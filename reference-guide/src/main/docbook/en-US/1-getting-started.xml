@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) 2010. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<chapter id="getting-started" xmlns="http://docbook.org/ns/docbook">
+    <title>Getting Started</title>
+
+    <sect1>
+        <title>Obtaining necessary libraries</title>
+
+        <para>If you use maven as your build tool, you need to configure the
+            correct dependencies for your project, as well as the repository
+            configuration that tells maven where the jars are located.
+        </para>
+
+        <sect2>
+            <title>Configuring maven</title>
+
+            <para>Add the following code in your dependencies section:</para>
+
+            <programlisting language="xml"><![CDATA[<dependency>
+    <groupId>org.axonframework</groupId>
+    <artifactId>axon-core</artifactId>
+    <version>0.3</version>
+</dependency>]]></programlisting>
+
+            <para>Make sure your maven installation has access to the axon repository, where the necessary jars and
+                poms are located.
+            </para>
+
+            <para>If you use a repository proxy, such as Artifactory, configure the following url:
+                <uri>http://axonframework.googlecode.com/svn/repo</uri>
+            </para>
+
+            <para>You can also add a repository configuration to you pom.xml:</para>
+            <programlisting language="xml"><![CDATA[<repositories>
+  <repository>
+    <id>axon</id>
+    <url>http://axonframework.googlecode.com/svn/repo</url>
+  </repository>
+</repositories>]]></programlisting>
+        </sect2>
+        <sect2>
+            <title>Additional dependencies</title>
+
+            <para>Most of the features provided by the Axon Framework are optional and require additional
+                dependencies. We have chosen not to add these dependencies by default, as they would possibly
+                clutter your project with stuff you don't need.
+            </para>
+            <simplesect>
+                <title>Event Sourcing</title>
+                <para>
+                    The event sourcing repository that is provided in Axon (<code>EventSourcingRepository</code>)
+                    requires XStream. You need the following maven dependency to use this repository implementation.
+                </para>
+                <programlisting language="xml"><![CDATA[<dependency>
+    <groupId>com.thoughtworks.xstream</groupId>
+    <artifactId>xstream</artifactId>
+    <version>1.3.1</version>
+</dependency>]]></programlisting>
+            </simplesect>
+
+            <simplesect>
+                <title>Spring Integration</title>
+                <para>
+                    The Axon Framework provides connectors that allow you to publish events on a Spring Integration channel. These
+                    connectors require Spring Integration on the classpath. You need the following maven dependency to
+                    use these connectors.
+                </para>
+                <programlisting language="xml"><![CDATA[<dependency>
+    <groupId>org.springframework.integration</groupId>
+    <artifactId>spring-integration-core</artifactId>
+    <version>1.0.3.RELEASE</version>
+</dependency>]]></programlisting>
+            </simplesect>
+        </sect2>
+    </sect1>
+
+    <sect1>
+        <title>Creating the CQRS building blocks</title>
+
+        <para/>
+
+        <sect2>
+            <title>Building an aggregate</title>
+
+            <para>All aggregates should implement the
+                <code>AggregateRoot</code>
+                interface. This interface describes that basic
+                operations needed by the Repository to store and publish the generated events.
+            </para>
+
+            <para>To support you with the implementation, there are two abstract implementations of this interface:
+                <code>AbstractAggregateRoot</code>
+                and<code>AbstractAnnotatedAggregateRoot</code>.
+            </para>
+
+            <para>
+                The first is a basic implementation that requires you to override the handle method to implement the
+                state change logic. This abstract class provides an apply method that you can call in your business
+                logic method to have an event applied. The
+                <code>AbstractAggregateRoot</code>
+                will keep track of all
+                uncommitted applied events and make sure they are forwarded to the EventBus when the aggregate is saved.
+            </para>
+
+            <para>The
+                <code>AbstractAnnotatedAggregateRoot</code>
+                is a specialization of the
+                <code>AbstractAggregateRoot</code>
+                that provides
+                <code>@EventHandler</code>
+                annotation support to your aggregate. See
+                <xref linkend="annotation-support"/>
+                for more information.
+            </para>
+        </sect2>
+
+        <sect2>
+            <title>Creating event listeners</title>
+
+            <para>Events that have been generated by your aggregates need to be processed. The event bus will take case
+                of the dispatching, but the actual processing is done by event listeners.
+            </para>
+
+            <para>Each event listener much implement the
+                <code>EventListener</code>
+                interface. Such implementation can be really
+                easy. You do need to make sure that the event listener is subscribed with the event bus.
+            </para>
+
+            <para>If you use the annotation support features, you can use the
+                <code>AnnotationEventListenerAdapter</code>
+                (and
+                subclasses) to turn your annotated pojo into a full blown event listener. See annotation support for
+                more information.
+            </para>
+        </sect2>
+
+        <sect2>
+            <title>Choosing an Event Bus</title>
+
+            <para>The
+                <code>EventBus</code>
+                is the mechanism that dispatches events to the event listeners. Axon Framework
+                provides two implementations of the event bus:<code>AsyncEventBus</code>> and
+                <code>SynchronousEventBus.</code>
+            </para>
+
+            <para>The
+                <code>AsyncEventBus</code>
+                is the default implementation of choice. It dispatches events asynchronously to all registered
+                event listeners in the application. It uses an
+                <code>EventSequencingPolicy</code>
+                to define the sequential processing requirements
+                of events. The
+                <code>AsyncEventBus</code>
+                can be configured with a
+                <code>ExecutorService</code>
+                implementation,
+                providing maximum control of the number of processor threads.
+            </para>
+
+            <para>The
+                <code>SynchronousEventBus</code>
+                dispatches events in the same thread that publishes them. This is quite useful
+                in test scenarios where the overhead of creating and managing application flow over multiple threads is
+                unwanted.
+            </para>
+        </sect2>
+    </sect1>
+</chapter>
