@@ -237,6 +237,10 @@
       </simplesect>
     </sect2>
   </sect1>
+  <sect1>
+    <title>Repository</title>
+    <para>TODO: Explain the repository</para>
+  </sect1>
   <sect1 xml:id="event-listeners">
     <title xml:id="event-listeners">Event Listeners</title>
     <para linkend="">Event listeners are the component that act on incoming events. These events may
@@ -258,13 +262,125 @@
       <para>If you use the annotation support features, you can use the
           <code>AnnotationEventListenerAdapter</code> (and subclasses) to turn your annotated pojo
         into a full blown event listener. See annotation support for more information.</para>
+      <tip>
+        <para>If you use Spring, you can automatically wrap all annotated event listeners with an
+          adapter automatically by configuring a bean of type
+            <code>AnnotationEventListenerBeanPostProcessor</code>. This post processor will
+          automatically find and wrap annotated event listeners inside an
+            <code>AnnotationEventListenerAdapter</code> and register them with an event bus.</para>
+      </tip>
     </sect2>
     <sect2>
       <title>Concurrent processing of events</title>
-      <para/>
+      <para>The <code>EventListener</code> interface defines a method called
+          <code>getEventSequencingPolicy()</code>. This method should return the policy that tells
+        Axon what type of concurrent processing of events this listener supports.</para>
+      <para>Axon provides a number of common policies you can use:<itemizedlist>
+          <listitem>
+            <para>The <code>FullConcurrencyPolicy</code> will tell Axon that this event handler may
+              handle all events concurrently. This means that there is no relationship between the
+              events that require them to be processed in a particular order.</para>
+          </listitem>
+          <listitem>
+            <para>The <code>SequentialPolicy</code> tells Axon that all events must be processed
+              sequentially. Handling of an event will start when the handling of a previous event is
+              finished. For annotated event handlers, this is the default policy.</para>
+          </listitem>
+          <listitem>
+            <para><code>SequentialPerAggregatePolicy</code> will force domain events that were
+              raised from the same aggregate to be handled sequentially. However, events from
+              different aggregates may be handled concurrently. This is typically a suitable policy
+              to use for event listeners that update details from aggregates in database
+              tables.</para>
+          </listitem>
+        </itemizedlist></para>
+      <para>Besides these provided policies, you can define your own. All policies must implement
+        the <code>EventSequencingPolicy</code> interface. This interface defines a single method
+        that returns the identifier sequence identifier for an event. Events for which an equals
+        sequence identifer is returned must be processed sequentially. Events that produce a
+        different sequence identifier may be processed concurrently. For performance reasons, policy
+        implementations should return <code>null</code> if the event may be processed in parallel to
+        any other event. This is faster, because Axon does not have to check for any restrictions on
+        event processing.</para>
+      <simplesect>
+        <title>Annotation support for concurrent processing</title>
+        <para>If you use the <code>AnnotationEventListenerAdapter</code>, you can configure the
+          event sequencing policy using the <code>@ConcurrentEventListener</code> annotation. You
+          then set the <code>sequencePolicyClass</code> to the type of policy you like to use. Note
+          that you can only choose policy classes that provide a public no-arg
+          constructor.<programlisting language="java">@ConcurrentEventListener(sequencingPolicyClass = MyCustomPolicy.class)
+public class MyEventListener() {
+  
+  @EventHandler
+  public void onSomeImportantEvent(MyEvent event) {
+    // eventProcessing logic
+  }
+}
+
+public class MyCustomPolicy implements EventSequencingPolicy {
+  public Object getSequenceIdentifierFor(DomainEvent event) {
+    if (event instanceof MyEvent) {
+      // let's assume that we do processing based on the someProperty field.
+      return ((MyEvent) event).someProperty();
+    }
+    return null;
+  }
+}</programlisting></para>
+      </simplesect>
     </sect2>
     <sect2>
       <title>Dealing with transactions</title>
+      <para>In some cases, your event handlers have to store data in systems that use transactions.
+        Starting and committing a transaction for each single event has a big performance impact. In
+        Axon, events are processed in batches. The batch size depends of the number of events that
+        need to be processed and the settings provided by the event handler. By default, a thread
+        will handle the all events in a batch that were present when that batch started processing. </para>
+      <para>In most cases, event handling is done using a thread pool executor, or scheduler. The
+        scheduler will schedule batches of event processing as soon as event become available. When
+        a batch is completed, the scheduler will reschedule processing of the next batch, as long as
+        more events are available. The smaller the batch, the more "fair" the distribution of event
+        handler processing is, but also the more scheduling overhead you create.</para>
+      <para>If Axon dispatches events to an event listener that implemetns the
+          <code>TransactionAware</code> interface, it will notify the event listener of the start
+        and end of a batch. The event listener can, based on the information in the
+          <code>TransactionStatus</code> object, decide to start, commit or rollback a transaction
+        to an external system.</para>
+      <para>The <code>beforeTransaction(TransactionStatus)</code>  method is invoked just before
+        Axon will start handling an event batch. You can use the TransactionStatus object to
+        configure the batch before it is started. For example, you can change the maximum number of
+        events that may run in the batch. </para>
+      <para>The <code>afterTransaction(TransactionStatus)</code> method is invoked after the batch
+        has been processed, but before the scheduler has scheduled the next batch. Based on the
+        value of <code>isSuccessful()</code>, you can decide to commit or rollback the transaction
+        with the datasource the event handler is updating. </para>
+      <simplesect>
+        <title>Configuring transactional batches</title>
+      </simplesect>
+      <para>There are a number of settings you can use on the <code>TransactionStatus</code> object. </para>
+      <para>You can configure a yielding policy, which gives the scheduler an indication of that to
+        do when a batch has finished, but more events are available for processing. Use
+          <code>DO_NOT_YIELD</code> if you want the scheduler to continue processing immediately as
+        long as new events are available for processing. The <code>YIELD_AFTER_TRANSACTION</code>
+        policy will tell the scheduler to reschedule the next batch for processing when a thread is
+        available.</para>
+      <para>You can set the maximum number of events to handle within a transaction using
+          <code>setMaxTransactionSize(int)</code>. The default of this value is the number of events
+        ready for processing at the moment the transaction started.</para>
+      <simplesect>
+        <title>Manipulating transactions during event processing</title>
+      </simplesect>
+      <para>You can change transaction semantics event during event processing. This can be done in
+        one of two ways, depending on the type of event handler you use.</para>
+      <para>If you use the <code>@EventHandler</code> annotation to mark event handler methods, you
+        may use a second parameter of type <code>TransactionStatus</code>. If such parameter is
+        available on the annotated method, the current <code>TransactionStatus</code> object is
+        passed as a parameter.</para>
+      <para>Alternatively, you can use the static <code>TransactionStatus.current()</code> accessor
+        to gain access to the status of the current transaction.</para>
+      <para>With the current transaction status, you can use the
+          <code>requestImmediateYield()</code> and <code>requestImmediateCommit()</code> methods to
+        end the transaction. The former will also tell the scheduler to reschedule the remainder of
+        the events for another batch.</para>
     </sect2>
   </sect1>
   <sect1>

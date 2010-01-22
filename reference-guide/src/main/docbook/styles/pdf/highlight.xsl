@@ -67,7 +67,7 @@
     </xsl:template>
 
     <xsl:template match='xslthl:comment' mode="xslthl">
-        <fo:inline font-style="italic">
+        <fo:inline color="#444444" font-style="italic">
             <xsl:apply-templates mode="xslthl"/>
         </fo:inline>
     </xsl:template>
