@@ -21,7 +21,7 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
-public class StubAggregate extends AbstractAggregateRoot {
+public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     private int invocationCount;
 

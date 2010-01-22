@@ -16,7 +16,7 @@
 
 package org.axonframework.core.repository.eventsourcing;
 
-import org.axonframework.core.AbstractAggregateRoot;
+import org.axonframework.core.AbstractEventSourcedAggregateRoot;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.EventStream;
 import org.axonframework.core.SimpleEventStream;
@@ -90,7 +90,7 @@ public class EventSourcingRepositoryTest {
         }
     }
 
-    private static class TestAggregate extends AbstractAggregateRoot {
+    private static class TestAggregate extends AbstractEventSourcedAggregateRoot {
 
         private List<DomainEvent> handledEvents = new ArrayList<DomainEvent>();
 

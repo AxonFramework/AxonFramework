@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler.annotation;
 
-import org.axonframework.core.AbstractAggregateRoot;
+import org.axonframework.core.AbstractEventSourcedAggregateRoot;
 import org.axonframework.core.DomainEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,14 +29,15 @@ import java.util.UUID;
  * <p/>
  * Implementations can call the {@link #apply(org.axonframework.core.DomainEvent)} method to have an event applied.
  * <p/>
- * Any events that are passed to the {@link #apply(org.axonframework.core.DomainEvent)} method for which no event handler
- * can be found will cause an {@link org.axonframework.core.eventhandler.annotation.UnhandledEventException} to be thrown.
+ * Any events that are passed to the {@link #apply(org.axonframework.core.DomainEvent)} method for which no event
+ * handler can be found will cause an {@link org.axonframework.core.eventhandler.annotation.UnhandledEventException} to
+ * be thrown.
  *
  * @author Allard Buijze
  * @see org.axonframework.core.eventhandler.annotation.EventHandler
  * @since 0.1
  */
-public abstract class AbstractAnnotatedAggregateRoot extends AbstractAggregateRoot {
+public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractAnnotatedAggregateRoot.class);
     private final AnnotationEventHandlerInvoker eventHandlerInvoker;
@@ -60,8 +61,8 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractAggregateRo
     }
 
     /**
-     * Calls the appropriate {@link org.axonframework.core.eventhandler.annotation.EventHandler} annotated handler with the
-     * provided event.
+     * Calls the appropriate {@link org.axonframework.core.eventhandler.annotation.EventHandler} annotated handler with
+     * the provided event.
      *
      * @param event The event to handle
      * @see org.axonframework.core.eventhandler.annotation.EventHandler

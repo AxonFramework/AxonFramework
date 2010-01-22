@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
@@ -34,48 +35,6 @@
                 <extensions>true</extensions>
                 <executions>
                     <execution>
-                        <id>make-pdf</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>resources</goal>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <formats>
-                                <format>
-                                    <formatName>pdf</formatName>
-                                    <finalName>reference-guide-${project.version}.pdf</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/xslt/main-pdf.xsl</stylesheetResource>
-                                </format>
-                            </formats>
-                            
-                            
-                            <options>
-                                <xincludeSupported>true</xincludeSupported>
-                                <localeSeparator>-</localeSeparator>
-                                <useRelativeImageUris>true</useRelativeImageUris>
-                                <transformerParameters>
-                                    <property>
-                                        <name>callout.graphics.path</name>
-                                        <value>${basedir}/src/main/resources/images/callouts/</value>
-                                    </property>
-                                    <property>
-                                        <name>callout.graphics.extension</name>
-                                        <value>.svg</value>
-                                    </property>
-                                    <property>
-                                        <name>highlight.source</name>
-                                        <value>1</value>
-                                    </property>
-                                    <property>
-                                        <name>highlight.xslthl.config.path</name>
-                                        <value>file:///${project.basedir}/src/main/xslt/highlighting/xslthl-config.xml</value>
-                                    </property>
-                                </transformerParameters>
-                            </options>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>make-html</id>
                         <phase>compile</phase>
                         <goals>
@@ -87,12 +46,12 @@
                                 <format>
                                     <formatName>html_single</formatName>
                                     <finalName>index.html</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/xslt/main-html_single.xsl</stylesheetResource>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/single.xsl</stylesheetResource>
                                 </format>
                                 <format>
                                     <formatName>html</formatName>
                                     <finalName>index.html</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/xslt/main-html.xsl</stylesheetResource>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/chunked.xsl</stylesheetResource>
                                 </format>
                             </formats>
 
@@ -101,6 +60,14 @@
                                 <localeSeparator>-</localeSeparator>
                                 <useRelativeImageUris>true</useRelativeImageUris>
                                 <transformerParameters>
+									<property>
+										<name>admon.graphics.path</name>
+										<value>images/</value>
+									</property>
+									<property>
+										<name>admon.graphics.extension</name>
+										<value>.png</value>
+									</property>
                                     <property>
                                         <name>callout.graphics.path</name>
                                         <value>callouts/</value>
@@ -110,15 +77,62 @@
                                         <value>.png</value>
                                     </property>
                                     <property>
-                                        <name>highlight.source</name>
-                                        <value>1</value>
-                                    </property>
-                                    <property>
                                         <name>highlight.xslthl.config.path</name>
-                                        <value>file:///${project.basedir}/src/main/xslt/highlighting/xslthl-config.xml</value>
+                                        <value>file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml</value>
                                     </property>
                                 </transformerParameters>
                             </options>
+                            <imageResource>
+                                <directory>${basedir}/src/main/resources/</directory>
+                            </imageResource>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>make-pdf</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>resources</goal>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <formats>
+                                <format>
+                                    <formatName>pdf</formatName>
+                                    <finalName>reference-guide-${project.version}.pdf</finalName>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/pdf/custom.xsl</stylesheetResource>
+                                </format>
+                            </formats>
+                            <options>
+                                <xincludeSupported>true</xincludeSupported>
+                                <localeSeparator>-</localeSeparator>
+                                <useRelativeImageUris>true</useRelativeImageUris>
+                                <transformerParameters>
+									<property>
+										<name>admon.graphics.path</name>
+										<value>${basedir}/src/main/resources/images/</value>
+									</property>
+									<property>
+										<name>admon.graphics.extension</name>
+										<value>_large.png</value>
+									</property>
+                                    <property>
+                                        <name>callout.graphics.path</name>
+                                        <value>${basedir}/src/main/resources/images/callouts/</value>
+                                    </property>
+                                    <property>
+                                        <name>callout.graphics.extension</name>
+                                        <value>.svg</value>
+                                    </property>
+                                    <property>
+                                        <name>highlight.xslthl.config.path</name>
+                                        <value>file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml</value>
+                                    </property>
+                                </transformerParameters>
+                            </options>
+                            <imageResource>
+                                <directory>${basedir}/src/main/resources/images</directory>
+                            </imageResource>
+
                         </configuration>
                     </execution>
                 </executions>
@@ -138,9 +152,6 @@
                     <sourceDocumentName>master.xml</sourceDocumentName>
                     <sourceDirectory>${basedir}/src/main/docbook</sourceDirectory>
                     <masterTranslation>en-US</masterTranslation>
-                    <imageResource>
-                        <directory>${basedir}/src/main/resources/images</directory>
-                    </imageResource>
                     <publishDirectory>${basedir}/target</publishDirectory>
                     <injections>
                         <injection>

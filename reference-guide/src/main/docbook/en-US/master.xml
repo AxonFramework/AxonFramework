@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   ~ Copyright (c) 2010. Axon Framework
   ~
@@ -14,31 +15,25 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<book version="5.0" xmlns="http://docbook.org/ns/docbook"
-      xmlns:xlink="http://www.w3.org/1999/xlink"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:svg="http://www.w3.org/2000/svg"
-      xmlns:m="http://www.w3.org/1998/Math/MathML"
-      xmlns:html="http://www.w3.org/1999/xhtml"
-      xmlns:db="http://docbook.org/ns/docbook"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<book version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:html="http://www.w3.org/1999/xhtml"
+      xmlns:db="http://docbook.org/ns/docbook" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://docbook.org/ns/docbook http://docbook.org/xml/5.0/xsd/docbook.xsd
                 http://www.w3.org/1999/xlink http://docbook.org/xml/5.0/xsd/xlink.xsd">
     <info>
         <title>Reference Guide</title>
-
-        <author>
-            <personname>
-                <firstname>Allard</firstname>
-                <surname>Buijze</surname>
-            </personname>
-
-            <affiliation>
-                <orgname>JTeam</orgname>
-            </affiliation>
-        </author>
-        <pubdate>14 Jan 2010</pubdate>
+        <!--
+                <author>
+                    <personname>
+                        <firstname>Allard</firstname>
+                        <surname>Buijze</surname>
+                    </personname>
+                    <affiliation>
+                        <orgname>JTeam</orgname>
+                    </affiliation>
+                </author>
+        -->
         <mediaobject>
             <imageobject role="fo">
                 <imagedata align="center" fileref="logo.png" width="257px"/>
@@ -47,14 +42,11 @@
         <releaseinfo>Axon Framework &version;</releaseinfo>
         <subjectset>
             <subject>
-                <subjectterm>axon</subjectterm>
+                <subjectterm>Axon Framework Reference Guide</subjectterm>
             </subject>
         </subjectset>
     </info>
-
     <xi:include href="1-getting-started.xml"/>
-    <xi:include href="2-annotation-support.xml"/>
-    <xi:include href="3-event-sourcing-support.xml"/>
-    <xi:include href="4-transaction-support.xml"/>
-
+    <xi:include href="2-building-blocks.xml"/>
+    <xi:include href="4-transactional-event-handling.xml"/>
 </book>

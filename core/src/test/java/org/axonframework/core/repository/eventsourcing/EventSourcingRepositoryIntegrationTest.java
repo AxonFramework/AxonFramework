@@ -16,7 +16,7 @@
 
 package org.axonframework.core.repository.eventsourcing;
 
-import org.axonframework.core.AbstractAggregateRoot;
+import org.axonframework.core.AbstractEventSourcedAggregateRoot;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.EventStream;
 import org.axonframework.core.StubDomainEvent;
@@ -150,7 +150,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         uncaughtExceptions.add(e);
     }
 
-    private static class SimpleAggregateRoot extends AbstractAggregateRoot {
+    private static class SimpleAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
         private SimpleAggregateRoot() {
             apply(new StubDomainEvent());

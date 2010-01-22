@@ -32,7 +32,7 @@ import java.util.UUID;
  * @author Allard Buijze
  * @param <T> The type of aggregate this repository stores
  * @see org.axonframework.core.EventSourcedAggregateRoot
- * @see org.axonframework.core.AbstractAggregateRoot
+ * @see org.axonframework.core.AbstractEventSourcedAggregateRoot
  * @see org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot
  * @see org.axonframework.core.repository.eventsourcing.EventStore
  * @see org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore
