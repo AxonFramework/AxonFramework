@@ -23,8 +23,6 @@
     <version>0.4-SNAPSHOT</version>
     <modules>
         <module>core</module>
-        <module>reference-guide</module>
-        <module>sample</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -42,6 +40,21 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
+
+    <profiles>
+        <profile>
+            <id>with-doc</id>
+            <modules>
+                <module>reference-guide</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>with-samples</id>
+            <modules>
+                <module>sample</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <properties>
         <slf4j.version>1.5.8</slf4j.version>
