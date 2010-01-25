@@ -18,13 +18,11 @@ package org.axonframework.core.eventhandler.annotation.postprocessor;
 
 import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.EventListener;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
 import org.axonframework.core.eventhandler.SequentialPolicy;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.junit.*;
-import org.springframework.context.ApplicationContext;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -35,16 +33,10 @@ import static org.mockito.Mockito.*;
 public class AnnotationEventHandlerBeanPostProcessorTest {
 
     private AnnotationEventListenerBeanPostProcessor testSubject;
-    private ApplicationContext mockApplicationContext;
-    private EventBus mockEventBus;
 
     @Before
     public void setUp() {
         testSubject = spy(new AnnotationEventListenerBeanPostProcessor());
-        mockApplicationContext = mock(ApplicationContext.class);
-        testSubject.setApplicationContext(mockApplicationContext);
-        mockEventBus = mock(EventBus.class);
-        when(mockApplicationContext.getBean(EventBus.class)).thenReturn(mockEventBus);
     }
 
     @Test
