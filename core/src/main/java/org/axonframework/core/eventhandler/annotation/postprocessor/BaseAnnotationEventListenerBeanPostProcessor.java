@@ -26,8 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -39,13 +37,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  * @since 0.3
  */
-public abstract class BaseAnnotationEventListenerBeanPostProcessor
-        implements DestructionAwareBeanPostProcessor, ApplicationContextAware {
+public abstract class BaseAnnotationEventListenerBeanPostProcessor implements DestructionAwareBeanPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(BaseAnnotationEventListenerBeanPostProcessor.class);
 
     private final Map<String, AnnotationEventListenerAdapter> managedAdapters = new HashMap<String, AnnotationEventListenerAdapter>();
-    private ApplicationContext applicationContext;
     private EventBus eventBus;
 
     /**
@@ -144,14 +140,6 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor
      */
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     private static final class AdapterInvocationHandler implements InvocationHandler {

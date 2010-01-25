@@ -190,10 +190,10 @@ public abstract class TransactionStatus {
     /**
      * Mark the current transaction as failed.
      *
-     * @param exception the exception that caused the transaction to fail
+     * @param cause the exception that caused the transaction to fail
      */
-    void markFailed(Throwable exception) {
-        this.exception = exception;
+    void markFailed(Throwable cause) {
+        this.exception = cause;
     }
 
 }

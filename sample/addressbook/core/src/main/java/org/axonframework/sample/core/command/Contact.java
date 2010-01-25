@@ -29,6 +29,7 @@ import org.axonframework.sample.core.ContactCreatedEvent;
 import org.axonframework.sample.core.ContactDeletedEvent;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -36,7 +37,7 @@ import java.util.UUID;
  */
 class Contact extends AbstractAnnotatedAggregateRoot {
 
-    private HashMap<AddressType, Address> addresses = new HashMap<AddressType, Address>();
+    private Map<AddressType, Address> addresses = new HashMap<AddressType, Address>();
 
     public Contact(String name) {
         apply(new ContactCreatedEvent(name));
@@ -61,16 +62,16 @@ class Contact extends AbstractAnnotatedAggregateRoot {
     }
 
     @EventHandler
-    private void handleContactCreatedEvent(ContactCreatedEvent event) {
+    protected void handleContactCreatedEvent(ContactCreatedEvent event) {
     }
 
     @EventHandler
-    private void handleAddressAddedEvent(AddressRegisteredEvent event) {
+    protected void handleAddressAddedEvent(AddressRegisteredEvent event) {
         addresses.put(event.getType(), event.getAddress());
     }
 
     @EventHandler
-    private void handleAddressRemovedEvent(AddressRemovedEvent event) {
+    protected void handleAddressRemovedEvent(AddressRemovedEvent event) {
         addresses.remove(event.getType());
     }
 

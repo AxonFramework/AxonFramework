@@ -89,6 +89,12 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
         throw new UnhandledEventException(message, event);
     }
 
+    /**
+     * Event Handler that suppresses errors when an AggregateDeletedEvent is applied, but is not handled by this
+     * aggregate. Typically, these events do not change any state within the aggregate.
+     *
+     * @param event The deletion event
+     */
     @EventHandler
     protected void onUnhandledDeleteEvent(AggregateDeletedEvent event) {
         // that is allowed.

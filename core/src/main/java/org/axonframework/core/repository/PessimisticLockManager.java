@@ -99,7 +99,7 @@ class PessimisticLockManager implements LockManager {
         return locks.get(aggregateIdentifier);
     }
 
-    private class DisposableLock {
+    private final class DisposableLock {
 
         private ReentrantLock lock;
         // guarded by "this"

@@ -25,6 +25,10 @@ package org.axonframework.core.util;
  */
 public abstract class Assert {
 
+    private Assert() {
+        // utility class
+    }
+
     /**
      * Asserts that the value of <code>state</code> is true. If not, an IllegalStateException is thrown.
      *

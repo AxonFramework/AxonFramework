@@ -28,8 +28,8 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 /**
- * Adapter that turns any bean with {@link org.axonframework.core.eventhandler.annotation.EventHandler} annotated methods
- * into an {@link org.axonframework.core.eventhandler.EventListener}.
+ * Adapter that turns any bean with {@link org.axonframework.core.eventhandler.annotation.EventHandler} annotated
+ * methods into an {@link org.axonframework.core.eventhandler.EventListener}.
  * <p/>
  * Optionally, this adapter may be configured with an {@link EventBus} at which the adapter should register for events.
  * If none is configured, one is autowired (requiring that exactly one {@link EventBus} is present in the
@@ -178,7 +178,7 @@ public class AnnotationEventListenerAdapter
         this.eventBus = eventBus;
     }
 
-    private class AnnotatedTransactionAware implements TransactionAware {
+    private static class AnnotatedTransactionAware implements TransactionAware {
 
         private final AnnotationEventHandlerInvoker eventHandlerInvoker;
 

@@ -147,7 +147,7 @@ class AnnotationEventHandlerInvoker {
         } catch (InvocationTargetException e) {
             throw new UnsupportedOperationException(String.format(
                     "An error occurred when applying an event of type [%s]",
-                    event.getClass().getSimpleName()), e.getCause());
+                    event.getClass().getSimpleName()), e);
         }
     }
 
@@ -181,6 +181,11 @@ class AnnotationEventHandlerInvoker {
         return callback.foundHandler();
     }
 
+    /**
+     * Invoke the "BeforeTransaction" method on the target. This is the method annotated with {@link BeforeTransaction}
+     *
+     * @param transactionStatus The status of the transaction to pass as parameter to the method call
+     */
     public void invokeBeforeTransaction(TransactionStatus transactionStatus) {
         invokeTransactionMethod(BeforeTransaction.class, transactionStatus);
     }
@@ -192,6 +197,11 @@ class AnnotationEventHandlerInvoker {
         ReflectionUtils.doWithMethods(target.getClass(), callback, callback);
     }
 
+    /**
+     * Invoke the "AfterTransaction" method on the target. This is the method annotated with {@link AfterTransaction}
+     *
+     * @param transactionStatus The status of the transaction to pass as parameter to the method call
+     */
     public void invokeAfterTransaction(TransactionStatus transactionStatus) {
         invokeTransactionMethod(AfterTransaction.class, transactionStatus);
     }
@@ -289,7 +299,7 @@ class AnnotationEventHandlerInvoker {
     private class CallFirstTransactionMethodCallback
             implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
 
-        final AtomicBoolean found = new AtomicBoolean(false);
+        private final AtomicBoolean found = new AtomicBoolean(false);
         private final Class<? extends Annotation> annotation;
         private final TransactionStatus transactionStatus;
 

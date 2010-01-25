@@ -27,15 +27,28 @@ public abstract class AbstractAggregateRoot implements VersionedAggregateRoot {
     private final UUID identifier;
     private volatile Long lastCommitted;
 
+    /**
+     * Initializes the aggregate root using a random aggregate identifier.
+     */
     protected AbstractAggregateRoot() {
         this(UUID.randomUUID());
     }
 
+    /**
+     * Initializes the aggregate root using the provided aggregate identifier.
+     *
+     * @param identifier the identifier of this aggregate
+     */
     protected AbstractAggregateRoot(UUID identifier) {
         this.identifier = identifier;
         uncommittedEvents = new EventContainer(identifier);
     }
 
+    /**
+     * Registers an event to be published when the aggregate is saved
+     *
+     * @param event the event to register
+     */
     protected void registerEvent(DomainEvent event) {
         uncommittedEvents.addEvent(event);
     }
@@ -73,6 +86,12 @@ public abstract class AbstractAggregateRoot implements VersionedAggregateRoot {
         return uncommittedEvents.size();
     }
 
+    /**
+     * Initialize the event stream using the given sequence number of the last known event. This will cause the new
+     * events to be attached to this aggregate to be assigned a continuous sequence number.
+     *
+     * @param lastSequenceNumber The sequence number of the last event from this aggregate
+     */
     protected void initializeEventStream(long lastSequenceNumber) {
         uncommittedEvents.setFirstSequenceNumber(lastSequenceNumber + 1);
         lastCommitted = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
