@@ -31,7 +31,7 @@
 
     <name>Axon Address Book Sample Project</name>
     <modules>
-        <module>app</module>
+        <module>core</module>
     </modules>
 
 </project>
