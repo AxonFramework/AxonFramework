@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app;
-
-import org.axonframework.core.AggregateDeletedEvent;
+package org.axonframework.sample.core;
 
 /**
  * @author Allard Buijze
  */
-public class ContactDeletedEvent extends AggregateDeletedEvent {
+public class AddressChangedEvent extends AddressRegisteredEvent {
 
+    public AddressChangedEvent(AddressType type, Address address) {
+        super(type, address);
+    }
 }

@@ -23,7 +23,7 @@
 
     <bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus"/>
 
-    <bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
+    <bean id="contactRepository" class="org.axonframework.sample.core.command.ContactRepository">
         <property name="eventBus" ref="eventBus"/>
         <property name="eventStore" ref="eventStore"/>
     </bean>
@@ -32,7 +32,7 @@
         <property name="baseDir" value="file:${java.io.tmpdir}"/>
     </bean>
 
-    <bean id="contactCommandHandler" class="org.axonframework.sample.app.command.ContactCommandHandler">
+    <bean id="contactCommandHandler" class="org.axonframework.sample.core.command.ContactCommandHandler">
         <property name="repository" ref="contactRepository"/>
     </bean>
 
