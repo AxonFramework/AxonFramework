@@ -51,4 +51,5 @@
     <xi:include href="2-building-blocks.xml"/>
     <xi:include href="3-using-spring.xml"/>
     <xi:include href="4-performance-tuning.xml"/>
+    <xi:include href="A-sample-applications.xml"/>
 </book>
