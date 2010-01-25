@@ -56,11 +56,23 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         long lastSequenceNumber = -1;
         while (eventStream.hasNext()) {
             DomainEvent event = eventStream.next();
+            if (event instanceof AggregateDeletedEvent) {
+                throw new AggregateDeletedException(String.format(
+                        "Aggregate with identifier [%s] not found. It has been deleted.",
+                        event.getAggregateIdentifier()));
+            }
             lastSequenceNumber = event.getSequenceNumber();
             handle(event);
         }
         initializeEventStream(lastSequenceNumber);
     }
+
+    @Override
+    public void markDeleted() {
+        apply(createDeletedEvent());
+    }
+
+    protected abstract AggregateDeletedEvent createDeletedEvent();
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to

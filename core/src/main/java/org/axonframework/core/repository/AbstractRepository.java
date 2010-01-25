@@ -16,6 +16,7 @@
 
 package org.axonframework.core.repository;
 
+import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.AggregateRoot;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.EventStream;
@@ -28,9 +29,9 @@ import org.springframework.beans.factory.annotation.Required;
 import java.util.UUID;
 
 /**
- * Abstract implementation of the {@link org.axonframework.core.repository.Repository} that takes care of the dispatching
- * of events when an aggregate is persisted. All uncommitted events on an aggregate are dispatched when the aggregate is
- * saved.
+ * Abstract implementation of the {@link org.axonframework.core.repository.Repository} that takes care of the
+ * dispatching of events when an aggregate is persisted. All uncommitted events on an aggregate are dispatched when the
+ * aggregate is saved.
  * <p/>
  * Note that this repository implementation does not take care of any locking. The underlying persistence is expected to
  * deal with concurrency. Alternatively, consider using the {@link org.axonframework.core.repository.LockingRepository}.
@@ -67,6 +68,17 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void delete(UUID aggregateIdentifier) {
+        AggregateDeletedEvent deleteEvent = doDelete(aggregateIdentifier);
+        if (deleteEvent != null) {
+            eventBus.publish(deleteEvent);
+        }
+    }
+
+    /**
      * Performs the actual saving of the aggregate.
      *
      * @param aggregate the aggregate to store
@@ -74,10 +86,21 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     protected abstract void doSave(T aggregate);
 
     /**
+     * Performs the actual deleting of the aggregate. Returns the event to be published on the event bus. Subclasses
+     * that dipatch the event themselves should return null.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to delete
+     * @return the event representing the notification that the aggregate was deleted, or null, if no event should be
+     *         published
+     */
+    protected abstract AggregateDeletedEvent doDelete(UUID aggregateIdentifier);
+
+    /**
      * Loads and initialized the aggregate with the given aggregateIdentifier.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @return a fully initialized aggregate
+     * @throws org.axonframework.core.AggregateNotFoundException if the aggregate with given identifier does not exist
      */
     protected abstract T doLoad(UUID aggregateIdentifier);
 

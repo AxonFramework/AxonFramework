@@ -35,4 +35,10 @@ public interface EventSourcedAggregateRoot extends VersionedAggregateRoot {
      */
     void initializeState(EventStream eventStream);
 
+    /**
+     * Mark this aggregate as deleted. An event of type {@link AggregateDeletedEvent} is appended to the uncommitted
+     * events. After saving this aggregate, it cannot be loaded again.
+     */
+    void markDeleted();
+
 }

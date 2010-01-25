@@ -131,6 +131,16 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
         }
     }
 
+    @Override
+    public void delete(UUID aggregateIdentifier) {
+        lockManager.obtainLock(aggregateIdentifier);
+        try {
+            super.delete(aggregateIdentifier);
+        } finally {
+            lockManager.releaseLock(aggregateIdentifier);
+        }
+    }
+
     /**
      * Perform the actual saving of the aggregate. All necessary locks have been verified.
      *

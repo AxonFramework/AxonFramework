@@ -17,6 +17,7 @@
 package org.axonframework.core.eventhandler.annotation;
 
 import org.axonframework.core.AbstractEventSourcedAggregateRoot;
+import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +87,11 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
                                        getClass().getSimpleName());
         logger.error(message);
         throw new UnhandledEventException(message, event);
+    }
+
+    @EventHandler
+    protected void onUnhandledDeleteEvent(AggregateDeletedEvent event) {
+        // that is allowed.
     }
 
 }

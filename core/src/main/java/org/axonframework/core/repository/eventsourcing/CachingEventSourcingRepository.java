@@ -17,6 +17,7 @@
 package org.axonframework.core.repository.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
+import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.EventSourcedAggregateRoot;
 import org.axonframework.core.repository.LockingStrategy;
 
@@ -87,6 +88,13 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
             return super.doLoad(aggregateIdentifier);
         }
         return existingAggregate;
+    }
+
+    @Override
+    protected AggregateDeletedEvent doDelete(UUID aggregateIdentifier) {
+        AggregateDeletedEvent event = super.doDelete(aggregateIdentifier);
+        cache.remove(aggregateIdentifier);
+        return event;
     }
 
     /**

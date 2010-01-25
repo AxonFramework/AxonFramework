@@ -19,9 +19,10 @@ package org.axonframework.core.repository.eventsourcing;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.SingleValueConverter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
+import org.apache.commons.io.IOUtils;
+import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.EventStream;
-import org.apache.commons.io.IOUtils;
 import org.joda.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
@@ -41,9 +42,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Implementation of the {@link org.axonframework.core.repository.eventsourcing.EventStore} that serializes objects using
- * XStream and writes them to files to disk. Each aggregate is represented by a single file, where each event of that
- * aggregate is a line in that file. Events are serialized to XML format, making them readable for both user and
+ * Implementation of the {@link org.axonframework.core.repository.eventsourcing.EventStore} that serializes objects
+ * using XStream and writes them to files to disk. Each aggregate is represented by a single file, where each event of
+ * that aggregate is a line in that file. Events are serialized to XML format, making them readable for both user and
  * machine.
  * <p/>
  * Use {@link #setBaseDir(org.springframework.core.io.Resource)} to specify the directory where event files should be
@@ -95,6 +96,13 @@ public class XStreamFileSystemEventStore implements EventStore {
     public EventStream readEvents(String type, UUID identifier) {
         try {
             File eventFile = getBaseDirForType(type).createRelative(identifier + ".events").getFile();
+            if (!eventFile.exists()) {
+                throw new AggregateNotFoundException(
+                        String.format(
+                                "Aggregate of type [%s] with identifier [%s] cannot be found.",
+                                type,
+                                identifier.toString()));
+            }
             FileInputStream fileStream = new FileInputStream(eventFile);
             InputStream inputStream = surroundWitObjectStreamTag(fileStream);
             ObjectInputStream eventsStream = xStream.createObjectInputStream(inputStream);
@@ -146,19 +154,6 @@ public class XStreamFileSystemEventStore implements EventStore {
     public void setAliases(Map<String, Class> aliases) {
         for (Map.Entry<String, Class> entry : aliases.entrySet()) {
             xStream.alias(entry.getKey(), entry.getValue());
-        }
-    }
-
-    /**
-     * Specify aliases for package names on serialization. When serializing an object, this event store will use the
-     * fully qualified class name as element name. Those are potentially long names. By specifying an alias for a
-     * package, they can be considerably shortened.
-     *
-     * @param aliases a map containing the aliases as keys and the full package name as value
-     */
-    public void setPackageAliases(Map<String, String> aliases) {
-        for (Map.Entry<String, String> entry : aliases.entrySet()) {
-            xStream.aliasPackage(entry.getKey(), entry.getValue());
         }
     }
 

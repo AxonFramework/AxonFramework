@@ -16,37 +16,16 @@
 
 package org.axonframework.core;
 
-import java.util.UUID;
-
 /**
  * @author Allard Buijze
  */
-public class StubAggregate extends AbstractEventSourcedAggregateRoot {
+public class AggregateDeletedException extends AggregateNotFoundException {
 
-    private int invocationCount;
-
-    public StubAggregate() {
+    public AggregateDeletedException(String message) {
+        super(message);
     }
 
-    public StubAggregate(UUID identifier) {
-        super(identifier);
-    }
-
-    public void doSomething() {
-        apply(new StubDomainEvent());
-    }
-
-    @Override
-    protected void handle(DomainEvent event) {
-        invocationCount++;
-    }
-
-    public int getInvocationCount() {
-        return invocationCount;
-    }
-
-    @Override
-    protected AggregateDeletedEvent createDeletedEvent() {
-        return new StubAggregateDeletedEvent();
+    public AggregateDeletedException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

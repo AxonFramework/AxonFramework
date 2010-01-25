@@ -42,6 +42,14 @@ public interface Repository<T extends AggregateRoot> {
      *
      * @param aggregateIdentifier The identifier of the aggregate to load
      * @return The aggregate root with the given identifier.
+     * @throws org.axonframework.core.AggregateNotFoundException if aggregate with given id cannot be found
      */
     T load(UUID aggregateIdentifier);
+
+    /**
+     * Delete the aggregate with the given unique identifier.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to delete
+     */
+    void delete(UUID aggregateIdentifier);
 }

@@ -17,9 +17,11 @@
 package org.axonframework.core.repository.eventsourcing;
 
 import org.axonframework.core.AbstractEventSourcedAggregateRoot;
+import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.EventStream;
 import org.axonframework.core.SimpleEventStream;
+import org.axonframework.core.StubAggregateDeletedEvent;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
 import org.junit.*;
@@ -110,6 +112,11 @@ public class EventSourcingRepositoryTest {
 
         public List<DomainEvent> getHandledEvents() {
             return handledEvents;
+        }
+
+        @Override
+        protected AggregateDeletedEvent createDeletedEvent() {
+            return new StubAggregateDeletedEvent();
         }
     }
 }

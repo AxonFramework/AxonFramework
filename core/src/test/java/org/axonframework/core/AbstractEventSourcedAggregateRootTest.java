@@ -76,6 +76,11 @@ public class AbstractEventSourcedAggregateRootTest {
         protected void handle(DomainEvent event) {
             this.invocationCount++;
         }
+
+        @Override
+        protected AggregateDeletedEvent createDeletedEvent() {
+            return new StubAggregateDeletedEvent();
+        }
     }
 
 }

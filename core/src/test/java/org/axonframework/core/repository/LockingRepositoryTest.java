@@ -16,6 +16,7 @@
 
 package org.axonframework.core.repository;
 
+import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.StubAggregate;
 import org.axonframework.core.eventhandler.EventBus;
@@ -127,6 +128,13 @@ public class LockingRepositoryTest {
         @Override
         protected void doSave(StubAggregate aggregate) {
             store.put(aggregate.getIdentifier(), aggregate);
+        }
+
+        @Override
+        protected AggregateDeletedEvent doDelete(UUID aggregateIdentifier) {
+            store.remove(aggregateIdentifier);
+            return new AggregateDeletedEvent() {
+            };
         }
 
         @Override
