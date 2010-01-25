@@ -84,6 +84,15 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         return aggregate;
     }
 
+    /**
+     * Performs the actual deleting of the aggregate. The aggregate will me marked as deleted and saved in the event
+     * sourcing database.
+     * <p/>
+     * Note that when a deleted aggregate is loaded, an {@link AggregateDeletedEvent} is thrown.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to delete
+     * @return always returns null
+     */
     @Override
     protected AggregateDeletedEvent doDelete(UUID aggregateIdentifier) {
         T aggregate = load(aggregateIdentifier);

@@ -17,7 +17,10 @@
 package org.axonframework.core;
 
 /**
+ * Special type of event that indicates that the aggregate from which this event was raised has been removed.
+ *
  * @author Allard Buijze
+ * @since 0.4
  */
 public abstract class AggregateDeletedEvent extends DomainEvent {
 

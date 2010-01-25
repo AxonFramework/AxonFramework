@@ -131,6 +131,12 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
         }
     }
 
+    /**
+     * Delete the aggregate with the given unique identifier. This repository will make sure necessary locks are
+     * obtained and released.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to delete
+     */
     @Override
     public void delete(UUID aggregateIdentifier) {
         lockManager.obtainLock(aggregateIdentifier);

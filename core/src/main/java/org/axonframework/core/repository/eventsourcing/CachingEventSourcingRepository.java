@@ -90,6 +90,12 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
         return existingAggregate;
     }
 
+    /**
+     * Perform the actual deleting of an aggregate. If present, the aggregate will be removed from the cache.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to delete
+     * @return the event to publish, if any.
+     */
     @Override
     protected AggregateDeletedEvent doDelete(UUID aggregateIdentifier) {
         AggregateDeletedEvent event = super.doDelete(aggregateIdentifier);

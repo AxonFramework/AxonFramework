@@ -17,14 +17,28 @@
 package org.axonframework.core;
 
 /**
+ * Exception indicating that the an aggregate could not be found in the repository.
+ *
  * @author Allard Buijze
+ * @since 0.4
  */
 public class AggregateNotFoundException extends RuntimeException {
 
+    /**
+     * Initialize a AggregateNotFoundException with the given <code>message</code>
+     *
+     * @param message The message describing the cause of the exception
+     */
     public AggregateNotFoundException(String message) {
         super(message);
     }
 
+    /**
+     * Initialize a AggregateNotFoundException with the given <code>message</code> and <code>cause</code>
+     *
+     * @param message The message describing the cause of the exception
+     * @param cause   The exception causing this exception
+     */
     public AggregateNotFoundException(String message, Throwable cause) {
         super(message, cause);
     }

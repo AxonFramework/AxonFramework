@@ -87,7 +87,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
 
     /**
      * Performs the actual deleting of the aggregate. Returns the event to be published on the event bus. Subclasses
-     * that dipatch the event themselves should return null.
+     * that dispatch the event themselves should return null.
      *
      * @param aggregateIdentifier the identifier of the aggregate to delete
      * @return the event representing the notification that the aggregate was deleted, or null, if no event should be
@@ -100,7 +100,9 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @return a fully initialized aggregate
-     * @throws org.axonframework.core.AggregateNotFoundException if the aggregate with given identifier does not exist
+     *
+     * @throws org.axonframework.core.AggregateNotFoundException
+     *          if the aggregate with given identifier does not exist
      */
     protected abstract T doLoad(UUID aggregateIdentifier);
 

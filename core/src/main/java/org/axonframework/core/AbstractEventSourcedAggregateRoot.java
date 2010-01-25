@@ -67,11 +67,22 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         initializeEventStream(lastSequenceNumber);
     }
 
+    /**
+     * Mark this aggregate as deleted. This will apply an {@link org.axonframework.core.AggregateDeletedEvent} (or
+     * subtype) to be saved in the event sourcing repository.
+     *
+     * @see #createDeletedEvent()
+     */
     @Override
     public void markDeleted() {
         apply(createDeletedEvent());
     }
 
+    /**
+     * Creates the event to apply to this aggregate when it is marked as deleted.
+     *
+     * @return the event to apply
+     */
     protected abstract AggregateDeletedEvent createDeletedEvent();
 
     /**
