@@ -107,7 +107,6 @@
     </build>
 
     <!-- deploy and release configuration -->
-
     <distributionManagement>
         <snapshotRepository>
             <id>googleCode</id>
