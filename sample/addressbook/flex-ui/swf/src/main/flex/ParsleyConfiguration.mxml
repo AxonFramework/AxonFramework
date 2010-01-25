@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<mx:Object xmlns:mx="http://www.adobe.com/2006/mxml"
+           xmlns:services="org.axonframework.examples.addressbook.services.*"
+           xmlns:actions="org.axonframework.examples.addressbook.actions.*"
+        >
+
+    <mx:RemoteObject
+        id="remoteAddressService"
+        destination="addressService"
+        endpoint="http://localhost:8080/messagebroker/amf"
+        showBusyCursor="true" />
+
+
+    <actions:SearchAddressesAction />
+
+    <!--<services:AddressServiceStub />-->
+    <services:AddressServiceRemote/>
+
+</mx:Object>

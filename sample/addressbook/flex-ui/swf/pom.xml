@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.axonframework.samples</groupId>
+        <artifactId>axon-addressbook-flexui</artifactId>
+        <version>0.4-SNAPSHOT</version>
+    </parent>
+
+    <groupId>org.axonframework.samples</groupId>
+    <artifactId>swf</artifactId>
+    <version>0.4-SNAPSHOT</version>
+    <packaging>swf</packaging>
+
+    <name>Axon Address Book Sample - Flex ui swf</name>
+
+    <build>
+        <sourceDirectory>src/main/flex</sourceDirectory>
+        <testSourceDirectory>src/test/flex</testSourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.flexmojos</groupId>
+                <artifactId>flexmojos-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <locales>
+                        <locale>en_US</locale>
+                    </locales>
+                    <debug>true</debug>
+                    <configurationReport>true</configurationReport>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.adobe.flex.framework</groupId>
+            <artifactId>flex-framework</artifactId>
+            <version>3.2.0.3958</version>
+            <type>pom</type>
+        </dependency>
+
+        <dependency>
+            <groupId>com.adobe.flexunit</groupId>
+            <artifactId>flexunit</artifactId>
+            <version>0.85</version>
+            <type>swc</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.spicefactory</groupId>
+            <artifactId>parsley-flex3</artifactId>
+            <version>2.2.RC2</version>
+            <type>swc</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.spicefactory</groupId>
+            <artifactId>spicelib-flex</artifactId>
+            <version>2.2.RC2</version>
+            <type>swc</type>
+        </dependency>
+    </dependencies>
+
+</project>

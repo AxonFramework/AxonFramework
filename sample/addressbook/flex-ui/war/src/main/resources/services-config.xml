@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services-config>
+
+    <channels>
+        <channel-definition id="my-amf" class="mx.messaging.channels.AMFChannel">
+            <endpoint url="http://{server.name}:{server.port}/{context.root}/messagebroker/amf"
+                      class="flex.messaging.endpoints.AMFEndpoint"/>
+            <properties>
+                <polling-enabled>false</polling-enabled>
+            </properties>
+        </channel-definition>
+        <channel-definition id="my-secure-amf" class="mx.messaging.channels.AMFChannel">
+            <endpoint url="https://{server.name}:{server.port}/{context.root}/messagebroker/secureamf"
+                      class="flex.messaging.endpoints.AMFEndpoint"/>
+            <properties>
+                <polling-enabled>false</polling-enabled>
+            </properties>
+        </channel-definition>
+        <channel-definition id="my-polling-amf" class="mx.messaging.channels.AMFChannel">
+            <endpoint url="http://{server.name}:{server.port}/{context.root}/messagebroker/pollingamf"
+                      class="flex.messaging.endpoints.AMFEndpoint"/>
+            <properties>
+                <polling-enabled>true</polling-enabled>
+                <polling-interval-seconds>4</polling-interval-seconds>
+            </properties>
+        </channel-definition>
+    </channels>
+
+</services-config>

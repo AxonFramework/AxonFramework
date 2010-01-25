@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%"
+           addedToStage="dispatchEvent(new Event('configureIOC', true))">
+
+    <mx:Metadata>
+        [ManagedEvents("addAddress,search")]
+    </mx:Metadata>
+
+    <mx:Script><![CDATA[
+        import org.axonframework.examples.addressbook.events.SearchEvent;
+        import org.axonframework.examples.addressbook.model.Address;
+
+        private function searchAction():void {
+            var searchAddress:Address = Address.newAddress(searchStreet.text, searchCity.text);
+            
+            dispatchEvent(new SearchEvent(SearchEvent.SEARCH, searchAddress));
+        }
+
+        ]]></mx:Script>
+
+    <mx:HBox>
+        <mx:ControlBar defaultButton="{searchButton}" >
+            <mx:Label text="Addresses"/>
+            <mx:Button id="addButton" icon="@Embed(source='/assets/images/report_add.png')" click="searchAction()"/>
+            <mx:Button id="searchButton" icon="@Embed(source='/assets/images/find.png')" click="searchAction()"/>
+            <mx:Label text="street"/>
+            <mx:TextInput id="searchStreet" width="100"/>
+            <mx:Label text="city"/>
+            <mx:TextInput id="searchCity" width="100"/>
+        </mx:ControlBar>
+    </mx:HBox>
+</mx:Canvas>
