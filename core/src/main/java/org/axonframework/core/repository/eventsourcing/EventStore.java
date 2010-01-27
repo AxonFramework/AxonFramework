@@ -16,13 +16,13 @@
 
 package org.axonframework.core.repository.eventsourcing;
 
-import org.axonframework.core.EventStream;
+import org.axonframework.core.DomainEventStream;
 
 import java.util.UUID;
 
 /**
- * Abstraction of the event storage mechanism. Events are stored and read as {@link org.axonframework.core.EventStream
- * streams}.
+ * Abstraction of the event storage mechanism. Domain Events are stored and read as {@link
+ * org.axonframework.core.DomainEventStream streams}.
  *
  * @author Allard Buijze
  * @since 0.1
@@ -30,13 +30,13 @@ import java.util.UUID;
 public interface EventStore {
 
     /**
-     * Append the events in the given {@link org.axonframework.core.EventStream stream} to the events available.
+     * Append the events in the given {@link org.axonframework.core.DomainEventStream stream} to the events available.
      *
      * @param type   The type descriptor of the object to store
      * @param events The event stream containing the events to store
      * @throws EventStorageException if an error occurs while storing the events in the event stream
      */
-    void appendEvents(String type, EventStream events);
+    void appendEvents(String type, DomainEventStream events);
 
     /**
      * Read the events of the aggregate identified by the given type and identifier.
@@ -45,5 +45,5 @@ public interface EventStore {
      * @param identifier The unique aggregate identifier of the events to load
      * @return an event stream containing the events of the aggregate
      */
-    EventStream readEvents(String type, UUID identifier);
+    DomainEventStream readEvents(String type, UUID identifier);
 }

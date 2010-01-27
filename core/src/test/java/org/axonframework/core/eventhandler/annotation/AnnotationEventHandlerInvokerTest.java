@@ -17,6 +17,7 @@
 package org.axonframework.core.eventhandler.annotation;
 
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.TransactionStatus;
 import org.junit.*;
@@ -260,7 +261,7 @@ public class AnnotationEventHandlerInvokerTest {
     private class EventHandlerWithUnfortunateMethod extends FirstSubclass {
 
         @EventHandler
-        public void handle(DomainEvent event) {
+        public void handle(Event event) {
         }
     }
 }

@@ -18,6 +18,7 @@ package org.axonframework.sample.core;
 
 import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
@@ -60,7 +61,7 @@ public class ContactIntegrationTest {
 
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private List<DomainEvent> dispatchedEvents = new ArrayList<DomainEvent>();
+    private List<Event> dispatchedEvents = new ArrayList<Event>();
 
     @Before
     public void setUp() throws IOException {

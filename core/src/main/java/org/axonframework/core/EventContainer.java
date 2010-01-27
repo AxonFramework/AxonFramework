@@ -81,12 +81,12 @@ class EventContainer {
     }
 
     /**
-     * Read the events inside this container using an {@link org.axonframework.core.EventStream}.
+     * Read the events inside this container using a {@link DomainEventStream}.
      *
-     * @return an EventStream providing access to the events in this container
+     * @return a DomainEventStream providing access to the events in this container
      */
-    public EventStream getInputStream() {
-        return new SimpleEventStream(events, aggregateIdentifier);
+    public DomainEventStream getInputStream() {
+        return new SimpleDomainEventStream(events, aggregateIdentifier);
     }
 
     /**

@@ -19,9 +19,9 @@ package org.axonframework.core;
 import java.util.UUID;
 
 /**
- * The EventStream represents a stream of historical events. The order of events in this stream must represent the
- * actual chronological order in which the events happened. An EventStream may provide access to all events (from the
- * first to the most recent) or any subset of these, as long as the stream is continuous.
+ * The DomainEventStream represents a stream of historical domain events. The order of events in this stream must
+ * represent the actual chronological order in which the events happened. A DomainEventStream may provide access to all
+ * events (from the first to the most recent) or any subset of these, as long as the stream is continuous.
  * <p/>
  * A stream is continuous if each call to obtain the <code>next</code> stream will return the event that immediately
  * followed the previous one. No events may be <i>skipped</i>.
@@ -29,7 +29,7 @@ import java.util.UUID;
  * @author Allard Buijze
  * @since 0.1
  */
-public interface EventStream {
+public interface DomainEventStream {
 
     /**
      * Returns the aggregate identifier of the aggregate on which these events apply.

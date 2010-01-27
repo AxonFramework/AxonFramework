@@ -17,7 +17,7 @@
 package org.axonframework.core.eventhandler.annotation.postprocessor;
 
 import net.sf.cglib.proxy.Enhancer;
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.EventListener;
@@ -93,7 +93,7 @@ public class BaseAnnotationEventListenerBeanPostProcessorTest {
         private int invocationCount;
 
         @EventHandler
-        public void handleEvent(DomainEvent event) {
+        public void handleEvent(Event event) {
             invocationCount++;
         }
     }

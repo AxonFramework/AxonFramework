@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 /**
  * Interface to a policy definition for concurrent event handling.
@@ -41,5 +41,5 @@ public interface EventSequencingPolicy {
      * @param event the event for which to get the sequencing identifier
      * @return a sequence identifier for the given event
      */
-    Object getSequenceIdentifierFor(DomainEvent event);
+    Object getSequenceIdentifierFor(Event event);
 }

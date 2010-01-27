@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
 
@@ -82,7 +82,7 @@ public class EventHandlingSequenceManagerTest {
     private class FullRandomPolicy implements EventSequencingPolicy {
 
         @Override
-        public Object getSequenceIdentifierFor(DomainEvent event) {
+        public Object getSequenceIdentifierFor(Event event) {
             return event.getEventIdentifier();
         }
     }
@@ -90,12 +90,12 @@ public class EventHandlingSequenceManagerTest {
     private class StubEventListener implements EventListener {
 
         @Override
-        public boolean canHandle(Class<? extends DomainEvent> eventType) {
+        public boolean canHandle(Class<? extends Event> eventType) {
             return true;
         }
 
         @Override
-        public void handle(DomainEvent event) {
+        public void handle(Event event) {
             countdownLatch.countDown();
         }
 

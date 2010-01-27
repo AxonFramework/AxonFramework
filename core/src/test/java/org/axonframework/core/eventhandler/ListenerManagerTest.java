@@ -17,6 +17,7 @@
 package org.axonframework.core.eventhandler;
 
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
 import org.springframework.util.StopWatch;
@@ -75,16 +76,17 @@ public class ListenerManagerTest {
                                          (eventsPerGroup * groupIds.length),
                                          taskTime));
         System.out.println(sw.prettyPrint());
-        BlockingQueue<DomainEvent> actualEventOrder = mockEventListener.events;
+        BlockingQueue<Event> actualEventOrder = mockEventListener.events;
         assertEquals("Expected all events to be dispatched", eventsPerGroup * groupIds.length, actualEventOrder.size());
 
         for (UUID groupId : groupIds) {
             long lastFromGroup = -1;
-            for (DomainEvent event : actualEventOrder) {
-                if (groupId.equals(event.getAggregateIdentifier())) {
+            for (Event event : actualEventOrder) {
+                DomainEvent domainEvent = (DomainEvent) event;
+                if (groupId.equals(domainEvent.getAggregateIdentifier())) {
                     assertEquals("Expected all events of same aggregate to be handled sequentially",
                                  ++lastFromGroup,
-                                 (long) event.getSequenceNumber());
+                                 (long) domainEvent.getSequenceNumber());
                 }
             }
         }
@@ -93,7 +95,7 @@ public class ListenerManagerTest {
     private UUID startEventDispatcher(final CountDownLatch waitToStart, final CountDownLatch waitToEnd,
                                       int eventCount) {
         UUID uuid = UUID.randomUUID();
-        final List<DomainEvent> events = new LinkedList<DomainEvent>();
+        final List<Event> events = new LinkedList<Event>();
         for (int t = 0; t < eventCount; t++) {
             events.add(new StubDomainEvent(uuid, t));
         }
@@ -102,7 +104,7 @@ public class ListenerManagerTest {
             public void run() {
                 try {
                     waitToStart.await();
-                    for (DomainEvent event : events) {
+                    for (Event event : events) {
                         testSubject.addEvent(event);
                     }
                 } catch (InterruptedException e) {
@@ -116,15 +118,15 @@ public class ListenerManagerTest {
 
     private class StubEventListener implements EventListener {
 
-        private final BlockingQueue<DomainEvent> events = new LinkedBlockingQueue<DomainEvent>();
+        private final BlockingQueue<Event> events = new LinkedBlockingQueue<Event>();
 
         @Override
-        public boolean canHandle(Class<? extends DomainEvent> eventType) {
+        public boolean canHandle(Class<? extends Event> eventType) {
             return true;
         }
 
         @Override
-        public void handle(DomainEvent event) {
+        public void handle(Event event) {
             events.add(event);
         }
 

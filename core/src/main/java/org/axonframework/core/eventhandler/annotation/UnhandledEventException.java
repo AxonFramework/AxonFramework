@@ -16,22 +16,22 @@
 
 package org.axonframework.core.eventhandler.annotation;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 /**
  * Raised when an event could not be handled by an Aggregate. This is an exceptional situation, as an aggregate is
  * responsible for generating the events that it should be able to handle. This typically means an event handler method
  * is missing.
  * <p/>
- * To prevent this exception, make a method that accepts a {@link org.axonframework.core.DomainEvent} as sole parameter and
- * annotate it with {@link org.axonframework.core.eventhandler.annotation.EventHandler}.
+ * To prevent this exception, make a method that accepts a {@link org.axonframework.core.DomainEvent} as sole parameter
+ * and annotate it with {@link org.axonframework.core.eventhandler.annotation.EventHandler}.
  *
  * @author Allard Buijze
  * @since 0.1
  */
 public class UnhandledEventException extends RuntimeException {
 
-    private final DomainEvent unhandledEvent;
+    private final Event unhandledEvent;
 
     /**
      * Initialize the exception with the given <code>message</code> and <code>unhandledEvent</code>.
@@ -39,7 +39,7 @@ public class UnhandledEventException extends RuntimeException {
      * @param message        a descriptive message of the cause of the exception
      * @param unhandledEvent The event for which no handler could be found
      */
-    public UnhandledEventException(String message, DomainEvent unhandledEvent) {
+    public UnhandledEventException(String message, Event unhandledEvent) {
         super(message);
         this.unhandledEvent = unhandledEvent;
     }
@@ -49,7 +49,7 @@ public class UnhandledEventException extends RuntimeException {
      *
      * @return the unhandled event
      */
-    public DomainEvent getUnhandledEvent() {
+    public Event getUnhandledEvent() {
         return unhandledEvent;
     }
 }

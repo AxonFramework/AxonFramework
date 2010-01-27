@@ -19,8 +19,9 @@ package org.axonframework.core.repository.eventsourcing;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.EventStream;
-import org.axonframework.core.SimpleEventStream;
+import org.axonframework.core.DomainEventStream;
+import org.axonframework.core.Event;
+import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.StubAggregate;
 import org.axonframework.core.eventhandler.EventBus;
 import org.junit.*;
@@ -68,8 +69,8 @@ public class CachingEventSourcingRepositoryTest {
         aggregate1.doSomething();
         testSubject.save(aggregate1);
 
-        EventStream events = mockEventStore.readEvents("mock", aggregate1.getIdentifier());
-        List<DomainEvent> eventList = new ArrayList<DomainEvent>();
+        DomainEventStream events = mockEventStore.readEvents("mock", aggregate1.getIdentifier());
+        List<Event> eventList = new ArrayList<Event>();
         while (events.hasNext()) {
             eventList.add(events.next());
         }
@@ -82,6 +83,16 @@ public class CachingEventSourcingRepositoryTest {
         assertNotSame(aggregate1, reloadedAggregate1);
         assertEquals(aggregate1.getLastCommittedEventSequenceNumber(),
                      reloadedAggregate1.getLastCommittedEventSequenceNumber());
+    }
+
+    @Test
+    public void testDeletedAggregateIsRemovedFromCache() {
+        UUID aggregateIdentifier = UUID.randomUUID();
+        cache.put(aggregateIdentifier, new StubAggregate(aggregateIdentifier));
+        testSubject.delete(aggregateIdentifier);
+
+        assertFalse("Entry should have been removed from cache.", cache.containsKey(aggregateIdentifier));
+
     }
 
     private static class StubCachingEventSourcingRepository extends CachingEventSourcingRepository<StubAggregate> {
@@ -102,7 +113,7 @@ public class CachingEventSourcingRepositoryTest {
         private Map<UUID, List<DomainEvent>> store = new HashMap<UUID, List<DomainEvent>>();
 
         @Override
-        public void appendEvents(String identifier, EventStream events) {
+        public void appendEvents(String identifier, DomainEventStream events) {
             if (!store.containsKey(events.getAggregateIdentifier())) {
                 store.put(events.getAggregateIdentifier(), new ArrayList<DomainEvent>());
             }
@@ -113,8 +124,8 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        public EventStream readEvents(String type, UUID identifier) {
-            return new SimpleEventStream(store.get(identifier));
+        public DomainEventStream readEvents(String type, UUID identifier) {
+            return new SimpleDomainEventStream(store.get(identifier));
         }
     }
 }

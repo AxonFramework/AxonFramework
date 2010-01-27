@@ -22,8 +22,8 @@ import java.util.UUID;
 
 /**
  * Abstract convenience class to be extended by all aggregate roots. The AbstractEventSourcedAggregateRoot tracks all
- * uncommitted events. It also provides convenience methods to initialize the state of the aggregate root based on an
- * {@link org.axonframework.core.EventStream}, which can be used for event sourcing.
+ * uncommitted events. It also provides convenience methods to initialize the state of the aggregate root based on a
+ * {@link DomainEventStream}, which can be used for event sourcing.
  *
  * @author Allard Buijze
  * @since 0.1
@@ -51,11 +51,11 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * {@inheritDoc}
      */
     @Override
-    public void initializeState(EventStream eventStream) {
+    public void initializeState(DomainEventStream domainEventStream) {
         Assert.state(getUncommittedEventCount() == 0, "Aggregate is already initialized");
         long lastSequenceNumber = -1;
-        while (eventStream.hasNext()) {
-            DomainEvent event = eventStream.next();
+        while (domainEventStream.hasNext()) {
+            DomainEvent event = domainEventStream.next();
             if (event instanceof AggregateDeletedEvent) {
                 throw new AggregateDeletedException(String.format(
                         "Aggregate with identifier [%s] not found. It has been deleted.",
@@ -87,7 +87,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(DomainEvent) event handler method} for processing.
+     * the {@link #handle(DomainEvent)} event handler method} for processing.
      *
      * @param event The event to apply
      */

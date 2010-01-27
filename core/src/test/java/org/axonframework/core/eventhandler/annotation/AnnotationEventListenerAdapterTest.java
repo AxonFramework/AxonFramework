@@ -17,6 +17,7 @@
 package org.axonframework.core.eventhandler.annotation;
 
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
@@ -103,7 +104,7 @@ public class AnnotationEventListenerAdapterTest {
     private static class AnnotatedEventHandler {
 
         @EventHandler
-        public void handleEvent(DomainEvent event) {
+        public void handleEvent(Event event) {
         }
 
     }
@@ -136,7 +137,7 @@ public class AnnotationEventListenerAdapterTest {
     private static class IllegalConcurrentAnnotatedEventHandler {
 
         @EventHandler
-        public void handleEvent(DomainEvent event) {
+        public void handleEvent(Event event) {
         }
 
     }
@@ -148,7 +149,7 @@ public class AnnotationEventListenerAdapterTest {
         }
 
         @Override
-        public Object getSequenceIdentifierFor(DomainEvent event) {
+        public Object getSequenceIdentifierFor(Event event) {
             return null;
         }
     }

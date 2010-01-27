@@ -17,7 +17,7 @@
 package org.axonframework.core.repository.eventsourcing;
 
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.EventStream;
+import org.axonframework.core.DomainEventStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,14 +27,14 @@ import java.io.ObjectInputStream;
 import java.util.UUID;
 
 /**
- * {@link org.axonframework.core.EventStream} implementation that takes an ObjectInputStream as input for events. This
- * implementation uses read-ahead to initialize the aggregateIdentifier upon initialization of the adapter. If there are
- * no events in the ObjectInputStream, the aggregate identifier cannot be resolved and will return null.
+ * {@link org.axonframework.core.DomainEventStream} implementation that takes an ObjectInputStream as input for events.
+ * This implementation uses read-ahead to initialize the aggregateIdentifier upon initialization of the adapter. If
+ * there are no events in the ObjectInputStream, the aggregate identifier cannot be resolved and will return null.
  *
  * @author Allard Buijze
  * @since 0.1
  */
-public class ObjectInputStreamAdapter implements EventStream {
+public class ObjectInputStreamAdapter implements DomainEventStream {
 
     private static final Logger logger = LoggerFactory.getLogger(ObjectInputStreamAdapter.class);
 
@@ -43,7 +43,7 @@ public class ObjectInputStreamAdapter implements EventStream {
     private volatile DomainEvent nextEvent;
 
     /**
-     * Construct a EventStream using the provided ObjectInputStream as event provider.
+     * Construct a DomainEventStream using the provided ObjectInputStream as event provider.
      *
      * @param objectInputStream the backing input stream that provides the events
      */
@@ -52,7 +52,7 @@ public class ObjectInputStreamAdapter implements EventStream {
         try {
             nextEvent = readIfAvailable(objectInputStream);
         } catch (IOException e) {
-            throw new IllegalStateException("The provided objectInputStream is not ready for reading");
+            throw new IllegalStateException("The provided objectInputStream is not ready for reading", e);
         }
         aggregateIdentifier = (nextEvent == null ? null : nextEvent.getAggregateIdentifier());
     }
@@ -74,7 +74,7 @@ public class ObjectInputStreamAdapter implements EventStream {
         try {
             nextEvent = readIfAvailable(objectInputStream);
         } catch (IOException e) {
-            throw new IllegalStateException("The provided objectInputStream is not ready for reading");
+            throw new IllegalStateException("The provided objectInputStream is not ready for reading", e);
 
         }
         return currentEvent;

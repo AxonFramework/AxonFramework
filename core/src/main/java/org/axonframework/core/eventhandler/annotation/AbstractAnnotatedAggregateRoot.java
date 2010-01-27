@@ -28,11 +28,10 @@ import java.util.UUID;
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
  * org.axonframework.core.eventhandler.annotation.EventHandler} annotation.
  * <p/>
- * Implementations can call the {@link #apply(org.axonframework.core.DomainEvent)} method to have an event applied.
+ * Implementations can call the {@link #apply(DomainEvent)} method to have an event applied.
  * <p/>
- * Any events that are passed to the {@link #apply(org.axonframework.core.DomainEvent)} method for which no event
- * handler can be found will cause an {@link org.axonframework.core.eventhandler.annotation.UnhandledEventException} to
- * be thrown.
+ * Any events that are passed to the {@link #apply(DomainEvent)} method for which no event handler can be found will
+ * cause an {@link org.axonframework.core.eventhandler.annotation.UnhandledEventException} to be thrown.
  *
  * @author Allard Buijze
  * @see org.axonframework.core.eventhandler.annotation.EventHandler

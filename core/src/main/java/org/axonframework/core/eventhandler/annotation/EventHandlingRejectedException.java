@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler.annotation;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 /**
  * Exception indicating that an event handler refused to process an event. A typical case is that the event handler is
@@ -27,7 +27,7 @@ import org.axonframework.core.DomainEvent;
  */
 public class EventHandlingRejectedException extends RuntimeException {
 
-    private DomainEvent rejectedEvent;
+    private Event rejectedEvent;
 
     /**
      * Initialize the exception with given <code>message</code>, <code>cause</code> and <code>event</code>
@@ -36,7 +36,7 @@ public class EventHandlingRejectedException extends RuntimeException {
      * @param cause   The exception that caused the event handling rejection
      * @param event   the rejected event
      */
-    public EventHandlingRejectedException(String message, Throwable cause, DomainEvent event) {
+    public EventHandlingRejectedException(String message, Throwable cause, Event event) {
         super(message, cause);
         this.rejectedEvent = event;
     }
@@ -46,7 +46,7 @@ public class EventHandlingRejectedException extends RuntimeException {
      *
      * @return the refused event
      */
-    public DomainEvent getRejectedEvent() {
+    public Event getRejectedEvent() {
         return rejectedEvent;
     }
 }

@@ -57,7 +57,7 @@ public abstract class AbstractAggregateRoot implements VersionedAggregateRoot {
      * {@inheritDoc}
      */
     @Override
-    public EventStream getUncommittedEvents() {
+    public DomainEventStream getUncommittedEvents() {
         return uncommittedEvents.getInputStream();
     }
 

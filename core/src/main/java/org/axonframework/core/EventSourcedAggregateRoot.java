@@ -17,8 +17,8 @@
 package org.axonframework.core;
 
 /**
- * Aggregate that can be initialized using an {@link org.axonframework.core.EventStream}. Aggregates that are initialized
- * using Event Sourcing should implement this interface.
+ * Aggregate that can be initialized using a {@link DomainEventStream}. Aggregates that are initialized using Event
+ * Sourcing should implement this interface.
  *
  * @author Allard Buijze
  * @see org.axonframework.core.repository.eventsourcing.EventSourcingRepository
@@ -27,13 +27,14 @@ package org.axonframework.core;
 public interface EventSourcedAggregateRoot extends VersionedAggregateRoot {
 
     /**
-     * Initialize the state of this aggregate using the events in the provided {@link EventStream}. A call to this
+     * Initialize the state of this aggregate using the events in the provided {@link DomainEventStream}. A call to this
      * method on an aggregate that has already been initialized will result in an {@link IllegalStateException}.
      *
-     * @param eventStream the event stream containing the events that describe the state changes of this aggregate
+     * @param domainEventStream the event stream containing the events that describe the state changes of this
+     *                          aggregate
      * @throws IllegalStateException if this aggregate was already initialized.
      */
-    void initializeState(EventStream eventStream);
+    void initializeState(DomainEventStream domainEventStream);
 
     /**
      * Mark this aggregate as deleted. An event of type {@link AggregateDeletedEvent} is appended to the uncommitted

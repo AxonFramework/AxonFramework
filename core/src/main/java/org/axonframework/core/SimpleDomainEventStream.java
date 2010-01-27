@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Creates an EventStream that streams the contents of a list.
+ * Creates a DomainEventStream that streams the contents of a list.
  *
  * @author Allard Buijze
  * @since 0.1
  */
-public class SimpleEventStream implements EventStream {
+public class SimpleDomainEventStream implements DomainEventStream {
 
     private volatile DomainEvent nextEvent;
     private final Iterator<DomainEvent> iterator;
@@ -36,11 +36,11 @@ public class SimpleEventStream implements EventStream {
     /**
      * Initialize the event stream using the given List of DomainEvent and aggregate identifier. The List may be empty.
      *
-     * @param domainEvents        the list of domain events to stream
+     * @param events              the list of domain events to stream
      * @param aggregateIdentifier the aggregate identifier that the events apply to
      */
-    public SimpleEventStream(List<DomainEvent> domainEvents, UUID aggregateIdentifier) {
-        this.iterator = domainEvents.iterator();
+    public SimpleDomainEventStream(List<DomainEvent> events, UUID aggregateIdentifier) {
+        this.iterator = events.iterator();
         if (iterator.hasNext()) {
             nextEvent = iterator.next();
         }
@@ -52,11 +52,11 @@ public class SimpleEventStream implements EventStream {
      * identifier is initialized by reading it from the first event available. Therefore, you must ensure that there is
      * at least one event in the provided list.
      *
-     * @param domainEvents the list of domain events to stream
+     * @param events the list of domain events to stream
      * @throws IllegalArgumentException if the given list is empty
      */
-    public SimpleEventStream(List<DomainEvent> domainEvents) {
-        this.iterator = domainEvents.iterator();
+    public SimpleDomainEventStream(List<DomainEvent> events) {
+        this.iterator = events.iterator();
         if (iterator.hasNext()) {
             nextEvent = iterator.next();
             identifier = nextEvent.getAggregateIdentifier();
@@ -73,7 +73,7 @@ public class SimpleEventStream implements EventStream {
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if no events are supplied
      */
-    public SimpleEventStream(DomainEvent... events) {
+    public SimpleDomainEventStream(DomainEvent... events) {
         this(Arrays.asList(events));
     }
 

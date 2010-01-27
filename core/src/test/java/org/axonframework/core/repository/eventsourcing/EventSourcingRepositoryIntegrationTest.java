@@ -19,7 +19,7 @@ package org.axonframework.core.repository.eventsourcing;
 import org.axonframework.core.AbstractEventSourcedAggregateRoot;
 import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.EventStream;
+import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.StubAggregateDeletedEvent;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
@@ -112,7 +112,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         File eventFile = new File(folder.getRoot(), "test/" + aggregateIdentifier.toString() + ".events");
         assertTrue(eventFile.exists());
-        EventStream committedEvents = eventStore.readEvents("test", aggregateIdentifier);
+        DomainEventStream committedEvents = eventStore.readEvents("test", aggregateIdentifier);
         long lastSequenceNumber = -1;
         while (committedEvents.hasNext()) {
             DomainEvent nextEvent = committedEvents.next();

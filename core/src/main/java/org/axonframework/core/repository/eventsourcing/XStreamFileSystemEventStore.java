@@ -21,8 +21,8 @@ import com.thoughtworks.xstream.converters.SingleValueConverter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
 import org.apache.commons.io.IOUtils;
 import org.axonframework.core.AggregateNotFoundException;
-import org.axonframework.core.DomainEvent;
-import org.axonframework.core.EventStream;
+import org.axonframework.core.DomainEventStream;
+import org.axonframework.core.Event;
 import org.joda.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
@@ -70,7 +70,7 @@ public class XStreamFileSystemEventStore implements EventStore {
      * {@inheritDoc}
      */
     @Override
-    public void appendEvents(String type, EventStream eventsToStore) {
+    public void appendEvents(String type, DomainEventStream eventsToStore) {
         OutputStream out = null;
         try {
             File eventFile = getBaseDirForType(type).createRelative(eventsToStore.getAggregateIdentifier() + ".events")
@@ -78,12 +78,12 @@ public class XStreamFileSystemEventStore implements EventStore {
             out = new FileOutputStream(eventFile, true);
             CompactWriter writer = new CompactWriter(new OutputStreamWriter(out, "UTF-8"));
             while (eventsToStore.hasNext()) {
-                DomainEvent event = eventsToStore.next();
+                Event event = eventsToStore.next();
                 xStream.marshal(event, writer);
                 IOUtils.write("\n", out);
             }
         } catch (IOException e) {
-            throw new EventStorageException("Unable to store given entity due to a IOException", e);
+            throw new EventStorageException("Unable to store given entity due to an IOException", e);
         } finally {
             IOUtils.closeQuietly(out);
         }
@@ -93,7 +93,7 @@ public class XStreamFileSystemEventStore implements EventStore {
      * {@inheritDoc}
      */
     @Override
-    public EventStream readEvents(String type, UUID identifier) {
+    public DomainEventStream readEvents(String type, UUID identifier) {
         try {
             File eventFile = getBaseDirForType(type).createRelative(identifier + ".events").getFile();
             if (!eventFile.exists()) {
@@ -130,7 +130,7 @@ public class XStreamFileSystemEventStore implements EventStore {
             }
             return typeSpecificDir;
         } catch (IOException e) {
-            throw new EventStorageException("An IO Exception occured while reading from the file system", e);
+            throw new EventStorageException("An IO Exception occurred while reading from the file system", e);
         }
     }
 

@@ -18,6 +18,7 @@ package org.axonframework.core.eventhandler.annotation.postprocessor;
 
 import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventListener;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
 import org.axonframework.core.eventhandler.SequentialPolicy;
@@ -70,17 +71,17 @@ public class AnnotationEventHandlerBeanPostProcessorTest {
     public static class RealEventListener implements EventListener {
 
         @Override
-        public boolean canHandle(Class<? extends DomainEvent> eventType) {
+        public boolean canHandle(Class<? extends Event> eventType) {
             return true;
         }
 
         @Override
-        public void handle(DomainEvent event) {
+        public void handle(Event event) {
             // not relevant
         }
 
         @EventHandler
-        public void handleEvent(DomainEvent event) {
+        public void handleEvent(Event event) {
 
         }
 

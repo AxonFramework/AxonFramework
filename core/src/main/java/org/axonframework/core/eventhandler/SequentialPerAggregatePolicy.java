@@ -17,10 +17,11 @@
 package org.axonframework.core.eventhandler;
 
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 /**
  * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different
- * aggregates may be processed in different threads.
+ * aggregates may be processed in different threads, as will events that do not extend the DomainEvent type.
  *
  * @author Allard Buijze
  * @since 0.3
@@ -31,7 +32,10 @@ public class SequentialPerAggregatePolicy implements EventSequencingPolicy {
      * {@inheritDoc}
      */
     @Override
-    public Object getSequenceIdentifierFor(DomainEvent event) {
-        return event.getAggregateIdentifier();
+    public Object getSequenceIdentifierFor(Event event) {
+        if (DomainEvent.class.isInstance(event)) {
+            return ((DomainEvent) event).getAggregateIdentifier();
+        }
+        return null;
     }
 }

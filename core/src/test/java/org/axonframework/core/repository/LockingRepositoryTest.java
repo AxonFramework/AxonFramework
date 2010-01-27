@@ -19,6 +19,7 @@ package org.axonframework.core.repository;
 import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.StubAggregate;
+import org.axonframework.core.StubAggregateDeletedEvent;
 import org.axonframework.core.eventhandler.EventBus;
 import org.junit.*;
 import org.mockito.*;
@@ -117,6 +118,17 @@ public class LockingRepositoryTest {
         testLoadAndStoreAggregate_LockReleasedOnException();
     }
 
+    @Test
+    public void testDeleteAggregate() {
+        UUID aggregateIdentifier = UUID.randomUUID();
+        testSubject.delete(aggregateIdentifier);
+        InOrder inOrder = inOrder(lockManager, mockEventBus, testSubject);
+        inOrder.verify(lockManager).obtainLock(aggregateIdentifier);
+        inOrder.verify(testSubject).doDelete(aggregateIdentifier);
+        inOrder.verify(mockEventBus).publish(isA(StubAggregateDeletedEvent.class));
+        inOrder.verify(lockManager).releaseLock(aggregateIdentifier);
+    }
+
     private static class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
 
         private Map<UUID, StubAggregate> store = new HashMap<UUID, StubAggregate>();
@@ -133,8 +145,7 @@ public class LockingRepositoryTest {
         @Override
         protected AggregateDeletedEvent doDelete(UUID aggregateIdentifier) {
             store.remove(aggregateIdentifier);
-            return new AggregateDeletedEvent() {
-            };
+            return new StubAggregateDeletedEvent(aggregateIdentifier);
         }
 
         @Override

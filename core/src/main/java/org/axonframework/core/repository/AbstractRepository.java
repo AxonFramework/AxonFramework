@@ -19,7 +19,7 @@ package org.axonframework.core.repository;
 import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.AggregateRoot;
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.EventStream;
+import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.eventhandler.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +107,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     protected abstract T doLoad(UUID aggregateIdentifier);
 
     private void dispatchUncommittedEvents(T aggregate) {
-        EventStream uncommittedEvents = aggregate.getUncommittedEvents();
+        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
         while (uncommittedEvents.hasNext()) {
             DomainEvent event = uncommittedEvents.next();
             logger.debug("Publishing event [{}] to the EventBus", event.getClass().getSimpleName());

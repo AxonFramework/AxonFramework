@@ -58,26 +58,26 @@ public class DomainEventTest {
     @Test
     public void testDomainEventEquality() {
         DateTimeUtils.setCurrentMillisFixed(System.currentTimeMillis());
-        DomainEvent eventWithoutAggrIdOrIdentifier = new StubDomainEvent();
-        DomainEvent anotherEventWithoutAggrIdOrIdentifier = new StubDomainEvent();
+        Event eventWithoutAggrIdOrIdentifier = new StubDomainEvent();
+        Event anotherEventWithoutAggrIdOrIdentifier = new StubDomainEvent();
 
         assertFalse(eventWithoutAggrIdOrIdentifier.equals(anotherEventWithoutAggrIdOrIdentifier));
 
         UUID aggregateIdentifier = UUID.randomUUID();
-        DomainEvent fullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
-        DomainEvent anotherFullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
+        Event fullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
+        Event anotherFullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
 
         assertTrue(fullyInitializedEvent.equals(anotherFullyInitializedEvent));
 
-        DomainEvent eventWithTimestamp = new StubDomainEvent(aggregateIdentifier, 1);
+        Event eventWithTimestamp = new StubDomainEvent(aggregateIdentifier, 1);
         DateTimeUtils.setCurrentMillisFixed(System.currentTimeMillis() + 1000);
-        DomainEvent eventWithOtherTimeStamp = new StubDomainEvent(aggregateIdentifier, 1);
+        Event eventWithOtherTimeStamp = new StubDomainEvent(aggregateIdentifier, 1);
 
         assertFalse(eventWithTimestamp.equals(eventWithOtherTimeStamp));
 
         assertFalse(eventWithOtherTimeStamp.equals(new Object()));
 
-        DomainEvent eventWithoutAggregateIdentifier = new StubDomainEvent(2);
+        Event eventWithoutAggregateIdentifier = new StubDomainEvent(2);
 
         assertFalse(fullyInitializedEvent.equals(eventWithoutAggregateIdentifier));
         assertFalse(eventWithoutAggregateIdentifier.equals(fullyInitializedEvent));

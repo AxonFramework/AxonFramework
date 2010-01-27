@@ -28,11 +28,12 @@ import java.util.UUID;
 public interface AggregateRoot {
 
     /**
-     * Returns an EventStream to the events in the aggregate that have been raised since creation or the last commit.
+     * Returns a DomainEventStream to the events in the aggregate that have been raised since creation or the last
+     * commit.
      *
-     * @return the EventStream to the uncommitted events.
+     * @return the DomainEventStream to the uncommitted events.
      */
-    EventStream getUncommittedEvents();
+    DomainEventStream getUncommittedEvents();
 
     /**
      * Returns the identifier of this aggregate

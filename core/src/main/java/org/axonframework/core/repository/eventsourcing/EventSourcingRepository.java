@@ -17,8 +17,8 @@
 package org.axonframework.core.repository.eventsourcing;
 
 import org.axonframework.core.AggregateDeletedEvent;
+import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.EventSourcedAggregateRoot;
-import org.axonframework.core.EventStream;
 import org.axonframework.core.repository.LockingRepository;
 import org.axonframework.core.repository.LockingStrategy;
 import org.springframework.beans.factory.annotation.Required;
@@ -78,7 +78,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      */
     @Override
     protected T doLoad(UUID aggregateIdentifier) {
-        EventStream events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
+        DomainEventStream events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
         T aggregate = instantiateAggregate(events.getAggregateIdentifier());
         aggregate.initializeState(events);
         return aggregate;

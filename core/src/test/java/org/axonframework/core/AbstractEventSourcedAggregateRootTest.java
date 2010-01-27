@@ -33,7 +33,7 @@ public class AbstractEventSourcedAggregateRootTest {
     public void testInitializeWithEvents() {
         UUID identifier = UUID.randomUUID();
         testSubject = new SimpleAggregateRoot(identifier);
-        testSubject.initializeState(new SimpleEventStream(new StubDomainEvent(identifier, 243)));
+        testSubject.initializeState(new SimpleDomainEventStream(new StubDomainEvent(identifier, 243)));
 
         assertEquals(identifier, testSubject.getIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());

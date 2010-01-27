@@ -22,12 +22,12 @@ import java.util.UUID;
 
 /**
  * Base class for all Domain Events. This class contains the basic behavior expected from any event to be processed by
- * event sourcing engines or dispatchers.
+ * event sourcing engines and aggregates.
  *
  * @author Allard Buijze
  * @since 0.1
  */
-public abstract class DomainEvent {
+public abstract class DomainEvent implements Event {
 
     private volatile Long sequenceNumber;
     private volatile UUID aggregateIdentifier;
@@ -44,10 +44,9 @@ public abstract class DomainEvent {
     }
 
     /**
-     * Returns the identifier of this event.
-     *
-     * @return the identifier of this event.
+     * {@inheritDoc}
      */
+    @Override
     public UUID getEventIdentifier() {
         return eventIdentifier;
     }

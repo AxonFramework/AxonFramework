@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler.annotation;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
 import org.axonframework.core.eventhandler.SequentialPolicy;
@@ -68,7 +68,7 @@ public class AnnotationEventListenerAdapter
      * {@inheritDoc}
      */
     @Override
-    public boolean canHandle(Class<? extends DomainEvent> eventType) {
+    public boolean canHandle(Class<? extends Event> eventType) {
         return eventHandlerInvoker.hasHandlerFor(eventType);
     }
 
@@ -76,7 +76,7 @@ public class AnnotationEventListenerAdapter
      * {@inheritDoc}
      */
     @Override
-    public void handle(DomainEvent event) {
+    public void handle(Event event) {
         eventHandlerInvoker.invokeEventHandlerMethod(event);
     }
 
@@ -111,7 +111,7 @@ public class AnnotationEventListenerAdapter
      * @param event the event for which to search configuration.
      * @return the annotation on the event handler method
      */
-    public org.axonframework.core.eventhandler.annotation.EventHandler getConfigurationFor(DomainEvent event) {
+    public org.axonframework.core.eventhandler.annotation.EventHandler getConfigurationFor(Event event) {
         return eventHandlerInvoker.findEventHandlerConfiguration(event);
     }
 

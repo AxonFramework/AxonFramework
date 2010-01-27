@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 /**
  * EventSequencingPolicy that does not enforce any sequencing requirements on event processing.
@@ -30,7 +30,7 @@ public class FullConcurrencyPolicy implements EventSequencingPolicy {
      * {@inheritDoc}
      */
     @Override
-    public Object getSequenceIdentifierFor(DomainEvent event) {
+    public Object getSequenceIdentifierFor(Event event) {
         return null;
     }
 }

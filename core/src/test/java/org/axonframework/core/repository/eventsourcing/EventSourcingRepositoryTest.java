@@ -19,8 +19,9 @@ package org.axonframework.core.repository.eventsourcing;
 import org.axonframework.core.AbstractEventSourcedAggregateRoot;
 import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.EventStream;
-import org.axonframework.core.SimpleEventStream;
+import org.axonframework.core.DomainEventStream;
+import org.axonframework.core.Event;
+import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.StubAggregateDeletedEvent;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
@@ -56,7 +57,7 @@ public class EventSourcingRepositoryTest {
         UUID identifier = UUID.randomUUID();
         StubDomainEvent event1 = new StubDomainEvent(identifier, 1);
         StubDomainEvent event2 = new StubDomainEvent(identifier, 2);
-        when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleEventStream(event1, event2));
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(event1, event2));
 
         TestAggregate aggregate = testSubject.load(identifier);
 
@@ -75,7 +76,7 @@ public class EventSourcingRepositoryTest {
         verify(mockEventBus).publish(event3);
         verify(mockEventBus, never()).publish(event1);
         verify(mockEventBus, never()).publish(event2);
-        verify(mockEventStore, times(1)).appendEvents(eq("test"), isA(EventStream.class));
+        verify(mockEventStore, times(1)).appendEvents(eq("test"), isA(DomainEventStream.class));
         assertEquals(0, aggregate.getUncommittedEventCount());
     }
 
@@ -94,7 +95,7 @@ public class EventSourcingRepositoryTest {
 
     private static class TestAggregate extends AbstractEventSourcedAggregateRoot {
 
-        private List<DomainEvent> handledEvents = new ArrayList<DomainEvent>();
+        private List<Event> handledEvents = new ArrayList<Event>();
 
         private TestAggregate(UUID identifier) {
             super(identifier);
@@ -110,7 +111,7 @@ public class EventSourcingRepositoryTest {
             handledEvents.add(event);
         }
 
-        public List<DomainEvent> getHandledEvents() {
+        public List<Event> getHandledEvents() {
             return handledEvents;
         }
 

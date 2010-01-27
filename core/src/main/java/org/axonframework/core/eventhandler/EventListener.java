@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 /**
  * Interface to be implemented by classes that can handle events.
@@ -36,7 +36,7 @@ public interface EventListener {
      * @param eventType the type of event
      * @return true if this event listener can handle the event, false otherwise
      */
-    boolean canHandle(Class<? extends DomainEvent> eventType);
+    boolean canHandle(Class<? extends Event> eventType);
 
     /**
      * Process the given event. There are no guarantees that this method is not called with types for which {@link
@@ -45,7 +45,7 @@ public interface EventListener {
      *
      * @param event the event to handle
      */
-    void handle(DomainEvent event);
+    void handle(Event event);
 
     /**
      * The Event sequencing policy applicable to this event listener. This policy defines which Events must be processed

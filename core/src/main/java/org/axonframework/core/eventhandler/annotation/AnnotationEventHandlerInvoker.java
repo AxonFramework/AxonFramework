@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler.annotation;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventListener;
 import org.axonframework.core.eventhandler.TransactionStatus;
 import org.springframework.util.ReflectionUtils;
@@ -85,7 +85,7 @@ class AnnotationEventHandlerInvoker {
                                 method.getName()),
                                                                     method);
                     }
-                    if (!DomainEvent.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                    if (!Event.class.isAssignableFrom(method.getParameterTypes()[0])) {
                         throw new UnsupportedHandlerMethodException(String.format(
                                 "Event Handling class %s contains method %s that has an invalid parameter. "
                                         + "Parameter must extend from DomainEvent",
@@ -125,7 +125,7 @@ class AnnotationEventHandlerInvoker {
      *
      * @param event the event to handle
      */
-    protected void invokeEventHandlerMethod(DomainEvent event) {
+    protected void invokeEventHandlerMethod(Event event) {
         final Method m = findEventHandlerMethod(event.getClass());
         if (m == null) {
             // event listener doesn't support this type of event
@@ -157,7 +157,7 @@ class AnnotationEventHandlerInvoker {
      * @param event the event for which to find handler configuration
      * @return the configuration for the event handler that would handle the given <code>event</code>
      */
-    protected EventHandler findEventHandlerConfiguration(DomainEvent event) {
+    protected EventHandler findEventHandlerConfiguration(Event event) {
         Method m = findEventHandlerMethod(event.getClass());
         if (m != null && m.isAnnotationPresent(EventHandler.class)) {
             return m.getAnnotation(EventHandler.class);
@@ -171,11 +171,11 @@ class AnnotationEventHandlerInvoker {
      * @param eventClass the event class to find an handler for
      * @return true if an event handler is found, false otherwise
      */
-    protected boolean hasHandlerFor(Class<? extends DomainEvent> eventClass) {
+    protected boolean hasHandlerFor(Class<? extends Event> eventClass) {
         return findEventHandlerMethod(eventClass) != null;
     }
 
-    private Method findEventHandlerMethod(final Class<? extends DomainEvent> eventClass) {
+    private Method findEventHandlerMethod(final Class<? extends Event> eventClass) {
         MostSuitableEventHandlerCallback callback = new MostSuitableEventHandlerCallback(eventClass);
         ReflectionUtils.doWithMethods(target.getClass(), callback, callback);
         return callback.foundHandler();
@@ -241,7 +241,7 @@ class AnnotationEventHandlerInvoker {
     private static class MostSuitableEventHandlerCallback
             implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
 
-        private final Class<? extends DomainEvent> eventClass;
+        private final Class<? extends Event> eventClass;
         private Method bestMethodSoFar;
 
         /**
@@ -250,7 +250,7 @@ class AnnotationEventHandlerInvoker {
          *
          * @param eventClass The type of event to find the handler for
          */
-        public MostSuitableEventHandlerCallback(Class<? extends DomainEvent> eventClass) {
+        public MostSuitableEventHandlerCallback(Class<? extends Event> eventClass) {
             this.eventClass = eventClass;
         }
 

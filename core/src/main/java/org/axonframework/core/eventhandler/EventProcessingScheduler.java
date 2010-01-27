@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -41,7 +41,7 @@ public class EventProcessingScheduler implements Runnable {
     private final ExecutorService executorService;
 
     // guarded by "this"
-    private final Queue<DomainEvent> events = new LinkedList<DomainEvent>();
+    private final Queue<Event> events = new LinkedList<Event>();
     // guarded by "this"
     private boolean isScheduled = false;
     private boolean cleanedUp;
@@ -75,7 +75,7 @@ public class EventProcessingScheduler implements Runnable {
      * @param event the event to schedule
      * @return true if the event was scheduled successfully, false if this scheduler is not available to process events
      */
-    public synchronized boolean scheduleEvent(DomainEvent event) {
+    public synchronized boolean scheduleEvent(Event event) {
         if (cleanedUp) {
             return false;
         }
@@ -92,7 +92,7 @@ public class EventProcessingScheduler implements Runnable {
      *
      * @return the next DomainEvent for processing, of null if none is available
      */
-    protected synchronized DomainEvent nextEvent() {
+    protected synchronized Event nextEvent() {
         return events.poll();
     }
 
@@ -145,7 +145,7 @@ public class EventProcessingScheduler implements Runnable {
      */
     @Override
     public void run() {
-        DomainEvent event;
+        Event event;
         boolean mayContinue = true;
         final TransactionStatusImpl status = new TransactionStatusImpl(queuedEventCount());
         TransactionStatus.set(status);

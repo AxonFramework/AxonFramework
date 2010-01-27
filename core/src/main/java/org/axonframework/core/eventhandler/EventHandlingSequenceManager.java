@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -55,7 +55,7 @@ public class EventHandlingSequenceManager {
      *
      * @param event The event to schedule
      */
-    public void addEvent(DomainEvent event) {
+    public void addEvent(Event event) {
         if (eventListener.canHandle(event.getClass())) {
             final Object policy = eventSequencingPolicy.getSequenceIdentifierFor(event);
             if (policy == null) {
@@ -66,7 +66,7 @@ public class EventHandlingSequenceManager {
         }
     }
 
-    private void scheduleEvent(DomainEvent event, Object policy) {
+    private void scheduleEvent(Event event, Object policy) {
         boolean eventScheduled = false;
         while (!eventScheduled) {
             EventProcessingScheduler currentScheduler = transactions.get(policy);
@@ -96,7 +96,7 @@ public class EventHandlingSequenceManager {
     private static class SingleEventHandlerInvocationTask implements Runnable {
 
         private final EventListener eventListener;
-        private final DomainEvent event;
+        private final Event event;
 
         /**
          * Configures a task to invoke a single event on an event listener
@@ -104,7 +104,7 @@ public class EventHandlingSequenceManager {
          * @param eventListener The event listener to invoke the event handler on
          * @param event         the event to send to the event listener
          */
-        public SingleEventHandlerInvocationTask(EventListener eventListener, DomainEvent event) {
+        public SingleEventHandlerInvocationTask(EventListener eventListener, Event event) {
             this.eventListener = eventListener;
             this.event = event;
         }

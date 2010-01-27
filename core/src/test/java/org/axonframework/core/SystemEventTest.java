@@ -14,26 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.eventhandler;
+package org.axonframework.core;
 
-import org.axonframework.core.Event;
+import org.junit.*;
+
+import static org.junit.Assert.*;
 
 /**
- * EventSequencingPolicy that requires serialized handling of all events delivered to an event handler. This is the
- * default policy for event handlers.
- *
  * @author Allard Buijze
- * @since 0.3
  */
-public class SequentialPolicy implements EventSequencingPolicy {
+public class SystemEventTest {
 
-    private static final Object FULL_SEQUENTIAL_POLICY = new Object();
+    private SystemEvent testSubject;
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Object getSequenceIdentifierFor(Event event) {
-        return FULL_SEQUENTIAL_POLICY;
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored", "ThrowableInstanceNeverThrown"})
+    @Test
+    public void testInitializeWithCause() {
+        Throwable cause = new RuntimeException("MockException");
+        testSubject = new SystemEvent(null, cause) {
+        };
+        assertEquals(cause, testSubject.getCause());
+    }
+
+    public void testInitializeWithoutCause() {
+        testSubject = new SystemEvent(null) {
+        };
+        assertNull(testSubject.getCause());
     }
 }
