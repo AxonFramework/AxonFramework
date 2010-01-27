@@ -18,6 +18,7 @@ package org.axonframework.core.repository.eventsourcing;
 
 import org.axonframework.core.AbstractEventSourcedAggregateRoot;
 import org.axonframework.core.AggregateDeletedEvent;
+import org.axonframework.core.AggregateDeletedException;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.Event;
@@ -78,6 +79,23 @@ public class EventSourcingRepositoryTest {
         verify(mockEventBus, never()).publish(event2);
         verify(mockEventStore, times(1)).appendEvents(eq("test"), isA(DomainEventStream.class));
         assertEquals(0, aggregate.getUncommittedEventCount());
+    }
+
+    @Test
+    public void testLoadDeletedAggregate() {
+        UUID identifier = UUID.randomUUID();
+        StubDomainEvent event1 = new StubDomainEvent(identifier, 1);
+        StubDomainEvent event2 = new StubDomainEvent(identifier, 2);
+        AggregateDeletedEvent event3 = new StubAggregateDeletedEvent(identifier, 3);
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(
+                new SimpleDomainEventStream(event1, event2, event3));
+
+        try {
+            testSubject.load(identifier);
+            fail("Expected AggregateDeletedException");
+        } catch (AggregateDeletedException e) {
+            assertTrue(e.getMessage().contains(identifier.toString()));
+        }
     }
 
     private static class EventSourcingRepositoryImpl extends EventSourcingRepository<TestAggregate> {
