@@ -32,14 +32,4 @@ public class AggregateNotFoundException extends RuntimeException {
     public AggregateNotFoundException(String message) {
         super(message);
     }
-
-    /**
-     * Initialize a AggregateNotFoundException with the given <code>message</code> and <code>cause</code>
-     *
-     * @param message The message describing the cause of the exception
-     * @param cause   The exception causing this exception
-     */
-    public AggregateNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

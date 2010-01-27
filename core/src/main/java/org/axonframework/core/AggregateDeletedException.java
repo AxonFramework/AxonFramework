@@ -33,14 +33,4 @@ public class AggregateDeletedException extends AggregateNotFoundException {
     public AggregateDeletedException(String message) {
         super(message);
     }
-
-    /**
-     * Initialize a AggregateDeletedException with the given <code>message</code> and <code>cause</code>
-     *
-     * @param message The message describing the cause of the exception
-     * @param cause   The exception causing this exception
-     */
-    public AggregateDeletedException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
