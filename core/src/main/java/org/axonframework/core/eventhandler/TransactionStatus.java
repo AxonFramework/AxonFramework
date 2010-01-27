@@ -36,7 +36,7 @@ public abstract class TransactionStatus {
     private int eventsProcessedInTransaction = 0;
     private int maxTransactionSize = 50;
     private Throwable exception;
-    private RetryPolicy retryPolicy = RetryPolicy.RETRY_TRANSACTION;
+    private RetryPolicy retryPolicy = RetryPolicy.RETRY_LAST_EVENT;
 
     /**
      * Returns the TransactionStatus object related to a transaction running on the current thread. Returns
@@ -141,10 +141,32 @@ public abstract class TransactionStatus {
         this.maxTransactionSize = maxTransactionSize;
     }
 
+    /**
+     * Sets the retry policy for the current transaction. Is set to {@link RetryPolicy#RETRY_LAST_EVENT
+     * RETRY_LAST_EVENT} by default.
+     * <p/>
+     * The policy choice should be based on the effect of a transaction rollback. Some data sources, such as databases,
+     * roll back the entire transaction. In that case, choose {@link RetryPolicy#RETRY_TRANSACTION RETRY_TRANSACTION}
+     * policy. If a rollback on the underlying data source only rolls back the last modification, choose {@link
+     * RetryPolicy#RETRY_LAST_EVENT RETRY_LAST_EVENT}. If failed events should be ignored, choose the {@link
+     * RetryPolicy#IGNORE_FAILED_TRANSACTION IGNORE_FAILED_TRANSACTION} policy.
+     * <p/>
+     * These policies may be set in both the <code>beforeTransaction()</code> and <code>afterTransaction</code> methods.
+     * The latter would allow you to change policy based on the exact type of exception encountered.
+     *
+     * @param retryPolicy the retry policy to apply when a transaction fails.
+     */
     public void setRetryPolicy(RetryPolicy retryPolicy) {
         this.retryPolicy = retryPolicy;
     }
 
+    /**
+     * Returns the retry policy for the current transaction
+     *
+     * @return the retry policy for the current transaction
+     *
+     * @see #setRetryPolicy(RetryPolicy)
+     */
     public RetryPolicy getRetryPolicy() {
         return retryPolicy;
     }

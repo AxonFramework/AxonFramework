@@ -238,7 +238,6 @@ public class EventProcessingScheduler implements Runnable {
          */
         @Override
         public void beforeTransaction(TransactionStatus transactionStatus) {
-            transactionStatus.setRetryPolicy(RetryPolicy.RETRY_LAST_EVENT);
         }
 
         /**
