@@ -36,6 +36,7 @@ public class SystemEventTest {
         assertEquals(cause, testSubject.getCause());
     }
 
+    @Test
     public void testInitializeWithoutCause() {
         testSubject = new SystemEvent(null) {
         };
