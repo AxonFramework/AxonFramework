@@ -38,6 +38,9 @@ public class TransactionStatus {
     private Throwable exception;
     private RetryPolicy retryPolicy = RetryPolicy.RETRY_LAST_EVENT;
 
+    /**
+     * Initialize a TransactionStatus instance with default settings.
+     */
     TransactionStatus() {
         // construction limited to this package
     }
