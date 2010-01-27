@@ -32,7 +32,20 @@
     <name>Axon Address Book Sample Project</name>
     <modules>
         <module>core</module>
-        <module>flex-ui</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>axon-addressbook-withflex</id>
+            <activation>
+                <property>
+                    <name>env.FLEX_HOME</name>
+                </property>
+            </activation>
+            <modules>
+                <module>flex-ui</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>
