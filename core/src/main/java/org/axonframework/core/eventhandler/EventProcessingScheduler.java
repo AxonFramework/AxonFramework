@@ -17,8 +17,11 @@
 package org.axonframework.core.eventhandler;
 
 import org.axonframework.core.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -35,6 +38,8 @@ import static org.axonframework.core.eventhandler.YieldPolicy.DO_NOT_YIELD;
  */
 public class EventProcessingScheduler implements Runnable {
 
+    private static final Logger logger = LoggerFactory.getLogger(EventProcessingScheduler.class);
+
     private final EventListener eventListener;
     private final ShutdownCallback shutDownCallback;
     private final TransactionAware transactionListener;
@@ -45,6 +50,7 @@ public class EventProcessingScheduler implements Runnable {
     // guarded by "this"
     private boolean isScheduled = false;
     private boolean cleanedUp;
+    private final List<Event> currentBatch = new LinkedList<Event>();
 
     /**
      * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executorService</code>.
@@ -105,7 +111,7 @@ public class EventProcessingScheduler implements Runnable {
      * @return true if yielding succeeded, false otherwise.
      */
     protected synchronized boolean yield() {
-        if (events.size() > 0) {
+        if (events.size() > 0 || currentBatch.size() > 0) {
             isScheduled = true;
             try {
                 executorService.submit((Runnable) this);
@@ -145,25 +151,74 @@ public class EventProcessingScheduler implements Runnable {
      */
     @Override
     public void run() {
-        Event event;
         boolean mayContinue = true;
         final TransactionStatusImpl status = new TransactionStatusImpl(queuedEventCount());
         TransactionStatus.set(status);
         while (mayContinue) {
-            transactionListener.beforeTransaction(status);
-            // TODO: Implement transaction rollback and retry mechanism
-            while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) {
-                eventListener.handle(event);
-                status.recordEventProcessed();
+            try {
+                transactionListener.beforeTransaction(status);
+                if (currentBatch.isEmpty()) {
+                    handleEventBatch(status);
+                } else {
+                    retryEventBatch(status);
+                    handleEventBatch(status);
+                }
+                transactionListener.afterTransaction(status);
+                currentBatch.clear();
             }
-            transactionListener.afterTransaction(status);
+            catch (Exception e) {
+                // the batch failed.
+                status.markFailed(e);
+                tryAfterTransactionCall(status);
+                switch (status.getRetryPolicy()) {
+                    case RETRY_LAST_EVENT:
+                        markLastEventForRetry();
+                        break;
+                    case IGNORE_FAILED_TRANSACTION:
+                        currentBatch.clear();
+                        break;
+                }
+            }
             mayContinue = (queuedEventCount() > 0 && DO_NOT_YIELD.equals(status.getYieldPolicy())) || !yield();
             status.resetTransactionStatus();
         }
         TransactionStatus.clear();
     }
 
-    private synchronized void cleanUp() {
+    private void tryAfterTransactionCall(TransactionStatusImpl status) {
+        try {
+            transactionListener.afterTransaction(status);
+        } catch (Exception e) {
+            logger.warn("Call to afterTransaction method of failed transaction resulted in an exception.", e);
+        }
+    }
+
+    private void markLastEventForRetry() {
+        Event lastEvent = currentBatch.get(currentBatch.size() - 1);
+        currentBatch.clear();
+        if (lastEvent != null) {
+            currentBatch.add(lastEvent);
+        }
+    }
+
+    private void retryEventBatch(TransactionStatus status) {
+        for (Event event : this.currentBatch) {
+            eventListener.handle(event);
+            status.recordEventProcessed();
+        }
+        currentBatch.clear();
+    }
+
+    private void handleEventBatch(TransactionStatus status) {
+        Event event;
+        while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) {
+            currentBatch.add(event);
+            eventListener.handle(event);
+            status.recordEventProcessed();
+        }
+    }
+
+    protected synchronized void cleanUp() {
         isScheduled = false;
         cleanedUp = true;
         shutDownCallback.afterShutdown(this);
@@ -183,6 +238,7 @@ public class EventProcessingScheduler implements Runnable {
          */
         @Override
         public void beforeTransaction(TransactionStatus transactionStatus) {
+            transactionStatus.setRetryPolicy(RetryPolicy.RETRY_LAST_EVENT);
         }
 
         /**

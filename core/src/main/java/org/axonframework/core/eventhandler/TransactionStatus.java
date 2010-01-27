@@ -36,6 +36,7 @@ public abstract class TransactionStatus {
     private int eventsProcessedInTransaction = 0;
     private int maxTransactionSize = 50;
     private Throwable exception;
+    private RetryPolicy retryPolicy = RetryPolicy.RETRY_TRANSACTION;
 
     /**
      * Returns the TransactionStatus object related to a transaction running on the current thread. Returns
@@ -140,6 +141,14 @@ public abstract class TransactionStatus {
         this.maxTransactionSize = maxTransactionSize;
     }
 
+    public void setRetryPolicy(RetryPolicy retryPolicy) {
+        this.retryPolicy = retryPolicy;
+    }
+
+    public RetryPolicy getRetryPolicy() {
+        return retryPolicy;
+    }
+
     /**
      * Record the fact that an event has been processed. This will increase the number of events processed in current
      * transaction as well as the number of events since last yield.
@@ -156,6 +165,7 @@ public abstract class TransactionStatus {
     protected void resetTransactionStatus() {
         eventsProcessedInTransaction = 0;
         yieldPolicy = YieldPolicy.YIELD_AFTER_TRANSACTION;
+        exception = null;
     }
 
     /**
@@ -195,5 +205,4 @@ public abstract class TransactionStatus {
     void markFailed(Throwable cause) {
         this.exception = cause;
     }
-
 }
