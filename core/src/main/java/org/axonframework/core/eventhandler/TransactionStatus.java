@@ -27,7 +27,7 @@ package org.axonframework.core.eventhandler;
  * @author Allard Buijze
  * @since 0.3
  */
-public abstract class TransactionStatus {
+public class TransactionStatus {
 
     private static ThreadLocal<TransactionStatus> current = new ThreadLocal<TransactionStatus>();
 
@@ -37,6 +37,10 @@ public abstract class TransactionStatus {
     private int maxTransactionSize = 50;
     private Throwable exception;
     private RetryPolicy retryPolicy = RetryPolicy.RETRY_LAST_EVENT;
+
+    TransactionStatus() {
+        // construction limited to this package
+    }
 
     /**
      * Returns the TransactionStatus object related to a transaction running on the current thread. Returns

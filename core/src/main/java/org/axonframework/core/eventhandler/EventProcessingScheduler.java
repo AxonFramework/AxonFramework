@@ -152,40 +152,49 @@ public class EventProcessingScheduler implements Runnable {
     @Override
     public void run() {
         boolean mayContinue = true;
-        final TransactionStatusImpl status = new TransactionStatusImpl(queuedEventCount());
+        final TransactionStatus status = new TransactionStatus();
+        status.setMaxTransactionSize(queuedEventCount());
         TransactionStatus.set(status);
         while (mayContinue) {
-            try {
-                transactionListener.beforeTransaction(status);
-                if (currentBatch.isEmpty()) {
-                    handleEventBatch(status);
-                } else {
-                    retryEventBatch(status);
-                    handleEventBatch(status);
-                }
-                transactionListener.afterTransaction(status);
-                currentBatch.clear();
-            }
-            catch (Exception e) {
-                // the batch failed.
-                status.markFailed(e);
-                tryAfterTransactionCall(status);
-                switch (status.getRetryPolicy()) {
-                    case RETRY_LAST_EVENT:
-                        markLastEventForRetry();
-                        break;
-                    case IGNORE_FAILED_TRANSACTION:
-                        currentBatch.clear();
-                        break;
-                }
-            }
+            processOrRetryBatch(status);
             mayContinue = (queuedEventCount() > 0 && DO_NOT_YIELD.equals(status.getYieldPolicy())) || !yield();
             status.resetTransactionStatus();
         }
         TransactionStatus.clear();
     }
 
-    private void tryAfterTransactionCall(TransactionStatusImpl status) {
+    private void processOrRetryBatch(TransactionStatus status) {
+        try {
+            transactionListener.beforeTransaction(status);
+            if (currentBatch.isEmpty()) {
+                handleEventBatch(status);
+            } else {
+                retryEventBatch(status);
+                handleEventBatch(status);
+            }
+            transactionListener.afterTransaction(status);
+            currentBatch.clear();
+        }
+        catch (Exception e) {
+            // the batch failed.
+            prepareBatchRetry(status, e);
+        }
+    }
+
+    private void prepareBatchRetry(TransactionStatus status, Exception e) {
+        status.markFailed(e);
+        tryAfterTransactionCall(status);
+        switch (status.getRetryPolicy()) {
+            case RETRY_LAST_EVENT:
+                markLastEventForRetry();
+                break;
+            case IGNORE_FAILED_TRANSACTION:
+                currentBatch.clear();
+                break;
+        }
+    }
+
+    private void tryAfterTransactionCall(TransactionStatus status) {
         try {
             transactionListener.afterTransaction(status);
         } catch (Exception e) {
@@ -218,17 +227,10 @@ public class EventProcessingScheduler implements Runnable {
         }
     }
 
-    protected synchronized void cleanUp() {
+    private synchronized void cleanUp() {
         isScheduled = false;
         cleanedUp = true;
         shutDownCallback.afterShutdown(this);
-    }
-
-    private static class TransactionStatusImpl extends TransactionStatus {
-
-        public TransactionStatusImpl(int transactionSize) {
-            setMaxTransactionSize(transactionSize);
-        }
     }
 
     private static class TransactionIgnoreAdapter implements TransactionAware {
@@ -246,7 +248,6 @@ public class EventProcessingScheduler implements Runnable {
         @Override
         public void afterTransaction(TransactionStatus transactionStatus) {
         }
-
     }
 
     /**
