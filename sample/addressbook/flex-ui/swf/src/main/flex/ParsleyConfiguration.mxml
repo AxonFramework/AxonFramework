@@ -2,18 +2,21 @@
 <mx:Object xmlns:mx="http://www.adobe.com/2006/mxml"
            xmlns:services="org.axonframework.examples.addressbook.services.*"
            xmlns:actions="org.axonframework.examples.addressbook.actions.*"
+           xmlns:sf="http://www.spicefactory.org/parsley"
+           xmlns:commands="org.axonframework.examples.addressbook.commands.*"
+           xmlns:model="org.axonframework.examples.addressbook.model.*"
         >
 
     <mx:RemoteObject
-        id="remoteAddressService"
-        destination="addressService"
-        endpoint="http://localhost:8080/messagebroker/amf"
-        showBusyCursor="true" />
+            id="remoteAddressService"
+            destination="addressService"
+            endpoint="http://localhost:8080/messagebroker/amf"
+            showBusyCursor="true"/>
+    <!--<services:AddressServiceRemote/>-->
+    <services:AddressServiceStub/>
 
+    <commands:SearchAddressCommand/>
 
-    <actions:SearchAddressesAction />
-
-    <!--<services:AddressServiceStub />-->
-    <services:AddressServiceRemote/>
+    <model:AddressModel/>
 
 </mx:Object>

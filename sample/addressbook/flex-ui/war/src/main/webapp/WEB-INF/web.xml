@@ -34,7 +34,7 @@
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
-    
+
     <!-- ====================================================================== -->
     <!--                             Filters                                    -->
     <!-- ====================================================================== -->
@@ -55,7 +55,7 @@
     </servlet-mapping>
 
     <welcome-file-list>
-        <welcome-file>swf-1.0-SNAPSHOT.swf</welcome-file>
+        <welcome-file>swf-0.4-SNAPSHOT.swf</welcome-file>
     </welcome-file-list>
 
 </web-app>

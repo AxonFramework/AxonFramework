@@ -1,47 +1,23 @@
 <?xml version="1.0"?>
 <mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
-        addedToStage="dispatchEvent(new Event('configureIOC', true))"
+           xmlns:sf="http://www.spicefactory.org/parsley/flex"
         >
-    <mx:Metadata>
-        [ManagedEvents("search")]
-    </mx:Metadata>
 
     <mx:Script><![CDATA[
-        import mx.collections.ArrayCollection;
 
-        import org.axonframework.examples.addressbook.actions.SearchAddressesAction;
-        import org.axonframework.examples.addressbook.events.AddressResultEvent;
-        import org.axonframework.examples.addressbook.events.SearchEvent;
-
-        public var searchAddressesAction:SearchAddressesAction;
-
-        [Bindable]
-        public var addresses:ArrayCollection = new ArrayCollection();
+        import org.axonframework.examples.addressbook.model.AddressModel;
 
         [Inject]
-        public function init(obtainAllAddressesAction:SearchAddressesAction):void {
-            trace("initializing the main component");
-            this.searchAddressesAction = obtainAllAddressesAction;
-            if (searchAddressesAction == null) {
-                trace('Oeps, obtainAllAddressesAction is not injected');
-            }
-        }
-
-        [MessageHandler(selector="search")]
-        public function searchHandler(event:SearchEvent):void {
-            searchAddressesAction.execute(event.searchAddress);
-        }
-
-        [MessageHandler(selector="searchResults")]
-        public function searchResults(event:AddressResultEvent):void {
-            this.addresses = event.results;
-        }
+        [Bindable]
+        public var addressModel:AddressModel;
 
         ]]></mx:Script>
 
+    <sf:Configure/>
+
     <mx:VBox>
         <mx:Label text="1"/>
-        <mx:DataGrid dataProvider="{addresses}">
+        <mx:DataGrid dataProvider="{addressModel.addresses}">
             <mx:columns>
                 <mx:DataGridColumn dataField="street"/>
                 <mx:DataGridColumn dataField="city"/>
