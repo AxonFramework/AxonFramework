@@ -66,7 +66,7 @@ class Contact extends AbstractAnnotatedAggregateRoot {
     }
 
     @EventHandler
-    protected void handleAddressAddedEvent(AddressRegisteredEvent event) {
+    protected void handleAddressRegisteredEvent(AddressRegisteredEvent event) {
         addresses.put(event.getType(), event.getAddress());
     }
 
