@@ -26,6 +26,9 @@ import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -57,21 +60,22 @@ public class BaseAnnotationEventListenerBeanPostProcessorTest {
 
     @Test
     public void testEventBusIsNotAutowiredWhenProvided() throws Exception {
-        when(mockApplicationContext.getBean(EventBus.class)).thenReturn(mockEventBus);
 
         testSubject.afterPropertiesSet();
 
-        verify(mockApplicationContext, never()).getBean(EventBus.class);
+        verify(mockApplicationContext, never()).getBeansOfType(EventBus.class);
     }
 
     @Test
     public void testEventBusIsAutowired() throws Exception {
         testSubject.setEventBus(null);
-        when(mockApplicationContext.getBean(EventBus.class)).thenReturn(mockEventBus);
+        Map<String, EventBus> map = new HashMap<String, EventBus>();
+        map.put("ignored", mockEventBus);
+        when(mockApplicationContext.getBeansOfType(EventBus.class)).thenReturn(map);
 
         testSubject.afterPropertiesSet();
 
-        verify(mockApplicationContext).getBean(EventBus.class);
+        verify(mockApplicationContext).getBeansOfType(EventBus.class);
     }
 
     @Test
