@@ -5,6 +5,7 @@ import mx.collections.ArrayCollection;
 import mx.rpc.AsyncToken;
 import mx.utils.ObjectUtil;
 
+import org.axonframework.examples.addressbook.messages.NewAddressMessage;
 import org.axonframework.examples.addressbook.messages.SearchForAddressesMessage;
 import org.axonframework.examples.addressbook.messages.SearchResultMessage;
 import org.axonframework.examples.addressbook.model.Address;
@@ -27,7 +28,7 @@ public class AddressServiceStub extends EventDispatcher implements IAddressServi
 
     [MessageHandler]
     public function search(message:SearchForAddressesMessage):AsyncToken {
-        trace('Received a message SearchForAddressesMessageSearchForAddressesMessage ');
+        trace('Received a message SearchForAddressesMessage');
         var foundAddresses:ArrayCollection;
         var searchAddress:Address = message.address;
 
@@ -45,5 +46,10 @@ public class AddressServiceStub extends EventDispatcher implements IAddressServi
         return mockService.createToken(ObjectUtil.copy(foundAddresses));
     }
 
+    [MessageHandler]
+    public function create(message:NewAddressMessage):AsyncToken {
+        allAddresses.addItem(message.address);
+        return mockService.createToken(true);
+    }
 }
 }

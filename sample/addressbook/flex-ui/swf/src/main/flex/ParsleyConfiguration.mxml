@@ -16,6 +16,7 @@
     <services:AddressServiceStub/>
 
     <commands:SearchAddressCommand/>
+    <commands:NewAddressCommand/>
 
     <model:AddressModel/>
 

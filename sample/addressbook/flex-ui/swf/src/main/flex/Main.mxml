@@ -1,15 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
-                preinitialize="FlexContextBuilder.build(ParsleyConfiguration,this)"
+                xmlns:sf="http://www.spicefactory.org/parsley"
                 xmlns:views="org.axonframework.examples.addressbook.views.*"
                 width="100%" height="100%">
-    <mx:Script><![CDATA[
-        import org.spicefactory.parsley.flex.FlexContextBuilder;
-    ]]></mx:Script>
 
-    <mx:VBox width="100%" height="100%" top="8" left="8" right="8" bottom="8">
-        <views:Toolbar id="toolbar" width="100%"/>
-        <views:AddressesView id="mainView" width="100%"/>
-    </mx:VBox>
+    <sf:ContextBuilder config="ParsleyConfiguration"/>
 
+    <views:OverallView width="100%" height="100%"/>
 </mx:Application>

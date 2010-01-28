@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+           xmlns:views="org.axonframework.examples.addressbook.views.*"
+           xmlns:sf="http://www.spicefactory.org/parsley/flex"
+        >
+    <mx:Script><![CDATA[
+        import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
+
+        public static const ALL_ADDRESSES:String = "allAddresses";
+        public static const NEW_ADDRESS:String = "newAddress";
+
+        [MessageHandler]
+        public function showRightViewStack(changeViewMessage:ChangeViewMessage):void {
+            trace('Switching the view ...');
+            switch (changeViewMessage.stackId) {
+                case ALL_ADDRESSES:
+                    mainViewStack.selectedChild = addresses;
+                    break;
+                case NEW_ADDRESS:
+                    mainViewStack.selectedChild = addAddress;
+                    break;
+                default:
+                    mainViewStack.selectedChild = welcomeMessage
+            }
+        }
+
+        ]]></mx:Script>
+
+    <sf:Configure/>
+
+    <mx:VBox width="100%" height="100%" top="8" left="8" right="8" bottom="8">
+        <views:ToolbarView id="toolbar" width="100%"/>
+        <mx:ViewStack id="mainViewStack" width="100%" height="100%">
+            <mx:HBox id="welcomeMessage">
+                <mx:Text text="Welcome to this very nice application ..."/>
+            </mx:HBox>
+
+            <views:AddressesView id="addresses" width="100%" height="100%"/>
+            <views:AddAddressView id="addAddress" width="100%" height="100%"/>
+        </mx:ViewStack>
+    </mx:VBox>
+
+</mx:Canvas>

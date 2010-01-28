@@ -1,12 +1,17 @@
 <?xml version="1.0"?>
 <mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%"
-           addedToStage="dispatchEvent(new Event('configureIOC', true))">
+           xmlns:sf="http://www.spicefactory.org/parsley/flex"
+        >
 
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.commands.SearchAddressCommand;
+        import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
         import org.axonframework.examples.addressbook.model.Address;
 
         private var searchAddressCommand:SearchAddressCommand;
+
+        [MessageDispatcher]
+        public var dispatcher:Function;
 
         [Inject]
         public function init(searchAddressCommand:SearchAddressCommand):void {
@@ -15,15 +20,24 @@
 
         private function searchAction():void {
             var searchAddress:Address = Address.newAddress(searchStreet.text, searchCity.text);
-            searchAddressCommand.create(searchAddress);
+            searchAddressCommand.execute(searchAddress);
+            // I do not want to do this here, but it is easy for now
+            dispatcher(new ChangeViewMessage(OverallView.ALL_ADDRESSES));
+        }
+
+        private function newAddressAction():void {
+            // I do not want to do this here, but it is easy for now
+            dispatcher(new ChangeViewMessage(OverallView.NEW_ADDRESS));
         }
 
         ]]></mx:Script>
 
+    <sf:Configure/>
+
     <mx:HBox>
         <mx:ControlBar defaultButton="{searchButton}">
             <mx:Label text="Addresses"/>
-            <mx:Button id="addButton" icon="@Embed(source='/assets/images/report_add.png')" click="searchAction()"/>
+            <mx:Button id="addButton" icon="@Embed(source='/assets/images/report_add.png')" click="newAddressAction()"/>
             <mx:Button id="searchButton" icon="@Embed(source='/assets/images/find.png')" click="searchAction()"/>
             <mx:Label text="street"/>
             <mx:TextInput id="searchStreet" width="100"/>
