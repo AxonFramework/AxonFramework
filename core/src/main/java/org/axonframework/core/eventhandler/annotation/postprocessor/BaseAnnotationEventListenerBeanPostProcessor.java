@@ -25,7 +25,10 @@ import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -37,12 +40,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  * @since 0.3
  */
-public abstract class BaseAnnotationEventListenerBeanPostProcessor implements DestructionAwareBeanPostProcessor {
+public abstract class BaseAnnotationEventListenerBeanPostProcessor implements DestructionAwareBeanPostProcessor,
+                                                                              ApplicationContextAware,
+                                                                              InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(BaseAnnotationEventListenerBeanPostProcessor.class);
 
     private final Map<String, AnnotationEventListenerAdapter> managedAdapters = new HashMap<String, AnnotationEventListenerAdapter>();
     private EventBus eventBus;
+    private ApplicationContext applicationContext;
 
     /**
      * {@inheritDoc}
@@ -132,6 +138,17 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor implements De
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        // if no EventBus is set, find one in the application context
+        if (eventBus == null) {
+            this.eventBus = applicationContext.getBean(EventBus.class);
+        }
+    }
+
+    /**
      * Sets the event bus to which the event listeners should be registered to upon creation. If none is explicitly
      * provided, the event bus will be injected from the application context. This will only work if a single {@link
      * org.axonframework.core.eventhandler.EventBus} instance is registered in the application context.
@@ -140,6 +157,14 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor implements De
      */
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     private static final class AdapterInvocationHandler implements InvocationHandler {

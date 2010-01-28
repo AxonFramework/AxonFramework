@@ -24,6 +24,7 @@ import org.axonframework.core.eventhandler.EventListener;
 import org.axonframework.core.eventhandler.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.junit.*;
+import org.springframework.context.ApplicationContext;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -37,11 +38,13 @@ public class BaseAnnotationEventListenerBeanPostProcessorTest {
 
     private BaseAnnotationEventListenerBeanPostProcessor testSubject;
     private EventBus mockEventBus;
+    private ApplicationContext mockApplicationContext;
 
     @Before
     public void setUp() {
         mockAdapter = mock(AnnotationEventListenerAdapter.class);
         mockEventBus = mock(EventBus.class);
+        mockApplicationContext = mock(ApplicationContext.class);
         testSubject = new BaseAnnotationEventListenerBeanPostProcessor() {
             @Override
             protected AnnotationEventListenerAdapter adapt(Object bean) {
@@ -49,6 +52,26 @@ public class BaseAnnotationEventListenerBeanPostProcessorTest {
             }
         };
         testSubject.setEventBus(mockEventBus);
+        testSubject.setApplicationContext(mockApplicationContext);
+    }
+
+    @Test
+    public void testEventBusIsNotAutowiredWhenProvided() throws Exception {
+        when(mockApplicationContext.getBean(EventBus.class)).thenReturn(mockEventBus);
+
+        testSubject.afterPropertiesSet();
+
+        verify(mockApplicationContext, never()).getBean(EventBus.class);
+    }
+
+    @Test
+    public void testEventBusIsAutowired() throws Exception {
+        testSubject.setEventBus(null);
+        when(mockApplicationContext.getBean(EventBus.class)).thenReturn(mockEventBus);
+
+        testSubject.afterPropertiesSet();
+
+        verify(mockApplicationContext).getBean(EventBus.class);
     }
 
     @Test
