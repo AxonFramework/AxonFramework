@@ -19,14 +19,14 @@
         }
 
         private function searchAction():void {
-            var searchAddress:Address = Address.newAddress(searchStreet.text, searchCity.text);
+            var searchAddress:Address = Address.newAddress("", searchStreet.text, "", searchCity.text);
             searchAddressCommand.execute(searchAddress);
-            // I do not want to do this here, but it is easy for now
+            // TODO : I do not want to do this here, but it is easy for now
             dispatcher(new ChangeViewMessage(OverallView.ALL_ADDRESSES));
         }
 
         private function newAddressAction():void {
-            // I do not want to do this here, but it is easy for now
+            // TODO : I do not want to do this here, but it is easy for now
             dispatcher(new ChangeViewMessage(OverallView.NEW_ADDRESS));
         }
 

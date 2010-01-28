@@ -17,6 +17,8 @@
             var address:Address = new Address();
             address.street = inputStreet.text;
             address.city = inputCity.text;
+            address.zipCode = inputZipCode.text;
+            address.contactName = inputContactName.text;
 
             newAddressCommand.execute(address);
         }
@@ -25,10 +27,16 @@
     <sf:Configure/>
 
     <mx:Form defaultButton="{createAddressButton}">
+        <mx:FormItem id="contactName" label="Contact">
+            <mx:TextInput id="inputContactName"/>
+        </mx:FormItem>
         <mx:FormItem id="street" label="Street">
             <mx:TextInput id="inputStreet"/>
         </mx:FormItem>
-        <mx:FormItem id="city" label="Street">
+        <mx:FormItem id="zipCode" label="Zip code">
+            <mx:TextInput id="inputZipCode"/>
+        </mx:FormItem>
+        <mx:FormItem id="city" label="City">
             <mx:TextInput id="inputCity"/>
         </mx:FormItem>
         <mx:Button id="createAddressButton" label="Create" click="createAddress()"/>

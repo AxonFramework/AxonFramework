@@ -12,8 +12,10 @@
             destination="addressService"
             endpoint="http://localhost:8080/messagebroker/amf"
             showBusyCursor="true"/>
-    <!--<services:AddressServiceRemote/>-->
-    <services:AddressServiceStub/>
+
+
+    <services:AddressServiceRemote/>
+    <!--<services:AddressServiceStub/>-->
 
     <commands:SearchAddressCommand/>
     <commands:NewAddressCommand/>

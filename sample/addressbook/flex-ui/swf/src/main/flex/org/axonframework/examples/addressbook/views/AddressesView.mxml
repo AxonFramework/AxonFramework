@@ -19,7 +19,9 @@
         <mx:Label text="1"/>
         <mx:DataGrid dataProvider="{addressModel.addresses}">
             <mx:columns>
+                <mx:DataGridColumn dataField="contactName"/>
                 <mx:DataGridColumn dataField="street"/>
+                <mx:DataGridColumn dataField="zipCode"/>
                 <mx:DataGridColumn dataField="city"/>
             </mx:columns>
         </mx:DataGrid>

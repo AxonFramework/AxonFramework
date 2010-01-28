@@ -17,7 +17,7 @@
     <properties>
         <spring.version>2.5.6.SEC01</spring.version>
     </properties>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -42,6 +42,12 @@
 
     <dependencies>
         <!-- Internal dependencies -->
+        <dependency>
+            <groupId>org.axonframework.samples</groupId>
+            <artifactId>axon-addressbook-app</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.axonframework.samples</groupId>
             <artifactId>swf</artifactId>
@@ -69,6 +75,29 @@
             <artifactId>spring-aop</artifactId>
             <version>${spring.version}</version>
         </dependency>
+        <!-- jms -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jms</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>jms</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-core</artifactId>
+            <version>5.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xbean</groupId>
+            <artifactId>xbean-spring</artifactId>
+            <version>3.5</version>
+        </dependency>
+
+
         <!-- other -->
         <dependency>
             <groupId>log4j</groupId>

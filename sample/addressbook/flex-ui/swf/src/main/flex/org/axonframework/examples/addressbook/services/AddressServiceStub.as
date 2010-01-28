@@ -20,10 +20,10 @@ public class AddressServiceStub extends EventDispatcher implements IAddressServi
     private var allAddresses:ArrayCollection = new ArrayCollection();
 
     public function AddressServiceStub() {
-        allAddresses.addItem(Address.newAddress("kerkstraat 8", "Zoetermeer"));
-        allAddresses.addItem(Address.newAddress("zwerflaan 18", "Amsterdam"));
-        allAddresses.addItem(Address.newAddress("rijkestraat 23", "Bloemendaal"));
-        allAddresses.addItem(Address.newAddress("kustweg 1", "Monster"));
+        allAddresses.addItem(Address.newAddress("kerkstraat 8", "", "Zoetermeer", "Jettro"));
+        allAddresses.addItem(Address.newAddress("zwerflaan 18", "", "Amsterdam", "Chris"));
+        allAddresses.addItem(Address.newAddress("rijkestraat 23", "", "Bloemendaal", "Leonard"));
+        allAddresses.addItem(Address.newAddress("kustweg 1", "", "Monster", "Michael"));
     }
 
     [MessageHandler]
