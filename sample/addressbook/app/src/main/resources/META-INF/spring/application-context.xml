@@ -21,7 +21,15 @@
 
     <bean class="org.axonframework.core.eventhandler.annotation.postprocessor.AnnotationEventListenerBeanPostProcessor"/>
 
-    <bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus"/>
+    <bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus">
+        <property name="executor" ref="taskExecutor"/>
+    </bean>
+
+    <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="20"/>
+        <property name="maxPoolSize" value="100"/>
+        <property name="waitForTasksToCompleteOnShutdown" value="true"/>
+    </bean>
 
     <bean id="contactRepository" class="org.axonframework.sample.core.command.ContactRepository">
         <property name="eventBus" ref="eventBus"/>

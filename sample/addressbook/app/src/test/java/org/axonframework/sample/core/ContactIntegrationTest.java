@@ -20,18 +20,18 @@ import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventBus;
-import org.axonframework.core.eventhandler.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.core.repository.Repository;
 import org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore;
 import org.axonframework.sample.core.command.ContactCommandHandler;
 import org.junit.*;
-import org.junit.rules.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,7 +44,9 @@ import static org.junit.Assert.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:/META-INF/spring/application-context.xml")
+@ContextConfiguration(locations = {"classpath:/META-INF/spring/application-context.xml",
+        "classpath:/META-INF/spring/database-context.xml"})
+@Transactional(readOnly = false)
 public class ContactIntegrationTest {
 
     @Autowired
@@ -59,19 +61,20 @@ public class ContactIntegrationTest {
     @Autowired
     private Repository repository;
 
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @Autowired
+    private ThreadPoolTaskExecutor taskExecutor;
 
     private List<Event> dispatchedEvents = new ArrayList<Event>();
 
     @Before
     public void setUp() throws IOException {
-        tempFolder.create();
-        eventStore.setBaseDir(new FileSystemResource(tempFolder.getRoot().getPath() + "/"));
-        eventBus.subscribe(new AnnotationEventListenerAdapter(this));
+        FileSystemResource resource = new FileSystemResource("target/");
+        eventStore.setBaseDir(resource);
     }
 
     @Test
-    public void testApplicationContext() throws InterruptedException {
+//(timeout = 10000)
+public void testApplicationContext() throws InterruptedException {
         assertNotNull(commandHandler);
         UUID contactId = commandHandler.createContact("Allard");
 
@@ -88,8 +91,11 @@ public class ContactIntegrationTest {
             // we got 'm
         }
 
-        // the event bus is asynchronous. Let's give it some time to dispatch.
-        Thread.sleep(100);
+        // the event bus is asynchronous. Let's wait for the task executor to finish all tasks
+        while (taskExecutor.getActiveCount() > 0) {
+            Thread.sleep(10);
+        }
+
         assertEquals(5, dispatchedEvents.size());
 
         assertEquals(ContactCreatedEvent.class, dispatchedEvents.get(0).getClass());
