@@ -109,7 +109,7 @@ public class AsyncEventBus implements EventBus {
     public void stop() {
         running.set(false);
         listenerManagers.clear();
-        if (executor != null && shutdownExecutorServiceOnStop && executor instanceof ExecutorService) {
+        if (shutdownExecutorServiceOnStop && executor instanceof ExecutorService) {
             ((ExecutorService) executor).shutdown();
         }
     }

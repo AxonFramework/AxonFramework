@@ -34,7 +34,8 @@ public abstract class AbstractTransactionalJpaEventListener implements Transacti
 
     private PlatformTransactionManager transactionManager;
 
-    private final ThreadLocal<org.springframework.transaction.TransactionStatus> underlyingTransaction = new ThreadLocal<org.springframework.transaction.TransactionStatus>();
+    private final ThreadLocal<org.springframework.transaction.TransactionStatus> underlyingTransaction =
+            new ThreadLocal<org.springframework.transaction.TransactionStatus>();
 
     @Override
     public void beforeTransaction(TransactionStatus transactionStatus) {
