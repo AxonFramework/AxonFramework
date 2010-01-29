@@ -33,7 +33,7 @@ import javax.persistence.PersistenceContext;
  * @author Allard Buijze
  */
 @ConcurrentEventListener(sequencingPolicyClass = SequentialPerAggregatePolicy.class)
-public class AddressTableUpdater extends AbstractTransactionalJpaEventListener implements TransactionAware {
+public class AddressTableUpdater extends AbstractTransactionalEventListener implements TransactionAware {
 
     private static final Logger logger = LoggerFactory.getLogger(AddressTableUpdater.class);
 

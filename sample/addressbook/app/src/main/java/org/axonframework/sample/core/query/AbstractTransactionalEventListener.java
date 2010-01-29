@@ -28,13 +28,13 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 /**
  * @author Allard Buijze
  */
-public abstract class AbstractTransactionalJpaEventListener implements TransactionAware {
+public abstract class AbstractTransactionalEventListener implements TransactionAware {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractTransactionalJpaEventListener.class);
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private PlatformTransactionManager transactionManager;
 
-    private final ThreadLocal<org.springframework.transaction.TransactionStatus> underlyingTransaction =
+    private static final ThreadLocal<org.springframework.transaction.TransactionStatus> underlyingTransaction =
             new ThreadLocal<org.springframework.transaction.TransactionStatus>();
 
     @Override
@@ -52,6 +52,7 @@ public abstract class AbstractTransactionalJpaEventListener implements Transacti
                 transactionManager.commit(underlyingTransaction.get());
             } else {
                 logger.error("Found failed transaction. Will retry shortly.", transactionStatus.getException());
+                // TODO: Check if the exception is transient. If not log an error, commit the transaction and skip the last event
                 transactionManager.rollback(underlyingTransaction.get());
             }
         } finally {
