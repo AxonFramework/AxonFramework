@@ -17,7 +17,9 @@
 package org.axonframework.examples.addressbook.web.listener;
 
 import org.axonframework.core.eventhandler.annotation.EventHandler;
+import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.axonframework.sample.app.ContactCreatedEvent;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,8 +28,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class ContactListener {
 
+    private JmsContactMessageProducer producer;
+
+
     @EventHandler
     public void handleContactCreatedEvent(ContactCreatedEvent event) {
-        System.out.println("Received and event : " + event.getName());
+        System.out.println("Received and event : " + event.getName() + event.getEventIdentifier());
+        AddressDTO addressDTO = new AddressDTO();
+        addressDTO.setContactName(event.getName());
+        producer.sendContactUpdate(addressDTO);
+    }
+
+    @Autowired
+    public void setProducer(JmsContactMessageProducer producer) {
+        this.producer = producer;
     }
 }

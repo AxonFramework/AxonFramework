@@ -2,33 +2,24 @@ package org.axonframework.examples.addressbook.web.listener;
 
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsTemplate;
-import org.springframework.jms.core.MessageCreator;
-
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
+import org.springframework.flex.messaging.MessageTemplate;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Jettro Coenradie
  */
+@Component
 public class JmsContactMessageProducer {
-    private JmsTemplate jmsTemplate;
-    private Destination destination;
+
+    private MessageTemplate template;
 
     @Autowired
-    public JmsContactMessageProducer(JmsTemplate jmsTemplate, Destination destination) {
-        this.jmsTemplate = jmsTemplate;
-        this.destination = destination;
+    public JmsContactMessageProducer(MessageTemplate template) {
+        this.template = template;
     }
 
     public void sendContactUpdate(final AddressDTO addressDTO) {
-        jmsTemplate.send(destination, new MessageCreator() {
-            public Message createMessage(Session session) throws JMSException {
-                return session.createObjectMessage(addressDTO);
-            }
-        });
-
+        template.send(addressDTO);
+        System.out.println("I want to debug");
     }
 }

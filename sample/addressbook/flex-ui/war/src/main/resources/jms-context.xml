@@ -1,25 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:amq="http://activemq.apache.org/schema/core"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
-    <amq:broker useJmx="true" persistent="false">
-        <amq:transportConnectors>
-            <amq:transportConnector uri="tcp://localhost:61616"/>
-        </amq:transportConnectors>
-    </amq:broker>
+       xmlns:flex="http://www.springframework.org/schema/flex"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd http://www.springframework.org/schema/flex http://www.springframework.org/schema/flex/spring-flex-1.0.xsd">
 
-    <amq:topic id="jmsTopic" physicalName="contactMessageTopic"/>
+    <flex:message-destination id="event-bus"/>
 
-    <amq:connectionFactory id="jmsFactory" brokerURL="vm://localhost"/>
-
-    <bean id="connectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
-        <property name="targetConnectionFactory">
-            <ref local="jmsFactory"/>
-        </property>
-    </bean>
-
-    <bean id="myJmsTemplate" class="org.springframework.jms.core.JmsTemplate">
-        <property name="connectionFactory" ref="connectionFactory"/>
+    <bean id="defaultMessageTemplate" class="org.springframework.flex.messaging.MessageTemplate">
+        <property name="defaultDestination" value="event-bus"/>
     </bean>
 
 

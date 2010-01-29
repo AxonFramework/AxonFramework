@@ -2,9 +2,13 @@
 <mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
            xmlns:views="org.axonframework.examples.addressbook.views.*"
            xmlns:sf="http://www.spicefactory.org/parsley/flex"
+           creationComplete="doSubscribe()"
         >
     <mx:Script><![CDATA[
+        import mx.messaging.events.MessageEvent;
+
         import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
+        import org.axonframework.examples.addressbook.model.Address;
 
         public static const ALL_ADDRESSES:String = "allAddresses";
         public static const NEW_ADDRESS:String = "newAddress";
@@ -24,7 +28,34 @@
             }
         }
 
+        public function messageHandler(event:MessageEvent):void {
+            trace('message event : ' + event.type);
+            var address:Address = event.message.body as Address;
+            trace('Received an address event : ' + address.contactName);
+        }
+
+        public function acknowledgeHandler(event:Event):void {
+            trace('acknowledge event : ');
+            trace(event.toString());
+        }
+
+        public function faultHandler(event:Event):void {
+            trace('*** fault event : ');
+            trace(event.toString());
+        }
+
+        private function doSubscribe():void {
+            consumer.subscribe();
+        }
+
         ]]></mx:Script>
+
+    <mx:Consumer id="consumer" destination="event-bus" channelSet="{cs}" message="messageHandler(event)"
+                 acknowledge="acknowledgeHandler(event);" fault=" faultHandler(event)"/>
+
+    <mx:ChannelSet id="cs">
+        <mx:AMFChannel url="http://localhost:8080/messagebroker/pollingamf"/>
+    </mx:ChannelSet>
 
     <sf:Configure/>
 
