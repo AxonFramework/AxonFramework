@@ -30,6 +30,21 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>package-docs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <descriptorSourceDirectory>src/main/assembly/</descriptorSourceDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.jboss.maven.plugins</groupId>
                 <artifactId>maven-jdocbook-plugin</artifactId>
                 <extensions>true</extensions>
@@ -46,12 +61,14 @@
                                 <format>
                                     <formatName>html_single</formatName>
                                     <finalName>index.html</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/single.xsl</stylesheetResource>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/single.xsl
+                                    </stylesheetResource>
                                 </format>
                                 <format>
                                     <formatName>html</formatName>
                                     <finalName>index.html</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/chunked.xsl</stylesheetResource>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/chunked.xsl
+                                    </stylesheetResource>
                                 </format>
                             </formats>
 
@@ -60,14 +77,14 @@
                                 <localeSeparator>-</localeSeparator>
                                 <useRelativeImageUris>true</useRelativeImageUris>
                                 <transformerParameters>
-									<property>
-										<name>admon.graphics.path</name>
-										<value>images/</value>
-									</property>
-									<property>
-										<name>admon.graphics.extension</name>
-										<value>.png</value>
-									</property>
+                                    <property>
+                                        <name>admon.graphics.path</name>
+                                        <value>images/</value>
+                                    </property>
+                                    <property>
+                                        <name>admon.graphics.extension</name>
+                                        <value>.png</value>
+                                    </property>
                                     <property>
                                         <name>callout.graphics.path</name>
                                         <value>callouts/</value>
@@ -78,7 +95,9 @@
                                     </property>
                                     <property>
                                         <name>highlight.xslthl.config.path</name>
-                                        <value>file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml</value>
+                                        <value>
+                                            file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
+                                        </value>
                                     </property>
                                 </transformerParameters>
                             </options>
@@ -99,7 +118,8 @@
                                 <format>
                                     <formatName>pdf</formatName>
                                     <finalName>reference-guide-${project.version}.pdf</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/pdf/custom.xsl</stylesheetResource>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/pdf/custom.xsl
+                                    </stylesheetResource>
                                 </format>
                             </formats>
                             <options>
@@ -107,14 +127,14 @@
                                 <localeSeparator>-</localeSeparator>
                                 <useRelativeImageUris>true</useRelativeImageUris>
                                 <transformerParameters>
-									<property>
-										<name>admon.graphics.path</name>
-										<value>${basedir}/src/main/resources/images/</value>
-									</property>
-									<property>
-										<name>admon.graphics.extension</name>
-										<value>_large.png</value>
-									</property>
+                                    <property>
+                                        <name>admon.graphics.path</name>
+                                        <value>${basedir}/src/main/resources/images/</value>
+                                    </property>
+                                    <property>
+                                        <name>admon.graphics.extension</name>
+                                        <value>_large.png</value>
+                                    </property>
                                     <property>
                                         <name>callout.graphics.path</name>
                                         <value>${basedir}/src/main/resources/images/callouts/</value>
@@ -125,7 +145,9 @@
                                     </property>
                                     <property>
                                         <name>highlight.xslthl.config.path</name>
-                                        <value>file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml</value>
+                                        <value>
+                                            file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
+                                        </value>
                                     </property>
                                 </transformerParameters>
                             </options>
