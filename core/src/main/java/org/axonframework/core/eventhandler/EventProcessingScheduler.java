@@ -23,15 +23,15 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
 import static org.axonframework.core.eventhandler.YieldPolicy.DO_NOT_YIELD;
 
 /**
  * The EventProcessingScheduler is responsible for scheduling all events within the same SequencingIdentifier in an
- * ExecutorService. It will only handle events that were present in the queue at the moment processing started. Any
- * events added later will be rescheduled automatically.
+ * Executor. It will only handle events that were present in the queue at the moment processing started. Any events
+ * added later will be rescheduled automatically.
  *
  * @author Allard Buijze
  * @since 0.3
@@ -43,7 +43,7 @@ public class EventProcessingScheduler implements Runnable {
     private final EventListener eventListener;
     private final ShutdownCallback shutDownCallback;
     private final TransactionAware transactionListener;
-    private final ExecutorService executorService;
+    private final Executor executor;
 
     // guarded by "this"
     private final Queue<Event> events = new LinkedList<Event>();
@@ -53,13 +53,13 @@ public class EventProcessingScheduler implements Runnable {
     private final List<Event> currentBatch = new LinkedList<Event>();
 
     /**
-     * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executorService</code>.
+     * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>.
      *
      * @param eventListener    The event listener for which this scheduler schedules events
-     * @param executorService  The executor service that will process the events
+     * @param executor         The executor service that will process the events
      * @param shutDownCallback The callback to notify when the scheduler finishes processing events
      */
-    public EventProcessingScheduler(EventListener eventListener, ExecutorService executorService,
+    public EventProcessingScheduler(EventListener eventListener, Executor executor,
                                     ShutdownCallback shutDownCallback) {
         this.eventListener = eventListener;
         this.shutDownCallback = shutDownCallback;
@@ -68,7 +68,7 @@ public class EventProcessingScheduler implements Runnable {
         } else {
             this.transactionListener = new TransactionIgnoreAdapter();
         }
-        this.executorService = executorService;
+        this.executor = executor;
     }
 
     /**
@@ -114,7 +114,7 @@ public class EventProcessingScheduler implements Runnable {
         if (events.size() > 0 || currentBatch.size() > 0) {
             isScheduled = true;
             try {
-                executorService.submit((Runnable) this);
+                executor.execute(this);
             }
             catch (RejectedExecutionException e) {
                 return false;
@@ -133,7 +133,7 @@ public class EventProcessingScheduler implements Runnable {
     protected synchronized void scheduleIfNecessary() {
         if (!isScheduled) {
             isScheduled = true;
-            executorService.submit(this);
+            executor.execute(this);
         }
     }
 
@@ -157,7 +157,19 @@ public class EventProcessingScheduler implements Runnable {
         TransactionStatus.set(status);
         while (mayContinue) {
             processOrRetryBatch(status);
-            mayContinue = (queuedEventCount() > 0 && DO_NOT_YIELD.equals(status.getYieldPolicy())) || !yield();
+            boolean inRetryMode =
+                    !status.isSuccessful() && status.getRetryPolicy() != RetryPolicy.IGNORE_FAILED_TRANSACTION;
+            /*
+             * Only continue processing in the current thread if:
+             * - all of the following
+             *   - not in retry mode
+             *   - there are events waiting in the queue
+             *   - the yielding policy is DO_NOT_YIELD
+             * - or
+             *   - yielding failed because the executor rejected the execution
+             */
+            mayContinue = (!inRetryMode && queuedEventCount() > 0 && DO_NOT_YIELD.equals(status.getYieldPolicy()))
+                    || !yield();
             status.resetTransactionStatus();
         }
         TransactionStatus.clear();
@@ -178,6 +190,8 @@ public class EventProcessingScheduler implements Runnable {
         catch (Exception e) {
             // the batch failed.
             prepareBatchRetry(status, e);
+            // TODO: Add logging
+            // TODO: Add retry interval
         }
     }
 

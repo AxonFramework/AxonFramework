@@ -75,8 +75,7 @@ public class EventProcessingSchedulerTest {
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
-        when(mockExecutorService.submit(isA(Runnable.class))).thenReturn(null)
-                .thenThrow(new RejectedExecutionException());
+        doNothing().doThrow(new RejectedExecutionException()).when(mockExecutorService).execute(isA(Runnable.class));
         testSubject.scheduleEvent(new StubDomainEvent());
         listener.failOnEvent = 2;
         testSubject.scheduleEvent(new StubDomainEvent());

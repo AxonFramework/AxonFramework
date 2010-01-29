@@ -23,6 +23,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -46,7 +47,7 @@ public class AsyncEventBus implements EventBus {
     private final static long DEFAULT_KEEP_ALIVE_TIME = 5;
     private final static TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MINUTES;
 
-    private ExecutorService executorService;
+    private Executor executor;
     private final ConcurrentMap<EventListener, EventHandlingSequenceManager> listenerManagers =
             new ConcurrentHashMap<EventListener, EventHandlingSequenceManager>();
     private boolean shutdownExecutorServiceOnStop = false;
@@ -93,11 +94,11 @@ public class AsyncEventBus implements EventBus {
     @PostConstruct
     public void start() {
         running.set(true);
-        if (executorService == null) {
+        if (executor == null) {
             shutdownExecutorServiceOnStop = true;
-            executorService = new ThreadPoolExecutor(DEFAULT_CORE_POOL_SIZE, DEFAULT_MAX_POOL_SIZE,
-                                                     DEFAULT_KEEP_ALIVE_TIME, DEFAULT_TIME_UNIT,
-                                                     new LinkedBlockingQueue<Runnable>());
+            executor = new ThreadPoolExecutor(DEFAULT_CORE_POOL_SIZE, DEFAULT_MAX_POOL_SIZE,
+                                              DEFAULT_KEEP_ALIVE_TIME, DEFAULT_TIME_UNIT,
+                                              new LinkedBlockingQueue<Runnable>());
         }
     }
 
@@ -108,8 +109,8 @@ public class AsyncEventBus implements EventBus {
     public void stop() {
         running.set(false);
         listenerManagers.clear();
-        if (executorService != null && shutdownExecutorServiceOnStop) {
-            executorService.shutdown();
+        if (executor != null && shutdownExecutorServiceOnStop && executor instanceof ExecutorService) {
+            ((ExecutorService) executor).shutdown();
         }
     }
 
@@ -120,7 +121,7 @@ public class AsyncEventBus implements EventBus {
      * @return a new EventHandlingSequenceManager instance
      */
     protected EventHandlingSequenceManager newEventHandlingSequenceManager(EventListener eventListener) {
-        return new EventHandlingSequenceManager(eventListener, getExecutorService());
+        return new EventHandlingSequenceManager(eventListener, getExecutor());
     }
 
     /**
@@ -128,8 +129,8 @@ public class AsyncEventBus implements EventBus {
      *
      * @return the executor service used to dispatch events in this event bus
      */
-    protected ExecutorService getExecutorService() {
-        return executorService;
+    protected Executor getExecutor() {
+        return executor;
     }
 
     /**
@@ -139,16 +140,16 @@ public class AsyncEventBus implements EventBus {
      * Defaults to a ThreadPoolExecutor with 5 core threads and a max pool size of 25 threads with a timeout of 5
      * minutes.
      *
-     * @param executorService the executor service to use for event handling
+     * @param executor the executor service to use for event handling
      */
-    public void setExecutorService(ExecutorService executorService) {
-        this.executorService = executorService;
+    public void setExecutor(Executor executor) {
+        this.executor = executor;
     }
 
     /**
      * Defines whether or not to shutdown the executor service when the EventBus is stopped. This value is ignored when
      * the default ExecutorService is used. Defaults to <code>false</code> if a custom executor service is defined using
-     * the {@link #setExecutorService(java.util.concurrent.ExecutorService)} method.
+     * the {@link #setExecutor(java.util.concurrent.Executor)} method.
      *
      * @param shutdownExecutorServiceOnStop Whether or not to shutdown the executor service when the event bus is
      *                                      stopped

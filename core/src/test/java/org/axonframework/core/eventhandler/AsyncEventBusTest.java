@@ -41,7 +41,7 @@ public class AsyncEventBusTest {
     public void setUp() {
         testSubject = spy(new AsyncEventBus());
         mockExecutor = mock(ExecutorService.class);
-        testSubject.setExecutorService(mockExecutor);
+        testSubject.setExecutor(mockExecutor);
     }
 
     @Test
@@ -49,7 +49,7 @@ public class AsyncEventBusTest {
         testSubject = new AsyncEventBus();
         testSubject.start();
 
-        Object actual = getFieldValue(testSubject, "executorService");
+        Object actual = getFieldValue(testSubject, "executor");
         assertTrue(actual instanceof ThreadPoolExecutor);
     }
 
@@ -62,7 +62,7 @@ public class AsyncEventBusTest {
         testSubject.subscribe(mockEventListener);
         testSubject.publish(new StubDomainEvent());
 
-        verify(mockExecutor).submit(isA(Runnable.class));
+        verify(mockExecutor).execute(isA(Runnable.class));
 
         testSubject.unsubscribe(mockEventListener);
         testSubject.publish(new StubDomainEvent());

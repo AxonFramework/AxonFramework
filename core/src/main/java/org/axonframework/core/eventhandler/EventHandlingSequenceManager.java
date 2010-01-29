@@ -20,7 +20,7 @@ import org.axonframework.core.Event;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 /**
  * The EventHandlingSequenceManager is responsible for delegating each incoming event to the relevant {@link
@@ -32,21 +32,21 @@ import java.util.concurrent.ExecutorService;
 public class EventHandlingSequenceManager {
 
     private final EventListener eventListener;
-    private final ExecutorService executorService;
+    private final Executor executor;
     private final ConcurrentMap<Object, EventProcessingScheduler> transactions =
             new ConcurrentHashMap<Object, EventProcessingScheduler>();
     private final EventSequencingPolicy eventSequencingPolicy;
 
     /**
      * Initialize the EventHandlingSequenceManager for the given <code>eventListener</code> using the given
-     * <code>executorService</code>.
+     * <code>executor</code>.
      *
-     * @param eventListener   The event listener this instance manages
-     * @param executorService The executorService that processes the events
+     * @param eventListener The event listener this instance manages
+     * @param executor      The executor that processes the events
      */
-    public EventHandlingSequenceManager(EventListener eventListener, ExecutorService executorService) {
+    public EventHandlingSequenceManager(EventListener eventListener, Executor executor) {
         this.eventListener = eventListener;
-        this.executorService = executorService;
+        this.executor = executor;
         this.eventSequencingPolicy = eventListener.getEventSequencingPolicy();
     }
 
@@ -59,7 +59,7 @@ public class EventHandlingSequenceManager {
         if (eventListener.canHandle(event.getClass())) {
             final Object policy = eventSequencingPolicy.getSequenceIdentifierFor(event);
             if (policy == null) {
-                executorService.submit(new SingleEventHandlerInvocationTask(eventListener, event));
+                executor.execute(new SingleEventHandlerInvocationTask(eventListener, event));
             } else {
                 scheduleEvent(event, policy);
             }
@@ -90,7 +90,7 @@ public class EventHandlingSequenceManager {
      * @return a new scheduler instance
      */
     protected EventProcessingScheduler newProcessingScheduler(TransactionCleanUp shutDownCallback) {
-        return new EventProcessingScheduler(eventListener, executorService, shutDownCallback);
+        return new EventProcessingScheduler(eventListener, executor, shutDownCallback);
     }
 
     private static class SingleEventHandlerInvocationTask implements Runnable {
