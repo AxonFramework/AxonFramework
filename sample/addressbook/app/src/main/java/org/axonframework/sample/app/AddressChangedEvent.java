@@ -14,28 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core;
-
-import org.axonframework.core.DomainEvent;
+package org.axonframework.sample.app;
 
 /**
  * @author Allard Buijze
  */
-public abstract class AddressRegisteredEvent extends DomainEvent {
+public class AddressChangedEvent extends AddressRegisteredEvent {
 
-    private final AddressType type;
-    private final Address address;
-
-    protected AddressRegisteredEvent(AddressType type, Address address) {
-        this.type = type;
-        this.address = address;
-    }
-
-    public AddressType getType() {
-        return type;
-    }
-
-    public Address getAddress() {
-        return address;
+    public AddressChangedEvent(AddressType type, Address address) {
+        super(type, address);
     }
 }

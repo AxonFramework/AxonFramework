@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core.command;
-
-import org.axonframework.core.repository.eventsourcing.EventSourcingRepository;
-
-import java.util.UUID;
+package org.axonframework.sample.app;
 
 /**
  * @author Allard Buijze
  */
-class ContactRepository extends EventSourcingRepository<Contact> {
+public class AddressAddedEvent extends AddressRegisteredEvent {
 
-    @Override
-    protected Contact instantiateAggregate(UUID aggregateIdentifier) {
-        return new Contact(aggregateIdentifier);
-    }
-
-    @Override
-    protected String getTypeIdentifier() {
-        return Contact.class.getSimpleName();
+    public AddressAddedEvent(AddressType type, Address address) {
+        super(type, address);
     }
 }

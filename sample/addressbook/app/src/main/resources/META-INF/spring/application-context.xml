@@ -31,7 +31,7 @@
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 
-    <bean id="contactRepository" class="org.axonframework.sample.core.command.ContactRepository">
+    <bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
         <property name="eventBus" ref="eventBus"/>
         <property name="eventStore" ref="eventStore"/>
     </bean>
@@ -40,7 +40,7 @@
         <property name="baseDir" value="file:${java.io.tmpdir}"/>
     </bean>
 
-    <bean id="contactCommandHandler" class="org.axonframework.sample.core.command.ContactCommandHandler">
+    <bean id="contactCommandHandler" class="org.axonframework.sample.app.command.ContactCommandHandler">
         <property name="repository" ref="contactRepository"/>
     </bean>
 

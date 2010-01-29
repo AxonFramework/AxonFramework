@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core.command;
+package org.axonframework.sample.app.command;
 
-import org.axonframework.sample.core.Address;
-import org.axonframework.sample.core.AddressType;
+import org.axonframework.sample.app.Address;
+import org.axonframework.sample.app.AddressType;
 
 import java.util.UUID;
 

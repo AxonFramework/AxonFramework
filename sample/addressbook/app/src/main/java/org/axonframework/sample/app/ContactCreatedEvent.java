@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core;
+package org.axonframework.sample.app;
+
+import org.axonframework.core.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public enum AddressType {
+public class ContactCreatedEvent extends DomainEvent {
 
-    WORK,
-    PRIVATE,
-    VACATION
+    private final String name;
 
+    public ContactCreatedEvent(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core.command;
+package org.axonframework.sample.app.command;
 
 import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.sample.core.Address;
-import org.axonframework.sample.core.AddressAddedEvent;
-import org.axonframework.sample.core.AddressChangedEvent;
-import org.axonframework.sample.core.AddressRegisteredEvent;
-import org.axonframework.sample.core.AddressRemovedEvent;
-import org.axonframework.sample.core.AddressType;
-import org.axonframework.sample.core.ContactCreatedEvent;
-import org.axonframework.sample.core.ContactDeletedEvent;
+import org.axonframework.sample.app.Address;
+import org.axonframework.sample.app.AddressAddedEvent;
+import org.axonframework.sample.app.AddressChangedEvent;
+import org.axonframework.sample.app.AddressRegisteredEvent;
+import org.axonframework.sample.app.AddressRemovedEvent;
+import org.axonframework.sample.app.AddressType;
+import org.axonframework.sample.app.ContactCreatedEvent;
+import org.axonframework.sample.app.ContactDeletedEvent;
 
 import java.util.HashMap;
 import java.util.Map;

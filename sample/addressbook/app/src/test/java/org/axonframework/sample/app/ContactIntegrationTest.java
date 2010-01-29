@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core;
+package org.axonframework.sample.app;
 
 import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
@@ -23,7 +23,7 @@ import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.core.repository.Repository;
 import org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore;
-import org.axonframework.sample.core.command.ContactCommandHandler;
+import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;

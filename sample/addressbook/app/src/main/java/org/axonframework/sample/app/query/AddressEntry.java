@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core.query;
+package org.axonframework.sample.app.query;
+
+import org.axonframework.sample.app.AddressType;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.UUID;
@@ -26,7 +30,7 @@ import java.util.UUID;
  * @author Allard Buijze
  */
 @Entity
-public class ContactEntry {
+public class AddressEntry {
 
     @Id
     @GeneratedValue
@@ -37,6 +41,19 @@ public class ContactEntry {
 
     @Basic
     private String name;
+
+    @Basic
+    @Enumerated(EnumType.STRING)
+    private AddressType addressType;
+
+    @Basic
+    private String streetAndNumber;
+
+    @Basic
+    private String zipCode;
+
+    @Basic
+    private String city;
 
     public UUID getIdentifier() {
         return identifier;
@@ -52,5 +69,37 @@ public class ContactEntry {
 
     void setName(String name) {
         this.name = name;
+    }
+
+    public AddressType getAddressType() {
+        return addressType;
+    }
+
+    void setAddressType(AddressType addressType) {
+        this.addressType = addressType;
+    }
+
+    public String getStreetAndNumber() {
+        return streetAndNumber;
+    }
+
+    void setStreetAndNumber(String streetAndNumber) {
+        this.streetAndNumber = streetAndNumber;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    void setCity(String city) {
+        this.city = city;
     }
 }

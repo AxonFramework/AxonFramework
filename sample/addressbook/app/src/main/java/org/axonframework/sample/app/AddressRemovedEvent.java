@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core;
+package org.axonframework.sample.app;
+
+import org.axonframework.core.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public class AddressAddedEvent extends AddressRegisteredEvent {
+public class AddressRemovedEvent extends DomainEvent {
 
-    public AddressAddedEvent(AddressType type, Address address) {
-        super(type, address);
+    private final AddressType type;
+
+    public AddressRemovedEvent(AddressType type) {
+        this.type = type;
+    }
+
+    public AddressType getType() {
+        return type;
     }
 }

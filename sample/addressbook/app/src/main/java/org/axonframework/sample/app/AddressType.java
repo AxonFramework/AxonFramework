@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core;
-
-import org.axonframework.core.DomainEvent;
+package org.axonframework.sample.app;
 
 /**
  * @author Allard Buijze
  */
-public class AddressRemovedEvent extends DomainEvent {
+public enum AddressType {
 
-    private final AddressType type;
+    WORK,
+    PRIVATE,
+    VACATION
 
-    public AddressRemovedEvent(AddressType type) {
-        this.type = type;
-    }
-
-    public AddressType getType() {
-        return type;
-    }
 }

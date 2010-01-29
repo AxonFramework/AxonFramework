@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core.query;
+package org.axonframework.sample.app.query;
 
 import org.axonframework.core.eventhandler.SequentialPerAggregatePolicy;
 import org.axonframework.core.eventhandler.TransactionAware;
 import org.axonframework.core.eventhandler.TransactionStatus;
 import org.axonframework.core.eventhandler.annotation.ConcurrentEventListener;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.sample.core.AddressAddedEvent;
-import org.axonframework.sample.core.ContactCreatedEvent;
+import org.axonframework.sample.app.AddressAddedEvent;
+import org.axonframework.sample.app.ContactCreatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.core.query;
+package org.axonframework.sample.app.query;
 
 import org.axonframework.core.eventhandler.RetryPolicy;
 import org.axonframework.core.eventhandler.TransactionAware;
