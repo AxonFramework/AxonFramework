@@ -16,8 +16,6 @@
 
 package org.axonframework.core;
 
-import java.util.UUID;
-
 /**
  * Represents an event that does not represent a state change of an application but does have functional meaning to the
  * application.
@@ -37,9 +35,8 @@ import java.util.UUID;
  * @see org.axonframework.core.DomainEvent
  * @since 0.4
  */
-public abstract class ApplicationEvent implements Event {
+public abstract class ApplicationEvent extends EventBase {
 
-    private final UUID eventIdentifier;
     private final transient Object source;
     private final Class sourceType;
     private final String sourceDescription;
@@ -52,7 +49,6 @@ public abstract class ApplicationEvent implements Event {
      * @param source the instance that reported this event. If any.
      */
     protected ApplicationEvent(Object source) {
-        this.eventIdentifier = UUID.randomUUID();
         this.source = source;
         if (source != null) {
             this.sourceType = source.getClass();
@@ -61,14 +57,6 @@ public abstract class ApplicationEvent implements Event {
             this.sourceDescription = "[unknown source]";
             this.sourceType = Object.class;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public UUID getEventIdentifier() {
-        return eventIdentifier;
     }
 
     /**

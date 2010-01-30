@@ -19,6 +19,11 @@ package org.axonframework.core;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -67,7 +72,7 @@ public class DomainEventTest {
         Event fullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
         Event anotherFullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
 
-        assertTrue(fullyInitializedEvent.equals(anotherFullyInitializedEvent));
+        assertFalse(fullyInitializedEvent.equals(anotherFullyInitializedEvent));
 
         Event eventWithTimestamp = new StubDomainEvent(aggregateIdentifier, 1);
         DateTimeUtils.setCurrentMillisFixed(System.currentTimeMillis() + 1000);
@@ -84,6 +89,37 @@ public class DomainEventTest {
         assertFalse(new StubDomainEvent(UUID.randomUUID()).equals(new StubDomainEvent(UUID.randomUUID())));
 
         assertFalse(new StubDomainEvent(aggregateIdentifier, 1).equals(new StubDomainEvent(aggregateIdentifier, 2)));
+    }
+
+    @Test
+    public void testDomainEventEquality_WithClones() throws ClassNotFoundException, IOException {
+        UUID aggregateIdentifier = UUID.randomUUID();
+        StubDomainEvent someEvent = new StubDomainEvent();
+        StubDomainEvent eventClone = copy(someEvent);
+        assertTrue(someEvent.equals(eventClone));
+        assertTrue(eventClone.equals(someEvent));
+
+        someEvent.setAggregateIdentifier(aggregateIdentifier);
+        assertFalse(someEvent.equals(eventClone));
+        assertFalse(eventClone.equals(someEvent));
+
+        eventClone.setAggregateIdentifier(aggregateIdentifier);
+        assertTrue(someEvent.equals(eventClone));
+        assertTrue(eventClone.equals(someEvent));
+
+        someEvent.setSequenceNumber(1);
+        assertFalse(someEvent.equals(eventClone));
+        assertFalse(eventClone.equals(someEvent));
+
+        eventClone.setSequenceNumber(1);
+        assertTrue(someEvent.equals(eventClone));
+        assertTrue(eventClone.equals(someEvent));
+    }
+
+    private StubDomainEvent copy(StubDomainEvent someEvent) throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new ObjectOutputStream(baos).writeObject(someEvent);
+        return (StubDomainEvent) new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject();
     }
 
     @Test

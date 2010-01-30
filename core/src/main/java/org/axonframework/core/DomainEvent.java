@@ -16,8 +16,6 @@
 
 package org.axonframework.core;
 
-import org.joda.time.LocalDateTime;
-
 import java.util.UUID;
 
 /**
@@ -27,28 +25,16 @@ import java.util.UUID;
  * @author Allard Buijze
  * @since 0.1
  */
-public abstract class DomainEvent implements Event {
+public abstract class DomainEvent extends EventBase {
 
     private volatile Long sequenceNumber;
     private volatile UUID aggregateIdentifier;
-
-    private final LocalDateTime createDate;
-    private final UUID eventIdentifier;
 
     /**
      * Initialize the domain event. Will set the current time stamp and generate a random event identifier.
      */
     protected DomainEvent() {
-        createDate = new LocalDateTime();
-        eventIdentifier = UUID.randomUUID();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public UUID getEventIdentifier() {
-        return eventIdentifier;
+        super();
     }
 
     /**
@@ -113,36 +99,20 @@ public abstract class DomainEvent implements Event {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        DomainEvent that = (DomainEvent) o;
-
-        if (!createDate.equals(that.createDate)) {
+        if (!super.equals(o)) {
             return false;
         }
+
+        DomainEvent that = (DomainEvent) o;
 
         if (aggregateIdentifier != null ? !aggregateIdentifier.equals(that.aggregateIdentifier) :
                 that.aggregateIdentifier != null) {
             return false;
         }
-
-        if (this.sequenceNumber == null || that.sequenceNumber == null) {
-            return false;
-        }
-
-        if (!sequenceNumber.equals(that.sequenceNumber)) {
+        if (sequenceNumber != null ? !sequenceNumber.equals(that.sequenceNumber) : that.sequenceNumber != null) {
             return false;
         }
 
         return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        int result = createDate != null ? createDate.hashCode() : 0;
-        result = 31 * result + (eventIdentifier != null ? eventIdentifier.hashCode() : 0);
-        return result;
     }
 }
