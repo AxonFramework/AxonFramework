@@ -207,4 +207,9 @@ public class AnnotationEventListenerAdapter
             eventHandlerInvoker.invokeAfterTransaction(transactionStatus);
         }
     }
+
+    @Override
+    public String toString() {
+        return "AnnotationEventListenerAdapter(" + target.getClass().getSimpleName() + ")";
+    }
 }

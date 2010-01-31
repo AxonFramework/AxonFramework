@@ -70,7 +70,7 @@ public class AsyncEventBus implements EventBus {
             if (logger.isDebugEnabled()) {
                 logger.debug("Dispatching event [{}] to listener [{}]",
                              event.getClass().getSimpleName(),
-                             eventHandlingSequencing.getEventListener().getClass().getSimpleName());
+                             eventHandlingSequencing.getEventListener().toString());
             }
             eventHandlingSequencing.addEvent(event);
         }
@@ -84,10 +84,9 @@ public class AsyncEventBus implements EventBus {
         Assert.state(running.get(), "The EventBus is currently not running.");
         if (!listenerManagers.containsKey(eventListener)) {
             listenerManagers.putIfAbsent(eventListener, newEventHandlingSequenceManager(eventListener));
-            logger.info("Subscribed event listener of type [{}]", eventListener.getClass().getSimpleName());
+            logger.info("Subscribed event listener [{}]", eventListener.toString());
         } else {
-            logger.info("Event listener of type [{}] was already subscribed.",
-                        eventListener.getClass().getSimpleName());
+            logger.info("Event listener [{}] was already subscribed.", eventListener.toString());
         }
     }
 
@@ -97,10 +96,10 @@ public class AsyncEventBus implements EventBus {
     @Override
     public void unsubscribe(EventListener eventListener) {
         if (listenerManagers.remove(eventListener) != null) {
-            logger.info("Event listener of type [{}] unsubscribed.", eventListener.getClass().getSimpleName());
+            logger.info("Event listener [{}] unsubscribed.", eventListener.toString());
         } else {
-            logger.info("Event listener of type [{}] not unsubscribed. It wasn't subscribed.",
-                        eventListener.getClass().getSimpleName());
+            logger.info("Event listener [{}] not unsubscribed. It wasn't subscribed.",
+                        eventListener.toString());
         }
     }
 

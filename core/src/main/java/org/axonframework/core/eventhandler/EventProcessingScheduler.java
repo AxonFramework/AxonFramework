@@ -115,11 +115,11 @@ public class EventProcessingScheduler implements Runnable {
             isScheduled = true;
             try {
                 executor.execute(this);
-                logger.info("Processing of event listener [{}] yielded.", eventListener.getClass().getSimpleName());
+                logger.info("Processing of event listener [{}] yielded.", eventListener.toString());
             }
             catch (RejectedExecutionException e) {
                 logger.info("Processing of event listener [{}] could not yield. Executor refused the task.",
-                            eventListener.getClass().getSimpleName());
+                            eventListener.toString());
                 return false;
             }
         } else {
