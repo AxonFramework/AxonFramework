@@ -17,6 +17,8 @@
 package org.axonframework.core.repository;
 
 import org.axonframework.core.VersionedAggregateRoot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
@@ -44,6 +46,8 @@ import java.util.UUID;
  * @since 0.3
  */
 public abstract class LockingRepository<T extends VersionedAggregateRoot> extends AbstractRepository<T> {
+
+    private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
     private final LockManager lockManager;
 
@@ -126,6 +130,7 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
         try {
             return super.load(aggregateIdentifier);
         } catch (RuntimeException ex) {
+            logger.warn("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregateIdentifier);
             throw ex;
         }

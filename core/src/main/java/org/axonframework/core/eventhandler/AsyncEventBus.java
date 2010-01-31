@@ -18,6 +18,8 @@ package org.axonframework.core.eventhandler;
 
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.util.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -42,6 +44,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AsyncEventBus implements EventBus {
 
+    private static final Logger logger = LoggerFactory.getLogger(AsyncEventBus.class);
+
     private final static int DEFAULT_CORE_POOL_SIZE = 5;
     private final static int DEFAULT_MAX_POOL_SIZE = 25;
     private final static long DEFAULT_KEEP_ALIVE_TIME = 5;
@@ -59,7 +63,15 @@ public class AsyncEventBus implements EventBus {
     @Override
     public void publish(DomainEvent event) {
         Assert.state(running.get(), "The EventBus is currently not running.");
+        logger.info("Publishing event of type {} with identifier {}",
+                    event.getClass().getSimpleName(),
+                    event.getEventIdentifier());
         for (EventHandlingSequenceManager eventHandlingSequencing : listenerManagers.values()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Dispatching event [{}] to listener [{}]",
+                             event.getClass().getSimpleName(),
+                             eventHandlingSequencing.getEventListener().getClass().getSimpleName());
+            }
             eventHandlingSequencing.addEvent(event);
         }
     }
@@ -72,6 +84,10 @@ public class AsyncEventBus implements EventBus {
         Assert.state(running.get(), "The EventBus is currently not running.");
         if (!listenerManagers.containsKey(eventListener)) {
             listenerManagers.putIfAbsent(eventListener, newEventHandlingSequenceManager(eventListener));
+            logger.info("Subscribed event listener of type [{}]", eventListener.getClass().getSimpleName());
+        } else {
+            logger.info("Event listener of type [{}] was already subscribed.",
+                        eventListener.getClass().getSimpleName());
         }
     }
 
@@ -80,7 +96,12 @@ public class AsyncEventBus implements EventBus {
      */
     @Override
     public void unsubscribe(EventListener eventListener) {
-        listenerManagers.remove(eventListener);
+        if (listenerManagers.remove(eventListener) != null) {
+            logger.info("Event listener of type [{}] unsubscribed.", eventListener.getClass().getSimpleName());
+        } else {
+            logger.info("Event listener of type [{}] not unsubscribed. It wasn't subscribed.",
+                        eventListener.getClass().getSimpleName());
+        }
     }
 
     /**
@@ -93,13 +114,18 @@ public class AsyncEventBus implements EventBus {
      */
     @PostConstruct
     public void start() {
+        logger.info("Starting the AsyncEventBus.");
         running.set(true);
         if (executor == null) {
             shutdownExecutorServiceOnStop = true;
+            logger.info("Initializing default ThreadPoolExecutor to process incoming events");
             executor = new ThreadPoolExecutor(DEFAULT_CORE_POOL_SIZE, DEFAULT_MAX_POOL_SIZE,
                                               DEFAULT_KEEP_ALIVE_TIME, DEFAULT_TIME_UNIT,
                                               new LinkedBlockingQueue<Runnable>());
+        } else {
+            logger.info("Using provided [{}] to process incoming events", executor.getClass().getSimpleName());
         }
+        logger.info("AsyncEventBus started.");
     }
 
     /**
@@ -107,11 +133,14 @@ public class AsyncEventBus implements EventBus {
      */
     @PreDestroy
     public void stop() {
+        logger.info("Stopping AsyncEventBus...");
         running.set(false);
         listenerManagers.clear();
         if (shutdownExecutorServiceOnStop && executor instanceof ExecutorService) {
+            logger.info("Shutting down the executor...");
             ((ExecutorService) executor).shutdown();
         }
+        logger.info("AsyncEventBus stopped.");
     }
 
     /**

@@ -115,8 +115,11 @@ public class EventProcessingScheduler implements Runnable {
             isScheduled = true;
             try {
                 executor.execute(this);
+                logger.info("Processing of event listener [{}] yielded.", eventListener.getClass().getSimpleName());
             }
             catch (RejectedExecutionException e) {
+                logger.info("Processing of event listener [{}] could not yield. Executor refused the task.",
+                            eventListener.getClass().getSimpleName());
                 return false;
             }
         } else {
@@ -181,7 +184,9 @@ public class EventProcessingScheduler implements Runnable {
             if (currentBatch.isEmpty()) {
                 handleEventBatch(status);
             } else {
+                logger.info("Retrying {} events from the previous failed transaction.", currentBatch.size());
                 retryEventBatch(status);
+                logger.info("Continuing processing of next events.");
                 handleEventBatch(status);
             }
             transactionListener.afterTransaction(status);
@@ -190,7 +195,6 @@ public class EventProcessingScheduler implements Runnable {
         catch (Exception e) {
             // the batch failed.
             prepareBatchRetry(status, e);
-            // TODO: Add logging
             // TODO: Add retry interval
         }
     }
@@ -200,10 +204,15 @@ public class EventProcessingScheduler implements Runnable {
         tryAfterTransactionCall(status);
         switch (status.getRetryPolicy()) {
             case RETRY_LAST_EVENT:
+                logger.warn("Transactional event processing batch failed. Rescheduling last event for retry.");
                 markLastEventForRetry();
                 break;
             case IGNORE_FAILED_TRANSACTION:
+                logger.warn("Transactional event processing batch failed. Ignoring failed events.");
                 currentBatch.clear();
+                break;
+            case RETRY_TRANSACTION:
+                logger.warn("Transactional event processing batch failed. Retrying entire batch.");
                 break;
         }
     }

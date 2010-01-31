@@ -17,6 +17,8 @@
 package org.axonframework.core.eventhandler;
 
 import org.axonframework.core.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,6 +32,8 @@ import java.util.concurrent.Executor;
  * @since 0.3
  */
 public class EventHandlingSequenceManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(EventHandlingSequenceManager.class);
 
     private final EventListener eventListener;
     private final Executor executor;
@@ -57,26 +61,32 @@ public class EventHandlingSequenceManager {
      */
     public void addEvent(Event event) {
         if (eventListener.canHandle(event.getClass())) {
-            final Object policy = eventSequencingPolicy.getSequenceIdentifierFor(event);
-            if (policy == null) {
+            final Object sequenceIdentifier = eventSequencingPolicy.getSequenceIdentifierFor(event);
+            if (sequenceIdentifier == null) {
+                logger.debug("Scheduling event of type [{}] for full concurrent processing",
+                             event.getClass().getSimpleName());
                 executor.execute(new SingleEventHandlerInvocationTask(eventListener, event));
             } else {
-                scheduleEvent(event, policy);
+                logger.debug("Scheduling event of type [{}] for sequential processing in group [{}]",
+                             event.getClass().getSimpleName(),
+                             sequenceIdentifier.toString());
+                scheduleEvent(event, sequenceIdentifier);
             }
         }
     }
 
-    private void scheduleEvent(Event event, Object policy) {
+    private void scheduleEvent(Event event, Object sequenceIdentifier) {
         boolean eventScheduled = false;
         while (!eventScheduled) {
-            EventProcessingScheduler currentScheduler = transactions.get(policy);
+            EventProcessingScheduler currentScheduler = transactions.get(sequenceIdentifier);
             if (currentScheduler == null) {
-                transactions.putIfAbsent(policy, newProcessingScheduler(new TransactionCleanUp(policy)));
+                transactions.putIfAbsent(sequenceIdentifier,
+                                         newProcessingScheduler(new TransactionCleanUp(sequenceIdentifier)));
             } else {
                 eventScheduled = currentScheduler.scheduleEvent(event);
                 if (!eventScheduled) {
                     // we know it can be cleaned up.
-                    transactions.remove(policy, currentScheduler);
+                    transactions.remove(sequenceIdentifier, currentScheduler);
                 }
             }
         }
@@ -90,6 +100,8 @@ public class EventHandlingSequenceManager {
      * @return a new scheduler instance
      */
     protected EventProcessingScheduler newProcessingScheduler(TransactionCleanUp shutDownCallback) {
+        logger.debug("Initializing new processing scheduler for sequence [{}]",
+                     shutDownCallback.sequenceIdentifier.toString());
         return new EventProcessingScheduler(eventListener, executor, shutDownCallback);
     }
 
@@ -120,10 +132,10 @@ public class EventHandlingSequenceManager {
 
     private final class TransactionCleanUp implements EventProcessingScheduler.ShutdownCallback {
 
-        private final Object policy;
+        private final Object sequenceIdentifier;
 
-        private TransactionCleanUp(Object policy) {
-            this.policy = policy;
+        private TransactionCleanUp(Object sequenceIdentifier) {
+            this.sequenceIdentifier = sequenceIdentifier;
         }
 
         /**
@@ -131,7 +143,17 @@ public class EventHandlingSequenceManager {
          */
         @Override
         public void afterShutdown(EventProcessingScheduler scheduler) {
-            transactions.remove(policy, scheduler);
+            logger.debug("Cleaning up processing scheduler for sequence [{}]", sequenceIdentifier.toString());
+            transactions.remove(sequenceIdentifier, scheduler);
         }
+    }
+
+    /**
+     * Returns the event listener this instance manages events for
+     *
+     * @return the event listener this instance manages events for
+     */
+    EventListener getEventListener() {
+        return eventListener;
     }
 }
