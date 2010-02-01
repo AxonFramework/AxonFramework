@@ -46,10 +46,10 @@ public class AsyncEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncEventBus.class);
 
-    private final static int DEFAULT_CORE_POOL_SIZE = 5;
-    private final static int DEFAULT_MAX_POOL_SIZE = 25;
-    private final static long DEFAULT_KEEP_ALIVE_TIME = 5;
-    private final static TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MINUTES;
+    private static final int DEFAULT_CORE_POOL_SIZE = 5;
+    private static final int DEFAULT_MAX_POOL_SIZE = 25;
+    private static final long DEFAULT_KEEP_ALIVE_TIME = 5;
+    private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MINUTES;
 
     private Executor executor;
     private final ConcurrentMap<EventListener, EventHandlingSequenceManager> listenerManagers =
