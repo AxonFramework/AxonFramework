@@ -19,11 +19,20 @@ package org.axonframework.integration.adapter;
 import org.axonframework.core.Event;
 
 /**
+ * Interface describing an Event Filter. The Event Filter decides which events may be forwarded by adapters and which
+ * should be blocked.
+ *
  * @author Allard Buijze
  * @since 0.4
  */
 public interface EventFilter {
 
+    /**
+     * Whether or not this filter allows an event of the given type to pass through or not.
+     *
+     * @param eventType The actual type of the event.
+     * @return <code>true</code> if this event should be forwarded, <code>false</code> otherwise.
+     */
     boolean accept(Class<? extends Event> eventType);
 
 }

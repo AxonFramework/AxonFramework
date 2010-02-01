@@ -109,18 +109,18 @@ class PessimisticLockManager implements LockManager {
             this.lock = new ReentrantLock();
         }
 
-        public boolean isHeldByCurrentThread() {
+        private boolean isHeldByCurrentThread() {
             return lock.isHeldByCurrentThread();
         }
 
-        public void unlock(UUID aggregateIdentifier) {
+        private void unlock(UUID aggregateIdentifier) {
             lock.unlock();
             if (shutDown()) {
                 locks.remove(aggregateIdentifier);
             }
         }
 
-        public synchronized boolean lock() {
+        private synchronized boolean lock() {
             if (isClosed) {
                 return false;
             }
@@ -128,15 +128,15 @@ class PessimisticLockManager implements LockManager {
             return true;
         }
 
-        public synchronized boolean tryLock() {
+        private synchronized boolean tryLock() {
             return !isClosed && lock.tryLock();
         }
 
-        public boolean isLocked() {
+        private boolean isLocked() {
             return lock.isLocked();
         }
 
-        public synchronized boolean shutDown() {
+        private synchronized boolean shutDown() {
             if (lock.tryLock()) {
                 // we now have a lock. We can shut it down.
                 isClosed = true;

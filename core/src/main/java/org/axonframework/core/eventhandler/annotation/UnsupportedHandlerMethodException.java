@@ -19,8 +19,8 @@ package org.axonframework.core.eventhandler.annotation;
 import java.lang.reflect.Method;
 
 /**
- * Thrown when an {@link org.axonframework.core.eventhandler.annotation.EventHandler} annotated method was found that does
- * not conform to the rules that apply to those methods.
+ * Thrown when an {@link org.axonframework.core.eventhandler.annotation.EventHandler} annotated method was found that
+ * does not conform to the rules that apply to those methods.
  *
  * @author Allard Buijze
  * @see org.axonframework.core.eventhandler.annotation.EventHandler

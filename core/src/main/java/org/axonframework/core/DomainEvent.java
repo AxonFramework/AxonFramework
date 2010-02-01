@@ -105,8 +105,9 @@ public abstract class DomainEvent extends EventBase {
 
         DomainEvent that = (DomainEvent) o;
 
-        if (aggregateIdentifier != null ? !aggregateIdentifier.equals(that.aggregateIdentifier) :
-                that.aggregateIdentifier != null) {
+        if (aggregateIdentifier != null
+                ? !aggregateIdentifier.equals(that.aggregateIdentifier)
+                : that.aggregateIdentifier != null) {
             return false;
         }
         if (sequenceNumber != null ? !sequenceNumber.equals(that.sequenceNumber) : that.sequenceNumber != null) {
@@ -114,5 +115,13 @@ public abstract class DomainEvent extends EventBase {
         }
 
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return getEventIdentifier().hashCode();
     }
 }

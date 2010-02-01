@@ -126,7 +126,8 @@ public class XStreamFileSystemEventStore implements EventStore {
         try {
             Resource typeSpecificDir = baseDir.createRelative("/" + type + "/");
             if (!typeSpecificDir.exists() && !typeSpecificDir.getFile().mkdirs()) {
-                throw new IllegalStateException("The given event store directory doesn't exist and could not be created");
+                throw new IllegalStateException(
+                        "The given event store directory doesn't exist and could not be created");
             }
             return typeSpecificDir;
         } catch (IOException e) {

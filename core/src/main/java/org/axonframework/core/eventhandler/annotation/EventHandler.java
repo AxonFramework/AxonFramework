@@ -26,9 +26,9 @@ import java.lang.annotation.Target;
  * Annotation to be placed on methods that can handle events.
  * <p/>
  * Annotated methods must comply to a few simple rules: <ul> <li>The method must accept 1 or 2 parameter
- * parameters<li>The first parameter must be a subtype of {@link org.axonframework.core.DomainEvent} <li>If specified, the
- * second parameter must be of type {@link org.axonframework.core.eventhandler.TransactionStatus}<li>Return values are
- * allowed, but are ignored by dispatchers <li>Exceptions are highly discouraged, and are likely to be caught and
+ * parameters<li>The first parameter must be a subtype of {@link org.axonframework.core.DomainEvent} <li>If specified,
+ * the second parameter must be of type {@link org.axonframework.core.eventhandler.TransactionStatus}<li>Return values
+ * are allowed, but are ignored by dispatchers <li>Exceptions are highly discouraged, and are likely to be caught and
  * ignored by the dispatchers </ul>
  * <p/>
  * For each event, only a single annotated method will be invoked. This method is resolved in the following order <ol>

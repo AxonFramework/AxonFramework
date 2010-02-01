@@ -133,8 +133,11 @@ public class EventHandlingSequenceManager {
         return eventListener;
     }
 
-    private class NoActionCallback implements EventProcessingScheduler.ShutdownCallback {
+    private static class NoActionCallback implements EventProcessingScheduler.ShutdownCallback {
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void afterShutdown(EventProcessingScheduler scheduler) {
         }

@@ -23,6 +23,11 @@ import org.springframework.integration.message.MessageHandler;
 import org.springframework.integration.message.MessageRejectedException;
 
 /**
+ * Adapter class that publishes Events from a Spring Integration Message Channel on the Event Bus. All events are
+ * expected to be contained in the payload of the Message instances.
+ * <p/>
+ * Optionally, this adapter can be configured with a filter, which can block or accept messages based on their type.
+ *
  * @author Allard Buijze
  * @since 0.4
  */
@@ -31,16 +36,39 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
     private final EventFilter filter;
     private final EventBus eventBus;
 
+    /**
+     * Initialize the adapter to publish all incoming events to the given <code>eventBus</code>.
+     *
+     * @param eventBus The event bus to publish events on
+     */
     public EventPublishingMessageChannelAdapter(EventBus eventBus) {
         this.eventBus = eventBus;
         this.filter = new NoFilter();
     }
 
+    /**
+     * Initialize the adapter to publish all incoming events to the given <code>eventBus</code> if they accepted by the
+     * given <code>filter</code>.
+     *
+     * @param eventBus The event bus to publish events on.
+     * @param filter   The filter that indicates which events to publish.
+     */
     public EventPublishingMessageChannelAdapter(EventBus eventBus, EventFilter filter) {
         this.eventBus = eventBus;
         this.filter = filter;
     }
 
+    /**
+     * Handles the given <code>message</code>. The message is expected to contain an object of type {@link
+     * org.axonframework.core.Event} in its payload. If that is not the case, a {@link MessageRejectedException} is
+     * thrown.
+     * <p/>
+     * If the <code>message</code> does contain an {@link Event}, but the filter refuses it, a {@link
+     * MessageRejectedException} is also thrown.
+     *
+     * @param message The message containing the event to publish
+     * @throws MessageRejectedException is the payload could not be published on the event bus.
+     */
     @SuppressWarnings({"unchecked"})
     @Override
     public void handleMessage(Message<?> message) {

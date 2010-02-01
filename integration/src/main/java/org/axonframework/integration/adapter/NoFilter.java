@@ -24,6 +24,9 @@ import org.axonframework.core.Event;
  */
 class NoFilter implements EventFilter {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean accept(Class<? extends Event> eventType) {
         return true;

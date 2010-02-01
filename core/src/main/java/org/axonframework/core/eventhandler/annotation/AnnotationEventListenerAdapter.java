@@ -208,6 +208,9 @@ public class AnnotationEventListenerAdapter
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "AnnotationEventListenerAdapter(" + target.getClass().getSimpleName() + ")";

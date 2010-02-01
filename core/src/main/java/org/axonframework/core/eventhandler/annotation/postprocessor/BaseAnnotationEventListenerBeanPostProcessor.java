@@ -37,6 +37,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * Base implementation of the AnnotationEventListenerBeanPostProcessor. It can be subclassed with post processors that
+ * provide special abilities to certain types of classes.
+ *
  * @author Allard Buijze
  * @since 0.3
  */
@@ -46,7 +49,8 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor implements De
 
     private static final Logger logger = LoggerFactory.getLogger(BaseAnnotationEventListenerBeanPostProcessor.class);
 
-    private final Map<String, AnnotationEventListenerAdapter> managedAdapters = new HashMap<String, AnnotationEventListenerAdapter>();
+    private final Map<String, AnnotationEventListenerAdapter> managedAdapters =
+            new HashMap<String, AnnotationEventListenerAdapter>();
     private EventBus eventBus;
     private ApplicationContext applicationContext;
 
@@ -140,6 +144,7 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor implements De
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings({"unchecked"})
     @Override
     public void afterPropertiesSet() throws Exception {
         // if no EventBus is set, find one in the application context
@@ -147,8 +152,8 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor implements De
             Map<String, EventBus> beans = applicationContext.getBeansOfType(EventBus.class);
             if (beans.size() != 1) {
                 throw new IllegalStateException("If no specific EventBus is provided, the application context must "
-                        + "contain exactly one bean of type EventBus. The current application context has: " +
-                        beans.size());
+                        + "contain exactly one bean of type EventBus. The current application context has: "
+                        + beans.size());
             }
             this.eventBus = beans.entrySet().iterator().next().getValue();
         }
@@ -183,6 +188,9 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor implements De
             this.bean = bean;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
             // this is where we test the method
@@ -194,14 +202,17 @@ public abstract class BaseAnnotationEventListenerBeanPostProcessor implements De
         }
     }
 
-    private static class HasEventHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {
+    private static final class HasEventHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {
 
         private final AtomicBoolean result;
 
-        public HasEventHandlerAnnotationMethodCallback(AtomicBoolean result) {
+        private HasEventHandlerAnnotationMethodCallback(AtomicBoolean result) {
             this.result = result;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
             if (method.isAnnotationPresent(EventHandler.class)) {

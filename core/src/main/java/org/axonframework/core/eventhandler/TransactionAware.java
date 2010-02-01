@@ -17,8 +17,8 @@
 package org.axonframework.core.eventhandler;
 
 /**
- * Extension on the {@link org.axonframework.core.eventhandler.EventListener} interface that provides implementations the
- * ability to do work at the start and end of a transaction.
+ * Extension on the {@link org.axonframework.core.eventhandler.EventListener} interface that provides implementations
+ * the ability to do work at the start and end of a transaction.
  * <p/>
  * Typically, this will involve opening database transactions or connecting to external systems.
  *
@@ -40,8 +40,8 @@ public interface TransactionAware {
 
     /**
      * Invoked by the EventProcessingScheduler after a series of events is processed. The given {@link
-     * org.axonframework.core.eventhandler.TransactionStatus} may be used to indicate whether the scheduler should yield to
-     * other event processing schedulers or not.
+     * org.axonframework.core.eventhandler.TransactionStatus} may be used to indicate whether the scheduler should yield
+     * to other event processing schedulers or not.
      * <p/>
      * This method is always called once for each invocation to {@link #beforeTransaction(TransactionStatus)}, even if
      * no events were processed at all.

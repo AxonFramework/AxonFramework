@@ -93,8 +93,8 @@ class AnnotationEventHandlerInvoker {
                                 method.getName()),
                                                                     method);
                     }
-                    if (method.getParameterTypes().length == 2 &&
-                            !TransactionStatus.class.equals(method.getParameterTypes()[1])) {
+                    if (method.getParameterTypes().length == 2
+                            && !TransactionStatus.class.equals(method.getParameterTypes()[1])) {
                         throw new UnsupportedHandlerMethodException(String.format(
                                 "Event Handling class %s contains method %s that has an invalid parameter. "
                                         + "The (optional) second parameter must be of type: %s",
@@ -108,8 +108,8 @@ class AnnotationEventHandlerInvoker {
                         if (method.getName().equals(forbiddenMethod.getName())
                                 && Arrays.equals(method.getParameterTypes(), forbiddenMethod.getParameterTypes())) {
                             throw new UnsupportedHandlerMethodException(String.format(
-                                    "Event Handling class %s contains method %s that has a naming conflict with a method on"
-                                            + "the EventHandler interface. Please rename the method.",
+                                    "Event Handling class %s contains method %s that has a naming conflict with a "
+                                            + "method on the EventHandler interface. Please rename the method.",
                                     method.getDeclaringClass().getSimpleName(),
                                     method.getName()),
                                                                         method);
@@ -235,8 +235,8 @@ class AnnotationEventHandlerInvoker {
      * <p/>
      * Note that this callback must used both as MethodCallback and MethodCallback.
      * <p/>
-     * Example:<br/> <code>MostSuitableEventHandlerCallback callback = new MostSuitableEventHandlerCallback(eventType)<br/>
-     * ReflectionUtils.doWithMethods(eventListenerClass, callback, callback);</code>
+     * Example:<br/> <code>MostSuitableEventHandlerCallback callback = new MostSuitableEventHandlerCallback(eventType)
+     * <br/> ReflectionUtils.doWithMethods(eventListenerClass, callback, callback);</code>
      */
     private static class MostSuitableEventHandlerCallback
             implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
@@ -303,12 +303,18 @@ class AnnotationEventHandlerInvoker {
         private final Class<? extends Annotation> annotation;
         private final TransactionStatus transactionStatus;
 
+        /**
+         * {@inheritDoc}
+         */
         public CallFirstTransactionMethodCallback(
                 Class<? extends Annotation> annotation, TransactionStatus transactionStatus) {
             this.annotation = annotation;
             this.transactionStatus = transactionStatus;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
             found.set(true);
@@ -326,11 +332,15 @@ class AnnotationEventHandlerInvoker {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean matches(Method method) {
-            return (method.getParameterTypes().length == 0
-                    || method.getParameterTypes()[0].equals(TransactionStatus.class))
-                    && method.isAnnotationPresent(annotation) && !found.get();
+            return !found.get()
+                    && method.isAnnotationPresent(annotation)
+                    && (method.getParameterTypes().length == 0
+                    || method.getParameterTypes()[0].equals(TransactionStatus.class));
         }
     }
 }

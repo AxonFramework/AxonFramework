@@ -45,7 +45,8 @@ import java.util.concurrent.ConcurrentMap;
 public class SpringIntegrationEventBus implements EventBus {
 
     private SubscribableChannel channel;
-    private final ConcurrentMap<EventListener, MessageHandler> handlers = new ConcurrentHashMap<EventListener, MessageHandler>();
+    private final ConcurrentMap<EventListener, MessageHandler> handlers =
+            new ConcurrentHashMap<EventListener, MessageHandler>();
 
     /**
      * {@inheritDoc}

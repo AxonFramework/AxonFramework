@@ -30,8 +30,7 @@ import java.lang.annotation.Target;
  * org.axonframework.core.eventhandler.TransactionStatus}. The transaction status object contains information about the
  * transactional batch. It also provides an option to configure transaction parameters such as batch size.
  * <p/>
- * For each time the annotated method is called, the method annotated with {@link org.axonframework.core.eventhandler.annotation.AfterTransaction}
- * will be called to.
+ * For each time the annotated method is called, the method annotated with {@link AfterTransaction} will be called too.
  * <p/>
  * For each class hierarchy, only a single method annotated with <code>@BeforeTransaction</code> will be invoked. This
  * is always a method on the most specific class (i.e. subclass) in the hierarchy. If that class contains several

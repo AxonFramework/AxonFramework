@@ -71,13 +71,16 @@ class OptimisticLockManager implements LockManager {
         lock.unlock(aggregateIdentifier);
     }
 
-    private class OptimisticLock {
+    private final class OptimisticLock {
 
         private Long versionNumber;
         private int lockCount = 0;
         private boolean closed = false;
 
-        public synchronized boolean validate(VersionedAggregateRoot aggregate) {
+        private OptimisticLock() {
+        }
+
+        private synchronized boolean validate(VersionedAggregateRoot aggregate) {
             Long lastCommittedEventSequenceNumber = aggregate.getLastCommittedEventSequenceNumber();
             if (versionNumber == null || versionNumber.equals(lastCommittedEventSequenceNumber)) {
                 long last = lastCommittedEventSequenceNumber == null ? 0 : lastCommittedEventSequenceNumber;
@@ -87,7 +90,7 @@ class OptimisticLockManager implements LockManager {
             return false;
         }
 
-        public synchronized boolean lock() {
+        private synchronized boolean lock() {
             if (closed) {
                 return false;
             }
@@ -95,7 +98,7 @@ class OptimisticLockManager implements LockManager {
             return true;
         }
 
-        public synchronized void unlock(UUID aggregateIdentifier) {
+        private synchronized void unlock(UUID aggregateIdentifier) {
             lockCount--;
             if (lockCount == 0) {
                 closed = true;
