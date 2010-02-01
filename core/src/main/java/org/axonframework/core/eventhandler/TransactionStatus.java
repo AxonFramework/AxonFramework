@@ -37,6 +37,7 @@ public class TransactionStatus {
     private int maxTransactionSize = 50;
     private Throwable exception;
     private RetryPolicy retryPolicy = RetryPolicy.RETRY_LAST_EVENT;
+    private long retryInterval = 5000;
 
     /**
      * Initialize a TransactionStatus instance with default settings.
@@ -204,6 +205,29 @@ public class TransactionStatus {
      */
     protected boolean isTransactionSizeReached() {
         return eventsProcessedInTransaction >= maxTransactionSize;
+    }
+
+    /**
+     * Returns the current retry interval. This is the number of milliseconds processing should wait before retrying
+     * this transaction. Defaults to 5000 milliseconds.
+     * <p/>
+     * Note that negative values will result in immediate retries, making them practically equal to a value of 0.
+     *
+     * @return the current retry interval
+     */
+    public long getRetryInterval() {
+        return retryInterval;
+    }
+
+    /**
+     * Sets the retry interval for the current transaction. his is the number of milliseconds processing should wait
+     * before retrying this transaction. Defaults to {@value org.axonframework.core.eventhandler.TransactionStatus@retryInterval
+     * }.
+     *
+     * @param retryInterval the number of milliseconds to wait before retrying the transaction
+     */
+    public void setRetryInterval(long retryInterval) {
+        this.retryInterval = retryInterval;
     }
 
     /**

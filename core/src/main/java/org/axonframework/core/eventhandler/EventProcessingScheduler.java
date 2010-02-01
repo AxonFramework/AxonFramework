@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.core.eventhandler.YieldPolicy.DO_NOT_YIELD;
 
@@ -51,6 +53,7 @@ public class EventProcessingScheduler implements Runnable {
     private boolean isScheduled = false;
     private boolean cleanedUp;
     private final List<Event> currentBatch = new LinkedList<Event>();
+    private long retryAfter;
 
     /**
      * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>.
@@ -114,8 +117,18 @@ public class EventProcessingScheduler implements Runnable {
         if (events.size() > 0 || currentBatch.size() > 0) {
             isScheduled = true;
             try {
-                executor.execute(this);
-                logger.info("Processing of event listener [{}] yielded.", eventListener.toString());
+                if (retryAfter <= System.currentTimeMillis()) {
+                    executor.execute(this);
+                    logger.info("Processing of event listener [{}] yielded.", eventListener.toString());
+                } else {
+                    long waitTimeRemaining = retryAfter - System.currentTimeMillis();
+                    boolean executionScheduled = scheduleDelayedExecution(waitTimeRemaining);
+                    if (!executionScheduled) {
+                        logger.warn("The provided executor does not seem to support delayed execution. Scheduling for "
+                                + "immediate processing and expecting processing to wait if scheduled to soon.");
+                        executor.execute(this);
+                    }
+                }
             }
             catch (RejectedExecutionException e) {
                 logger.info("Processing of event listener [{}] could not yield. Executor refused the task.",
@@ -126,6 +139,18 @@ public class EventProcessingScheduler implements Runnable {
             cleanUp();
         }
         return true;
+    }
+
+    private boolean scheduleDelayedExecution(long waitTimeRemaining) {
+        if (executor instanceof ScheduledExecutorService) {
+            logger.info("Executor supports delayed executing. Rescheduling for processing in {} millis",
+                        waitTimeRemaining);
+            ((ScheduledExecutorService) executor).schedule(this,
+                                                           waitTimeRemaining,
+                                                           TimeUnit.MILLISECONDS);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -155,6 +180,7 @@ public class EventProcessingScheduler implements Runnable {
     @Override
     public void run() {
         boolean mayContinue = true;
+        waitUntilAllowedStartingTime();
         final TransactionStatus status = new TransactionStatus();
         status.setMaxTransactionSize(queuedEventCount());
         TransactionStatus.set(status);
@@ -178,6 +204,21 @@ public class EventProcessingScheduler implements Runnable {
         TransactionStatus.clear();
     }
 
+    private synchronized void waitUntilAllowedStartingTime() {
+        long waitTimeRemaining = retryAfter - System.currentTimeMillis();
+        if (waitTimeRemaining > 0) {
+            try {
+                logger.warn("Event processing started before delay expired. Forcing thread to sleep for {} millis.",
+                            waitTimeRemaining);
+                Thread.sleep(waitTimeRemaining);
+            } catch (InterruptedException e) {
+                logger.info("Thread was interrupted while waiting for retry. Scheduling for immediate retry.");
+            } finally {
+                retryAfter = 0;
+            }
+        }
+    }
+
     private void processOrRetryBatch(TransactionStatus status) {
         try {
             transactionListener.beforeTransaction(status);
@@ -195,11 +236,11 @@ public class EventProcessingScheduler implements Runnable {
         catch (Exception e) {
             // the batch failed.
             prepareBatchRetry(status, e);
-            // TODO: Add retry interval
+
         }
     }
 
-    private void prepareBatchRetry(TransactionStatus status, Exception e) {
+    private synchronized void prepareBatchRetry(TransactionStatus status, Exception e) {
         status.markFailed(e);
         tryAfterTransactionCall(status);
         switch (status.getRetryPolicy()) {
@@ -210,11 +251,13 @@ public class EventProcessingScheduler implements Runnable {
             case IGNORE_FAILED_TRANSACTION:
                 logger.warn("Transactional event processing batch failed. Ignoring failed events.");
                 currentBatch.clear();
+                status.setRetryInterval(0);
                 break;
             case RETRY_TRANSACTION:
                 logger.warn("Transactional event processing batch failed. Retrying entire batch.");
                 break;
         }
+        this.retryAfter = System.currentTimeMillis() + status.getRetryInterval();
     }
 
     private void tryAfterTransactionCall(TransactionStatus status) {

@@ -19,14 +19,20 @@ package org.axonframework.core.eventhandler;
 import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
+import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 /**
  * @author Allard Buijze
@@ -66,6 +72,51 @@ public class EventProcessingSchedulerTest {
         assertEquals(2, listener.transactionsStarted);
         assertEquals(1, listener.transactionsSucceeded);
         assertEquals(1, listener.transactionsFailed);
+    }
+
+    @Test
+    public void testEventProcessingDelayed_ScheduledExecutorService() {
+        EventListener listener = mock(EventListener.class);
+        ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
+        testSubject = new EventProcessingScheduler(listener,
+                                                   mockExecutorService,
+                                                   new NullShutdownCallback());
+
+        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(isA(Event.class));
+        testSubject.scheduleEvent(new StubDomainEvent());
+        testSubject.scheduleEvent(new StubDomainEvent());
+        testSubject.run();
+        verify(mockExecutorService).schedule(eq(testSubject), gt(4000L), eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testEventProcessingDelayed_ExecutorDoesNotSupportScheduling() {
+        TransactionalEventListener listener = mock(TransactionalEventListener.class);
+        ExecutorService mockExecutorService = mock(ExecutorService.class);
+        testSubject = new EventProcessingScheduler(listener,
+                                                   mockExecutorService,
+                                                   new NullShutdownCallback());
+
+        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(isA(Event.class));
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                TransactionStatus status = (TransactionStatus) invocation.getArguments()[0];
+                status.setRetryInterval(500);
+                status.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
+                return null;
+            }
+        }).when(listener).afterTransaction(isA(TransactionStatus.class));
+        testSubject.scheduleEvent(new StubDomainEvent());
+        testSubject.scheduleEvent(new StubDomainEvent());
+        long t1 = System.currentTimeMillis();
+        testSubject.run();
+        // we simulate the immediate scheduling of the yielded task by executing run again
+        testSubject.run();
+        long t2 = System.currentTimeMillis();
+        // we allow some slack, because thread scheduling doesn't give us much guarantees about timing
+        long waitTime = t2 - t1;
+        assertTrue("Wait time was too short: " + waitTime, waitTime > 480);
     }
 
     private MockEventListener executeEventProcessing(RetryPolicy policy) {
@@ -138,5 +189,9 @@ public class EventProcessingSchedulerTest {
         @Override
         public void afterShutdown(EventProcessingScheduler scheduler) {
         }
+    }
+
+    private interface TransactionalEventListener extends TransactionAware, EventListener {
+
     }
 }
