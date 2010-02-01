@@ -101,7 +101,7 @@ public class EventProcessingScheduler implements Runnable {
      *
      * @return the next DomainEvent for processing, of null if none is available
      */
-    protected synchronized Event nextEvent() {
+    private synchronized Event nextEvent() {
         return events.poll();
     }
 
@@ -113,7 +113,7 @@ public class EventProcessingScheduler implements Runnable {
      *
      * @return true if yielding succeeded, false otherwise.
      */
-    protected synchronized boolean yield() {
+    private synchronized boolean yield() {
         if (events.size() > 0 || currentBatch.size() > 0) {
             isScheduled = true;
             try {
@@ -133,6 +133,7 @@ public class EventProcessingScheduler implements Runnable {
             catch (RejectedExecutionException e) {
                 logger.info("Processing of event listener [{}] could not yield. Executor refused the task.",
                             eventListener.toString());
+                waitUntilAllowedStartingTime();
                 return false;
             }
         } else {
@@ -145,9 +146,7 @@ public class EventProcessingScheduler implements Runnable {
         if (executor instanceof ScheduledExecutorService) {
             logger.info("Executor supports delayed executing. Rescheduling for processing in {} millis",
                         waitTimeRemaining);
-            ((ScheduledExecutorService) executor).schedule(this,
-                                                           waitTimeRemaining,
-                                                           TimeUnit.MILLISECONDS);
+            ((ScheduledExecutorService) executor).schedule(this, waitTimeRemaining, TimeUnit.MILLISECONDS);
             return true;
         }
         return false;
@@ -158,7 +157,7 @@ public class EventProcessingScheduler implements Runnable {
      * <p/>
      * This method is thread safe
      */
-    protected synchronized void scheduleIfNecessary() {
+    private synchronized void scheduleIfNecessary() {
         if (!isScheduled) {
             isScheduled = true;
             executor.execute(this);
@@ -170,7 +169,7 @@ public class EventProcessingScheduler implements Runnable {
      *
      * @return the number of events currently queued for processing.
      */
-    protected synchronized int queuedEventCount() {
+    private synchronized int queuedEventCount() {
         return events.size();
     }
 
@@ -212,7 +211,7 @@ public class EventProcessingScheduler implements Runnable {
                             waitTimeRemaining);
                 Thread.sleep(waitTimeRemaining);
             } catch (InterruptedException e) {
-                logger.info("Thread was interrupted while waiting for retry. Scheduling for immediate retry.");
+                logger.warn("Thread was interrupted while waiting for retry. Scheduling for immediate retry.");
             } finally {
                 retryAfter = 0;
             }
@@ -236,7 +235,6 @@ public class EventProcessingScheduler implements Runnable {
         catch (Exception e) {
             // the batch failed.
             prepareBatchRetry(status, e);
-
         }
     }
 
