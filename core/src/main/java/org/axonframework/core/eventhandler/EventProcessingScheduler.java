@@ -53,7 +53,7 @@ public class EventProcessingScheduler implements Runnable {
     private boolean isScheduled = false;
     private boolean cleanedUp;
     private final List<Event> currentBatch = new LinkedList<Event>();
-    private long retryAfter;
+    private volatile long retryAfter;
 
     /**
      * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>.
@@ -133,7 +133,6 @@ public class EventProcessingScheduler implements Runnable {
             catch (RejectedExecutionException e) {
                 logger.info("Processing of event listener [{}] could not yield. Executor refused the task.",
                             eventListener.toString());
-                waitUntilAllowedStartingTime();
                 return false;
             }
         } else {
@@ -203,8 +202,9 @@ public class EventProcessingScheduler implements Runnable {
         TransactionStatus.clear();
     }
 
-    private synchronized void waitUntilAllowedStartingTime() {
-        long waitTimeRemaining = retryAfter - System.currentTimeMillis();
+    private void waitUntilAllowedStartingTime() {
+        long waitTimeRemaining;
+        waitTimeRemaining = retryAfter - System.currentTimeMillis();
         if (waitTimeRemaining > 0) {
             try {
                 logger.warn("Event processing started before delay expired. Forcing thread to sleep for {} millis.",
