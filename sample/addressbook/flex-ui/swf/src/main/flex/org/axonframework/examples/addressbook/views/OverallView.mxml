@@ -62,8 +62,8 @@
     <mx:VBox width="100%" height="100%" top="8" left="8" right="8" bottom="8">
         <views:ToolbarView id="toolbar" width="100%"/>
         <mx:ViewStack id="mainViewStack" width="100%" height="100%">
-            <mx:HBox id="welcomeMessage">
-                <mx:Text text="Welcome to this very nice application ..."/>
+            <mx:HBox id="welcomeMessage" horizontalAlign="center">
+                <mx:Image source="@Embed(source='/assets/images/logo-large.png')"/>
             </mx:HBox>
 
             <views:AddressesView id="addresses" width="100%" height="100%"/>
