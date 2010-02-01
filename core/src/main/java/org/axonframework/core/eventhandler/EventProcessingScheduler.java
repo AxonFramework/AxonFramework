@@ -186,7 +186,7 @@ public class EventProcessingScheduler implements Runnable {
         while (mayContinue) {
             processOrRetryBatch(status);
             boolean inRetryMode =
-                    !status.isSuccessful() && status.getRetryPolicy() != RetryPolicy.IGNORE_FAILED_TRANSACTION;
+                    !status.isSuccessful() && status.getRetryPolicy() != RetryPolicy.SKIP_FAILED_EVENT;
             /*
              * Only continue processing in the current thread if:
              * - all of the following
@@ -246,7 +246,7 @@ public class EventProcessingScheduler implements Runnable {
                 logger.warn("Transactional event processing batch failed. Rescheduling last event for retry.");
                 markLastEventForRetry();
                 break;
-            case IGNORE_FAILED_TRANSACTION:
+            case SKIP_FAILED_EVENT:
                 logger.warn("Transactional event processing batch failed. Ignoring failed events.");
                 currentBatch.clear();
                 status.setRetryInterval(0);

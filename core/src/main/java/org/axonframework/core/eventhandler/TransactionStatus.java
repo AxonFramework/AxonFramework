@@ -36,7 +36,7 @@ public class TransactionStatus {
     private int eventsProcessedInTransaction = 0;
     private int maxTransactionSize = 50;
     private Throwable exception;
-    private RetryPolicy retryPolicy = RetryPolicy.RETRY_LAST_EVENT;
+    private RetryPolicy retryPolicy = RetryPolicy.SKIP_FAILED_EVENT;
     private long retryInterval = 5000;
 
     /**
@@ -150,14 +150,23 @@ public class TransactionStatus {
     }
 
     /**
-     * Sets the retry policy for the current transaction. Is set to {@link RetryPolicy#RETRY_LAST_EVENT
-     * RETRY_LAST_EVENT} by default.
+     * Sets the retry policy for the current transaction. Is set to {@link RetryPolicy#SKIP_FAILED_EVENT
+     * SKIP_FAILED_EVENT} by default.
      * <p/>
-     * The policy choice should be based on the effect of a transaction rollback. Some data sources, such as databases,
-     * roll back the entire transaction. In that case, choose {@link RetryPolicy#RETRY_TRANSACTION RETRY_TRANSACTION}
-     * policy. If a rollback on the underlying data source only rolls back the last modification, choose {@link
-     * RetryPolicy#RETRY_LAST_EVENT RETRY_LAST_EVENT}. If failed events should be ignored, choose the {@link
-     * RetryPolicy#IGNORE_FAILED_TRANSACTION IGNORE_FAILED_TRANSACTION} policy.
+     * Typically, exceptions are caused by programming errors or the underlying processing environment that the event
+     * handler uses, such as a database. In the former, there is no point in retrying the event processing. It would
+     * cause an unlimited loop in event processing, making an application vulnerable to a poisonous message attack. In
+     * the latter case, the event listener should identify which exception is transitive (i.e. might make a chance when
+     * retried), and which is not. If an exception is transitive, either {@link RetryPolicy#RETRY_TRANSACTION
+     * RETRY_TRANSACTION} or {@link RetryPolicy#RETRY_LAST_EVENT RETRY_LAST_EVENT} should be chosen.
+     * <p/>
+     * Furthermore, the policy choice should be based on the effect of a transaction rollback. Some data sources, such
+     * as databases, roll back the entire transaction. In that case, choose {@link RetryPolicy#RETRY_TRANSACTION
+     * RETRY_TRANSACTION} policy. If a rollback on the underlying data source only rolls back the last modification,
+     * choose {@link RetryPolicy#RETRY_LAST_EVENT RETRY_LAST_EVENT}.
+     * <p/>
+     * If failed events should be ignored altogether, choose the {@link RetryPolicy#SKIP_FAILED_EVENT SKIP_FAILED_EVENT}
+     * policy.
      * <p/>
      * These policies may be set in both the <code>beforeTransaction()</code> and <code>afterTransaction</code> methods.
      * The latter would allow you to change policy based on the exact type of exception encountered.

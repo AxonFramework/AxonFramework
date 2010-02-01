@@ -57,11 +57,12 @@ public abstract class AbstractTransactionalEventListener implements TransactionA
             if (!isTransient(transactionStatus.getException())) {
                 logger.error("ERROR! Exception is not transient or recoverable! Committing transaction and "
                         + "skipping Event processing", transactionStatus.getException());
-                transactionStatus.setRetryPolicy(RetryPolicy.IGNORE_FAILED_TRANSACTION);
+                transactionStatus.setRetryPolicy(RetryPolicy.SKIP_FAILED_EVENT);
                 transactionManager.commit(underlyingTransaction.get());
             } else if (underlyingTransaction.get() != null) {
                 logger.warn("Performing rollback on transaction due to recoverable exception: [{}]",
                             transactionStatus.getException().getClass().getSimpleName());
+                transactionStatus.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
                 transactionManager.rollback(underlyingTransaction.get());
             }
         }

@@ -18,7 +18,7 @@ package org.axonframework.core.eventhandler;
 
 /**
  * This policy tells the EventProcessingScheduler how it should deal with failed transactions. <ul> <li>{@link
- * #IGNORE_FAILED_TRANSACTION} will tell the scheduler to ignore the failure and schedule a new transaction to continue
+ * #SKIP_FAILED_EVENT} will tell the scheduler to ignore the failure and schedule a new transaction to continue
  * processing. <li>{@link #RETRY_TRANSACTION} tells the scheduler to offer all the events in the failed transaction to
  * the event listener in a new transaction. <li>{@link #RETRY_LAST_EVENT} tell the scheduler to only offer the last
  * event form this transaction to the event listener. This event will be handled in a new transaction. </ul>
@@ -29,9 +29,11 @@ package org.axonframework.core.eventhandler;
 public enum RetryPolicy {
 
     /**
-     * Tells the scheduler to ignore the failure and schedule a new transaction to continue processing.
+     * Tells the scheduler to ignore the failure and schedule a new transaction to continue processing. Note that any
+     * retry interval is ignored, and a new transaction is scheduled for immediate execution when this retry policy is
+     * applied.
      */
-    IGNORE_FAILED_TRANSACTION,
+    SKIP_FAILED_EVENT,
 
     /**
      * Tells the scheduler to offer all the events in the failed transaction to the event listener in a new

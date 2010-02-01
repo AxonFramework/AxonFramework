@@ -15,6 +15,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+
 <chapter id="building-blocks" xmlns="http://docbook.org/ns/docbook">
     <title>Building Blocks</title>
     <figure>
@@ -687,11 +688,11 @@
                     </listitem>
                     <listitem>
                         <para>
-                            <code>IGNORE_FAILED_TRANSACTION</code>
+                            <code>SKIP_FAILED_EVENT</code>
                             will tell the scheduler to ignore the
                             exception and continue processing with the next event. The event listener can still
                             try to commit the underlying transaction to persist any changed made while processing
-                            other events in this transaction.
+                            other events in this transaction. This is the default policy.
                         </para>
                     </listitem>
                 </itemizedlist>

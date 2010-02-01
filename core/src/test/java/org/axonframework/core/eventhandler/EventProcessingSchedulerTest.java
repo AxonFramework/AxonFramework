@@ -65,7 +65,7 @@ public class EventProcessingSchedulerTest {
 
     @Test
     public void testEventProcessingSchedule_FailedEventIgnored() {
-        MockEventListener listener = executeEventProcessing(RetryPolicy.IGNORE_FAILED_TRANSACTION);
+        MockEventListener listener = executeEventProcessing(RetryPolicy.SKIP_FAILED_EVENT);
 
         // each event is handled twice, since we retry the entire batch
         assertEquals(3, listener.handledEvents.size());
@@ -76,17 +76,26 @@ public class EventProcessingSchedulerTest {
 
     @Test
     public void testEventProcessingDelayed_ScheduledExecutorService() {
-        EventListener listener = mock(EventListener.class);
+        TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
         testSubject = new EventProcessingScheduler(listener,
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
         doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(isA(Event.class));
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                TransactionStatus status = (TransactionStatus) invocation.getArguments()[0];
+                status.setRetryInterval(500);
+                status.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
+                return null;
+            }
+        }).when(listener).afterTransaction(isA(TransactionStatus.class));
         testSubject.scheduleEvent(new StubDomainEvent());
         testSubject.scheduleEvent(new StubDomainEvent());
         testSubject.run();
-        verify(mockExecutorService).schedule(eq(testSubject), gt(4000L), eq(TimeUnit.MILLISECONDS));
+        verify(mockExecutorService).schedule(eq(testSubject), gt(400L), eq(TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -175,6 +184,7 @@ public class EventProcessingSchedulerTest {
 
         @Override
         public void afterTransaction(TransactionStatus transactionStatus) {
+            transactionStatus.setRetryInterval(100);
             assertEquals(failOnEvent != 0, transactionStatus.isSuccessful());
             if (transactionStatus.isSuccessful()) {
                 transactionsSucceeded++;
