@@ -16,8 +16,8 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
+import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.springframework.integration.message.GenericMessage;
 import org.springframework.integration.message.MessageRejectedException;

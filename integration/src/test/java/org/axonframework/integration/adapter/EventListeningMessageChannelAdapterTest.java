@@ -17,9 +17,9 @@
 package org.axonframework.integration.adapter;
 
 import org.axonframework.core.Event;
-import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.FullConcurrencyPolicy;
+import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.integration.core.Message;

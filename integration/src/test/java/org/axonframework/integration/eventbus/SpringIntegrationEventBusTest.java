@@ -16,8 +16,8 @@
 
 package org.axonframework.integration.eventbus;
 
-import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventListener;
+import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.integration.channel.SubscribableChannel;
