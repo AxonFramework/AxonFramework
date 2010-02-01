@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:views="org.axonframework.examples.addressbook.views.*"
+           width="100%"
+           xmlns:sf="http://www.spicefactory.org/parsley/flex">
+    <mx:Script><![CDATA[
+        import org.axonframework.examples.addressbook.commands.SearchAddressCommand;
+        import org.axonframework.examples.addressbook.model.Address;
+
+        private var searchAddressCommand:SearchAddressCommand;
+
+        [MessageDispatcher]
+        public var dispatcher:Function;
+
+        [Inject]
+        public function init(searchAddressCommand:SearchAddressCommand):void {
+            this.searchAddressCommand = searchAddressCommand;
+        }
+
+        private function searchAction():void {
+            var searchAddress:Address = Address.newAddress(contactNameInput.text, searchStreetInput.text, "", searchCityInput.text);
+            searchAddressCommand.execute(searchAddress);
+        }
+
+        ]]></mx:Script>
+    <sf:Configure/>
+    <mx:VBox>
+        <mx:HBox verticalAlign="middle">
+            <mx:Form defaultButton="{findButton}">
+                <mx:FormItem id="contactName" label="Lastname">
+                    <mx:TextInput id="contactNameInput" width="100"/>
+                </mx:FormItem>
+                <mx:FormItem id="searchStreet" label="Street">
+                    <mx:TextInput id="searchStreetInput" width="100"/>
+                </mx:FormItem>
+                <mx:FormItem id="searchCity" label="City">
+                    <mx:TextInput id="searchCityInput" width="100"/>
+                </mx:FormItem>
+            </mx:Form>
+            <mx:Button id="findButton" icon="@Embed(source='/assets/images/find_next.png')"
+                       click="searchAction()"/>
+        </mx:HBox>
+        <views:AddressesView/>
+    </mx:VBox>
+</mx:Canvas>

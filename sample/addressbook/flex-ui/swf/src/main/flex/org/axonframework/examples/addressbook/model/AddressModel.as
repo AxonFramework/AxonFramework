@@ -13,7 +13,6 @@ public class AddressModel {
 
     [MessageHandler]
     public function searchResults(message:SearchResultMessage):void {
-        trace('receving new addresses');
         this.addresses = message.results;
     }
 

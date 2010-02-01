@@ -8,6 +8,7 @@ import mx.utils.ObjectUtil;
 import org.axonframework.examples.addressbook.messages.NewAddressMessage;
 import org.axonframework.examples.addressbook.messages.SearchForAddressesMessage;
 import org.axonframework.examples.addressbook.messages.SearchResultMessage;
+import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
 import org.axonframework.examples.addressbook.model.Address;
 import org.axonframework.examples.addressbook.utils.MockServiceUtil;
 
@@ -20,10 +21,11 @@ public class AddressServiceStub extends EventDispatcher implements IAddressServi
     private var allAddresses:ArrayCollection = new ArrayCollection();
 
     public function AddressServiceStub() {
-        allAddresses.addItem(Address.newAddress("kerkstraat 8", "", "Zoetermeer", "Jettro"));
-        allAddresses.addItem(Address.newAddress("zwerflaan 18", "", "Amsterdam", "Chris"));
-        allAddresses.addItem(Address.newAddress("rijkestraat 23", "", "Bloemendaal", "Leonard"));
-        allAddresses.addItem(Address.newAddress("kustweg 1", "", "Monster", "Michael"));
+        allAddresses.addItem(Address.newAddress("Jettro", "kerkstraat 8", "", "Zoetermeer"));
+        allAddresses.addItem(Address.newAddress("Chris", "zwerflaan 18", "", "Amsterdam"));
+        allAddresses.addItem(Address.newAddress("Leonard", "rijkestraat 23", "", "Bloemendaal"));
+        allAddresses.addItem(Address.newAddress("Michael", "kustweg 1", "", "Monster"));
+        allAddresses.addItem(Address.newAddress("Roberto", "Coolsingel 1", "010", "Rotterdam"));
     }
 
     [MessageHandler]
@@ -50,6 +52,10 @@ public class AddressServiceStub extends EventDispatcher implements IAddressServi
     public function create(message:NewAddressMessage):AsyncToken {
         allAddresses.addItem(message.address);
         return mockService.createToken(true);
+    }
+
+    public function showContacts(message:ShowContactsMessage):AsyncToken {
+        return null;
     }
 }
 }

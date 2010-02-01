@@ -18,16 +18,18 @@ package org.axonframework.examples.addressbook.web.impl;
 
 import org.axonframework.examples.addressbook.web.AddressService;
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
+import org.axonframework.examples.addressbook.web.dto.ContactDTO;
 import org.axonframework.sample.app.Address;
-import org.axonframework.sample.app.AddressType;
 import org.axonframework.sample.app.command.ContactCommandHandler;
+import org.axonframework.sample.app.query.AddressEntry;
+import org.axonframework.sample.app.query.ContactEntry;
+import org.axonframework.sample.app.query.ContactRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.flex.remoting.RemotingDestination;
 import org.springframework.flex.remoting.RemotingInclude;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,26 +39,26 @@ import java.util.UUID;
 @Service("addressService")
 @RemotingDestination(channels = {"my-amf"})
 public class AddressServiceImpl implements AddressService {
-
-    private List<AddressDTO> addresses = new ArrayList<AddressDTO>();
-
     private ContactCommandHandler contactCommandHandler;
+    private ContactRepository repository;
 
     @Autowired
-    public AddressServiceImpl(ContactCommandHandler contactCommandHandler) {
+    public AddressServiceImpl(ContactCommandHandler contactCommandHandler, ContactRepository repository) {
         this.contactCommandHandler = contactCommandHandler;
-
-        addresses.add(new AddressDTO("serverstraat 1", "", "Amsterdam", "Roberto"));
-        addresses.add(new AddressDTO("kerstraat 12", "", "Zoetermeer", "Jettro"));
-        addresses.add(new AddressDTO("havenlaan 100", "", "Maassluis", "WasIk"));
-        addresses.add(new AddressDTO("kustweg 4", "", "Monster", "Michael"));
-        addresses.add(new AddressDTO("axonboulavard nr 1", "", "Leidscheveen", "Allard"));
+        this.repository = repository;
     }
 
     @RemotingInclude
     @Override
-    public List<AddressDTO> searchAddresses() {
-        return Collections.unmodifiableList(addresses);
+    public List<AddressDTO> searchAddresses(AddressDTO searchAddress) {
+        List<AddressDTO> foundAddresses = new ArrayList<AddressDTO>();
+
+        List<AddressEntry> addresses =
+                repository.findAllAddressesInCity(searchAddress.getContactName(), searchAddress.getCity());
+        for (AddressEntry address : addresses) {
+            foundAddresses.add(AddressDTO.createFrom(address));
+        }
+        return foundAddresses;
     }
 
     @RemotingInclude
@@ -64,6 +66,23 @@ public class AddressServiceImpl implements AddressService {
     public void createAddress(AddressDTO addressDTO) {
         UUID contact = contactCommandHandler.createContact(addressDTO.getContactName());
         Address address = new Address(addressDTO.getStreet(), addressDTO.getZipCode(), addressDTO.getCity());
-        contactCommandHandler.registerAddress(contact, AddressType.WORK, address);
+        contactCommandHandler.registerAddress(contact, addressDTO.getType(), address);
+    }
+
+    @Override
+    @RemotingInclude
+    public List<ContactDTO> obtainAllContacts() {
+        List<ContactDTO> contacts = new ArrayList<ContactDTO>();
+        List<ContactEntry> allContacts = repository.findAllContacts();
+        for (ContactEntry contactEntry : allContacts) {
+            contacts.add(ContactDTO.createContactDTOFrom(contactEntry));
+        }
+        return contacts;
+    }
+
+    @Override
+    @RemotingInclude
+    public void createContact(ContactDTO contactDTO) {
+        contactCommandHandler.createContact(contactDTO.getName());
     }
 }

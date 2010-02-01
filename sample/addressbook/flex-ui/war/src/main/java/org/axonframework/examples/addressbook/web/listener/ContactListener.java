@@ -17,7 +17,7 @@
 package org.axonframework.examples.addressbook.web.listener;
 
 import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.examples.addressbook.web.dto.AddressDTO;
+import org.axonframework.examples.addressbook.web.dto.ContactDTO;
 import org.axonframework.sample.app.ContactCreatedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -34,9 +34,10 @@ public class ContactListener {
     @EventHandler
     public void handleContactCreatedEvent(ContactCreatedEvent event) {
         System.out.println("Received and event : " + event.getName() + event.getEventIdentifier());
-        AddressDTO addressDTO = new AddressDTO();
-        addressDTO.setContactName(event.getName());
-        producer.sendContactUpdate(addressDTO);
+        ContactDTO contactDTO = new ContactDTO();
+        contactDTO.setName(event.getName());
+        contactDTO.setUuid(event.getAggregateIdentifier().toString());
+        producer.sendContactUpdate(contactDTO);
     }
 
     @Autowired

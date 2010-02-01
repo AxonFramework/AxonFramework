@@ -1,5 +1,8 @@
 package org.axonframework.examples.addressbook.web.dto;
 
+import org.axonframework.sample.app.AddressType;
+import org.axonframework.sample.app.query.AddressEntry;
+
 import java.io.Serializable;
 
 /**
@@ -8,6 +11,9 @@ import java.io.Serializable;
 public class AddressDTO implements Serializable {
 
     private String contactName;
+    private String contactUUID;
+
+    private AddressType type;
     private String street;
     private String city;
     private String zipCode;
@@ -15,11 +21,16 @@ public class AddressDTO implements Serializable {
     public AddressDTO() {
     }
 
-    public AddressDTO(String street, String zipCode, String city, String contactName) {
-        this.contactName = contactName;
-        this.street = street;
-        this.city = city;
-        this.zipCode = zipCode;
+    public static AddressDTO createFrom(AddressEntry addressEntry) {
+        AddressDTO newAddress = new AddressDTO();
+        newAddress.setType(addressEntry.getAddressType());
+        newAddress.setCity(addressEntry.getCity());
+        newAddress.setContactName(addressEntry.getName());
+        newAddress.setStreet(addressEntry.getStreetAndNumber());
+        newAddress.setZipCode(addressEntry.getZipCode());
+        newAddress.setContactUUID(addressEntry.getIdentifier().toString());
+
+        return newAddress;
     }
 
     public String getStreet() {
@@ -52,5 +63,21 @@ public class AddressDTO implements Serializable {
 
     public void setContactName(String contactName) {
         this.contactName = contactName;
+    }
+
+    public String getContactUUID() {
+        return contactUUID;
+    }
+
+    public void setContactUUID(String contactUUID) {
+        this.contactUUID = contactUUID;
+    }
+
+    public AddressType getType() {
+        return type;
+    }
+
+    public void setType(AddressType type) {
+        this.type = type;
     }
 }

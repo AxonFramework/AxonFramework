@@ -16,7 +16,6 @@
     <sf:Configure/>
 
     <mx:VBox>
-        <mx:Label text="1"/>
         <mx:DataGrid dataProvider="{addressModel.addresses}">
             <mx:columns>
                 <mx:DataGridColumn dataField="contactName"/>

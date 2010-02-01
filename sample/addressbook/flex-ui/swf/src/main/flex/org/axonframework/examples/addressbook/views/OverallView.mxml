@@ -7,31 +7,52 @@
     <mx:Script><![CDATA[
         import mx.messaging.events.MessageEvent;
 
+        import org.axonframework.examples.addressbook.commands.ShowContactsCommand;
+        import org.axonframework.examples.addressbook.commands.ViewConstants;
         import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
-        import org.axonframework.examples.addressbook.model.Address;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
+        import org.axonframework.examples.addressbook.model.Contact;
 
-        public static const ALL_ADDRESSES:String = "allAddresses";
-        public static const NEW_ADDRESS:String = "newAddress";
+        private var showContactsCommand:ShowContactsCommand;
+
+        [MessageDispatcher]
+        public var dispatcher:Function;
+
+        [Inject]
+        public function init(showContactsCommand:ShowContactsCommand):void {
+            this.showContactsCommand = showContactsCommand;
+            // TODO check if we can do this in another function
+            showContactsCommand.execute();
+        }
 
         [MessageHandler]
         public function showRightViewStack(changeViewMessage:ChangeViewMessage):void {
             trace('Switching the view ...');
             switch (changeViewMessage.stackId) {
-                case ALL_ADDRESSES:
-                    mainViewStack.selectedChild = addresses;
+                case ViewConstants.HOME:
+                    mainViewStack.selectedChild = home;
                     break;
-                case NEW_ADDRESS:
+                case ViewConstants.FIND:
+                    mainViewStack.selectedChild = find;
+                    break;
+                case ViewConstants.CONTACTS:
+                    mainViewStack.selectedChild = contacts;
+                    break;
+                case ViewConstants.NEW_ADDRESS:
                     mainViewStack.selectedChild = addAddress;
                     break;
                 default:
-                    mainViewStack.selectedChild = welcomeMessage
+                    mainViewStack.selectedChild = home
             }
         }
 
         public function messageHandler(event:MessageEvent):void {
-            trace('message event : ' + event.type);
-            var address:Address = event.message.body as Address;
-            trace('Received an address event : ' + address.contactName);
+            trace('message event : ' + event.message.body);
+            if (event.message.body is Contact) {
+                dispatcher(new UpdatedContactMessage(event.message.body as Contact));
+            }
+            //            var address:Address = event.message.body as Address;
+            //            trace('Received an address event : ' + address.contactName);
         }
 
         public function acknowledgeHandler(event:Event):void {
@@ -62,11 +83,11 @@
     <mx:VBox width="100%" height="100%" top="8" left="8" right="8" bottom="8">
         <views:ToolbarView id="toolbar" width="100%"/>
         <mx:ViewStack id="mainViewStack" width="100%" height="100%">
-            <mx:HBox id="welcomeMessage" horizontalAlign="center">
+            <mx:HBox id="home" horizontalAlign="center">
                 <mx:Image source="@Embed(source='/assets/images/logo-large.png')"/>
             </mx:HBox>
-
-            <views:AddressesView id="addresses" width="100%" height="100%"/>
+            <views:SearchView id="find" width="100%" height="100%"/>
+            <views:ContactsView id="contacts" width="100%" height="100%"/>
             <views:AddAddressView id="addAddress" width="100%" height="100%"/>
         </mx:ViewStack>
     </mx:VBox>

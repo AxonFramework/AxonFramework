@@ -6,19 +6,21 @@ public class Address {
     public var city:String;
     public var zipCode:String;
     public var contactName:String;
+    public var contactUUID:String;
+    public var type:String;
 
     public function Address() {
     }
 
-    public static function newAddress(contactName:String, street:String, zipCode:String, city:String):Address {
+    public static function newAddress(contactName:String, street:String, zipCode:String, city:String, type:String = "work"):Address {
         var address:Address = new Address();
         address.contactName = contactName;
         address.street = street;
         address.zipCode = zipCode;
         address.city = city;
+        address.type = type;
         return address;
     }
-
 
     public function same(address:Address):Boolean {
         if (address == null) {
@@ -28,7 +30,8 @@ public class Address {
         var sameStreet:Boolean = sameString(street, address.street);
         var sameZipCode:Boolean = sameString(zipCode, address.zipCode);
         var sameContactName:Boolean = sameString(contactName, address.contactName);
-        return sameCity && sameStreet && sameZipCode && sameContactName;
+        var sameType:Boolean = sameString(type, address.type);
+        return sameCity && sameStreet && sameZipCode && sameContactName && sameType;
     }
 
     private function sameString(base:String, search:String):Boolean {

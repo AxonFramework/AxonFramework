@@ -5,8 +5,8 @@
 
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.commands.SearchAddressCommand;
+        import org.axonframework.examples.addressbook.commands.ViewConstants;
         import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
-        import org.axonframework.examples.addressbook.model.Address;
 
         private var searchAddressCommand:SearchAddressCommand;
 
@@ -18,31 +18,25 @@
             this.searchAddressCommand = searchAddressCommand;
         }
 
-        private function searchAction():void {
-            var searchAddress:Address = Address.newAddress("", searchStreet.text, "", searchCity.text);
-            searchAddressCommand.execute(searchAddress);
+        private function changeView(identity:String):void {
             // TODO : I do not want to do this here, but it is easy for now
-            dispatcher(new ChangeViewMessage(OverallView.ALL_ADDRESSES));
+            dispatcher(new ChangeViewMessage(identity));
         }
-
-        private function newAddressAction():void {
-            // TODO : I do not want to do this here, but it is easy for now
-            dispatcher(new ChangeViewMessage(OverallView.NEW_ADDRESS));
-        }
-
         ]]></mx:Script>
 
     <sf:Configure/>
 
     <mx:HBox>
-        <mx:ControlBar defaultButton="{searchButton}">
-            <mx:Label text="Addresses"/>
-            <mx:Button id="addButton" icon="@Embed(source='/assets/images/report_add.png')" click="newAddressAction()"/>
-            <mx:Button id="searchButton" icon="@Embed(source='/assets/images/find.png')" click="searchAction()"/>
-            <mx:Label text="street"/>
-            <mx:TextInput id="searchStreet" width="100"/>
-            <mx:Label text="city"/>
-            <mx:TextInput id="searchCity" width="100"/>
+        <mx:ControlBar defaultButton="{homeButton}">
+            <mx:Button id="homeButton" icon="@Embed(source='/assets/images/home.png')"
+                       click="changeView(ViewConstants.HOME)"/>
+            <mx:Label text="Home"/>
+            <mx:Button id="contactButton" icon="@Embed(source='/assets/images/address_book.png')"
+                       click="changeView(ViewConstants.CONTACTS)"/>
+            <mx:Label text="Contacts"/>
+            <mx:Button id="searchButton" icon="@Embed(source='/assets/images/find.png')"
+                       click="changeView(ViewConstants.FIND)"/>
+            <mx:Label text="Find"/>
         </mx:ControlBar>
     </mx:HBox>
 </mx:Canvas>
