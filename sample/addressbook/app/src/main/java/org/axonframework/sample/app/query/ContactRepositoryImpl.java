@@ -16,6 +16,9 @@
 
 package org.axonframework.sample.app.query;
 
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.List;
@@ -24,6 +27,8 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
+@Repository
+@Transactional(readOnly = true)
 public class ContactRepositoryImpl implements ContactRepository {
 
     @PersistenceContext
@@ -50,8 +55,8 @@ public class ContactRepositoryImpl implements ContactRepository {
     @Override
     public List<AddressEntry> findAllAddressesInCity(String name, String city) {
         return entityManager.createQuery("SELECT e FROM AddressEntry e WHERE e.name LIKE :name AND e.city LIKE :city")
-                .setParameter("name", "%" + name + "%")
-                .setParameter("name", "%" + city + "%")
+                .setParameter("name", "%" + (name == null ? "" : name) + "%")
+                .setParameter("city", "%" + (city == null ? "" : city) + "%")
                 .setMaxResults(250)
                 .getResultList();
     }

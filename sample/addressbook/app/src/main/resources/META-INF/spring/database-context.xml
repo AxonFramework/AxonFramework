@@ -24,6 +24,8 @@
         <property name="transactionManager" ref="transactionManager"/>
     </bean>
 
+    <bean class="org.axonframework.sample.app.query.ContactRepositoryImpl"/>
+
     <!-- Infrastructure configuration -->
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">

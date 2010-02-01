@@ -24,6 +24,9 @@ import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.core.repository.Repository;
 import org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore;
 import org.axonframework.sample.app.command.ContactCommandHandler;
+import org.axonframework.sample.app.query.AddressEntry;
+import org.axonframework.sample.app.query.ContactEntry;
+import org.axonframework.sample.app.query.ContactRepository;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,10 +60,13 @@ public class ContactIntegrationTest {
     private XStreamFileSystemEventStore eventStore;
 
     @Autowired
-    private Repository repository;
+    private Repository commandRepository;
 
     @Autowired
     private ThreadPoolTaskExecutor taskExecutor;
+
+    @Autowired
+    private ContactRepository contactRepository;
 
     private List<Event> dispatchedEvents = new ArrayList<Event>();
 
@@ -71,13 +77,27 @@ public class ContactIntegrationTest {
     }
 
     @Test(timeout = 10000)
-    public void testApplicationContext() {
+    public void testApplicationContext() throws InterruptedException {
 
         assertNotNull(commandHandler);
         UUID contactId = commandHandler.createContact("Allard");
 
         commandHandler.registerAddress(contactId, AddressType.PRIVATE, address("Street 123", "90210", "City"));
         commandHandler.registerAddress(contactId, AddressType.PRIVATE, address("Street 321", "90210", "City"));
+
+        // the event bus is asynchronous. Let's wait for the task executor to finish all tasks
+        waitForTaskExecution();
+
+        List<ContactEntry> contactList = contactRepository.findAllContacts();
+        List<AddressEntry> addressList = contactRepository.findAllAddressesForContact(contactId);
+        assertEquals(1, contactList.size());
+        assertEquals(1, addressList.size());
+
+        assertEquals(1, contactRepository.findAllAddressesInCity(null, "Ci").size());
+        assertEquals(1, contactRepository.findAllAddressesInCity("lla", null).size());
+        assertEquals(1, contactRepository.findAllAddressesInCity("lla", "Ci").size());
+        assertEquals(0, contactRepository.findAllAddressesInCity("Bla", "Ci").size());
+
         commandHandler.removeAddress(contactId, AddressType.PRIVATE);
         commandHandler.removeAddress(contactId, AddressType.PRIVATE);
         commandHandler.deleteContact(contactId);
@@ -89,23 +109,20 @@ public class ContactIntegrationTest {
 //             we got 'm
         }
 
-        // the event bus is asynchronous. Let's wait for the task executor to finish all tasks
-        try {
-            while (taskExecutor.getActiveCount() > 0) {
-                Thread.sleep(10);
-            }
-        }
-        catch (InterruptedException e) {
-            // this is normal. If the database is unreachable, the task executor will never finish.
-            // But that is not important in this test method
-        }
+        waitForTaskExecution();
 
-        assertEquals(5, dispatchedEvents.size());
+        assertEquals("Not all events were dispatched", 5, dispatchedEvents.size());
 
         assertEquals(ContactCreatedEvent.class, dispatchedEvents.get(0).getClass());
         assertEquals(AddressAddedEvent.class, dispatchedEvents.get(1).getClass());
         assertEquals(AddressChangedEvent.class, dispatchedEvents.get(2).getClass());
         assertEquals(AddressRemovedEvent.class, dispatchedEvents.get(3).getClass());
+    }
+
+    private void waitForTaskExecution() throws InterruptedException {
+        while (taskExecutor.getActiveCount() > 0) {
+            Thread.sleep(10);
+        }
     }
 
     private Address address(String streetAndNumber, String zipCode, String city) {
