@@ -27,7 +27,7 @@
     <!-- Infrastructure configuration -->
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <property name="locations" value="classpath:database.properties"/>
+        <property name="locations" value="classpath:hsqldb.database.properties"/>
     </bean>
 
     <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">

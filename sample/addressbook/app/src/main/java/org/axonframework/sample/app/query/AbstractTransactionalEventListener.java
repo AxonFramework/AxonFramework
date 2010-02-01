@@ -25,6 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.sql.SQLRecoverableException;
+import java.sql.SQLTransientException;
+
 /**
  * @author Allard Buijze
  */
@@ -47,21 +50,37 @@ public abstract class AbstractTransactionalEventListener implements TransactionA
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void afterTransaction(TransactionStatus transactionStatus) {
-        try {
-            if (transactionStatus.isSuccessful()) {
+        if (transactionStatus.isSuccessful()) {
+            transactionManager.commit(underlyingTransaction.get());
+        } else {
+            logger.warn("Found failed transaction: [{}].", transactionStatus.getException().getClass().getSimpleName());
+            if (!isTransient(transactionStatus.getException())) {
+                logger.error("ERROR! Exception is not transient or recoverable! Committing transaction and "
+                        + "skipping Event processing", transactionStatus.getException());
+                transactionStatus.setRetryPolicy(RetryPolicy.IGNORE_FAILED_TRANSACTION);
                 transactionManager.commit(underlyingTransaction.get());
-            } else {
-                logger.error("Found failed transaction. Will retry shortly.", transactionStatus.getException());
-                // TODO: Check if the exception is transient. If not log an error, commit the transaction and skip the last event
+            } else if (underlyingTransaction.get() != null) {
+                logger.warn("Performing rollback on transaction due to recoverable exception: [{}]",
+                            transactionStatus.getException().getClass().getSimpleName());
                 transactionManager.rollback(underlyingTransaction.get());
             }
-        } finally {
-            underlyingTransaction.remove();
         }
+        underlyingTransaction.remove();
     }
 
     @Autowired
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
+    }
+
+    private boolean isTransient(Throwable exception) {
+        if (exception instanceof SQLTransientException ||
+                exception instanceof SQLRecoverableException) {
+            return true;
+        }
+        if (exception.getCause() != null && exception.getCause() != exception) {
+            return isTransient(exception.getCause());
+        }
+        return false;
     }
 }

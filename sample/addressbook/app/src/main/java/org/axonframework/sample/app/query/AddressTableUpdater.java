@@ -17,12 +17,13 @@
 package org.axonframework.sample.app.query;
 
 import org.axonframework.core.eventhandler.SequentialPerAggregatePolicy;
-import org.axonframework.core.eventhandler.TransactionAware;
-import org.axonframework.core.eventhandler.TransactionStatus;
 import org.axonframework.core.eventhandler.annotation.ConcurrentEventListener;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.sample.app.AddressAddedEvent;
+import org.axonframework.sample.app.AddressChangedEvent;
+import org.axonframework.sample.app.AddressRemovedEvent;
 import org.axonframework.sample.app.ContactCreatedEvent;
+import org.axonframework.sample.app.ContactDeletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,28 +34,51 @@ import javax.persistence.PersistenceContext;
  * @author Allard Buijze
  */
 @ConcurrentEventListener(sequencingPolicyClass = SequentialPerAggregatePolicy.class)
-public class AddressTableUpdater extends AbstractTransactionalEventListener implements TransactionAware {
+public class AddressTableUpdater extends AbstractTransactionalEventListener {
 
     private static final Logger logger = LoggerFactory.getLogger(AddressTableUpdater.class);
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Override
-    public void beforeTransaction(TransactionStatus transactionStatus) {
-        super.beforeTransaction(transactionStatus);
-    }
-
-    @Override
-    public void afterTransaction(TransactionStatus transactionStatus) {
-        super.afterTransaction(transactionStatus);
-    }
-
     @EventHandler
     public void handleContactCreatedEvent(ContactCreatedEvent event) {
         ContactEntry entry = new ContactEntry();
         entry.setIdentifier(event.getAggregateIdentifier());
         entry.setName(event.getName());
+        entityManager.persist(entry);
+    }
+
+    @EventHandler
+    public void handleContactDeletedEvent(ContactDeletedEvent event) {
+        entityManager.createQuery("DELETE FROM AddressEntry e WHERE e.identifier = :id")
+                .setParameter("id", event.getAggregateIdentifier())
+                .executeUpdate();
+
+        entityManager.createQuery("DELETE FROM ContactEntry e WHERE e.identifier = :id")
+                .setParameter("id", event.getAggregateIdentifier())
+                .executeUpdate();
+    }
+
+    @EventHandler
+    public void handleAddressDeletedEvent(AddressRemovedEvent event) {
+        entityManager.createQuery("DELETE FROM AddressEntry e WHERE e.identifier = :id and e.addressType = :type")
+                .setParameter("id", event.getAggregateIdentifier())
+                .setParameter("type", event.getType())
+                .executeUpdate();
+    }
+
+    @EventHandler
+    public void handleAddressChangedEvent(AddressChangedEvent event) {
+        AddressEntry entry = (AddressEntry) entityManager.createQuery(
+                "SELECT e from AddressEntry e WHERE e.identifier = :id and e.addressType = :type")
+                .setParameter("id", event.getAggregateIdentifier())
+                .setParameter("type", event.getType())
+                .getSingleResult();
+
+        entry.setStreetAndNumber(event.getAddress().getStreetAndNumber());
+        entry.setZipCode(event.getAddress().getZipCode());
+        entry.setCity(event.getAddress().getCity());
         entityManager.persist(entry);
     }
 

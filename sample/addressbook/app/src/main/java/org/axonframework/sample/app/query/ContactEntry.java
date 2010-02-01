@@ -16,6 +16,8 @@
 
 package org.axonframework.sample.app.query;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -33,6 +35,7 @@ public class ContactEntry {
     private Long db_identifier;
 
     @Basic
+    @Type(type = "org.axonframework.sample.app.query.UUIDUserType")
     private UUID identifier;
 
     @Basic

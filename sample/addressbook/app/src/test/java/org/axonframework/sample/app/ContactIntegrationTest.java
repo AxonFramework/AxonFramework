@@ -31,7 +31,6 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/META-INF/spring/application-context.xml",
         "classpath:/META-INF/spring/database-context.xml"})
-@Transactional(readOnly = false)
 public class ContactIntegrationTest {
 
     @Autowired
@@ -72,9 +70,9 @@ public class ContactIntegrationTest {
         eventStore.setBaseDir(resource);
     }
 
-    @Test
-//(timeout = 10000)
-public void testApplicationContext() throws InterruptedException {
+    @Test(timeout = 10000)
+    public void testApplicationContext() {
+
         assertNotNull(commandHandler);
         UUID contactId = commandHandler.createContact("Allard");
 
@@ -88,12 +86,18 @@ public void testApplicationContext() throws InterruptedException {
             commandHandler.registerAddress(contactId, AddressType.PRIVATE, address("Street 321", "90210", "City"));
             fail("Excepted exception");
         } catch (AggregateNotFoundException e) {
-            // we got 'm
+//             we got 'm
         }
 
         // the event bus is asynchronous. Let's wait for the task executor to finish all tasks
-        while (taskExecutor.getActiveCount() > 0) {
-            Thread.sleep(10);
+        try {
+            while (taskExecutor.getActiveCount() > 0) {
+                Thread.sleep(10);
+            }
+        }
+        catch (InterruptedException e) {
+            // this is normal. If the database is unreachable, the task executor will never finish.
+            // But that is not important in this test method
         }
 
         assertEquals(5, dispatchedEvents.size());
