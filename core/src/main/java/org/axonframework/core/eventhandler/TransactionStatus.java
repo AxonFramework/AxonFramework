@@ -221,8 +221,7 @@ public class TransactionStatus {
 
     /**
      * Sets the retry interval for the current transaction. his is the number of milliseconds processing should wait
-     * before retrying this transaction. Defaults to {@value org.axonframework.core.eventhandler.TransactionStatus@retryInterval
-     * }.
+     * before retrying this transaction. Defaults to 5000 milliseconds.
      *
      * @param retryInterval the number of milliseconds to wait before retrying the transaction
      */
