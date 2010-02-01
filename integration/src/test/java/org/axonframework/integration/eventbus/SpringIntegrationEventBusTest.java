@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.eventhandler;
+package org.axonframework.integration.eventbus;
 
 import org.axonframework.core.StubDomainEvent;
+import org.axonframework.core.eventhandler.EventListener;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.integration.channel.SubscribableChannel;
 import org.springframework.integration.core.Message;
 import org.springframework.integration.message.MessageHandler;
 
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
 
 /**

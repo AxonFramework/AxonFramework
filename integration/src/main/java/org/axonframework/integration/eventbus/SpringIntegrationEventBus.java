@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.eventhandler;
+package org.axonframework.integration.eventbus;
 
 import org.axonframework.core.Event;
+import org.axonframework.core.eventhandler.EventBus;
+import org.axonframework.core.eventhandler.EventListener;
 import org.springframework.integration.channel.SubscribableChannel;
 import org.springframework.integration.message.GenericMessage;
 import org.springframework.integration.message.MessageHandler;

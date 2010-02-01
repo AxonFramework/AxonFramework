@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.eventhandler;
+package org.axonframework.integration.eventbus;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
+import org.axonframework.core.eventhandler.EventListener;
 import org.springframework.integration.core.Message;
-import org.springframework.integration.message.MessageDeliveryException;
 import org.springframework.integration.message.MessageHandler;
-import org.springframework.integration.message.MessageHandlingException;
 
 /**
  * Adapter that allows an EventListener to be registered as a Spring Integration {@link
@@ -46,8 +45,8 @@ class MessageHandlerAdapter implements MessageHandler {
      * {@inheritDoc}
      */
     @Override
-    public void handleMessage(Message<?> message) throws MessageHandlingException, MessageDeliveryException {
-        DomainEvent event = (DomainEvent) message.getPayload();
+    public void handleMessage(Message<?> message) {
+        Event event = (Event) message.getPayload();
         if (eventListener.canHandle(event.getClass())) {
             eventListener.handle(event);
         }
