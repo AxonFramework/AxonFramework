@@ -28,6 +28,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * events (in the callers' thread) to all subscribed listeners.
  * <p/>
  * Listeners are expected to implement asynchronous handling themselves.
+ * <p/>
+ * <strong>Warning</strong>: This EventBus implementation does not support transaction aware event listeners.
  *
  * @author Allard Buijze
  * @since 0.1
