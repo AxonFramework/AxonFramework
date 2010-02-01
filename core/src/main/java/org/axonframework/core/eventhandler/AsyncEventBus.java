@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.axonframework.core.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +61,7 @@ public class AsyncEventBus implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void publish(DomainEvent event) {
+    public void publish(Event event) {
         Assert.state(running.get(), "The EventBus is currently not running.");
         logger.info("Publishing event of type {} with identifier {}",
                     event.getClass().getSimpleName(),

@@ -49,10 +49,9 @@ public abstract class EventBase implements Event {
     }
 
     /**
-     * Returns the timestamp of this event. The timestamp is set to the date and time the event was created.
-     *
-     * @return the timestamp of this event.
+     * {@inheritDoc}
      */
+    @Override
     public LocalDateTime getTimestamp() {
         return timestamp;
     }

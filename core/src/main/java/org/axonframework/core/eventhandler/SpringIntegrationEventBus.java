@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.springframework.integration.channel.SubscribableChannel;
 import org.springframework.integration.message.GenericMessage;
 import org.springframework.integration.message.MessageHandler;
@@ -68,8 +68,8 @@ public class SpringIntegrationEventBus implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void publish(DomainEvent event) {
-        channel.send(new GenericMessage<Object>(event));
+    public void publish(Event event) {
+        channel.send(new GenericMessage<Event>(event));
     }
 
     /**

@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
@@ -38,7 +38,7 @@ public interface EventBus {
      *
      * @param event the event to publish
      */
-    void publish(DomainEvent event);
+    void publish(Event event);
 
     /**
      * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events published

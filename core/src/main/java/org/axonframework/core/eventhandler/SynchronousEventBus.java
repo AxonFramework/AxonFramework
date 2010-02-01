@@ -16,7 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.core.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Implementation of the {@link org.axonframework.core.eventhandler.EventBus} that directly forwards all published events
- * (in the callers' thread) to all subscribed listeners.
+ * Implementation of the {@link org.axonframework.core.eventhandler.EventBus} that directly forwards all published
+ * events (in the callers' thread) to all subscribed listeners.
  * <p/>
  * Listeners are expected to implement asynchronous handling themselves.
  *
@@ -67,7 +67,7 @@ public class SynchronousEventBus implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void publish(DomainEvent event) {
+    public void publish(Event event) {
         for (EventListener listener : listeners) {
             if (listener.canHandle(event.getClass())) {
                 logger.debug("Dispatching Event [{}] to EventListener [{}]",

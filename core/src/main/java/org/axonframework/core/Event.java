@@ -16,6 +16,8 @@
 
 package org.axonframework.core;
 
+import org.joda.time.LocalDateTime;
+
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -43,4 +45,11 @@ public interface Event extends Serializable {
      * @return the identifier of this event.
      */
     UUID getEventIdentifier();
+
+    /**
+     * Returns the timestamp of this event. The timestamp is set to the date and time the event was created.
+     *
+     * @return the timestamp of this event.
+     */
+    LocalDateTime getTimestamp();
 }
