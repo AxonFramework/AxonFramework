@@ -69,6 +69,25 @@ public class AsyncEventBusTest {
         verifyNoMoreInteractions(mockExecutor);
     }
 
+    @SuppressWarnings({"unchecked"})
+    @Test
+    public void testDispatchEvent_TransactionControlOnFullConcurrencyPolicy() {
+        // Tests Issue #9 - Transaction ignored with FullConcurrencyPolicy
+        // The scheduler should be used, even if there can only be 1 event to handle
+        TransactionalEventListener mockEventListener = mock(TransactionalEventListener.class);
+        when(mockEventListener.canHandle(isA(Class.class))).thenReturn(true);
+        when(mockEventListener.getEventSequencingPolicy()).thenReturn(new FullConcurrencyPolicy());
+        testSubject.start();
+        testSubject.subscribe(mockEventListener);
+        testSubject.publish(new StubDomainEvent());
+
+        verify(mockExecutor).execute(isA(EventProcessingScheduler.class));
+
+        testSubject.unsubscribe(mockEventListener);
+        testSubject.publish(new StubDomainEvent());
+        verifyNoMoreInteractions(mockExecutor);
+    }
+
     @Test
     public void testExecutorNotShutDownOnDestroy() throws Exception {
         // the executor must only be shutdown if the event bus created it.
@@ -91,4 +110,7 @@ public class AsyncEventBusTest {
         return field.get(testSubject);
     }
 
+    private interface TransactionalEventListener extends EventListener, TransactionAware {
+
+    }
 }

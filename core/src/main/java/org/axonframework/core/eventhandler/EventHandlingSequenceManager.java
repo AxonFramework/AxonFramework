@@ -65,7 +65,8 @@ public class EventHandlingSequenceManager {
             if (sequenceIdentifier == null) {
                 logger.debug("Scheduling event of type [{}] for full concurrent processing",
                              event.getClass().getSimpleName());
-                executor.execute(new SingleEventHandlerInvocationTask(eventListener, event));
+                EventProcessingScheduler scheduler = newProcessingScheduler(new NoActionCallback());
+                scheduler.scheduleEvent(event);
             } else {
                 logger.debug("Scheduling event of type [{}] for sequential processing in group [{}]",
                              event.getClass().getSimpleName(),
@@ -99,35 +100,10 @@ public class EventHandlingSequenceManager {
      * @param shutDownCallback The callback that needs to be notified when the scheduler stops processing.
      * @return a new scheduler instance
      */
-    protected EventProcessingScheduler newProcessingScheduler(TransactionCleanUp shutDownCallback) {
-        logger.debug("Initializing new processing scheduler for sequence [{}]",
-                     shutDownCallback.sequenceIdentifier.toString());
+    protected EventProcessingScheduler newProcessingScheduler(
+            EventProcessingScheduler.ShutdownCallback shutDownCallback) {
+        logger.debug("Initializing new processing scheduler.");
         return new EventProcessingScheduler(eventListener, executor, shutDownCallback);
-    }
-
-    private static class SingleEventHandlerInvocationTask implements Runnable {
-
-        private final EventListener eventListener;
-        private final Event event;
-
-        /**
-         * Configures a task to invoke a single event on an event listener
-         *
-         * @param eventListener The event listener to invoke the event handler on
-         * @param event         the event to send to the event listener
-         */
-        public SingleEventHandlerInvocationTask(EventListener eventListener, Event event) {
-            this.eventListener = eventListener;
-            this.event = event;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void run() {
-            eventListener.handle(event);
-        }
     }
 
     private final class TransactionCleanUp implements EventProcessingScheduler.ShutdownCallback {
@@ -155,5 +131,12 @@ public class EventHandlingSequenceManager {
      */
     EventListener getEventListener() {
         return eventListener;
+    }
+
+    private class NoActionCallback implements EventProcessingScheduler.ShutdownCallback {
+
+        @Override
+        public void afterShutdown(EventProcessingScheduler scheduler) {
+        }
     }
 }
