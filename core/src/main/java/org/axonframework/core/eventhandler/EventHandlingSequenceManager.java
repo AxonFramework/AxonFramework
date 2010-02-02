@@ -20,9 +20,12 @@ import org.axonframework.core.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The EventHandlingSequenceManager is responsible for delegating each incoming event to the relevant {@link
@@ -40,6 +43,7 @@ public class EventHandlingSequenceManager {
     private final ConcurrentMap<Object, EventProcessingScheduler> transactions =
             new ConcurrentHashMap<Object, EventProcessingScheduler>();
     private final EventSequencingPolicy eventSequencingPolicy;
+    private final BlockingQueue<Event> concurrentEventQueue = new LinkedBlockingQueue<Event>();
 
     /**
      * Initialize the EventHandlingSequenceManager for the given <code>eventListener</code> using the given
@@ -65,7 +69,8 @@ public class EventHandlingSequenceManager {
             if (sequenceIdentifier == null) {
                 logger.debug("Scheduling event of type [{}] for full concurrent processing",
                              event.getClass().getSimpleName());
-                EventProcessingScheduler scheduler = newProcessingScheduler(new NoActionCallback());
+                EventProcessingScheduler scheduler = newProcessingScheduler(this.concurrentEventQueue,
+                                                                            new NoActionCallback());
                 scheduler.scheduleEvent(event);
             } else {
                 logger.debug("Scheduling event of type [{}] for sequential processing in group [{}]",
@@ -104,6 +109,20 @@ public class EventHandlingSequenceManager {
             EventProcessingScheduler.ShutdownCallback shutDownCallback) {
         logger.debug("Initializing new processing scheduler.");
         return new EventProcessingScheduler(eventListener, executor, shutDownCallback);
+    }
+
+    /**
+     * Creates a new scheduler instance for the eventListener that schedules events on the executor service for the
+     * managed EventListener. The Scheduler must get events from the given <code>eventQueue</code>.
+     *
+     * @param eventQueue       The event queue from which the scheduler must fetch events
+     * @param shutDownCallback The callback that needs to be notified when the scheduler stops processing.
+     * @return a new scheduler instance
+     */
+    protected EventProcessingScheduler newProcessingScheduler(Queue<Event> eventQueue,
+                                                              EventProcessingScheduler.ShutdownCallback shutDownCallback) {
+        logger.debug("Initializing new processing scheduler.");
+        return new EventProcessingScheduler(eventListener, executor, eventQueue, shutDownCallback);
     }
 
     private final class TransactionCleanUp implements EventProcessingScheduler.ShutdownCallback {

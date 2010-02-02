@@ -48,12 +48,13 @@ public class EventProcessingScheduler implements Runnable {
     private final Executor executor;
 
     // guarded by "this"
-    private final Queue<Event> events = new LinkedList<Event>();
+    private final Queue<Event> eventQueue;
     // guarded by "this"
     private boolean isScheduled = false;
     private boolean cleanedUp;
     private final List<Event> currentBatch = new LinkedList<Event>();
     private volatile long retryAfter;
+    private boolean transactionStarted;
 
     /**
      * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>.
@@ -64,6 +65,22 @@ public class EventProcessingScheduler implements Runnable {
      */
     public EventProcessingScheduler(EventListener eventListener, Executor executor,
                                     ShutdownCallback shutDownCallback) {
+        this(eventListener, executor, new LinkedList<Event>(), shutDownCallback);
+    }
+
+    /**
+     * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>. The
+     * <code>eventQueue</code> is the queue from which the scheduler should obtain it's events. This queue must be
+     * thread safe, as it can be used simultaneously by multiple threads.
+     *
+     * @param eventListener    The event listener for which this scheduler schedules events
+     * @param executor         The executor service that will process the events
+     * @param eventQueue       The queue from which this scheduler gets events
+     * @param shutDownCallback The callback to notify when the scheduler finishes processing events
+     */
+    public EventProcessingScheduler(EventListener eventListener, Executor executor, Queue<Event> eventQueue,
+                                    ShutdownCallback shutDownCallback) {
+        this.eventQueue = eventQueue;
         this.eventListener = eventListener;
         this.shutDownCallback = shutDownCallback;
         if (eventListener instanceof TransactionAware) {
@@ -88,7 +105,7 @@ public class EventProcessingScheduler implements Runnable {
         if (cleanedUp) {
             return false;
         }
-        events.add(event);
+        eventQueue.add(event);
         scheduleIfNecessary();
         return true;
     }
@@ -102,7 +119,7 @@ public class EventProcessingScheduler implements Runnable {
      * @return the next DomainEvent for processing, of null if none is available
      */
     private synchronized Event nextEvent() {
-        return events.poll();
+        return eventQueue.poll();
     }
 
     /**
@@ -114,7 +131,7 @@ public class EventProcessingScheduler implements Runnable {
      * @return true if yielding succeeded, false otherwise.
      */
     private synchronized boolean yield() {
-        if (events.size() > 0 || currentBatch.size() > 0) {
+        if (eventQueue.size() > 0 || currentBatch.size() > 0) {
             isScheduled = true;
             try {
                 if (retryAfter <= System.currentTimeMillis()) {
@@ -169,7 +186,7 @@ public class EventProcessingScheduler implements Runnable {
      * @return the number of events currently queued for processing.
      */
     private synchronized int queuedEventCount() {
-        return events.size();
+        return eventQueue.size();
     }
 
     /**
@@ -220,7 +237,7 @@ public class EventProcessingScheduler implements Runnable {
 
     private void processOrRetryBatch(TransactionStatus status) {
         try {
-            transactionListener.beforeTransaction(status);
+            this.transactionStarted = false;
             if (currentBatch.isEmpty()) {
                 handleEventBatch(status);
             } else {
@@ -229,7 +246,9 @@ public class EventProcessingScheduler implements Runnable {
                 logger.info("Continuing processing of next events.");
                 handleEventBatch(status);
             }
-            transactionListener.afterTransaction(status);
+            if (transactionStarted) {
+                transactionListener.afterTransaction(status);
+            }
             currentBatch.clear();
         }
         catch (Exception e) {
@@ -264,6 +283,7 @@ public class EventProcessingScheduler implements Runnable {
         } catch (Exception e) {
             logger.warn("Call to afterTransaction method of failed transaction resulted in an exception.", e);
         }
+        transactionStarted = false;
     }
 
     private void markLastEventForRetry() {
@@ -285,6 +305,10 @@ public class EventProcessingScheduler implements Runnable {
     private void handleEventBatch(TransactionStatus status) {
         Event event;
         while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) {
+            if (!transactionStarted) {
+                transactionListener.beforeTransaction(status);
+                transactionStarted = true;
+            }
             currentBatch.add(event);
             eventListener.handle(event);
             status.recordEventProcessed();

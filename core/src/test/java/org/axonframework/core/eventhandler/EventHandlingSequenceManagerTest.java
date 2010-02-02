@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -76,6 +77,23 @@ public class EventHandlingSequenceManagerTest {
         assertTrue("Expected transaction schedulers to be cleaned up", transactions.isEmpty());
     }
 
+    @Test
+    public void testDispatchFullConcurrentEvents() throws InterruptedException {
+        FullConcurrentEventListener eventListener = new FullConcurrentEventListener();
+        testSubject = new EventHandlingSequenceManager(eventListener, executorService);
+        StubDomainEvent event = new StubDomainEvent();
+        for (int t = 0; t < 1000; t++) {
+            testSubject.addEvent(event);
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(10, TimeUnit.SECONDS);
+        assertEquals(0, eventListener.transactionCounter.get());
+        // it's almost impossible that 2 threads will cause more than 250 transactions.
+        assertEquals(1000, eventListener.eventCounter.get());
+        assertTrue("Event processing doesn't seem to be optimized", eventListener.totalTransactionCounter.get() < 250);
+        System.out.println("Total transactions started: " + eventListener.totalTransactionCounter.get());
+    }
+
     /**
      * Very useless implementation of EventSequencingPolicy that is the fastest way to display a memory leak
      */
@@ -102,6 +120,39 @@ public class EventHandlingSequenceManagerTest {
         @Override
         public EventSequencingPolicy getEventSequencingPolicy() {
             return new FullRandomPolicy();
+        }
+    }
+
+    private class FullConcurrentEventListener implements EventListener, TransactionAware {
+
+        private AtomicInteger eventCounter = new AtomicInteger(0);
+        private AtomicInteger transactionCounter = new AtomicInteger(0);
+        private AtomicInteger totalTransactionCounter = new AtomicInteger(0);
+
+        @Override
+        public boolean canHandle(Class<? extends Event> eventType) {
+            return true;
+        }
+
+        @Override
+        public void handle(Event event) {
+            eventCounter.incrementAndGet();
+        }
+
+        @Override
+        public EventSequencingPolicy getEventSequencingPolicy() {
+            return new FullConcurrencyPolicy();
+        }
+
+        @Override
+        public void beforeTransaction(TransactionStatus transactionStatus) {
+            transactionCounter.incrementAndGet();
+            totalTransactionCounter.incrementAndGet();
+        }
+
+        @Override
+        public void afterTransaction(TransactionStatus transactionStatus) {
+            transactionCounter.decrementAndGet();
         }
     }
 }
