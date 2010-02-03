@@ -19,6 +19,7 @@ package org.axonframework.core.eventhandler;
 import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
+import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
@@ -76,13 +77,15 @@ public class EventProcessingSchedulerTest {
 
     @Test
     public void testEventProcessingDelayed_ScheduledExecutorService() {
+        StubDomainEvent event1 = new StubDomainEvent(1);
+        StubDomainEvent event2 = new StubDomainEvent(2);
         TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
         testSubject = new EventProcessingScheduler(listener,
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
-        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(isA(Event.class));
+        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(event1);
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -92,21 +95,33 @@ public class EventProcessingSchedulerTest {
                 return null;
             }
         }).when(listener).afterTransaction(isA(TransactionStatus.class));
-        testSubject.scheduleEvent(new StubDomainEvent());
-        testSubject.scheduleEvent(new StubDomainEvent());
+        testSubject.scheduleEvent(event1);
+        testSubject.scheduleEvent(event2);
         testSubject.run();
         verify(mockExecutorService).schedule(eq(testSubject), gt(400L), eq(TimeUnit.MILLISECONDS));
+        // since the scheduler is a mock, we simulate the execution:
+        testSubject.run();
+        InOrder inOrder = inOrder(listener);
+        inOrder.verify(listener).beforeTransaction(isA(TransactionStatus.class));
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(listener).afterTransaction(isA(TransactionStatus.class));
+        inOrder.verify(listener).beforeTransaction(isA(TransactionStatus.class));
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(listener).handle(event2);
+        inOrder.verify(listener).afterTransaction(isA(TransactionStatus.class));
     }
 
     @Test
     public void testEventProcessingDelayed_ExecutorDoesNotSupportScheduling() {
+        StubDomainEvent event1 = new StubDomainEvent(1);
+        StubDomainEvent event2 = new StubDomainEvent(2);
         TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ExecutorService mockExecutorService = mock(ExecutorService.class);
         testSubject = new EventProcessingScheduler(listener,
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
-        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(isA(Event.class));
+        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(event1);
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -116,8 +131,8 @@ public class EventProcessingSchedulerTest {
                 return null;
             }
         }).when(listener).afterTransaction(isA(TransactionStatus.class));
-        testSubject.scheduleEvent(new StubDomainEvent());
-        testSubject.scheduleEvent(new StubDomainEvent());
+        testSubject.scheduleEvent(event1);
+        testSubject.scheduleEvent(event2);
         long t1 = System.currentTimeMillis();
         testSubject.run();
         // we simulate the immediate scheduling of the yielded task by executing run again
@@ -126,6 +141,15 @@ public class EventProcessingSchedulerTest {
         // we allow some slack, because thread scheduling doesn't give us much guarantees about timing
         long waitTime = t2 - t1;
         assertTrue("Wait time was too short: " + waitTime, waitTime > 480);
+
+        InOrder inOrder = inOrder(listener);
+        inOrder.verify(listener).beforeTransaction(isA(TransactionStatus.class));
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(listener).afterTransaction(isA(TransactionStatus.class));
+        inOrder.verify(listener).beforeTransaction(isA(TransactionStatus.class));
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(listener).handle(event2);
+        inOrder.verify(listener).afterTransaction(isA(TransactionStatus.class));
     }
 
     private MockEventListener executeEventProcessing(RetryPolicy policy) {

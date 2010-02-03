@@ -54,7 +54,7 @@ public class EventProcessingScheduler implements Runnable {
     private boolean cleanedUp;
     private final List<Event> currentBatch = new LinkedList<Event>();
     private volatile long retryAfter;
-    private boolean transactionStarted;
+    private volatile boolean transactionStarted;
 
     /**
      * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>.
@@ -197,7 +197,7 @@ public class EventProcessingScheduler implements Runnable {
         boolean mayContinue = true;
         waitUntilAllowedStartingTime();
         final TransactionStatus status = new TransactionStatus();
-        status.setMaxTransactionSize(queuedEventCount());
+        status.setMaxTransactionSize(queuedEventCount() + currentBatch.size());
         TransactionStatus.set(status);
         while (mayContinue) {
             processOrRetryBatch(status);
@@ -296,6 +296,7 @@ public class EventProcessingScheduler implements Runnable {
 
     private void retryEventBatch(TransactionStatus status) {
         for (Event event : this.currentBatch) {
+            startTransactionIfNecessary(status);
             eventListener.handle(event);
             status.recordEventProcessed();
         }
@@ -305,13 +306,17 @@ public class EventProcessingScheduler implements Runnable {
     private void handleEventBatch(TransactionStatus status) {
         Event event;
         while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) {
-            if (!transactionStarted) {
-                transactionListener.beforeTransaction(status);
-                transactionStarted = true;
-            }
+            startTransactionIfNecessary(status);
             currentBatch.add(event);
             eventListener.handle(event);
             status.recordEventProcessed();
+        }
+    }
+
+    private void startTransactionIfNecessary(TransactionStatus status) {
+        if (!transactionStarted) {
+            transactionListener.beforeTransaction(status);
+            transactionStarted = true;
         }
     }
 
