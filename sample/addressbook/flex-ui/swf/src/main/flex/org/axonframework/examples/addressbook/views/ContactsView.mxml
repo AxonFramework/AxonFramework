@@ -21,6 +21,7 @@
             var contact:Contact = new Contact();
             contact.name = contactNameInput.text;
             newContactCommand.execute(contact);
+            contactNameInput.text = "";
         }
 
         ]]></mx:Script>

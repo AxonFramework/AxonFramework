@@ -7,7 +7,7 @@ import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
 
 public class ContactModel {
     [Bindable]
-    public var contacts:ArrayCollection;
+    public var contacts:ArrayCollection = new ArrayCollection();
 
     public function ContactModel() {
     }
@@ -30,7 +30,7 @@ public class ContactModel {
             contact.name = message.contact.name;
         } else {
             trace('creating a contact after receving an event');
-            contacts.addItem(contact);
+            contacts.addItem(message.contact);
         }
     }
 
