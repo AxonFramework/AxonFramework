@@ -29,6 +29,7 @@
             classpath:services-context.xml,
             classpath:META-INF/spring/application-context.xml,
             classpath:META-INF/spring/database-context.xml,
+            classpath:META-INF/spring/datainit-context.xml,
             classpath:jms-context.xml
         </param-value>
     </context-param>
