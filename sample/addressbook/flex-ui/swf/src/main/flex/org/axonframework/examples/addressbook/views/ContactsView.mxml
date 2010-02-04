@@ -49,27 +49,32 @@
         </mx:State>
     </mx:states>
 
-    <mx:VBox>
-        <mx:Button id="addContact" icon="@Embed(source='/assets/images/address_book_add.png')" label="Add Contact"
-                   click="addContactPopupAction()"/>
-        <mx:HBox>
+    <mx:HBox>
+        <mx:VBox>
+            <mx:Button id="addContact" icon="@Embed(source='/assets/images/address_book_add.png')" label="Add Contact"
+                       click="addContactPopupAction()"/>
             <mx:DataGrid dataProvider="{contactModel.contacts}" itemClick="showContactDetails(event)">
                 <mx:columns>
-                    <mx:DataGridColumn dataField="uuid"/>
-                    <mx:DataGridColumn dataField="name"/>
+                    <mx:DataGridColumn dataField="name" headerText="Name"/>
                 </mx:columns>
             </mx:DataGrid>
-            <mx:VBox id="contactControls" visible="false">
-                <mx:ControlBar>
-                    <mx:Button id="editContact" icon="@Embed(source='/assets/images/address_book_edit.png')"
-                               label="Edit Contact"/>
-                    <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"
-                               label="Delete Contact"/>
-                </mx:ControlBar>
-                <mx:Label text="{contactModel.selectedContact.name}"/>
-                <views:AddAddressView/>
-            </mx:VBox>
-        </mx:HBox>
-    </mx:VBox>
+        </mx:VBox>
+        <mx:VBox id="contactControls" visible="false">
+            <mx:HBox>
+                <mx:Button id="editContact" icon="@Embed(source='/assets/images/address_book_edit.png')"
+                           label="Edit Contact"/>
+                <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"
+                           label="Delete Contact"/>
+            </mx:HBox>
+            <mx:DataGrid dataProvider="{contactModel.selectedContact.addresses}">
+                <mx:columns>
+                    <mx:DataGridColumn dataField="type"/>
+                    <mx:DataGridColumn dataField="street"/>
+                    <mx:DataGridColumn dataField="zipCode"/>
+                    <mx:DataGridColumn dataField="city"/>
+                </mx:columns>
+            </mx:DataGrid>
+        </mx:VBox>
+    </mx:HBox>
 
 </mx:Canvas>
