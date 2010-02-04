@@ -40,8 +40,8 @@ hr {
     background: gray;
 }
 
-h1, h2, h3, h4 {
-    color: #234623;
+h1, h2, h3, h4, .toc {
+    color: #232346;
     font-family: Arial, Sans-serif;
 }
 
@@ -53,7 +53,7 @@ pre {
 pre.programlisting {
     font-size: 10pt;
     padding: 7pt 3pt;
-    border: 1pt solid black;
+    border: 1pt solid #222222;
     background: #eeeeee;
     clear: both;
 }
@@ -85,8 +85,8 @@ div.table td {
 }
 
 .mediaobject {
-    padding-top: 30px;
-    padding-bottom: 30px;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 .legalnotice {
@@ -100,6 +100,8 @@ p.releaseinfo {
     font-weight: bold;
     font-family: Verdana, Arial, helvetica, sans-serif;
     padding-top: 10px;
+    text-align: center;
+    color: #232346;
 }
 
 p.pubdate {

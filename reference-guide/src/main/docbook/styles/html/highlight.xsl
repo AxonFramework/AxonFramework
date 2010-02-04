@@ -36,39 +36,39 @@
 	<xsl:param name="highlight.default.language" select="java"/>
 
     <xsl:template match='xslthl:tag' mode="xslthl">
-        <span style="color: #000080">
+        <span style="color:#000080">
             <xsl:apply-templates/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:attribute' mode="xslthl">
-        <strong>
+        <span style="color:#000080;">
             <xsl:apply-templates/>
-        </strong>
+        </span>
     </xsl:template>
 
     <xsl:template match='xslthl:value' mode="xslthl">
-        <inline font-weight="bold" color="#008000">
+        <span style="font-weight:bold; color:#008000;">
             <xsl:apply-templates/>
-        </inline>
+        </span>
     </xsl:template>
 
     <xsl:template match='xslthl:keyword' mode="xslthl">
-        <span style="color: #000080">
+        <span style="color:#000080;">
             <xsl:apply-templates mode="xslthl"/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:string' mode="xslthl">
-        <inline font-weight="bold" font-style="italic">
+        <span style="color:#008000;">
             <xsl:apply-templates mode="xslthl"/>
-        </inline>
+        </span>
     </xsl:template>
 
     <xsl:template match='xslthl:comment' mode="xslthl">
-        <inline font-style="italic">
+        <span style="font-style:italic; color:#444444;">
             <xsl:apply-templates mode="xslthl"/>
-        </inline>
+        </span>
     </xsl:template>
 
     <!--
@@ -90,9 +90,9 @@
     </xsl:template>
 
     <xsl:template match='xslthl:annotation' mode="xslthl">
-        <inline color="#808000">
+        <span style="color:#808000;">
             <xsl:apply-templates mode="xslthl"/>
-        </inline>
+        </span>
     </xsl:template>
 
     <xsl:template match='xslthl:directive' mode="xslthl">
@@ -101,9 +101,9 @@
 
     <!-- Not sure which element will be in final XSLTHL 2.0 -->
     <xsl:template match='xslthl:doccomment|xslthl:doctype' mode="xslthl">
-        <inline font-weight="bold">
+        <span style="font-weight:bold;">
             <xsl:apply-templates mode="xslthl"/>
-        </inline>
+        </span>
     </xsl:template>
 
 

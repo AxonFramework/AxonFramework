@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   ~ Copyright (c) 2010. Axon Framework
   ~
@@ -17,12 +16,82 @@
   -->
 <chapter id="using-spring" xmlns="http://docbook.org/ns/docbook">
     <title>Using Spring</title>
+    <para>The AxonFramework has many integration points with the Spring Framework. All major
+        building blocks in Axon are Spring configurable. Furthermore, there are some Bean Post
+        Processors that scan the application context for building blocks and automatically wires
+        them.</para>
     <sect1>
-        <title>Core Spring support</title>
-        
+        <title>Wiring event handlers</title>
+        <para>Using the annotated event listeners is very easy when you use Spring. All you need to
+            do is configure the AnnotationEventListenerBeanPostProcessor in your application
+            context. This post processor will discover beans with @EventHandler annotated methods
+            and automatically connect them to the event bus.<programlistingco>
+                <areaspec>
+                    <area xml:id="postprocessor-co" coords="3 67"/>
+                    <area xml:id="optional-eventbus-reference-co" coords="4 52"/>
+                    <area xml:id="eventlistener-co" coords="7 76"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean class="org...AnnotationEventListenerBeanPostProcessor">
+        &lt;property name="eventBus" ref="eventBus"/>
+    &lt;/bean>
+
+    &lt;bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="postprocessor-co">
+                        <para>This bean post processor will scan the application context for beans
+                            with an <code>@EventHandler</code> annotated method.</para>
+                    </callout>
+                    <callout arearefs="optional-eventbus-reference-co">
+                        <para>The reference to the event bus is optional, if only a single
+                                <code>EventBus</code> implementation is configured in the
+                            application context. The bean postprocessor will automatically find and
+                            wire it. If there is more than one <code>EventBus</code> in the context,
+                            you must specify the one to use in the postprocessor.</para>
+                    </callout>
+                    <callout arearefs="eventlistener-co">
+                        <para>This event listener will be automatically recognized and subscribed to
+                            the event bus.</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
+        <para>You can also wire event listeners "manually", by explicitly defining them within a
+                <code>AnnotationEventListenerAdapter</code> bean, as shown in the code sample below.<programlistingco>
+                <areaspec>
+                    <area xml:id="adapter-co" coords="3 82"/>
+                    <area xml:id="eventbus-reference-co" coords="7 52"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean class="org.axonframework...annotation.AnnotationEventListenerAdapter">
+        &lt;constructor-arg>
+            &lt;bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
+        &lt;/constructor-arg>
+        &lt;property name="eventBus" ref="eventBus"/>
+    &lt;/bean>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="adapter-co">
+                        <para>The adapter turns any bean with <code>@EventHandler</code> methods
+                            into an <code>EventListener</code></para>
+                    </callout>
+                    <callout arearefs="eventbus-reference-co">
+                        <para>You need to explicitly reference the event bus to which you like to
+                            register the event listener</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
     </sect1>
     <sect1>
-        <title>Spring Integration support</title>
-        
+        <title>Wiring the event bus</title>
+        <para>This how it's done</para>
+    </sect1>
+    <sect1>
+        <title>Wiring the Repository</title>
+        <para>This is how</para>
     </sect1>
 </chapter>

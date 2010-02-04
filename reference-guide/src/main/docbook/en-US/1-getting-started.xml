@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   ~ Copyright (c) 2010. Axon Framework
   ~
@@ -51,8 +50,9 @@
             <simplesect>
                 <title>Event Sourcing</title>
                 <para>The event sourcing repository that is provided in Axon
-                        (<code>EventSourcingRepository</code>) requires XStream. You need the
-                    following maven dependency to use this repository implementation. </para>
+                        (<code>XStreamFileSystemEventStore</code>) requires XStream. You need to add
+                    the following maven dependency to your project to use this repository
+                    implementation. </para>
                 <programlisting language="xml"><![CDATA[<dependency>
     <groupId>com.thoughtworks.xstream</groupId>
     <artifactId>xstream</artifactId>
