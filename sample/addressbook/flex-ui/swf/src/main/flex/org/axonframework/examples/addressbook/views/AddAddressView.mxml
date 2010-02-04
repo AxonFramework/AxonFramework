@@ -6,14 +6,6 @@
         import org.axonframework.examples.addressbook.messages.NewAddressMessage;
         import org.axonframework.examples.addressbook.model.Address;
 
-
-        //        private var newAddressCommand:NewAddressCommand;
-        //
-        //        [Inject]
-        //        public function init(newAddressCommand:NewAddressCommand):void {
-        //            this.newAddressCommand = newAddressCommand;
-        //        }
-
         [MessageDispatcher]
         public var dispatcher:Function;
 
@@ -25,7 +17,6 @@
             address.zipCode = inputZipCode.text;
             address.contactName = inputContactName.text;
             dispatcher(new NewAddressMessage(address));
-            //            newAddressCommand.execute(address);
         }
         ]]></mx:Script>
 

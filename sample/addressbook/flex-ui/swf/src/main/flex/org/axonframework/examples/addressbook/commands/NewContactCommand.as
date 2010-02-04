@@ -1,6 +1,8 @@
 package org.axonframework.examples.addressbook.commands {
+import mx.rpc.AsyncToken;
+
 import org.axonframework.examples.addressbook.messages.NewContactMessage;
-import org.axonframework.examples.addressbook.model.Contact;
+import org.axonframework.examples.addressbook.messages.NotificationMessage;
 
 public class NewContactCommand extends BaseCommand {
 
@@ -8,10 +10,15 @@ public class NewContactCommand extends BaseCommand {
         super();
     }
 
-    public function execute(contact:Contact):void {
+    public function execute(message:NewContactMessage):AsyncToken {
         trace('Executing the new contact command');
-        // TODO add some validation
-        dispatcher(new NewContactMessage(contact));
+        return addressService.createContact(message.contact);
     }
+
+    public function result():void {
+        trace("The new contact has been created : ");
+        dispatcher(new NotificationMessage("New contact has been received by the server"));
+    }
+
 }
 }

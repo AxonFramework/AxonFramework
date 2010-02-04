@@ -7,23 +7,15 @@
     <mx:Script><![CDATA[
         import mx.messaging.events.MessageEvent;
 
-        import org.axonframework.examples.addressbook.commands.ShowContactsCommand;
         import org.axonframework.examples.addressbook.commands.ViewConstants;
         import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
+        import org.axonframework.examples.addressbook.messages.NotificationMessage;
+        import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
         import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
         import org.axonframework.examples.addressbook.model.Contact;
 
-        private var showContactsCommand:ShowContactsCommand;
-
         [MessageDispatcher]
         public var dispatcher:Function;
-
-        [Inject]
-        public function init(showContactsCommand:ShowContactsCommand):void {
-            this.showContactsCommand = showContactsCommand;
-            // TODO check if we can do this in another function
-            showContactsCommand.execute();
-        }
 
         [MessageHandler]
         public function showRightViewStack(changeViewMessage:ChangeViewMessage):void {
@@ -47,12 +39,9 @@
         }
 
         public function messageHandler(event:MessageEvent):void {
-            trace('message event : ' + event.message.body);
             if (event.message.body is Contact) {
                 dispatcher(new UpdatedContactMessage(event.message.body as Contact));
             }
-            //            var address:Address = event.message.body as Address;
-            //            trace('Received an address event : ' + address.contactName);
         }
 
         public function acknowledgeHandler(event:Event):void {
@@ -61,12 +50,29 @@
         }
 
         public function faultHandler(event:Event):void {
-            trace('*** fault event : ');
             trace(event.toString());
+        }
+
+        [Init]
+        public function init():void {
+            dispatcher(new ShowContactsMessage());
         }
 
         private function doSubscribe():void {
             consumer.subscribe();
+        }
+
+        [MessageHandler]
+        public function handleActivityLogEvent(event:NotificationMessage):void {
+            trace("Received a notification message : " + event.message);
+            activityBoxHolder.visible = true;
+            activityBox.setStyle('borderColor', '#7FFF00');
+            activityBox.setStyle('backgroundColor', '#FFF8DC');
+            activityMessage.text = event.message;
+            activityBoxHolder.visible = false;
+            var notificationlabel:Label = new Label();
+            notificationlabel.text = event.message;
+            notificationMessages.addChildAt(notificationlabel, 0);
         }
 
         ]]></mx:Script>
@@ -80,16 +86,29 @@
 
     <sf:Configure/>
 
-    <mx:VBox width="100%" height="100%" top="8" left="8" right="8" bottom="8">
-        <views:ToolbarView id="toolbar" width="100%"/>
-        <mx:ViewStack id="mainViewStack" width="100%" height="100%">
-            <mx:HBox id="home" horizontalAlign="center">
-                <mx:Image source="@Embed(source='/assets/images/logo-large.png')"/>
+    <mx:Dissolve id="dissolveOut" duration="10000" alphaFrom="1.0" alphaTo="0.0"/>
+    <mx:HBox width="100%" height="100%">
+        <mx:VBox height="100%" top="8" left="8" right="8" bottom="8">
+            <views:ToolbarView id="toolbar" width="100%"/>
+            <mx:HBox id="activityBoxHolder" hideEffect="dissolveOut" visible="false" backgroundColor="#91A7B2">
+                <mx:Spacer width="160"/>
+                <mx:HBox id="activityBox" borderStyle="solid" cornerRadius="10" width="1050"
+                         horizontalScrollPolicy="off">
+                    <mx:Label id="activityMessage" text=""/>
+                </mx:HBox>
             </mx:HBox>
-            <views:SearchView id="find" width="100%" height="100%"/>
-            <views:ContactsView id="contacts" width="100%" height="100%"/>
-            <views:AddAddressView id="addAddress" width="100%" height="100%"/>
-        </mx:ViewStack>
-    </mx:VBox>
+            <mx:ViewStack id="mainViewStack" width="100%" height="100%">
+                <mx:HBox id="home" horizontalAlign="center">
+                    <mx:Image source="@Embed(source='/assets/images/logo-large.png')"/>
+                </mx:HBox>
+                <views:SearchView id="find" width="100%" height="100%"/>
+                <views:ContactsView id="contacts" width="100%" height="100%"/>
+                <views:AddAddressView id="addAddress" width="100%" height="100%"/>
+            </mx:ViewStack>
+        </mx:VBox>
+        <mx:VBox id="notificationMessages" width="25%">
+
+        </mx:VBox>
+    </mx:HBox>
 
 </mx:Canvas>

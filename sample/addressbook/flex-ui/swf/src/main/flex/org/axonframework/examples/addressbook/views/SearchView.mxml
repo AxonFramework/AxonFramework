@@ -3,22 +3,15 @@
            width="100%"
            xmlns:sf="http://www.spicefactory.org/parsley/flex">
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.commands.SearchAddressCommand;
+        import org.axonframework.examples.addressbook.messages.SearchForAddressesMessage;
         import org.axonframework.examples.addressbook.model.Address;
-
-        private var searchAddressCommand:SearchAddressCommand;
 
         [MessageDispatcher]
         public var dispatcher:Function;
 
-        [Inject]
-        public function init(searchAddressCommand:SearchAddressCommand):void {
-            this.searchAddressCommand = searchAddressCommand;
-        }
-
         private function searchAction():void {
             var searchAddress:Address = Address.newAddress(contactNameInput.text, searchStreetInput.text, "", searchCityInput.text);
-            searchAddressCommand.execute(searchAddress);
+            dispatcher(new SearchForAddressesMessage(searchAddress));
         }
 
         ]]></mx:Script>
@@ -37,7 +30,7 @@
                 </mx:FormItem>
             </mx:Form>
             <mx:Button id="findButton" icon="@Embed(source='/assets/images/find_next.png')"
-                       click="searchAction()"/>
+                       label="Search" click="searchAction()"/>
         </mx:HBox>
         <views:AddressesView/>
     </mx:VBox>

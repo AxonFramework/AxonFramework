@@ -4,19 +4,11 @@
         >
 
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.commands.SearchAddressCommand;
         import org.axonframework.examples.addressbook.commands.ViewConstants;
         import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
 
-        private var searchAddressCommand:SearchAddressCommand;
-
         [MessageDispatcher]
         public var dispatcher:Function;
-
-        [Inject]
-        public function init(searchAddressCommand:SearchAddressCommand):void {
-            this.searchAddressCommand = searchAddressCommand;
-        }
 
         private function changeView(identity:String):void {
             // TODO : I do not want to do this here, but it is easy for now
@@ -29,14 +21,11 @@
     <mx:HBox>
         <mx:ControlBar defaultButton="{homeButton}">
             <mx:Button id="homeButton" icon="@Embed(source='/assets/images/home.png')"
-                       click="changeView(ViewConstants.HOME)"/>
-            <mx:Label text="Home"/>
+                       click="changeView(ViewConstants.HOME)" label="Home"/>
             <mx:Button id="contactButton" icon="@Embed(source='/assets/images/address_book.png')"
-                       click="changeView(ViewConstants.CONTACTS)"/>
-            <mx:Label text="Contacts"/>
-            <mx:Button id="searchButton" icon="@Embed(source='/assets/images/find.png')"
+                       click="changeView(ViewConstants.CONTACTS)" label="Contacts"/>
+            <mx:Button id="searchButton" icon="@Embed(source='/assets/images/find.png')" label="Find"
                        click="changeView(ViewConstants.FIND)"/>
-            <mx:Label text="Find"/>
         </mx:ControlBar>
     </mx:HBox>
 </mx:Canvas>

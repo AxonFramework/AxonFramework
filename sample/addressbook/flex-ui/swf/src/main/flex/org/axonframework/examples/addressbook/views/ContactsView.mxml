@@ -9,8 +9,8 @@
 
         import mx.events.ListEvent;
 
-        import org.axonframework.examples.addressbook.commands.NewContactCommand;
-        import org.axonframework.examples.addressbook.commands.SelectContactCommand;
+        import org.axonframework.examples.addressbook.messages.NewContactMessage;
+        import org.axonframework.examples.addressbook.messages.SelectContactMessage;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.ContactModel;
 
@@ -18,22 +18,20 @@
         [Bindable]
         public var contactModel:ContactModel;
 
-        [Inject]
-        public var newContactCommand:NewContactCommand;
+        [MessageDispatcher]
+        public var dispatcher:Function;
 
-        [Inject]
-        public var selectContactCommand:SelectContactCommand;
 
         public function addContactAction():void {
             trace('In the add contact action');
             var contact:Contact = new Contact();
             contact.name = contactNameInput.text;
-            newContactCommand.execute(contact);
+            dispatcher(new NewContactMessage(contact));
             contactNameInput.text = "";
         }
 
         private function showContactDetails(event:ListEvent):void {
-            selectContactCommand.execute(event.currentTarget.selectedItem as Contact);
+            dispatcher(new SelectContactMessage(event.currentTarget.selectedItem as Contact));
             currentState = 'detail';
         }
 

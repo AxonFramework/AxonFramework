@@ -13,24 +13,18 @@
             endpoint="http://localhost:8080/messagebroker/amf"
             showBusyCursor="true"/>
 
-
-    <services:AddressServiceRemote/>
-    <!--<services:AddressServiceStub/>-->
-
-    <commands:SearchAddressCommand/>
-    <!--<commands:NewAddressCommand/>-->
-    <commands:ShowContactsCommand/>
-    <commands:NewContactCommand/>
-    <commands:SelectContactCommand/>
-
-
     <sf:DynamicCommand type="{NewAddressCommand}" messageType="{NewAddressMessage}"/>
+    <sf:DynamicCommand type="{NewContactCommand}" messageType="{NewContactMessage}"/>
+    <sf:DynamicCommand type="{SearchAddressCommand}" messageType="{SearchForAddressesMessage}"/>
+    <sf:DynamicCommand type="{SelectContactCommand}" messageType="{SelectContactMessage}"/>
+    <sf:DynamicCommand type="{ShowContactsCommand}" messageType="{ShowContactsMessage}"/>
+    <sf:DynamicCommand type="{UpdatedContactCommand}" messageType="{UpdatedContactMessage}"/>
 
     <model:AddressModel/>
     <model:ContactModel/>
 
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.commands.NewAddressCommand;
-        import org.axonframework.examples.addressbook.messages.NewAddressMessage;
+        import org.axonframework.examples.addressbook.commands.*;
+        import org.axonframework.examples.addressbook.messages.*;
         ]]></mx:Script>
 </mx:Object>
