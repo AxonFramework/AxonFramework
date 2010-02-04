@@ -7,12 +7,15 @@
 
     <mx:Script><![CDATA[
 
+        import mx.containers.TitleWindow;
+        import mx.core.IFlexDisplayObject;
         import mx.events.ListEvent;
+        import mx.managers.PopUpManager;
 
-        import org.axonframework.examples.addressbook.messages.NewContactMessage;
         import org.axonframework.examples.addressbook.messages.SelectContactMessage;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.ContactModel;
+        import org.spicefactory.parsley.core.context.Context;
 
         [Inject]
         [Bindable]
@@ -21,13 +24,14 @@
         [MessageDispatcher]
         public var dispatcher:Function;
 
+        [Inject]
+        public var context:Context;
 
-        public function addContactAction():void {
-            trace('In the add contact action');
-            var contact:Contact = new Contact();
-            contact.name = contactNameInput.text;
-            dispatcher(new NewContactMessage(contact));
-            contactNameInput.text = "";
+        public function addContactPopupAction():void {
+            var win:TitleWindow = new AddContactPopup();
+            context.viewManager.addViewRoot(win);
+            PopUpManager.addPopUp(win, this, true);
+            PopUpManager.centerPopUp(win as IFlexDisplayObject);
         }
 
         private function showContactDetails(event:ListEvent):void {
@@ -46,12 +50,8 @@
     </mx:states>
 
     <mx:VBox>
-        <mx:HBox>
-            <mx:Label text="New Contact"/>
-            <mx:TextInput id="contactNameInput"/>
-            <mx:Button id="newContactButton" icon="@Embed(source='/assets/images/address_book.png')"
-                       click="addContactAction()"/>
-        </mx:HBox>
+        <mx:Button id="addContact" icon="@Embed(source='/assets/images/address_book_add.png')" label="Add Contact"
+                   click="addContactPopupAction()"/>
         <mx:HBox>
             <mx:DataGrid dataProvider="{contactModel.contacts}" itemClick="showContactDetails(event)">
                 <mx:columns>
@@ -61,8 +61,10 @@
             </mx:DataGrid>
             <mx:VBox id="contactControls" visible="false">
                 <mx:ControlBar>
-                    <mx:Button id="editContact" icon="@Embed(source='/assets/images/address_book_edit.png')"/>
-                    <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"/>
+                    <mx:Button id="editContact" icon="@Embed(source='/assets/images/address_book_edit.png')"
+                               label="Edit Contact"/>
+                    <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"
+                               label="Delete Contact"/>
                 </mx:ControlBar>
                 <mx:Label text="{contactModel.selectedContact.name}"/>
                 <views:AddAddressView/>

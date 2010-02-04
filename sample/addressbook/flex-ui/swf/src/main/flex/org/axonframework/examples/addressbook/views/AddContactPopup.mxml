@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+                xmlns:sf="http://www.spicefactory.org/parsley/flex"
+                layout="vertical" width="300" height="300" showCloseButton="true" close="closeMe()"
+                title="Add new contact">
+    <mx:Script><![CDATA[
+        import mx.managers.PopUpManager;
+
+        import org.axonframework.examples.addressbook.messages.NewContactMessage;
+        import org.axonframework.examples.addressbook.model.Contact;
+
+        [MessageDispatcher]
+        public var dispatcher:Function;
+
+        public function addContactAction():void {
+            trace('In the add contact action');
+            var contact:Contact = new Contact();
+            contact.name = contactNameInput.text;
+            dispatcher(new NewContactMessage(contact));
+            contactNameInput.text = "";
+            closeMe();
+        }
+
+        private function closeMe():void {
+            PopUpManager.removePopUp(this)
+        }
+        ]]></mx:Script>
+
+    <sf:Configure/>
+
+    <mx:Form defaultButton="{newContactButton}">
+        <mx:FormItem label="Name">
+            <mx:TextInput id="contactNameInput"/>
+        </mx:FormItem>
+        <mx:HBox>
+            <mx:Button id="newContactButton" icon="@Embed(source='/assets/images/address_book.png')"
+                       click="addContactAction()" label="Create Contact"/>
+            <mx:Button id="cancelNewContactButton" icon="@Embed(source='/assets/images/address_book.png')"
+                       click="closeMe()" label="Cancel"/>
+        </mx:HBox>
+    </mx:Form>
+
+</mx:TitleWindow>
