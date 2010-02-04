@@ -22,7 +22,8 @@ package org.axonframework.core.eventhandler;
  * TransactionAware#afterTransaction(TransactionStatus) afterTransaction} methods on {@link TransactionAware}, but may
  * also be obtained through the static {@link TransactionStatus#current()} method.
  * <p/>
- * This class is meant to be used in a single thread and is therefore not thread-safe.
+ * All instance methods in this class are meant to be used in a single thread and are therefore not thread-safe. The
+ * static methods are thread-safe.
  *
  * @author Allard Buijze
  * @since 0.3
@@ -42,7 +43,7 @@ public class TransactionStatus {
     /**
      * Initialize a TransactionStatus instance with default settings.
      */
-    TransactionStatus() {
+    protected TransactionStatus() {
         // construction limited to this package
     }
 
@@ -59,7 +60,7 @@ public class TransactionStatus {
     /**
      * Clears the TransactionStatus related to the current thread.
      */
-    static void clear() {
+    protected static void clear() {
         current.remove();
     }
 
@@ -69,7 +70,7 @@ public class TransactionStatus {
      *
      * @param newStatus The TransactionStatus for the current transaction
      */
-    static void set(TransactionStatus newStatus) {
+    protected static void set(TransactionStatus newStatus) {
         current.set(newStatus);
     }
 
@@ -263,7 +264,7 @@ public class TransactionStatus {
      *
      * @param cause the exception that caused the transaction to fail
      */
-    void markFailed(Throwable cause) {
+    protected void markFailed(Throwable cause) {
         this.exception = cause;
     }
 }
