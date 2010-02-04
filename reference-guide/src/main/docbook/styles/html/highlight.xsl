@@ -33,40 +33,40 @@
     <xsl:import href="../highlighting/common.xsl"/>
 
     <xsl:param name="highlight.source" select="1"/>
-	<xsl:param name="highlight.default.language" select="java"/>
+    <xsl:param name="highlight.default.language" select="java"/>
 
     <xsl:template match='xslthl:tag' mode="xslthl">
-        <span style="color:#000080">
+        <span class="code_tag">
             <xsl:apply-templates/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:attribute' mode="xslthl">
-        <span style="color:#000080;">
+        <span class="code_attribute">
             <xsl:apply-templates/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:value' mode="xslthl">
-        <span style="font-weight:bold; color:#008000;">
+        <span class="code_value">
             <xsl:apply-templates/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:keyword' mode="xslthl">
-        <span style="color:#000080;">
+        <span class="code_keyword">
             <xsl:apply-templates mode="xslthl"/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:string' mode="xslthl">
-        <span style="color:#008000;">
+        <span class="code_string">
             <xsl:apply-templates mode="xslthl"/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:comment' mode="xslthl">
-        <span style="font-style:italic; color:#444444;">
+        <span class="code_comment">
             <xsl:apply-templates mode="xslthl"/>
         </span>
     </xsl:template>
@@ -86,26 +86,29 @@
     -->
 
     <xsl:template match='xslthl:number' mode="xslthl">
-        <xsl:apply-templates mode="xslthl"/>
+        <span class="code_number">
+            <xsl:apply-templates mode="xslthl"/>
+        </span>
     </xsl:template>
 
     <xsl:template match='xslthl:annotation' mode="xslthl">
-        <span style="color:#808000;">
+        <span class="code_annotation">
             <xsl:apply-templates mode="xslthl"/>
         </span>
     </xsl:template>
 
     <xsl:template match='xslthl:directive' mode="xslthl">
-        <xsl:apply-templates mode="xslthl"/>
-    </xsl:template>
-
-    <!-- Not sure which element will be in final XSLTHL 2.0 -->
-    <xsl:template match='xslthl:doccomment|xslthl:doctype' mode="xslthl">
-        <span style="font-weight:bold;">
+        <span class="code_directive">
             <xsl:apply-templates mode="xslthl"/>
         </span>
     </xsl:template>
 
+    <!-- Not sure which element will be in final XSLTHL 2.0 -->
+    <xsl:template match='xslthl:doccomment|xslthl:doctype' mode="xslthl">
+        <span class="code_doctype">
+            <xsl:apply-templates mode="xslthl"/>
+        </span>
+    </xsl:template>
 
 </xsl:stylesheet>
 
