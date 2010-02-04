@@ -18,11 +18,19 @@
     <!--<services:AddressServiceStub/>-->
 
     <commands:SearchAddressCommand/>
-    <commands:NewAddressCommand/>
+    <!--<commands:NewAddressCommand/>-->
     <commands:ShowContactsCommand/>
     <commands:NewContactCommand/>
+    <commands:SelectContactCommand/>
+
+
+    <sf:DynamicCommand type="{NewAddressCommand}" messageType="{NewAddressMessage}"/>
 
     <model:AddressModel/>
     <model:ContactModel/>
 
+    <mx:Script><![CDATA[
+        import org.axonframework.examples.addressbook.commands.NewAddressCommand;
+        import org.axonframework.examples.addressbook.messages.NewAddressMessage;
+        ]]></mx:Script>
 </mx:Object>

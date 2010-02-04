@@ -3,15 +3,20 @@
            xmlns:sf="http://www.spicefactory.org/parsley/flex"
         >
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.commands.NewAddressCommand;
+        import org.axonframework.examples.addressbook.messages.NewAddressMessage;
         import org.axonframework.examples.addressbook.model.Address;
 
-        private var newAddressCommand:NewAddressCommand;
 
-        [Inject]
-        public function init(newAddressCommand:NewAddressCommand):void {
-            this.newAddressCommand = newAddressCommand;
-        }
+        //        private var newAddressCommand:NewAddressCommand;
+        //
+        //        [Inject]
+        //        public function init(newAddressCommand:NewAddressCommand):void {
+        //            this.newAddressCommand = newAddressCommand;
+        //        }
+
+        [MessageDispatcher]
+        public var dispatcher:Function;
+
 
         private function createAddress():void {
             var address:Address = new Address();
@@ -19,8 +24,8 @@
             address.city = inputCity.text;
             address.zipCode = inputZipCode.text;
             address.contactName = inputContactName.text;
-
-            newAddressCommand.execute(address);
+            dispatcher(new NewAddressMessage(address));
+            //            newAddressCommand.execute(address);
         }
         ]]></mx:Script>
 

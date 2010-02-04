@@ -16,4 +16,6 @@ public interface AddressService {
     List<ContactDTO> obtainAllContacts();
 
     void createContact(ContactDTO contact);
+
+    List<AddressDTO> obtainContactAddresses(String contactIdentifier);
 }

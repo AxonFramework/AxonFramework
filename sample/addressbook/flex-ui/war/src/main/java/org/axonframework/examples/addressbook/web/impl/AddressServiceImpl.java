@@ -85,4 +85,17 @@ public class AddressServiceImpl implements AddressService {
     public void createContact(ContactDTO contactDTO) {
         contactCommandHandler.createContact(contactDTO.getName());
     }
+
+    @Override
+    @RemotingInclude
+    public List<AddressDTO> obtainContactAddresses(String contactIdentifier) {
+        List<AddressDTO> foundAddresses = new ArrayList<AddressDTO>();
+
+        List<AddressEntry> addressesForContact =
+                repository.findAllAddressesForContact(UUID.fromString(contactIdentifier));
+        for (AddressEntry entry : addressesForContact) {
+            foundAddresses.add(AddressDTO.createFrom(entry));
+        }
+        return foundAddresses;
+    }
 }

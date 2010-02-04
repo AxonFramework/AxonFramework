@@ -1,11 +1,16 @@
 <?xml version="1.0"?>
 <mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
            xmlns:sf="http://www.spicefactory.org/parsley/flex"
+           xmlns:views="org.axonframework.examples.addressbook.views.*"
+           enterState="''"
         >
 
     <mx:Script><![CDATA[
 
+        import mx.events.ListEvent;
+
         import org.axonframework.examples.addressbook.commands.NewContactCommand;
+        import org.axonframework.examples.addressbook.commands.SelectContactCommand;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.ContactModel;
 
@@ -16,6 +21,9 @@
         [Inject]
         public var newContactCommand:NewContactCommand;
 
+        [Inject]
+        public var selectContactCommand:SelectContactCommand;
+
         public function addContactAction():void {
             trace('In the add contact action');
             var contact:Contact = new Contact();
@@ -24,9 +32,20 @@
             contactNameInput.text = "";
         }
 
+        private function showContactDetails(event:ListEvent):void {
+            selectContactCommand.execute(event.currentTarget.selectedItem as Contact);
+            currentState = 'detail';
+        }
+
         ]]></mx:Script>
 
     <sf:Configure/>
+
+    <mx:states>
+        <mx:State name="detail">
+            <mx:SetProperty target="{contactControls}" name="visible" value="true"/>
+        </mx:State>
+    </mx:states>
 
     <mx:VBox>
         <mx:HBox>
@@ -35,12 +54,22 @@
             <mx:Button id="newContactButton" icon="@Embed(source='/assets/images/address_book.png')"
                        click="addContactAction()"/>
         </mx:HBox>
-        <mx:DataGrid dataProvider="{contactModel.contacts}">
-            <mx:columns>
-                <mx:DataGridColumn dataField="uuid"/>
-                <mx:DataGridColumn dataField="name"/>
-            </mx:columns>
-        </mx:DataGrid>
+        <mx:HBox>
+            <mx:DataGrid dataProvider="{contactModel.contacts}" itemClick="showContactDetails(event)">
+                <mx:columns>
+                    <mx:DataGridColumn dataField="uuid"/>
+                    <mx:DataGridColumn dataField="name"/>
+                </mx:columns>
+            </mx:DataGrid>
+            <mx:VBox id="contactControls" visible="false">
+                <mx:ControlBar>
+                    <mx:Button id="editContact" icon="@Embed(source='/assets/images/address_book_edit.png')"/>
+                    <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"/>
+                </mx:ControlBar>
+                <mx:Label text="{contactModel.selectedContact.name}"/>
+                <views:AddAddressView/>
+            </mx:VBox>
+        </mx:HBox>
     </mx:VBox>
 
 </mx:Canvas>

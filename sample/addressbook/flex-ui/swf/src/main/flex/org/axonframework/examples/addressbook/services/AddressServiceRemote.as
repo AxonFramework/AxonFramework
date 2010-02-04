@@ -8,11 +8,13 @@ import mx.rpc.events.FaultEvent;
 import mx.rpc.remoting.mxml.RemoteObject;
 
 import org.axonframework.examples.addressbook.messages.AllContactsResultMessage;
+import org.axonframework.examples.addressbook.messages.ContactAddressesMessage;
 import org.axonframework.examples.addressbook.messages.NewAddressMessage;
 import org.axonframework.examples.addressbook.messages.NewContactMessage;
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
 import org.axonframework.examples.addressbook.messages.SearchForAddressesMessage;
 import org.axonframework.examples.addressbook.messages.SearchResultMessage;
+import org.axonframework.examples.addressbook.messages.SelectContactMessage;
 import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
 
 public class AddressServiceRemote extends EventDispatcher implements IAddressService {
@@ -46,20 +48,20 @@ public class AddressServiceRemote extends EventDispatcher implements IAddressSer
     }
 
     /* Creating */
-    [Command]
-    public function create(message:NewAddressMessage):AsyncToken {
-        return addressService.createAddress(message.address);
-    }
-
-    [CommandResult]
-    public function createResult(trigger:NewAddressMessage):void {
-        dispatcher(new NotificationMessage("The new address command has been received"));
-    }
-
-    [CommandError]
-    public function createError(fault:FaultEvent, trigger:NewAddressMessage):void {
-        Alert.show(fault.fault.faultString);
-    }
+    //    [Command]
+    //    public function create(message:NewAddressMessage):AsyncToken {
+    //        return addressService.createAddress(message.address);
+    //    }
+    //
+    //    [CommandResult]
+    //    public function createResult(trigger:NewAddressMessage):void {
+    //        dispatcher(new NotificationMessage("The new address command has been received"));
+    //    }
+    //
+    //    [CommandError]
+    //    public function createError(fault:FaultEvent, trigger:NewAddressMessage):void {
+    //        Alert.show(fault.fault.faultString);
+    //    }
 
     /* Creating */
     [Command]
@@ -82,7 +84,7 @@ public class AddressServiceRemote extends EventDispatcher implements IAddressSer
     /* Obtain all contacts */
     [Command]
     public function showContacts(message:ShowContactsMessage):AsyncToken {
-        trace('trying to obtain all contacts')
+        trace('trying to obtain all contacts');
         return addressService.obtainAllContacts();
     }
 
@@ -92,7 +94,26 @@ public class AddressServiceRemote extends EventDispatcher implements IAddressSer
         dispatcher(new AllContactsResultMessage(contacts));
     }
 
+    [CommandError]
     public function allContactsError(fault:FaultEvent, trigger:ShowContactsMessage):void {
+        Alert.show(fault.fault.faultString);
+    }
+
+    /* Obtain addresses for contact */
+    [Command]
+    public function showAddressesForContact(message:SelectContactMessage):AsyncToken {
+        trace('Obtaining the addresses for contact : ' + message.contact.name);
+        return addressService.obtainContactAddresses(message.contact.uuid);
+    }
+
+    [CommandResult]
+    public function showAddressesForContactResult(addresses:ArrayCollection, trigger:SelectContactMessage):void {
+        trace('Yep, got some addresses : ' + addresses.length);
+        dispatcher(new ContactAddressesMessage(trigger.contact.uuid, addresses));
+    }
+
+    [CommandError]
+    public function showAddressesForContactError(fault:FaultEvent, trigger:SelectContactMessage):void {
         Alert.show(fault.fault.faultString);
     }
 }
