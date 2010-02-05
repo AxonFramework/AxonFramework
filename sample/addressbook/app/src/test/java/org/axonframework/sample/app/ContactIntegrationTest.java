@@ -80,10 +80,11 @@ public class ContactIntegrationTest {
     public void testApplicationContext() throws InterruptedException {
 
         assertNotNull(commandHandler);
-        UUID contactId = commandHandler.createContact("Allard");
+        UUID contactId = commandHandler.createContact("Henk");
 
         commandHandler.registerAddress(contactId, AddressType.PRIVATE, address("Street 123", "90210", "City"));
         commandHandler.registerAddress(contactId, AddressType.PRIVATE, address("Street 321", "90210", "City"));
+        commandHandler.changeContactName(contactId, "Allard");
 
         // the event bus is asynchronous. Let's wait for the task executor to finish all tasks
         waitForTaskExecution();
@@ -97,6 +98,7 @@ public class ContactIntegrationTest {
         assertEquals(1, contactRepository.findAllAddressesInCity("lla", null).size());
         assertEquals(1, contactRepository.findAllAddressesInCity("lla", "Ci").size());
         assertEquals(0, contactRepository.findAllAddressesInCity("Bla", "Ci").size());
+        assertEquals("Allard", contactRepository.loadContactDetails(contactId).getName());
 
         commandHandler.removeAddress(contactId, AddressType.PRIVATE);
         commandHandler.removeAddress(contactId, AddressType.PRIVATE);
@@ -111,12 +113,14 @@ public class ContactIntegrationTest {
 
         waitForTaskExecution();
 
-        assertEquals("Not all events were dispatched", 5, dispatchedEvents.size());
+        assertEquals("Not all events were dispatched", 6, dispatchedEvents.size());
 
         assertEquals(ContactCreatedEvent.class, dispatchedEvents.get(0).getClass());
         assertEquals(AddressAddedEvent.class, dispatchedEvents.get(1).getClass());
         assertEquals(AddressChangedEvent.class, dispatchedEvents.get(2).getClass());
-        assertEquals(AddressRemovedEvent.class, dispatchedEvents.get(3).getClass());
+        assertEquals(ContactNameChangedEvent.class, dispatchedEvents.get(3).getClass());
+        assertEquals(AddressRemovedEvent.class, dispatchedEvents.get(4).getClass());
+
     }
 
     private void waitForTaskExecution() throws InterruptedException {

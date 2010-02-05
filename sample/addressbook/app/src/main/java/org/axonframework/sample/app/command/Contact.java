@@ -27,6 +27,7 @@ import org.axonframework.sample.app.AddressRemovedEvent;
 import org.axonframework.sample.app.AddressType;
 import org.axonframework.sample.app.ContactCreatedEvent;
 import org.axonframework.sample.app.ContactDeletedEvent;
+import org.axonframework.sample.app.ContactNameChangedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,8 +62,16 @@ class Contact extends AbstractAnnotatedAggregateRoot {
         }
     }
 
+    public void changeName(String name) {
+        apply(new ContactNameChangedEvent(name));
+    }
+
     @EventHandler
     protected void handleContactCreatedEvent(ContactCreatedEvent event) {
+    }
+
+    @EventHandler
+    protected void handleContactNameChangedEvent(ContactNameChangedEvent event) {
     }
 
     @EventHandler
@@ -79,5 +88,4 @@ class Contact extends AbstractAnnotatedAggregateRoot {
     protected AggregateDeletedEvent createDeletedEvent() {
         return new ContactDeletedEvent();
     }
-
 }

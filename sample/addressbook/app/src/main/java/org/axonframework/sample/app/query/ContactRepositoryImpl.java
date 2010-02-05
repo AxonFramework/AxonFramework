@@ -60,4 +60,12 @@ public class ContactRepositoryImpl implements ContactRepository {
                 .setMaxResults(250)
                 .getResultList();
     }
+
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public ContactEntry loadContactDetails(UUID contactIdentifier) {
+        return (ContactEntry) entityManager.createQuery("SELECT e FROM ContactEntry e WHERE e.identifier = :id")
+                .setParameter("id", contactIdentifier)
+                .getSingleResult();
+    }
 }

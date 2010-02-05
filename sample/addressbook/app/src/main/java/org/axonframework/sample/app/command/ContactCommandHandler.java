@@ -34,6 +34,12 @@ public class ContactCommandHandler {
         return contact.getIdentifier();
     }
 
+    public void changeContactName(UUID contactId, String name) {
+        Contact contact = repository.load(contactId);
+        contact.changeName(name);
+        repository.save(contact);
+    }
+
     public void registerAddress(UUID contactId, AddressType type, Address address) {
         Contact contact = repository.load(contactId);
         contact.registerAddress(type, address);

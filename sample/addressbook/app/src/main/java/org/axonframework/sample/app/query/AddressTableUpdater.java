@@ -24,6 +24,7 @@ import org.axonframework.sample.app.AddressChangedEvent;
 import org.axonframework.sample.app.AddressRemovedEvent;
 import org.axonframework.sample.app.ContactCreatedEvent;
 import org.axonframework.sample.app.ContactDeletedEvent;
+import org.axonframework.sample.app.ContactNameChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,18 @@ public class AddressTableUpdater extends AbstractTransactionalEventListener {
         entry.setIdentifier(event.getAggregateIdentifier());
         entry.setName(event.getName());
         entityManager.persist(entry);
+    }
+
+    @EventHandler
+    public void handleContactNameChangedEvent(ContactNameChangedEvent event) {
+        entityManager.createQuery("UPDATE ContactEntry e SET e.name = :newName WHERE e.identifier = :id")
+                .setParameter("newName", event.getNewName())
+                .setParameter("id", event.getAggregateIdentifier())
+                .executeUpdate();
+        entityManager.createQuery("UPDATE AddressEntry e SET e.name = :newName WHERE e.identifier = :id")
+                .setParameter("newName", event.getNewName())
+                .setParameter("id", event.getAggregateIdentifier())
+                .executeUpdate();
     }
 
     @EventHandler

@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app.query;
+package org.axonframework.sample.app;
 
-import java.util.List;
-import java.util.UUID;
+import org.axonframework.core.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public interface ContactRepository {
+public class ContactNameChangedEvent extends DomainEvent {
 
-    List<ContactEntry> findAllContacts();
+    private final String newName;
 
-    List<AddressEntry> findAllAddressesForContact(UUID contactIdentifier);
+    public ContactNameChangedEvent(String newName) {
+        this.newName = newName;
+    }
 
-    List<AddressEntry> findAllAddressesInCity(String name, String city);
-
-    ContactEntry loadContactDetails(UUID contactId);
+    public String getNewName() {
+        return newName;
+    }
 }
