@@ -27,11 +27,12 @@
         [Inject]
         public var context:Context;
 
+        public function addAddressPopupAction():void {
+            createPopup(new AddAddressPopupView());
+        }
+
         public function addContactPopupAction():void {
-            var win:TitleWindow = new AddContactPopup();
-            context.viewManager.addViewRoot(win);
-            PopUpManager.addPopUp(win, this, true);
-            PopUpManager.centerPopUp(win as IFlexDisplayObject);
+            createPopup(new AddContactPopup());
         }
 
         private function showContactDetails(event:ListEvent):void {
@@ -39,7 +40,11 @@
             currentState = 'detail';
         }
 
-        ]]></mx:Script>
+        private function createPopup(win:TitleWindow):void {
+            context.viewManager.addViewRoot(win);
+            PopUpManager.addPopUp(win, this, true);
+            PopUpManager.centerPopUp(win as IFlexDisplayObject);
+        }]]></mx:Script>
 
     <sf:Configure/>
 
@@ -66,14 +71,24 @@
                 <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"
                            label="Delete Contact"/>
             </mx:HBox>
-            <mx:DataGrid dataProvider="{contactModel.selectedContact.addresses}">
-                <mx:columns>
-                    <mx:DataGridColumn dataField="type"/>
-                    <mx:DataGridColumn dataField="street"/>
-                    <mx:DataGridColumn dataField="zipCode"/>
-                    <mx:DataGridColumn dataField="city"/>
-                </mx:columns>
-            </mx:DataGrid>
+            <mx:HBox>
+                <mx:DataGrid dataProvider="{contactModel.selectedContact.addresses}">
+                    <mx:columns>
+                        <mx:DataGridColumn dataField="type"/>
+                        <mx:DataGridColumn dataField="street"/>
+                        <mx:DataGridColumn dataField="zipCode"/>
+                        <mx:DataGridColumn dataField="city"/>
+                    </mx:columns>
+                </mx:DataGrid>
+                <mx:VBox>
+                    <mx:Button id="addAddressButton" icon="@Embed(source='/assets/images/icon_add.png')"
+                               label="Add address" click="addAddressPopupAction()" width="125"/>
+                    <mx:Button id="deleteAddressButton" icon="@Embed(source='/assets/images/icon_delete.png')"
+                               label="Delete address" width="125"/>
+                    <mx:Button id="editAddressButton" icon="@Embed(source='/assets/images/icon_edit.png')"
+                               label="Edit address" width="125"/>
+                </mx:VBox>
+            </mx:HBox>
         </mx:VBox>
     </mx:HBox>
 

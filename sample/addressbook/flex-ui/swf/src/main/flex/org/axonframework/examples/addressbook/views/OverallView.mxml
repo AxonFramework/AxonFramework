@@ -65,14 +65,14 @@
         [MessageHandler]
         public function handleActivityLogEvent(event:NotificationMessage):void {
             trace("Received a notification message : " + event.message);
-            activityBoxHolder.visible = true;
-            activityBox.setStyle('borderColor', '#7FFF00');
-            activityBox.setStyle('backgroundColor', '#FFF8DC');
-            activityMessage.text = event.message;
-            activityBoxHolder.visible = false;
-            var notificationlabel:Label = new Label();
-            notificationlabel.text = event.message;
-            notificationMessages.addChildAt(notificationlabel, 0);
+
+            var note:Notification = new Notification();
+            note.message = event.message;
+            notificationMessages.addChildAt(note, 0);
+
+            if (notificationMessages.getChildren().length > 2) {
+                notificationMessages.removeChildAt(2);
+            }
         }
 
         ]]></mx:Script>
@@ -87,27 +87,20 @@
     <sf:Configure/>
 
     <mx:Dissolve id="dissolveOut" duration="10000" alphaFrom="1.0" alphaTo="0.0"/>
+
     <mx:HBox width="100%" height="100%">
-        <mx:VBox height="100%" top="8" left="8" right="8" bottom="8">
+        <mx:VBox height="100%" top="8" left="8" right="8" bottom="8" width="70%">
             <views:ToolbarView id="toolbar" width="100%"/>
-            <mx:HBox id="activityBoxHolder" hideEffect="dissolveOut" visible="false" backgroundColor="#91A7B2">
-                <mx:Spacer width="160"/>
-                <mx:HBox id="activityBox" borderStyle="solid" cornerRadius="10" width="1050"
-                         horizontalScrollPolicy="off">
-                    <mx:Label id="activityMessage" text=""/>
-                </mx:HBox>
-            </mx:HBox>
             <mx:ViewStack id="mainViewStack" width="100%" height="100%">
                 <mx:HBox id="home" horizontalAlign="center">
                     <mx:Image source="@Embed(source='/assets/images/logo-large.png')"/>
                 </mx:HBox>
                 <views:SearchView id="find" width="100%" height="100%"/>
                 <views:ContactsView id="contacts" width="100%" height="100%"/>
-                <views:AddAddressView id="addAddress" width="100%" height="100%"/>
+                <views:AddAddressPopupView id="addAddress" width="100%" height="100%"/>
             </mx:ViewStack>
         </mx:VBox>
         <mx:VBox id="notificationMessages" width="25%">
-
         </mx:VBox>
     </mx:HBox>
 

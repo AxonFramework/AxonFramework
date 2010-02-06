@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+                xmlns:sf="http://www.spicefactory.org/parsley/flex"
+                layout="vertical" width="500" height="300" showCloseButton="true" close="closeMe()"
+        >
+    <mx:Script><![CDATA[
+        import mx.managers.PopUpManager;
+
+        import org.axonframework.examples.addressbook.messages.NewAddressMessage;
+        import org.axonframework.examples.addressbook.model.Address;
+        import org.axonframework.examples.addressbook.model.ContactModel;
+
+        [MessageDispatcher]
+        public var dispatcher:Function;
+
+
+        [Inject]
+        public var contactModel:ContactModel;
+
+        private function createAddress():void {
+            var address:Address = new Address();
+            address.street = inputStreet.text;
+            address.city = inputCity.text;
+            address.zipCode = inputZipCode.text;
+            address.contactUUID = contactModel.selectedContact.uuid;
+            address.contactName = contactModel.selectedContact.name;
+            dispatcher(new NewAddressMessage(address));
+            inputCity.text = "";
+            inputStreet.text = "";
+            inputZipCode.text = "";
+            closeMe();
+        }
+
+        private function closeMe():void {
+            PopUpManager.removePopUp(this)
+        }
+
+        ]]></mx:Script>
+
+    <sf:Configure/>
+
+    <mx:Form defaultButton="{createAddressButton}">
+        <mx:FormItem id="street" label="Street">
+            <mx:TextInput id="inputStreet"/>
+        </mx:FormItem>
+        <mx:FormItem id="zipCode" label="Zip code">
+            <mx:TextInput id="inputZipCode"/>
+        </mx:FormItem>
+        <mx:FormItem id="city" label="City">
+            <mx:TextInput id="inputCity"/>
+        </mx:FormItem>
+        <mx:Button id="createAddressButton" icon="@Embed(source='/assets/images/address_book.png')"
+                   click="createAddress()" label="Create Address"/>
+        <mx:Button id="cancelNewContactButton" icon="@Embed(source='/assets/images/address_book.png')"
+                   click="closeMe()" label="Cancel"/>
+
+    </mx:Form>
+</mx:TitleWindow>

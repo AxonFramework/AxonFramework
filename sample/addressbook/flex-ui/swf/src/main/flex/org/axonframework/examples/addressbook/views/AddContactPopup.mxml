@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
                 xmlns:sf="http://www.spicefactory.org/parsley/flex"
-                layout="vertical" width="300" height="300" showCloseButton="true" close="closeMe()"
+                layout="vertical" width="500" height="300" showCloseButton="true" close="closeMe()"
                 title="Add new contact">
     <mx:Script><![CDATA[
         import mx.managers.PopUpManager;
