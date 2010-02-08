@@ -11,7 +11,9 @@
         import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
         import org.axonframework.examples.addressbook.messages.NotificationMessage;
         import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressMessage;
         import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
+        import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.Contact;
 
         [MessageDispatcher]
@@ -41,7 +43,10 @@
         public function messageHandler(event:MessageEvent):void {
             if (event.message.body is Contact) {
                 dispatcher(new UpdatedContactMessage(event.message.body as Contact));
+            } else if (event.message.body is Address) {
+                dispatcher(new UpdatedContactAddressMessage(event.message.body as Address))
             }
+
         }
 
         public function acknowledgeHandler(event:Event):void {

@@ -18,6 +18,8 @@ package org.axonframework.sample.app;
 
 import org.axonframework.core.DomainEvent;
 
+import java.util.UUID;
+
 /**
  * @author Allard Buijze
  */
@@ -29,6 +31,10 @@ public abstract class AddressRegisteredEvent extends DomainEvent {
     protected AddressRegisteredEvent(AddressType type, Address address) {
         this.type = type;
         this.address = address;
+    }
+
+    public UUID getContactIdentifier() {
+        return getAggregateIdentifier();
     }
 
     public AddressType getType() {

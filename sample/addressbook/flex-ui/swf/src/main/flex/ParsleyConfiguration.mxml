@@ -19,6 +19,7 @@
     <sf:DynamicCommand type="{SelectContactCommand}" messageType="{SelectContactMessage}"/>
     <sf:DynamicCommand type="{ShowContactsCommand}" messageType="{ShowContactsMessage}"/>
     <sf:DynamicCommand type="{UpdatedContactCommand}" messageType="{UpdatedContactMessage}"/>
+    <sf:DynamicCommand type="{UpdatedContactAddressCommand}" messageType="{UpdatedContactAddressMessage}"/>
 
     <model:AddressModel/>
     <model:ContactModel/>

@@ -10,6 +10,7 @@ import java.io.Serializable;
 public class ContactDTO implements Serializable {
     private String name;
     private String uuid;
+    private Boolean detailsLoaded;
 
     public ContactDTO() {
     }
@@ -18,6 +19,7 @@ public class ContactDTO implements Serializable {
         ContactDTO contactDTO = new ContactDTO();
         contactDTO.setName(contactEntry.getName());
         contactDTO.setUuid(contactEntry.getIdentifier().toString());
+        contactDTO.setDetailsLoaded(false);
         return contactDTO;
     }
 
@@ -40,5 +42,13 @@ public class ContactDTO implements Serializable {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public Boolean getDetailsLoaded() {
+        return detailsLoaded;
+    }
+
+    public void setDetailsLoaded(Boolean detailsLoaded) {
+        this.detailsLoaded = detailsLoaded;
     }
 }

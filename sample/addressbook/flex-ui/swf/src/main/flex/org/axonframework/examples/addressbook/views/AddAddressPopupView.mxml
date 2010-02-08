@@ -24,6 +24,7 @@
             address.zipCode = inputZipCode.text;
             address.contactUUID = contactModel.selectedContact.uuid;
             address.contactName = contactModel.selectedContact.name;
+            address.type = inputType.selectedItem.toString();
             dispatcher(new NewAddressMessage(address));
             inputCity.text = "";
             inputStreet.text = "";
@@ -48,6 +49,15 @@
         </mx:FormItem>
         <mx:FormItem id="city" label="City">
             <mx:TextInput id="inputCity"/>
+        </mx:FormItem>
+        <mx:FormItem id="type" label="Type">
+            <mx:ComboBox id="inputType">
+                <mx:Array>
+                    <mx:String>WORK</mx:String>
+                    <mx:String>PRIVATE</mx:String>
+                    <mx:String>VACATION</mx:String>
+                </mx:Array>
+            </mx:ComboBox>
         </mx:FormItem>
         <mx:Button id="createAddressButton" icon="@Embed(source='/assets/images/address_book.png')"
                    click="createAddress()" label="Create Address"/>

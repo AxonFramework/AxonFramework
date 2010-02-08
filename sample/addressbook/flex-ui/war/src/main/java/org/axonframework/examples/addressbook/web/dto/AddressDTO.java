@@ -1,9 +1,11 @@
 package org.axonframework.examples.addressbook.web.dto;
 
+import org.axonframework.sample.app.Address;
 import org.axonframework.sample.app.AddressType;
 import org.axonframework.sample.app.query.AddressEntry;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * @author Jettro Coenradie
@@ -30,6 +32,16 @@ public class AddressDTO implements Serializable {
         newAddress.setZipCode(addressEntry.getZipCode());
         newAddress.setContactUUID(addressEntry.getIdentifier().toString());
 
+        return newAddress;
+    }
+
+    public static AddressDTO createFrom(Address address, UUID contactIdentifier, AddressType addressType) {
+        AddressDTO newAddress = new AddressDTO();
+        newAddress.setContactUUID(contactIdentifier.toString());
+        newAddress.setStreet(address.getStreetAndNumber());
+        newAddress.setZipCode(address.getZipCode());
+        newAddress.setCity(address.getCity());
+        newAddress.setType(addressType);
         return newAddress;
     }
 

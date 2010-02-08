@@ -25,6 +25,7 @@ public class UpdatedContactCommand extends BaseCommand {
             contact.name = message.contact.name;
         } else {
             trace('creating a contact after receving an event');
+            trace('Addresses of new contact : ' + message.contact.addresses);
             contactModel.contacts.addItem(message.contact);
         }
     }

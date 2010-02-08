@@ -19,6 +19,8 @@ package org.axonframework.examples.addressbook.web.listener;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.examples.addressbook.web.dto.ContactDTO;
 import org.axonframework.sample.app.ContactCreatedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,13 +29,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ContactListener {
+    private final static Logger logger = LoggerFactory.getLogger(ContactListener.class);
 
-    private JmsContactMessageProducer producer;
-
+    private UpdateMessageProducerForFlex producer;
 
     @EventHandler
     public void handleContactCreatedEvent(ContactCreatedEvent event) {
-        System.out.println("Received and event : " + event.getName() + event.getEventIdentifier());
+        logger.debug("Received and event with name {} and identifier {}", event.getName(), event.getEventIdentifier());
         ContactDTO contactDTO = new ContactDTO();
         contactDTO.setName(event.getName());
         contactDTO.setUuid(event.getAggregateIdentifier().toString());
@@ -41,7 +43,7 @@ public class ContactListener {
     }
 
     @Autowired
-    public void setProducer(JmsContactMessageProducer producer) {
+    public void setProducer(UpdateMessageProducerForFlex producer) {
         this.producer = producer;
     }
 }

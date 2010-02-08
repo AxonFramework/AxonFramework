@@ -7,6 +7,8 @@ public class Contact {
 
     public var name:String;
     public var uuid:String;
+    public var detailsLoaded:Boolean;
+
     public var addresses:ArrayCollection = new ArrayCollection();
 
     public function Contact() {
@@ -16,6 +18,7 @@ public class Contact {
         var contact:Contact = new Contact();
         contact.name = name;
         contact.uuid = uuid;
+        contact.detailsLoaded = false;
         return contact;
     }
 

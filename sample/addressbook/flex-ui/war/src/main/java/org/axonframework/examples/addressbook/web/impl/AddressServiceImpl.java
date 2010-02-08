@@ -64,9 +64,8 @@ public class AddressServiceImpl implements AddressService {
     @RemotingInclude
     @Override
     public void createAddress(AddressDTO addressDTO) {
-        UUID contact = contactCommandHandler.createContact(addressDTO.getContactName());
         Address address = new Address(addressDTO.getStreet(), addressDTO.getZipCode(), addressDTO.getCity());
-        contactCommandHandler.registerAddress(contact, addressDTO.getType(), address);
+        contactCommandHandler.registerAddress(UUID.fromString(addressDTO.getContactUUID()), addressDTO.getType(), address);
     }
 
     @Override
