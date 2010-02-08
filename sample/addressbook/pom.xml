@@ -32,6 +32,7 @@
     <name>Axon Address Book Sample Project</name>
     <modules>
         <module>app</module>
+        <module>console-ui</module>
     </modules>
 
     <profiles>

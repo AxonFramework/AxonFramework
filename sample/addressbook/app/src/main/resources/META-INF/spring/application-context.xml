@@ -17,9 +17,19 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:annotation-config/>
 
     <bean class="org.axonframework.core.eventhandler.annotation.postprocessor.AnnotationEventListenerBeanPostProcessor"/>
+
+    <bean class="org.axonframework.sample.app.socket.SocketConnectionEventPublisher"
+          init-method="acceptConnection"
+          destroy-method="shutDown">
+        <property name="port" value="2525"/>
+        <property name="eventBus" ref="eventBus"/>
+    </bean>
 
     <bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus">
         <property name="executor" ref="taskExecutor"/>
