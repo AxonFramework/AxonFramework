@@ -90,7 +90,7 @@ public class EventHandlingSequenceManagerTest {
         assertEquals(0, eventListener.transactionCounter.get());
         // it's almost impossible that 2 threads will cause more than 250 transactions.
         assertEquals(1000, eventListener.eventCounter.get());
-        assertTrue("Event processing doesn't seem to be optimized", eventListener.totalTransactionCounter.get() < 250);
+        assertTrue("Event processing doesn't seem to be optimized", eventListener.totalTransactionCounter.get() < 500);
         System.out.println("Total transactions started: " + eventListener.totalTransactionCounter.get());
     }
 
