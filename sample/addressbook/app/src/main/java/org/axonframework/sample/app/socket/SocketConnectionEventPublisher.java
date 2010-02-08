@@ -55,8 +55,9 @@ public class SocketConnectionEventPublisher implements Runnable {
         this.eventBus = eventBus;
     }
 
-    public void shutDown() {
+    public void shutDown() throws IOException {
         isRunning = false;
+        serverSocket.close();
         acceptorThread.interrupt();
     }
 
