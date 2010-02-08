@@ -18,6 +18,7 @@ package org.axonframework.sample.app.command;
 
 import org.axonframework.sample.app.Address;
 import org.axonframework.sample.app.AddressType;
+import org.springframework.util.Assert;
 
 import java.util.UUID;
 
@@ -29,30 +30,39 @@ public class ContactCommandHandler {
     private ContactRepository repository;
 
     public UUID createContact(String name) {
+        Assert.notNull(name, "Name may not be null");
         Contact contact = new Contact(name);
         repository.save(contact);
         return contact.getIdentifier();
     }
 
     public void changeContactName(UUID contactId, String name) {
+        Assert.notNull(contactId, "ContactIdentifier may not be null");
+        Assert.notNull(name, "Name may not be null");
         Contact contact = repository.load(contactId);
         contact.changeName(name);
         repository.save(contact);
     }
 
     public void registerAddress(UUID contactId, AddressType type, Address address) {
+        Assert.notNull(contactId, "ContactIdentifier may not be null");
+        Assert.notNull(type, "AddressType may not be null");
+        Assert.notNull(address, "Address may not be null");
         Contact contact = repository.load(contactId);
         contact.registerAddress(type, address);
         repository.save(contact);
     }
 
     public void removeAddress(UUID contactId, AddressType type) {
+        Assert.notNull(contactId, "ContactIdentifier may not be null");
+        Assert.notNull(type, "AddressType may not be null");
         Contact contact = repository.load(contactId);
         contact.removeAddress(type);
         repository.save(contact);
     }
 
     public void deleteContact(UUID contactId) {
+        Assert.notNull(contactId, "ContactIdentifier may not be null");
         repository.delete(contactId);
     }
 
