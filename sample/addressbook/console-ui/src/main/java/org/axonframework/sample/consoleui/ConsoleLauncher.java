@@ -43,8 +43,6 @@ public class ConsoleLauncher {
     @Autowired
     private ContactRepository repository;
 
-    private ClassPathXmlApplicationContext context;
-
     public static void main(String... args) throws InterruptedException {
         ConsoleLauncher launcher = new ConsoleLauncher();
         launcher.initializeContext();
@@ -78,7 +76,7 @@ public class ConsoleLauncher {
     }
 
     public void initializeContext() {
-        context = new ClassPathXmlApplicationContext(
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
                 new String[]{
                         "/META-INF/spring/application-context.xml",
                         "/META-INF/spring/database-context.xml",

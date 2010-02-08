@@ -17,15 +17,14 @@
 package org.axonframework.sample.app.socket;
 
 import org.axonframework.core.eventhandler.EventBus;
-import org.axonframework.core.eventhandler.EventListener;
 import org.axonframework.core.eventhandler.SequentialPolicy;
 import org.axonframework.core.eventhandler.annotation.ConcurrentEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author Allard Buijze
@@ -33,9 +32,10 @@ import java.util.concurrent.ConcurrentMap;
 @ConcurrentEventListener(sequencingPolicyClass = SequentialPolicy.class)
 public class SocketConnectionEventPublisher implements Runnable {
 
+    private static final Logger logger = LoggerFactory.getLogger(SocketConnectionEventPublisher.class);
+
     private ServerSocket serverSocket;
     private int port;
-    private final ConcurrentMap<Socket, EventListener> openSockets = new ConcurrentHashMap<Socket, EventListener>();
     private Thread acceptorThread;
     private volatile boolean isRunning = true;
     private EventBus eventBus;
@@ -44,7 +44,7 @@ public class SocketConnectionEventPublisher implements Runnable {
         serverSocket = new ServerSocket(port);
         acceptorThread = new Thread(this);
         acceptorThread.start();
-        System.out.println("Listing for socket listeners on port " + serverSocket.getLocalPort());
+        logger.info("Listing for socket listeners on port " + serverSocket.getLocalPort());
     }
 
     public void setPort(int port) {
@@ -65,7 +65,8 @@ public class SocketConnectionEventPublisher implements Runnable {
         while (isRunning) {
             try {
                 Socket socket = serverSocket.accept();
-                openSockets.put(socket, new SocketPrintingEventListener(socket, eventBus));
+                // the listener will register itself
+                new SocketPrintingEventListener(socket, eventBus);
             } catch (IOException e) {
                 isRunning = false;
             }

@@ -25,6 +25,8 @@ import org.axonframework.core.eventhandler.EventListener;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
 import org.axonframework.core.eventhandler.SequentialPolicy;
 import org.joda.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -33,6 +35,8 @@ import java.net.Socket;
  * @author Allard Buijze
  */
 public class SocketPrintingEventListener implements EventListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(SocketPrintingEventListener.class);
 
     private final Socket socket;
     private final XStream xStream;
@@ -43,7 +47,7 @@ public class SocketPrintingEventListener implements EventListener {
         xStream.registerConverter(new LocalDateTimeConverter());
         this.socket = socket;
         this.eventBus = eventBus;
-        eventBus.subscribe(this);
+        this.eventBus.subscribe(this);
     }
 
     @Override
@@ -60,7 +64,7 @@ public class SocketPrintingEventListener implements EventListener {
             socket.getOutputStream().write(eventString.getBytes("UTF-8"));
         }
         catch (Exception e) {
-            System.out.println("Exception occurred. Socket seems closed.");
+            logger.warn("Exception occurred. Socket seems closed.");
             try {
                 socket.close();
             } catch (IOException e1) {
@@ -69,7 +73,7 @@ public class SocketPrintingEventListener implements EventListener {
         }
         if (socket.isClosed()) {
             eventBus.unsubscribe(this);
-            System.out.println("Socket is closed. Unsubscribed event listener");
+            logger.warn("Socket is closed. Unsubscribed event listener");
         }
     }
 
