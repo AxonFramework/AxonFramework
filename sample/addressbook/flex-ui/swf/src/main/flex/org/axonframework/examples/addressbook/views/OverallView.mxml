@@ -86,7 +86,7 @@
                  acknowledge="acknowledgeHandler(event);" fault=" faultHandler(event)"/>
 
     <mx:ChannelSet id="cs">
-        <mx:AMFChannel url="http://localhost:8080/messagebroker/pollingamf"/>
+        <mx:AMFChannel url="/messagebroker/pollingamf"/>
     </mx:ChannelSet>
 
     <sf:Configure/>
