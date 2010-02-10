@@ -23,9 +23,9 @@
     <sect1>
         <title>Wiring event handlers</title>
         <para>Using the annotated event listeners is very easy when you use Spring. All you need to
-            do is configure the AnnotationEventListenerBeanPostProcessor in your application
-            context. This post processor will discover beans with @EventHandler annotated methods
-            and automatically connect them to the event bus.<programlistingco>
+            do is configure the <code>AnnotationEventListenerBeanPostProcessor</code> in your
+            application context. This post processor will discover beans with @EventHandler
+            annotated methods and automatically connect them to the event bus.<programlistingco>
                 <areaspec>
                     <area xml:id="postprocessor-co" coords="3 67"/>
                     <area xml:id="optional-eventbus-reference-co" coords="4 52"/>
@@ -85,10 +85,56 @@
                     </callout>
                 </calloutlist>
             </programlistingco></para>
+        <warning>
+            <para>Be careful when wiring event listeners "manually" while there is also an
+                    <code>AnnotationEventListenerBeanPostProcessor</code> in the application
+                context. This will cause the event listener to be wired twice.</para>
+        </warning>
     </sect1>
     <sect1>
         <title>Wiring the event bus</title>
-        <para>This how it's done</para>
+        <para>In a typical Axon application, there is only one event bus. Wiring it is just a matter
+            of creating a bean of a subtype of <code>EventBus</code>. The
+            <code>AsyncEventBus</code>, the default implementation of choice, also takes an optional
+            executor property for the event processing.<programlistingco>
+                <areaspec>
+                    <area xml:id="eventbus-config-co" coords="3 84"/>
+                    <area xml:id="taskexecutor-config-co" coords="7 103"/>
+                    <area xml:id="wait-on-shutdown-co" coords="10 74"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus">
+        &lt;property name="executor" ref="taskExecutor"/>
+    &lt;/bean>
+
+    &lt;bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        &lt;property name="corePoolSize" value="20"/>
+        &lt;property name="maxPoolSize" value="100"/>
+        &lt;property name="waitForTasksToCompleteOnShutdown" value="true"/>
+    &lt;/bean>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="eventbus-config-co">
+                        <para>Bean definition of the event bus to use. In this case, the
+                            asynchronous event bus implementation is used.</para>
+                    </callout>
+                    <callout arearefs="taskexecutor-config-co">
+                        <para>Instead of using the default task executor, you can define your own to
+                            get more control over the number of threads to create. In this sample,
+                            we define one of Spring's executor implementations, which uses a thread
+                            pool.</para>
+                    </callout>
+                    <callout arearefs="wait-on-shutdown-co">
+                        <para>This property ensures that the events that are in the dispatching
+                            process are handled before the executor is shut down. This help ensure
+                            that all events are processed, even when the application is
+                            stopped.</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
+        <para/>
     </sect1>
     <sect1>
         <title>Wiring the Repository</title>
