@@ -20,6 +20,7 @@ import org.axonframework.sample.app.AddressType;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -38,6 +39,7 @@ public class AddressEntry {
     private Long db_identifier;
 
     @Basic
+    @Column(length = 36)
     @Type(type = "org.axonframework.sample.app.query.UUIDUserType")
     private UUID identifier;
 
