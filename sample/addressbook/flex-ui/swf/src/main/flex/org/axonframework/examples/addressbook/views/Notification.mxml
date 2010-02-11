@@ -1,12 +1,23 @@
 <?xml version="1.0"?>
 <mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" removedEffect="dissolveOut" visible="true" backgroundColor="#91A7B2">
     <mx:Script><![CDATA[
+        import org.axonframework.examples.addressbook.NotificationImagesCollection;
+
+        public static const INFO:int = 0;
+        public static const ERROR:int = 1;
+        public static const VALID:int = 2;
+
         [Bindable]
         public var message:String;
+
+        [Bindable]
+        public var type:int = 0;
+
         ]]></mx:Script>
 
-    <mx:HBox borderStyle="solid" cornerRadius="10" width="200" horizontalScrollPolicy="off" height="100">
-        <mx:Text id="notificationMessage" text="{message}"/>
+    <mx:HBox borderStyle="solid" cornerRadius="10" width="200" horizontalScrollPolicy="off" height="50">
+        <mx:Image id="notificationIcon" source="{NotificationImagesCollection.imagesArray.getItemAt(type)}"/>
+        <mx:Text id="notificationMessage" text="{message}" width="100" height="100%"/>
     </mx:HBox>
 
 </mx:VBox>

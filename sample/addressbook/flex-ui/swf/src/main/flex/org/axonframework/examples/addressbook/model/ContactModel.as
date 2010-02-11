@@ -2,8 +2,13 @@ package org.axonframework.examples.addressbook.model {
 import mx.collections.ArrayCollection;
 
 import org.axonframework.examples.addressbook.messages.ContactAddressesMessage;
+import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
 
 public class ContactModel {
+
+    [MessageDispatcher]
+    public var dispatcher:Function;
+
     [Bindable]
     public var contacts:ArrayCollection = new ArrayCollection();
 
@@ -19,8 +24,8 @@ public class ContactModel {
         var uuid:String = message.contactIdentifier;
         var contact:Contact = findContactByIdentifier(uuid);
         if (contact == null) {
-            trace('Retrieving addresses for a contact we do not have');
-            // TODO jettro : try to log an error and send it to the server ???
+            dispatcher(new ErrorNotificationMessage("Got an address for non existing user "
+                    + message.contactIdentifier));
             return;
         }
         contact.addresses = message.addresses;

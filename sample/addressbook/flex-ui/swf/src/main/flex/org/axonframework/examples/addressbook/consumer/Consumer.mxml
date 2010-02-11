@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<mx:Object xmlns:mx="http://www.adobe.com/2006/mxml">
+    <mx:Script><![CDATA[
+        import mx.messaging.events.MessageEvent;
+
+        import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressMessage;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
+        import org.axonframework.examples.addressbook.model.Address;
+        import org.axonframework.examples.addressbook.model.Contact;
+
+        [Init]
+        public function init():void {
+            consumer.subscribe();
+        }
+
+        [MessageDispatcher]
+        public var dispatcher:Function;
+
+        public function messageHandler(event:MessageEvent):void {
+            if (event.message.body is Contact) {
+                dispatcher(new UpdatedContactMessage(event.message.body as Contact));
+            } else if (event.message.body is Address) {
+                dispatcher(new UpdatedContactAddressMessage(event.message.body as Address))
+            }
+
+        }
+
+        public function faultHandler(event:Event):void {
+            dispatcher(new ErrorNotificationMessage("Fault while receiving message" + event.toString()))
+        }
+
+        ]]></mx:Script>
+    <mx:Consumer id="consumer" destination="event-bus" channelSet="{cs}" message="messageHandler(event)"
+                 fault=" faultHandler(event)"/>
+
+    <mx:ChannelSet id="cs">
+        <mx:AMFChannel url="/messagebroker/pollingamf"/>
+    </mx:ChannelSet>
+
+</mx:Object>

@@ -5,6 +5,9 @@ import mx.rpc.AsyncToken;
 import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
+/**
+ * Command obtains all contacts from the server
+ */
 public class ShowContactsCommand  extends BaseCommand {
 
     [Inject]
@@ -15,12 +18,10 @@ public class ShowContactsCommand  extends BaseCommand {
     }
 
     public function execute(message:ShowContactsMessage):AsyncToken {
-        trace("Obtaining all contacts");
         return addressService.obtainAllContacts();
     }
 
     public function result(contacts:ArrayCollection):void {
-        trace("Obtained all contacts and putting them into the model");
         contactModel.contacts = contacts;
     }
 

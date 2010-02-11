@@ -5,6 +5,7 @@
            xmlns:sf="http://www.spicefactory.org/parsley"
            xmlns:commands="org.axonframework.examples.addressbook.commands.*"
            xmlns:model="org.axonframework.examples.addressbook.model.*"
+           xmlns:cons="org.axonframework.examples.addressbook.consumer.*"
         >
 
     <mx:RemoteObject
@@ -12,6 +13,8 @@
             destination="addressService"
             endpoint="/messagebroker/amf"
             showBusyCursor="true"/>
+
+    <cons:Consumer/>
 
     <sf:DynamicCommand type="{NewAddressCommand}" messageType="{NewAddressMessage}"/>
     <sf:DynamicCommand type="{NewContactCommand}" messageType="{NewContactMessage}"/>

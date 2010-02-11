@@ -1,8 +1,12 @@
 package org.axonframework.examples.addressbook.commands {
+import org.axonframework.examples.addressbook.messages.NotificationMessage;
 import org.axonframework.examples.addressbook.messages.UpdatedContactAddressMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
+/**
+ * Handles an incoming contact address updates by updating the model and sending a notification to the user.
+ */
 public class UpdatedContactAddressCommand extends BaseCommand {
     [Inject]
     public var contactModel:ContactModel;
@@ -12,17 +16,14 @@ public class UpdatedContactAddressCommand extends BaseCommand {
     }
 
     public function execute(message:UpdatedContactAddressMessage):void {
-        trace('Received an internal message from the consumer that an address is updated');
         var uuid:String = message.address.contactUUID;
         var contact:Contact = null;
         if (uuid != null && uuid != "") {
             contact = contactModel.findContactByIdentifier(uuid);
         }
         if (contact != null) {
-            trace('updating an address for a contact after receving an event');
+            dispatcher(new NotificationMessage("Received an address update for " + contact.name));
             contact.addAddress(message.address);
-        } else {
-            trace('Received an address for non existing contact with name : ' + message.address.contactName);
         }
     }
 

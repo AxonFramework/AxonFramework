@@ -59,10 +59,12 @@
                 </mx:Array>
             </mx:ComboBox>
         </mx:FormItem>
-        <mx:Button id="createAddressButton" icon="@Embed(source='/assets/images/address_book.png')"
-                   click="createAddress()" label="Create Address"/>
-        <mx:Button id="cancelNewContactButton" icon="@Embed(source='/assets/images/address_book.png')"
-                   click="closeMe()" label="Cancel"/>
+        <mx:HBox>
+            <mx:Button id="createAddressButton" icon="@Embed(source='/assets/images/address_book.png')"
+                       click="createAddress()" label="Create Address"/>
+            <mx:Button id="cancelNewContactButton" icon="@Embed(source='/assets/images/address_book.png')"
+                       click="closeMe()" label="Cancel"/>
+        </mx:HBox>
 
     </mx:Form>
 </mx:TitleWindow>

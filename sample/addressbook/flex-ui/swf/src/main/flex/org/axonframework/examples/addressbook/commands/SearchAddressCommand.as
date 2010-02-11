@@ -5,6 +5,9 @@ import mx.rpc.AsyncToken;
 import org.axonframework.examples.addressbook.messages.SearchForAddressesMessage;
 import org.axonframework.examples.addressbook.model.AddressModel;
 
+/**
+ * Query command that executes a call to the backend to query all addresses and present them using the addressModel
+ */
 public class SearchAddressCommand extends BaseCommand {
 
     [Inject]

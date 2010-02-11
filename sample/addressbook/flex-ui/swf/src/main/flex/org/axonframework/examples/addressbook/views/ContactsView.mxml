@@ -54,11 +54,12 @@
         </mx:State>
     </mx:states>
 
-    <mx:HBox>
+    <mx:HBox left="10">
         <mx:VBox>
             <mx:Button id="addContact" icon="@Embed(source='/assets/images/address_book_add.png')" label="Add Contact"
                        click="addContactPopupAction()"/>
-            <mx:DataGrid dataProvider="{contactModel.contacts}" itemClick="showContactDetails(event)">
+            <mx:DataGrid dataProvider="{contactModel.contacts}" itemClick="showContactDetails(event)" width="150"
+                         height="300">
                 <mx:columns>
                     <mx:DataGridColumn dataField="name" headerText="Name"/>
                 </mx:columns>

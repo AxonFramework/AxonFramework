@@ -2,26 +2,20 @@
 <mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
            xmlns:views="org.axonframework.examples.addressbook.views.*"
            xmlns:sf="http://www.spicefactory.org/parsley/flex"
-           creationComplete="doSubscribe()"
         >
     <mx:Script><![CDATA[
-        import mx.messaging.events.MessageEvent;
-
         import org.axonframework.examples.addressbook.commands.ViewConstants;
         import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
+        import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
         import org.axonframework.examples.addressbook.messages.NotificationMessage;
         import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
-        import org.axonframework.examples.addressbook.model.Address;
-        import org.axonframework.examples.addressbook.model.Contact;
+        import org.axonframework.examples.addressbook.messages.ValidationMessage;
 
         [MessageDispatcher]
         public var dispatcher:Function;
 
         [MessageHandler]
         public function showRightViewStack(changeViewMessage:ChangeViewMessage):void {
-            trace('Switching the view ...');
             switch (changeViewMessage.stackId) {
                 case ViewConstants.HOME:
                     mainViewStack.selectedChild = home;
@@ -40,60 +34,42 @@
             }
         }
 
-        public function messageHandler(event:MessageEvent):void {
-            if (event.message.body is Contact) {
-                dispatcher(new UpdatedContactMessage(event.message.body as Contact));
-            } else if (event.message.body is Address) {
-                dispatcher(new UpdatedContactAddressMessage(event.message.body as Address))
-            }
-
-        }
-
-        public function acknowledgeHandler(event:Event):void {
-            trace('acknowledge event : ');
-            trace(event.toString());
-        }
-
-        public function faultHandler(event:Event):void {
-            trace(event.toString());
-        }
-
         [Init]
         public function init():void {
             dispatcher(new ShowContactsMessage());
         }
 
-        private function doSubscribe():void {
-            consumer.subscribe();
+        [MessageHandler]
+        public function handleActivityLogEvent(message:NotificationMessage):void {
+            createNotification(message.message, Notification.INFO);
         }
 
         [MessageHandler]
-        public function handleActivityLogEvent(event:NotificationMessage):void {
-            trace("Received a notification message : " + event.message);
-
-            var note:Notification = new Notification();
-            note.message = event.message;
-            notificationMessages.addChildAt(note, 0);
-
-            if (notificationMessages.getChildren().length > 2) {
-                notificationMessages.removeChildAt(2);
-            }
+        public function handleErrorMessage(message:ErrorNotificationMessage):void {
+            createNotification(message.message, Notification.ERROR);
         }
 
-        ]]></mx:Script>
+        [MessageHandler]
+        public function handleValidationMessage(message:ValidationMessage):void {
+            createNotification(message.message, Notification.VALID);
+        }
 
-    <mx:Consumer id="consumer" destination="event-bus" channelSet="{cs}" message="messageHandler(event)"
-                 acknowledge="acknowledgeHandler(event);" fault=" faultHandler(event)"/>
+        private function createNotification(message:String, type:int):void {
+            var note:Notification = new Notification();
+            note.message = message;
+            note.type = type;
+            notificationMessages.addChildAt(note, 0);
 
-    <mx:ChannelSet id="cs">
-        <mx:AMFChannel url="/messagebroker/pollingamf"/>
-    </mx:ChannelSet>
+            if (notificationMessages.getChildren().length > 8) {
+                notificationMessages.removeChildAt(8);
+            }
+        }]]></mx:Script>
 
     <sf:Configure/>
 
     <mx:Dissolve id="dissolveOut" duration="10000" alphaFrom="1.0" alphaTo="0.0"/>
 
-    <mx:HBox width="100%" height="100%">
+    <mx:HBox width="100%" height="100%" left="10">
         <mx:VBox height="100%" top="8" left="8" right="8" bottom="8" width="70%">
             <views:ToolbarView id="toolbar" width="100%"/>
             <mx:ViewStack id="mainViewStack" width="100%" height="100%">
