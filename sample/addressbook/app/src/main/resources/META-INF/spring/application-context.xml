@@ -47,7 +47,7 @@
     </bean>
 
     <bean id="eventStore" class="org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore">
-        <property name="baseDir" value="file:${java.io.tmpdir}"/>
+        <property name="baseDir" value="file:${java.io.tmpdir}/"/>
     </bean>
 
     <bean id="contactCommandHandler" class="org.axonframework.sample.app.command.ContactCommandHandler">
