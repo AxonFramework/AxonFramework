@@ -30,7 +30,7 @@ package org.axonframework.core.eventhandler;
  */
 public class TransactionStatus {
 
-    private static ThreadLocal<TransactionStatus> current = new ThreadLocal<TransactionStatus>();
+    private static final ThreadLocal<TransactionStatus> current = new ThreadLocal<TransactionStatus>();
 
     private YieldPolicy yieldPolicy = YieldPolicy.YIELD_AFTER_TRANSACTION;
     private int eventsProcessedSinceLastYield = 0;
