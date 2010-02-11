@@ -59,11 +59,13 @@ public abstract class AbstractTransactionalEventListener implements TransactionA
                         + "skipping Event processing", transactionStatus.getException());
                 transactionStatus.setRetryPolicy(RetryPolicy.SKIP_FAILED_EVENT);
                 transactionManager.commit(underlyingTransaction.get());
-            } else if (underlyingTransaction.get() != null) {
+            } else {
                 logger.warn("Performing rollback on transaction due to recoverable exception: [{}]",
                             transactionStatus.getException().getClass().getSimpleName());
                 transactionStatus.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
-                transactionManager.rollback(underlyingTransaction.get());
+                if (underlyingTransaction.get() != null) {
+                    transactionManager.rollback(underlyingTransaction.get());
+                }
             }
         }
         underlyingTransaction.remove();
