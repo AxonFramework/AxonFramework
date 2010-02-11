@@ -169,6 +169,12 @@
                         <artifactId>saxon</artifactId>
                         <version>8.7</version>
                     </dependency>
+					<dependency>
+						<groupId>net.sf.docbook</groupId>
+						<artifactId>docbook</artifactId>
+						<!--  The 1.74.0 version doesn't properly parse link elements-->
+						<version>1.72.0</version>
+					</dependency>
                 </dependencies>
                 <configuration>
                     <sourceDocumentName>master.xml</sourceDocumentName>
