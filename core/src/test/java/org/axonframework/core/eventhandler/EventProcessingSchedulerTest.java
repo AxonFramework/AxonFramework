@@ -152,6 +152,47 @@ public class EventProcessingSchedulerTest {
         inOrder.verify(listener).afterTransaction(isA(TransactionStatus.class));
     }
 
+    /**
+     * This test verifies issue #15 (http://code.google.com/p/axonframework/issues/detail?id=15)
+     */
+    @Test
+    public void testEventProcessingRetried_BeforeTransactionFails() {
+        StubDomainEvent event1 = new StubDomainEvent(1);
+        StubDomainEvent event2 = new StubDomainEvent(2);
+        TransactionalEventListener listener = mock(TransactionalEventListener.class);
+        ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
+        testSubject = new EventProcessingScheduler(listener,
+                                                   mockExecutorService,
+                                                   new NullShutdownCallback());
+
+        doThrow(new RuntimeException("Mock")).doNothing().when(listener)
+                .beforeTransaction(isA(TransactionStatus.class));
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                TransactionStatus status = (TransactionStatus) invocation.getArguments()[0];
+                status.setRetryInterval(500);
+                status.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
+                return null;
+            }
+        }).when(listener).afterTransaction(isA(TransactionStatus.class));
+        testSubject.scheduleEvent(event1);
+        testSubject.scheduleEvent(event2);
+        testSubject.run();
+        verify(mockExecutorService).schedule(eq(testSubject), gt(400L), eq(TimeUnit.MILLISECONDS));
+        // since the scheduler is a mock, we simulate the execution:
+        testSubject.run();
+        InOrder inOrder = inOrder(listener);
+        inOrder.verify(listener).beforeTransaction(isA(TransactionStatus.class));
+        // the afterTransaction call must be done, event if the before failed.
+        inOrder.verify(listener).afterTransaction(isA(TransactionStatus.class));
+        inOrder.verify(listener).beforeTransaction(isA(TransactionStatus.class));
+        // make sure the first event is not skipped by verifying that event1 is handled
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(listener).handle(event2);
+        inOrder.verify(listener).afterTransaction(isA(TransactionStatus.class));
+    }
+
     private MockEventListener executeEventProcessing(RetryPolicy policy) {
         ExecutorService mockExecutorService = mock(ExecutorService.class);
         MockEventListener listener = new MockEventListener(policy);
