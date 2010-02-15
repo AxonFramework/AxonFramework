@@ -47,6 +47,7 @@
             </subject>
         </subjectset>
     </info>
+    <xi:include href="0-introduction.xml"/>
     <xi:include href="1-getting-started.xml"/>
     <xi:include href="2-building-blocks.xml"/>
     <xi:include href="3-using-spring.xml"/>
