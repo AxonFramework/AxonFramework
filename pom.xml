@@ -59,7 +59,7 @@
 
     <properties>
         <slf4j.version>1.5.8</slf4j.version>
-        <spring.version>2.5.6.SEC01</spring.version>
+        <spring.version>3.0.0.RELEASE</spring.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -82,32 +82,6 @@
             <artifactId>mockito-all</artifactId>
             <version>1.8.0</version>
             <scope>test</scope>
-        </dependency>
-
-		<!--  Optional dependencies-->
-		<dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-            <version>${slf4j.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-            <version>${slf4j.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.14</version>
-            <optional>true</optional>
         </dependency>
 
     </dependencies>

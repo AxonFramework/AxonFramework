@@ -13,7 +13,6 @@
         public var dispatcher:Function;
 
         public function addContactAction():void {
-            trace("Add new contact form");
             var contact:Contact = new Contact();
             contact.name = contactNameInput.text;
             dispatcher(new NewContactMessage(contact));

@@ -20,6 +20,7 @@ import org.axonframework.examples.addressbook.web.AddressService;
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.axonframework.examples.addressbook.web.dto.ContactDTO;
 import org.axonframework.sample.app.Address;
+import org.axonframework.sample.app.AddressType;
 import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.query.AddressEntry;
 import org.axonframework.sample.app.query.ContactEntry;
@@ -96,5 +97,17 @@ public class AddressServiceImpl implements AddressService {
             foundAddresses.add(AddressDTO.createFrom(entry));
         }
         return foundAddresses;
+    }
+
+    @Override
+    @RemotingInclude
+    public void removeAddressFor(String contactIdentifier, AddressType addressType) {
+        contactCommandHandler.removeAddress(UUID.fromString(contactIdentifier), addressType);
+    }
+
+    @Override
+    @RemotingInclude
+    public void removeContact(String contactIdentifier) {
+        contactCommandHandler.deleteContact(UUID.fromString(contactIdentifier));
     }
 }

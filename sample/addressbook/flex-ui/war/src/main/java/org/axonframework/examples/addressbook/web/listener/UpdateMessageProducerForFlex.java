@@ -2,6 +2,7 @@ package org.axonframework.examples.addressbook.web.listener;
 
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.axonframework.examples.addressbook.web.dto.ContactDTO;
+import org.axonframework.examples.addressbook.web.dto.RemovedDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.flex.messaging.MessageTemplate;
 import org.springframework.stereotype.Component;
@@ -25,5 +26,9 @@ public class UpdateMessageProducerForFlex {
 
     public void sendAddressUpdate(final AddressDTO addressDTO) {
         template.send(addressDTO);
+    }
+
+    public void sendRemovedUpdate(final RemovedDTO removedDTO) {
+        template.send(removedDTO);
     }
 }

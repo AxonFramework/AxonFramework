@@ -23,7 +23,24 @@ public class Contact {
     }
 
     public function addAddress(address:Address):void {
+        var i:int = 0;
+        while (i < addresses.length) {
+            if (addresses.getItemAt(i).type == address.type) {
+                this.addresses.removeItemAt(i);
+            }
+            i++;
+        }
         this.addresses.addItem(address);
+    }
+
+    public function removeAddress(addressType:String):void {
+        var i:int = 0;
+        while (i < addresses.length) {
+            if (addresses.getItemAt(i).type == addressType) {
+                this.addresses.removeItemAt(i);
+            }
+            i++;
+        }
     }
 }
 }

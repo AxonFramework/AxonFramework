@@ -17,6 +17,9 @@
         [Inject]
         public var contactModel:ContactModel;
 
+        [Bindable]
+        public var address:Address = new Address();
+
         private function createAddress():void {
             var address:Address = new Address();
             address.street = inputStreet.text;
@@ -42,16 +45,16 @@
 
     <mx:Form defaultButton="{createAddressButton}">
         <mx:FormItem id="street" label="Street">
-            <mx:TextInput id="inputStreet"/>
+            <mx:TextInput id="inputStreet" text="{address.street}"/>
         </mx:FormItem>
         <mx:FormItem id="zipCode" label="Zip code">
-            <mx:TextInput id="inputZipCode"/>
+            <mx:TextInput id="inputZipCode" text="{address.zipCode}"/>
         </mx:FormItem>
         <mx:FormItem id="city" label="City">
-            <mx:TextInput id="inputCity"/>
+            <mx:TextInput id="inputCity" text="{address.city}"/>
         </mx:FormItem>
         <mx:FormItem id="type" label="Type">
-            <mx:ComboBox id="inputType">
+            <mx:ComboBox id="inputType" selectedItem="{address.type}">
                 <mx:Array>
                     <mx:String>WORK</mx:String>
                     <mx:String>PRIVATE</mx:String>

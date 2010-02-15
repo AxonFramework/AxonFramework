@@ -23,6 +23,9 @@
     <sf:DynamicCommand type="{ShowContactsCommand}" messageType="{ShowContactsMessage}"/>
     <sf:DynamicCommand type="{UpdatedContactCommand}" messageType="{UpdatedContactMessage}"/>
     <sf:DynamicCommand type="{UpdatedContactAddressCommand}" messageType="{UpdatedContactAddressMessage}"/>
+    <sf:DynamicCommand type="{RemoveAddressCommand}" messageType="{RemoveAddressMessage}"/>
+    <sf:DynamicCommand type="{RemovedItemCommand}" messageType="{RemovedItemMessage}"/>
+    <sf:DynamicCommand type="{RemoveContactCommand}" messageType="{RemoveContactMessage}"/>
 
     <model:AddressModel/>
     <model:ContactModel/>

@@ -20,7 +20,6 @@ public class ContactModel {
 
     [MessageHandler]
     public function obtainedAddressForContact(message:ContactAddressesMessage):void {
-        trace('Retrieved an internal message containing the new addresses for a contact');
         var uuid:String = message.contactIdentifier;
         var contact:Contact = findContactByIdentifier(uuid);
         if (contact == null) {
@@ -38,6 +37,17 @@ public class ContactModel {
             }
         }
         return null;
+    }
+
+    public function removeContact(uuid:String):void {
+        var i:int = 0;
+        while (i < uuid.length) {
+            if (contacts.getItemAt(i).uuid == uuid) {
+                this.contacts.removeItemAt(i);
+            }
+            i++;
+        }
+
     }
 }
 }

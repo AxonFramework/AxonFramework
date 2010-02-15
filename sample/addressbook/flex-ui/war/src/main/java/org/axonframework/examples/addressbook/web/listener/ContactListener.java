@@ -18,7 +18,9 @@ package org.axonframework.examples.addressbook.web.listener;
 
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.examples.addressbook.web.dto.ContactDTO;
+import org.axonframework.examples.addressbook.web.dto.RemovedDTO;
 import org.axonframework.sample.app.ContactCreatedEvent;
+import org.axonframework.sample.app.ContactDeletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +43,13 @@ public class ContactListener {
         contactDTO.setUuid(event.getAggregateIdentifier().toString());
         producer.sendContactUpdate(contactDTO);
     }
+
+    @EventHandler
+    public void handleContactRemovedEvent(ContactDeletedEvent event) {
+        RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(event.getContactIdentifier().toString());
+        producer.sendRemovedUpdate(removedDTO);
+    }
+
 
     @Autowired
     public void setProducer(UpdateMessageProducerForFlex producer) {

@@ -18,9 +18,13 @@ package org.axonframework.sample.app;
 
 import org.axonframework.core.AggregateDeletedEvent;
 
+import java.util.UUID;
+
 /**
  * @author Allard Buijze
  */
 public class ContactDeletedEvent extends AggregateDeletedEvent {
-
+    public UUID getContactIdentifier() {
+        return getAggregateIdentifier();
+    }
 }

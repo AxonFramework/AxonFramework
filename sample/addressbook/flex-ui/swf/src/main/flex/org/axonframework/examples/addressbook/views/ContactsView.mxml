@@ -8,11 +8,16 @@
     <mx:Script><![CDATA[
 
         import mx.containers.TitleWindow;
+        import mx.controls.Alert;
         import mx.core.IFlexDisplayObject;
+        import mx.events.CloseEvent;
         import mx.events.ListEvent;
         import mx.managers.PopUpManager;
 
+        import org.axonframework.examples.addressbook.messages.RemoveAddressMessage;
+        import org.axonframework.examples.addressbook.messages.RemoveContactMessage;
         import org.axonframework.examples.addressbook.messages.SelectContactMessage;
+        import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.ContactModel;
         import org.spicefactory.parsley.core.context.Context;
@@ -29,6 +34,49 @@
 
         public function addAddressPopupAction():void {
             createPopup(new AddAddressPopupView());
+        }
+
+        public function updateAddressPopupAction():void {
+            var popup:AddAddressPopupView = new AddAddressPopupView();
+            popup.address = addressDetailsGrid.selectedItem as Address;
+            createPopup(popup);
+        }
+
+        public function removeAddressPopupAction():void {
+            var address:Address = addressDetailsGrid.selectedItem as Address;
+            var contact:Contact = contactModel.selectedContact;
+            Alert.show(
+                    "Do you want to delete the '" + address.type + ' address for ' + contact.name,
+                    "Remove address",
+                    Alert.YES | Alert.NO,
+                    this,
+                    removeAddressHandler);
+        }
+
+        public function removeAddressHandler(event:CloseEvent):void {
+            if (event.detail == Alert.YES) {
+                var address:Address = addressDetailsGrid.selectedItem as Address;
+                var contact:Contact = contactModel.selectedContact;
+                dispatcher(new RemoveAddressMessage(address, contact));
+            }
+        }
+
+        public function removeContactPopupAction():void {
+            var contact:Contact = contactModel.selectedContact;
+            Alert.show(
+                    "Do you want to remove the contact " + contact.name,
+                    "Remove contact",
+                    Alert.YES | Alert.NO,
+                    this,
+                    removeContactHandler);
+        }
+
+        public function removeContactHandler(event:CloseEvent):void {
+            if (event.detail == Alert.YES) {
+                var contact:Contact = contactModel.selectedContact;
+                dispatcher(new RemoveContactMessage(contact));
+                currentState = '';
+            }
         }
 
         public function addContactPopupAction():void {
@@ -70,10 +118,10 @@
                 <mx:Button id="editContact" icon="@Embed(source='/assets/images/address_book_edit.png')"
                            label="Edit Contact"/>
                 <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"
-                           label="Delete Contact"/>
+                           label="Delete Contact" click="removeContactPopupAction()"/>
             </mx:HBox>
             <mx:HBox>
-                <mx:DataGrid dataProvider="{contactModel.selectedContact.addresses}">
+                <mx:DataGrid dataProvider="{contactModel.selectedContact.addresses}" id="addressDetailsGrid">
                     <mx:columns>
                         <mx:DataGridColumn dataField="type"/>
                         <mx:DataGridColumn dataField="street"/>
@@ -85,9 +133,9 @@
                     <mx:Button id="addAddressButton" icon="@Embed(source='/assets/images/icon_add.png')"
                                label="Add address" click="addAddressPopupAction()" width="125"/>
                     <mx:Button id="deleteAddressButton" icon="@Embed(source='/assets/images/icon_delete.png')"
-                               label="Delete address" width="125"/>
+                               label="Delete address" width="125" click="removeAddressPopupAction()"/>
                     <mx:Button id="editAddressButton" icon="@Embed(source='/assets/images/icon_edit.png')"
-                               label="Edit address" width="125"/>
+                               label="Edit address" width="125" click="updateAddressPopupAction()"/>
                 </mx:VBox>
             </mx:HBox>
         </mx:VBox>

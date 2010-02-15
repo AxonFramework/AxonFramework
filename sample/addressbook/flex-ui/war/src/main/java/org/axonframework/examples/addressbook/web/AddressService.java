@@ -2,6 +2,7 @@ package org.axonframework.examples.addressbook.web;
 
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.axonframework.examples.addressbook.web.dto.ContactDTO;
+import org.axonframework.sample.app.AddressType;
 
 import java.util.List;
 
@@ -18,4 +19,8 @@ public interface AddressService {
     void createContact(ContactDTO contact);
 
     List<AddressDTO> obtainContactAddresses(String contactIdentifier);
+
+    void removeAddressFor(String contactIdentifier, AddressType addressType);
+
+    void removeContact(String contactIdentifier);
 }

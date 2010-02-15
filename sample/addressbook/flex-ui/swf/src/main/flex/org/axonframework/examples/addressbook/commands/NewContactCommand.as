@@ -17,13 +17,10 @@ public class NewContactCommand extends BaseCommand {
     }
 
     public function execute(message:NewContactMessage):AsyncToken {
-        trace("Trying to create a new contact");
         if (message.contact.name.length < 1) {
-            trace("Create validation error");
             dispatcher(new ValidationMessage("Name field is required for contact"));
             return null;
         }
-        trace("Go an create the contact");
         this.contact = message.contact;
         return addressService.createContact(this.contact);
     }
