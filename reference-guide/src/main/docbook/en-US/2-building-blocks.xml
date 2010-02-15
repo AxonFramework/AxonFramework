@@ -264,7 +264,7 @@
             </simplesect>
         </sect2>
     </sect1>
-    <sect1>
+    <sect1 xml:id="building-block-repository">
         <title>Repository</title>
         <para>The repository is the mechanism that provides access to aggregates. In the Axon
             Framework, aggregates can only be loaded based on their unique identifier. All

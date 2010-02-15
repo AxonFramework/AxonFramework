@@ -27,8 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -118,9 +117,10 @@ public class AsyncEventBus implements EventBus {
         if (executor == null) {
             shutdownExecutorServiceOnStop = true;
             logger.info("Initializing default ThreadPoolExecutor to process incoming events");
-            executor = new ThreadPoolExecutor(DEFAULT_CORE_POOL_SIZE, DEFAULT_MAX_POOL_SIZE,
-                                              DEFAULT_KEEP_ALIVE_TIME, DEFAULT_TIME_UNIT,
-                                              new LinkedBlockingQueue<Runnable>());
+            ScheduledThreadPoolExecutor defaultExecutor = new ScheduledThreadPoolExecutor(DEFAULT_CORE_POOL_SIZE);
+            defaultExecutor.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
+            defaultExecutor.setKeepAliveTime(DEFAULT_KEEP_ALIVE_TIME, DEFAULT_TIME_UNIT);
+            executor = defaultExecutor;
         } else {
             logger.info("Using provided [{}] to process incoming events", executor.getClass().getSimpleName());
         }
