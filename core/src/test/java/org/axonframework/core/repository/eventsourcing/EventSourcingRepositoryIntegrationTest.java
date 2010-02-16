@@ -52,7 +52,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private XStreamFileSystemEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new Vector<Throwable>();
 
-    @Test
+    @Test(timeout = 60000)
     public void testPessimisticLocking() throws InterruptedException {
         initializeRepository(LockingStrategy.PESSIMISTIC);
         long lastSequenceNumber = executeConcurrentModifications(10);
@@ -63,7 +63,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         assertEquals(10, getSuccessfulModifications());
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testOptimisticLocking() throws InterruptedException {
         // unfortunately, we cannot use @Before on the setUp, because of the TemporaryFolder
         initializeRepository(LockingStrategy.OPTIMISTIC);
