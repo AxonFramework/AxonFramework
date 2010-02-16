@@ -16,8 +16,6 @@
 
 package org.axonframework.core.repository.eventsourcing;
 
-import net.sf.ehcache.Statistics;
-import net.sf.ehcache.jcache.JCacheStatistics;
 import net.sf.jsr107cache.Cache;
 import net.sf.jsr107cache.CacheEntry;
 import net.sf.jsr107cache.CacheException;
@@ -160,7 +158,7 @@ class NoCache implements Cache {
      */
     @Override
     public CacheStatistics getCacheStatistics() {
-        return new JCacheStatistics(new Statistics(null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        return null;
     }
 
     /**

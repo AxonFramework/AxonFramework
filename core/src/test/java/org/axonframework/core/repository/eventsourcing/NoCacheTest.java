@@ -45,7 +45,7 @@ public class NoCacheTest {
         assertNull(cache.get(new Object()));
         assertEquals(Collections.<Object, Object>emptyMap(), cache.getAll(Arrays.asList(new Object(), new Object())));
         assertNull(cache.getCacheEntry(new Object()));
-        assertEquals(0, cache.getCacheStatistics().getObjectCount());
+        assertNull(cache.getCacheStatistics());
         assertTrue(cache.isEmpty());
         assertEquals(Collections.<Object>emptySet(), cache.keySet());
         cache.loadAll(Arrays.asList(new Object(), new Object()));
