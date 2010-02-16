@@ -320,7 +320,7 @@
                     <para>An Aggregate will only contain fields of properties it uses for validation
                         or business logic decisions. That means you will likely have some events
                         that have no direct effect on any fields in the aggregate. In that case you
-                        can choose to create a <code>handleOtherEvents(DomainEvent event) </code>
+                        can choose to create a <code>handleOtherEvents(DomainEvent event)</code>
                         method with an empty body. This handler will be called for any event for
                         which there is no specific handler, preventing any exception being thrown.
                         Do consider, however, that doing so may result in unexpected behavior if an
