@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright (c) 2010. Axon Framework
   ~
@@ -19,27 +18,35 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
-    <id>html</id>
-    <includeBaseDirectory>false</includeBaseDirectory>
+    <id>with-dependencies</id>
     <formats>
         <format>zip</format>
-        <format>dir</format>
     </formats>
-    <fileSets>
-        <fileSet>
-            <directory>target/en-US/html</directory>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <moduleSets>
+        <moduleSet>
             <includes>
-                <include>*.html</include>
-                <include>images/**</include>
-                <include>css/**</include>
+                <include>*:axon-integration</include>
+                <include>*:axon-core</include>
             </includes>
-            <excludes>
-                <exclude>**/*.svg</exclude>
-                <exclude>images/callouts/*.gif</exclude>
-                <exclude>images/*_large.*</exclude>
-            </excludes>
-            <outputDirectory>/</outputDirectory>
-        </fileSet>
-    </fileSets>
-
+            <binaries>
+                <dependencySets>
+                    <dependencySet>
+                        <unpack>false</unpack>
+                        <outputDirectory>dependencies</outputDirectory>
+                        <excludes>
+                            <exclude>org.axonframework:*</exclude>
+                        </excludes>
+                    </dependencySet>
+                </dependencySets>
+                <unpack>false</unpack>
+            </binaries>
+        </moduleSet>
+    </moduleSets>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>dependencies</outputDirectory>
+            <unpack>false</unpack>
+        </dependencySet>
+    </dependencySets>
 </assembly>
