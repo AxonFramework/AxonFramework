@@ -20,6 +20,16 @@
         building blocks in Axon are Spring configurable. Furthermore, there are some Bean Post
         Processors that scan the application context for building blocks and automatically wires
         them.</para>
+    <para>Axon uses JSR 250 annotations (@PostConstruct and @PreDestroy) to annotate lifecycle
+        methods of Axon building blocks. Spring doesn't always automatically evaluate these
+        annotations. To force Spring to do so, add the <code>&lt;context:annotation-config/></code>
+        tag to your application context, as shown in the example
+        below:<programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans" 
+       xmlns:context="http://www.springframework.org/schema/context">
+
+    &lt;context:annotation-config/>
+
+&lt;/beans></programlisting></para>
     <sect1>
         <title>Wiring event handlers</title>
         <para>Using the annotated event listeners is very easy when you use Spring. All you need to
@@ -99,7 +109,7 @@
             executor property for the event processing.<programlistingco>
                 <areaspec>
                     <area xml:id="eventbus-config-co" coords="3 84"/>
-                    <area xml:id="taskexecutor-config-co" coords="7 103"/>
+                    <area xml:id="taskexecutor-config-co" coords="7 88"/>
                     <area xml:id="wait-on-shutdown-co" coords="10 74"/>
                 </areaspec>
                 <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
@@ -108,7 +118,7 @@
         &lt;property name="executor" ref="taskExecutor"/>
     &lt;/bean>
 
-    &lt;bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+    &lt;bean id="taskExecutor" class="org.springfr..sched..conc..ThreadPoolTaskExecutor">
         &lt;property name="corePoolSize" value="20"/>
         &lt;property name="maxPoolSize" value="100"/>
         &lt;property name="waitForTasksToCompleteOnShutdown" value="true"/>
@@ -166,10 +176,12 @@
         <para>Repositories that support event sourcing will also need an event store, which takes
             care of the actual storage and retrieval of events. The example below shows a repository
             configuration of a repository that extends the
-            <code>EventSourcingRepository</code>.<programlisting>&lt;bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
+            <code>EventSourcingRepository</code>.<programlisting language="xml">&lt;bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
     &lt;property name="eventBus" ref="eventBus"/>
     &lt;property name="eventStore" ref="eventStore"/>
 &lt;/bean></programlisting></para>
-        <para/>
+        <para>The repository will delegate the storage of events to the configured
+                <code>eventStore</code>, while these events are dispatched using the provided
+                <code>eventBus</code>.</para>
     </sect1>
 </chapter>

@@ -16,7 +16,7 @@
   -->
 <appendix id="sample-applications" xmlns="http://docbook.org/ns/docbook">
     <title>Sample Applications</title>
-    <sect1>
+    <sect1 xml:id="sample-addressbook">
         <title>Address Book</title>
         <sect2>
             <title>Introduction</title>
@@ -24,22 +24,18 @@
                 that demonstrates enough of the framework and is easy enough to understand. The
                 Address book we have created is such an application. A very simple domain to
                 understand with enough features to show the event mechanism as well as the seperate
-                data store and query database.
-            </para>
+                data store and query database. </para>
             <para>With the flex client, the event handling becomes very interesting. The server side
-                events are pushed to the clients to stay up to date.
-            </para>
+                events are pushed to the clients to stay up to date. </para>
             <para>So what does the sample provide? The sample comtains contacts with addresses. Each
                 contact can have a maximum of three addresses, one for each available type. Using
                 the query database, you can request all contacts, request contact details and search
                 the addresses. For this kind of queries, the query database is used. You can also
-                create new contacts and addresses or provided updates.
-            </para>
+                create new contacts and addresses or provided updates. </para>
             <para>The framework creates events for things like: contact created, contact updated,
                 address changed. These events are picket up by special listeners that publish these
                 events to all flex clients using BlazeDS. More on this part follows in the Flex
-                client part. (TODO create reference)
-            </para>
+                client part. (TODO create reference) </para>
             <para>TODO create image for overall architecture</para>
             <para>TODO show screen dump</para>
         </sect2>
@@ -50,27 +46,20 @@
                 makes the application maintainable and easier to understand. Parsley makes use of
                 metadata tags to indicate injection of objects and handling of messages. It makes
                 heavily use of messages or events. The following image gives an idea of the basic
-                architecture of the flex solution.
-            </para>
+                architecture of the flex solution. </para>
             <note>
                 <para>For the flex application we use the parsley framework. More information about
-                    the framework can be found on the website.
-                </para>
-                <para>
-                    <uri>http://www.spicefactory.org/parsley/</uri>
-                    <link
-                            xmlns:ns1="http://www.w3.org/1999/xlink"
-                            ns1:href="http://www.spicefactory.org/parsley/"
-                            >http://www.spicefactory.org/parsley/
-                    </link>
+                    the framework can be found on the Parsley website: <link
+                        xmlns:ns1="http://www.w3.org/1999/xlink"
+                        ns1:href="http://www.spicefactory.org/parsley/"
+                        >http://www.spicefactory.org/parsley/ </link>
                 </para>
             </note>
             <para>The flex client talks to the server. Remote obejcts are used to ask data from the
                 server and send data to the server. Another mechanism, called consumers, is used to
                 receive update events. Both types of communication are handled by the BlazeDS
                 framework. To make integration with the backend even easier, the sample makes use of
-                the spring blazeds integration project.
-            </para>
+                the spring blazeds integration project. </para>
         </sect2>
         <sect2>
             <title>Application logic</title>
