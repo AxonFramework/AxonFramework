@@ -20,10 +20,11 @@
         building blocks in Axon are Spring configurable. Furthermore, there are some Bean Post
         Processors that scan the application context for building blocks and automatically wires
         them.</para>
-    <para>Axon uses JSR 250 annotations (@PostConstruct and @PreDestroy) to annotate lifecycle
-        methods of Axon building blocks. Spring doesn't always automatically evaluate these
-        annotations. To force Spring to do so, add the <code>&lt;context:annotation-config/></code>
-        tag to your application context, as shown in the example
+    <para>Axon uses JSR 250 annotations (<code>@PostConstruct</code> and <code>@PreDestroy</code>)
+        to annotate lifecycle methods of some of the building blocks. Spring doesn't always
+        automatically evaluate these annotations. To force Spring to do so, add the
+            <code>&lt;context:annotation-config/></code> tag to your application context, as shown
+        in the example
         below:<programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans" 
        xmlns:context="http://www.springframework.org/schema/context">
 
@@ -144,12 +145,12 @@
                     </callout>
                 </calloutlist>
             </programlistingco></para>
-        <para>Configuring a taskExecutor is optional. By default, the <code>AsyncEventBus</code>
-            uses a <code>ScheduledThreadPoolExecutor</code> instance with 5 core threads, a maximum
-            pool size of 25 and a keep alive timeout of 5 minutes. These settings are probably fine
-            for smaller applications, but when the application contains more than 25 listeners,
-            event processing can stall, waiting for events. Whether this is a problem heavily relies
-            on your application's requirements.</para>
+        <para>Configuring a <code>taskExecutor</code> is optional. By default, the
+                <code>AsyncEventBus</code> uses a <code>ScheduledThreadPoolExecutor</code> instance
+            with 5 core threads, a maximum pool size of 25 and a keep alive timeout of 5 minutes.
+            These settings are probably fine for smaller applications, but when the application
+            contains more than 25 listeners, event processing can stall, waiting for events. Whether
+            this is a problem heavily relies on your application's requirements.</para>
         <para>The <code>AsyncEventBus</code> can be configured with any <code>Executor</code>
             instance you like. However, if the provided instance implements the
                 <code>ScheduledExecutorService</code> interface (of the
