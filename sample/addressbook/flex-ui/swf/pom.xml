@@ -21,12 +21,12 @@
     <parent>
         <groupId>org.axonframework.samples</groupId>
         <artifactId>axon-addressbook-flexui</artifactId>
-        <version>0.4</version>
+        <version>0.5-SNAPSHOT</version>
     </parent>
 
     <groupId>org.axonframework.samples</groupId>
     <artifactId>swf</artifactId>
-    <version>0.4</version>
+    <version>0.5-SNAPSHOT</version>
     <packaging>swf</packaging>
 
     <name>Axon Address Book Sample - Flex ui swf</name>
