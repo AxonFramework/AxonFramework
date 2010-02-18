@@ -25,7 +25,7 @@
         <mediaobject>
             <info>Detailed architecture overview</info>
             <imageobject role="fo">
-                <imagedata format="png" fileref="detailed-architecture-overview-hires.png"
+                <imagedata align="center" format="png" fileref="detailed-architecture-overview-hires.png"
                     width="15cm"/>
             </imageobject>
             <imageobject role="html">
