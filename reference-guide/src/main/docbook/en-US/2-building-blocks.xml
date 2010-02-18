@@ -117,7 +117,8 @@
                     <mediaobject>
                         <info>Adding intent to events</info>
                         <imageobject role="fo">
-                            <imagedata format="png" fileref="state-change-intent-hires.png" width="10cm"/>
+                            <imagedata format="png" fileref="state-change-intent-hires.png"
+                                width="10cm"/>
                         </imageobject>
                         <imageobject role="html">
                             <imagedata format="png" fileref="state-change-intent.png"/>
@@ -285,8 +286,7 @@
     private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
         // do something with someProperty
     }
-}
-                </programlisting>
+}</programlisting>
                 <para>In all circumstances, exactly one single event handler method is invoked. The
                         <code>AbstractAnnotatedAggregateRoot</code> will search the most specific
                     method to invoke, in the following order: </para>

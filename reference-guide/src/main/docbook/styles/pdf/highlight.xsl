@@ -43,7 +43,7 @@
     </xsl:template>
 
     <xsl:template match='xslthl:attribute' mode="xslthl">
-        <fo:inline font-weight="bold" color="blue">
+        <fo:inline color="#000080">
             <xsl:apply-templates/>
         </fo:inline>
     </xsl:template>
