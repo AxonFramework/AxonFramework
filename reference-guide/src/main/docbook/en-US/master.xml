@@ -32,13 +32,13 @@
                 </personname>
                 <orgname>JTeam</orgname>
             </author>
-            <author>
+            <othercredit>
                 <personname>
                     <firstname>Jettro</firstname>
                     <surname>Coenradie</surname>
                 </personname>
                 <orgname>JTeam</orgname>
-            </author>
+            </othercredit>
         </authorgroup>
         <mediaobject>
             <imageobject role="fo">
