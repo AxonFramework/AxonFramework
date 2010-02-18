@@ -131,6 +131,12 @@
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
             </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkMode>once</forkMode>
+                </configuration>
+            </plugin>
         </plugins>
         <extensions>
             <extension>
