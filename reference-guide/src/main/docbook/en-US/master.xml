@@ -24,26 +24,22 @@
                 http://www.w3.org/1999/xlink http://docbook.org/xml/5.0/xsd/xlink.xsd">
     <info>
         <title>Reference Guide</title>
-        <author>
-            <personname>
-                <firstname>Allard</firstname>
-                <surname>Buijze</surname>
-            </personname>
-            <affiliation>
+        <authorgroup>
+            <author>
+                <personname>
+                    <firstname>Allard</firstname>
+                    <surname>Buijze</surname>
+                </personname>
                 <orgname>JTeam</orgname>
-            </affiliation>
-        </author>
-        <collab>
-            <person>
-                <personname> 
+            </author>
+            <author>
+                <personname>
                     <firstname>Jettro</firstname>
                     <surname>Coenradie</surname>
                 </personname>
-                <affiliation>
-                    <orgname>JTeam</orgname>
-                </affiliation>
-            </person>
-        </collab>
+                <orgname>JTeam</orgname>
+            </author>
+        </authorgroup>
         <mediaobject>
             <imageobject role="fo">
                 <imagedata align="center" fileref="logo.png" width="257px"/>
@@ -60,5 +56,5 @@
     <xi:include href="2-building-blocks.xml"/>
     <xi:include href="3-using-spring.xml"/>
     <!--<xi:include href="4-performance-tuning.xml"/>-->
-    <xi:include href="A-sample-applications.xml"/>
+    <!--<xi:include href="A-sample-applications.xml"/>-->
 </book>

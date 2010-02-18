@@ -149,6 +149,7 @@
                     </listitem>
                 </itemizedlist></para>
         </sect2>
+        <!--
         <sect2>
             <title>Axon sample application</title>
             <para>To show how applications can benefit from Axon, and as a guide when developing
@@ -160,6 +161,7 @@
                     linkend="sample-applications"/> contains more information about the sample
                 application.</para>
         </sect2>
+        -->
     </sect1>
     <sect1 xml:id="getting-started">
         <title>Getting started</title>

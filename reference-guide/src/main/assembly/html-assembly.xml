@@ -34,9 +34,9 @@
                 <include>css/**</include>
             </includes>
             <excludes>
-                <exclude>**/*.svg</exclude>
-                <exclude>images/callouts/*.gif</exclude>
+                <exclude>images/*-hires.png</exclude>
                 <exclude>images/*_large.*</exclude>
+                <exclude>**/*.svg</exclude>
             </excludes>
             <outputDirectory>/</outputDirectory>
         </fileSet>

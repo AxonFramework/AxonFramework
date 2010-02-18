@@ -35,7 +35,7 @@
         <title>Wiring event handlers</title>
         <para>Using the annotated event listeners is very easy when you use Spring. All you need to
             do is configure the <code>AnnotationEventListenerBeanPostProcessor</code> in your
-            application context. This post processor will discover beans with @EventHandler
+            application context. This post processor will discover beans with <code>@EventHandler</code>
             annotated methods and automatically connect them to the event bus.<programlistingco>
                 <areaspec>
                     <area xml:id="postprocessor-co" coords="3 67"/>

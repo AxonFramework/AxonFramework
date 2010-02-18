@@ -105,19 +105,19 @@
                     an abstract implementation of a domain event to capture the fact that certain
                     state has changed, and use a concrete sub-implementation of that abstract class
                     that indicates the intention of the change. For example, you could have an
-                    abstract <code>OrderStatusChangedEvent</code>, and two implementations
-                        <code>OrderCancelledByUser</code> and
-                        <code>OrderCancelledByAdministrator</code> that capture the intent of the
-                    state change. Some listeners will care about the intent (e.g. to select a mail
-                    template when notifying the customer), while others don't (e.g. database
-                    updating event listeners). The latter will listen to events of the abstract
-                    type, while the former will listen to the concrete subtypes. </para>
+                    abstract <code>AddressChangedEvent</code>, and two implementations
+                        <code>ContactMovedEvent</code> and <code>AddressCorrectedEvent</code> that
+                    capture the intent of the state change. Some listeners will care about the
+                    intent (e.g. to send an address change confirmation email to the customer),
+                    while others don't (e.g. database updating event listeners). The latter will
+                    listen to events of the abstract type, while the former will listen to the
+                    concrete subtypes. </para>
                 <figure>
                     <title>Adding intent to events</title>
                     <mediaobject>
                         <info>Adding intent to events</info>
-                        <imageobject role="html">
-                            <imagedata format="png" fileref="state-change-intent.png" width="10cm"/>
+                        <imageobject role="fo">
+                            <imagedata format="png" fileref="state-change-intent-hires.png" width="10cm"/>
                         </imageobject>
                         <imageobject role="html">
                             <imagedata format="png" fileref="state-change-intent.png"/>

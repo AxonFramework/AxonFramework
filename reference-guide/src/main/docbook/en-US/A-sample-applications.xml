@@ -52,7 +52,7 @@
                     the framework can be found on the Parsley website: <link
                         xmlns:ns1="http://www.w3.org/1999/xlink"
                         ns1:href="http://www.spicefactory.org/parsley/"
-                        >http://www.spicefactory.org/parsley/ </link>
+                        >http://www.spicefactory.org/parsley/</link>
                 </para>
             </note>
             <para>The flex client talks to the server. Remote obejcts are used to ask data from the

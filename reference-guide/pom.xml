@@ -87,7 +87,7 @@
                                     </property>
                                     <property>
                                         <name>callout.graphics.path</name>
-                                        <value>callouts/</value>
+                                        <value>images/callouts/</value>
                                     </property>
                                     <property>
                                         <name>callout.graphics.extension</name>
@@ -154,7 +154,6 @@
                             <imageResource>
                                 <directory>${basedir}/src/main/resources/images</directory>
                             </imageResource>
-
                         </configuration>
                     </execution>
                 </executions>
