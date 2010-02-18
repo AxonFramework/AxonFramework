@@ -70,7 +70,9 @@
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="releaseinfo"/>
 
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/authorgroup/author"/>
+        <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/authorgroup/othercredit"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/authorgroup/author"/>
+        <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/authorgroup/othercredit"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/author"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/author"/>
     </xsl:template>
@@ -121,6 +123,14 @@
         </fo:block>
     </xsl:template>
 
+    <xsl:template match="othercredit" mode="book.titlepage.recto.auto.mode">
+        <fo:block xsl:use-attribute-sets="book.titlepage.recto.style" font-size="14pt" space-before="15.552pt">
+            <xsl:call-template name="person.name">
+                <xsl:with-param name="node" select="."/>
+            </xsl:call-template>
+        </fo:block>
+    </xsl:template>
+
     <!--###################################################-->
     <!--##           The secondary cover page            ##-->
     <!--###################################################-->
@@ -162,7 +172,7 @@
             <fo:table-cell>
                 <fo:block>
                     <xsl:call-template name="gentext">
-                        <xsl:with-param name="key" select="'Author'"/>
+                        <xsl:with-param name="key" select="'Project Lead'"/>
                     </xsl:call-template>
                 </fo:block>
             </fo:table-cell>
@@ -175,7 +185,7 @@
             </fo:table-cell>
             <fo:table-cell>
                 <fo:block>
-                    <xsl:apply-templates select="email"/>
+                    <xsl:apply-templates select="orgname"/>
                 </fo:block>
             </fo:table-cell>
         </fo:table-row>
@@ -220,7 +230,7 @@
             <fo:table-cell>
                 <fo:block>
                     <xsl:call-template name="gentext">
-                        <xsl:with-param name="key" select="'translator'"/>
+                        <xsl:with-param name="key" select="'Contributor'"/>
                     </xsl:call-template>
                 </fo:block>
             </fo:table-cell>
@@ -238,6 +248,5 @@
             </fo:table-cell>
         </fo:table-row>
     </xsl:template>
-
 
 </xsl:stylesheet>

@@ -69,7 +69,9 @@
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="releaseinfo"/>
 
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/authorgroup/author"/>
+        <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/authorgroup/othercredit"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/authorgroup/author"/>
+        <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/authorgroup/othercredit"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/author"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/author"/>
     </xsl:template>
@@ -96,6 +98,14 @@
     </xsl:template>
 
     <xsl:template match="author" mode="book.titlepage.recto.auto.mode">
+        <div align="center">
+            <xsl:call-template name="person.name">
+                <xsl:with-param name="node" select="."/>
+            </xsl:call-template>
+        </div>
+    </xsl:template>
+
+    <xsl:template match="othercredit" mode="book.titlepage.recto.auto.mode">
         <div align="center">
             <xsl:call-template name="person.name">
                 <xsl:with-param name="node" select="."/>
