@@ -17,7 +17,7 @@
 <chapter id="introduction" xmlns="http://docbook.org/ns/docbook">
     <title>Introduction</title>
     <para>Axon is a lightweight framework that helps developers build scalable and extensible
-        applications by addressing these concern directly in the architecture. This reference guide
+        applications by addressing these concerns directly in the architecture. This reference guide
         explains what Axon is, how it can help you and how you can use it. There is even a sample
         web application built using Axon that shows how you can leverage the provided features to
         quickly build a dynamic and extensible application.</para>
@@ -27,19 +27,19 @@
         interested in helping out building the Axon Framework, <xref linkend="contributing"/> will
         contain the information you require. Finally, this chapter covers some legal concerns in
             <xref linkend="license"/>.</para>
-    <sect1 xml:id="about-axon">
+    <sect1 id="about-axon">
         <title>Axon Framework Background</title>
         <sect2>
             <title>A brief history</title>
-            <para>The demands on software projects increase rapidly, as time progresses. Customers
-                no longer want access a brochure-like homepage to promote their business; they want
-                their (web)applications to evolve together with their business. That means that not
-                only projects and code bases become more complex, it also means that functionality
-                is constantly added, changed and (unfortunately not enough) removed. It can be
+            <para>The demands on software projects increase rapidly, as time progresses. Companies
+                no longer accept brochure-like homepage to promote their business; they want their
+                (web)applications to evolve together with their business. That means that not only
+                projects and code bases become more complex, it also means that functionality is
+                constantly added, changed and (unfortunately not enough) removed. It can be
                 frustrating to find out that a seemingly easy-to-implement feature can require
                 development teams to take apart an entire application. Furthermore, today's
                 webapplications target an audience of potentially billions of people, making
-                scalability a basic necessity.</para>
+                scalability a bare necessity.</para>
             <para>Although there are many applications and frameworks around that deal with
                 scalability issues, such as GigaSpaces and Terracotta, they share one fundamental
                 flaw. These stacks try to solve the scalability issues while letting developers
@@ -68,28 +68,29 @@
             <para>Since CQRS is so fundamentally different than the layered-architecture which
                 dominates the software landscape nowadays, it is quite hard to grasp. It is not
                 uncommon for developers to walk into a few traps while trying to find their way
-                around this architecture. That's why Axon Framework was conceived.</para>
+                around this architecture. That's why Axon Framework was conceived: to help
+                developers implement CQRS applications while focussing on the business logic.</para>
         </sect2>
         <sect2>
             <title>What is Axon?</title>
-            <para>Axon Framework helps build scalable, extensible and maintainable application by
+            <para>Axon Framework helps build scalable, extensible and maintainable applications by
                 supporting developers apply the Command Query Responsiblity Segregation (CQRS)
                 architectural pattern. It does so by providing implementations, sometimes complete,
                 sometimes abstract, of the most important building blocks, such as aggregates,
                 repositories and event busses (the dispatching mechanism for events). Furthermore,
                 Axon provides annotation support, which allows you to build aggregates and event
-                listeners withouth tying your code to Axon specific logic. One the one hand, this
-                allows you to focus on your business logic, instead of the plumbing, and on the
-                other hand, makes your code easier to test in isolation.</para>
+                listeners withouth tying your code to Axon specific logic. This allows you to focus
+                on your business logic, instead of the plumbing, and helps you makes your code
+                easier to test in isolation.</para>
             <para>Axon does not, in any way, try to hide the CQRS architecture or any of its
                 components from developers. Therefore, depending on team size, it is still advisable
                 to have one or more developers with a thorough understanding of CQRS on each team.
                 However, Axon does help when it comes to guaranteeing delivering events to the right
-                event listeners and processing them concurrently and still in the correct order.
-                These multi-threading concerns are typically hard to deal with, leading to
-                hard-to-trace bugs and sometimes complete application failure. When you have a tight
-                deadline, you probably don't even want to care about these concerns. Axon's code is
-                thoroughly tested to prevent these types of bugs.</para>
+                event listeners and processing them concurrently and in the correct order. These
+                multi-threading concerns are typically hard to deal with, leading to hard-to-trace
+                bugs and sometimes complete application failure. When you have a tight deadline, you
+                probably don't even want to care about these concerns. Axon's code is thoroughly
+                tested to prevent these types of bugs.</para>
             <para>Most of the concerns Axon addresses are located inside the JVM. However, for an
                 application to be scalable, a single JVM is not enough. Therefore, Axon provides the
                     <code>axon-intregration</code> module, which allows events to be sent to a
@@ -100,7 +101,7 @@
         </sect2>
         <sect2>
             <title>When to use Axon?</title>
-            <para>Will each appliation benefit from Axon? Unfortunately not. Simple CRUD (Create,
+            <para>Will each application benefit from Axon? Unfortunately not. Simple CRUD (Create,
                 Read, Update, Delete) applications which are not expected to scale will probably not
                 benefit from CQRS or Axon. Fortunately, there is a wide variety of applications that
                 does benefit from Axon.</para>
@@ -108,7 +109,7 @@
                 one or more of the following characteristics:<itemizedlist>
                     <listitem>
                         <para>The application is likely to be extended with new functionality during
-                            a long period of time. For example, an online store might start of with
+                            a long period of time. For example, an online store might start off with
                             a system that tracks progress of Orders. At a later stage, this could be
                             extended with Inventory information, to make sure stocks are updated
                             when items are sold. Even later, accounting can require financial
@@ -194,7 +195,7 @@
     <artifactId>axon-core</artifactId>
     <version>0.4</version>
 </dependency>]]></programlisting>
-            <para>T make sure your maven installation has access to the axon repository, where the
+            <para>To make sure your maven installation has access to the axon repository, where the
                 necessary jars and poms are located, you can do at least two things. You can
                 configure your repository proxy to access the axon repository and you can configure
                 your project to look for the axon repository. </para>
@@ -242,7 +243,7 @@
         <para>Development on the Axon Framework is never finished. There will always be more
             features that we like to include in our framework to continue making development of
             scalabale and extensible application easier. This means we are constantly looking for
-            help in developting our framework.</para>
+            help in developing our framework.</para>
         <para>There is a number of ways in which you can contribute to the Axon Framework:<itemizedlist>
                 <listitem>
                     <para>You can report any bugs, feature requests or ideas about improvemens on
@@ -271,7 +272,7 @@
             Version 2.0. You may obtain a copy of the License at <link
                 xmlns:ns1="http://www.w3.org/1999/xlink"
                 ns1:href="http://www.apache.org/licenses/LICENSE-2.0" ns1:show="new"
-                >http://www.apache.org/licenses/LICENSE-2.0</link>.  </para>
+                >http://www.apache.org/licenses/LICENSE-2.0</link>. </para>
         <para>Unless required by applicable law or agreed to in writing, software distributed under
             the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
             KIND, either express or implied. See the <link xmlns:ns1="http://www.w3.org/1999/xlink"

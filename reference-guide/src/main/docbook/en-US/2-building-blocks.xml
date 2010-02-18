@@ -60,10 +60,10 @@
         aggregate. Furthermore, events are handed over to the event bus, which is reposonsible for
         dispatching them to all interested listeners.</para>
     <para>The event bus dispatches events to all interested event listeners. This is typically done
-        asynchronously. This allows the command execution to return and hand over control to the
-        user, while the events are being dispatched and processed in the background. Not having to
-        wait for event processing to complete typically makes application much more
-        responsive.</para>
+        asynchronously. Asynchonous event dispatching allows the command execution to return and
+        hand over control to the user, while the events are being dispatched and processed in the
+        background. Not having to wait for event processing to complete makes an application more
+        responsive</para>
     <para>Event listeners pick up incoming events and handle them. Some handlers might load related
         aggregates from a repository and update their state based on information in the event. An
         example of this is the placement of an order in an online store. When an order comes in, you
