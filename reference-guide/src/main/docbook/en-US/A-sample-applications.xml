@@ -22,11 +22,12 @@
             <title>Introduction</title>
             <para>Every good framework needs a sample application. You want to have an application
                 that demonstrates enough of the framework and is easy enough to understand. The
-                Address book we have created is such an application. A very simple domain to
+                Address book sample we have created is such an application. A very simple domain to
                 understand with enough features to show the event mechanism as well as the seperate
                 data store and query database. </para>
-            <para>With the flex client, the event handling becomes very interesting. The server side
-                events are pushed to the clients to stay up to date. </para>
+            <para>The address book sample shows an Adobe flex user interface. With this flex client,
+                the event handling becomes very interesting. The server side domain events are
+                pushed to the flex clients to stay up to date.</para>
             <para>So what does the sample provide? The sample comtains contacts with addresses. Each
                 contact can have a maximum of three addresses, one for each available type. Using
                 the query database, you can request all contacts, request contact details and search
@@ -34,12 +35,39 @@
                 create new contacts and addresses or provided updates. </para>
             <para>The framework creates events for things like: contact created, contact updated,
                 address changed. These events are picket up by special listeners that publish these
-                events to all flex clients using BlazeDS. More on this part follows in the Flex
-                client part. (TODO create reference) </para>
-            <para>TODO create image for overall architecture</para>
-            <para>TODO show screen dump</para>
+                events to all flex clients using BlazeDS. More on this part follows in section <xref
+                    linkend="addressbook-flex-client"/>.</para>
+            <para>The following image gives an overview of the archtiecture as discussed in this
+                section.</para>
+            <figure>
+                <title>Architecture overview address book sample</title>
+                <mediaobject>
+                    <info>Architecture overview address book sample</info>
+                    <imageobject role="fo">
+                        <imagedata format="png" fileref="addressbook-arch-overview-hires.png"
+                            depth="10cm"/>
+                    </imageobject>
+                    <imageobject role="html">
+                        <imagedata format="png" fileref="addressbook-arch-overview.png"/>
+                    </imageobject>
+                </mediaobject>
+            </figure>
+            <para>The next image gives a preview of the flex client.</para>
+            <figure>
+                <title>Preview of the flex client of the address book</title>
+                <mediaobject>
+                    <info>Preview of the flex client of the address book</info>
+                    <imageobject role="fo">
+                        <imagedata format="png" fileref="addressbook-sd-overview-hires.png"
+                            width="15cm"/>
+                    </imageobject>
+                    <imageobject role="html">
+                        <imagedata format="png" fileref="addressbook-sd-overview.png"/>
+                    </imageobject>
+                </mediaobject>
+            </figure>
         </sect2>
-        <sect2>
+        <sect2 xml:id="addressbook-flex-client">
             <title>Flex client</title>
             <para>In this section we will describe the main components of the flex client. The flex
                 client makes use of an Inversion Of Control framework called parsley. This framework
