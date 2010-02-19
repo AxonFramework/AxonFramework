@@ -78,7 +78,7 @@
     </servlet-mapping>
 
     <welcome-file-list>
-        <welcome-file>swf.swf</welcome-file>
+        <welcome-file>addressbook.swf</welcome-file>
     </welcome-file-list>
 
 </web-app>

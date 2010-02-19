@@ -33,7 +33,7 @@
     <name>Axon Address Book Sample - Flex ui swf</name>
 
     <build>
-        <finalName>swf</finalName>
+        <finalName>addressbook</finalName>
         <sourceDirectory>src/main/flex</sourceDirectory>
         <testSourceDirectory>src/test/flex</testSourceDirectory>
         <plugins>
