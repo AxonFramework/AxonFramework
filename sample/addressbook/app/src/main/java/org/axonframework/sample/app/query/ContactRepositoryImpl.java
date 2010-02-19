@@ -53,7 +53,7 @@ public class ContactRepositoryImpl implements ContactRepository {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public List<AddressEntry> findAllAddressesInCity(String name, String city) {
+    public List<AddressEntry> findAllAddressesInCityForContact(String name, String city) {
         return entityManager.createQuery("SELECT e FROM AddressEntry e WHERE e.name LIKE :name AND e.city LIKE :city")
                 .setParameter("name", "%" + (name == null ? "" : name) + "%")
                 .setParameter("city", "%" + (city == null ? "" : city) + "%")

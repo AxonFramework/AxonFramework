@@ -27,8 +27,9 @@ import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.query.AddressEntry;
 import org.axonframework.sample.app.query.ContactEntry;
 import org.axonframework.sample.app.query.ContactRepository;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -94,10 +95,10 @@ public class ContactIntegrationTest {
         assertEquals(1, contactList.size());
         assertEquals(1, addressList.size());
 
-        assertEquals(1, contactRepository.findAllAddressesInCity(null, "Ci").size());
-        assertEquals(1, contactRepository.findAllAddressesInCity("lla", null).size());
-        assertEquals(1, contactRepository.findAllAddressesInCity("lla", "Ci").size());
-        assertEquals(0, contactRepository.findAllAddressesInCity("Bla", "Ci").size());
+        assertEquals(1, contactRepository.findAllAddressesInCityForContact(null, "Ci").size());
+        assertEquals(1, contactRepository.findAllAddressesInCityForContact("lla", null).size());
+        assertEquals(1, contactRepository.findAllAddressesInCityForContact("lla", "Ci").size());
+        assertEquals(0, contactRepository.findAllAddressesInCityForContact("Bla", "Ci").size());
         assertEquals("Allard", contactRepository.loadContactDetails(contactId).getName());
 
         commandHandler.removeAddress(contactId, AddressType.PRIVATE);

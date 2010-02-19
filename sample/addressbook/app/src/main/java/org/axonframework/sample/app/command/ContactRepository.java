@@ -21,15 +21,24 @@ import org.axonframework.core.repository.eventsourcing.EventSourcingRepository;
 import java.util.UUID;
 
 /**
+ * <p>Event sourcing repository class that handles all @{code Contact} actions like save and delete. Through it's
+ * parent class generated domain events are dispatched.</p>
+ *
  * @author Allard Buijze
  */
 class ContactRepository extends EventSourcingRepository<Contact> {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected Contact instantiateAggregate(UUID aggregateIdentifier) {
         return new Contact(aggregateIdentifier);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected String getTypeIdentifier() {
         return Contact.class.getSimpleName();

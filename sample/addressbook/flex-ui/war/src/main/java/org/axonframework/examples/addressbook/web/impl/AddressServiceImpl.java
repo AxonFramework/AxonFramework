@@ -55,7 +55,7 @@ public class AddressServiceImpl implements AddressService {
         List<AddressDTO> foundAddresses = new ArrayList<AddressDTO>();
 
         List<AddressEntry> addresses =
-                repository.findAllAddressesInCity(searchAddress.getContactName(), searchAddress.getCity());
+                repository.findAllAddressesInCityForContact(searchAddress.getContactName(), searchAddress.getCity());
         for (AddressEntry address : addresses) {
             foundAddresses.add(AddressDTO.createFrom(address));
         }

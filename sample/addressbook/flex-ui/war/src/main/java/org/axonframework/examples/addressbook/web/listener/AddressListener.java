@@ -39,13 +39,15 @@ public class AddressListener {
     public void handleAddressCreatedEvent(AddressRegisteredEvent event) {
         logger.debug("Received and event with name {} and identifier {}",
                 event.getAggregateIdentifier(), event.getEventIdentifier());
-        AddressDTO addressDTO = AddressDTO.createFrom(event.getAddress(), event.getContactIdentifier(), event.getType());
+        AddressDTO addressDTO = AddressDTO.createFrom(
+                event.getAddress(), event.getContactIdentifier(), event.getType());
         producer.sendAddressUpdate(addressDTO);
     }
 
     @EventHandler
     public void handleAddressRemovedEvent(AddressRemovedEvent event) {
-        RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(event.getContactIdentifier().toString(), event.getType());
+        RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(
+                event.getContactIdentifier().toString(), event.getType());
         producer.sendRemovedUpdate(removedDTO);
     }
 
