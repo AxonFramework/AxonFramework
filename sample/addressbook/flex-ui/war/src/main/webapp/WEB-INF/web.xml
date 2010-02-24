@@ -77,11 +77,6 @@
         <url-pattern>/messagebroker/*</url-pattern>
     </servlet-mapping>
 
-    <servlet-mapping>
-        <servlet-name>dispatcher</servlet-name>
-        <url-pattern>*.properties</url-pattern>
-    </servlet-mapping>
-
     <welcome-file-list>
         <welcome-file>addressbook.swf</welcome-file>
     </welcome-file-list>

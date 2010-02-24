@@ -23,20 +23,4 @@
        http://www.springframework.org/schema/flex http://www.springframework.org/schema/flex/spring-flex-1.0.xsd
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <context:component-scan base-package="org.axonframework.examples.addressbook.web.config"/>
-
-    <!-- View resolver used connect the views returned by controllers to view implementation classes -->
-    <bean id="defaultViewResolver" class="org.springframework.web.servlet.view.ResourceBundleViewResolver">
-        <property name="basename" value="views"/>
-        <property name="order" value="1"/>
-    </bean>
-
-    <bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping">
-        <property name="alwaysUseFullPath" value="true"/>
-    </bean>
-
-    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
-        <property name="alwaysUseFullPath" value="true"/>
-    </bean>
-    
 </beans>

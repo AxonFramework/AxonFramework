@@ -27,9 +27,6 @@
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.Removed;
 
-        [Bindable]
-        public var host:String;
-
         [Init]
         public function init():void {
             consumer.subscribe();
@@ -58,7 +55,7 @@
                  fault=" faultHandler(event)"/>
 
     <mx:ChannelSet id="cs">
-        <mx:AMFChannel url="{host}/messagebroker/pollingamf"/>
+        <mx:AMFChannel url="messagebroker/pollingamf"/>
     </mx:ChannelSet>
 
 </mx:Object>

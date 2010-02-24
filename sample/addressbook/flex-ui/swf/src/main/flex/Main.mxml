@@ -18,48 +18,9 @@
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
                 xmlns:sf="http://www.spicefactory.org/parsley"
                 xmlns:views="org.axonframework.examples.addressbook.views.*"
-                width="100%" height="100%" creationComplete="initApp()" >
-    <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.model.Config;
-        import org.axonframework.examples.addressbook.views.OverallView;
-        import org.spicefactory.parsley.core.context.Context;
-        import org.spicefactory.parsley.flex.FlexContextBuilder;
-        import org.springextensions.actionscript.collections.Properties;
+                width="100%" height="100%">
 
-        private var loadedProps:Properties = new Properties();
-        private var context:Context;
+    <sf:ContextBuilder config="ParsleyConfiguration"/>
 
-        public function initApp():void {
-            loadedProps.addEventListener(Event.COMPLETE, onLoaderComplete);
-            loadedProps.addEventListener(IOErrorEvent.IO_ERROR, onIOError);
-            loadedProps.load("config.properties");
-
-        }
-
-        private function onLoaderComplete(event:Event):void {
-            var host:String = loadedProps.getProperty("host");
-            var port:String = loadedProps.getProperty("port");
-            var contextUrl:String = loadedProps.getProperty("context-root");
-
-            var completeUrl:String = "http://" + host + ":" + port;
-            if (contextUrl.length > 0) {
-                completeUrl += "/" + contextUrl;
-            }
-            context = FlexContextBuilder.build(ParsleyConfiguration, this);
-            var config:Config = context.getObjectByType(Config) as Config;
-            config.host = completeUrl;
-
-            var overallView:OverallView = new OverallView();
-            overallView.percentWidth = 100;
-            overallView.percentHeight = 100;
-            mainView.addChild(overallView);
-        }
-
-        private function onIOError(event:IOErrorEvent):void {
-            dispatchEvent(event);
-        }
-
-        ]]></mx:Script>
-
-    <mx:Canvas id="mainView" width="100%" height="100%"/>
+    <views:OverallView width="100%" height="100%"/>
 </mx:Application>

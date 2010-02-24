@@ -16,8 +16,6 @@
   -->
 
 <mx:Object xmlns:mx="http://www.adobe.com/2006/mxml"
-           xmlns:services="org.axonframework.examples.addressbook.services.*"
-           xmlns:actions="org.axonframework.examples.addressbook.actions.*"
            xmlns:sf="http://www.spicefactory.org/parsley"
            xmlns:commands="org.axonframework.examples.addressbook.commands.*"
            xmlns:model="org.axonframework.examples.addressbook.model.*"
@@ -27,10 +25,10 @@
     <mx:RemoteObject
             id="remoteAddressService"
             destination="addressService"
-            endpoint="{config.host}/messagebroker/amf"
+            endpoint="messagebroker/amf"
             showBusyCursor="true"/>
 
-    <cons:Consumer host="{config.host}"/>
+    <cons:Consumer/>
 
     <sf:DynamicCommand type="{NewAddressCommand}" messageType="{NewAddressMessage}"/>
     <sf:DynamicCommand type="{NewContactCommand}" messageType="{NewContactMessage}"/>
@@ -45,14 +43,9 @@
 
     <model:AddressModel/>
     <model:ContactModel/>
-    <model:Config id="config"/>
 
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.commands.*;
         import org.axonframework.examples.addressbook.messages.*;
-
-        [Bindable]
-        public var host:String = "";
-
         ]]></mx:Script>
 </mx:Object>

@@ -82,22 +82,6 @@
             <version>2.2.0</version>
             <type>swc</type>
         </dependency>
-
-        <dependency>
-            <groupId>org.as3commons</groupId>
-            <artifactId>as3commons-lang</artifactId>
-            <version>0.2</version>
-            <type>swc</type>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springextensions.actionscript</groupId>
-            <artifactId>spring-actionscript-core</artifactId>
-            <version>0.8.1</version>
-            <type>swc</type>
-        </dependency>
-        
     </dependencies>
 
 </project>
