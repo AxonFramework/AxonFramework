@@ -24,13 +24,6 @@
 
     <bean class="org.axonframework.core.eventhandler.annotation.postprocessor.AnnotationEventListenerBeanPostProcessor"/>
 
-    <bean class="org.axonframework.sample.app.socket.SocketConnectionEventPublisher"
-          init-method="acceptConnection"
-          destroy-method="shutDown">
-        <property name="port" value="2525"/>
-        <property name="eventBus" ref="eventBus"/>
-    </bean>
-
     <bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus">
         <property name="executor" ref="taskExecutor"/>
     </bean>
