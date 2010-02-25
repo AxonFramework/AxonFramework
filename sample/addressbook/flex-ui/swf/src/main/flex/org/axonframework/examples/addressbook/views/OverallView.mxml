@@ -20,7 +20,7 @@
            xmlns:sf="http://www.spicefactory.org/parsley/flex"
         >
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.commands.ViewConstants;
+        import org.axonframework.examples.addressbook.controllers.ViewConstants;
         import org.axonframework.examples.addressbook.messages.ChangeViewCommandMessage;
         import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
         import org.axonframework.examples.addressbook.messages.NotificationMessage;

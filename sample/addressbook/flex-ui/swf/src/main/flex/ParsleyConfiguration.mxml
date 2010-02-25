@@ -17,7 +17,7 @@
 
 <mx:Object xmlns:mx="http://www.adobe.com/2006/mxml"
            xmlns:sf="http://www.spicefactory.org/parsley"
-           xmlns:commands="org.axonframework.examples.addressbook.commands.*"
+           xmlns:commands="org.axonframework.examples.addressbook.controllers.*"
            xmlns:model="org.axonframework.examples.addressbook.model.*"
            xmlns:cons="org.axonframework.examples.addressbook.consumer.*"
         >
@@ -45,7 +45,7 @@
     <model:ContactModel/>
 
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.commands.*;
+        import org.axonframework.examples.addressbook.controllers.*;
         import org.axonframework.examples.addressbook.messages.*;
         import org.axonframework.examples.addressbook.messages.NewAddressCommandMessage;
         import org.axonframework.examples.addressbook.messages.NewContactCommandMessage;

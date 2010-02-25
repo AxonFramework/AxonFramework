@@ -20,7 +20,7 @@
         >
 
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.commands.ViewConstants;
+        import org.axonframework.examples.addressbook.controllers.ViewConstants;
         import org.axonframework.examples.addressbook.messages.ChangeViewCommandMessage;
 
         [MessageDispatcher]
