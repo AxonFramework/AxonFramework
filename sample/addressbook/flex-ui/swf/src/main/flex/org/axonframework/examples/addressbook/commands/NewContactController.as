@@ -17,7 +17,7 @@
 package org.axonframework.examples.addressbook.commands {
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.NewContactMessage;
+import org.axonframework.examples.addressbook.messages.NewContactCommandMessage;
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
 import org.axonframework.examples.addressbook.messages.ValidationMessage;
 import org.axonframework.examples.addressbook.model.Contact;
@@ -32,7 +32,7 @@ public class NewContactController extends BaseController {
         super();
     }
 
-    public function execute(message:NewContactMessage):AsyncToken {
+    public function execute(message:NewContactCommandMessage):AsyncToken {
         if (message.contact.name.length < 1) {
             dispatcher(new ValidationMessage("Name field is required for contact"));
             return null;

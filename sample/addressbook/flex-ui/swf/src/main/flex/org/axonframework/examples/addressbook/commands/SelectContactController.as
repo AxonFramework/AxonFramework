@@ -18,7 +18,7 @@ package org.axonframework.examples.addressbook.commands {
 import mx.collections.ArrayCollection;
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.SelectContactMessage;
+import org.axonframework.examples.addressbook.messages.SelectContactCommandMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
@@ -41,7 +41,7 @@ public class SelectContactController extends BaseController {
         super();
     }
 
-    public function execute(message:SelectContactMessage):AsyncToken {
+    public function execute(message:SelectContactCommandMessage):AsyncToken {
         var cachedContact:Contact = contactModel.findContactByIdentifier(message.contact.uuid);
         contactModel.selectedContact = cachedContact;
         findAddressesFor = cachedContact;

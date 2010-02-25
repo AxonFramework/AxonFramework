@@ -30,16 +30,16 @@
 
     <cons:Consumer/>
 
-    <sf:DynamicCommand type="{NewAddressController}" messageType="{NewAddressMessage}"/>
-    <sf:DynamicCommand type="{NewContactController}" messageType="{NewContactMessage}"/>
-    <sf:DynamicCommand type="{SearchAddressController}" messageType="{SearchForAddressesMessage}"/>
-    <sf:DynamicCommand type="{SelectContactController}" messageType="{SelectContactMessage}"/>
-    <sf:DynamicCommand type="{ShowContactsController}" messageType="{ShowContactsMessage}"/>
-    <sf:DynamicCommand type="{UpdatedContactController}" messageType="{UpdatedContactMessage}"/>
-    <sf:DynamicCommand type="{UpdatedContactAddressController}" messageType="{UpdatedContactAddressMessage}"/>
-    <sf:DynamicCommand type="{RemoveAddressController}" messageType="{RemoveAddressMessage}"/>
-    <sf:DynamicCommand type="{RemovedItemController}" messageType="{RemovedItemMessage}"/>
-    <sf:DynamicCommand type="{RemoveContactController}" messageType="{RemoveContactMessage}"/>
+    <sf:DynamicCommand type="{NewAddressController}" messageType="{NewAddressCommandMessage}"/>
+    <sf:DynamicCommand type="{NewContactController}" messageType="{NewContactCommandMessage}"/>
+    <sf:DynamicCommand type="{SearchAddressController}" messageType="{SearchForAddressesCommandMessage}"/>
+    <sf:DynamicCommand type="{SelectContactController}" messageType="{SelectContactCommandMessage}"/>
+    <sf:DynamicCommand type="{ShowContactsController}" messageType="{ShowContactsCommandMessage}"/>
+    <sf:DynamicCommand type="{UpdatedContactController}" messageType="{UpdatedContactNotificationMessage}"/>
+    <sf:DynamicCommand type="{UpdatedContactAddressController}" messageType="{UpdatedContactAddressNotificationMessage}"/>
+    <sf:DynamicCommand type="{RemoveAddressController}" messageType="{RemoveAddressCommandMessage}"/>
+    <sf:DynamicCommand type="{RemovedItemController}" messageType="{RemovedItemNotificationMessage}"/>
+    <sf:DynamicCommand type="{RemoveContactController}" messageType="{RemoveContactCommandMessage}"/>
 
     <model:AddressModel/>
     <model:ContactModel/>
@@ -47,5 +47,14 @@
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.commands.*;
         import org.axonframework.examples.addressbook.messages.*;
+        import org.axonframework.examples.addressbook.messages.NewAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.NewContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.RemoveAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.RemoveContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.SearchForAddressesCommandMessage;
+        import org.axonframework.examples.addressbook.messages.SelectContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.ShowContactsCommandMessage;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactNotificationMessage;
         ]]></mx:Script>
 </mx:Object>

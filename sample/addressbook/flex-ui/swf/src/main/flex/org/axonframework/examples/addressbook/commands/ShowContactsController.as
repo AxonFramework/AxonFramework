@@ -18,7 +18,7 @@ package org.axonframework.examples.addressbook.commands {
 import mx.collections.ArrayCollection;
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
+import org.axonframework.examples.addressbook.messages.ShowContactsCommandMessage;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
 /**
@@ -33,7 +33,7 @@ public class ShowContactsController  extends BaseController {
         super();
     }
 
-    public function execute(message:ShowContactsMessage):AsyncToken {
+    public function execute(message:ShowContactsCommandMessage):AsyncToken {
         return addressService.obtainAllContacts();
     }
 

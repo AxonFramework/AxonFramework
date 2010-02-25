@@ -17,10 +17,10 @@
 package org.axonframework.examples.addressbook.messages {
 import org.axonframework.examples.addressbook.model.Contact;
 
-public class RemoveContactMessage {
+public class UpdatedContactNotificationMessage {
     public var contact:Contact;
 
-    public function RemoveContactMessage(contact:Contact) {
+    public function UpdatedContactNotificationMessage(contact:Contact) {
         this.contact = contact;
     }
 }

@@ -16,15 +16,12 @@
 
 package org.axonframework.examples.addressbook.messages {
 import org.axonframework.examples.addressbook.model.Address;
-import org.axonframework.examples.addressbook.model.Contact;
 
-public class RemoveAddressMessage {
+public class UpdatedContactAddressNotificationMessage {
     public var address:Address;
-    public var contact:Contact;
 
-    public function RemoveAddressMessage(address:Address, contact:Contact) {
+    public function UpdatedContactAddressNotificationMessage(address:Address) {
         this.address = address;
-        this.contact = contact;
     }
 }
 }

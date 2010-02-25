@@ -20,9 +20,9 @@
         import mx.messaging.events.MessageEvent;
 
         import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.RemovedItemMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
+        import org.axonframework.examples.addressbook.messages.RemovedItemNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.UpdatedContactNotificationMessage;
         import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.Removed;
@@ -37,11 +37,11 @@
 
         public function messageHandler(event:MessageEvent):void {
             if (event.message.body is Contact) {
-                dispatcher(new UpdatedContactMessage(event.message.body as Contact));
+                dispatcher(new UpdatedContactNotificationMessage(event.message.body as Contact));
             } else if (event.message.body is Address) {
-                dispatcher(new UpdatedContactAddressMessage(event.message.body as Address))
+                dispatcher(new UpdatedContactAddressNotificationMessage(event.message.body as Address))
             } else if (event.message.body is Removed) {
-                dispatcher(new RemovedItemMessage(event.message.body as Removed));
+                dispatcher(new RemovedItemNotificationMessage(event.message.body as Removed));
             }
 
         }

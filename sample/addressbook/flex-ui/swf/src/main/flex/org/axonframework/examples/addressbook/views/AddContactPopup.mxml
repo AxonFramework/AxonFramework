@@ -22,7 +22,7 @@
     <mx:Script><![CDATA[
         import mx.managers.PopUpManager;
 
-        import org.axonframework.examples.addressbook.messages.NewContactMessage;
+        import org.axonframework.examples.addressbook.messages.NewContactCommandMessage;
         import org.axonframework.examples.addressbook.model.Contact;
 
         [MessageDispatcher]
@@ -31,7 +31,7 @@
         public function addContactAction():void {
             var contact:Contact = new Contact();
             contact.name = contactNameInput.text;
-            dispatcher(new NewContactMessage(contact));
+            dispatcher(new NewContactCommandMessage(contact));
             contactNameInput.text = "";
             closeMe();
         }

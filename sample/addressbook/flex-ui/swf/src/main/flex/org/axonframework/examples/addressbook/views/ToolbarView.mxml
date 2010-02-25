@@ -21,14 +21,13 @@
 
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.commands.ViewConstants;
-        import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
+        import org.axonframework.examples.addressbook.messages.ChangeViewCommandMessage;
 
         [MessageDispatcher]
         public var dispatcher:Function;
 
         private function changeView(identity:String):void {
-            // TODO : I do not want to do this here, but it is easy for now
-            dispatcher(new ChangeViewMessage(identity));
+            dispatcher(new ChangeViewCommandMessage(identity));
         }
         ]]></mx:Script>
 

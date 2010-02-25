@@ -15,13 +15,14 @@
  */
 
 package org.axonframework.examples.addressbook.messages {
-import org.axonframework.examples.addressbook.model.Removed;
+import org.axonframework.examples.addressbook.model.Address;
 
-public class RemovedItemMessage {
-    public var removed:Removed;
+public class NewAddressCommandMessage {
 
-    public function RemovedItemMessage(removed:Removed) {
-        this.removed = removed;
+    public var address:Address;
+
+    public function NewAddressCommandMessage(address:Address) {
+        this.address = address;
     }
 }
 }

@@ -17,11 +17,11 @@
 package org.axonframework.examples.addressbook.messages {
 import org.axonframework.examples.addressbook.model.Address;
 
-public class NewAddressMessage {
+public class SearchForAddressesCommandMessage {
 
     public var address:Address;
 
-    public function NewAddressMessage(address:Address) {
+    public function SearchForAddressesCommandMessage(address:Address = null) {
         this.address = address;
     }
 }

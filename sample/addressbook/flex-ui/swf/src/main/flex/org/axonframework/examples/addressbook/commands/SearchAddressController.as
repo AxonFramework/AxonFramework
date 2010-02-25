@@ -18,7 +18,7 @@ package org.axonframework.examples.addressbook.commands {
 import mx.collections.ArrayCollection;
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.SearchForAddressesMessage;
+import org.axonframework.examples.addressbook.messages.SearchForAddressesCommandMessage;
 import org.axonframework.examples.addressbook.model.AddressModel;
 
 /**
@@ -33,7 +33,7 @@ public class SearchAddressController extends BaseController {
         super();
     }
 
-    public function execute(message:SearchForAddressesMessage):AsyncToken {
+    public function execute(message:SearchForAddressesCommandMessage):AsyncToken {
         return addressService.searchAddresses(message.address);
     }
 

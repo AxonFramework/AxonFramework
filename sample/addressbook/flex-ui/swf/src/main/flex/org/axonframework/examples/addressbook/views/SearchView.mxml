@@ -19,7 +19,7 @@
            width="100%"
            xmlns:sf="http://www.spicefactory.org/parsley/flex">
     <mx:Script><![CDATA[
-        import org.axonframework.examples.addressbook.messages.SearchForAddressesMessage;
+        import org.axonframework.examples.addressbook.messages.SearchForAddressesCommandMessage;
         import org.axonframework.examples.addressbook.model.Address;
 
         [MessageDispatcher]
@@ -27,7 +27,7 @@
 
         private function searchAction():void {
             var searchAddress:Address = Address.newAddress(contactNameInput.text, searchStreetInput.text, "", searchCityInput.text);
-            dispatcher(new SearchForAddressesMessage(searchAddress));
+            dispatcher(new SearchForAddressesCommandMessage(searchAddress));
         }
 
         ]]></mx:Script>

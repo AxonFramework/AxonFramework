@@ -21,17 +21,17 @@
         >
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.commands.ViewConstants;
-        import org.axonframework.examples.addressbook.messages.ChangeViewMessage;
+        import org.axonframework.examples.addressbook.messages.ChangeViewCommandMessage;
         import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
         import org.axonframework.examples.addressbook.messages.NotificationMessage;
-        import org.axonframework.examples.addressbook.messages.ShowContactsMessage;
+        import org.axonframework.examples.addressbook.messages.ShowContactsCommandMessage;
         import org.axonframework.examples.addressbook.messages.ValidationMessage;
 
         [MessageDispatcher]
         public var dispatcher:Function;
 
         [MessageHandler]
-        public function showRightViewStack(changeViewMessage:ChangeViewMessage):void {
+        public function showRightViewStack(changeViewMessage:ChangeViewCommandMessage):void {
             switch (changeViewMessage.stackId) {
                 case ViewConstants.HOME:
                     mainViewStack.selectedChild = home;
@@ -52,7 +52,7 @@
 
         [Init]
         public function init():void {
-            dispatcher(new ShowContactsMessage());
+            dispatcher(new ShowContactsCommandMessage());
         }
 
         [MessageHandler]

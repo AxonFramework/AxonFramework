@@ -22,7 +22,7 @@
     <mx:Script><![CDATA[
         import mx.managers.PopUpManager;
 
-        import org.axonframework.examples.addressbook.messages.NewAddressMessage;
+        import org.axonframework.examples.addressbook.messages.NewAddressCommandMessage;
         import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.ContactModel;
 
@@ -44,7 +44,7 @@
             address.contactUUID = contactModel.selectedContact.uuid;
             address.contactName = contactModel.selectedContact.name;
             address.type = inputType.selectedItem.toString();
-            dispatcher(new NewAddressMessage(address));
+            dispatcher(new NewAddressCommandMessage(address));
             inputCity.text = "";
             inputStreet.text = "";
             inputZipCode.text = "";

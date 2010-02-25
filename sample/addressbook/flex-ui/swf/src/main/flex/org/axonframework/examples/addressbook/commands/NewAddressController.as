@@ -17,7 +17,7 @@
 package org.axonframework.examples.addressbook.commands {
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.NewAddressMessage;
+import org.axonframework.examples.addressbook.messages.NewAddressCommandMessage;
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
 import org.axonframework.examples.addressbook.model.Address;
 
@@ -31,7 +31,7 @@ public class NewAddressController extends BaseController {
         super();
     }
 
-    public function execute(message:NewAddressMessage):AsyncToken {
+    public function execute(message:NewAddressCommandMessage):AsyncToken {
         // TODO We should implement some validation here
         this.address = message.address;
         return addressService.createAddress(message.address);

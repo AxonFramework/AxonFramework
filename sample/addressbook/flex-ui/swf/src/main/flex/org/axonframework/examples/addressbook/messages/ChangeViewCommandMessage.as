@@ -15,13 +15,15 @@
  */
 
 package org.axonframework.examples.addressbook.messages {
-import org.axonframework.examples.addressbook.model.Address;
+/**
+ * Message used to change the view, The ID of the stack to switch to must be provided. Stack id's are available in the
+ * ViewConstants component.
+ */
+public class ChangeViewCommandMessage {
+    public var stackId:String;
 
-public class UpdatedContactAddressMessage {
-    public var address:Address;
-
-    public function UpdatedContactAddressMessage(address:Address) {
-        this.address = address;
+    public function ChangeViewCommandMessage(stackId:String) {
+        this.stackId = stackId;
     }
 }
 }

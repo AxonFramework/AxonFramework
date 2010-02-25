@@ -30,9 +30,9 @@
         import mx.events.ListEvent;
         import mx.managers.PopUpManager;
 
-        import org.axonframework.examples.addressbook.messages.RemoveAddressMessage;
-        import org.axonframework.examples.addressbook.messages.RemoveContactMessage;
-        import org.axonframework.examples.addressbook.messages.SelectContactMessage;
+        import org.axonframework.examples.addressbook.messages.RemoveAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.RemoveContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.SelectContactCommandMessage;
         import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.ContactModel;
@@ -73,7 +73,7 @@
             if (event.detail == Alert.YES) {
                 var address:Address = addressDetailsGrid.selectedItem as Address;
                 var contact:Contact = contactModel.selectedContact;
-                dispatcher(new RemoveAddressMessage(address, contact));
+                dispatcher(new RemoveAddressCommandMessage(address, contact));
             }
         }
 
@@ -90,7 +90,7 @@
         public function removeContactHandler(event:CloseEvent):void {
             if (event.detail == Alert.YES) {
                 var contact:Contact = contactModel.selectedContact;
-                dispatcher(new RemoveContactMessage(contact));
+                dispatcher(new RemoveContactCommandMessage(contact));
                 currentState = '';
             }
         }
@@ -100,7 +100,7 @@
         }
 
         private function showContactDetails(event:ListEvent):void {
-            dispatcher(new SelectContactMessage(event.currentTarget.selectedItem as Contact));
+            dispatcher(new SelectContactCommandMessage(event.currentTarget.selectedItem as Contact));
             currentState = 'detail';
         }
 

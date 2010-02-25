@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.addressbook.commands {
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
-import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
+import org.axonframework.examples.addressbook.messages.UpdatedContactNotificationMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
@@ -32,7 +32,7 @@ public class UpdatedContactController extends BaseController {
         super();
     }
 
-    public function execute(message:UpdatedContactMessage):void {
+    public function execute(message:UpdatedContactNotificationMessage):void {
         var uuid:String = message.contact.uuid;
         var contact:Contact = null;
         if (uuid != null && uuid != "") {
