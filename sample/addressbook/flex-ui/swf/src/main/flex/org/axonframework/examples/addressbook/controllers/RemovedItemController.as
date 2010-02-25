@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.commands {
+package org.axonframework.examples.addressbook.controllers {
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
-import org.axonframework.examples.addressbook.messages.UpdatedContactAddressNotificationMessage;
+import org.axonframework.examples.addressbook.messages.RemovedItemNotificationMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
-/**
- * Handles an incoming contact address updates by updating the model and sending a notification to the user.
- */
-public class UpdatedContactAddressController extends BaseController {
+public class RemovedItemController extends BaseController {
     [Inject]
     public var contactModel:ContactModel;
 
-    public function UpdatedContactAddressController() {
+    public function RemovedItemController() {
         super();
     }
 
-    public function execute(message:UpdatedContactAddressNotificationMessage):void {
-        var uuid:String = message.address.contactUUID;
+    public function execute(message:RemovedItemNotificationMessage):void {
+
+        var uuid:String = message.removed.contactIdentifier;
         var contact:Contact = null;
         if (uuid != null && uuid != "") {
             contact = contactModel.findContactByIdentifier(uuid);
         }
         if (contact != null) {
-            dispatcher(new NotificationMessage("Received an address update for " + contact.name));
-            contact.addAddress(message.address);
+            if (message.removed.addressType == null || message.removed.addressType.length == 0) {
+                contactModel.removeContact(uuid);
+                dispatcher(new NotificationMessage("removed the contact " + contact.name));
+            } else {
+                contact.removeAddress(message.removed.addressType);
+                dispatcher(new NotificationMessage(
+                        "removed the " + message.removed.addressType + " address for " + contact.name));
+            }
         }
     }
 

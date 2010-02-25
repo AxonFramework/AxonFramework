@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.commands {
+package org.axonframework.examples.addressbook.controllers {
 /**
  * View constants used by the viewer and change view dispatcher
  */

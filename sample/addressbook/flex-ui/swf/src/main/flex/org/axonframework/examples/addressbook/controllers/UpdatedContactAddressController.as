@@ -14,36 +14,32 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.commands {
+package org.axonframework.examples.addressbook.controllers {
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
-import org.axonframework.examples.addressbook.messages.UpdatedContactNotificationMessage;
+import org.axonframework.examples.addressbook.messages.UpdatedContactAddressNotificationMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
 /**
- * Handles incoming contact updates
+ * Handles an incoming contact address updates by updating the model and sending a notification to the user.
  */
-public class UpdatedContactController extends BaseController {
-
+public class UpdatedContactAddressController extends BaseController {
     [Inject]
     public var contactModel:ContactModel;
 
-    public function UpdatedContactController() {
+    public function UpdatedContactAddressController() {
         super();
     }
 
-    public function execute(message:UpdatedContactNotificationMessage):void {
-        var uuid:String = message.contact.uuid;
+    public function execute(message:UpdatedContactAddressNotificationMessage):void {
+        var uuid:String = message.address.contactUUID;
         var contact:Contact = null;
         if (uuid != null && uuid != "") {
             contact = contactModel.findContactByIdentifier(uuid);
         }
         if (contact != null) {
-            dispatcher(new NotificationMessage('Received contact update for ' + message.contact.name));
-            contact.name = message.contact.name;
-        } else {
-            dispatcher(new NotificationMessage('Received new contact ' + message.contact.name));
-            contactModel.contacts.addItem(message.contact);
+            dispatcher(new NotificationMessage("Received an address update for " + contact.name));
+            contact.addAddress(message.address);
         }
     }
 

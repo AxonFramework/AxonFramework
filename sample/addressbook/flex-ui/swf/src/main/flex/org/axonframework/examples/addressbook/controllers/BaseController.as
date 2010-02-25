@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.commands {
+package org.axonframework.examples.addressbook.controllers {
 import mx.rpc.Fault;
 import mx.rpc.remoting.mxml.RemoteObject;
 

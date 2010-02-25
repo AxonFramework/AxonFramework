@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.commands {
+package org.axonframework.examples.addressbook.controllers {
 import mx.rpc.AsyncToken;
 
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
