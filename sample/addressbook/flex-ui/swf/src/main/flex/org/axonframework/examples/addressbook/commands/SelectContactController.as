@@ -30,14 +30,14 @@ import org.axonframework.examples.addressbook.model.ContactModel;
  * If the details are already obtained from the server, the cached details are used. Updates to the details are pushed
  * by the server.
  */
-public class SelectContactCommand extends BaseCommand {
+public class SelectContactController extends BaseController {
 
     [Inject]
     public var contactModel:ContactModel;
 
     private var findAddressesFor:Contact;
 
-    public function SelectContactCommand() {
+    public function SelectContactController() {
         super();
     }
 

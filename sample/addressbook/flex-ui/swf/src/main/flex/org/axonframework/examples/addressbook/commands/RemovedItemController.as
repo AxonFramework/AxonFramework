@@ -20,11 +20,11 @@ import org.axonframework.examples.addressbook.messages.RemovedItemMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
-public class RemovedItemCommand extends BaseCommand {
+public class RemovedItemController extends BaseController {
     [Inject]
     public var contactModel:ContactModel;
 
-    public function RemovedItemCommand() {
+    public function RemovedItemController() {
         super();
     }
 

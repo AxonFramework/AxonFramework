@@ -24,12 +24,12 @@ import org.axonframework.examples.addressbook.model.ContactModel;
 /**
  * Command obtains all contacts from the server
  */
-public class ShowContactsCommand  extends BaseCommand {
+public class ShowContactsController  extends BaseController {
 
     [Inject]
     public var contactModel:ContactModel;
 
-    public function ShowContactsCommand() {
+    public function ShowContactsController() {
         super();
     }
 

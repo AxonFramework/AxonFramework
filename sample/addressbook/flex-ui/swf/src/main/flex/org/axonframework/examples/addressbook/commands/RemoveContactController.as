@@ -21,10 +21,10 @@ import org.axonframework.examples.addressbook.messages.NotificationMessage;
 import org.axonframework.examples.addressbook.messages.RemoveContactMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 
-public class RemoveContactCommand extends BaseCommand {
+public class RemoveContactController extends BaseController {
     private var contact:Contact;
 
-    public function RemoveContactCommand() {
+    public function RemoveContactController() {
         super();
     }
 

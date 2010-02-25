@@ -30,16 +30,16 @@
 
     <cons:Consumer/>
 
-    <sf:DynamicCommand type="{NewAddressCommand}" messageType="{NewAddressMessage}"/>
-    <sf:DynamicCommand type="{NewContactCommand}" messageType="{NewContactMessage}"/>
-    <sf:DynamicCommand type="{SearchAddressCommand}" messageType="{SearchForAddressesMessage}"/>
-    <sf:DynamicCommand type="{SelectContactCommand}" messageType="{SelectContactMessage}"/>
-    <sf:DynamicCommand type="{ShowContactsCommand}" messageType="{ShowContactsMessage}"/>
-    <sf:DynamicCommand type="{UpdatedContactCommand}" messageType="{UpdatedContactMessage}"/>
-    <sf:DynamicCommand type="{UpdatedContactAddressCommand}" messageType="{UpdatedContactAddressMessage}"/>
-    <sf:DynamicCommand type="{RemoveAddressCommand}" messageType="{RemoveAddressMessage}"/>
-    <sf:DynamicCommand type="{RemovedItemCommand}" messageType="{RemovedItemMessage}"/>
-    <sf:DynamicCommand type="{RemoveContactCommand}" messageType="{RemoveContactMessage}"/>
+    <sf:DynamicCommand type="{NewAddressController}" messageType="{NewAddressMessage}"/>
+    <sf:DynamicCommand type="{NewContactController}" messageType="{NewContactMessage}"/>
+    <sf:DynamicCommand type="{SearchAddressController}" messageType="{SearchForAddressesMessage}"/>
+    <sf:DynamicCommand type="{SelectContactController}" messageType="{SelectContactMessage}"/>
+    <sf:DynamicCommand type="{ShowContactsController}" messageType="{ShowContactsMessage}"/>
+    <sf:DynamicCommand type="{UpdatedContactController}" messageType="{UpdatedContactMessage}"/>
+    <sf:DynamicCommand type="{UpdatedContactAddressController}" messageType="{UpdatedContactAddressMessage}"/>
+    <sf:DynamicCommand type="{RemoveAddressController}" messageType="{RemoveAddressMessage}"/>
+    <sf:DynamicCommand type="{RemovedItemController}" messageType="{RemovedItemMessage}"/>
+    <sf:DynamicCommand type="{RemoveContactController}" messageType="{RemoveContactMessage}"/>
 
     <model:AddressModel/>
     <model:ContactModel/>

@@ -22,11 +22,11 @@ import org.axonframework.examples.addressbook.messages.RemoveAddressMessage;
 import org.axonframework.examples.addressbook.model.Address;
 import org.axonframework.examples.addressbook.model.Contact;
 
-public class RemoveAddressCommand extends BaseCommand {
+public class RemoveAddressController extends BaseController {
     private var address:Address;
     private var contact:Contact;
 
-    public function RemoveAddressCommand() {
+    public function RemoveAddressController() {
         super();
     }
 

@@ -24,10 +24,10 @@ import org.axonframework.examples.addressbook.model.Address;
 /**
  * Command that receives the request to create a new address : NewAddressMessage
  */
-public class NewAddressCommand extends BaseCommand {
+public class NewAddressController extends BaseController {
     private var address:Address;
 
-    public function NewAddressCommand() {
+    public function NewAddressController() {
         super();
     }
 

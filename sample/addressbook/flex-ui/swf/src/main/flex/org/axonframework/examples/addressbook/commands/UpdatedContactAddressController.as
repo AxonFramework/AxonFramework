@@ -16,34 +16,30 @@
 
 package org.axonframework.examples.addressbook.commands {
 import org.axonframework.examples.addressbook.messages.NotificationMessage;
-import org.axonframework.examples.addressbook.messages.UpdatedContactMessage;
+import org.axonframework.examples.addressbook.messages.UpdatedContactAddressMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
 /**
- * Handles incoming contact updates
+ * Handles an incoming contact address updates by updating the model and sending a notification to the user.
  */
-public class UpdatedContactCommand extends BaseCommand {
-
+public class UpdatedContactAddressController extends BaseController {
     [Inject]
     public var contactModel:ContactModel;
 
-    public function UpdatedContactCommand() {
+    public function UpdatedContactAddressController() {
         super();
     }
 
-    public function execute(message:UpdatedContactMessage):void {
-        var uuid:String = message.contact.uuid;
+    public function execute(message:UpdatedContactAddressMessage):void {
+        var uuid:String = message.address.contactUUID;
         var contact:Contact = null;
         if (uuid != null && uuid != "") {
             contact = contactModel.findContactByIdentifier(uuid);
         }
         if (contact != null) {
-            dispatcher(new NotificationMessage('Received contact update for ' + message.contact.name));
-            contact.name = message.contact.name;
-        } else {
-            dispatcher(new NotificationMessage('Received new contact ' + message.contact.name));
-            contactModel.contacts.addItem(message.contact);
+            dispatcher(new NotificationMessage("Received an address update for " + contact.name));
+            contact.addAddress(message.address);
         }
     }
 

@@ -25,10 +25,10 @@ import org.axonframework.examples.addressbook.model.Contact;
 /**
  * Command that makes use of the received NewContactMessage mesage to create a new Contact
  */
-public class NewContactCommand extends BaseCommand {
+public class NewContactController extends BaseController {
     private var contact:Contact;
 
-    public function NewContactCommand() {
+    public function NewContactController() {
         super();
     }
 

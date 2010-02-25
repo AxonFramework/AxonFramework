@@ -24,7 +24,7 @@ import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
  * Parent class for all Command classes. Using this class as a parent, the dispatcher and the remote address service
  * are available. This parent class also provided the default error handling message.
  */
-public class BaseCommand {
+public class BaseController {
     [MessageDispatcher]
     public var dispatcher:Function;
 
@@ -32,7 +32,7 @@ public class BaseCommand {
     public var addressService:RemoteObject;
 
 
-    public function BaseCommand() {
+    public function BaseController() {
         // default constructor
     }
 
