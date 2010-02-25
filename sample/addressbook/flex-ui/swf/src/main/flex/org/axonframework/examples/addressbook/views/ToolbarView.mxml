@@ -21,7 +21,7 @@
 
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.controllers.ViewConstants;
-        import org.axonframework.examples.addressbook.messages.ChangeViewCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.ChangeViewCommandMessage;
 
         [MessageDispatcher]
         public var dispatcher:Function;

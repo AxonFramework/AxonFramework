@@ -18,7 +18,7 @@ package org.axonframework.examples.addressbook.controllers {
 import mx.collections.ArrayCollection;
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.ShowContactsCommandMessage;
+import org.axonframework.examples.addressbook.messages.command.ShowContactsCommandMessage;
 import org.axonframework.examples.addressbook.model.ContactModel;
 
 /**

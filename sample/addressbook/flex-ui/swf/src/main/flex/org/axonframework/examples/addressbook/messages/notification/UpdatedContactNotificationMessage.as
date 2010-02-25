@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
-import org.axonframework.examples.addressbook.model.Removed;
+package org.axonframework.examples.addressbook.messages.notification {
+import org.axonframework.examples.addressbook.model.Contact;
 
-public class RemovedItemNotificationMessage {
-    public var removed:Removed;
+public class UpdatedContactNotificationMessage {
+    public var contact:Contact;
 
-    public function RemovedItemNotificationMessage(removed:Removed) {
-        this.removed = removed;
+    public function UpdatedContactNotificationMessage(contact:Contact) {
+        this.contact = contact;
     }
 }
 }

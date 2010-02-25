@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
+package org.axonframework.examples.addressbook.messages.notification {
 import org.axonframework.examples.addressbook.model.Address;
 
 public class UpdatedContactAddressNotificationMessage {

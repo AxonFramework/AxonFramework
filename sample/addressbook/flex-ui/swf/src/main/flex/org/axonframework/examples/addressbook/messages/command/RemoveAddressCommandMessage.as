@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
+package org.axonframework.examples.addressbook.messages.command {
 import org.axonframework.examples.addressbook.model.Address;
+import org.axonframework.examples.addressbook.model.Contact;
 
-public class NewAddressCommandMessage {
-
+public class RemoveAddressCommandMessage {
     public var address:Address;
+    public var contact:Contact;
 
-    public function NewAddressCommandMessage(address:Address) {
+    public function RemoveAddressCommandMessage(address:Address, contact:Contact) {
         this.address = address;
+        this.contact = contact;
     }
 }
 }

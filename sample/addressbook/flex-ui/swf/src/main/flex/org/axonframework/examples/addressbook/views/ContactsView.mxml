@@ -30,9 +30,9 @@
         import mx.events.ListEvent;
         import mx.managers.PopUpManager;
 
-        import org.axonframework.examples.addressbook.messages.RemoveAddressCommandMessage;
-        import org.axonframework.examples.addressbook.messages.RemoveContactCommandMessage;
-        import org.axonframework.examples.addressbook.messages.SelectContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.RemoveAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.RemoveContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.SelectContactCommandMessage;
         import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.ContactModel;

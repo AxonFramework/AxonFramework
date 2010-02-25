@@ -17,8 +17,8 @@
 package org.axonframework.examples.addressbook.controllers {
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.NotificationMessage;
-import org.axonframework.examples.addressbook.messages.RemoveContactCommandMessage;
+import org.axonframework.examples.addressbook.messages.notification.NotificationMessage;
+import org.axonframework.examples.addressbook.messages.command.RemoveContactCommandMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 
 public class RemoveContactController extends BaseController {

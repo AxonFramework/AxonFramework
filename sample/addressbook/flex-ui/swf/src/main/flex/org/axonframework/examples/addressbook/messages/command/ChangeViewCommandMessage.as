@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
-import org.axonframework.examples.addressbook.model.Contact;
+package org.axonframework.examples.addressbook.messages.command {
+/**
+ * Message used to change the view, The ID of the stack to switch to must be provided. Stack id's are available in the
+ * ViewConstants component.
+ */
+public class ChangeViewCommandMessage {
+    public var stackId:String;
 
-public class NewContactCommandMessage {
-    public var contact:Contact;
-
-    public function NewContactCommandMessage(contact:Contact) {
-        this.contact = contact;
+    public function ChangeViewCommandMessage(stackId:String) {
+        this.stackId = stackId;
     }
 }
 }

@@ -19,10 +19,10 @@
     <mx:Script><![CDATA[
         import mx.messaging.events.MessageEvent;
 
-        import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.RemovedItemNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.ErrorNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.RemovedItemNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactAddressNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactNotificationMessage;
         import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.Contact;
         import org.axonframework.examples.addressbook.model.Removed;

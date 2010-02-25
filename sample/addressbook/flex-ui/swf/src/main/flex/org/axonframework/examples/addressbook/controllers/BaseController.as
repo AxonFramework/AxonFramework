@@ -18,7 +18,7 @@ package org.axonframework.examples.addressbook.controllers {
 import mx.rpc.Fault;
 import mx.rpc.remoting.mxml.RemoteObject;
 
-import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
+import org.axonframework.examples.addressbook.messages.notification.ErrorNotificationMessage;
 
 /**
  * Parent class for all Command classes. Using this class as a parent, the dispatcher and the remote address service

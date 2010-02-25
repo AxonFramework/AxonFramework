@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
-/**
- * Message picket up by the view component to present errors to the user
- */
-public class ErrorNotificationMessage {
-    public var message:String;
+package org.axonframework.examples.addressbook.messages.command {
+import org.axonframework.examples.addressbook.model.Address;
 
-    public function ErrorNotificationMessage(message:String) {
-        this.message = message;
+public class NewAddressCommandMessage {
+
+    public var address:Address;
+
+    public function NewAddressCommandMessage(address:Address) {
+        this.address = address;
     }
 }
 }

@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
-import org.axonframework.examples.addressbook.model.Contact;
-
-public class RemoveContactCommandMessage {
-    public var contact:Contact;
-
-    public function RemoveContactCommandMessage(contact:Contact) {
-        this.contact = contact;
+package org.axonframework.examples.addressbook.messages.command {
+public class ShowContactsCommandMessage {
+    public function ShowContactsCommandMessage() {
     }
 }
 }

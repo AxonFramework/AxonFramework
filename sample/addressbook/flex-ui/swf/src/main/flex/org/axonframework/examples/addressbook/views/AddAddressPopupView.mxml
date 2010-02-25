@@ -22,7 +22,7 @@
     <mx:Script><![CDATA[
         import mx.managers.PopUpManager;
 
-        import org.axonframework.examples.addressbook.messages.NewAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.NewAddressCommandMessage;
         import org.axonframework.examples.addressbook.model.Address;
         import org.axonframework.examples.addressbook.model.ContactModel;
 

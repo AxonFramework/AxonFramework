@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
-import org.axonframework.examples.addressbook.model.Contact;
+package org.axonframework.examples.addressbook.messages.notification {
+/**
+ * Message used by the client to show notifications
+ */
+public class NotificationMessage {
+    public var message:String;
 
-public class SelectContactCommandMessage {
-    public var contact:Contact;
-
-    public function SelectContactCommandMessage(contact:Contact) {
-        this.contact = contact;
+    public function NotificationMessage(message:String) {
+        this.message = message;
     }
 }
 }

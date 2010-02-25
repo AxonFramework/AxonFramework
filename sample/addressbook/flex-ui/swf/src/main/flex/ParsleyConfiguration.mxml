@@ -47,14 +47,24 @@
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.controllers.*;
         import org.axonframework.examples.addressbook.messages.*;
-        import org.axonframework.examples.addressbook.messages.NewAddressCommandMessage;
-        import org.axonframework.examples.addressbook.messages.NewContactCommandMessage;
-        import org.axonframework.examples.addressbook.messages.RemoveAddressCommandMessage;
-        import org.axonframework.examples.addressbook.messages.RemoveContactCommandMessage;
-        import org.axonframework.examples.addressbook.messages.SearchForAddressesCommandMessage;
-        import org.axonframework.examples.addressbook.messages.SelectContactCommandMessage;
-        import org.axonframework.examples.addressbook.messages.ShowContactsCommandMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactAddressNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.UpdatedContactNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.command.NewAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.NewContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.RemoveAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.RemoveContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.SearchForAddressesCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.SearchForAddressesCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.SelectContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.ShowContactsCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.ShowContactsCommandMessage;
+        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactAddressNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.command.NewAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.NewContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.RemoveAddressCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.RemoveContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.SelectContactCommandMessage;
+        import org.axonframework.examples.addressbook.messages.notification.RemovedItemNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactAddressNotificationMessage;
         ]]></mx:Script>
 </mx:Object>

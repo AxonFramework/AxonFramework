@@ -15,8 +15,8 @@
  */
 
 package org.axonframework.examples.addressbook.controllers {
-import org.axonframework.examples.addressbook.messages.NotificationMessage;
-import org.axonframework.examples.addressbook.messages.RemovedItemNotificationMessage;
+import org.axonframework.examples.addressbook.messages.notification.NotificationMessage;
+import org.axonframework.examples.addressbook.messages.notification.RemovedItemNotificationMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 import org.axonframework.examples.addressbook.model.ContactModel;
 

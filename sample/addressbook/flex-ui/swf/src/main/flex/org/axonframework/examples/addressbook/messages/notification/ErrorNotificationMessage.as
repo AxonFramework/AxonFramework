@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
-import org.axonframework.examples.addressbook.model.Address;
-import org.axonframework.examples.addressbook.model.Contact;
+package org.axonframework.examples.addressbook.messages.notification {
+/**
+ * Message picket up by the view component to present errors to the user
+ */
+public class ErrorNotificationMessage {
+    public var message:String;
 
-public class RemoveAddressCommandMessage {
-    public var address:Address;
-    public var contact:Contact;
-
-    public function RemoveAddressCommandMessage(address:Address, contact:Contact) {
-        this.address = address;
-        this.contact = contact;
+    public function ErrorNotificationMessage(message:String) {
+        this.message = message;
     }
 }
 }

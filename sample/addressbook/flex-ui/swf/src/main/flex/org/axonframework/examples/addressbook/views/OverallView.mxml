@@ -21,10 +21,10 @@
         >
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.controllers.ViewConstants;
-        import org.axonframework.examples.addressbook.messages.ChangeViewCommandMessage;
-        import org.axonframework.examples.addressbook.messages.ErrorNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.NotificationMessage;
-        import org.axonframework.examples.addressbook.messages.ShowContactsCommandMessage;
+        import org.axonframework.examples.addressbook.messages.command.ChangeViewCommandMessage;
+        import org.axonframework.examples.addressbook.messages.notification.ErrorNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.NotificationMessage;
+        import org.axonframework.examples.addressbook.messages.command.ShowContactsCommandMessage;
         import org.axonframework.examples.addressbook.messages.ValidationMessage;
 
         [MessageDispatcher]

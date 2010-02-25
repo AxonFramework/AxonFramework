@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.messages {
-/**
- * Message used by the client to show notifications
- */
-public class NotificationMessage {
-    public var message:String;
+package org.axonframework.examples.addressbook.messages.command {
+import org.axonframework.examples.addressbook.model.Address;
 
-    public function NotificationMessage(message:String) {
-        this.message = message;
+public class SearchForAddressesCommandMessage {
+
+    public var address:Address;
+
+    public function SearchForAddressesCommandMessage(address:Address = null) {
+        this.address = address;
     }
 }
 }
