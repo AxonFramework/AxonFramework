@@ -37,6 +37,7 @@ public class AnnotationEventListenerBeanPostProcessor extends BaseAnnotationEven
      */
     @Override
     protected AnnotationEventListenerAdapter adapt(Object bean) {
+        // TODO (issue #21): This implementation should be smarter. Classes with @AsynchronousEventListener should be wrapped with the AsynchronousEventListenerWrapper
         return new AnnotationEventListenerAdapter(bean);
     }
 }

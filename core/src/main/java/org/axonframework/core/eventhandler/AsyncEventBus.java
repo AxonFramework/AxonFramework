@@ -32,6 +32,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * TODO (issue #21): Most of the logic associated with the async behavior is moved towards the EventHandlers themselves.
+ * Remove from here.
+ * <p/>
  * EventBus implementation that uses an ExecutorService to dispatch events asynchronously. This dispatcher takes into
  * account the {@link EventSequencingPolicy} provided by the {@link EventListener} for sequential handling
  * requirements.

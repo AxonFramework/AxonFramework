@@ -26,6 +26,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * TODO (issue #21): Rename this class to "AsynchronousEventListener".
+ * <p/>
  * Annotation that marks a class as a concurrency aware EventListener. This optional type-level annotations allows the
  * definition of the concurrency policy for this EventListener. The default values of this annotations will provide the
  * exact same behavior as the omission of the entire annotation, albeit less explicit.

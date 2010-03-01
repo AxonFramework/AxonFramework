@@ -28,6 +28,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
+ * TODO (issue #21): Rename this class into AsynchronousEventHandlerWrapper and make it implement EventListener. TODO
+ * (issue #21): The "ConcurrencyPolicy" should not be configured on the EventListener, but on the wrapper.
+ * <p/>
  * The EventHandlingSequenceManager is responsible for delegating each incoming event to the relevant {@link
  * EventProcessingScheduler} for processing, depending on the sequencing identifier of the event.
  *
@@ -46,8 +49,8 @@ public class EventHandlingSequenceManager {
     private final BlockingQueue<Event> concurrentEventQueue = new LinkedBlockingQueue<Event>();
 
     /**
-     * Initialize the EventHandlingSequenceManager for the given <code>eventListener</code> using the given
-     * <code>executor</code>.
+     * TODO (issue #21): Add "TransactionManager" as extra optional constructor parameter Initialize the
+     * EventHandlingSequenceManager for the given <code>eventListener</code> using the given <code>executor</code>.
      *
      * @param eventListener The event listener this instance manages
      * @param executor      The executor that processes the events
@@ -55,11 +58,13 @@ public class EventHandlingSequenceManager {
     public EventHandlingSequenceManager(EventListener eventListener, Executor executor) {
         this.eventListener = eventListener;
         this.executor = executor;
+        // TODO (issue #21): EventSequencingPolicy should be a constructor parameter
         this.eventSequencingPolicy = eventListener.getEventSequencingPolicy();
     }
 
     /**
-     * Adds an event to the relevant scheduler.
+     * // TODO (issue #21): This method should implement the "handleEvent" method from "EventHandler". Adds an event to
+     * the relevant scheduler.
      *
      * @param event The event to schedule
      */

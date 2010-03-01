@@ -30,8 +30,9 @@ import org.axonframework.core.Event;
 public interface EventListener {
 
     /**
-     * Indicates whether this event listener can handle events of the given type. This method is used as an early
-     * detection during the dispatching process.
+     * TODO (issue #21): Remove this method. Implementations should decide how they do this themselves. Indicates
+     * whether this event listener can handle events of the given type. This method is used as an early detection during
+     * the dispatching process.
      *
      * @param eventType the type of event
      * @return true if this event listener can handle the event, false otherwise
@@ -48,8 +49,9 @@ public interface EventListener {
     void handle(Event event);
 
     /**
-     * The Event sequencing policy applicable to this event listener. This policy defines which Events must be processed
-     * sequentially, and which may run in parallel.
+     * TODO (issue #21): Remove this method. It has to do with Asynchronous Event Handling, and should move to a
+     * specialized class The Event sequencing policy applicable to this event listener. This policy defines which Events
+     * must be processed sequentially, and which may run in parallel.
      *
      * @return the Event sequencing policy applicable to this event listener
      */
