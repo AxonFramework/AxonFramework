@@ -24,14 +24,17 @@ import java.util.UUID;
 
 /**
  * <p>Command handler that can be used to create and update Contacts. It can also be used to register and remove
- * addresses.</p>
- * <p>The provided repository is used to store the changes.</p>
+ * addresses.</p> <p>The provided repository is used to store the changes.</p>
  *
  * @author Allard Buijze
  */
 public class ContactCommandHandler {
 
-    private ContactRepository repository;
+    private final ContactRepository repository;
+
+    public ContactCommandHandler(ContactRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Creates a contact with the provided name.
@@ -47,8 +50,8 @@ public class ContactCommandHandler {
     }
 
     /**
-     * Changes the name of the contact with the provided UUID. An {@code AggregateNotFoundException}
-     * is thrown if the UUID does not represent a valid contact.
+     * Changes the name of the contact with the provided UUID. An {@code AggregateNotFoundException} is thrown if the
+     * UUID does not represent a valid contact.
      *
      * @param contactId UUID required field representing the contact to change
      * @param name      String required field containing the new value of the name of the contact
@@ -63,8 +66,8 @@ public class ContactCommandHandler {
 
     /**
      * Registers an address for the contact with the provided UUID. If the contact already has an address with the
-     * provided type, this address will be updated. An {@code AggregateNotFoundException} is thrown if the provided
-     * UUID does not exist.
+     * provided type, this address will be updated. An {@code AggregateNotFoundException} is thrown if the provided UUID
+     * does not exist.
      *
      * @param contactId UUID required field containing the identifier of the contact to add an address to.
      * @param type      AddressType required field containing the type of the address to register.
@@ -105,7 +108,4 @@ public class ContactCommandHandler {
         repository.delete(contactId);
     }
 
-    public void setRepository(ContactRepository repository) {
-        this.repository = repository;
-    }
 }
