@@ -16,6 +16,7 @@
 
 package org.axonframework.core.eventhandler;
 
+import org.axonframework.core.EventBase;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
 
@@ -36,9 +37,13 @@ public class SequentialPerAggregatePolicyTest {
         Object id1 = testSubject.getSequenceIdentifierFor(new StubDomainEvent(aggregateIdentifier));
         Object id2 = testSubject.getSequenceIdentifierFor(new StubDomainEvent(aggregateIdentifier));
         Object id3 = testSubject.getSequenceIdentifierFor(new StubDomainEvent(UUID.randomUUID()));
+        Object id4 = testSubject.getSequenceIdentifierFor(new EventBase() {
+        });
 
         assertEquals(id1, id2);
         assertFalse(id1.equals(id3));
         assertFalse(id2.equals(id3));
+        assertNull(id4);
     }
+
 }

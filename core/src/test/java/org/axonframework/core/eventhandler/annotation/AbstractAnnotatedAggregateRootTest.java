@@ -22,6 +22,8 @@ import org.axonframework.core.StubAggregateDeletedEvent;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
 
+import java.util.UUID;
+
 import static org.junit.Assert.*;
 
 /**
@@ -36,11 +38,11 @@ public class AbstractAnnotatedAggregateRootTest {
         testSubject = new SimpleAggregateRoot();
 
         assertNotNull(testSubject.getIdentifier());
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(1, testSubject.getUncommittedEventCount());
 
         testSubject.handle(new StubDomainEvent());
 
-        assertEquals(1, testSubject.invocationCount);
+        assertEquals(2, testSubject.invocationCount);
 
         try {
             testSubject.handle(new DomainEvent() {
@@ -51,7 +53,13 @@ public class AbstractAnnotatedAggregateRootTest {
             // this is what we wanted
         }
 
-        assertEquals(1, testSubject.invocationCount);
+        assertEquals(2, testSubject.invocationCount);
+    }
+
+    @Test
+    public void testInitializeWithIdentifier() {
+        testSubject = new SimpleAggregateRoot(UUID.randomUUID());
+        assertEquals(0, testSubject.getUncommittedEventCount());
     }
 
     private static class SimpleAggregateRoot extends AbstractAnnotatedAggregateRoot {
@@ -59,7 +67,11 @@ public class AbstractAnnotatedAggregateRootTest {
         private int invocationCount;
 
         private SimpleAggregateRoot() {
-            super();
+            apply(new StubDomainEvent());
+        }
+
+        public SimpleAggregateRoot(UUID uuid) {
+            super(uuid);
         }
 
         @Override

@@ -22,7 +22,16 @@ package org.axonframework.core.repository.eventsourcing;
  * @author Allard Buijze
  * @since 0.1
  */
-public class EventStorageException extends RuntimeException {
+public class EventStoreException extends RuntimeException {
+
+    /**
+     * Initialize the exception with the given <code>message</code>.
+     *
+     * @param message a detailed message of the cause of the exception
+     */
+    public EventStoreException(String message) {
+        super(message);
+    }
 
     /**
      * Initialize the exception with the given <code>message</code> and <code>cause</code>
@@ -30,7 +39,7 @@ public class EventStorageException extends RuntimeException {
      * @param message a detailed message of the cause of the exception
      * @param cause   the original cause of this exception
      */
-    public EventStorageException(String message, Throwable cause) {
+    public EventStoreException(String message, Throwable cause) {
         super(message, cause);
     }
 }

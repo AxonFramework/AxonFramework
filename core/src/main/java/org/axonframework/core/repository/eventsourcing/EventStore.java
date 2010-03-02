@@ -34,7 +34,7 @@ public interface EventStore {
      *
      * @param type   The type descriptor of the object to store
      * @param events The event stream containing the events to store
-     * @throws EventStorageException if an error occurs while storing the events in the event stream
+     * @throws EventStoreException if an error occurs while storing the events in the event stream
      */
     void appendEvents(String type, DomainEventStream events);
 
@@ -44,6 +44,8 @@ public interface EventStore {
      * @param type       The type descriptor of the object to retrieve
      * @param identifier The unique aggregate identifier of the events to load
      * @return an event stream containing the events of the aggregate
+     *
+     * @throws EventStoreException if an error occurs while reading the events in the event stream
      */
     DomainEventStream readEvents(String type, UUID identifier);
 }

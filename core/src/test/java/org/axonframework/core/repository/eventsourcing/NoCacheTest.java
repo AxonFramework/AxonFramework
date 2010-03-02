@@ -39,6 +39,8 @@ public class NoCacheTest {
         NoCache cache = new NoCache();
         cache.addListener(mock(CacheListener.class));
         cache.clear();
+        cache.evict();
+        cache.load(new Object());
         assertFalse(cache.containsKey(new Object()));
         assertFalse(cache.containsValue(new Object()));
         assertEquals(Collections.<Object>emptySet(), cache.entrySet());

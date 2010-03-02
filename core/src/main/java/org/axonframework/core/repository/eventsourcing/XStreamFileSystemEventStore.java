@@ -29,7 +29,6 @@ import org.springframework.core.io.Resource;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +37,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -83,7 +81,7 @@ public class XStreamFileSystemEventStore implements EventStore {
                 IOUtils.write("\n", out);
             }
         } catch (IOException e) {
-            throw new EventStorageException("Unable to store given entity due to an IOException", e);
+            throw new EventStoreException("Unable to store given entity due to an IOException", e);
         } finally {
             IOUtils.closeQuietly(out);
         }
@@ -95,7 +93,7 @@ public class XStreamFileSystemEventStore implements EventStore {
     @Override
     public DomainEventStream readEvents(String type, UUID identifier) {
         try {
-            File eventFile = getBaseDirForType(type).createRelative(identifier + ".events").getFile();
+            Resource eventFile = getBaseDirForType(type).createRelative(identifier + ".events");
             if (!eventFile.exists()) {
                 throw new AggregateNotFoundException(
                         String.format(
@@ -103,12 +101,12 @@ public class XStreamFileSystemEventStore implements EventStore {
                                 type,
                                 identifier.toString()));
             }
-            FileInputStream fileStream = new FileInputStream(eventFile);
+            InputStream fileStream = eventFile.getInputStream();
             InputStream inputStream = surroundWitObjectStreamTag(fileStream);
             ObjectInputStream eventsStream = xStream.createObjectInputStream(inputStream);
             return new ObjectInputStreamAdapter(eventsStream);
         } catch (IOException e) {
-            throw new IllegalStateException(
+            throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
                             + "for aggregate type [%s] with identifier [%s]",
                                   type,
@@ -116,7 +114,7 @@ public class XStreamFileSystemEventStore implements EventStore {
         }
     }
 
-    private InputStream surroundWitObjectStreamTag(FileInputStream fileStream) throws UnsupportedEncodingException {
+    private InputStream surroundWitObjectStreamTag(InputStream fileStream) throws UnsupportedEncodingException {
         InputStream prefix = new ByteArrayInputStream("<object-stream>".getBytes("UTF-8"));
         InputStream suffix = new ByteArrayInputStream("</object-stream>".getBytes("UTF-8"));
         return new SequenceInputStream(prefix, new SequenceInputStream(fileStream, suffix));
@@ -126,12 +124,12 @@ public class XStreamFileSystemEventStore implements EventStore {
         try {
             Resource typeSpecificDir = baseDir.createRelative("/" + type + "/");
             if (!typeSpecificDir.exists() && !typeSpecificDir.getFile().mkdirs()) {
-                throw new IllegalStateException(
+                throw new EventStoreException(
                         "The given event store directory doesn't exist and could not be created");
             }
             return typeSpecificDir;
         } catch (IOException e) {
-            throw new EventStorageException("An IO Exception occurred while reading from the file system", e);
+            throw new EventStoreException("An IO Exception occurred while reading from the file system", e);
         }
     }
 
@@ -143,19 +141,6 @@ public class XStreamFileSystemEventStore implements EventStore {
     @Required
     public void setBaseDir(Resource baseDir) {
         this.baseDir = baseDir;
-    }
-
-    /**
-     * Specify aliases for classes on serialization. When serializing an object, this event store will use the fully
-     * qualified class name as element name. Those are potentially long names. By specifying an alias, they can be
-     * considerably shortened.
-     *
-     * @param aliases a map containing the aliases as keys and their respective class as value
-     */
-    public void setAliases(Map<String, Class> aliases) {
-        for (Map.Entry<String, Class> entry : aliases.entrySet()) {
-            xStream.alias(entry.getKey(), entry.getValue());
-        }
     }
 
     private static class LocalDateTimeConverter implements SingleValueConverter {
