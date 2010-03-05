@@ -194,7 +194,7 @@
         </para>
         <sect2>
             <title>Download Axon</title>
-            <para>You can download the Axon Framework from our downloads page:<link
+            <para>You can download the Axon Framework from our downloads page: <link
                     xmlns:ns1="http://www.w3.org/1999/xlink"
                     ns1:href="http://www.axonframework.org/download"
                     >axonframework.org/download</link>.
@@ -285,9 +285,8 @@
             <itemizedlist>
                 <listitem>
                     <para>You can report any bugs, feature requests or ideas about improvemens on
-                        our issue page:<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                                             ns1:href="http://www.axonframework.org/issues"
-                                >axonframework.org/issues</link>. All ideas are welcome. Please be as
+                        our issue page: <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                                             ns1:href="http://www.axonframework.org/issues"> axonframework.org/issues</link>. All ideas are welcome. Please be as
                         exact as possible when reporting bugs. This will help us reproduce and thus
                         solve the problem faster.
                     </para>
@@ -311,19 +310,16 @@
     <sect1 xml:id="license">
         <title>License information</title>
         <para>The Axon Framework and its documentation are licensed under the Apache License,
-            Version 2.0. You may obtain a copy of the License at<link
+            Version 2.0. You may obtain a copy of the License at <link
                     xmlns:ns1="http://www.w3.org/1999/xlink"
                     ns1:href="http://www.apache.org/licenses/LICENSE-2.0" ns1:show="new"
                     >http://www.apache.org/licenses/LICENSE-2.0</link>.
         </para>
         <para>Unless required by applicable law or agreed to in writing, software distributed under
             the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-            KIND, either express or implied. See the
-            <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                  ns1:href="http://www.apache.org/licenses/LICENSE-2.0" ns1:show="new">License
-            </link>
-            for the specific language governing permissions and limitations under the
-            License.
+            KIND, either express or implied. See the <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                  xlink:href="http://www.apache.org/licenses/LICENSE-2.0" xlink:show="new">License</link>
+            for the specific language governing permissions and limitations under the License.
         </para>
     </sect1>
 </chapter>
