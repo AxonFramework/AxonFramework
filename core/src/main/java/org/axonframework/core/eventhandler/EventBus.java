@@ -20,19 +20,13 @@ import org.axonframework.core.Event;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
- * their events. The event bus dispatches event to all subscribed listeners, obeying their {@link
- * org.axonframework.core.eventhandler.EventSequencingPolicy}.
- * <p/>
- * Optionally, event bus implementations may support transactional dispatching of events. If dispatching is done
- * transactionally, the current transaction <strong>MUST</strong> be reported using
- * <code>TransactionStatus.set()</code>.
+ * their events. The event bus dispatches event to all subscribed listeners.
  * <p/>
  * Implementations may or may not dispatch the events to event listeners in the dispatching thread.
  *
  * @author Allard Buijze
  * @see EventListener
- * @see AsyncEventBus
- * @see SynchronousEventBus
+ * @see SimpleEventBus
  * @since 0.1
  */
 public interface EventBus {

@@ -36,13 +36,10 @@ public class MessageHandlerAdapterTest {
         MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockEventListener);
 
         StubDomainEvent payload = new StubDomainEvent();
-        when(mockEventListener.canHandle(isA(Class.class))).thenReturn(true).thenReturn(false);
         adapter.handleMessage(new GenericMessage<DomainEvent>(payload));
         adapter.handleMessage(new GenericMessage<DomainEvent>(new StubDomainEvent()));
 
         verify(mockEventListener, times(1)).handle(payload);
-        verify(mockEventListener, times(2)).canHandle(StubDomainEvent.class);
-        verifyNoMoreInteractions(mockEventListener);
     }
 
 }

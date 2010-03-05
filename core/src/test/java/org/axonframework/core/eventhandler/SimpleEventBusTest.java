@@ -37,11 +37,7 @@ public class SimpleEventBusTest {
         listener1 = mock(EventListener.class);
         listener2 = mock(EventListener.class);
         listener3 = mock(EventListener.class);
-        testSubject = new SynchronousEventBus();
-
-        when(listener1.canHandle(StubDomainEvent.class)).thenReturn(true);
-        when(listener2.canHandle(StubDomainEvent.class)).thenReturn(true);
-        when(listener3.canHandle(StubDomainEvent.class)).thenReturn(false);
+        testSubject = new SimpleEventBus();
     }
 
     @Test
@@ -62,11 +58,8 @@ public class SimpleEventBusTest {
         testSubject.unsubscribe(listener3);
         testSubject.publish(new StubDomainEvent());
 
-        verify(listener1, times(2)).canHandle(StubDomainEvent.class);
         verify(listener1, times(2)).handle(isA(StubDomainEvent.class));
-        verify(listener2, times(2)).canHandle(StubDomainEvent.class);
         verify(listener2, times(2)).handle(isA(StubDomainEvent.class));
-        verify(listener2, times(2)).canHandle(StubDomainEvent.class);
-        verify(listener3, never()).handle(isA(StubDomainEvent.class));
+        verify(listener3, times(2)).handle(isA(StubDomainEvent.class));
     }
 }

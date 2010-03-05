@@ -17,7 +17,7 @@
 package org.axonframework.sample.app.query;
 
 import org.axonframework.core.eventhandler.SequentialPerAggregatePolicy;
-import org.axonframework.core.eventhandler.annotation.ConcurrentEventListener;
+import org.axonframework.core.eventhandler.annotation.AsynchronousEventListener;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.sample.app.AddressAddedEvent;
 import org.axonframework.sample.app.AddressChangedEvent;
@@ -34,7 +34,7 @@ import javax.persistence.PersistenceContext;
 /**
  * @author Allard Buijze
  */
-@ConcurrentEventListener(sequencingPolicyClass = SequentialPerAggregatePolicy.class)
+@AsynchronousEventListener(sequencingPolicyClass = SequentialPerAggregatePolicy.class)
 public class AddressTableUpdater extends AbstractTransactionalEventListener {
 
     private static final Logger logger = LoggerFactory.getLogger(AddressTableUpdater.class);

@@ -17,59 +17,74 @@
 package org.axonframework.core.eventhandler.annotation;
 
 import org.axonframework.core.Event;
+import org.axonframework.core.eventhandler.AsynchronousEventHandlerWrapper;
 import org.axonframework.core.eventhandler.EventBus;
+import org.axonframework.core.eventhandler.EventListener;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
 import org.axonframework.core.eventhandler.SequentialPolicy;
-import org.axonframework.core.eventhandler.TransactionAware;
+import org.axonframework.core.eventhandler.TransactionManager;
 import org.axonframework.core.eventhandler.TransactionStatus;
-import org.springframework.core.annotation.AnnotationUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.concurrent.Executor;
+
+import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 /**
  * Adapter that turns any bean with {@link org.axonframework.core.eventhandler.annotation.EventHandler} annotated
  * methods into an {@link org.axonframework.core.eventhandler.EventListener}.
  * <p/>
- * Optionally, this adapter may be configured with an {@link EventBus} at which the adapter should register for events.
- * If none is configured, one is autowired (requiring that exactly one {@link EventBus} is present in the
- * ApplicationContext.
+ * If the event listener has the {@link @AsynchronousEventListener} annotation, it is also configured to handle events
+ * asynchronously.
+ * <p/>
  *
  * @author Allard Buijze
+ * @see EventListener
+ * @see org.axonframework.core.eventhandler.AsynchronousEventHandlerWrapper
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter
-        implements TransactionAware, org.axonframework.core.eventhandler.EventListener {
+public class AnnotationEventListenerAdapter implements EventListener, TransactionManager {
 
-    private volatile EventBus eventBus;
-
-    private final Object target;
-    private final AnnotationEventHandlerInvoker eventHandlerInvoker;
-    private final EventSequencingPolicy eventSequencingPolicy;
-    private final TransactionAware transactionListener;
+    private final EventListener targetEventListener;
+    private final Executor executor;
+    private final TransactionManager transactionManager;
+    private final EventBus eventBus;
 
     /**
-     * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>.
+     * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>. When the adapter
+     * subscribes, it will subscribe to the given event bus.
      *
      * @param annotatedEventListener the event listener
+     * @param eventBus               the event bus to register the event listener to
      */
-    public AnnotationEventListenerAdapter(Object annotatedEventListener) {
-        eventHandlerInvoker = new AnnotationEventHandlerInvoker(annotatedEventListener);
-        eventSequencingPolicy = getSequencingPolicyFor(annotatedEventListener);
-        this.target = annotatedEventListener;
-        if (target instanceof TransactionAware) {
-            transactionListener = (TransactionAware) target;
-        } else {
-            transactionListener = new AnnotatedTransactionAware(eventHandlerInvoker);
-        }
+    public AnnotationEventListenerAdapter(Object annotatedEventListener, EventBus eventBus) {
+        this(annotatedEventListener, null, eventBus);
     }
 
     /**
-     * {@inheritDoc}
+     * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>. If the
+     * <code>annotatedEventListener</code> is asynchronous (has the {@link AsynchronousEventListener}) annotation) then
+     * the given executor is used to execute event processing.
+     *
+     * @param annotatedEventListener the event listener
+     * @param executor               The executor to use when wiring an Asynchronous Event Listener.
+     * @param eventBus               the event bus to register the event listener to
      */
-    @Override
-    public boolean canHandle(Class<? extends Event> eventType) {
-        return eventHandlerInvoker.hasHandlerFor(eventType);
+    public AnnotationEventListenerAdapter(Object annotatedEventListener, Executor executor, EventBus eventBus) {
+        EventListener adapter = new TargetEventListener(new AnnotationEventHandlerInvoker(annotatedEventListener));
+        this.transactionManager = createTransactionManagerFor(annotatedEventListener);
+        this.executor = executor;
+        this.eventBus = eventBus;
+
+        if (findAnnotation(annotatedEventListener.getClass(), AsynchronousEventListener.class) != null) {
+            if (executor == null) {
+                throw new IllegalArgumentException(
+                        "The annotatedEventListener is Asynchronous, but no executor is provided.");
+            }
+            adapter = createAsynchronousWrapperForBean(annotatedEventListener, adapter);
+        }
+        this.targetEventListener = adapter;
     }
 
     /**
@@ -77,15 +92,7 @@ public class AnnotationEventListenerAdapter
      */
     @Override
     public void handle(Event event) {
-        eventHandlerInvoker.invokeEventHandlerMethod(event);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public EventSequencingPolicy getEventSequencingPolicy() {
-        return eventSequencingPolicy;
+        targetEventListener.handle(event);
     }
 
     /**
@@ -93,7 +100,7 @@ public class AnnotationEventListenerAdapter
      */
     @Override
     public void beforeTransaction(TransactionStatus transactionStatus) {
-        transactionListener.beforeTransaction(transactionStatus);
+        transactionManager.beforeTransaction(transactionStatus);
     }
 
     /**
@@ -101,43 +108,47 @@ public class AnnotationEventListenerAdapter
      */
     @Override
     public void afterTransaction(TransactionStatus transactionStatus) {
-        transactionListener.afterTransaction(transactionStatus);
+        transactionManager.afterTransaction(transactionStatus);
     }
 
     /**
-     * Returns the configuration of the event handler that would process the given <code>event</code>. Returns
-     * <code>null</code> if no event handler is found for the given event.
-     *
-     * @param event the event for which to search configuration.
-     * @return the annotation on the event handler method
-     */
-    public org.axonframework.core.eventhandler.annotation.EventHandler getConfigurationFor(Event event) {
-        return eventHandlerInvoker.findEventHandlerConfiguration(event);
-    }
-
-    /**
-     * {@inheritDoc}
+     * Unsubscribe the EventListener with the configured EventBus.
      */
     @PreDestroy
-    public void shutdown() {
-        if (eventBus != null) {
-            eventBus.unsubscribe(this);
-        }
+    public void unsubscribe() {
+        eventBus.unsubscribe(this);
     }
 
     /**
-     * {@inheritDoc}
+     * Subscribe the EventListener with the configured EventBus.
      */
     @PostConstruct
-    public void initialize() {
-        if (eventBus != null) {
-            eventBus.subscribe(this);
+    public void subscribe() {
+        eventBus.subscribe(this);
+    }
+
+    private TransactionManager createTransactionManagerFor(Object bean) {
+        TransactionManager tm;
+        if (bean instanceof TransactionManager) {
+            tm = (TransactionManager) bean;
+        } else {
+            tm = new AnnotationTransactionManager(bean);
         }
+        return tm;
+    }
+
+    private AsynchronousEventHandlerWrapper createAsynchronousWrapperForBean(Object bean,
+                                                                             EventListener adapter) {
+
+        return new AsynchronousEventHandlerWrapper(adapter,
+                                                   transactionManager,
+                                                   getSequencingPolicyFor(bean),
+                                                   executor);
     }
 
     private EventSequencingPolicy getSequencingPolicyFor(Object annotatedEventListener) {
-        ConcurrentEventListener annotation = AnnotationUtils.findAnnotation(annotatedEventListener.getClass(),
-                                                                            ConcurrentEventListener.class);
+        AsynchronousEventListener annotation = findAnnotation(annotatedEventListener.getClass(),
+                                                              AsynchronousEventListener.class);
         if (annotation == null) {
             return new SequentialPolicy();
         }
@@ -158,36 +169,11 @@ public class AnnotationEventListenerAdapter
         }
     }
 
-    /**
-     * Returns the event listener to which events are forwarded
-     *
-     * @return the targeted event listener
-     */
-    public Object getTarget() {
-        return target;
-    }
-
-    /**
-     * Sets the event bus that this adapter should subscribe to.
-     *
-     * @param eventBus the EventBus to subscribe to
-     * @see #initialize()
-     * @see #shutdown()
-     */
-    public void setEventBus(EventBus eventBus) {
-        this.eventBus = eventBus;
-    }
-
-    private static class AnnotatedTransactionAware implements TransactionAware {
+    private static final class TargetEventListener implements EventListener {
 
         private final AnnotationEventHandlerInvoker eventHandlerInvoker;
 
-        /**
-         * Initialize the Annotated Transaction Aware adapter for the given event handler invoker.
-         *
-         * @param eventHandlerInvoker the invoker to delegate transaction handling to
-         */
-        public AnnotatedTransactionAware(AnnotationEventHandlerInvoker eventHandlerInvoker) {
+        public TargetEventListener(AnnotationEventHandlerInvoker eventHandlerInvoker) {
             this.eventHandlerInvoker = eventHandlerInvoker;
         }
 
@@ -195,24 +181,8 @@ public class AnnotationEventListenerAdapter
          * {@inheritDoc}
          */
         @Override
-        public void beforeTransaction(TransactionStatus transactionStatus) {
-            eventHandlerInvoker.invokeBeforeTransaction(transactionStatus);
+        public void handle(Event event) {
+            eventHandlerInvoker.invokeEventHandlerMethod(event);
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void afterTransaction(TransactionStatus transactionStatus) {
-            eventHandlerInvoker.invokeAfterTransaction(transactionStatus);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "AnnotationEventListenerAdapter(" + target.getClass().getSimpleName() + ")";
     }
 }

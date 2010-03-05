@@ -17,7 +17,7 @@
 package org.axonframework.sample.app.query;
 
 import org.axonframework.core.eventhandler.RetryPolicy;
-import org.axonframework.core.eventhandler.TransactionAware;
+import org.axonframework.core.eventhandler.TransactionManager;
 import org.axonframework.core.eventhandler.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ import java.sql.SQLTransientException;
 /**
  * @author Allard Buijze
  */
-public abstract class AbstractTransactionalEventListener implements TransactionAware {
+public abstract class AbstractTransactionalEventListener implements TransactionManager {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 

@@ -20,8 +20,6 @@ import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventListener;
-import org.axonframework.core.eventhandler.EventSequencingPolicy;
-import org.axonframework.core.eventhandler.SequentialPolicy;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.junit.*;
 
@@ -71,11 +69,6 @@ public class AnnotationEventHandlerBeanPostProcessorTest {
     public static class RealEventListener implements EventListener {
 
         @Override
-        public boolean canHandle(Class<? extends Event> eventType) {
-            return true;
-        }
-
-        @Override
         public void handle(Event event) {
             // not relevant
         }
@@ -83,11 +76,6 @@ public class AnnotationEventHandlerBeanPostProcessorTest {
         @EventHandler
         public void handleEvent(Event event) {
 
-        }
-
-        @Override
-        public EventSequencingPolicy getEventSequencingPolicy() {
-            return new SequentialPolicy();
         }
     }
 }

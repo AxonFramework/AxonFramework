@@ -165,16 +165,6 @@ class AnnotationEventHandlerInvoker {
         return null;
     }
 
-    /**
-     * Indicates whether the target event listener has a handler for the given <code>eventClass</code>.
-     *
-     * @param eventClass the event class to find an handler for
-     * @return true if an event handler is found, false otherwise
-     */
-    protected boolean hasHandlerFor(Class<? extends Event> eventClass) {
-        return findEventHandlerMethod(eventClass) != null;
-    }
-
     private Method findEventHandlerMethod(final Class<? extends Event> eventClass) {
         MostSuitableEventHandlerCallback callback = new MostSuitableEventHandlerCallback(eventClass);
         ReflectionUtils.doWithMethods(target.getClass(), callback, callback);

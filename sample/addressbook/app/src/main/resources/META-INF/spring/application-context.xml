@@ -22,11 +22,11 @@
 
     <context:annotation-config/>
 
-    <bean class="org.axonframework.core.eventhandler.annotation.postprocessor.AnnotationEventListenerBeanPostProcessor"/>
-
-    <bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus">
+    <bean class="org.axonframework.core.eventhandler.annotation.postprocessor.AnnotationEventListenerBeanPostProcessor">
         <property name="executor" ref="taskExecutor"/>
     </bean>
+
+    <bean id="eventBus" class="org.axonframework.core.eventhandler.SimpleEventBus"/>
 
     <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
         <property name="corePoolSize" value="20"/>

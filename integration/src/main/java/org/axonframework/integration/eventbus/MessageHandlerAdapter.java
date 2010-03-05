@@ -47,8 +47,6 @@ class MessageHandlerAdapter implements MessageHandler {
     @Override
     public void handleMessage(Message<?> message) {
         Event event = (Event) message.getPayload();
-        if (eventListener.canHandle(event.getClass())) {
-            eventListener.handle(event);
-        }
+        eventListener.handle(event);
     }
 }

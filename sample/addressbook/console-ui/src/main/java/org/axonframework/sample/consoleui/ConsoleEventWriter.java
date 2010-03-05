@@ -18,8 +18,6 @@ package org.axonframework.sample.consoleui;
 
 import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventListener;
-import org.axonframework.core.eventhandler.EventSequencingPolicy;
-import org.axonframework.core.eventhandler.SequentialPolicy;
 import org.axonframework.sample.app.ContactCreatedEvent;
 
 /**
@@ -28,19 +26,12 @@ import org.axonframework.sample.app.ContactCreatedEvent;
 public class ConsoleEventWriter implements EventListener {
 
     @Override
-    public boolean canHandle(Class<? extends Event> eventType) {
-        return eventType.isAssignableFrom(ContactCreatedEvent.class);
-    }
-
-    @Override
     public void handle(Event event) {
+        if (event.getClass().isAssignableFrom(ContactCreatedEvent.class)) {
         System.out.println(String.format("Received event of type [%s] at [%s]",
                                          event.getClass().getSimpleName(),
                                          event.getTimestamp().toString()));
+        }
     }
 
-    @Override
-    public EventSequencingPolicy getEventSequencingPolicy() {
-        return new SequentialPolicy();
-    }
 }

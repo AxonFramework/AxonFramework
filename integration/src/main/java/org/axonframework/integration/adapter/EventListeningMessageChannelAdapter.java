@@ -19,8 +19,6 @@ package org.axonframework.integration.adapter;
 import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.EventListener;
-import org.axonframework.core.eventhandler.EventSequencingPolicy;
-import org.axonframework.core.eventhandler.FullConcurrencyPolicy;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.integration.core.MessageChannel;
 import org.springframework.integration.message.GenericMessage;
@@ -76,14 +74,6 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean canHandle(Class<? extends Event> eventType) {
-        return filter.accept(eventType);
-    }
-
-    /**
      * If allows by the filter, wraps the given <code>event</code> in a {@link GenericMessage} ands sends it to the
      * configured {@link MessageChannel}.
      *
@@ -94,14 +84,6 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
         if (filter.accept(event.getClass())) {
             channel.send(new GenericMessage<Event>(event));
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public EventSequencingPolicy getEventSequencingPolicy() {
-        return new FullConcurrencyPolicy();
     }
 
 }

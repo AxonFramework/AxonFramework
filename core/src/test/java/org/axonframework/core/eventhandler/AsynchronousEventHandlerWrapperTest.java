@@ -25,9 +25,9 @@ import org.springframework.util.StopWatch;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -36,9 +36,9 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class ListenerManagerTest {
+public class AsynchronousEventHandlerWrapperTest {
 
-    private EventHandlingSequenceManager testSubject;
+    private AsynchronousEventHandlerWrapper testSubject;
     private StubEventListener mockEventListener;
     private ScheduledThreadPoolExecutor executorService;
 
@@ -48,7 +48,8 @@ public class ListenerManagerTest {
         executorService = new ScheduledThreadPoolExecutor(25);
         executorService.setMaximumPoolSize(100);
         executorService.setKeepAliveTime(1, TimeUnit.MINUTES);
-        testSubject = new EventHandlingSequenceManager(mockEventListener, executorService);
+        testSubject = new AsynchronousEventHandlerWrapper(mockEventListener,
+                                                          new SequentialPerAggregatePolicy(), executorService);
     }
 
     @Test
@@ -105,7 +106,7 @@ public class ListenerManagerTest {
                 try {
                     waitToStart.await();
                     for (Event event : events) {
-                        testSubject.addEvent(event);
+                        testSubject.handle(event);
                     }
                 } catch (InterruptedException e) {
                     // then we don't dispatch anything
@@ -116,24 +117,15 @@ public class ListenerManagerTest {
         return uuid;
     }
 
-    private class StubEventListener implements EventListener {
+    private static class StubEventListener implements EventListener {
 
-        private final BlockingQueue<Event> events = new LinkedBlockingQueue<Event>();
-
-        @Override
-        public boolean canHandle(Class<? extends Event> eventType) {
-            return true;
-        }
+        private final BlockingQueue<Event> events = new ArrayBlockingQueue<Event>(10000);
 
         @Override
         public void handle(Event event) {
             events.add(event);
         }
 
-        @Override
-        public EventSequencingPolicy getEventSequencingPolicy() {
-            return new SequentialPerAggregatePolicy();
-        }
     }
 
 }

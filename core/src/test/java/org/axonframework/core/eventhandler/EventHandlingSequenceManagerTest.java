@@ -36,7 +36,7 @@ public class EventHandlingSequenceManagerTest {
 
     private EventListener eventListener;
     private ScheduledThreadPoolExecutor executorService;
-    private EventHandlingSequenceManager testSubject;
+    private AsynchronousEventHandlerWrapper testSubject;
 
     private CountDownLatch countdownLatch;
     private Field transactionsField;
@@ -48,7 +48,7 @@ public class EventHandlingSequenceManagerTest {
         executorService = new ScheduledThreadPoolExecutor(2);
         executorService.setMaximumPoolSize(2);
         executorService.setKeepAliveTime(1, TimeUnit.SECONDS);
-        testSubject = new EventHandlingSequenceManager(eventListener, executorService);
+        testSubject = new AsynchronousEventHandlerWrapper(eventListener, new FullRandomPolicy(), executorService);
     }
 
     @After
@@ -64,7 +64,7 @@ public class EventHandlingSequenceManagerTest {
             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
         countdownLatch = new CountDownLatch(1000);
         for (int t = 0; t < 1000; t++) {
-            testSubject.addEvent(new StubDomainEvent());
+            testSubject.handle(new StubDomainEvent());
         }
         assertTrue("Processing took too long.", countdownLatch.await(10, TimeUnit.SECONDS));
 
@@ -80,10 +80,10 @@ public class EventHandlingSequenceManagerTest {
     @Test
     public void testDispatchFullConcurrentEvents() throws InterruptedException {
         FullConcurrentEventListener eventListener = new FullConcurrentEventListener();
-        testSubject = new EventHandlingSequenceManager(eventListener, executorService);
+        testSubject = new AsynchronousEventHandlerWrapper(eventListener, new FullConcurrencyPolicy(), executorService);
         StubDomainEvent event = new StubDomainEvent();
         for (int t = 0; t < 1000; t++) {
-            testSubject.addEvent(event);
+            testSubject.handle(event);
         }
         executorService.shutdown();
         executorService.awaitTermination(10, TimeUnit.SECONDS);
@@ -108,40 +108,21 @@ public class EventHandlingSequenceManagerTest {
     private class StubEventListener implements EventListener {
 
         @Override
-        public boolean canHandle(Class<? extends Event> eventType) {
-            return true;
-        }
-
-        @Override
         public void handle(Event event) {
             countdownLatch.countDown();
         }
 
-        @Override
-        public EventSequencingPolicy getEventSequencingPolicy() {
-            return new FullRandomPolicy();
-        }
     }
 
-    private class FullConcurrentEventListener implements EventListener, TransactionAware {
+    private class FullConcurrentEventListener implements EventListener, TransactionManager {
 
         private AtomicInteger eventCounter = new AtomicInteger(0);
         private AtomicInteger transactionCounter = new AtomicInteger(0);
         private AtomicInteger totalTransactionCounter = new AtomicInteger(0);
 
         @Override
-        public boolean canHandle(Class<? extends Event> eventType) {
-            return true;
-        }
-
-        @Override
         public void handle(Event event) {
             eventCounter.incrementAndGet();
-        }
-
-        @Override
-        public EventSequencingPolicy getEventSequencingPolicy() {
-            return new FullConcurrencyPolicy();
         }
 
         @Override

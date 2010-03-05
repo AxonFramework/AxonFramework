@@ -28,18 +28,15 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * TODO (issue #21): Rename this class into AsynchronousEventHandlerWrapper and make it implement EventListener. TODO
- * (issue #21): The "ConcurrencyPolicy" should not be configured on the EventListener, but on the wrapper.
- * <p/>
- * The EventHandlingSequenceManager is responsible for delegating each incoming event to the relevant {@link
- * EventProcessingScheduler} for processing, depending on the sequencing identifier of the event.
+ * The AsynchronousEventHandlerWrapper can wrap any event listener to give it asynchronous behavior. The wrapper will
+ * schedule all incoming events for processing, making the calling thread return immediately.
  *
  * @author Allard Buijze
  * @since 0.3
  */
-public class EventHandlingSequenceManager {
+public class AsynchronousEventHandlerWrapper implements EventListener {
 
-    private static final Logger logger = LoggerFactory.getLogger(EventHandlingSequenceManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(AsynchronousEventHandlerWrapper.class);
 
     private final EventListener eventListener;
     private final Executor executor;
@@ -47,42 +44,65 @@ public class EventHandlingSequenceManager {
             new ConcurrentHashMap<Object, EventProcessingScheduler>();
     private final EventSequencingPolicy eventSequencingPolicy;
     private final BlockingQueue<Event> concurrentEventQueue = new LinkedBlockingQueue<Event>();
+    private final TransactionManager transactionManager;
 
     /**
-     * TODO (issue #21): Add "TransactionManager" as extra optional constructor parameter Initialize the
-     * EventHandlingSequenceManager for the given <code>eventListener</code> using the given <code>executor</code>.
+     * Initialize the AsynchronousEventHandlerWrapper for the given <code>eventListener</code> using the given
+     * <code>executor</code> and <code>transactionManager</code>. The transaction manager is used to start and stop any
+     * underlying transactions necessary for event processing.
      *
-     * @param eventListener The event listener this instance manages
-     * @param executor      The executor that processes the events
+     * @param eventListener         The event listener this instance manages
+     * @param transactionManager    The transaction manager that will manage underlying transactions for this event
+     * @param eventSequencingPolicy The sequencing policy for concurrent execution of events
+     * @param executor              The executor that processes the events
      */
-    public EventHandlingSequenceManager(EventListener eventListener, Executor executor) {
+    public AsynchronousEventHandlerWrapper(EventListener eventListener,
+                                           TransactionManager transactionManager,
+                                           EventSequencingPolicy eventSequencingPolicy,
+                                           Executor executor) {
         this.eventListener = eventListener;
         this.executor = executor;
-        // TODO (issue #21): EventSequencingPolicy should be a constructor parameter
-        this.eventSequencingPolicy = eventListener.getEventSequencingPolicy();
+        this.eventSequencingPolicy = eventSequencingPolicy;
+        this.transactionManager = transactionManager;
     }
 
     /**
-     * // TODO (issue #21): This method should implement the "handleEvent" method from "EventHandler". Adds an event to
-     * the relevant scheduler.
+     * Initialize the AsynchronousEventHandlerWrapper for the given <code>eventListener</code> using the given
+     * <code>executor</code>.
+     * <p/>
+     * Note that the underlying bean will not be notified of any transactions.
+     *
+     * @param eventListener         The event listener this instance manages
+     * @param eventSequencingPolicy The sequencing policy for concurrent execution of events
+     * @param executor              The executor that processes the events
+     * @see #AsynchronousEventHandlerWrapper(EventListener, TransactionManager, EventSequencingPolicy,
+     *      java.util.concurrent.Executor)
+     */
+    public AsynchronousEventHandlerWrapper(EventListener eventListener,
+                                           EventSequencingPolicy eventSequencingPolicy,
+                                           Executor executor) {
+        this(eventListener, new NoTransactionManager(), eventSequencingPolicy, executor);
+    }
+
+    /**
+     * Handles the event by scheduling it for execution by the target event handler.
      *
      * @param event The event to schedule
      */
-    public void addEvent(Event event) {
-        if (eventListener.canHandle(event.getClass())) {
-            final Object sequenceIdentifier = eventSequencingPolicy.getSequenceIdentifierFor(event);
-            if (sequenceIdentifier == null) {
-                logger.debug("Scheduling event of type [{}] for full concurrent processing",
-                             event.getClass().getSimpleName());
-                EventProcessingScheduler scheduler = newProcessingScheduler(this.concurrentEventQueue,
-                                                                            new NoActionCallback());
-                scheduler.scheduleEvent(event);
-            } else {
-                logger.debug("Scheduling event of type [{}] for sequential processing in group [{}]",
-                             event.getClass().getSimpleName(),
-                             sequenceIdentifier.toString());
-                scheduleEvent(event, sequenceIdentifier);
-            }
+    @Override
+    public void handle(Event event) {
+        final Object sequenceIdentifier = eventSequencingPolicy.getSequenceIdentifierFor(event);
+        if (sequenceIdentifier == null) {
+            logger.debug("Scheduling event of type [{}] for full concurrent processing",
+                         event.getClass().getSimpleName());
+            EventProcessingScheduler scheduler = newProcessingScheduler(this.concurrentEventQueue,
+                                                                        new NoActionCallback());
+            scheduler.scheduleEvent(event);
+        } else {
+            logger.debug("Scheduling event of type [{}] for sequential processing in group [{}]",
+                         event.getClass().getSimpleName(),
+                         sequenceIdentifier.toString());
+            scheduleEvent(event, sequenceIdentifier);
         }
     }
 
@@ -113,7 +133,7 @@ public class EventHandlingSequenceManager {
     protected EventProcessingScheduler newProcessingScheduler(
             EventProcessingScheduler.ShutdownCallback shutDownCallback) {
         logger.debug("Initializing new processing scheduler.");
-        return new EventProcessingScheduler(eventListener, executor, shutDownCallback);
+        return new EventProcessingScheduler(eventListener, transactionManager, executor, shutDownCallback);
     }
 
     /**
@@ -124,10 +144,11 @@ public class EventHandlingSequenceManager {
      * @param shutDownCallback The callback that needs to be notified when the scheduler stops processing.
      * @return a new scheduler instance
      */
-    protected EventProcessingScheduler newProcessingScheduler(Queue<Event> eventQueue,
-                                                              EventProcessingScheduler.ShutdownCallback shutDownCallback) {
+    protected EventProcessingScheduler newProcessingScheduler(
+            Queue<Event> eventQueue,
+            EventProcessingScheduler.ShutdownCallback shutDownCallback) {
         logger.debug("Initializing new processing scheduler.");
-        return new EventProcessingScheduler(eventListener, executor, eventQueue, shutDownCallback);
+        return new EventProcessingScheduler(eventListener, transactionManager, executor, eventQueue, shutDownCallback);
     }
 
     private final class TransactionCleanUp implements EventProcessingScheduler.ShutdownCallback {
@@ -148,15 +169,6 @@ public class EventHandlingSequenceManager {
         }
     }
 
-    /**
-     * Returns the event listener this instance manages events for
-     *
-     * @return the event listener this instance manages events for
-     */
-    EventListener getEventListener() {
-        return eventListener;
-    }
-
     private static class NoActionCallback implements EventProcessingScheduler.ShutdownCallback {
 
         /**
@@ -164,6 +176,17 @@ public class EventHandlingSequenceManager {
          */
         @Override
         public void afterShutdown(EventProcessingScheduler scheduler) {
+        }
+    }
+
+    private static class NoTransactionManager implements TransactionManager {
+
+        @Override
+        public void beforeTransaction(TransactionStatus transactionStatus) {
+        }
+
+        @Override
+        public void afterTransaction(TransactionStatus transactionStatus) {
         }
     }
 }

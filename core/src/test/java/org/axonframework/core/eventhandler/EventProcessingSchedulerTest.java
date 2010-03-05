@@ -82,6 +82,7 @@ public class EventProcessingSchedulerTest {
         TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
         testSubject = new EventProcessingScheduler(listener,
+                                                   listener,
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
@@ -117,7 +118,7 @@ public class EventProcessingSchedulerTest {
         StubDomainEvent event2 = new StubDomainEvent(2);
         TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ExecutorService mockExecutorService = mock(ExecutorService.class);
-        testSubject = new EventProcessingScheduler(listener,
+        testSubject = new EventProcessingScheduler(listener, listener, 
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
@@ -161,7 +162,7 @@ public class EventProcessingSchedulerTest {
         StubDomainEvent event2 = new StubDomainEvent(2);
         TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
-        testSubject = new EventProcessingScheduler(listener,
+        testSubject = new EventProcessingScheduler(listener, listener,
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
@@ -196,7 +197,7 @@ public class EventProcessingSchedulerTest {
     private MockEventListener executeEventProcessing(RetryPolicy policy) {
         ExecutorService mockExecutorService = mock(ExecutorService.class);
         MockEventListener listener = new MockEventListener(policy);
-        testSubject = new EventProcessingScheduler(listener,
+        testSubject = new EventProcessingScheduler(listener, listener,
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 
@@ -210,7 +211,7 @@ public class EventProcessingSchedulerTest {
         return listener;
     }
 
-    private class MockEventListener implements EventListener, TransactionAware {
+    private class MockEventListener implements EventListener, TransactionManager {
 
         private int failOnEvent;
         private List<Event> handledEvents = new LinkedList<Event>();
@@ -224,21 +225,11 @@ public class EventProcessingSchedulerTest {
         }
 
         @Override
-        public boolean canHandle(Class<? extends Event> eventType) {
-            return true;
-        }
-
-        @Override
         public void handle(Event event) {
             handledEvents.add(event);
             if (--failOnEvent == 0) {
                 throw new RuntimeException("Mock exception");
             }
-        }
-
-        @Override
-        public EventSequencingPolicy getEventSequencingPolicy() {
-            return new SequentialPolicy();
         }
 
         @Override
@@ -266,7 +257,7 @@ public class EventProcessingSchedulerTest {
         }
     }
 
-    private interface TransactionalEventListener extends TransactionAware, EventListener {
+    private interface TransactionalEventListener extends TransactionManager, EventListener {
 
     }
 }

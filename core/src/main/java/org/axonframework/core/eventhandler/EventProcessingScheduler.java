@@ -44,7 +44,7 @@ public class EventProcessingScheduler implements Runnable {
 
     private final EventListener eventListener;
     private final ShutdownCallback shutDownCallback;
-    private final TransactionAware transactionListener;
+    private final TransactionManager transactionManager;
     private final Executor executor;
 
     // guarded by "this"
@@ -59,13 +59,16 @@ public class EventProcessingScheduler implements Runnable {
     /**
      * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>.
      *
-     * @param eventListener    The event listener for which this scheduler schedules events
-     * @param executor         The executor service that will process the events
-     * @param shutDownCallback The callback to notify when the scheduler finishes processing events
+     * @param eventListener      The event listener for which this scheduler schedules events
+     * @param transactionManager The transaction manager that manages underlying transactions
+     * @param executor           The executor service that will process the events
+     * @param shutDownCallback   The callback to notify when the scheduler finishes processing events
      */
-    public EventProcessingScheduler(EventListener eventListener, Executor executor,
+    public EventProcessingScheduler(EventListener eventListener,
+                                    TransactionManager transactionManager,
+                                    Executor executor,
                                     ShutdownCallback shutDownCallback) {
-        this(eventListener, executor, new LinkedList<Event>(), shutDownCallback);
+        this(eventListener, transactionManager, executor, new LinkedList<Event>(), shutDownCallback);
     }
 
     /**
@@ -73,21 +76,21 @@ public class EventProcessingScheduler implements Runnable {
      * <code>eventQueue</code> is the queue from which the scheduler should obtain it's events. This queue must be
      * thread safe, as it can be used simultaneously by multiple threads.
      *
-     * @param eventListener    The event listener for which this scheduler schedules events
-     * @param executor         The executor service that will process the events
-     * @param eventQueue       The queue from which this scheduler gets events
-     * @param shutDownCallback The callback to notify when the scheduler finishes processing events
+     * @param eventListener      The event listener for which this scheduler schedules events
+     * @param transactionManager The transaction manager that manages underlying transactions
+     * @param executor           The executor service that will process the events
+     * @param eventQueue         The queue from which this scheduler gets events
+     * @param shutDownCallback   The callback to notify when the scheduler finishes processing events
      */
-    public EventProcessingScheduler(EventListener eventListener, Executor executor, Queue<Event> eventQueue,
+    public EventProcessingScheduler(EventListener eventListener,
+                                    TransactionManager transactionManager,
+                                    Executor executor,
+                                    Queue<Event> eventQueue,
                                     ShutdownCallback shutDownCallback) {
         this.eventQueue = eventQueue;
         this.eventListener = eventListener;
         this.shutDownCallback = shutDownCallback;
-        if (eventListener instanceof TransactionAware) {
-            this.transactionListener = (TransactionAware) eventListener;
-        } else {
-            this.transactionListener = new TransactionIgnoreAdapter();
-        }
+        this.transactionManager = transactionManager;
         this.executor = executor;
     }
 
@@ -251,7 +254,7 @@ public class EventProcessingScheduler implements Runnable {
                 handleEventBatch(status);
             }
             if (transactionStarted) {
-                transactionListener.afterTransaction(status);
+                transactionManager.afterTransaction(status);
             }
             currentBatch.clear();
         }
@@ -286,7 +289,7 @@ public class EventProcessingScheduler implements Runnable {
 
     private void tryAfterTransactionCall(TransactionStatus status) {
         try {
-            transactionListener.afterTransaction(status);
+            transactionManager.afterTransaction(status);
         } catch (Exception e) {
             logger.warn("Call to afterTransaction method of failed transaction resulted in an exception.", e);
         }
@@ -321,7 +324,7 @@ public class EventProcessingScheduler implements Runnable {
 
     private void startTransactionIfNecessary(TransactionStatus status) {
         if (!transactionStarted) {
-            transactionListener.beforeTransaction(status);
+            transactionManager.beforeTransaction(status);
             transactionStarted = true;
         }
     }
@@ -330,23 +333,6 @@ public class EventProcessingScheduler implements Runnable {
         isScheduled = false;
         cleanedUp = true;
         shutDownCallback.afterShutdown(this);
-    }
-
-    private static class TransactionIgnoreAdapter implements TransactionAware {
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void beforeTransaction(TransactionStatus transactionStatus) {
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void afterTransaction(TransactionStatus transactionStatus) {
-        }
     }
 
     /**

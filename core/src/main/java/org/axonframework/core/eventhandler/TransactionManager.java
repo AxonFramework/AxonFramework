@@ -17,7 +17,6 @@
 package org.axonframework.core.eventhandler;
 
 /**
- * TODO (issue #21): Rename this class to "TransactionManager". Extension on the {@link
  * org.axonframework.core.eventhandler.EventListener} interface that provides implementations the ability to do work at
  * the start and end of a transaction.
  * <p/>
@@ -26,7 +25,7 @@ package org.axonframework.core.eventhandler;
  * @author Allard Buijze
  * @since 0.3
  */
-public interface TransactionAware {
+public interface TransactionManager {
 
     /**
      * Invoked by the EventProcessingScheduler before processing a series of events. The given {@link

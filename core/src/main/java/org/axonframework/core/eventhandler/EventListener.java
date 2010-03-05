@@ -30,30 +30,11 @@ import org.axonframework.core.Event;
 public interface EventListener {
 
     /**
-     * TODO (issue #21): Remove this method. Implementations should decide how they do this themselves. Indicates
-     * whether this event listener can handle events of the given type. This method is used as an early detection during
-     * the dispatching process.
-     *
-     * @param eventType the type of event
-     * @return true if this event listener can handle the event, false otherwise
-     */
-    boolean canHandle(Class<? extends Event> eventType);
-
-    /**
-     * Process the given event. There are no guarantees that this method is not called with types for which {@link
-     * #canHandle(Class)} returned false. In such case, this method should return normally (typically without doing
-     * anything).
+     * Process the given event. The implementation may decide to process or skip the given event. It is highly
+     * unrecommended to throw any exception during the event handling process.
      *
      * @param event the event to handle
      */
     void handle(Event event);
 
-    /**
-     * TODO (issue #21): Remove this method. It has to do with Asynchronous Event Handling, and should move to a
-     * specialized class The Event sequencing policy applicable to this event listener. This policy defines which Events
-     * must be processed sequentially, and which may run in parallel.
-     *
-     * @return the Event sequencing policy applicable to this event listener
-     */
-    EventSequencingPolicy getEventSequencingPolicy();
 }

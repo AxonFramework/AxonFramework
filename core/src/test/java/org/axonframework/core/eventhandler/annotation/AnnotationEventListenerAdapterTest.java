@@ -16,16 +16,16 @@
 
 package org.axonframework.core.eventhandler.annotation;
 
-import org.axonframework.core.DomainEvent;
 import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
-import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
-import org.axonframework.core.eventhandler.FullConcurrencyPolicy;
-import org.axonframework.core.eventhandler.SequentialPolicy;
+import org.axonframework.core.eventhandler.TransactionStatus;
 import org.junit.*;
 
-import static org.junit.Assert.*;
+import java.util.concurrent.Executor;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -35,69 +35,75 @@ public class AnnotationEventListenerAdapterTest {
 
     @Test
     public void testHandlerCorrectlyUsed() {
-        ConcurrentAnnotatedEventHandler annotatedEventHandler = new ConcurrentAnnotatedEventHandler();
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventHandler);
+        AnnotatedEventHandler handler = mock(AnnotatedEventHandler.class);
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler, null);
 
-        adapter.beforeTransaction(null);
-        assertEquals(1, annotatedEventHandler.beforeInvoked);
-        assertEquals(0, annotatedEventHandler.eventInvoked);
-        assertEquals(0, annotatedEventHandler.afterInvoked);
-        adapter.handle(new StubDomainEvent());
-        assertEquals(1, annotatedEventHandler.beforeInvoked);
-        assertEquals(1, annotatedEventHandler.eventInvoked);
-        assertEquals(0, annotatedEventHandler.afterInvoked);
-        adapter.afterTransaction(null);
-        assertEquals(1, annotatedEventHandler.beforeInvoked);
-        assertEquals(1, annotatedEventHandler.eventInvoked);
-        assertEquals(1, annotatedEventHandler.afterInvoked);
+        TransactionStatus transactionStatus = new TransactionStatus() {
+        };
+        StubDomainEvent event = new StubDomainEvent();
+        adapter.beforeTransaction(transactionStatus);
+        adapter.handle(event);
+        adapter.afterTransaction(transactionStatus);
 
-        assertTrue(adapter.canHandle(StubDomainEvent.class));
-        assertFalse(adapter.canHandle(DomainEvent.class));
-        assertNotNull(adapter.getConfigurationFor(new StubDomainEvent()));
+        verify(handler).handleEvent(event);
     }
 
     @Test
-    public void testAdapterMangegesEventBusSubscription() {
-        ConcurrentAnnotatedEventHandler annotatedEventHandler = new ConcurrentAnnotatedEventHandler();
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventHandler);
-        EventBus mockEventBus = mock(EventBus.class);
-        adapter.setEventBus(mockEventBus);
-
-        adapter.initialize();
-        verify(mockEventBus).subscribe(adapter);
-        adapter.shutdown();
-        verify(mockEventBus).unsubscribe(adapter);
-    }
-
-    @Test
-    public void testHandlingPolicy_Default() throws Exception {
-        AnnotatedEventHandler annotatedEventHandler = new AnnotatedEventHandler();
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventHandler);
-
-        EventSequencingPolicy actualPolicy = adapter.getEventSequencingPolicy();
-
-        assertEquals(SequentialPolicy.class, actualPolicy.getClass());
-    }
-
-    @Test
-    public void testHandlingPolicy_FromAnnotation() throws Exception {
-        ConcurrentAnnotatedEventHandler annotatedEventHandler = new ConcurrentAnnotatedEventHandler();
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventHandler);
-
-        EventSequencingPolicy actualPolicy = adapter.getEventSequencingPolicy();
-
-        assertEquals(FullConcurrencyPolicy.class, actualPolicy.getClass());
-    }
-
-    @Test
-    public void testHandlingPolicy_IllegalClassFromAnnotation() throws Exception {
-        IllegalConcurrentAnnotatedEventHandler annotatedEventHandler = new IllegalConcurrentAnnotatedEventHandler();
+    public void testAdaptAsyncEventHandler_NoExecutor() {
+        AsyncAnnotatedEventHandler handler = mock(AsyncAnnotatedEventHandler.class);
         try {
-            new AnnotationEventListenerAdapter(annotatedEventHandler);
+            new AnnotationEventListenerAdapter(handler, null);
+            fail("Expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("annotatedEventListener"));
+            assertTrue(e.getMessage().contains("executor"));
+        }
+    }
+
+    @Test
+    public void testAdaptAsyncEventHandler_WithExecutor() {
+        AsyncAnnotatedEventHandler handler = mock(AsyncAnnotatedEventHandler.class);
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler, new DirectExecutor(), null);
+
+        TransactionStatus transactionStatus = new TransactionStatus() {
+        };
+        StubDomainEvent event = new StubDomainEvent();
+        adapter.beforeTransaction(transactionStatus);
+        adapter.handle(event);
+        adapter.afterTransaction(transactionStatus);
+
+        verify(handler).beforeTransaction(transactionStatus);
+        verify(handler).handleEvent(event);
+        verify(handler).afterTransaction(transactionStatus);
+    }
+
+    @Test
+    public void testAdaptSyncTransactionAwareEventHandler() {
+        TransactionAwareSyncHandler handler = mock(TransactionAwareSyncHandler.class);
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler, null);
+
+        TransactionStatus transactionStatus = new TransactionStatus() {
+        };
+        StubDomainEvent event = new StubDomainEvent();
+        adapter.beforeTransaction(transactionStatus);
+        adapter.handle(event);
+        adapter.afterTransaction(transactionStatus);
+
+        verify(handler).beforeTransaction(transactionStatus);
+        verify(handler).handleEvent(event);
+        verify(handler).afterTransaction(transactionStatus);
+    }
+
+    @Test
+    public void testAdaptClassWithIllegalPolicy() {
+        AsyncAnnotatedEventHandler_IllegalPolicy handler = new AsyncAnnotatedEventHandler_IllegalPolicy(); 
+        try {
+            new AnnotationEventListenerAdapter(handler, new DirectExecutor(), null);
             fail("Expected UnsupportedPolicyException");
         }
         catch (UnsupportedPolicyException e) {
-            assertTrue("Incomplete message:" + e.getMessage(), e.getMessage().contains("IllegalConcurrencyPolicy"));
+            assertTrue(e.getMessage().contains("no-arg constructor"));
         }
     }
 
@@ -109,43 +115,70 @@ public class AnnotationEventListenerAdapterTest {
 
     }
 
-    @ConcurrentEventListener(sequencingPolicyClass = FullConcurrencyPolicy.class)
-    private static class ConcurrentAnnotatedEventHandler {
-
-        private int beforeInvoked;
-        private int afterInvoked;
-        private int eventInvoked;
-
-        @BeforeTransaction
-        public void beforeTransaction() {
-            beforeInvoked++;
-        }
-
-        @EventHandler
-        public void handleEvent(StubDomainEvent event) {
-            eventInvoked++;
-        }
-
-        @AfterTransaction
-        public void afterTransaction() {
-            afterInvoked++;
-        }
-
-    }
-
-    @ConcurrentEventListener(sequencingPolicyClass = IllegalConcurrencyPolicy.class)
-    private static class IllegalConcurrentAnnotatedEventHandler {
+    @AsynchronousEventListener
+    private static class AsyncAnnotatedEventHandler {
 
         @EventHandler
         public void handleEvent(Event event) {
         }
 
+        @BeforeTransaction
+        public void beforeTransaction(TransactionStatus status) {
+
+        }
+
+        @AfterTransaction
+        public void afterTransaction(TransactionStatus status) {
+
+        }
     }
 
-    private static class IllegalConcurrencyPolicy implements EventSequencingPolicy {
+    @AsynchronousEventListener(sequencingPolicyClass = WrongPolicy.class)
+    private static class AsyncAnnotatedEventHandler_IllegalPolicy {
 
-        public IllegalConcurrencyPolicy(String name) {
-            // just for the sake of not having a default constructor
+        @EventHandler
+        public void handleEvent(Event event) {
+        }
+
+        @BeforeTransaction
+        public void beforeTransaction(TransactionStatus status) {
+
+        }
+
+        @AfterTransaction
+        public void afterTransaction(TransactionStatus status) {
+
+        }
+    }
+
+    private static class TransactionAwareSyncHandler {
+        @EventHandler
+        public void handleEvent(Event event) {
+        }
+
+        @BeforeTransaction
+        public void beforeTransaction(TransactionStatus status) {
+
+        }
+
+        @AfterTransaction
+        public void afterTransaction(TransactionStatus status) {
+
+        }
+    }
+
+    private static class DirectExecutor implements Executor {
+
+        @Override
+        public void execute(Runnable command) {
+            command.run();
+        }
+    }
+
+    private class WrongPolicy implements EventSequencingPolicy {
+
+        public WrongPolicy(Object anyParameter) {
+            // this constructor makes it unsuitable as policy class
         }
 
         @Override

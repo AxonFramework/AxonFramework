@@ -18,7 +18,6 @@ package org.axonframework.integration.adapter;
 
 import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventBus;
-import org.axonframework.core.eventhandler.FullConcurrencyPolicy;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
@@ -47,7 +46,6 @@ public class EventListeningMessageChannelAdapterTest {
 
     @Test
     public void testMessageForwardedToChannel() {
-        Assert.assertTrue(testSubject.canHandle(Event.class));
         StubDomainEvent event = new StubDomainEvent();
         testSubject.handle(event);
 
@@ -59,11 +57,6 @@ public class EventListeningMessageChannelAdapterTest {
         verify(mockEventBus, never()).subscribe(testSubject);
         testSubject.afterPropertiesSet();
         verify(mockEventBus).subscribe(testSubject);
-    }
-
-    @Test
-    public void testConcurrencyPolicy() throws Exception {
-        Assert.assertTrue(testSubject.getEventSequencingPolicy() instanceof FullConcurrencyPolicy);
     }
 
     @SuppressWarnings({"unchecked"})

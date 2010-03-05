@@ -25,8 +25,8 @@
         <mediaobject>
             <info>Detailed architecture overview</info>
             <imageobject role="fo">
-                <imagedata align="center" format="png" fileref="detailed-architecture-overview-hires.png"
-                    width="15cm"/>
+                <imagedata align="center" format="png"
+                    fileref="detailed-architecture-overview-hires.png" width="15cm"/>
             </imageobject>
             <imageobject role="html">
                 <imagedata format="png" fileref="detailed-architecture-overview.png"/>
@@ -59,17 +59,19 @@
             linkend="building-block-repository"/>) for future commands that need to execute on this
         aggregate. Furthermore, events are handed over to the event bus, which is reposonsible for
         dispatching them to all interested listeners.</para>
-    <para>The event bus dispatches events to all interested event listeners. This is typically done
-        asynchronously. Asynchonous event dispatching allows the command execution to return and
-        hand over control to the user, while the events are being dispatched and processed in the
-        background. Not having to wait for event processing to complete makes an application more
-        responsive</para>
-    <para>Event listeners pick up incoming events and handle them. Some handlers might load related
-        aggregates from a repository and update their state based on information in the event. An
-        example of this is the placement of an order in an online store. When an order comes in, you
-        might want to update stock information for all ordered items. The listener would listen to
-        events regarding placed orders and update the inventory. Other event listeners will update
-        data sources used for querying or send messages to external systems.</para>
+    <para>The event bus dispatches events to all interested event listeners. This can either be done
+        synchronously or asynchronously. Asynchronous event dispatching allows the command execution
+        to return and hand over control to the user, while the events are being dispatched and
+        processed in the background. Not having to wait for event processing to complete makes an
+        application more responsive. Synchronous event processing, on the other hand, is simpler and
+        is usual a sensible default. Synchronous processing also allows several event listeners to
+        process events within the same transaction.</para>
+    <para>Event listeners receive events and handle them. Some handlers might issue commands to
+        update other aggregates, based on information in the event. An example of this is the
+        placement of an order in an online store. When an order comes in, you might want to update
+        stock information for all ordered items. The listener would listen to events regarding
+        placed orders and send stock update commands to the inventory. Other event listeners will
+        update data sources used for querying or send messages to external systems.</para>
     <para>The data sources are updated and ready for querying by the user interface. The thin data
         layer in between the user interface and the data sources provides a clearly defined
         interface to the actual query implementation used. This data layer typically returns
@@ -132,12 +134,12 @@
             <para>Application events are events that cannot be categorized as domain events, but do
                 have a significant importance for the application. When using application events,
                 check if the event is actually a domain event that you over looked. Examples of
-                application events are the expiry of a user session, reporting the successful
-                sending of an email or a validation error on a command. The usefulness of these
-                events depend on the type of application you are creating. </para>
+                application events are the expiry of a user session, or the notification of an email
+                being successfully send. The usefulness of these events depend on the type of
+                application you are creating.</para>
             <para>In the Axon Framework, you can extend the abtract <code>ApplicationEvent</code>
                 class for application events. This class will generate a unique identifier and a
-                time stamp for the current event. Optionally, you can attach a class that acts as
+                time stamp for the current event. Optionally, you can attach an object that acts as
                 the source of the event. This source is loosely attached, which means that if the
                 garbage collector cleans up the source, or when the event is serialized and
                 deserialized, the original source class is not available anymore. Instead, you will
@@ -163,7 +165,7 @@
             for maintaining this consistent state. </para>
         <para>For example, a "Contact" aggregate will contain two entities: contact and address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
-            be done via the contact entity. In this case, the contact entity is the appointed
+            be done via the contact entity. In this case, the Contact entity is the appointed
             aggregate root.</para>
         <sect2>
             <title>Basic aggregate implementations</title>
@@ -191,22 +193,20 @@
                     needed by repositories to perform optimistic locking. The only method added to
                     the <code>AggregateRoot</code> interface is
                         <code>getLastCommittedEventSequenceNumber</code>, which returns the sequence
-                    number of the event that was last committed. </para>
-                <para>See <xref linkend="locking-repository"/> for more information about the
-                    abstract <code>LockingRepository</code> implementation. </para>
+                    number of the event that was last committed. See <xref
+                        linkend="locking-repository"/> for more information about the abstract
+                        <code>LockingRepository</code> implementation. </para>
             </simplesect>
             <simplesect>
                 <title>
                     <code>AbstractAggregateRoot</code>
                 </title>
-                <para>The <code>AbstractAggregateRoot</code> is a basic implementation that requires
-                    you to override the handle method to implement the state change logic. This
-                    abstract class provides an apply method that you can call in your business logic
-                    method to have an event applied. The <code>AbstractAggregateRoot</code> will
-                    keep track of all uncommitted registered events and make sure they are forwarded
-                    to the event bus when the aggregate is saved to a repository. To register an
-                    event, call the <code>registerEvent(event)</code> method, where
-                        <code>event</code> is the event to register. </para>
+                <para>The <code>AbstractAggregateRoot</code> is a basic implementation that provides
+                    a <code>registerEvent(DomainEvent)</code> method that you can call in your
+                    business logic method to have an event added to the list of uncommitted events.
+                    The <code>AbstractAggregateRoot</code> will keep track of all uncommitted
+                    registered events and make sure they are forwarded to the event bus when the
+                    aggregate is saved to a repository.</para>
             </simplesect>
         </sect2>
         <sect2>
@@ -220,19 +220,19 @@
                 <title>
                     <code>EventSourcedAggregateRoot</code>
                 </title>
-                <para>The <code>EventSourcedAggregateRoot</code> provides an extra method on top of
-                    the <code>VersionedAggregateRoot</code>:<code>initializeState()</code>. This
-                    method allows a repository to initialize the aggregate's state based on an event
-                    stream. </para>
+                <para>The <code>EventSourcedAggregateRoot</code> defines an extra method,
+                        <code>initializeState()</code>, on top of the
+                        <code>VersionedAggregateRoot</code> interface. This method initializes an
+                    aggregate's state based on an event stream.</para>
             </simplesect>
             <simplesect>
                 <title>
                     <code>AbstractEventSourcedAggregateRoot</code>
                 </title>
                 <para>The <code>AbstractEventSourcedAggregateRoot</code> implements all methods on
-                    the <code>EventSourcedAggregateRoot</code> interface. All you need to implement
-                    is the <code>handle()</code> method, which contains the actual logic to change
-                    state based on information in the events. When you extend the
+                    the <code>EventSourcedAggregateRoot</code> interface. It defines an abstract
+                        <code>handle()</code> method, which you need to implement with the actual
+                    logic to apply state changes based on domain events. When you extend the
                         <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
                     using the <code>apply()</code> method. This method will register the event to be
                     committed when the aggregate is saved, and will call the <code>handle()</code>
@@ -261,10 +261,11 @@
                 <title>
                     <code>AbstractAnnotatedAggregateRoot</code>
                 </title>
-                <para>As you see, the implementation of the <code>handle()</code> method can become
-                    quite verbose and hard to read. The <code>AbstractAnnotatedAggregateRoot</code>
-                    can help. The <code>AbstractAnnotatedAggregateRoot</code> is a specialization of
-                    the <code>AbstractAggregateRoot</code> that provides <code>@EventHandler</code>
+                <para>As you see in the example above, the implementation of the
+                        <code>handle()</code> method can become quite verbose and hard to read. The
+                        <code>AbstractAnnotatedAggregateRoot</code> can help. The
+                        <code>AbstractAnnotatedAggregateRoot</code> is a specialization of the
+                        <code>AbstractAggregateRoot</code> that provides <code>@EventHandler</code>
                     annotation support to your aggregate. Instead of a single <code>handle()</code>
                     method, you can split the logic in separate methods, with names that you may
                     define yourself. Just annotate the event handler methods with
@@ -287,7 +288,7 @@
         // do something with someProperty
     }
 }</programlisting>
-                <para>In all circumstances, exactly one single event handler method is invoked. The
+                <para>In all circumstances, exactly one event handler method is invoked. The
                         <code>AbstractAnnotatedAggregateRoot</code> will search the most specific
                     method to invoke, in the following order: </para>
                 <orderedlist>
@@ -335,12 +336,13 @@
             Framework, aggregates can only be loaded based on their unique identifier. All
             repositories must implement the <code>Repository</code> interface. This interface
             prescribes three methods: <code>load(identifier)</code>, <code>save(aggregate)</code>
-                and<code>delete(identifier)</code>. </para>
+            and <code>delete(identifier)</code>. </para>
         <para>Depending on your underlying persistence storage and auditing needs, there are a
             number of base implementations that provide basic functionality needed by most
             repositories. Axon Framework makes a distinction between repositories that save the
-            aggregate itself (see <xref linkend="standard-repositories"/>), and those that store the
-            events of an aggregate (see <xref linkend="event-sourcing-repositories"/>). </para>
+            current state of the aggregate (see <xref linkend="standard-repositories"/>), and those
+            that store the events of an aggregate (see <xref linkend="event-sourcing-repositories"
+            />). </para>
         <sect2 xml:id="standard-repositories">
             <title>Standard repositories</title>
             <simplesect>
@@ -354,9 +356,7 @@
                 any locking mechanism and expects the underlying data storage mechanism to provide
                 it. </para>
             <simplesect xml:id="locking-repository">
-                <title>
-                    <code>LockingRepository</code>
-                </title>
+                <title><code>LockingRepository</code></title>
             </simplesect>
             <para>If the underlying data store does not provide any locking mechanism to prevent
                 concurrent modifications of aggregates, consider using the abstract
@@ -365,8 +365,8 @@
                 modified. </para>
             <para>You can configure the <code>LockingRepository</code> to use an optimistic locking
                 strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
-                the second thread saving an aggregate will receive
-                    a<code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
+                the second thread saving an aggregate will receive a
+                    <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
                 access to the aggregate alltogether. </para>
         </sect2>
         <sect2 xml:id="event-sourcing-repositories">
@@ -381,7 +381,7 @@
                 </title>
                 <para>The abstract <code>EventSourcingRepository</code> implementation provides the
                     basic functionality needed by any event sourcing repository in the
-                    AxonFramework. It depends on an<code>EventStore</code>, which abstracts the
+                    AxonFramework. It depends on an <code>EventStore</code>, which abstracts the
                     actual storage mechanism for the events. See <xref
                         linkend="implementing-an-eventstore"/>. </para>
                 <para>The EventSourcingRepository has two abstract methods:
@@ -389,9 +389,10 @@
                         <code>instantiateAggregate(identifier)</code>. The first is a value passed
                     to the event store that provides information about the type of aggregate that
                     the events relate to. A good starting point to use as return value is the simple
-                    name of a class. The second method requires you to create an uninitialized
-                    instance of the aggregate using the given identifier. The repository will
-                    initialize this instance with the events obtained from the event store. </para>
+                    name of a class (i.e. the fully qualified class name withouth the package name).
+                    The second method requires you to create an uninitialized instance of the
+                    aggregate using the given identifier. The repository will initialize this
+                    instance with the events obtained from the event store. </para>
             </simplesect>
             <simplesect>
                 <title>
@@ -402,7 +403,7 @@
                     implementations. The <code>CachingEventSourcingRepository</code> provides a
                     cache from which aggregates can be loaded if available. You can configure any
                     jcache implementation with this repository. Note that this implementation can
-                    use caching in combination with a pessimistic locking strategy. </para>
+                    only use caching in combination with a pessimistic locking strategy.</para>
             </simplesect>
             <simplesect xml:id="implementing-an-eventstore">
                 <title>Implementing an <code>EventStore</code>
@@ -414,16 +415,17 @@
                     transaction support and doesn't cluster very well. </para>
                 <para>If you have specific requirements for an event store, it is quite easy to
                     implement one using different underlying data sources. Reading and appending
-                    events is done using a<code>DomainEventStream</code>, which is quite similar to
+                    events is done using a <code>DomainEventStream</code>, which is quite similar to
                     iterator implementations. In contrast to the iterator, the
                         <code>DomainEventStream</code> provides information about the aggregate to
                     which the events belong. </para>
                 <tip>
                     <para>If you have an <code>ObjectInputStream</code> that provides the events,
                         you can use the <code>ObjectInputStreamAdapter</code> to adapt that stream
-                        to a<code>DomainEventStream</code>. The <code>SimpleDomainEventStream</code>
-                        class will make the contents of a sequence of <code>DomainEvent</code>
-                        instances accessible as event stream. </para>
+                        to a <code>DomainEventStream</code>. The
+                            <code>SimpleDomainEventStream</code> class will make the contents of a
+                        sequence (<code>List</code> or <code>array</code>) of
+                            <code>DomainEvent</code> instances accessible as event stream. </para>
                 </tip>
             </simplesect>
         </sect2>
@@ -432,7 +434,7 @@
         <title>Event Listeners</title>
         <para linkend="">Event listeners are the component that act on incoming events. These events
             may be of any type of the events mentioned in <xref linkend="events"/>. In the Axon
-            Framework, all event listenerrs must implement the <code>EventListener</code> interface. </para>
+            Framework, all event listeners must implement the <code>EventListener</code> interface. </para>
         <sect2>
             <title>Basic configuration</title>
             <para>Event listeners need to be registered with an event bus (see <xref
@@ -442,39 +444,62 @@
                 <title>
                     <code>AnnotationEventListenerAdapter</code>
                 </title>
-                <para>The <code>AnnotationEventListenerAdapter</code> can wrap any bean into an
+                <para>The <code>AnnotationEventListenerAdapter</code> can wrap any object into an
                     event listener. The adapter will invoke the most appropriate event handler
                     method available. These event handler methods must be annotated with the
                         <code>@EventHandler</code> annotation and are resolved according to the same
                     rules that count for annotated aggregate roots (see <xref
                         linkend="annotated-aggregate-root"/>). </para>
+                <para>The constructor of the <code>AnnotationEventListenerAdapter</code> takes two
+                    parameters: the annotated bean, and the <code>EventBus</code>, to which the
+                    listener should subscribe. You can subscribe and unsubscribe the event listener
+                    using the <code>subscribe()</code> and <code>unsubscribe()</code> methods on the
+                    adapter.</para>
+                <tip>
+                    <para>If you use Spring, you can automatically wrap all annotated event
+                        listeners with an adapter automatically by configuring a bean of type
+                            <code>AnnotationEventListenerBeanPostProcessor</code>. This post
+                        processor will automatically find and wrap annotated event listeners inside
+                        an <code>AnnotationEventListenerAdapter</code> and register them with an
+                        event bus. </para>
+                </tip>
             </simplesect>
-            <para>If you use the annotation support features, you can use the
-                    <code>AnnotationEventListenerAdapter</code> (and subclasses) to turn your
-                annotated pojo into a full blown event listener. See annotation support for more
-                information. </para>
-            <tip>
-                <para>If you use Spring, you can automatically wrap all annotated event listeners
-                    with an adapter automatically by configuring a bean of type
-                        <code>AnnotationEventListenerBeanPostProcessor</code>. This post processor
-                    will automatically find and wrap annotated event listeners inside an
-                        <code>AnnotationEventListenerAdapter</code> and register them with an event
-                    bus. </para>
-            </tip>
         </sect2>
         <sect2>
-            <title>Concurrent processing of events</title>
-            <para>By default, event listeners process events one at a time. This means that an event
-                can only be handled when handling of all previous events has finished. For some
-                types of event listeners this is not the optimal form of processing. The
-                    <code>EventListener</code> interface defines a method called
-                    <code>getEventSequencingPolicy()</code>. This method should return the policy
-                that tells Axon what type of concurrent processing of events this listener supports. </para>
-            <para>This policy defines which event must be handled sequentially, and which events may
-                be processed independently of others. Policies return a sequence identifier of a
-                given event. If two events have the same sequence identifier, this means that they
-                must be handled sequentially be the event handler. A <code>null</code> sequence
-                identifier means the event may be processed concurrently with any other event. </para>
+            <title>Asynchronous event processing</title>
+            <para>By default, event listeners process events in the thread that dispatches them.
+                This means that the thread that executes the command will have to wait untill all
+                event handling has finished. For some types of event listeners this is not the
+                optimal form of processing. Asynchronous event processing improves the scalability
+                of the application, with the penalty of added complexity to deal with "eventual
+                consistency". With the Axon Framework, you can easily convert any event handler into
+                an asynchronous event handler by wrapping it in an
+                    <code>AsynchronousEventHandlerWrapper</code> or, when using annotations, adding
+                the type-level <code>AsynchronousEventListener</code> annotation.</para>
+            <para>The <code>AsynchronousEventHandlerWrapper</code> needs some extra configuration to
+                make an event handler asynchronous. The first thing that the wrapper needs is an
+                    <code>Executor</code>, for example a <code>ThreadPoolExecutor</code>. The second
+                is the <code>SequencingPolicy</code>, a definition of which events may be processed
+                in parallel, and which sequentially. The last one is optional: the
+                    <code>TransactionManager</code>, which enables you to run event processing
+                within a transaction. The next pragraphs will provide more details about the
+                configuration options.</para>
+            <para>The <code>Executor</code> is responsible for executing the event processing. The
+                actual implementation most likely depends on the environment that the application
+                runs in and the SLA of the event handler. An example is the
+                    <code>ThreadPoolExecutor</code>, which maintains a pool of threads for the event
+                handlers to use to process events. The <code>AsynchonousEventHandlerWrapper</code>
+                will manage the processing of incoming events in the provided executor. If an
+                instance of a <code>ScheduledThreadPoolExecutor</code> is provided, the
+                    <code>AsynchronousEventHandlerWrapper</code> will automatically leverage its
+                ability to schedule processing in the cases of delayed retries. See <xref
+                    linkend="transactionmanager"/> for more information about transactions.</para>
+            <para>The <code>SequencingPolicy</code> defines whether events must be handled
+                sequentially, in parallel or a combination of both. Policies return a sequence
+                identifier of a given event. If two events have the same sequence identifier, this
+                means that they must be handled sequentially be the event handler. A
+                    <code>null</code> sequence identifier means the event may be processed in
+                parallel with any other event. </para>
             <para>Axon provides a number of common policies you can use: <itemizedlist>
                     <listitem>
                         <para>The <code>FullConcurrencyPolicy</code> will tell Axon that this event
@@ -496,8 +521,7 @@
                             typically a suitable policy to use for event listeners that update
                             details from aggregates in database tables. </para>
                     </listitem>
-                </itemizedlist>
-            </para>
+                </itemizedlist></para>
             <para>Besides these provided policies, you can define your own. All policies must
                 implement the <code>EventSequencingPolicy</code> interface. This interface defines a
                 single method,<code>getSequenceIdentifierFor</code>, that returns the identifier
@@ -507,14 +531,29 @@
                 implementations should return <code>null</code> if the event may be processed in
                 parallel to any other event. This is faster, because Axon does not have to check for
                 any restrictions on event processing. </para>
+            <para>A <code>TransactionManager</code> can be assigned to a
+                    <code>AsynchronousEventHandlerWrapper</code> to add transactional processing of
+                events. To optimize processing, events can be processed in small batches inside a
+                transaction. The transaction manager has the ability to influence the size of these
+                batches and can decide to either commit, skip or retry event processing based on the
+                result of a batch. See <xref linkend="transactionmanager"/> for more
+                information.</para>
             <simplesect>
                 <title>Annotation support for concurrent processing</title>
-                <para>If you use the <code>AnnotationEventListenerAdapter</code>, you can configure
-                    the event sequencing policy using the <code>@ConcurrentEventListener</code>
-                    annotation. You then set the <code>sequencePolicyClass</code> to the type of
-                    policy you like to use. Note that you can only choose policy classes that
-                    provide a public no-arg constructor.
-                    <programlisting language="java">@ConcurrentEventListener(sequencingPolicyClass = MyCustomPolicy.class)
+                <para>If you use the <code>AnnotationEventListenerAdapter</code> (or the
+                        <code>AnnotationEventListenerBeanPostProcessor</code>), the annotated bean
+                    will be automatically wrapped in an <code>AsynchronousEventHandlerWrapper</code>
+                    if the bean is annotated with <code>@AsyncronousEventListener</code>. In that
+                    case, an <code>Executor</code> must have been configured on the the
+                        <code>AnnotationEventListenerAdapter</code> or the
+                        <code>AnnotationEventListenerBeanPostProcessor</code>. If no
+                        <code>Executor</code> is provided, an exception is thrown.</para>
+                <para>You can configure the event sequencing policy on the
+                        <code>@AsynchronousEventListener</code> annotation. You then set the
+                        <code>sequencePolicyClass</code> to the type of policy you like to use. Note
+                    that you can only choose policy classes that provide a public no-arg
+                    constructor.
+                    <programlisting language="java">@AsynchronousEventListener(sequencingPolicyClass = MyCustomPolicy.class)
 public class MyEventListener() {
 
     @EventHandler
@@ -531,37 +570,40 @@ public class MyCustomPolicy implements EventSequencingPolicy {
         }
         return null;
     }
-}</programlisting>
-                </para>
+}</programlisting></para>
+                <para>With annotation support, the event handler bean must also act as a transaction
+                    manager in order to support transactions. There is annotation support for
+                    transaction management, too (see <xref linkend="transactionmanager"/>).</para>
             </simplesect>
         </sect2>
-        <sect2>
-            <title>Dealing with transactions</title>
+        <sect2 xml:id="transactionmanager">
+            <title>Managing transactions in asynchronous event handling</title>
             <para>In some cases, your event handlers have to store data in systems that use
                 transactions. Starting and committing a transaction for each single event has a big
                 performance impact. In Axon, events are processed in batches. The batch size depends
                 of the number of events that need to be processed and the settings provided by the
-                event handler. By default, a thread will handle the all events in a batch that were
-                present when that batch started processing. </para>
+                event handler. By default, the batch size is set to the number of events available
+                in the processing queue at the time a batch starts. </para>
             <para>In most cases, event handling is done using a thread pool executor, or scheduler.
                 The scheduler will schedule batches of event processing as soon as event become
                 available. When a batch is completed, the scheduler will reschedule processing of
-                the next batch, as long as more events are available. The smaller the batch, the
-                more "fair" the distribution of event handler processing is, but also the more
-                scheduling overhead you create. </para>
-            <para>If Axon dispatches events to an event listener that implements the
-                    <code>TransactionAware</code> interface, it will notify the event listener of
-                the start as well as end of a batch. The event listener can, based on the
-                information in the <code>TransactionStatus</code> object, decide to start, commit or
-                rollback a transaction to an external system. </para>
+                the next batch, as long as more events are available. The smaller a batch, the more
+                "fair" the distribution of event handler processing is, but also the more scheduling
+                overhead you create.</para>
+            <para>When an event listener is wrapped with the
+                    <code>AsynchronousEventHandlerWrapper</code>, you can configure a
+                    <code>TransactionManager</code> to handle transactions for the event listener.
+                The transaction manager can, based on the information in the
+                    <code>TransactionStatus</code> object, decide to start, commit or rollback a
+                transaction to an external system. </para>
             <para>The <code>beforeTransaction(TransactionStatus)</code> method is invoked just
                 before Axon will start handling an event batch. You can use the TransactionStatus
                 object to configure the batch before it is started. For example, you can change the
                 maximum number of events that may run in the batch. </para>
             <para>The <code>afterTransaction(TransactionStatus)</code> method is invoked after the
                 batch has been processed, but before the scheduler has scheduled the next batch.
-                Based on the value of<code>isSuccessful()</code>, you can decide to commit or
-                rollback the transaction with the datasource the event handler is updating. </para>
+                Based on the value of <code>isSuccessful()</code>, you can decide to commit or
+                rollback the underlying transaction.</para>
             <simplesect>
                 <title>Configuring transactional batches</title>
                 <para>There are a number of settings you can use on the
@@ -617,8 +659,7 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                                 persist any changed made while processing other events in this
                                 transaction. This is the default policy. </para>
                         </listitem>
-                    </itemizedlist>
-                </para>
+                    </itemizedlist></para>
                 <para>Note that the <code>SKIP_FAILED_EVENT</code> is the default policy. For event
                     handlers that use an underlying mechanism to perform actions, this might not be
                     a suitable policy. Exceptions resulting from errors in these underlying systems
@@ -630,11 +671,8 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                         <code>RETRY_TRANSACTION</code> policy, depending on the transactional
                     behavior of the underlying system. </para>
                 <para>When the chosen policy forces a retry of event processing, the processing is
-                    delayed by the number of milliseonds defined in the <code>retryInterval</code>
-                    property. The default interval is 5 seconds. The exact waiting mechanism used is
-                    defined by the event bus. The asynchronous event bus provided by Axon may
-                    support scheduled retries under certain conditions. See <xref
-                        linkend="async-eventbus"/> for more information. </para>
+                    delayed by the number of milliseconds defined in the <code>retryInterval</code>
+                    property. The default interval is 5 seconds. </para>
             </simplesect>
             <simplesect>
                 <title>Manipulating transactions during event processing</title>
@@ -655,38 +693,26 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                     the remainder of the events for another batch. The latter will use the yield
                     policy to see what needs to be done. Since the default yielding policy is
                         <code>YIELD_AFTER_TRANSACTION</code>, the behavior of both methods is
-                    identical when using these defaults. </para>
+                    identical when using these defaults.</para>
+            </simplesect>
+            <simplesect>
+                <title>Annotation support</title>
+                <para>As with many of the other supported features in Axon, there is also annotation
+                    support for transaction management. The methods annotated with
+                        <code>@BeforeTransaction</code> and <code>@AfterTransaction</code> will be
+                    called before and after the execution of a transactional batch, respectively.
+                    The annotated methods may accept a single parameter of type
+                        <code>TransactionStatus</code>, which provides access to transaction
+                    details, such as current status and configuration.</para>
             </simplesect>
         </sect2>
     </sect1>
     <sect1 xml:id="event-bus">
         <title>Event Bus</title>
-        <para>The <code>EventBus</code> is the mechanism that dispatches events to the event
-            listeners. Axon Framework provides two implementations of the event bus:
-                <code>AsyncEventBus</code> and <code>SynchronousEventBus.</code>
-        </para>
-        <simplesect xml:id="async-eventbus">
-            <title>Asynchronous event processing</title>
-            <para>The <code>AsyncEventBus</code> is the default implementation of choice. It
-                dispatches events asynchronously to all registered event listeners in the
-                application. It uses the <code>EventSequencingPolicy</code> to define the sequential
-                processing requirements of events. The <code>AsyncEventBus</code> can be configured
-                with an <code>Executor</code> implementation, providing maximum control of the
-                number of event processor threads. </para>
-            <para>The chosen <code>Executor</code> implementation defines some of the optimizations
-                that the <code>AsyncEventBus</code> will do. If the <code>Executor</code> implements
-                the <code>ScheduledExecutorService</code> interface, the event bus will use its
-                scheduling capability to schedule retries for future execution. If the
-                    <code>Executor</code> does not implement that interface, a
-                    <code>Thread.sleep()</code> will be used to force a delay between transaction
-                retries. </para>
-        </simplesect>
-        <simplesect>
-            <title>Alternative event bus implementations</title>
-            <para>The <code>SynchronousEventBus</code> dispatches events in the same thread that
-                publishes them. This is quite useful in test scenarios where the overhead of
-                creating and managing application flow over multiple threads is unwanted. The
-                    <code>SynchronousEventBus</code> does not support transactions. </para>
-        </simplesect>
+        <para>The <code>EventBus</code> is the mechanism that dispatches events to the subsribed
+            event listeners. Axon Framework provides an implementation of the event bus:
+                <code>SimpleEventBus.</code>. The <code>SimpleEventBus</code> manages subscribed
+                <code>EventListeners</code> and forwards all incoming events to all subscribed
+            listeners.</para>
     </sect1>
 </chapter>

@@ -28,16 +28,15 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * events (in the callers' thread) to all subscribed listeners.
  * <p/>
  * Listeners are expected to implement asynchronous handling themselves.
- * <p/>
- * <strong>Warning</strong>: This EventBus implementation does not support transaction aware event listeners.
  *
  * @author Allard Buijze
- * @since 0.1
+ * @since 0.5
+ * @see org.axonframework.core.eventhandler.AsynchronousEventHandlerWrapper
  */
-public class SynchronousEventBus implements EventBus {
+public class SimpleEventBus implements EventBus {
 
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
-    private static final Logger logger = LoggerFactory.getLogger(SynchronousEventBus.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
 
     /**
      * {@inheritDoc}
@@ -71,16 +70,10 @@ public class SynchronousEventBus implements EventBus {
     @Override
     public void publish(Event event) {
         for (EventListener listener : listeners) {
-            if (listener.canHandle(event.getClass())) {
-                logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                             event.getClass().getSimpleName(),
-                             listener.getClass().getSimpleName());
-                listener.handle(event);
-            } else {
-                logger.debug("Dispatching of Event [{}] skipped for EventListener [{}]",
-                             event.getClass().getSimpleName(),
-                             listener.getClass().getSimpleName());
-            }
+            logger.debug("Dispatching Event [{}] to EventListener [{}]",
+                         event.getClass().getSimpleName(),
+                         listener.getClass().getSimpleName());
+            listener.handle(event);
         }
     }
 }
