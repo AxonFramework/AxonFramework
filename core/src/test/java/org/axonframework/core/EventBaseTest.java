@@ -45,6 +45,7 @@ public class EventBaseTest {
         Event event1 = new SimpleEvent();
         assertFalse(event1.equals(new Object()));
         assertTrue(event1.equals(event1));
+        assertFalse(event1.equals(null));
     }
 
     private static class SimpleEvent extends EventBase {
