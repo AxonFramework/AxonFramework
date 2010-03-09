@@ -37,14 +37,14 @@ public class EventContainerTest {
         eventContainer.setFirstSequenceNumber(12);
 
         assertEquals(0, eventContainer.size());
-        assertFalse(eventContainer.getInputStream().hasNext());
+        assertFalse(eventContainer.getEventStream().hasNext());
 
         eventContainer.addEvent(domainEvent);
 
         assertEquals(1, eventContainer.size());
         assertEquals(new Long(12), domainEvent.getSequenceNumber());
         assertEquals(identifier, domainEvent.getAggregateIdentifier());
-        assertTrue(eventContainer.getInputStream().hasNext());
+        assertTrue(eventContainer.getEventStream().hasNext());
 
         eventContainer.clear();
 

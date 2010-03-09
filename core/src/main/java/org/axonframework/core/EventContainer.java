@@ -85,8 +85,8 @@ class EventContainer {
      *
      * @return a DomainEventStream providing access to the events in this container
      */
-    public DomainEventStream getInputStream() {
-        return new SimpleDomainEventStream(events, aggregateIdentifier);
+    public DomainEventStream getEventStream() {
+        return new SimpleDomainEventStream(events);
     }
 
     /**

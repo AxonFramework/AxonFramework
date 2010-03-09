@@ -19,8 +19,8 @@ package org.axonframework.core.eventhandler;
 /**
  * Provides details about the current status of an event handling transaction. This method is typically accessed through
  * the {@link TransactionManager#beforeTransaction(TransactionStatus) beforeTransaction} and {@link
- * TransactionManager#afterTransaction(TransactionStatus) afterTransaction} methods on {@link TransactionManager}, but may
- * also be obtained through the static {@link TransactionStatus#current()} method.
+ * TransactionManager#afterTransaction(TransactionStatus) afterTransaction} methods on {@link TransactionManager}, but
+ * may also be obtained through the static {@link TransactionStatus#current()} method.
  * <p/>
  * All instance methods in this class are meant to be used in a single thread and are therefore not thread-safe. The
  * static methods are thread-safe.

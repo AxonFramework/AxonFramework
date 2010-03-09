@@ -16,8 +16,6 @@
 
 package org.axonframework.core;
 
-import java.util.UUID;
-
 /**
  * The DomainEventStream represents a stream of historical domain events. The order of events in this stream must
  * represent the actual chronological order in which the events happened. A DomainEventStream may provide access to all
@@ -30,13 +28,6 @@ import java.util.UUID;
  * @since 0.1
  */
 public interface DomainEventStream {
-
-    /**
-     * Returns the aggregate identifier of the aggregate on which these events apply.
-     *
-     * @return the identifier of the aggregate to which events in this stream apply.
-     */
-    UUID getAggregateIdentifier();
 
     /**
      * Returns <code>true</code> if the stream has more events, meaning that a call to <code>next()</code> will not

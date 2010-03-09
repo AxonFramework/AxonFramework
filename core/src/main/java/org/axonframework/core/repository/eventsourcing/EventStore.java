@@ -30,7 +30,7 @@ import java.util.UUID;
 public interface EventStore {
 
     /**
-     * Append the events in the given {@link org.axonframework.core.DomainEventStream stream} to the events available.
+     * Append the events in the given {@link org.axonframework.core.DomainEventStream stream} to the event store.
      *
      * @param type   The type descriptor of the object to store
      * @param events The event stream containing the events to store

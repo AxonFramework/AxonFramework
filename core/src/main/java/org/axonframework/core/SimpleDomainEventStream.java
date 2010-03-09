@@ -19,7 +19,6 @@ package org.axonframework.core;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Creates a DomainEventStream that streams the contents of a list.
@@ -29,40 +28,16 @@ import java.util.UUID;
  */
 public class SimpleDomainEventStream implements DomainEventStream {
 
-    private volatile DomainEvent nextEvent;
     private final Iterator<DomainEvent> iterator;
-    private final UUID identifier;
 
     /**
-     * Initialize the event stream using the given List of DomainEvent and aggregate identifier. The List may be empty.
-     *
-     * @param events              the list of domain events to stream
-     * @param aggregateIdentifier the aggregate identifier that the events apply to
-     */
-    public SimpleDomainEventStream(List<DomainEvent> events, UUID aggregateIdentifier) {
-        this.iterator = events.iterator();
-        if (iterator.hasNext()) {
-            nextEvent = iterator.next();
-        }
-        identifier = aggregateIdentifier;
-    }
-
-    /**
-     * Initialize the event stream using the given List of DomainEvent and aggregate identifier. The aggregate
-     * identifier is initialized by reading it from the first event available. Therefore, you must ensure that there is
-     * at least one event in the provided list.
+     * Initialize the event stream using the given List of DomainEvent and aggregate identifier.
      *
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if the given list is empty
      */
     public SimpleDomainEventStream(List<DomainEvent> events) {
         this.iterator = events.iterator();
-        if (iterator.hasNext()) {
-            nextEvent = iterator.next();
-            identifier = nextEvent.getAggregateIdentifier();
-        } else {
-            throw new IllegalArgumentException("Must provide at least one event");
-        }
     }
 
     /**
@@ -78,21 +53,11 @@ public class SimpleDomainEventStream implements DomainEventStream {
     }
 
     /**
-     * Returns the aggregate identifier that the events in this stream apply to. Will never return null.
-     *
-     * @return the aggregate identifier of the events in this stream
-     */
-    @Override
-    public UUID getAggregateIdentifier() {
-        return identifier;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public boolean hasNext() {
-        return nextEvent != null;
+        return iterator.hasNext();
     }
 
     /**
@@ -100,12 +65,6 @@ public class SimpleDomainEventStream implements DomainEventStream {
      */
     @Override
     public DomainEvent next() {
-        DomainEvent next = nextEvent;
-        if (iterator.hasNext()) {
-            nextEvent = iterator.next();
-        } else {
-            nextEvent = null;
-        }
-        return next;
+        return iterator.next();
     }
 }

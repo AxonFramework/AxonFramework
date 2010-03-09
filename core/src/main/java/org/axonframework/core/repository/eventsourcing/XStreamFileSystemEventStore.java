@@ -16,27 +16,19 @@
 
 package org.axonframework.core.repository.eventsourcing;
 
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.converters.SingleValueConverter;
-import com.thoughtworks.xstream.io.xml.CompactWriter;
 import org.apache.commons.io.IOUtils;
 import org.axonframework.core.AggregateNotFoundException;
+import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
-import org.axonframework.core.Event;
-import org.joda.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.SequenceInputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 /**
@@ -53,15 +45,14 @@ import java.util.UUID;
  */
 public class XStreamFileSystemEventStore implements EventStore {
 
-    private final XStream xStream;
+    private final EventSerializer eventSerializer;
     private Resource baseDir;
 
     /**
      * Basic initialization of the event store.
      */
     public XStreamFileSystemEventStore() {
-        xStream = new XStream();
-        xStream.registerConverter(new LocalDateTimeConverter());
+        eventSerializer = new XStreamEventSerializer();
     }
 
     /**
@@ -69,17 +60,23 @@ public class XStreamFileSystemEventStore implements EventStore {
      */
     @Override
     public void appendEvents(String type, DomainEventStream eventsToStore) {
+        if (!eventsToStore.hasNext()) {
+            return;
+        }
         OutputStream out = null;
         try {
-            File eventFile = getBaseDirForType(type).createRelative(eventsToStore.getAggregateIdentifier() + ".events")
-                    .getFile();
+            DomainEvent next = eventsToStore.next();
+            File eventFile = new File(getBaseDirForType(type).getFile(), next.getAggregateIdentifier() + ".events");
             out = new FileOutputStream(eventFile, true);
-            CompactWriter writer = new CompactWriter(new OutputStreamWriter(out, "UTF-8"));
-            while (eventsToStore.hasNext()) {
-                Event event = eventsToStore.next();
-                xStream.marshal(event, writer);
+            do {
+                out.write(eventSerializer.serialize(next));
                 IOUtils.write("\n", out);
-            }
+                if (eventsToStore.hasNext()) {
+                    next = eventsToStore.next();
+                } else {
+                    next = null;
+                }
+            } while (next != null);
         } catch (IOException e) {
             throw new EventStoreException("Unable to store given entity due to an IOException", e);
         } finally {
@@ -101,10 +98,9 @@ public class XStreamFileSystemEventStore implements EventStore {
                                 type,
                                 identifier.toString()));
             }
-            InputStream fileStream = eventFile.getInputStream();
-            InputStream inputStream = surroundWitObjectStreamTag(fileStream);
-            ObjectInputStream eventsStream = xStream.createObjectInputStream(inputStream);
-            return new ObjectInputStreamAdapter(eventsStream);
+            LineNumberReader fileReader = new LineNumberReader(new InputStreamReader(eventFile.getInputStream(),
+                                                                                     "UTF-8"));
+            return new BufferedReaderDomainEventStream(fileReader, eventSerializer);
         } catch (IOException e) {
             throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
@@ -112,12 +108,6 @@ public class XStreamFileSystemEventStore implements EventStore {
                                   type,
                                   identifier.toString()), e);
         }
-    }
-
-    private InputStream surroundWitObjectStreamTag(InputStream fileStream) throws UnsupportedEncodingException {
-        InputStream prefix = new ByteArrayInputStream("<object-stream>".getBytes("UTF-8"));
-        InputStream suffix = new ByteArrayInputStream("</object-stream>".getBytes("UTF-8"));
-        return new SequenceInputStream(prefix, new SequenceInputStream(fileStream, suffix));
     }
 
     private Resource getBaseDirForType(String type) {
@@ -143,30 +133,4 @@ public class XStreamFileSystemEventStore implements EventStore {
         this.baseDir = baseDir;
     }
 
-    private static class LocalDateTimeConverter implements SingleValueConverter {
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean canConvert(Class type) {
-            return type.equals(LocalDateTime.class);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString(Object obj) {
-            return obj.toString();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Object fromString(String str) {
-            return new LocalDateTime(str);
-        }
-    }
 }

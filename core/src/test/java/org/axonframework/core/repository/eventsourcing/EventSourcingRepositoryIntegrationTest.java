@@ -30,10 +30,12 @@ import org.junit.rules.*;
 import org.springframework.core.io.FileSystemResource;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -51,6 +53,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private EventBus mockEventBus;
     private XStreamFileSystemEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new Vector<Throwable>();
+    private List<Thread> startedThreads = new ArrayList<Thread>();
 
     @Test(timeout = 60000)
     public void testPessimisticLocking() throws InterruptedException {
@@ -102,7 +105,10 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
             prepareAggregateModifier(startSignal, threadsDone, repository, aggregateIdentifier);
         }
         startSignal.countDown();
-        threadsDone.await();
+        if (!threadsDone.await(30, TimeUnit.SECONDS)) {
+            printDiagnosticInformation();
+            fail("Thread found to be alive after timeout. It might be hanging");
+        }
         for (Throwable e : uncaughtExceptions) {
             if (!(e instanceof ConcurrencyException)) {
                 e.printStackTrace();
@@ -121,6 +127,18 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
                          nextEvent.getSequenceNumber());
         }
         return lastSequenceNumber;
+    }
+
+    private void printDiagnosticInformation() {
+        for (Thread t : startedThreads) {
+            System.out.print("## Thread [" + t.getName() + "] did not properly shut down during Locking test. ##");
+            if (t.getState() != Thread.State.TERMINATED) {
+                for (StackTraceElement ste : t.getStackTrace()) {
+                    System.out.println(" - " + ste.toString());
+                }
+            }
+            System.out.println();
+        }
     }
 
     private Thread prepareAggregateModifier(final CountDownLatch awaitFor, final CountDownLatch reportDone,
@@ -143,6 +161,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
             }
         });
         t.setUncaughtExceptionHandler(this);
+        startedThreads.add(t);
         t.start();
         return t;
     }

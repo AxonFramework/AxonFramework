@@ -114,12 +114,13 @@ public class CachingEventSourcingRepositoryTest {
 
         @Override
         public void appendEvents(String identifier, DomainEventStream events) {
-            if (!store.containsKey(events.getAggregateIdentifier())) {
-                store.put(events.getAggregateIdentifier(), new ArrayList<DomainEvent>());
-            }
-            List<DomainEvent> eventList = store.get(events.getAggregateIdentifier());
             while (events.hasNext()) {
-                eventList.add(events.next());
+                DomainEvent next = events.next();
+                if (!store.containsKey(next.getAggregateIdentifier())) {
+                    store.put(next.getAggregateIdentifier(), new ArrayList<DomainEvent>());
+                }
+                List<DomainEvent> eventList = store.get(next.getAggregateIdentifier());
+                eventList.add(next);
             }
         }
 

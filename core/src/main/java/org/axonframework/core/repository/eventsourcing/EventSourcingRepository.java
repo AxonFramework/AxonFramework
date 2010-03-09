@@ -79,7 +79,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     @Override
     protected T doLoad(UUID aggregateIdentifier) {
         DomainEventStream events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
-        T aggregate = instantiateAggregate(events.getAggregateIdentifier());
+        T aggregate = instantiateAggregate(aggregateIdentifier);
         aggregate.initializeState(events);
         return aggregate;
     }
