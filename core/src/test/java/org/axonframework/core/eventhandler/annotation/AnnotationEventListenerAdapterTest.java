@@ -24,8 +24,7 @@ import org.junit.*;
 
 import java.util.concurrent.Executor;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -64,7 +63,9 @@ public class AnnotationEventListenerAdapterTest {
     @Test
     public void testAdaptAsyncEventHandler_WithExecutor() {
         AsyncAnnotatedEventHandler handler = mock(AsyncAnnotatedEventHandler.class);
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler, new DirectExecutor(), null);
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler,
+                                                                                    new DirectExecutor(),
+                                                                                    null);
 
         TransactionStatus transactionStatus = new TransactionStatus() {
         };
@@ -97,7 +98,7 @@ public class AnnotationEventListenerAdapterTest {
 
     @Test
     public void testAdaptClassWithIllegalPolicy() {
-        AsyncAnnotatedEventHandler_IllegalPolicy handler = new AsyncAnnotatedEventHandler_IllegalPolicy(); 
+        AsyncAnnotatedEventHandler_IllegalPolicy handler = new AsyncAnnotatedEventHandler_IllegalPolicy();
         try {
             new AnnotationEventListenerAdapter(handler, new DirectExecutor(), null);
             fail("Expected UnsupportedPolicyException");
@@ -152,6 +153,7 @@ public class AnnotationEventListenerAdapterTest {
     }
 
     private static class TransactionAwareSyncHandler {
+
         @EventHandler
         public void handleEvent(Event event) {
         }

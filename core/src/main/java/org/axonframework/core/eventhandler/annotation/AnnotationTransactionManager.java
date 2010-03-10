@@ -34,6 +34,7 @@ public class AnnotationTransactionManager implements TransactionManager {
 
     /**
      * Initialize a transaction manager that delegates calls tot he given <code>bean</code>.
+     *
      * @param bean The bean containing annotation transaction management methods
      */
     public AnnotationTransactionManager(Object bean) {

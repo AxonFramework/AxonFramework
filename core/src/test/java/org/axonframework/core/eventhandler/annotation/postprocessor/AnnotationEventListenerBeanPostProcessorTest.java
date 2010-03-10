@@ -34,8 +34,6 @@ import java.util.concurrent.Executor;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze
@@ -63,7 +61,8 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         StubExecutor mockExecutor = new StubExecutor();
         testSubject.setExecutor(mockExecutor);
 
-        EventListener actualResult = (EventListener) testSubject.postProcessAfterInitialization(new AsyncHandler(), "beanName");
+        EventListener actualResult = (EventListener) testSubject.postProcessAfterInitialization(new AsyncHandler(),
+                                                                                                "beanName");
         actualResult.handle(new StubDomainEvent());
         assertEquals(1, mockExecutor.invocationCounter);
     }
@@ -109,7 +108,8 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     @Test
     public void testEventHandlerAdapterIsInitializedAndDestroyedProperly() throws Exception {
         Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
-        EventListener postProcessedBean = (EventListener) testSubject.postProcessAfterInitialization(result1, "beanName");
+        EventListener postProcessedBean = (EventListener) testSubject.postProcessAfterInitialization(result1,
+                                                                                                     "beanName");
 
         verify(mockEventBus).subscribe(isA(EventListener.class));
 

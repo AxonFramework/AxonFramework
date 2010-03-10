@@ -104,7 +104,7 @@ public class AnnotationEventListenerBeanPostProcessor implements DestructionAwar
     private AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
         AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(bean, executor, eventBus);
 
-            adapter.subscribe();
+        adapter.subscribe();
         return adapter;
     }
 

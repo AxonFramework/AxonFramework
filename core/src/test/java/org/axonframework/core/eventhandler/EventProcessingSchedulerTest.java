@@ -118,7 +118,7 @@ public class EventProcessingSchedulerTest {
         StubDomainEvent event2 = new StubDomainEvent(2);
         TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ExecutorService mockExecutorService = mock(ExecutorService.class);
-        testSubject = new EventProcessingScheduler(listener, listener, 
+        testSubject = new EventProcessingScheduler(listener, listener,
                                                    mockExecutorService,
                                                    new NullShutdownCallback());
 

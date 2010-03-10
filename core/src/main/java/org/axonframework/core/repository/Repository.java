@@ -42,7 +42,9 @@ public interface Repository<T extends AggregateRoot> {
      *
      * @param aggregateIdentifier The identifier of the aggregate to load
      * @return The aggregate root with the given identifier.
-     * @throws org.axonframework.core.AggregateNotFoundException if aggregate with given id cannot be found
+     *
+     * @throws org.axonframework.core.AggregateNotFoundException
+     *          if aggregate with given id cannot be found
      */
     T load(UUID aggregateIdentifier);
 

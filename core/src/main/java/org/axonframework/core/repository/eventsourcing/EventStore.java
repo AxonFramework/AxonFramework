@@ -39,7 +39,9 @@ public interface EventStore {
     void appendEvents(String type, DomainEventStream events);
 
     /**
-     * Read the events of the aggregate identified by the given type and identifier.
+     * Read the events of the aggregate identified by the given type and identifier that allow the current aggregate
+     * state to be rebuilt. Implementations may omit or replace events (e.g. by using snapshot events) from the stream
+     * for performance purposes.
      *
      * @param type       The type descriptor of the object to retrieve
      * @param identifier The unique aggregate identifier of the events to load
