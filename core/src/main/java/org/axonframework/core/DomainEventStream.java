@@ -19,10 +19,7 @@ package org.axonframework.core;
 /**
  * The DomainEventStream represents a stream of historical domain events. The order of events in this stream must
  * represent the actual chronological order in which the events happened. A DomainEventStream may provide access to all
- * events (from the first to the most recent) or any subset of these, as long as the stream is continuous.
- * <p/>
- * A stream is continuous if each call to obtain the <code>next</code> stream will return the event that immediately
- * followed the previous one. No events may be <i>skipped</i>.
+ * events (from the first to the most recent) or any subset of these.
  *
  * @author Allard Buijze
  * @since 0.1
@@ -34,7 +31,7 @@ public interface DomainEventStream {
      * result in an exception. If a call to this method returns <code>false</code>, there is no guarantee about the
      * result of a consecutive call to <code>next()</code>
      *
-     * @return <tt>true</tt> if the stream contains more events.
+     * @return <code>true</code> if the stream contains more events.
      */
     boolean hasNext();
 
