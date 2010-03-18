@@ -56,7 +56,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private List<Thread> startedThreads = new ArrayList<Thread>();
 
     @Test(timeout = 60000)
-    public void testPessimisticLocking() throws InterruptedException {
+    public void testPessimisticLocking() throws Throwable {
         initializeRepository(LockingStrategy.PESSIMISTIC);
         long lastSequenceNumber = executeConcurrentModifications(10);
 
@@ -67,7 +67,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     @Test(timeout = 60000)
-    public void testOptimisticLocking() throws InterruptedException {
+    public void testOptimisticLocking() throws Throwable {
         // unfortunately, we cannot use @Before on the setUp, because of the TemporaryFolder
         initializeRepository(LockingStrategy.OPTIMISTIC);
         long lastSequenceNumber = executeConcurrentModifications(10);
@@ -98,7 +98,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         aggregateIdentifier = aggregate.getIdentifier();
     }
 
-    private long executeConcurrentModifications(final int concurrentModifiers) throws InterruptedException {
+    private long executeConcurrentModifications(final int concurrentModifiers) throws Throwable {
         CountDownLatch startSignal = new CountDownLatch(1);
         CountDownLatch threadsDone = new CountDownLatch(concurrentModifiers);
         for (int t = 0; t < concurrentModifiers; t++) {
@@ -111,8 +111,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
         for (Throwable e : uncaughtExceptions) {
             if (!(e instanceof ConcurrencyException)) {
-                e.printStackTrace();
-                fail("A non-concurrency related exception was found. See stack trace above");
+                throw e;
             }
         }
 
