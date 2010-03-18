@@ -122,6 +122,11 @@
                     </mediaobject>
                 </figure>
             </note>
+            <para>There is a special type of <code>DomainEvent</code>, which has a special meaning:
+                the <code>AggregateDeletedEvent</code>. This event can be extended to indicate that
+                the event indicates a migration to a "deleted" state of the aggregate. Repositories
+                must consider aggregates that have applied such an event as deleted. Loading such an
+                aggregate in again results in an exception.</para>
         </sect2>
         <sect2>
             <title>Application Events</title>
