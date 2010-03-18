@@ -24,14 +24,14 @@
             <para>Every good framework needs a sample application. You want to have an application
                 that demonstrates enough of the framework and is easy enough to understand. The
                 Address book sample we have created is such an application. A very simple domain to
-                understand with enough features to show the event mechanism as well as the seperate
+                understand with enough features to show the event mechanism as well as the separate
                 data store and query database.
             </para>
             <para>The address book sample shows an Adobe flex user interface. With this flex client,
                 the event handling becomes very interesting. The server side domain events are
                 pushed to the flex clients to stay up to date.
             </para>
-            <para>So what does the sample provide? The sample comtains contacts with addresses. Each
+            <para>So what does the sample provide? The sample contains contacts with addresses. Each
                 contact can have a maximum of three addresses, one for each available type. Using
                 the query database, you can request all contacts, request contact details and search
                 the addresses. For this kind of queries, the query database is used. You can also
@@ -42,7 +42,7 @@
                 events to all flex clients using BlazeDS. More on this part follows in section<xref
                         linkend="addressbook-flex-client"/>.
             </para>
-            <para>The following image gives an overview of the archtiecture as discussed in this
+            <para>The following image gives an overview of the architecture as discussed in this
                 section.
             </para>
             <figure>
@@ -78,7 +78,7 @@
             <para>In this section we will describe the main components of the flex client. The flex
                 client makes use of an Inversion Of Control framework called parsley. This framework
                 makes the application maintainable and easier to understand. Parsley makes use of
-                metadata tags to indicate injection of objects and handling of messages. It makes
+                meta-data tags to indicate injection of objects and handling of messages. It makes
                 heavily use of messages and events.
             </para>
             <note>
@@ -91,10 +91,10 @@
                     </link>
                 </para>
             </note>
-            <para>The flex client talks to the server. Remote obejcts are used to ask data from the
+            <para>The flex client talks to the server. Remote objects are used to ask data from the
                 server and send data to the server. Another mechanism, called consumers, is used to
                 receive update events. Both types of communication are handled by the BlazeDS
-                framework. To make integration with the backend even easier, the sample makes use of
+                framework. To make integration with the back-end even easier, the sample makes use of
                 the spring blazeds integration project.
             </para>
             <para>The nice part about using flex on the client side is that flex enables you to
@@ -103,32 +103,30 @@
                 events to stay up to date. To receive the events, the application registers an event
                 listener. The following code block shows the event listener .
             </para>
-            <programlisting language="java">
-                @Component
-                public class AddressListener {
-                private final static Logger logger = LoggerFactory.getLogger(AddressListener.class);
-                private UpdateMessageProducerForFlex producer;
+            <programlisting language="java">@Component
+public class AddressListener {
+    private final static Logger logger = LoggerFactory.getLogger(AddressListener.class);
+    private UpdateMessageProducerForFlex producer;
 
-                @EventHandler
-                public void handleAddressCreatedEvent(AddressRegisteredEvent event) {
-                AddressDTO addressDTO = AddressDTO.createFrom(
-                event.getAddress(), event.getContactIdentifier(), event.getType());
-                producer.sendAddressUpdate(addressDTO);
-                }
+    @EventHandler
+    public void handleAddressCreatedEvent(AddressRegisteredEvent event) {
+        AddressDTO addressDTO = AddressDTO.createFrom(
+            event.getAddress(), event.getContactIdentifier(), event.getType());
+        producer.sendAddressUpdate(addressDTO);
+    }
 
-                @EventHandler
-                public void handleAddressRemovedEvent(AddressRemovedEvent event) {
-                RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(
-                event.getContactIdentifier().toString(), event.getType());
-                producer.sendRemovedUpdate(removedDTO);
-                }
+    @EventHandler
+    public void handleAddressRemovedEvent(AddressRemovedEvent event) {
+        RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(
+            event.getContactIdentifier().toString(), event.getType());
+        producer.sendRemovedUpdate(removedDTO);
+    }
 
-                @Autowired
-                public void setProducer(UpdateMessageProducerForFlex producer) {
-                this.producer = producer;
-                }
-                }
-            </programlisting>
+    @Autowired
+    public void setProducer(UpdateMessageProducerForFlex producer) {
+        this.producer = producer;
+    }
+}</programlisting>
             <para>This class registers two event listeners. The Axon Framework uses the EventHandler
                 annotation and the argument of the method to register the right listener and to call
                 this method when the event takes place. Both method create a DTO object and send
@@ -146,7 +144,7 @@
             <title>Application logic</title>
             <para>Axon is a framework. Axon makes it easier to create your own application following
                 the Axon principles. This section discusses the components of the sample that make
-                use of the Axon Frameowork and that form the backend of your application.
+                use of the Axon Framework and that form the back-end of your application.
             </para>
             <para>It all starts with the domain. The address book has a very easy domain, a root
                 aggregate called Contact. The contact has a collection of addresses. The Address is
@@ -184,8 +182,8 @@
                 listens for these events.
             </para>
             <para>Now that we have covered adding data by calling the command handler class. The
-                next part is queriing the data. The addressbook sample makes use of a seperate
-                datasource for queriing the data. Two databases configurations are available, mysql
+                next part is querying the data. The address book sample makes use of a separate
+                data source for querying the data. Two databases configurations are available, mysql
                 and hsqldb. The configuration is available in the file database-context.xml. By
                 changing the following lines you can switch between an hsqldb or mysql.
             </para>
