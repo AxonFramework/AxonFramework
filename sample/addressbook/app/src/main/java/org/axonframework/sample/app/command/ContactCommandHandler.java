@@ -105,7 +105,9 @@ public class ContactCommandHandler {
      */
     public void deleteContact(UUID contactId) {
         Assert.notNull(contactId, "ContactIdentifier may not be null");
-        repository.delete(contactId);
+        Contact contact = repository.load(contactId);
+        contact.delete();
+        repository.save(contact);
     }
 
 }

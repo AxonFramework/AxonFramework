@@ -16,18 +16,25 @@
 
 package org.axonframework.sample.app.command;
 
-import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.sample.app.*;
+import org.axonframework.sample.app.Address;
+import org.axonframework.sample.app.AddressAddedEvent;
+import org.axonframework.sample.app.AddressChangedEvent;
+import org.axonframework.sample.app.AddressRegisteredEvent;
+import org.axonframework.sample.app.AddressRemovedEvent;
+import org.axonframework.sample.app.AddressType;
+import org.axonframework.sample.app.ContactCreatedEvent;
+import org.axonframework.sample.app.ContactDeletedEvent;
+import org.axonframework.sample.app.ContactNameChangedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * <p>The Aggregate root component of the sample application. This component handles all contact as well as
- * address domain events.</p>
+ * <p>The Aggregate root component of the sample application. This component handles all contact as well as address
+ * domain events.</p>
  *
  * @author Allard Buijze
  */
@@ -61,6 +68,10 @@ class Contact extends AbstractAnnotatedAggregateRoot {
         apply(new ContactNameChangedEvent(name));
     }
 
+    public void delete() {
+        apply(new ContactDeletedEvent());
+    }
+
     @EventHandler
     protected void handleContactCreatedEvent(ContactCreatedEvent event) {
     }
@@ -77,10 +88,5 @@ class Contact extends AbstractAnnotatedAggregateRoot {
     @EventHandler
     protected void handleAddressRemovedEvent(AddressRemovedEvent event) {
         addresses.remove(event.getType());
-    }
-
-    @Override
-    protected AggregateDeletedEvent createDeletedEvent() {
-        return new ContactDeletedEvent();
     }
 }

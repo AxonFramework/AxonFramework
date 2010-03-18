@@ -16,7 +16,6 @@
 
 package org.axonframework.core.repository;
 
-import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.AggregateRoot;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
@@ -68,32 +67,11 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void delete(UUID aggregateIdentifier) {
-        AggregateDeletedEvent deleteEvent = doDelete(aggregateIdentifier);
-        if (deleteEvent != null) {
-            eventBus.publish(deleteEvent);
-        }
-    }
-
-    /**
      * Performs the actual saving of the aggregate.
      *
      * @param aggregate the aggregate to store
      */
     protected abstract void doSave(T aggregate);
-
-    /**
-     * Performs the actual deleting of the aggregate. Returns the event to be published on the event bus. Subclasses
-     * that dispatch the event themselves should return null.
-     *
-     * @param aggregateIdentifier the identifier of the aggregate to delete
-     * @return the event representing the notification that the aggregate was deleted, or null, if no event should be
-     *         published
-     */
-    protected abstract AggregateDeletedEvent doDelete(UUID aggregateIdentifier);
 
     /**
      * Loads and initialized the aggregate with the given aggregateIdentifier.

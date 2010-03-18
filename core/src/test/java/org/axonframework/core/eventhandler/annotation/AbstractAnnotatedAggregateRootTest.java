@@ -16,9 +16,7 @@
 
 package org.axonframework.core.eventhandler.annotation;
 
-import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.StubAggregateDeletedEvent;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
 
@@ -72,11 +70,6 @@ public class AbstractAnnotatedAggregateRootTest {
 
         public SimpleAggregateRoot(UUID uuid) {
             super(uuid);
-        }
-
-        @Override
-        protected AggregateDeletedEvent createDeletedEvent() {
-            return new StubAggregateDeletedEvent();
         }
 
         @EventHandler

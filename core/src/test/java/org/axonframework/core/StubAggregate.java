@@ -44,9 +44,4 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     public int getInvocationCount() {
         return invocationCount;
     }
-
-    @Override
-    protected AggregateDeletedEvent createDeletedEvent() {
-        return new StubAggregateDeletedEvent();
-    }
 }

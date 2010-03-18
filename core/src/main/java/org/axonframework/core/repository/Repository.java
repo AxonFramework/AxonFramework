@@ -47,11 +47,4 @@ public interface Repository<T extends AggregateRoot> {
      *          if aggregate with given id cannot be found
      */
     T load(UUID aggregateIdentifier);
-
-    /**
-     * Delete the aggregate with the given unique identifier.
-     *
-     * @param aggregateIdentifier The identifier of the aggregate to delete
-     */
-    void delete(UUID aggregateIdentifier);
 }

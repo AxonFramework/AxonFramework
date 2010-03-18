@@ -35,11 +35,4 @@ public interface EventSourcedAggregateRoot extends VersionedAggregateRoot {
      * @throws IllegalStateException if this aggregate was already initialized.
      */
     void initializeState(DomainEventStream domainEventStream);
-
-    /**
-     * Mark this aggregate as deleted. An event of type {@link AggregateDeletedEvent} is appended to the uncommitted
-     * events. After saving this aggregate, it cannot be loaded again.
-     */
-    void markDeleted();
-
 }

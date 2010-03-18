@@ -16,12 +16,10 @@
 
 package org.axonframework.core.repository.eventsourcing;
 
-import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.core.repository.eventsourcing.JpaEventStore;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,11 +93,6 @@ public class JpaEventStoreTest {
 
         public void changeState() {
             apply(new StubStateChangedEvent());
-        }
-
-        @Override
-        protected AggregateDeletedEvent createDeletedEvent() {
-            return null;
         }
 
         @EventHandler

@@ -132,10 +132,5 @@ public class EventSourcingRepositoryTest {
         public List<Event> getHandledEvents() {
             return handledEvents;
         }
-
-        @Override
-        protected AggregateDeletedEvent createDeletedEvent() {
-            return new StubAggregateDeletedEvent();
-        }
     }
 }

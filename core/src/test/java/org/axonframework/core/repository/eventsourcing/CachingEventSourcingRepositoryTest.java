@@ -85,16 +85,6 @@ public class CachingEventSourcingRepositoryTest {
                      reloadedAggregate1.getLastCommittedEventSequenceNumber());
     }
 
-    @Test
-    public void testDeletedAggregateIsRemovedFromCache() {
-        UUID aggregateIdentifier = UUID.randomUUID();
-        cache.put(aggregateIdentifier, new StubAggregate(aggregateIdentifier));
-        testSubject.delete(aggregateIdentifier);
-
-        assertFalse("Entry should have been removed from cache.", cache.containsKey(aggregateIdentifier));
-
-    }
-
     private static class StubCachingEventSourcingRepository extends CachingEventSourcingRepository<StubAggregate> {
 
         @Override

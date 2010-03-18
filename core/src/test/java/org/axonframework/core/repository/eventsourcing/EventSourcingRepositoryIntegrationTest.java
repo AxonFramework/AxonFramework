@@ -17,10 +17,8 @@
 package org.axonframework.core.repository.eventsourcing;
 
 import org.axonframework.core.AbstractEventSourcedAggregateRoot;
-import org.axonframework.core.AggregateDeletedEvent;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
-import org.axonframework.core.StubAggregateDeletedEvent;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.repository.ConcurrencyException;
@@ -186,11 +184,6 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @Override
         protected void handle(DomainEvent event) {
-        }
-
-        @Override
-        protected AggregateDeletedEvent createDeletedEvent() {
-            return new StubAggregateDeletedEvent();
         }
     }
 
