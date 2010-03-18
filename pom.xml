@@ -24,7 +24,6 @@
     <modules>
         <module>core</module>
         <module>integration</module>
-        <module>jpa</module>
     </modules>
     <packaging>pom</packaging>
 
