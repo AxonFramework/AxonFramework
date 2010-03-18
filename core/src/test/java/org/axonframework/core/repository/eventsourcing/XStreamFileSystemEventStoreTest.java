@@ -69,6 +69,33 @@ public class XStreamFileSystemEventStoreTest {
     }
 
     @Test
+    // Issue #25: XStreamFileSystemEventStore fails when event data contains newline character
+    public void testSaveStreamAndReadBackIn_NewLineInEvent() {
+        UUID aggregateId = UUID.randomUUID();
+        String description = "This is a description with a \n newline character and weird chars éçè\u6324.";
+        StringBuilder stringBuilder = new StringBuilder(description);
+        for (int i = 0; i < 100; i++) {
+            stringBuilder.append(
+                    "Some more text to make this event really long. It should not be a problem for the event serializer.");
+        }
+        description = stringBuilder.toString();
+        MyStubDomainEvent event1 = new MyStubDomainEvent(aggregateId, 0, description);
+        StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
+        DomainEventStream stream = new SimpleDomainEventStream(event1, event2);
+        eventStore.appendEvents("test", stream);
+
+        DomainEventStream eventStream = eventStore.readEvents("test", aggregateId);
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        while (eventStream.hasNext()) {
+            domainEvents.add(eventStream.next());
+        }
+        MyStubDomainEvent actualEvent1 = (MyStubDomainEvent) domainEvents.get(0);
+        assertEquals(event1, actualEvent1);
+        assertEquals(description, actualEvent1.getDescription());
+        assertEquals(event2, domainEvents.get(1));
+    }
+
+    @Test
     public void testRead_FileNotReadable() throws IOException {
         Resource mockResource = mock(Resource.class);
         InputStream mockInputStream = mock(InputStream.class);
@@ -151,6 +178,20 @@ public class XStreamFileSystemEventStoreTest {
         }
         catch (EventStoreException e) {
             assertTrue(e.getMessage().contains("could not be created"));
+        }
+    }
+
+    public static class MyStubDomainEvent extends StubDomainEvent {
+
+        private final String description;
+
+        public MyStubDomainEvent(UUID aggregateId, int sequenceNumber, String description) {
+            super(aggregateId, sequenceNumber);
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
         }
     }
 }
