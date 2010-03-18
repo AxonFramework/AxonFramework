@@ -25,8 +25,7 @@
         <mediaobject>
             <info>Detailed architecture overview</info>
             <imageobject role="fo">
-                <imagedata align="center" format="png"
-                    fileref="detailed-architecture-overview-hires.png" width="15cm"/>
+                <imagedata align="center" format="png" fileref="detailed-architecture-overview-hires.png" width="15cm"/>
             </imageobject>
             <imageobject role="html">
                 <imagedata format="png" fileref="detailed-architecture-overview.png"/>
@@ -49,14 +48,10 @@
                     of data changes. External references are restricted to one member of the
                     Aggregate, designated as the root. A set of consistency rules applies within the
                     Aggregate's boundaries.</quote></para>
-            <para>A more extensive definition can be found on: <link
-                    xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://domaindrivendesign.org/freelinking/Aggregate"
-                    >http://domaindrivendesign.org/freelinking/Aggregate</link>.</para>
+            <para>A more extensive definition can be found on: <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://domaindrivendesign.org/freelinking/Aggregate">http://domaindrivendesign.org/freelinking/Aggregate</link>.</para>
         </note></para>
     <para>The repository does two things when it saves an aggregate. It persists the aggregate's
-        state (either directly or by persisting all its past mutations, see <xref
-            linkend="building-block-repository"/>) for future commands that need to execute on this
+        state (either directly or by persisting all its past mutations, see <xref linkend="building-block-repository"/>) for future commands that need to execute on this
         aggregate. Furthermore, events are handed over to the event bus, which is reposonsible for
         dispatching them to all interested listeners.</para>
     <para>The event bus dispatches events to all interested event listeners. This can either be done
@@ -119,8 +114,7 @@
                     <mediaobject>
                         <info>Adding intent to events</info>
                         <imageobject role="fo">
-                            <imagedata format="png" fileref="state-change-intent-hires.png"
-                                width="10cm"/>
+                            <imagedata format="png" fileref="state-change-intent-hires.png" width="10cm"/>
                         </imageobject>
                         <imageobject role="html">
                             <imagedata format="png" fileref="state-change-intent.png"/>
@@ -193,8 +187,7 @@
                     needed by repositories to perform optimistic locking. The only method added to
                     the <code>AggregateRoot</code> interface is
                         <code>getLastCommittedEventSequenceNumber</code>, which returns the sequence
-                    number of the event that was last committed. See <xref
-                        linkend="locking-repository"/> for more information about the abstract
+                    number of the event that was last committed. See <xref linkend="locking-repository"/> for more information about the abstract
                         <code>LockingRepository</code> implementation. </para>
             </simplesect>
             <simplesect>
@@ -341,8 +334,7 @@
             number of base implementations that provide basic functionality needed by most
             repositories. Axon Framework makes a distinction between repositories that save the
             current state of the aggregate (see <xref linkend="standard-repositories"/>), and those
-            that store the events of an aggregate (see <xref linkend="event-sourcing-repositories"
-            />). </para>
+            that store the events of an aggregate (see <xref linkend="event-sourcing-repositories"/>). </para>
         <sect2 xml:id="standard-repositories">
             <title>Standard repositories</title>
             <simplesect>
@@ -382,8 +374,7 @@
                 <para>The abstract <code>EventSourcingRepository</code> implementation provides the
                     basic functionality needed by any event sourcing repository in the
                     AxonFramework. It depends on an <code>EventStore</code>, which abstracts the
-                    actual storage mechanism for the events. See <xref
-                        linkend="implementing-an-eventstore"/>. </para>
+                    actual storage mechanism for the events. See <xref linkend="implementing-an-eventstore"/>. </para>
                 <para>The EventSourcingRepository has two abstract methods:
                         <code>getTypeIdentifier()</code> and
                         <code>instantiateAggregate(identifier)</code>. The first is a value passed
@@ -405,40 +396,87 @@
                     jcache implementation with this repository. Note that this implementation can
                     only use caching in combination with a pessimistic locking strategy.</para>
             </simplesect>
-            <simplesect xml:id="implementing-an-eventstore">
-                <title>Implementing an <code>EventStore</code>
-                </title>
-                <para>Axon provides one implementation of an event store:
-                        <code>XStreamFileSystemEventStore</code>, which stores the events as XML
-                    entries in a file on the filesystem. It provides good performance and easy
+        </sect2>
+        <sect2 xml:id="implementing-an-eventstore">
+            <title>Event store implementations</title>
+            <para>Event Sourcing repositories need an event store to store and load events from
+                aggregates. Typically, event stores are capable of storing events from multiple
+                types of aggregates, but it is not a requirement.</para>
+            <para>Axon provides two implementations of event stores, both are capable of storing all
+                domain events (those that extend the <code>DomainEvent</code> class). These event
+                stores use an <code>EventSerializer</code> to serialize and deserialize the event.
+                By default, all Axon implementations of the Event Stores use the
+                    <code>XStreamEventSerializer</code>, which serializes events to XML.</para>
+            <simplesect>
+                <title><code>XStreamFileSystemEventStore</code></title>
+                <para>The <code>XStreamFileSystemEventStore</code> stores the events as XML entries
+                    in a file on the file system. It provides good performance and easy
                     configuration. The only downside of this event store is that is does not provide
-                    transaction support and doesn't cluster very well. </para>
+                    transaction support and doesn't cluster very well. The only configuration needed
+                    is the location where the event store may store its files. Note that the
+                    provided url must end on a slash. This is due to the way Spring's
+                        <code>Resource</code> implementations work.</para>
+            </simplesect>
+            <simplesect>
+                <title><code>JpaEventStore</code></title>
+                <para>The <code>JpaEventStore</code> stores events in a JPA-compatible data source.
+                    Unlike the XStream version, the <code>JPAEventStore</code> supports
+                    transactions. The JPA event store can also load events based on their
+                    timestamps.</para>
+                <para>To use the <code>JpaEventStore</code>, you must have the
+                        <code>javax.persistence</code> annotations on your classpath. Furthermore,
+                    you should configure your persistence context (defined in
+                        <code>META-INF/persistence.xml</code> file) to contain the class
+                        <code>org.axonframework.core.repository.eventsourcing.DomainEventEntry</code>.</para>
+                <para>Below is an example configuration of a persistence context
+                    configuration:</para>
+                <programlistingco>
+                    <areaspec units="LineColumn">
+                        <area coords="2 41" id="persistence-unit-name-co"/>
+                        
+                        <area coords="3 89" id="domain-event-entry-co"/>
+                    </areaspec>
+                    <programlisting language="xml">&lt;persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
+    &lt;persistence-unit name="eventStore"  transaction-type="RESOURCE_LOCAL">
+        &lt;class>org.axonframework.core.repository.eventsourcing.DomainEventEntry&lt;/class>
+    &lt;/persistence-unit>
+&lt;/persistence></programlisting>
+                    <calloutlist>
+                        <callout arearefs="persistence-unit-name-co">
+                            <para>In this sample, there is is specific persistence unit for the
+                                event store. You may, however, choose to add the third line to any
+                                other persistence unit configuration.</para>
+                        </callout>
+                        <callout arearefs="domain-event-entry-co">
+                            <para>This line registers the <code>DomainEventEntry</code> (the class
+                                used by the <code>JpaEventStore</code>) with the persistence
+                                context.</para>
+                        </callout>
+                    </calloutlist>
+                </programlistingco>
+            </simplesect>
+            <simplesect>
+                <title>Implementing your own event store</title>
                 <para>If you have specific requirements for an event store, it is quite easy to
                     implement one using different underlying data sources. Reading and appending
                     events is done using a <code>DomainEventStream</code>, which is quite similar to
-                    iterator implementations. In contrast to the iterator, the
-                        <code>DomainEventStream</code> provides information about the aggregate to
-                    which the events belong. </para>
+                    iterator implementations.</para>
                 <tip>
-                    <para>If you have an <code>ObjectInputStream</code> that provides the events,
-                        you can use the <code>ObjectInputStreamAdapter</code> to adapt that stream
-                        to a <code>DomainEventStream</code>. The
-                            <code>SimpleDomainEventStream</code> class will make the contents of a
+                    <para>The <code>SimpleDomainEventStream</code> class will make the contents of a
                         sequence (<code>List</code> or <code>array</code>) of
-                            <code>DomainEvent</code> instances accessible as event stream. </para>
+                            <code>DomainEvent</code> instances accessible as event stream.</para>
                 </tip>
             </simplesect>
         </sect2>
     </sect1>
     <sect1 xml:id="event-listeners">
         <title>Event Listeners</title>
-        <para linkend="">Event listeners are the component that act on incoming events. These events
+        <para>Event listeners are the component that act on incoming events. These events
             may be of any type of the events mentioned in <xref linkend="events"/>. In the Axon
             Framework, all event listeners must implement the <code>EventListener</code> interface. </para>
         <sect2>
             <title>Basic configuration</title>
-            <para>Event listeners need to be registered with an event bus (see <xref
-                    linkend="event-bus"/>) to be notified of events. Axon, however, provides a base
+            <para>Event listeners need to be registered with an event bus (see <xref linkend="event-bus"/>) to be notified of events. Axon, however, provides a base
                 implementation that take care of this, and other things, for you. </para>
             <simplesect>
                 <title>
@@ -448,8 +486,7 @@
                     event listener. The adapter will invoke the most appropriate event handler
                     method available. These event handler methods must be annotated with the
                         <code>@EventHandler</code> annotation and are resolved according to the same
-                    rules that count for annotated aggregate roots (see <xref
-                        linkend="annotated-aggregate-root"/>). </para>
+                    rules that count for annotated aggregate roots (see <xref linkend="annotated-aggregate-root"/>). </para>
                 <para>The constructor of the <code>AnnotationEventListenerAdapter</code> takes two
                     parameters: the annotated bean, and the <code>EventBus</code>, to which the
                     listener should subscribe. You can subscribe and unsubscribe the event listener
@@ -492,8 +529,7 @@
                 will manage the processing of incoming events in the provided executor. If an
                 instance of a <code>ScheduledThreadPoolExecutor</code> is provided, the
                     <code>AsynchronousEventHandlerWrapper</code> will automatically leverage its
-                ability to schedule processing in the cases of delayed retries. See <xref
-                    linkend="transactionmanager"/> for more information about transactions.</para>
+                ability to schedule processing in the cases of delayed retries. See <xref linkend="transactionmanager"/> for more information about transactions.</para>
             <para>The <code>SequencingPolicy</code> defines whether events must be handled
                 sequentially, in parallel or a combination of both. Policies return a sequence
                 identifier of a given event. If two events have the same sequence identifier, this
