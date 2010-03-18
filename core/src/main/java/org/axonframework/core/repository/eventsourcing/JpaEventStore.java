@@ -19,9 +19,6 @@ package org.axonframework.core.repository.eventsourcing;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.SimpleDomainEventStream;
-import org.axonframework.core.repository.eventsourcing.EventSerializer;
-import org.axonframework.core.repository.eventsourcing.EventStore;
-import org.axonframework.core.repository.eventsourcing.XStreamEventSerializer;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -30,26 +27,30 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * An EventStore implementation that uses JPA to store DomainEvents in a database.
+ * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as a
+ * serialized blob of bytes. Other columns are used to store meta-data that allow quick finding of DomainEvents for a
+ * specific aggregate in the correct order.
+ * <p/>
+ * The serializer used to serialize the events is configurable. By default, the {@link XStreamEventSerializer} is user.
  *
  * @author Allard Buijze
+ * @since 0.5
  */
 public class JpaEventStore implements EventStore {
 
-    @PersistenceContext
     private EntityManager entityManager;
 
     private final EventSerializer eventSerializer;
 
     /**
-     * Initialize a JpaEventStore using an XStreamEventSerializer, which serializes events as XML.
+     * Initialize a JpaEventStore using an {@link XStreamEventSerializer}, which serializes events as XML.
      */
     public JpaEventStore() {
         this(new XStreamEventSerializer());
     }
 
     /**
-     * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code>.
+     * Initialize a JpaEventStore which serializes events using the given {@link EventSerializer}.
      *
      * @param eventSerializer The serializer to (de)serialize domain events with.
      */
@@ -87,5 +88,16 @@ public class JpaEventStore implements EventStore {
             events.add(entry.getDomainEvent(eventSerializer));
         }
         return new SimpleDomainEventStream(events);
+    }
+
+    /**
+     * Sets the EntityManager for this EventStore to use. This EntityManager must be assigned to a persistence context
+     * that contains the {@link DomainEventEntry} as one of the managed entity types.
+     *
+     * @param entityManager the EntityManager to use.
+     */
+    @PersistenceContext
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 }

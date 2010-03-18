@@ -19,6 +19,8 @@ package org.axonframework.core.repository.eventsourcing;
 import org.axonframework.core.DomainEvent;
 import org.junit.*;
 
+import java.io.UnsupportedEncodingException;
+
 import static org.junit.Assert.*;
 
 /**
@@ -40,6 +42,32 @@ public class XStreamEventSerializerTest {
         assertTrue(actualResult instanceof TestEvent);
         TestEvent actualEvent = (TestEvent) actualResult;
         assertEquals("Henk", actualEvent.getName());
+    }
+
+    @Test
+    public void testSerialize_WithStrangeCharset() {
+        testSubject = new XStreamEventSerializer("Weird");
+        try {
+            testSubject.serialize(new TestEvent("Klaas"));
+            fail("Expected EventStoreException");
+        }
+        catch (EventStoreException e) {
+            assertTrue("Not the type of exception that was expected",
+                       e.getCause() instanceof UnsupportedEncodingException);
+        }
+    }
+
+    @Test
+    public void testDeserialize_WithStrangeCharset() {
+        testSubject = new XStreamEventSerializer("Weird");
+        try {
+            testSubject.deserialize(new byte[]{});
+            fail("Expected EventStoreException");
+        }
+        catch (EventStoreException e) {
+            assertTrue("Not the type of exception that was expected",
+                       e.getCause() instanceof UnsupportedEncodingException);
+        }
     }
 
     public static class TestEvent extends DomainEvent {

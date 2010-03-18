@@ -17,7 +17,6 @@
 package org.axonframework.core.repository.eventsourcing;
 
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.repository.eventsourcing.EventSerializer;
 import org.joda.time.LocalDateTime;
 
 import javax.persistence.Basic;
@@ -39,7 +38,7 @@ import java.util.UUID;
 @Entity
 @Table(uniqueConstraints = {
         @UniqueConstraint(columnNames = {"aggregateIdentifier", "sequenceIdentifier"})})
-class DomainEventEntry {
+public class DomainEventEntry {
 
     @Id
     @GeneratedValue
@@ -60,6 +59,12 @@ class DomainEventEntry {
     @Basic
     @Lob
     private byte[] serializedEvent;
+
+    /**
+     * Default constructor, as required by JPA specification. Do not use directly!
+     */
+    public DomainEventEntry() {
+    }
 
     /**
      * Initialize a DomainEventEntry for the given <code>event</code>, to be serialized using the given
@@ -130,11 +135,5 @@ class DomainEventEntry {
      */
     public LocalDateTime getTimeStamp() {
         return new LocalDateTime(timeStamp);
-    }
-
-    /**
-     * Default constructor, as required by JPA specification. Do not use directly!
-     */
-    protected DomainEventEntry() {
     }
 }

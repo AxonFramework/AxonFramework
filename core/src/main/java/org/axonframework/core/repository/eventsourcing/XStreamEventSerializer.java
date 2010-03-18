@@ -39,39 +39,58 @@ import java.io.UnsupportedEncodingException;
 public class XStreamEventSerializer implements EventSerializer {
 
     private final XStream xStream;
+    private static final String DEFAULT_CHARSET_NAME = "UTF-8";
+    private final String charsetName;
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events.
+     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
+     * encoding.
      */
     public XStreamEventSerializer() {
+        this(DEFAULT_CHARSET_NAME);
+    }
+
+    /**
+     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given character
+     * set. If the character set is not supported by the JVM, any attempt to serialize or deserialize a DomainEvent will
+     * result in an EventStoreException.
+     *
+     * @param charsetName The name of the character set to use.
+     */
+    public XStreamEventSerializer(String charsetName) {
         xStream = new XStream(new XppDriver());
         xStream.registerConverter(new LocalDateTimeConverter());
+        this.charsetName = charsetName;
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @throws EventStoreException if the configured encoding is not available in this JVM.
      */
     @Override
     public byte[] serialize(DomainEvent event) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            xStream.marshal(event, new CompactWriter(new OutputStreamWriter(baos, "UTF-8")));
+            xStream.marshal(event, new CompactWriter(new OutputStreamWriter(baos, charsetName)));
         } catch (UnsupportedEncodingException e) {
-            throw new EventStoreException("The 'UTF-8' encoding is not supported.", e);
+            throw new EventStoreException("The '" + charsetName + "' encoding is not supported.", e);
         }
         return baos.toByteArray();
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @throws EventStoreException if the configured encoding is not available in this JVM.
      */
     @Override
     public DomainEvent deserialize(byte[] serializedEvent) {
         try {
             return (DomainEvent) xStream.fromXML(new InputStreamReader(new ByteArrayInputStream(serializedEvent),
-                                                                       "UTF-8"));
+                                                                       charsetName));
         } catch (UnsupportedEncodingException e) {
-            throw new EventStoreException("The 'UTF-8' encoding is not supported.", e);
+            throw new EventStoreException("The '" + charsetName + "' encoding is not supported.", e);
         }
     }
 
