@@ -22,6 +22,7 @@ import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
@@ -66,6 +67,26 @@ public class FileSystemEventStoreTest {
         assertEquals(event1, domainEvents.get(0));
         assertEquals(event2, domainEvents.get(1));
         assertEquals(event3, domainEvents.get(2));
+    }
+
+    @Test
+    public void testRead_WithSnapshotEvent() {
+        UUID aggregateId = UUID.fromString("fab0c2ec-a759-40f1-9078-9defb16e8553");
+        StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
+        StubDomainEvent event3 = new StubDomainEvent(aggregateId, 2);
+        eventStore.setBaseDir(new ClassPathResource("/snapshots/"));
+        DomainEventStream eventStream = eventStore.readEvents("events", aggregateId);
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        while (eventStream.hasNext()) {
+            domainEvents.add(eventStream.next());
+        }
+
+        assertEquals(event2.getSequenceNumber(), domainEvents.get(0).getSequenceNumber());
+        assertEquals(event2.getAggregateIdentifier(), domainEvents.get(0).getAggregateIdentifier());
+        assertEquals(event2.getClass(), domainEvents.get(0).getClass());
+        assertEquals(event3.getSequenceNumber(), domainEvents.get(1).getSequenceNumber());
+        assertEquals(event3.getAggregateIdentifier(), domainEvents.get(1).getAggregateIdentifier());
+        assertEquals(event3.getClass(), domainEvents.get(1).getClass());
     }
 
     @Test
