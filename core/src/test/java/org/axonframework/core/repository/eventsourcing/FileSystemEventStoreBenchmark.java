@@ -42,12 +42,12 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/META-INF/spring/benchmark-context.xml"})
-public class XStreamFileSystemEventStoreBenchmark {
+public class FileSystemEventStoreBenchmark {
 
     private static final int THREAD_COUNT = 100;
     private static final int TRANSACTION_COUNT = 500;
     private static final int TRANSACTION_SIZE = 2;
-    
+
     private static FileSystemEventStore fileSystemEventStore;
 
     @Autowired
@@ -94,6 +94,7 @@ public class XStreamFileSystemEventStoreBenchmark {
     // FileSystem: 100 threads concurrently wrote 500 * 2 events each in 44813 milliseconds. That is an average of 2272 events per second
     // FileSystem (OutputStream pooling): 100 threads concurrently wrote 100 * 10 events each in 19844 milliseconds. That is an average of 5263 events per second
     // FileSystem (OutputStream pooling): 100 threads concurrently wrote 500 * 2 events each in 20047 milliseconds. That is an average of 5000 events per second
+
     @Test
     public void startBenchmarkTest_FileSystem() throws InterruptedException {
         long start = System.currentTimeMillis();

@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class XStreamFileSystemEventStoreTest {
+public class FileSystemEventStoreTest {
 
     private FileSystemEventStore eventStore;
 
