@@ -22,7 +22,7 @@ import org.axonframework.core.Event;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
 import org.axonframework.core.repository.Repository;
-import org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore;
+import org.axonframework.core.repository.eventsourcing.FileSystemEventStore;
 import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.query.AddressEntry;
 import org.axonframework.sample.app.query.ContactEntry;
@@ -57,7 +57,7 @@ public class ContactIntegrationTest {
     private EventBus eventBus;
 
     @Autowired
-    private XStreamFileSystemEventStore eventStore;
+    private FileSystemEventStore eventStore;
 
     @Autowired
     private Repository commandRepository;

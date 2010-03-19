@@ -20,20 +20,22 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-    <bean class="org.axonframework.sample.app.query.AddressTableUpdater">
-        <property name="transactionManager" ref="transactionManager"/>
-    </bean>
+    <!-- EventStore configuration -->
 
-    <bean class="org.axonframework.sample.app.query.ContactRepositoryImpl"/>
+    <bean class="org.axonframework.core.repository.eventsourcing.JpaEventStore">
+        <constructor-arg>
+            <bean class="org.axonframework.core.repository.eventsourcing.XStreamEventSerializer"/>
+        </constructor-arg>
+    </bean>
 
     <!-- Infrastructure configuration -->
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <property name="locations" value="classpath:mysql.database.properties"/>
+        <property name="locations" value="classpath:mysql.benchmark.properties"/>
     </bean>
 
     <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-        <property name="persistenceUnitName" value="addresses"/>
+        <property name="persistenceUnitName" value="eventStore"/>
         <property name="jpaVendorAdapter">
             <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
                 <property name="databasePlatform" value="${hibernate.sql.dialect}"/>

@@ -49,7 +49,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private EventSourcingRepository<SimpleAggregateRoot> repository;
     private UUID aggregateIdentifier;
     private EventBus mockEventBus;
-    private XStreamFileSystemEventStore eventStore;
+    private FileSystemEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new Vector<Throwable>();
     private List<Thread> startedThreads = new ArrayList<Thread>();
 
@@ -84,7 +84,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository(LockingStrategy strategy) {
         repository = new SimpleEventSourcingRepository(strategy);
-        eventStore = new XStreamFileSystemEventStore();
+        eventStore = new FileSystemEventStore(new XStreamEventSerializer());
         eventStore.setBaseDir(new FileSystemResource(folder.getRoot().getPath() + "/"));
         repository.setEventStore(eventStore);
         mockEventBus = mock(EventBus.class);

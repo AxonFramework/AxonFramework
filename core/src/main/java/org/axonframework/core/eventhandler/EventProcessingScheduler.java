@@ -279,7 +279,8 @@ public class EventProcessingScheduler implements Runnable {
                 break;
             case RETRY_TRANSACTION:
                 logger.warn(
-                        "Transactional event processing batch failed. Retrying entire batch of {} events, with {} more in queue.",
+                        "Transactional event processing batch failed. "
+                                + "Retrying entire batch of {} events, with {} more in queue.",
                         currentBatch.size(),
                         queuedEventCount());
                 break;

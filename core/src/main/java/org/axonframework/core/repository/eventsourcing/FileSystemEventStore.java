@@ -20,10 +20,13 @@ import org.apache.commons.io.IOUtils;
 import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,9 +47,9 @@ import java.util.UUID;
  * org.springframework.core.io.FileSystemResource#FileSystemResource(String)}.
  *
  * @author Allard Buijze
- * @since 0.1
+ * @since 0.5
  */
-public class XStreamFileSystemEventStore implements EventStore {
+public class FileSystemEventStore implements EventStore {
 
     private static final String CHARSET_UTF8 = "UTF-8";
 
@@ -54,14 +57,20 @@ public class XStreamFileSystemEventStore implements EventStore {
     private Resource baseDir;
 
     /**
-     * Basic initialization of the event store.
+     * Basic initialization of the event store. The actual serialization and deserialization is delegated to the
+     * provided <code>eventSerializer </code>.
+     *
+     * @param eventSerializer The serializer to serialize DomainEvents with
      */
-    public XStreamFileSystemEventStore() {
-        eventSerializer = new XStreamEventSerializer();
+    public FileSystemEventStore(EventSerializer eventSerializer) {
+        this.eventSerializer = eventSerializer;
     }
 
     /**
      * {@inheritDoc}
+     * <p/>
+     * This implementation writes events to an event log on the file system. It uses a directory per type of aggregate,
+     * containing 1 file per aggregate.
      */
     @Override
     public void appendEvents(String type, DomainEventStream eventsToStore) {
@@ -71,8 +80,7 @@ public class XStreamFileSystemEventStore implements EventStore {
         OutputStream out = null;
         try {
             DomainEvent next = eventsToStore.next();
-            File eventFile = new File(getBaseDirForType(type).getFile(), next.getAggregateIdentifier() + ".events");
-            out = new FileOutputStream(eventFile, true);
+            out = obtainOutputStreamForAggregate(type, next.getAggregateIdentifier());
             do {
                 byte[] bytes = eventSerializer.serialize(next);
                 out.write(Integer.toString(bytes.length).getBytes(CHARSET_UTF8));
@@ -90,6 +98,22 @@ public class XStreamFileSystemEventStore implements EventStore {
         } finally {
             IOUtils.closeQuietly(out);
         }
+    }
+
+    /**
+     * Provides an output stream to a file using for an aggregate with the given <code>aggregateIdentifier</code> and of
+     * given <code>type</code>. The caller of this method is responsible for closing the output stream when all data has
+     * been written to it.
+     *
+     * @param type                The type of aggregate to open the stream for
+     * @param aggregateIdentifier the identifier of the aggregate
+     * @return an OutputStream that writes to the event log of of the given aggregate
+     *
+     * @throws IOException when an error occurs while opening a file
+     */
+    protected OutputStream obtainOutputStreamForAggregate(String type, UUID aggregateIdentifier) throws IOException {
+        File eventFile = new File(getBaseDirForType(type).getFile(), aggregateIdentifier + ".events");
+        return new BufferedOutputStream(new FileOutputStream(eventFile, true));
     }
 
     /**
@@ -145,6 +169,8 @@ public class XStreamFileSystemEventStore implements EventStore {
      */
     private static class BufferedReaderDomainEventStream implements DomainEventStream {
 
+        private static final Logger logger = LoggerFactory.getLogger(BufferedReaderDomainEventStream.class);
+
         private DomainEvent next;
         private final InputStream inputStream;
         private final EventSerializer serializer;
@@ -196,6 +222,10 @@ public class XStreamFileSystemEventStore implements EventStore {
                 }
                 byte[] serializedEvent = new byte[lineSize];
                 int bytesRead = inputStream.read(serializedEvent);
+                if (logger.isWarnEnabled() && bytesRead < serializedEvent.length) {
+                    logger.warn("Failed to read the required amount of bytes from the underlying stream. "
+                            + "This may result in a failure to deserialize the event");
+                }
                 return serializer.deserialize(serializedEvent);
             } catch (IOException e) {
                 IOUtils.closeQuietly(inputStream);

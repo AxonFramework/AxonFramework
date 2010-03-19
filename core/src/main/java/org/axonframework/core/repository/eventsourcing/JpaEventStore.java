@@ -19,6 +19,8 @@ package org.axonframework.core.repository.eventsourcing;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.SimpleDomainEventStream;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -62,6 +64,7 @@ public class JpaEventStore implements EventStore {
      * {@inheritDoc}
      */
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
     public void appendEvents(String type, DomainEventStream events) {
         while (events.hasNext()) {
             DomainEvent event = events.next();

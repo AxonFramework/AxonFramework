@@ -41,11 +41,11 @@ import static org.mockito.Mockito.*;
  */
 public class XStreamFileSystemEventStoreTest {
 
-    private XStreamFileSystemEventStore eventStore;
+    private FileSystemEventStore eventStore;
 
     @Before
     public void setUp() {
-        eventStore = new XStreamFileSystemEventStore();
+        eventStore = new FileSystemEventStore(new XStreamEventSerializer());
         eventStore.setBaseDir(new FileSystemResource("target/"));
     }
 

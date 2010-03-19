@@ -39,7 +39,7 @@
         <property name="eventStore" ref="eventStore"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore">
+    <bean id="eventStore" class="org.axonframework.core.repository.eventsourcing.FileSystemEventStore">
         <property name="baseDir" value="file:${java.io.tmpdir}/"/>
     </bean>
 

@@ -35,7 +35,7 @@ import java.util.UUID;
  * @see org.axonframework.core.AbstractEventSourcedAggregateRoot
  * @see org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot
  * @see org.axonframework.core.repository.eventsourcing.EventStore
- * @see org.axonframework.core.repository.eventsourcing.XStreamFileSystemEventStore
+ * @see FileSystemEventStore
  * @since 0.1
  */
 public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {

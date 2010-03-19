@@ -410,17 +410,17 @@
             <para>Axon provides two implementations of event stores, both are capable of storing all
                 domain events (those that extend the <code>DomainEvent</code> class). These event
                 stores use an <code>EventSerializer</code> to serialize and deserialize the event.
-                By default, all Axon implementations of the Event Stores use the
-                    <code>XStreamEventSerializer</code>, which serializes events to XML.</para>
+                By default, Axon provides an implementation of the Event Serializer that serializes
+                events to XML: the <code>XStreamEventSerializer</code>.</para>
             <simplesect>
-                <title><code>XStreamFileSystemEventStore</code></title>
-                <para>The <code>XStreamFileSystemEventStore</code> stores the events as XML entries
-                    in a file on the file system. It provides good performance and easy
-                    configuration. The only downside of this event store is that is does not provide
-                    transaction support and doesn't cluster very well. The only configuration needed
-                    is the location where the event store may store its files. Note that the
-                    provided url must end on a slash. This is due to the way Spring's
-                        <code>Resource</code> implementations work.</para>
+                <title><code>FileSystemEventStore</code></title>
+                <para>The <code>FileSystemEventStore</code> stores the events in a file on the file
+                    system. It provides good performance and easy configuration. The only downside
+                    of this event store is that is does not provide transaction support and doesn't
+                    cluster very well. The only configuration needed is the location where the event
+                    store may store its files and the serializer to use to actually serialize and
+                    deserialize the events. Note that the provided url must end on a slash. This is
+                    due to the way Spring's <code>Resource</code> implementations work.</para>
             </simplesect>
             <simplesect>
                 <title><code>JpaEventStore</code></title>
