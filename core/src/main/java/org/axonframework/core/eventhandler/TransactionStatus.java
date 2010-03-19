@@ -30,7 +30,7 @@ package org.axonframework.core.eventhandler;
  */
 public class TransactionStatus {
 
-    private static final ThreadLocal<TransactionStatus> current = new ThreadLocal<TransactionStatus>();
+    private static final ThreadLocal<TransactionStatus> THREAD_LOCAL_TRANSACTION = new ThreadLocal<TransactionStatus>();
 
     private YieldPolicy yieldPolicy = YieldPolicy.YIELD_AFTER_TRANSACTION;
     private int eventsProcessedSinceLastYield = 0;
@@ -54,14 +54,14 @@ public class TransactionStatus {
      * @return the currently active TransactionStatus, or <code>null</code> if none is present.
      */
     public static TransactionStatus current() {
-        return current.get();
+        return THREAD_LOCAL_TRANSACTION.get();
     }
 
     /**
      * Clears the TransactionStatus related to the current thread.
      */
     protected static void clear() {
-        current.remove();
+        THREAD_LOCAL_TRANSACTION.remove();
     }
 
     /**
@@ -71,7 +71,7 @@ public class TransactionStatus {
      * @param newStatus The TransactionStatus for the current transaction
      */
     protected static void set(TransactionStatus newStatus) {
-        current.set(newStatus);
+        THREAD_LOCAL_TRANSACTION.set(newStatus);
     }
 
     /**
