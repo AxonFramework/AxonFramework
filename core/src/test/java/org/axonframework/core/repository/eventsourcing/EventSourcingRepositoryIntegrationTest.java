@@ -53,23 +53,24 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private FileSystemEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new Vector<Throwable>();
     private List<Thread> startedThreads = new ArrayList<Thread>();
+    private static final int CONCURRENT_MODIFIERS = 10;
 
     @Test(timeout = 60000)
     public void testPessimisticLocking() throws Throwable {
         initializeRepository(LockingStrategy.PESSIMISTIC);
-        long lastSequenceNumber = executeConcurrentModifications(10);
+        long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
 
         // with pessimistic locking, all modifications are guaranteed successful
         // note: sequence number 20 means there are 21 events. This includes the one from the setup
-        assertEquals(20, lastSequenceNumber);
-        assertEquals(10, getSuccessfulModifications());
+        assertEquals(2 * CONCURRENT_MODIFIERS, lastSequenceNumber);
+        assertEquals(CONCURRENT_MODIFIERS, getSuccessfulModifications());
     }
 
     @Test(timeout = 60000)
     public void testOptimisticLocking() throws Throwable {
         // unfortunately, we cannot use @Before on the setUp, because of the TemporaryFolder
         initializeRepository(LockingStrategy.OPTIMISTIC);
-        long lastSequenceNumber = executeConcurrentModifications(10);
+        long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
         assertTrue("Expected at least one successful modification. Got " + getSuccessfulModifications(),
                    getSuccessfulModifications() >= 1);
         int expectedEventCount = getSuccessfulModifications() * 2;
@@ -80,7 +81,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     private int getSuccessfulModifications() {
-        return 10 - uncaughtExceptions.size();
+        return CONCURRENT_MODIFIERS - uncaughtExceptions.size();
     }
 
     private void initializeRepository(LockingStrategy strategy) {
