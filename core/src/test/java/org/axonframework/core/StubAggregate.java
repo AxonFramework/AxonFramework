@@ -16,12 +16,14 @@
 
 package org.axonframework.core;
 
+import org.axonframework.core.repository.eventsourcing.SnapshotProducer;
+
 import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
-public class StubAggregate extends AbstractEventSourcedAggregateRoot {
+public class StubAggregate extends AbstractEventSourcedAggregateRoot implements SnapshotProducer {
 
     private int invocationCount;
 
@@ -43,5 +45,10 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     public int getInvocationCount() {
         return invocationCount;
+    }
+
+    @Override
+    public DomainEvent createSnapshotEvent() {
+        return new StubDomainEvent(getIdentifier(), 5);
     }
 }

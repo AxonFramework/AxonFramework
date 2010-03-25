@@ -16,6 +16,7 @@
 
 package org.axonframework.core.repository.eventsourcing;
 
+import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.EventSourcedAggregateRoot;
 import org.axonframework.core.repository.LockingRepository;
@@ -35,10 +36,11 @@ import java.util.UUID;
  * @see org.axonframework.core.AbstractEventSourcedAggregateRoot
  * @see org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot
  * @see org.axonframework.core.repository.eventsourcing.EventStore
- * @see FileSystemEventStore
+ * @see org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore
  * @since 0.1
  */
-public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
+public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot>
+        extends LockingRepository<T> {
 
     private EventStore eventStore;
 
@@ -78,19 +80,28 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     @Override
     protected T doLoad(UUID aggregateIdentifier) {
         DomainEventStream events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
-        T aggregate = instantiateAggregate(aggregateIdentifier);
+        T aggregate = instantiateAggregate(aggregateIdentifier, events.peek());
         aggregate.initializeState(events);
         return aggregate;
     }
 
     /**
-     * Instantiate the aggregate using the given aggregate identifier. Aggregate state should *not* be initialized by
-     * this method. That means, no events should be applied by a call to this method.
+     * Instantiate the aggregate using the given aggregate identifier and first event. The first event of the event
+     * stream is passed to allow the repository to identify the actual implementation type of the aggregate to create.
+     * The first event can be either the event that created the aggregate or, when using event sourcing, a snapshot
+     * event. In either case, the event should be designed, such that these events contain enough information to deduct
+     * the actual aggregate type.
+     * <p/>
+     * Note that aggregate state should <strong>*not*</strong> be initialized by this method. That means, no events
+     * should be applied by a call to this method. The first event is passed to allow the implementation to base the
+     * exact type of aggregate to instantiate on that event.
      *
      * @param aggregateIdentifier the aggregate identifier of the aggregate to instantiate
-     * @return a fully initialized aggregate
+     * @param firstEvent          The first event in the event stream. This is either the event generated during
+     *                            creation of the aggregate, or a snapshot event
+     * @return an aggregate ready for initialization using a DomainEventStream.
      */
-    protected abstract T instantiateAggregate(UUID aggregateIdentifier);
+    protected abstract T instantiateAggregate(UUID aggregateIdentifier, DomainEvent firstEvent);
 
     /**
      * Sets the event store that would physically store the events.

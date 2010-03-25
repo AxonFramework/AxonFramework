@@ -31,10 +31,37 @@ public abstract class DomainEvent extends EventBase {
     private volatile UUID aggregateIdentifier;
 
     /**
-     * Initialize the domain event. Will set the current time stamp and generate a random event identifier.
+     * Initialize the domain event. Will set the current time stamp and generate a random event identifier. Use this
+     * constructor when using the {@link org.axonframework.core.AbstractEventSourcedAggregateRoot#apply(DomainEvent)}
+     * method. The <code>sequenceNumber</code> and <code>aggregateIdentifier</code> are automatically set to the correct
+     * values for that aggregate.
+     * <p/>
+     * If you do not use the {@link org.axonframework.core.AbstractEventSourcedAggregateRoot#apply(DomainEvent)} method,
+     * but need the <code>sequenceNumber</code> and <code>aggregateIdentifier</code> to be set to specific values, use
+     * the {@link org.axonframework.core.DomainEvent#DomainEvent(long, java.util.UUID)} constructor.
      */
     protected DomainEvent() {
         super();
+    }
+
+    /**
+     * Initialize the domain event. Will set the current time stamp and generate a random event identifier. Use this
+     * constructor when you need the <code>sequenceNumber</code> and <code>aggregateIdentifier</code> to be set to
+     * specific values.
+     * <p/>
+     * Two use cases for this constructor are<ul><li>the generation of events when <em>not</em> using event sourcing
+     * </li><li>the generation of snapshot events.</li></ul>
+     * <p/>
+     * When creating a DomainEvent using this constructor, all calls to {@link #setAggregateIdentifier(java.util.UUID)}
+     * and {@link #setSequenceNumber(long)} will result in an exception.
+     *
+     * @param sequenceNumber      The sequence number to assign to this event
+     * @param aggregateIdentifier The identifier of the aggregate this event applies to
+     */
+    protected DomainEvent(long sequenceNumber, UUID aggregateIdentifier) {
+        super();
+        this.sequenceNumber = sequenceNumber;
+        this.aggregateIdentifier = aggregateIdentifier;
     }
 
     /**

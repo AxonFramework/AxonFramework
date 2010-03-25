@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.repository.eventsourcing;
+package org.axonframework.core.repository.eventsourcing.jpa;
 
 import org.axonframework.core.DomainEvent;
-import org.axonframework.core.repository.eventsourcing.DomainEventEntry;
 import org.axonframework.core.repository.eventsourcing.EventSerializer;
 import org.joda.time.LocalDateTime;
 import org.junit.*;

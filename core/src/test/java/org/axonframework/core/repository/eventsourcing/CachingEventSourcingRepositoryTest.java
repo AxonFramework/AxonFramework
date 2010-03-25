@@ -88,7 +88,7 @@ public class CachingEventSourcingRepositoryTest {
     private static class StubCachingEventSourcingRepository extends CachingEventSourcingRepository<StubAggregate> {
 
         @Override
-        protected StubAggregate instantiateAggregate(UUID aggregateIdentifier) {
+        public StubAggregate instantiateAggregate(UUID aggregateIdentifier, DomainEvent event) {
             return new StubAggregate(aggregateIdentifier);
         }
 

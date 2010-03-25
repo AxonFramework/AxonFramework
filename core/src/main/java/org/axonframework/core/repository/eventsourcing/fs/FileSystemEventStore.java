@@ -14,27 +14,33 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.repository.eventsourcing;
+package org.axonframework.core.repository.eventsourcing.fs;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CountingInputStream;
 import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
+import org.axonframework.core.repository.eventsourcing.EventSerializer;
+import org.axonframework.core.repository.eventsourcing.EventStore;
+import org.axonframework.core.repository.eventsourcing.EventStoreException;
+import org.axonframework.core.repository.eventsourcing.SnapshotEventStore;
+import org.axonframework.core.repository.eventsourcing.XStreamEventSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.util.UUID;
 
-import static org.axonframework.core.repository.eventsourcing.EventSerializationUtils.*;
+import static org.axonframework.core.repository.eventsourcing.fs.EventSerializationUtils.*;
 
 /**
  * Implementation of the {@link org.axonframework.core.repository.eventsourcing.EventStore} that serializes objects
@@ -51,15 +57,23 @@ import static org.axonframework.core.repository.eventsourcing.EventSerialization
  * @author Allard Buijze
  * @since 0.5
  */
-public class FileSystemEventStore implements EventStore {
+public class FileSystemEventStore implements EventStore, SnapshotEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemEventStore.class);
 
     private final EventSerializer eventSerializer;
-    private Resource baseDir;
+    private EventFileResolver eventFileResolver;
 
     /**
-     * Basic initialization of the event store. The actual serialization and deserialization is delegated to the
+     * Basic initialization of the event store. The actual serialization and deserialization is delegated to a {@link
+     * org.axonframework.core.repository.eventsourcing.XStreamEventSerializer}
+     */
+    public FileSystemEventStore() {
+        this.eventSerializer = new XStreamEventSerializer();
+    }
+
+    /**
+     * Customized initialization of the event store. The actual serialization and deserialization is delegated to the
      * provided <code>eventSerializer </code>.
      *
      * @param eventSerializer The serializer to serialize DomainEvents with
@@ -82,10 +96,10 @@ public class FileSystemEventStore implements EventStore {
         OutputStream out = null;
         try {
             DomainEvent next = eventsToStore.next();
-            out = obtainOutputStreamForAggregate(type, next.getAggregateIdentifier());
+            out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
             do {
                 byte[] bytes = eventSerializer.serialize(next);
-                writeEventEntry(out, bytes);
+                writeEventEntry(out, next.getSequenceNumber(), bytes);
                 if (eventsToStore.hasNext()) {
                     next = eventsToStore.next();
                 } else {
@@ -100,38 +114,20 @@ public class FileSystemEventStore implements EventStore {
     }
 
     /**
-     * Provides an output stream to a file using for an aggregate with the given <code>aggregateIdentifier</code> and of
-     * given <code>type</code>. The caller of this method is responsible for closing the output stream when all data has
-     * been written to it.
-     *
-     * @param type                The type of aggregate to open the stream for
-     * @param aggregateIdentifier the identifier of the aggregate
-     * @return an OutputStream that writes to the event log of of the given aggregate
-     *
-     * @throws IOException when an error occurs while opening a file
-     */
-    protected OutputStream obtainOutputStreamForAggregate(String type, UUID aggregateIdentifier) throws IOException {
-        File eventFile = new File(getBaseDirForType(type).getFile(), aggregateIdentifier + ".events");
-        return new BufferedOutputStream(new FileOutputStream(eventFile, true));
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public DomainEventStream readEvents(String type, UUID identifier) {
         try {
-            Resource eventFile = getBaseDirForType(type).createRelative(identifier + ".events");
-            if (!eventFile.exists()) {
+            if (!eventFileResolver.eventFileExists(type, identifier)) {
                 throw new AggregateNotFoundException(
                         String.format(
                                 "Aggregate of type [%s] with identifier [%s] cannot be found.",
                                 type,
                                 identifier.toString()));
             }
-            InputStream eventFileInputStream = eventFile.getInputStream();
-            DomainEvent snapshotEvent = readSnapshotEvent(type, identifier, eventFileInputStream);
-            return new BufferedReaderDomainEventStream(snapshotEvent, eventFileInputStream, eventSerializer);
+            InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(type, identifier);
+            return readEvents(type, identifier, eventFileInputStream);
         } catch (IOException e) {
             throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
@@ -141,17 +137,72 @@ public class FileSystemEventStore implements EventStore {
         }
     }
 
-    private DomainEvent readSnapshotEvent(String type, UUID identifier, InputStream eventFileInputStream)
+    /**
+     * {@inheritDoc}
+     *
+     * @throws EventStoreException when an error occurs while reading or writing to the event logs.
+     */
+    @Override
+    public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
+        UUID aggregateIdentifier = snapshotEvent.getAggregateIdentifier();
+        OutputStream fileOutputStream = null;
+        try {
+
+            byte[] serializedEvent = eventSerializer.serialize(snapshotEvent);
+
+            long offset = calculateOffset(type, aggregateIdentifier, snapshotEvent.getSequenceNumber());
+            long sequenceNumber = snapshotEvent.getSequenceNumber();
+            SnapshotEventEntry snapshotEntry = new SnapshotEventEntry(serializedEvent, sequenceNumber, offset);
+
+            fileOutputStream = eventFileResolver.openSnapshotFileForWriting(type, aggregateIdentifier);
+
+            EventSerializationUtils.writeSnapshotEntry(fileOutputStream, snapshotEntry);
+        } catch (IOException e) {
+            throw new EventStoreException("Error writing a snapshot event due to an IO exception", e);
+        } finally {
+            IOUtils.closeQuietly(fileOutputStream);
+        }
+    }
+
+    private long calculateOffset(String type, UUID aggregateIdentifier, long sequenceNumber) throws IOException {
+        CountingInputStream countingInputStream = null;
+        try {
+            InputStream eventInputStream = eventFileResolver.openEventFileForReading(type, aggregateIdentifier);
+            countingInputStream = new CountingInputStream(new BufferedInputStream(eventInputStream));
+            long lastReadSequenceNumber = -1;
+            while (lastReadSequenceNumber < sequenceNumber) {
+                EventEntry entry = readEventEntry(countingInputStream);
+                lastReadSequenceNumber = entry.getSequenceNumber();
+            }
+            return countingInputStream.getByteCount();
+        }
+        finally {
+            IOUtils.closeQuietly(countingInputStream);
+        }
+    }
+
+    private DomainEventStream readEvents(String type, UUID identifier, InputStream eventFileInputStream)
             throws IOException {
-        Resource snapshotFile = getBaseDirForType(type).createRelative(identifier + ".snapshots");
-        DomainEvent snapshotEvent = null;
-        if (snapshotFile.exists()) {
-            InputStream snapshotFileInputStream = snapshotFile.getInputStream();
+        SnapshotEventEntry snapshotEntry = readSnapshotEvent(type, identifier, eventFileInputStream);
+        InputStream is = eventFileInputStream;
+        if (snapshotEntry != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            writeEventEntry(baos, snapshotEntry.getSequenceNumber(), IOUtils.toByteArray(
+                    snapshotEntry.getBytes()));
+            is = new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), eventFileInputStream);
+        }
+        return new BufferedReaderDomainEventStream(is, eventSerializer);
+    }
+
+    private SnapshotEventEntry readSnapshotEvent(String type, UUID identifier, InputStream eventFileInputStream)
+            throws IOException {
+        SnapshotEventEntry snapshotEvent = null;
+        if (eventFileResolver.snapshotFileExists(type, identifier)) {
+            InputStream snapshotFileInputStream = eventFileResolver.openSnapshotFileForReading(type, identifier);
             try {
-                SnapshotEntry event = readSnapshotEntry(snapshotFileInputStream);
-                snapshotEvent = event.getSerializedEvent(eventSerializer);
-                long actuallySkipped = eventFileInputStream.skip(event.getOffset());
-                if (actuallySkipped != event.getOffset()) {
+                snapshotEvent = readLastSnapshotEntry(snapshotFileInputStream);
+                long actuallySkipped = eventFileInputStream.skip(snapshotEvent.getOffset());
+                if (actuallySkipped != snapshotEvent.getOffset()) {
                     logger.warn(
                             "The skip operation did not actually skip the expected amount of bytes. "
                                     + "The event log of aggregate of type {} and identifier {} might be corrupt.",
@@ -166,19 +217,6 @@ public class FileSystemEventStore implements EventStore {
         return snapshotEvent;
     }
 
-    private Resource getBaseDirForType(String type) {
-        try {
-            Resource typeSpecificDir = baseDir.createRelative("/" + type + "/");
-            if (!typeSpecificDir.exists() && !typeSpecificDir.getFile().mkdirs()) {
-                throw new EventStoreException(
-                        "The given event store directory doesn't exist and could not be created");
-            }
-            return typeSpecificDir;
-        } catch (IOException e) {
-            throw new EventStoreException("An IO Exception occurred while reading from the file system", e);
-        }
-    }
-
     /**
      * Sets the base directory where the event store will store all events.
      *
@@ -186,12 +224,12 @@ public class FileSystemEventStore implements EventStore {
      */
     @Required
     public void setBaseDir(Resource baseDir) {
-        this.baseDir = baseDir;
+        eventFileResolver = new SimpleEventFileResolver(baseDir);
     }
 
     /**
-     * DomainEventStream implementation that reads DomainEvents from a BufferedReader. It expects each DomainEvent to be
-     * separated using a line terminator.
+     * DomainEventStream implementation that reads DomainEvents from an inputItream. Entries in the input stream must be
+     * formatted as described by {@link org.axonframework.core.repository.eventsourcing.fs.EventSerializationUtils}
      */
     private static class BufferedReaderDomainEventStream implements DomainEventStream {
 
@@ -202,28 +240,22 @@ public class FileSystemEventStore implements EventStore {
         /**
          * Initialize a BufferedReaderDomainEventStream using the given <code>inputStream</code> and
          * <code>serializer</code>. The <code>inputStream</code> must provide a serialized DomainEvent, prefixed with a
-         * UTF-8 encoded number indicating the number of bytes to read. In between the number and the serialized
-         * DomainEvent, there must be at least a single whitespace character.
+         * UTF-8 encoded number indicating the number of bytes to read and a number representing the sequence number of
+         * the event. In between each number and the serialized DomainEvent, there must be at least a single whitespace
+         * character.
          * <p/>
          * Example:<br/><code>1234 The serialized domain event using 1234 bytes...</code>
          * <p/>
          * The reader will be closed when the last event has been read from it, or when an exception occurs while
          * reading or deserializing an event.
          *
-         * @param snapshotEvent The snapshot event that should be provided by this stream first. May be
-         *                      <code>null</code> to indicate there is no snapshot event
-         * @param inputStream   The inputStream providing serialized DomainEvents
-         * @param serializer    The serializer to deserialize the DomainEvents
+         * @param inputStream The inputStream providing serialized DomainEvents
+         * @param serializer  The serializer to deserialize the DomainEvents
          */
-        public BufferedReaderDomainEventStream(DomainEvent snapshotEvent, InputStream inputStream,
-                                               EventSerializer serializer) {
+        public BufferedReaderDomainEventStream(InputStream inputStream, EventSerializer serializer) {
             this.inputStream = new BufferedInputStream(inputStream);
             this.serializer = serializer;
-            if (snapshotEvent == null) {
-                this.next = doReadNext();
-            } else {
-                this.next = snapshotEvent;
-            }
+            this.next = doReadNext();
         }
 
         /**
@@ -244,14 +276,19 @@ public class FileSystemEventStore implements EventStore {
             return toReturn;
         }
 
+        @Override
+        public DomainEvent peek() {
+            return next;
+        }
+
         private DomainEvent doReadNext() {
             try {
-                byte[] serializedEvent = readEventEntry(inputStream);
-                if (serializedEvent.length == 0) {
+                EventEntry serializedEvent = readEventEntry(inputStream);
+                if (serializedEvent == null) {
                     IOUtils.closeQuietly(inputStream);
                     return null;
                 }
-                return serializer.deserialize(serializedEvent);
+                return serializedEvent.deserialize(serializer);
             } catch (IOException e) {
                 IOUtils.closeQuietly(inputStream);
                 throw new EventStoreException("An error occurred while reading from the underlying source", e);

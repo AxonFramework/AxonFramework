@@ -101,7 +101,7 @@ public class EventSourcingRepositoryTest {
     private static class EventSourcingRepositoryImpl extends EventSourcingRepository<TestAggregate> {
 
         @Override
-        protected TestAggregate instantiateAggregate(UUID aggregateIdentifier) {
+        public TestAggregate instantiateAggregate(UUID aggregateIdentifier, DomainEvent event) {
             return new TestAggregate(aggregateIdentifier);
         }
 

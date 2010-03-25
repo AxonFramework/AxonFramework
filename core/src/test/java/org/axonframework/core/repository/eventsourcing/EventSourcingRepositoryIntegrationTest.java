@@ -23,6 +23,7 @@ import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.repository.ConcurrencyException;
 import org.axonframework.core.repository.LockingStrategy;
+import org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore;
 import org.junit.*;
 import org.junit.rules.*;
 import org.springframework.core.io.FileSystemResource;
@@ -194,7 +195,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        protected SimpleAggregateRoot instantiateAggregate(UUID aggregateIdentifier) {
+        public SimpleAggregateRoot instantiateAggregate(UUID aggregateIdentifier, DomainEvent event) {
             return new SimpleAggregateRoot(aggregateIdentifier);
         }
 

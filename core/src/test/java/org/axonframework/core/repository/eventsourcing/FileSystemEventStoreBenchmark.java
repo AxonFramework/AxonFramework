@@ -19,6 +19,8 @@ package org.axonframework.core.repository.eventsourcing;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.StubDomainEvent;
+import org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore;
+import org.axonframework.core.repository.eventsourcing.jpa.JpaEventStore;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;

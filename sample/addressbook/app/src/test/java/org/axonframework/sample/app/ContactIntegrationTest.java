@@ -19,10 +19,8 @@ package org.axonframework.sample.app;
 import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.Event;
-import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.core.repository.Repository;
-import org.axonframework.core.repository.eventsourcing.FileSystemEventStore;
+import org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore;
 import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.query.AddressEntry;
 import org.axonframework.sample.app.query.ContactEntry;
@@ -54,13 +52,7 @@ public class ContactIntegrationTest {
     private ContactCommandHandler commandHandler;
 
     @Autowired
-    private EventBus eventBus;
-
-    @Autowired
     private FileSystemEventStore eventStore;
-
-    @Autowired
-    private Repository commandRepository;
 
     @Autowired
     private ThreadPoolTaskExecutor taskExecutor;

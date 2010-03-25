@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.repository.eventsourcing;
-
-import org.axonframework.core.DomainEvent;
+package org.axonframework.core.repository.eventsourcing.fs;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -29,31 +27,25 @@ import java.util.Arrays;
  * @author Allard Buijze
  * @since 0.5
  */
-class SnapshotEntry {
+class SnapshotEventEntry {
 
     private final byte[] serializedEvent;
-    private final int offset;
+    private final long offset;
+    private final long sequenceNumber;
 
     /**
-     * Instantiate a SnapshotEntry for the given <code>serializedEvent</code>, which allows the given
-     * <code>offset</code>. The <code>serializedEvent</code> is not stored directly, instead, a copy is used.
+     * Instantiate a SnapshotEventEntry for the given <code>serializedEvent</code>, which allows the given
+     * <code>offset</code> number of bytes to be skipped when reading the Events file. The <code>serializedEvent</code>
+     * is not stored directly, instead, a copy is used.
      *
      * @param serializedEvent The bytes representing the serialized event object
+     * @param sequenceNumber  The sequence number of the snapshot
      * @param offset          The offset that the event allows in the event log
      */
-    public SnapshotEntry(byte[] serializedEvent, int offset) {
+    public SnapshotEventEntry(byte[] serializedEvent, long sequenceNumber, long offset) {
         this.offset = offset;
         this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
-    }
-
-    /**
-     * Deserializes the event using the given serializer, and returns it.
-     *
-     * @param eventSerializer The serializer to use
-     * @return the deserialized domain event
-     */
-    public DomainEvent getSerializedEvent(EventSerializer eventSerializer) {
-        return eventSerializer.deserialize(serializedEvent);
+        this.sequenceNumber = sequenceNumber;
     }
 
     /**
@@ -63,6 +55,16 @@ class SnapshotEntry {
      */
     public InputStream getBytes() {
         return new ByteArrayInputStream(serializedEvent);
+    }
+
+    /**
+     * Returns the sequence number of the snapshot event. This is the sequence number of the last regular event that was
+     * included in this snapshot.
+     *
+     * @return the sequence number of the snapshot event
+     */
+    public long getSequenceNumber() {
+        return sequenceNumber;
     }
 
     /**
@@ -79,7 +81,7 @@ class SnapshotEntry {
      *
      * @return the offset for this snapshot event.
      */
-    public int getOffset() {
+    public long getOffset() {
         return offset;
     }
 }

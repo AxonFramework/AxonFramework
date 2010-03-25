@@ -35,7 +35,8 @@ public interface EventSerializer {
     byte[] serialize(DomainEvent event);
 
     /**
-     * Deserialize a DomainEvent using the given <code>serializedEvents</code>.
+     * Deserialize a DomainEvent using the given <code>serializedEvents</code>. Implementations are *not* allowed to
+     * change the given <code>serializedEvent</code> (byte array).
      *
      * @param serializedEvent The byte array containing the serialized domain event.
      * @return The DomainEvent instance represented by the provided byte array

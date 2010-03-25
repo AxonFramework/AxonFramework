@@ -21,8 +21,8 @@ import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.StubDomainEvent;
+import org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore;
 import org.junit.*;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
@@ -43,23 +44,25 @@ import static org.mockito.Mockito.*;
 public class FileSystemEventStoreTest {
 
     private FileSystemEventStore eventStore;
+    private UUID aggregateIdentifier;
 
     @Before
     public void setUp() {
         eventStore = new FileSystemEventStore(new XStreamEventSerializer());
         eventStore.setBaseDir(new FileSystemResource("target/"));
+
+        aggregateIdentifier = UUID.randomUUID();
     }
 
     @Test
     public void testSaveStreamAndReadBackIn() {
-        UUID aggregateId = UUID.randomUUID();
-        StubDomainEvent event1 = new StubDomainEvent(aggregateId, 0);
-        StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
-        StubDomainEvent event3 = new StubDomainEvent(aggregateId, 2);
+        StubDomainEvent event1 = new StubDomainEvent(aggregateIdentifier, 0);
+        StubDomainEvent event2 = new StubDomainEvent(aggregateIdentifier, 1);
+        StubDomainEvent event3 = new StubDomainEvent(aggregateIdentifier, 2);
         DomainEventStream stream = new SimpleDomainEventStream(event1, event2, event3);
         eventStore.appendEvents("test", stream);
 
-        DomainEventStream eventStream = eventStore.readEvents("test", aggregateId);
+        DomainEventStream eventStream = eventStore.readEvents("test", aggregateIdentifier);
         List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
         while (eventStream.hasNext()) {
             domainEvents.add(eventStream.next());
@@ -67,26 +70,6 @@ public class FileSystemEventStoreTest {
         assertEquals(event1, domainEvents.get(0));
         assertEquals(event2, domainEvents.get(1));
         assertEquals(event3, domainEvents.get(2));
-    }
-
-    @Test
-    public void testRead_WithSnapshotEvent() {
-        UUID aggregateId = UUID.fromString("fab0c2ec-a759-40f1-9078-9defb16e8553");
-        StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
-        StubDomainEvent event3 = new StubDomainEvent(aggregateId, 2);
-        eventStore.setBaseDir(new ClassPathResource("/snapshots/"));
-        DomainEventStream eventStream = eventStore.readEvents("events", aggregateId);
-        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
-        while (eventStream.hasNext()) {
-            domainEvents.add(eventStream.next());
-        }
-
-        assertEquals(event2.getSequenceNumber(), domainEvents.get(0).getSequenceNumber());
-        assertEquals(event2.getAggregateIdentifier(), domainEvents.get(0).getAggregateIdentifier());
-        assertEquals(event2.getClass(), domainEvents.get(0).getClass());
-        assertEquals(event3.getSequenceNumber(), domainEvents.get(1).getSequenceNumber());
-        assertEquals(event3.getAggregateIdentifier(), domainEvents.get(1).getAggregateIdentifier());
-        assertEquals(event3.getClass(), domainEvents.get(1).getClass());
     }
 
     @Test
@@ -200,6 +183,35 @@ public class FileSystemEventStoreTest {
         catch (EventStoreException e) {
             assertTrue(e.getMessage().contains("could not be created"));
         }
+    }
+
+    @Test
+    public void testAppendSnapShot() {
+        AtomicInteger counter = new AtomicInteger(0);
+
+        writeEvents(counter, 5);
+        eventStore.appendSnapshotEvent("snapshotting", new StubDomainEvent(aggregateIdentifier, 4));
+        writeEvents(counter, 5);
+        eventStore.appendSnapshotEvent("snapshotting", new StubDomainEvent(aggregateIdentifier, 9));
+        writeEvents(counter, 5);
+        eventStore.appendSnapshotEvent("snapshotting", new StubDomainEvent(aggregateIdentifier, 14));
+        writeEvents(counter, 2);
+
+        DomainEventStream eventStream = eventStore.readEvents("snapshotting", aggregateIdentifier);
+        List<DomainEvent> actualEvents = new ArrayList<DomainEvent>();
+        while (eventStream.hasNext()) {
+            actualEvents.add(eventStream.next());
+        }
+        assertEquals(new Long(14), actualEvents.get(0).getSequenceNumber());
+        assertEquals(3, actualEvents.size());
+    }
+
+    private void writeEvents(AtomicInteger counter, int numberOfEvents) {
+        List<DomainEvent> events = new ArrayList<DomainEvent>();
+        for (int t = 0; t < numberOfEvents; t++) {
+            events.add(new StubDomainEvent(aggregateIdentifier, counter.getAndIncrement()));
+        }
+        eventStore.appendEvents("snapshotting", new SimpleDomainEventStream(events));
     }
 
     public static class MyStubDomainEvent extends StubDomainEvent {

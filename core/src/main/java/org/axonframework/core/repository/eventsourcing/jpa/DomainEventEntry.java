@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.repository.eventsourcing;
+package org.axonframework.core.repository.eventsourcing.jpa;
 
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.repository.eventsourcing.EventSerializer;
 import org.joda.time.LocalDateTime;
 
 import javax.persistence.Basic;
@@ -30,7 +31,8 @@ import java.util.UUID;
 
 /**
  * JPA compliant wrapper around a DomainEvent. It wraps a DomainEvent by extracting some of the information needed to
- * base searched on, and stores the {@link DomainEvent} itself as a serialized object using am {@link EventSerializer}
+ * base searched on, and stores the {@link DomainEvent} itself as a serialized object using am {@link
+ * org.axonframework.core.repository.eventsourcing.EventSerializer}
  *
  * @author Allard Buijze
  * @since 0.5

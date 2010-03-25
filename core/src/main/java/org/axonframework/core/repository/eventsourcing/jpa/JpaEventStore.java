@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.repository.eventsourcing;
+package org.axonframework.core.repository.eventsourcing.jpa;
 
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.SimpleDomainEventStream;
+import org.axonframework.core.repository.eventsourcing.EventSerializer;
+import org.axonframework.core.repository.eventsourcing.EventStore;
+import org.axonframework.core.repository.eventsourcing.XStreamEventSerializer;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +36,7 @@ import java.util.UUID;
  * serialized blob of bytes. Other columns are used to store meta-data that allow quick finding of DomainEvents for a
  * specific aggregate in the correct order.
  * <p/>
- * The serializer used to serialize the events is configurable. By default, the {@link XStreamEventSerializer} is user.
+ * The serializer used to serialize the events is configurable. By default, the {@link XStreamEventSerializer} is used.
  *
  * @author Allard Buijze
  * @since 0.5

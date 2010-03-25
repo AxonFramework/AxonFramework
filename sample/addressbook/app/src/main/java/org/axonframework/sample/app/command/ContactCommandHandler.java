@@ -16,6 +16,7 @@
 
 package org.axonframework.sample.app.command;
 
+import org.axonframework.core.repository.Repository;
 import org.axonframework.sample.app.Address;
 import org.axonframework.sample.app.AddressType;
 import org.springframework.util.Assert;
@@ -30,9 +31,9 @@ import java.util.UUID;
  */
 public class ContactCommandHandler {
 
-    private final ContactRepository repository;
+    private final Repository<Contact> repository;
 
-    public ContactCommandHandler(ContactRepository repository) {
+    public ContactCommandHandler(Repository<Contact> repository) {
         this.repository = repository;
     }
 

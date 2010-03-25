@@ -29,6 +29,7 @@ import java.util.List;
 public class SimpleDomainEventStream implements DomainEventStream {
 
     private final Iterator<DomainEvent> iterator;
+    private volatile DomainEvent peeked;
 
     /**
      * Initialize the event stream using the given List of DomainEvent and aggregate identifier.
@@ -57,14 +58,37 @@ public class SimpleDomainEventStream implements DomainEventStream {
      */
     @Override
     public boolean hasNext() {
-        return iterator.hasNext();
+        return peeked != null || iterator.hasNext();
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @throws java.util.NoSuchElementException
+     *          when no items exist after the current pointer in the stream
      */
     @Override
     public DomainEvent next() {
+        if (peeked != null) {
+            DomainEvent returnValue = peeked;
+            peeked = null;
+            return returnValue;
+        }
         return iterator.next();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws java.util.NoSuchElementException
+     *          when no items exist after the current pointer in the stream
+     */
+    @Override
+    public DomainEvent peek() {
+        if (peeked != null) {
+            return peeked;
+        }
+        peeked = iterator.next();
+        return peeked;
     }
 }

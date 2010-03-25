@@ -22,7 +22,7 @@
 
     <!-- EventStore configuration -->
 
-    <bean class="org.axonframework.core.repository.eventsourcing.JpaEventStore">
+    <bean class="org.axonframework.core.repository.eventsourcing.jpa.JpaEventStore">
         <constructor-arg>
             <bean class="org.axonframework.core.repository.eventsourcing.XStreamEventSerializer"/>
         </constructor-arg>
