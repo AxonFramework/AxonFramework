@@ -76,6 +76,11 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @return the fully initialized aggregate
+     *
+     * @throws org.axonframework.core.AggregateDeletedException
+     *          in case an aggregate existed in the past, but has been deleted
+     * @throws org.axonframework.core.AggregateNotFoundException
+     *          when an aggregate with the given identifier does not exist
      */
     @Override
     protected T doLoad(UUID aggregateIdentifier) {

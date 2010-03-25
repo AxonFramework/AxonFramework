@@ -60,6 +60,9 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
 
     /**
      * {@inheritDoc}
+     *
+     * @throws org.axonframework.core.AggregateNotFoundException
+     *          if aggregate with given id cannot be found
      */
     @Override
     public T load(UUID aggregateIdentifier) {

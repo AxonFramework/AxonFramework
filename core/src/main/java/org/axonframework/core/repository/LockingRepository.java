@@ -122,6 +122,9 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
 
     /**
      * {@inheritDoc}
+     *
+     * @throws org.axonframework.core.AggregateNotFoundException
+     *          if aggregate with given id cannot be found
      */
     @SuppressWarnings({"unchecked"})
     @Override
@@ -149,6 +152,9 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @return the fully initialized aggregate
+     *
+     * @throws org.axonframework.core.AggregateNotFoundException
+     *          if aggregate with given id cannot be found
      */
     @Override
     protected abstract T doLoad(UUID aggregateIdentifier);
