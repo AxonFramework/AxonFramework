@@ -34,15 +34,13 @@
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 
-    <bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
+    <bean id="contactRepository" class="org.axonframework.core.repository.eventsourcing.GenericEventSourcingRepository">
+        <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
         <property name="eventBus" ref="eventBus"/>
         <property name="eventStore" ref="eventStore"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.core.repository.eventsourcing.FileSystemEventStore">
-        <constructor-arg>
-            <bean class="org.axonframework.core.repository.eventsourcing.XStreamEventSerializer"/>
-        </constructor-arg>
+    <bean id="eventStore" class="org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore">
         <property name="baseDir" value="file:${java.io.tmpdir}/"/>
     </bean>
 
