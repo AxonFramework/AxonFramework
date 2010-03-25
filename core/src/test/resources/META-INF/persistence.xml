@@ -17,5 +17,6 @@
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.core.repository.eventsourcing.jpa.DomainEventEntry</class>
+        <class>org.axonframework.core.repository.eventsourcing.jpa.SnapshotEventEntry</class>
     </persistence-unit>
 </persistence>

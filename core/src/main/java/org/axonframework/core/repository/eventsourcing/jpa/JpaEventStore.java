@@ -20,7 +20,7 @@ import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.repository.eventsourcing.EventSerializer;
-import org.axonframework.core.repository.eventsourcing.EventStore;
+import org.axonframework.core.repository.eventsourcing.SnapshotEventStore;
 import org.axonframework.core.repository.eventsourcing.XStreamEventSerializer;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +41,7 @@ import java.util.UUID;
  * @author Allard Buijze
  * @since 0.5
  */
-public class JpaEventStore implements EventStore {
+public class JpaEventStore implements SnapshotEventStore {
 
     private EntityManager entityManager;
 
@@ -82,18 +82,50 @@ public class JpaEventStore implements EventStore {
     @SuppressWarnings({"unchecked"})
     @Override
     public DomainEventStream readEvents(String type, UUID identifier) {
+        long snapshotSequenceNumber = -1;
+        SnapshotEventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
+        if (lastSnapshotEvent != null) {
+            snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
+        }
+
         List<DomainEventEntry> entries = (List<DomainEventEntry>) entityManager.createQuery(
                 "SELECT e FROM DomainEventEntry e "
-                        + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
-                        + "ORDER BY e.sequenceIdentifier ASC")
+                        + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND sequenceNumber > :seq "
+                        + "ORDER BY e.sequenceNumber ASC")
                 .setParameter("id", identifier.toString())
                 .setParameter("type", type)
+                .setParameter("seq", snapshotSequenceNumber)
                 .getResultList();
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
+        if (lastSnapshotEvent != null) {
+            events.add(lastSnapshotEvent.getDomainEvent(eventSerializer));
+        }
         for (DomainEventEntry entry : entries) {
             events.add(entry.getDomainEvent(eventSerializer));
         }
         return new SimpleDomainEventStream(events);
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private SnapshotEventEntry loadLastSnapshotEvent(String type, UUID identifier) {
+        List<SnapshotEventEntry> entries = entityManager.createQuery(
+                "SELECT e FROM SnapshotEventEntry e "
+                        + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
+                        + "ORDER BY e.sequenceNumber DESC")
+                .setParameter("id", identifier.toString())
+                .setParameter("type", type)
+                .setMaxResults(1)
+                .setFirstResult(0)
+                .getResultList();
+        if (entries.size() < 1) {
+            return null;
+        }
+        return entries.get(0);
+    }
+
+    @Override
+    public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
+        entityManager.persist(new SnapshotEventEntry(type, snapshotEvent, eventSerializer));
     }
 
     /**

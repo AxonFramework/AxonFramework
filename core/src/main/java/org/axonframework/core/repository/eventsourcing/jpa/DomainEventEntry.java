@@ -18,16 +18,10 @@ package org.axonframework.core.repository.eventsourcing.jpa;
 
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.repository.eventsourcing.EventSerializer;
-import org.joda.time.LocalDateTime;
 
-import javax.persistence.Basic;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Lob;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.UUID;
 
 /**
  * JPA compliant wrapper around a DomainEvent. It wraps a DomainEvent by extracting some of the information needed to
@@ -39,33 +33,14 @@ import java.util.UUID;
  */
 @Entity
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"aggregateIdentifier", "sequenceIdentifier"})})
-public class DomainEventEntry {
-
-    @Id
-    @GeneratedValue
-    private Long id;
-
-    @Basic
-    private String aggregateIdentifier;
-
-    @Basic
-    private long sequenceIdentifier;
-
-    @Basic
-    private String timeStamp;
-
-    @Basic
-    private String type;
-
-    @Basic
-    @Lob
-    private byte[] serializedEvent;
+        @UniqueConstraint(columnNames = {"aggregateIdentifier", "sequenceNumber"})})
+public class DomainEventEntry extends AbstractEventEntry {
 
     /**
      * Default constructor, as required by JPA specification. Do not use directly!
      */
-    public DomainEventEntry() {
+    protected DomainEventEntry() {
+        super();
     }
 
     /**
@@ -77,65 +52,7 @@ public class DomainEventEntry {
      * @param eventSerializer The serialize to serialize the event with
      */
     public DomainEventEntry(String type, DomainEvent event, EventSerializer eventSerializer) {
-        this.type = type;
-        this.aggregateIdentifier = event.getAggregateIdentifier().toString();
-        this.sequenceIdentifier = event.getSequenceNumber();
-        this.serializedEvent = eventSerializer.serialize(event);
-        this.timeStamp = event.getTimestamp().toString();
+        super(type, event, eventSerializer);
     }
 
-    /**
-     * Reconstructs the DomainEvent using the given <code>eventSerializer</code>.
-     *
-     * @param eventSerializer The EventSerializer to deserialize the DomainEvent with.
-     * @return The deserialized domain event
-     */
-    public DomainEvent getDomainEvent(EventSerializer eventSerializer) {
-        return eventSerializer.deserialize(serializedEvent);
-    }
-
-    /**
-     * Returns the unique identifier of this entry. Returns <code>null</code> if the entry has not been persisted.
-     *
-     * @return the unique identifier of this entry
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Returns the Aggregate Identifier of the associated event.
-     *
-     * @return the Aggregate Identifier of the associated event.
-     */
-    public UUID getAggregateIdentifier() {
-        return UUID.fromString(aggregateIdentifier);
-    }
-
-    /**
-     * Returns the type identifier of the aggregate.
-     *
-     * @return the type identifier of the aggregate.
-     */
-    public String getType() {
-        return type;
-    }
-
-    /**
-     * Returns the sequence identifier of the associated event.
-     *
-     * @return the sequence identifier of the associated event.
-     */
-    public long getSequenceIdentifier() {
-        return sequenceIdentifier;
-    }
-
-    /**
-     * Returns the time stamp of the associated event.
-     *
-     * @return the time stamp of the associated event.
-     */
-    public LocalDateTime getTimeStamp() {
-        return new LocalDateTime(timeStamp);
-    }
 }

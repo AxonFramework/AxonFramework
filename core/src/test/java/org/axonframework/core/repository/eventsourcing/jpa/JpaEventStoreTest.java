@@ -20,6 +20,7 @@ import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
+import org.axonframework.core.repository.eventsourcing.SnapshotProducer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -89,7 +91,29 @@ public class JpaEventStoreTest {
         assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
     }
 
-    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
+    @Test
+    public void testLoadWithSnapshotEvent() {
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+        entityManager.flush();
+        entityManager.clear();
+        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        entityManager.flush();
+        entityManager.clear();
+        aggregate1.changeState();
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+
+        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        while (actualEventStream.hasNext()) {
+            domainEvents.add(actualEventStream.next());
+        }
+
+        assertEquals(2, domainEvents.size());
+    }
+
+    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot implements SnapshotProducer {
 
         public void changeState() {
             apply(new StubStateChangedEvent());
@@ -99,9 +123,19 @@ public class JpaEventStoreTest {
         public void handleStateChange(StubStateChangedEvent event) {
         }
 
+        @Override
+        public DomainEvent createSnapshotEvent() {
+            return new StubStateChangedEvent(getLastCommittedEventSequenceNumber(), getIdentifier());
+        }
     }
 
     private static class StubStateChangedEvent extends DomainEvent {
 
+        private StubStateChangedEvent() {
+        }
+
+        private StubStateChangedEvent(long sequenceNumber, UUID aggregateIdentifier) {
+            super(sequenceNumber, aggregateIdentifier);
+        }
     }
 }
