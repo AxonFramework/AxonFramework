@@ -115,9 +115,7 @@ class PessimisticLockManager implements LockManager {
 
         private void unlock(UUID aggregateIdentifier) {
             lock.unlock();
-            if (shutDown()) {
-                locks.remove(aggregateIdentifier);
-            }
+            disposeIfUnused(aggregateIdentifier);
         }
 
         private synchronized boolean lock() {
@@ -136,13 +134,13 @@ class PessimisticLockManager implements LockManager {
             return lock.isLocked();
         }
 
-        private synchronized boolean shutDown() {
+        private synchronized void disposeIfUnused(UUID aggregateIdentifier) {
             if (lock.tryLock()) {
                 // we now have a lock. We can shut it down.
                 isClosed = true;
+                locks.remove(aggregateIdentifier, this);
                 lock.unlock();
             }
-            return isClosed;
         }
     }
 }
