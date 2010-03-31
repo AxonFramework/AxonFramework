@@ -22,7 +22,10 @@ import org.axonframework.core.repository.eventsourcing.EventSerializer;
 import javax.persistence.Entity;
 
 /**
+ * JPA compatible entry that stores data required for the use of snapshot events.
+ *
  * @author Allard Buijze
+ * @since 0.5
  */
 @Entity
 class SnapshotEventEntry extends AbstractEventEntry {
@@ -33,6 +36,14 @@ class SnapshotEventEntry extends AbstractEventEntry {
     protected SnapshotEventEntry() {
     }
 
+    /**
+     * Initialize a snapshot event entry using given <code>type</code>, <code>event</code> and
+     * <code>eventSerializer</code>.
+     *
+     * @param type            The type of the aggregate the snapshot event belongs to.
+     * @param event           The actual snapshot event
+     * @param eventSerializer The serializer that must be used to serialize the snapshot event for storage
+     */
     public SnapshotEventEntry(String type, DomainEvent event, EventSerializer eventSerializer) {
         super(type, event, eventSerializer);
     }
