@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.eventhandler.annotation.postprocessor;
-
-import net.sf.cglib.core.DefaultNamingPolicy;
+package org.axonframework.core.command;
 
 /**
- * CGLib naming policy for classes that tags generated classed with "axon". This helps identify which classes were
- * generated for Axon, and which cglib classes were generated for other purposes.
+ * Exception indicating that no suitable handler could be found for the given command.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 0.5
  */
-class AxonNamingPolicy extends DefaultNamingPolicy {
+public class NoHandlerForCommandException extends RuntimeException {
 
     /**
-     * {@inheritDoc}
+     * Initialize a NoHandlerForCommandException with the given <code>message</code>
+     *
+     * @param message The message describing the cause of the exception
      */
-    @Override
-    protected String getTag() {
-        return "axon";
+    public NoHandlerForCommandException(String message) {
+        super(message);
     }
+
 }

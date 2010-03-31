@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.eventhandler.annotation.postprocessor;
+package org.axonframework.core.command.annotation.postprocessor;
 
-import org.axonframework.core.eventhandler.EventBus;
-import org.axonframework.core.eventhandler.EventListener;
-import org.axonframework.core.eventhandler.annotation.AnnotationEventListenerAdapter;
-import org.axonframework.core.eventhandler.annotation.EventHandler;
+import org.axonframework.core.command.CommandBus;
+import org.axonframework.core.command.CommandHandler;
+import org.axonframework.core.command.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.core.util.annotation.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -35,32 +33,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  * @since 0.3
  */
-public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor {
+public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor {
 
-    private Executor executor;
-    private EventBus eventBus;
+    private CommandBus commandBus;
 
     @Override
     protected Class<?> getAdapterInterface() {
-        return EventListener.class;
-    }
-
-    /**
-     * Create an AnnotationEventListenerAdapter instance of the given {@code bean}. This adapter will receive all event
-     * handler calls to be handled by this bean.
-     *
-     * @param bean The bean that the EventListenerAdapter has to adapt
-     * @return an event handler adapter for the given {@code bean}
-     */
-    protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(bean, executor, eventBus);
-        adapter.subscribe();
-        return adapter;
+        return CommandHandler.class;
     }
 
     @Override
     protected boolean isPostProcessingCandidate(Class<?> targetClass) {
-        return isNotEventHandlerSubclass(targetClass) && hasEventHandlerMethod(targetClass);
+        return isNotCommandHandlerSubclass(targetClass) && hasCommandHandlerMethod(targetClass);
+    }
+
+    @Override
+    protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean) {
+        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(bean, commandBus);
+        adapter.subscribe();
+        return adapter;
     }
 
     /**
@@ -70,44 +61,35 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
     @Override
     public void afterPropertiesSet() throws Exception {
         // if no EventBus is set, find one in the application context
-        if (eventBus == null) {
-            Map<String, EventBus> beans = getApplicationContext().getBeansOfType(EventBus.class);
+        if (commandBus == null) {
+            Map<String, CommandBus> beans = getApplicationContext().getBeansOfType(CommandBus.class);
             if (beans.size() != 1) {
-                throw new IllegalStateException("If no specific EventBus is provided, the application context must "
-                        + "contain exactly one bean of type EventBus. The current application context has: "
+                throw new IllegalStateException("If no specific CommandBus is provided, the application context must "
+                        + "contain exactly one bean of type CommandBus. The current application context has: "
                         + beans.size());
             }
-            this.eventBus = beans.entrySet().iterator().next().getValue();
+            this.commandBus = beans.entrySet().iterator().next().getValue();
         }
     }
 
-    private boolean isNotEventHandlerSubclass(Class<?> beanClass) {
-        return !EventListener.class.isAssignableFrom(beanClass);
+    private boolean isNotCommandHandlerSubclass(Class<?> beanClass) {
+        return !CommandHandler.class.isAssignableFrom(beanClass);
     }
 
-    private boolean hasEventHandlerMethod(Class<?> beanClass) {
+    private boolean hasCommandHandlerMethod(Class<?> beanClass) {
         final AtomicBoolean result = new AtomicBoolean(false);
         ReflectionUtils.doWithMethods(beanClass, new HasEventHandlerAnnotationMethodCallback(result));
         return result.get();
     }
 
     /**
-     * Sets the Executor to use when the AnnotationEventListenerBeanPostProcessor encounters event listeners w
-     *
-     * @param executor the Executor to use for asynchronous event listeners
-     */
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
-    }
-
-    /**
      * Sets the event bus to which detected event listeners should be subscribed. If none is provided, the event bus
      * will be automatically detected in the application context.
      *
-     * @param eventBus the event bus to subscribe detected event listeners to
+     * @param commandBus the event bus to subscribe detected event listeners to
      */
-    public void setEventBus(EventBus eventBus) {
-        this.eventBus = eventBus;
+    public void setCommandBus(CommandBus commandBus) {
+        this.commandBus = commandBus;
     }
 
     private static final class HasEventHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {
@@ -123,7 +105,7 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
          */
         @Override
         public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-            if (method.isAnnotationPresent(EventHandler.class)) {
+            if (method.isAnnotationPresent(org.axonframework.core.command.annotation.CommandHandler.class)) {
                 result.set(true);
             }
         }

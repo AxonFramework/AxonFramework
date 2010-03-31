@@ -85,7 +85,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_MoreThan3ParameterHandlerIsRejected() {
         FirstSubclass handler = new IllegalEventHandler();
         try {
-            AnnotationEventHandlerInvoker.validateHandlerMethods(handler);
+            new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
         }
         catch (UnsupportedHandlerMethodException e) {
@@ -98,7 +98,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_WrongSecondsParameterIsRejected() {
         FirstSubclass handler = new ASecondIllegalEventHandler();
         try {
-            AnnotationEventHandlerInvoker.validateHandlerMethods(handler);
+            new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
         }
         catch (UnsupportedHandlerMethodException e) {
@@ -116,7 +116,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_HandleDomainEventIsRejected() {
         FirstSubclass handler = new EventHandlerWithUnfortunateMethod();
         try {
-            AnnotationEventHandlerInvoker.validateHandlerMethods(handler);
+            new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
         }
         catch (UnsupportedHandlerMethodException e) {
@@ -129,26 +129,13 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_NonEventParameterIsRejected() {
         AnotherIllegalEventHandler handler = new AnotherIllegalEventHandler();
         try {
-            AnnotationEventHandlerInvoker.validateHandlerMethods(handler);
+            new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
         }
         catch (UnsupportedHandlerMethodException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
             assertEquals("notARealHandler", e.getViolatingMethod().getName());
         }
-    }
-
-    @Test
-    public void testFindHandlerConfiguration() {
-        SecondSubclass handler = new SecondSubclass();
-        testSubject = new AnnotationEventHandlerInvoker(handler);
-        org.axonframework.core.eventhandler.annotation.EventHandler configuration = testSubject
-                .findEventHandlerConfiguration(new StubEventOne());
-        assertNotNull(configuration);
-
-        // if no method is found, null is returned
-        assertNull(testSubject.findEventHandlerConfiguration(new DomainEvent() {
-        }));
     }
 
     @Test

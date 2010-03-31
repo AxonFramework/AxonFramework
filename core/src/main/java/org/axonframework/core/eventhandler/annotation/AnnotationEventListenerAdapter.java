@@ -24,6 +24,7 @@ import org.axonframework.core.eventhandler.EventSequencingPolicy;
 import org.axonframework.core.eventhandler.SequentialPolicy;
 import org.axonframework.core.eventhandler.TransactionManager;
 import org.axonframework.core.eventhandler.TransactionStatus;
+import org.axonframework.core.util.annotation.AnnotatedHandlerAdapter;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -44,7 +45,7 @@ import static org.springframework.core.annotation.AnnotationUtils.findAnnotation
  * @see org.axonframework.core.eventhandler.AsynchronousEventHandlerWrapper
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter implements EventListener, TransactionManager {
+public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, EventListener, TransactionManager {
 
     private final EventListener targetEventListener;
     private final Executor executor;
