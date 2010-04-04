@@ -106,6 +106,16 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
                 String.format("No Handler found for a command of type[%s]", parameterType.getSimpleName()));
     }
 
+    /**
+     * Returns the actual annotated event handler object
+     *
+     * @return The actual annotated event handler object
+     */
+    @Override
+    public Object getTarget() {
+        return super.getTarget();
+    }
+
     private static class CommandHandlerResolverCallback<T> implements ReflectionUtils.MethodCallback {
 
         private final List<Class<? extends T>> handlerParameters;
