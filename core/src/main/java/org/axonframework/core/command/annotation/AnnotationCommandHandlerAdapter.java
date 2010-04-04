@@ -116,6 +116,17 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
         return super.getTarget();
     }
 
+    /**
+     * Returns the method that will be called to handle the given command. Returns <code>null</code> is no such method
+     * is found.
+     *
+     * @param command The command to find the handler method for
+     * @return the command handler method for the given command
+     */
+    public Method findCommandHandlerMethodFor(Object command) {
+        return super.findHandlerMethod(command.getClass());
+    }
+
     private static class CommandHandlerResolverCallback<T> implements ReflectionUtils.MethodCallback {
 
         private final List<Class<? extends T>> handlerParameters;

@@ -106,7 +106,14 @@ public abstract class AbstractHandlerInvoker {
         return Void.TYPE;
     }
 
-    private Method findHandlerMethod(final Class<?> parameterType) {
+    /**
+     * Returns the handler method that handles objects of the given <code>parameterType</code>. Returns
+     * <code>null</code> is no such method is found.
+     *
+     * @param parameterType The parameter type to find a handler for
+     * @return the  handler method for the given parameterType
+     */
+    protected Method findHandlerMethod(final Class<?> parameterType) {
         MostSuitableHandlerCallback callback = new MostSuitableHandlerCallback(parameterType, annotationType);
         ReflectionUtils.doWithMethods(target.getClass(), callback, callback);
         return callback.foundHandler();
