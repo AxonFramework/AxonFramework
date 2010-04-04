@@ -107,16 +107,6 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     }
 
     /**
-     * Returns the actual annotated event handler object
-     *
-     * @return The actual annotated event handler object
-     */
-    @Override
-    public Object getTarget() {
-        return super.getTarget();
-    }
-
-    /**
      * Returns the method that will be called to handle the given command. Returns <code>null</code> is no such method
      * is found.
      *

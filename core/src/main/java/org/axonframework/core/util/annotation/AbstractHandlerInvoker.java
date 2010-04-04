@@ -124,7 +124,7 @@ public abstract class AbstractHandlerInvoker {
      *
      * @return the target on which handler methods are invoked
      */
-    protected Object getTarget() {
+    public Object getTarget() {
         return target;
     }
 
