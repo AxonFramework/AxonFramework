@@ -17,9 +17,11 @@
 package org.axonframework.core.repository.eventsourcing;
 
 import org.axonframework.core.DomainEvent;
+import org.axonframework.core.StubDomainEvent;
 import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -68,6 +70,43 @@ public class XStreamEventSerializerTest {
             assertTrue("Not the type of exception that was expected",
                        e.getCause() instanceof UnsupportedEncodingException);
         }
+    }
+
+    @Test
+    public void testPackageAlias() throws UnsupportedEncodingException {
+        testSubject.addPackageAlias("axoncore", "org.axonframework.core");
+        testSubject.addPackageAlias("axon", "org.axonframework");
+
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(UUID.randomUUID(), 1));
+        String asString = new String(serialized, "UTF-8");
+        assertFalse(asString.contains("org.axonframework.core"));
+        assertTrue(asString.contains("axoncore"));
+        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        assertEquals(new Long(1), deserialized.getSequenceNumber());
+    }
+
+    @Test
+    public void testAlias() throws UnsupportedEncodingException {
+        testSubject.addAlias("stub", StubDomainEvent.class);
+
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(UUID.randomUUID(), 1));
+        String asString = new String(serialized, "UTF-8");
+        assertFalse(asString.contains("org.axonframework.core"));
+        assertTrue(asString.contains("<stub>"));
+        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        assertEquals(new Long(1), deserialized.getSequenceNumber());
+    }
+
+    @Test
+    public void testFieldAlias() throws UnsupportedEncodingException {
+        testSubject.addFieldAlias("aggId", DomainEvent.class, "aggregateIdentifier");
+
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(UUID.randomUUID(), 1));
+        String asString = new String(serialized, "UTF-8");
+        assertFalse(asString.contains("aggregateIdentifier"));
+        assertTrue(asString.contains("<aggId>"));
+        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        assertEquals(new Long(1), deserialized.getSequenceNumber());
     }
 
     public static class TestEvent extends DomainEvent {

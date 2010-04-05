@@ -123,4 +123,54 @@ public class XStreamEventSerializer implements EventSerializer {
             return new LocalDateTime(str);
         }
     }
+
+    /**
+     * Adds an alias to use instead of the fully qualified class name
+     *
+     * @param name The alias to use
+     * @param type The Class to use the alias for
+     * @see XStream#alias(String, Class)
+     */
+    public void addAlias(String name, Class type) {
+        xStream.alias(name, type);
+    }
+
+    /**
+     * Add an alias for a package. This allows long package names to be shortened considerably. Will also use the alias
+     * for subpackages of the provided package.
+     * <p/>
+     * E.g. an alias of "axoncore" for the package "org.axonframework.core" will use "axoncore.repository" for the
+     * package "org.axonframework.core.repository".
+     *
+     * @param alias   The alias to use.
+     * @param pkgName The package to use the alias for
+     * @see XStream#aliasPackage(String, String)
+     */
+    public void addPackageAlias(String alias, String pkgName) {
+        xStream.aliasPackage(alias, pkgName);
+    }
+
+    /**
+     * Adds an alias to use for a given field in the given class.
+     *
+     * @param alias     The alias to use instead of the original field name
+     * @param definedIn The class that defines the field.
+     * @param fieldName The name of the field to use the alias for
+     * @see XStream#aliasField(String, Class, String)
+     */
+    public void addFieldAlias(String alias, Class definedIn, String fieldName) {
+        xStream.aliasField(alias, definedIn, fieldName);
+    }
+
+    /**
+     * Returns a reference to the underlying {@link com.thoughtworks.xstream.XStream} instance, that does the actual
+     * serialization.
+     *
+     * @return the XStream instance that does the actual (de)serialization.
+     *
+     * @see com.thoughtworks.xstream.XStream
+     */
+    public XStream getXStream() {
+        return xStream;
+    }
 }
