@@ -32,6 +32,7 @@ class SnapshotEventEntry {
     private final byte[] serializedEvent;
     private final long offset;
     private final long sequenceNumber;
+    private final String timeStamp;
 
     /**
      * Instantiate a SnapshotEventEntry for the given <code>serializedEvent</code>, which allows the given
@@ -40,10 +41,12 @@ class SnapshotEventEntry {
      *
      * @param serializedEvent The bytes representing the serialized event object
      * @param sequenceNumber  The sequence number of the snapshot
+     * @param timeStamp       The ISO8601 timestamp of the event
      * @param offset          The offset that the event allows in the event log
      */
-    public SnapshotEventEntry(byte[] serializedEvent, long sequenceNumber, long offset) {
+    public SnapshotEventEntry(byte[] serializedEvent, long sequenceNumber, String timeStamp, long offset) {
         this.offset = offset;
+        this.timeStamp = timeStamp;
         this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
         this.sequenceNumber = sequenceNumber;
     }
@@ -83,5 +86,14 @@ class SnapshotEventEntry {
      */
     public long getOffset() {
         return offset;
+    }
+
+    /**
+     * The ISO8601 timestamp of this entry
+     *
+     * @return the ISO8601 timestamp of this entry
+     */
+    public String getTimeStamp() {
+        return timeStamp;
     }
 }

@@ -31,15 +31,18 @@ class EventEntry {
 
     private final byte[] serializedEvent;
     private final long sequenceNumber;
+    private final String timeStamp;
 
     /**
      * Initialize an entry using the given <code>sequenceNumber</code> and <code>serializedEvent</code>.
      *
      * @param sequenceNumber  The sequence number of the event
+     * @param timeStamp       The ISO8601 timestamp of the event
      * @param serializedEvent The array containing the serialized domain event
      */
-    public EventEntry(long sequenceNumber, byte[] serializedEvent) {
+    public EventEntry(long sequenceNumber, String timeStamp, byte[] serializedEvent) {
         this.sequenceNumber = sequenceNumber;
+        this.timeStamp = timeStamp;
         this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
     }
 
@@ -60,5 +63,14 @@ class EventEntry {
      */
     public long getSequenceNumber() {
         return sequenceNumber;
+    }
+
+    /**
+     * Returns the ISO8601 timestamp of the event in this entry
+     *
+     * @return the ISO8601 timestamp of the event in this entry
+     */
+    public String getTimeStamp() {
+        return timeStamp;
     }
 }

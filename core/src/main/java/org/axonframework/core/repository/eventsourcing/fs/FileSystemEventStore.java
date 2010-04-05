@@ -99,7 +99,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
             out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
             do {
                 byte[] bytes = eventSerializer.serialize(next);
-                writeEventEntry(out, next.getSequenceNumber(), bytes);
+                String timeStamp = next.getTimestamp().toString();
+                writeEventEntry(out, next.getSequenceNumber(), timeStamp, bytes);
                 if (eventsToStore.hasNext()) {
                     next = eventsToStore.next();
                 } else {
@@ -152,7 +153,11 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
 
             long offset = calculateOffset(type, aggregateIdentifier, snapshotEvent.getSequenceNumber());
             long sequenceNumber = snapshotEvent.getSequenceNumber();
-            SnapshotEventEntry snapshotEntry = new SnapshotEventEntry(serializedEvent, sequenceNumber, offset);
+            String timeStamp = snapshotEvent.getTimestamp().toString();
+            SnapshotEventEntry snapshotEntry = new SnapshotEventEntry(serializedEvent,
+                                                                      sequenceNumber,
+                                                                      timeStamp,
+                                                                      offset);
 
             fileOutputStream = eventFileResolver.openSnapshotFileForWriting(type, aggregateIdentifier);
 
@@ -186,8 +191,9 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         SnapshotEventEntry snapshotEntry = readSnapshotEvent(type, identifier, eventFileInputStream);
         InputStream is = eventFileInputStream;
         if (snapshotEntry != null) {
+            String timeStamp = snapshotEntry.getTimeStamp();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            writeEventEntry(baos, snapshotEntry.getSequenceNumber(), IOUtils.toByteArray(
+            writeEventEntry(baos, snapshotEntry.getSequenceNumber(), timeStamp, IOUtils.toByteArray(
                     snapshotEntry.getBytes()));
             is = new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), eventFileInputStream);
         }

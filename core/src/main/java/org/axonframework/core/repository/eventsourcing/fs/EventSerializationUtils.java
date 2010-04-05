@@ -45,6 +45,7 @@ abstract class EventSerializationUtils {
     private static final Logger logger = LoggerFactory.getLogger(EventSerializationUtils.class);
 
     private static final String CHARSET_UTF8 = "UTF-8";
+    private static final int LATEST_ENTRY_VERSION = 0;
 
     private EventSerializationUtils() {
         // utility class
@@ -64,17 +65,24 @@ abstract class EventSerializationUtils {
      * @throws IOException when an error occurs reading from the input stream.
      */
     public static EventEntry readEventEntry(InputStream inputStream) throws IOException {
-        int eventSize = (int) readNumber(inputStream);
-        if (eventSize < 0) {
+        int version = (int) readNumber(inputStream);
+        if (version < 0) {
             return null;
         }
+
         int sequenceNumber = (int) readNumber(inputStream);
+        String timeStamp = readString(inputStream);
+        int eventSize = (int) readNumber(inputStream);
         byte[] serializedEvent = readBytes(inputStream, eventSize);
         if (logger.isWarnEnabled() && eventSize > serializedEvent.length) {
             logger.warn("Failed to read the required amount of bytes from the underlying stream. "
                     + "This may result in a failure to deserialize the event");
         }
-        return new EventEntry(sequenceNumber, serializedEvent);
+
+        return new
+
+                EventEntry(sequenceNumber, timeStamp, serializedEvent);
+
     }
 
     /**
@@ -85,13 +93,17 @@ abstract class EventSerializationUtils {
      *
      * @param outputStream    The stream delivering the raw data.
      * @param sequenceNumber  The sequence number of the event to write
+     * @param timeStamp       The ISO8601 formatted timestamp
      * @param serializedEvent The bytes of the serialized event
      * @throws IOException when an error occurs writing to the output stream.
      */
-    public static void writeEventEntry(OutputStream outputStream, long sequenceNumber, byte[] serializedEvent)
+    public static void writeEventEntry(OutputStream outputStream, long sequenceNumber, String timeStamp,
+                                       byte[] serializedEvent)
             throws IOException {
-        writeNumber(outputStream, serializedEvent.length);
+        writeNumber(outputStream, LATEST_ENTRY_VERSION);
         writeNumber(outputStream, sequenceNumber);
+        writeString(outputStream, timeStamp);
+        writeNumber(outputStream, serializedEvent.length);
         writeBytes(outputStream, new ByteArrayInputStream(serializedEvent));
     }
 
@@ -143,17 +155,21 @@ abstract class EventSerializationUtils {
      */
     public static void writeSnapshotEntry(OutputStream outputStream, SnapshotEventEntry snapshotEntry)
             throws IOException {
-        writeNumber(outputStream, snapshotEntry.getEventSize());
+        writeNumber(outputStream, LATEST_ENTRY_VERSION);
         writeNumber(outputStream, snapshotEntry.getSequenceNumber());
+        writeString(outputStream, snapshotEntry.getTimeStamp());
         writeNumber(outputStream, snapshotEntry.getOffset());
+        writeNumber(outputStream, snapshotEntry.getEventSize());
         writeBytes(outputStream, snapshotEntry.getBytes());
     }
 
     private static SnapshotEventEntry readNextSnapshotEntry(InputStream inputStream) throws IOException {
-        int eventSize = (int) readNumber(inputStream);
+        int version = (int) readNumber(inputStream);
         long sequenceNumber = readNumber(inputStream);
+        String timeStamp = readString(inputStream);
         long offset = readNumber(inputStream);
-        if (eventSize < 0 || sequenceNumber < 0 || offset < 0) {
+        int eventSize = (int) readNumber(inputStream);
+        if (version < 0 || eventSize < 0 || sequenceNumber < 0 || offset < 0) {
             return null;
         }
         byte[] serializedEvent = readBytes(inputStream, eventSize);
@@ -161,7 +177,7 @@ abstract class EventSerializationUtils {
             // maybe another stream is writing. We refuse half-baked entries.
             return null;
         }
-        return new SnapshotEventEntry(serializedEvent, sequenceNumber, offset);
+        return new SnapshotEventEntry(serializedEvent, sequenceNumber, timeStamp, offset);
     }
 
     private static void writeBytes(OutputStream outputStream, InputStream inputStream) throws IOException {
@@ -176,9 +192,18 @@ abstract class EventSerializationUtils {
     }
 
     private static long readNumber(InputStream inputStream) throws IOException {
+        String data = readString(inputStream);
+        if (data == null) {
+            return -1;
+        }
+
+        return Long.parseLong(data);
+    }
+
+    private static String readString(InputStream inputStream) throws IOException {
         int codePoint = readFistNonWhitespaceCharacter(inputStream);
         if (codePoint < 0) {
-            return -1;
+            return null;
         }
         StringBuilder sb = new StringBuilder();
         while (!Character.isWhitespace(codePoint)) {
@@ -187,12 +212,16 @@ abstract class EventSerializationUtils {
             codePoint = inputStream.read();
         }
 
-        return Long.parseLong(sb.toString());
+        return sb.toString();
+    }
+
+    private static void writeString(OutputStream outputStream, String value) throws IOException {
+        outputStream.write(value.getBytes(CHARSET_UTF8));
+        IOUtils.write(" ", outputStream, CHARSET_UTF8);
     }
 
     private static void writeNumber(OutputStream outputStream, int value) throws IOException {
-        outputStream.write(Integer.toString(value).getBytes(CHARSET_UTF8));
-        IOUtils.write(" ", outputStream, CHARSET_UTF8);
+        writeString(outputStream, Integer.toString(value));
     }
 
     private static void writeNumber(OutputStream outputStream, long value) throws IOException {
