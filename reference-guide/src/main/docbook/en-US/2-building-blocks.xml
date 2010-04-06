@@ -154,7 +154,7 @@
                 that the event indicates a migration to a "deleted" state of the aggregate.
                 Repositories must consider aggregates that have applied such an event as deleted.
                 Loading such an aggregate in again results in an exception.</para>
-            <para>Snapsot events are instances of <code>DomainEvent</code> with a special intention.
+            <para>Snapsot events are instances of <code>DomainEvent</code> with a special intent.
                 They are typically not dispatched via the event bus, but are used to summarize an
                 arbitrary number of events from the past into a single entry. This can drastically
                 improve performance when initializing an aggregate's state from a series of events.
@@ -314,24 +314,23 @@
                 </para>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
-                    private String someProperty;
+    private String someProperty;
 
-                    public MyAggregateRoot() {
-                    apply(new MyAggregateCreatedEvent());
-                    }
+    public MyAggregateRoot() {
+        apply(new MyAggregateCreatedEvent());
+    }
 
-                    public MyAggregateRoot(UUID identifier) {
-                    super(identifier);
-                    }
+    public MyAggregateRoot(UUID identifier) {
+        super(identifier);
+    }
 
-                    public void handle(DomainEvent event) {
-                    if (event instanceof MyAggregateCreatedEvent) {
-                    // do something with someProperty
-                    }
-                    // and more if-else-if logic here
-                    }
-                    }
-                </programlisting>
+    public void handle(DomainEvent event) {
+        if (event instanceof MyAggregateCreatedEvent) {
+            // do something with someProperty
+        }
+        // and more if-else-if logic here
+    }
+}                </programlisting>
             </simplesect>
             <simplesect xml:id="annotated-aggregate-root">
                 <title>
@@ -357,22 +356,21 @@
                     you.
                 </para>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
-                    private String someProperty;
+    private String someProperty;
 
-                    public MyAggregateRoot() {
-                    apply(new MyAggregateCreatedEvent());
-                    }
+    public MyAggregateRoot() {
+        apply(new MyAggregateCreatedEvent());
+    }
 
-                    public MyAggregateRoot(UUID identifier) {
-                    super(identifier);
-                    }
+    public MyAggregateRoot(UUID identifier) {
+        super(identifier);
+    }
 
-                    @EventHandler
-                    private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
-                    // do something with someProperty
-                    }
-                    }
-                </programlisting>
+    @EventHandler
+    private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
+    // do something with someProperty
+    }
+}                </programlisting>
                 <para>In all circumstances, exactly one event handler method is invoked. The
                     <code>AbstractAnnotatedAggregateRoot</code>
                     will search the most specific
@@ -601,11 +599,11 @@
         </sect2>
         <sect2 xml:id="using-snapshot-events">
             <title>Using Snapshot Events</title>
-            <para>When aggregates live for a long time, and its state constantly changes, it will
-                generate a large amount of events. Having to load all these events in to rebuild the
+            <para>When aggregates live for a long time, and their state constantly change, they will
+                generate a large amount of events. Having to load all these events in to rebuild an
                 aggregate's state may have a big performance impact. The snapshot event is a domain
                 event with a special purpose: it summarises an arbitrary amount of events into a
-                single one. By regularly creating an storing a snapshot event, the EventStore does
+                single one. By regularly creating an storing a snapshot event, the event store does
                 not have to return long lists of events. Just the last snapshot events and all
                 events that occurred after the snapshot was made.</para>
             <para>For example, items in stock tend to change quite often. Each time an item is sold,
@@ -619,18 +617,28 @@
                 <title>Storing Snapshot Events</title>
                 <para>Both the <code>JpaEventStore</code> and the <code>FileSystemEventStore</code>
                     are capable of storing snapshot events. They provide a special method that
-                    allows a <code>DomainEvent</code> to be stored as a snapshot event. Since
-                    snapshot events are never applied to an aggregate, you have to initialize the
-                    snapshot event completely, including the aggregate identifier and the sequence
-                    number. There is a special constructor on the <code>DomainEvent</code> for this
-                    purpose. The sequence number must be equal to the sequence number of the last
-                    event that was included in the state that the snapshot represents.</para>
+                    allows a <code>DomainEvent</code> to be stored as a snapshot event. You have to
+                    initialize the snapshot event completely, including the aggregate identifier and
+                    the sequence number. There is a special constructor on the
+                        <code>DomainEvent</code> for this purpose. The sequence number must be equal
+                    to the sequence number of the last event that was included in the state that the
+                    snapshot represents. In most cases, you can use the
+                        <code>getLastCommittedEventSequenceNumber()</code> on the
+                        <code>VersionedAggregate</code> (which each event sourced aggregate
+                    implements) to obtain the sequence number to use in the snapshot event.</para>
                 <para>When a snapshot is stored in the Event Store, it will automatically use that
                     snapshot to summarize all prior events and return it in their place. Both event
                     store implementations allow for concurrent creation of snapshots. This means
                     they allow snapshots to be stored while another process is adding Events for the
                     same aggregate. This allows the snapshotting process to run as a separate
                     process alltogether.</para>
+                <note>
+                    <para>Normally, you can archive all events once they are part of a snapshot
+                        event. Snapshotted events will never be read in again by the event store in
+                        regular operational scenario's. However, if you want to be able to
+                        reconstruct aggregate state prior to the moment the snapshot was created,
+                        you must keep the events up to that date.</para>
+                </note>
             </simplesect>
             <simplesect>
                 <title>Triggering snapshot creation</title>
@@ -645,10 +653,11 @@
             </simplesect>
             <simplesect>
                 <title>Initializing an aggregate based on a Snapshot Event</title>
-                <para>A snapshot event is just a regular DomainEvent. That means a snapshot event is
-                    handled just like any other domain event. When using annotations to demarcate
-                    event handers (<code>@EventHandler</code>), you can annotate a method that
-                    initializes full aggregate state based on a snapshot event.</para>
+                <para>A snapshot event is just a regular <code>DomainEvent</code>. That means a
+                    snapshot event is handled just like any other domain event. When using
+                    annotations to demarcate event handers (<code>@EventHandler</code>), you can
+                    annotate a method that initializes full aggregate state based on a snapshot
+                    event.</para>
             </simplesect>
         </sect2>
     </sect1>
@@ -753,52 +762,36 @@
                 sequence identifier means the event may be processed in
                 parallel with any other event.
             </para>
-            <para>Axon provides a number of common policies you can use:
-                <itemizedlist>
+            <para>Axon provides a number of common policies you can use: <itemizedlist>
                     <listitem>
-                        <para>The
-                            <code>FullConcurrencyPolicy</code>
-                            will tell Axon that this event
+                        <para>The <code>FullConcurrencyPolicy</code> will tell Axon that this event
                             handler may handle all events concurrently. This means that there is no
                             relationship between the events that require them to be processed in a
-                            particular order.
-                        </para>
+                            particular order. </para>
                     </listitem>
                     <listitem>
-                        <para>The
-                            <code>SequentialPolicy</code>
-                            tells Axon that all events must be
+                        <para>The <code>SequentialPolicy</code> tells Axon that all events must be
                             processed sequentially. Handling of an event will start when the
                             handling of a previous event is finished. For annotated event handlers,
-                            this is the default policy.
-                        </para>
+                            this is the default policy. </para>
                     </listitem>
                     <listitem>
                         <para>
-                            <code>SequentialPerAggregatePolicy</code>
-                            will force domain events that
+                            <code>SequentialPerAggregatePolicy</code> will force domain events that
                             were raised from the same aggregate to be handled sequentially. However,
                             events from different aggregates may be handled concurrently. This is
                             typically a suitable policy to use for event listeners that update
-                            details from aggregates in database tables.
-                        </para>
+                            details from aggregates in database tables. </para>
                     </listitem>
-                </itemizedlist>
-            </para>
-            <para>Besides these provided policies, you can define your own. All policies must
-                implement the
-                <code>EventSequencingPolicy</code>
-                interface. This interface defines a
-                single method, <code>getSequenceIdentifierFor</code>, that returns the identifier
-                sequence identifier for a given event. Events for which an equals sequence identifer
-                is returned must be processed sequentially. Events that produce a different sequence
-                identifier may be processed concurrently. For performance reasons, policy
-                implementations should return
-                <code>null</code>
-                if the event may be processed in
-                parallel to any other event. This is faster, because Axon does not have to check for
-                any restrictions on event processing.
-            </para>
+                </itemizedlist>Besides these provided policies, you can define your own. All
+                policies must implement the <code>EventSequencingPolicy</code> interface. This
+                interface defines a single method, <code>getSequenceIdentifierFor</code>, that
+                returns the identifier sequence identifier for a given event. Events for which an
+                equals sequence identifer is returned must be processed sequentially. Events that
+                produce a different sequence identifier may be processed concurrently. For
+                performance reasons, policy implementations should return <code>null</code> if the
+                event may be processed in parallel to any other event. This is faster, because Axon
+                does not have to check for any restrictions on event processing. </para>
             <para>A
                 <code>TransactionManager</code>
                 can be assigned to a
@@ -831,37 +824,31 @@
                     is provided, an exception is thrown.
                 </para>
                 <para>You can configure the event sequencing policy on the
-                    <code>@AsynchronousEventListener</code>
-                    annotation. You then set the
-                    <code>sequencePolicyClass</code>
-                    to the type of policy you like to use. Note
+                        <code>@AsynchronousEventListener</code> annotation. You then set the
+                        <code>sequencePolicyClass</code> to the type of policy you like to use. Note
                     that you can only choose policy classes that provide a public no-arg
                     constructor.
-                    <programlisting language="java">@AsynchronousEventListener(sequencingPolicyClass =
-                        MyCustomPolicy.class)
-                        public class MyEventListener() {
+                    <programlisting language="java">@AsynchronousEventListener(sequencingPolicyClass = MyCustomPolicy.class)
+public class MyEventListener() {
 
-                        @EventHandler
-                        public void onSomeImportantEvent(MyEvent event) {
-                        // eventProcessing logic
-                        }
-                        }
+    @EventHandler
+    public void onSomeImportantEvent(MyEvent event) {
+        // eventProcessing logic
+    }
+}
 
-                        public class MyCustomPolicy implements EventSequencingPolicy {
-                        public Object getSequenceIdentifierFor(Event event) {
-                        if (event instanceof MyEvent) {
-                        // let's assume that we do processing based on the someProperty field.
-                        return ((MyEvent) event).someProperty();
-                        }
-                        return null;
-                        }
-                        }
-                    </programlisting>
-                </para>
-                <para>With annotation support, the event handler bean must also act as a transaction
+public class MyCustomPolicy implements EventSequencingPolicy {
+    public Object getSequenceIdentifierFor(Event event) {
+        if (event instanceof MyEvent) {
+            // let's assume that we do processing based on the someProperty field.
+            return ((MyEvent) event).someProperty();
+        }
+        return null;
+    }
+}                    </programlisting>With
+                    annotation support, the event handler bean must also act as a transaction
                     manager in order to support transactions. There is annotation support for
-                    transaction management, too (see <xref linkend="transactionmanager"/>).
-                </para>
+                    transaction management, too (see <xref linkend="transactionmanager"/>). </para>
             </simplesect>
         </sect2>
         <sect2 xml:id="transactionmanager">
@@ -946,14 +933,11 @@
                     information provided by these methods.
                 </para>
                 <para>The event handler can provide a policy
-                    <code>setRetryPolicy(RetryPolicy)</code>
-                    to tell the scheduler what to do in
-                    such case. There are three policies, each for a specific scenario:
-                    <itemizedlist>
+                        <code>setRetryPolicy(RetryPolicy)</code> to tell the scheduler what to do in
+                    such case. There are three policies, each for a specific scenario: <itemizedlist>
                         <listitem>
                             <para>
-                                <code>RETRY_TRANSACTION</code>
-                                tells the event handler scheduler
+                                <code>RETRY_TRANSACTION</code> tells the event handler scheduler
                                 that the entire transaction should be retried. It will reschedule
                                 all the events in the current transaction for processing. This
                                 policy is suitable when the event listener processes events to a
@@ -962,25 +946,20 @@
                         </listitem>
                         <listitem>
                             <para>
-                                <code>RETRY_LAST_EVENT</code>
-                                is the policy that tells the scheduler
+                                <code>RETRY_LAST_EVENT</code> is the policy that tells the scheduler
                                 to only retry the last event in the transaction. This is suitable if
                                 the underlying data source does not support transactions or if the
-                                transaction was committed without the last event.
-                            </para>
+                                transaction was committed without the last event. </para>
                         </listitem>
                         <listitem>
                             <para>
-                                <code>SKIP_FAILED_EVENT</code>
-                                will tell the scheduler to ignore the
+                                <code>SKIP_FAILED_EVENT</code> will tell the scheduler to ignore the
                                 exception and continue processing with the next event. The event
                                 listener can still try to commit the underlying transaction to
                                 persist any changed made while processing other events in this
-                                transaction. This is the default policy.
-                            </para>
+                                transaction. This is the default policy. </para>
                         </listitem>
-                    </itemizedlist>
-                </para>
+                    </itemizedlist></para>
                 <para>Note that the
                     <code>SKIP_FAILED_EVENT</code>
                     is the default policy. For event
