@@ -561,7 +561,7 @@
                 <para>Below is an example configuration of a persistence context configuration: </para>
                 <programlistingco>
                     <areaspec units="LineColumn">
-                        <area coords="2 41" id="persistence-unit-name-co"/>
+                        <area coords="2 40" id="persistence-unit-name-co"/>
                         <area coords="3 93" id="domain-event-entry-co"/>
                     </areaspec>
                     <programlisting language="xml">&lt;persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
