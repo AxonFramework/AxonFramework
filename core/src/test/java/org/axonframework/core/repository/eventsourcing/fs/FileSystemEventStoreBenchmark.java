@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.repository.eventsourcing;
+package org.axonframework.core.repository.eventsourcing.fs;
 
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.StubDomainEvent;
-import org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore;
+import org.axonframework.core.repository.eventsourcing.EventStore;
+import org.axonframework.core.repository.eventsourcing.XStreamEventSerializer;
 import org.axonframework.core.repository.eventsourcing.jpa.JpaEventStore;
 import org.junit.*;
 import org.junit.runner.*;

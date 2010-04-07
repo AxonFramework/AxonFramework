@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.core.repository.eventsourcing;
+package org.axonframework.core.repository.eventsourcing.fs;
 
 import org.axonframework.core.AggregateNotFoundException;
 import org.axonframework.core.DomainEvent;
 import org.axonframework.core.DomainEventStream;
 import org.axonframework.core.SimpleDomainEventStream;
 import org.axonframework.core.StubDomainEvent;
-import org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore;
+import org.axonframework.core.repository.eventsourcing.EventStoreException;
+import org.axonframework.core.repository.eventsourcing.XStreamEventSerializer;
 import org.junit.*;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
