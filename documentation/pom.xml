@@ -56,7 +56,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-							<sourceDocumentName>master.xml</sourceDocumentName>
+							<sourceDocumentName>reference-guide.xml</sourceDocumentName>
                             <formats>
                                 <format>
                                     <formatName>html_single</formatName>
