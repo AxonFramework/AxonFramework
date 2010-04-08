@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2010. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<chapter id="architecture-overview" xmlns="http://docbook.org/ns/docbook">
+    <title>Architecture Overview</title>
+    <para>The diagram below shows an example of a typical layout of a CQRS architecture. The UI
+        component, displayed on the left, interacts with the rest of the application in two ways: it
+        sends commands to the application (shown in the top section), and it queries the application
+        for information (shown in the bottom section).
+    </para>
+    <figure>
+        <title>Architecture overview of a CQRS application</title>
+        <mediaobject>
+            <info>Detailed architecture overview</info>
+            <imageobject role="fo">
+                <imagedata align="center" format="png" fileref="detailed-architecture-overview-hires.png" width="15cm"/>
+            </imageobject>
+            <imageobject role="html">
+                <imagedata format="png" fileref="detailed-architecture-overview.png"/>
+            </imageobject>
+        </mediaobject>
+    </figure>
+    <para>Commands are executed by a command handler. Axon provides building blocks to help you implement
+        a command handling infrastructure. See 
+    </para>
+    <para>The command handler retrieves domain objects (aggregates) from a repository and executes
+        methods on them to change their state. These aggregates typically contain the actual
+        business logic and are therefore responsible for guarding their own invariants. Once the
+        command execution is complete, the command handler saves the aggregate's state by handing it
+        over to the repository.
+        <note>
+            <para>The term "Aggregate" refers to the aggregate as defined by Evans in Domain Driven
+                Design:
+            </para>
+            <para>
+                <quote>A cluster of associated objects that are treated as a unit for the purpose
+                    of data changes. External references are restricted to one member of the
+                    Aggregate, designated as the root. A set of consistency rules applies within the
+                    Aggregate's boundaries.
+                </quote>
+            </para>
+            <para>A more extensive definition can be found on: <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://domaindrivendesign.org/freelinking/Aggregate">
+                http://domaindrivendesign.org/freelinking/Aggregate</link>.
+            </para>
+        </note>
+    </para>
+    <para>The repository does two things when it saves an aggregate. It persists the aggregate's
+        state (either directly or by persisting all its past mutations, see <xref linkend="repositories-and-event-stores"/>)
+        for future commands that need to execute on this
+        aggregate. Furthermore, events are handed over to the event bus, which is reposonsible for
+        dispatching them to all interested listeners.
+    </para>
+    <para>The event bus dispatches events to all interested event listeners. This can either be done
+        synchronously or asynchronously. Asynchronous event dispatching allows the command execution
+        to return and hand over control to the user, while the events are being dispatched and
+        processed in the background. Not having to wait for event processing to complete makes an
+        application more responsive. Synchronous event processing, on the other hand, is simpler and
+        is usual a sensible default. Synchronous processing also allows several event listeners to
+        process events within the same transaction.
+    </para>
+    <para>Event listeners receive events and handle them. Some handlers might issue commands to
+        update other aggregates, based on information in the event. An example of this is the
+        placement of an order in an online store. When an order comes in, you might want to update
+        stock information for all ordered items. The listener would listen to events regarding
+        placed orders and send stock update commands to the inventory. Other event listeners will
+        update data sources used for querying or send messages to external systems.
+    </para>
+    <para>The data sources are updated and ready for querying by the user interface. The thin data
+        layer in between the user interface and the data sources provides a clearly defined
+        interface to the actual query implementation used. This data layer typically returns
+        read-only DTO objects containing query results.
+    </para>
+    <para>As you might notice, the command handlers are completely unaware of the components that
+        are interested in the changes they make. This means that it is very non-intrusive to extend
+        the application with new functionality. All you need to do is add another event listener.
+        The events loosely couple all components in your application together.
+    </para>
+</chapter>

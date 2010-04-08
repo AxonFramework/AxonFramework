@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    ~ Copyright (c) 2010. Axon Framework
+    ~
+    ~ Licensed under the Apache License, Version 2.0 (the "License");
+    ~ you may not use this file except in compliance with the License.
+    ~ You may obtain a copy of the License at
+    ~
+    ~     http://www.apache.org/licenses/LICENSE-2.0
+    ~
+    ~ Unless required by applicable law or agreed to in writing, software
+    ~ distributed under the License is distributed on an "AS IS" BASIS,
+    ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    ~ See the License for the specific language governing permissions and
+    ~ limitations under the License.
+-->
+<chapter id="command-handling" xmlns="http://docbook.org/ns/docbook">
+        <title>Command Handling</title>
+        <para>The aggregates contain the business logic, and expose the methods to change their
+            state. You could use any mechanism to call those methods, depending on the actual
+            architecture of your application. A nice and explicit way of doing this, however, is
+            through commands and command handlers. A command is an object describing an intent to
+            modify an object's state. A command handler is the instance that receives commands,
+            interprets them, loads the necessary aggregates and calls their methods.</para>
+        <para>The use of an explicit command dispatching mechanism has a number of advantages. First
+            of all, there is a single object that clearly describes the intent of the client. By
+            logging the command, the intent as well as related data is stored for future reference.
+            Command handling also makes it easy to expose your command processing components to
+            remote clients, via web services for example. Testing also becomes a lot easier, you
+            could define test scripts by just defining the starting situation (given), command to
+            execute (when) and expected results (then) by listing a number of events and commands.
+            The last major advantage is that it is very easy to switch between synchronous and
+            asynchronous command processing.</para>
+        <para>The next sections provide an overview of the tasks related to creating a Command
+            Handling infrastructure with the Axon Framework.</para>
+        <sect1>
+            <title>Creating a Command Handler</title>
+            <para>The Command Handler is the object that receives a Command of a pre-defined type
+                and takes action based on its contents. In Axon, a Command may be any object. There
+                is no predefined type that needs to be implemented. The Command Handler, however,
+                must implement the <code>CommandHandler</code> interface. This interface declares
+                only a single method: <code>Object handle(T command)</code>, where T is the type of
+                Command this Handler can process. It is not recommended to use return values, but
+                they are allowed. Always consider using a "fire and forget" style of event handlers,
+                where a client does not have to wait for a response. As return value in such a case,
+                you are recommended to use either <code>null</code> or <code>Void.TYPE</code>. The
+                latter being the official representation of the <code>void</code> keyword.</para>
+            <sect2>
+                <title>Annotation support</title>
+                <para>Comparable to the annotation support for Event Listeners, you can also use any
+                    POJO as command handler. The added advantage is that you can configure a single
+                    class to process several types of (related) commands. Just add the
+                    <code>@CommandHandler</code> annotated to your methods to turn them into a
+                    command handler. These methods may only accept a single parameter, which is the
+                    command to process. Note that for each command type, there may only be one
+                    handler! This restriction counts for all handlers registered to the same command
+                    bus.</para>
+                <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
+                    annotated class into a <code>CommandHandler</code>. The adapter also needs the
+                    CommandBus instance. Use the <code>subscribe()</code> method on the adapter to
+                    subscribe the annotated handlers to the command bus using the correct command
+                    type.</para>
+                <para>If you use Spring, you may also define a
+                    <code>AnnotationCommandHandlerBeanPostProcessor</code>. This post processor
+                    detects any beans that have an <code>@CommandHandler</code> annotated method in
+                    them and wrap them in an <code>AnnotationCommandHandlerAdapter</code>
+                    automatically. They will also be automatically subscribed to the
+                    <code>CommandBus</code>. </para>
+                <note>
+                    <para>Note that you need to be careful when mixing manual wrapping and the use
+                        of the post processor. This might result in command handler being subscribed
+                        twice. In contrast to the event handlers, this does not have to be a problem
+                        for command handlers. Since only a single command handler can be subscribed
+                        to a specific type of command at any one time, their subscriptions will just
+                        overwrite eachother.</para>
+                </note>
+            </sect2>
+        </sect1>
+        <sect1>
+            <title>Configuring the Command Bus</title>
+            <para>The Command Bus is the mechanism that dispatches command to their respective
+                Command Handler. Though similar to the Event Bus, there is a very clear distinction
+                to be made between the two. Where Events are published to all registered listeners,
+                commands are sent to only one (and exactly one) command handler. If no command
+                handler is available, an exception (<code>NoHandlerForCommandException</code>) is
+                thrown. Subscribing multiple command handlers to the same command type will result
+                in subscriptions replacing eachother. In that case, the last subscription
+                wins.</para>
+            <para>Axon provides a single implementation of the Command Bus:
+                <code>SimpleCommandBus</code>. You can subscribe and unsubscribe command
+                handlers using the <code>subscribe</code> and <code>unsubscribe</code> methods,
+                respectively. They both take two parameters: the type of command to (un)subscribe
+                the handler to, and the handler to (un)subscribe. An unsubscription will only be
+                done if the handler passed as the second parameter was currently assigned to handle
+                that type of command. If another command was subscribed to that type of command,
+                nothing happens.</para>
+        </sect1>
+        <sect1>
+            <title>Command Handler Interceptors</title>
+            <para>One of the advantages of using a command bus is the ability to undertake action
+                based on any incoming command, such as logging or authentication. The
+                <code>SimpleCommandBus</code> provides the ability to register interceptors.
+                These interceptors provide the ability to take action both before and after command
+                processing.</para>
+            <para>Interceptors must implement the <code>CommandHandlerInterceptor</code> interface.
+                This interface declares two methods, <code>beforeCommandHandling()</code> and
+                <code>afterCommandHandling()</code>, that both take two parameters: a
+                <code>CommandContext</code> and a <code>CommandHandler</code>. The first
+                contains the actual command and provides the possiblity to add meta-data to the
+                command. This meta-data is not forwarded to the command handler, but is intended for
+                the command handler interceptor itself. You could, for example, store transactional
+                information in the context if your transactional boundary is at the command
+                handling. The second parameter, the <code>CommandHandler</code> is the command
+                handler that processed the command. You could, for example, base authorization
+                requirements on information in the command handler.</para>
+            <para>If you use annotation support, the <code>AnnotationCommandHandlerAdapter</code> is
+                passed as the command handler. You may call <code>getTarget()</code> on it to obtain
+                the actual annotated command handler. To obtain a reference to the method that
+                handles the command, you can use the <code>findCommandHandlerMethodFor(Object
+                command)</code> method.</para>
+        </sect1>
+</chapter>

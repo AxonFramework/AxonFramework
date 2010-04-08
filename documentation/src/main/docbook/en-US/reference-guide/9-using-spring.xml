@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2010. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<chapter id="using-spring" xmlns="http://docbook.org/ns/docbook">
+    <title>Using Spring</title>
+    <para>The AxonFramework has many integration points with the Spring Framework. All major
+        building blocks in Axon are Spring configurable. Furthermore, there are some Bean Post
+        Processors that scan the application context for building blocks and automatically wires
+        them.</para>
+    <para>Axon uses JSR 250 annotations (<code>@PostConstruct</code> and <code>@PreDestroy</code>)
+        to annotate lifecycle methods of some of the building blocks. Spring doesn't always
+        automatically evaluate these annotations. To force Spring to do so, add the
+            <code>&lt;context:annotation-config/></code> tag to your application context, as shown
+        in the example
+        below:<programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans" 
+       xmlns:context="http://www.springframework.org/schema/context">
+
+    &lt;context:annotation-config/>
+
+&lt;/beans></programlisting></para>
+    <sect1>
+        <title>Wiring event handlers</title>
+        <para>Using the annotated event listeners is very easy when you use Spring. All you need to
+            do is configure the <code>AnnotationEventListenerBeanPostProcessor</code> in your
+            application context. This post processor will discover beans with <code>@EventHandler</code>
+            annotated methods and automatically connect them to the event bus.<programlistingco>
+                <areaspec>
+                    <area xml:id="postprocessor-co" coords="3 67"/>
+                    <area xml:id="optional-eventbus-reference-co" coords="4 52"/>
+                    <area xml:id="eventlistener-co" coords="7 76"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean class="org...AnnotationEventListenerBeanPostProcessor">
+        &lt;property name="eventBus" ref="eventBus"/>
+    &lt;/bean>
+
+    &lt;bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="postprocessor-co">
+                        <para>This bean post processor will scan the application context for beans
+                            with an <code>@EventHandler</code> annotated method.</para>
+                    </callout>
+                    <callout arearefs="optional-eventbus-reference-co">
+                        <para>The reference to the event bus is optional, if only a single
+                                <code>EventBus</code> implementation is configured in the
+                            application context. The bean postprocessor will automatically find and
+                            wire it. If there is more than one <code>EventBus</code> in the context,
+                            you must specify the one to use in the postprocessor.</para>
+                    </callout>
+                    <callout arearefs="eventlistener-co">
+                        <para>This event listener will be automatically recognized and subscribed to
+                            the event bus.</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
+        <para>You can also wire event listeners "manually", by explicitly defining them within a
+                <code>AnnotationEventListenerAdapter</code> bean, as shown in the code sample below.<programlistingco>
+                <areaspec>
+                    <area xml:id="adapter-co" coords="3 82"/>
+                    <area xml:id="eventbus-reference-co" coords="7 52"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean class="org.axonframework...annotation.AnnotationEventListenerAdapter">
+        &lt;constructor-arg>
+            &lt;bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
+        &lt;/constructor-arg>
+        &lt;property name="eventBus" ref="eventBus"/>
+    &lt;/bean>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="adapter-co">
+                        <para>The adapter turns any bean with <code>@EventHandler</code> methods
+                            into an <code>EventListener</code></para>
+                    </callout>
+                    <callout arearefs="eventbus-reference-co">
+                        <para>You need to explicitly reference the event bus to which you like to
+                            register the event listener</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
+        <warning>
+            <para>Be careful when wiring event listeners "manually" while there is also an
+                    <code>AnnotationEventListenerBeanPostProcessor</code> in the application
+                context. This will cause the event listener to be wired twice.</para>
+        </warning>
+    </sect1>
+    <sect1>
+        <title>Wiring the event bus</title>
+        <para>In a typical Axon application, there is only one event bus. Wiring it is just a matter
+            of creating a bean of a subtype of <code>EventBus</code>. The
+            <code>AsyncEventBus</code>, the default implementation of choice, also takes an optional
+            executor property for the event processing.<programlistingco>
+                <areaspec>
+                    <area xml:id="eventbus-config-co" coords="3 84"/>
+                    <area xml:id="taskexecutor-config-co" coords="7 88"/>
+                    <area xml:id="wait-on-shutdown-co" coords="10 74"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus">
+        &lt;property name="executor" ref="taskExecutor"/>
+    &lt;/bean>
+
+    &lt;bean id="taskExecutor" class="org.springfr..sched..conc..ThreadPoolTaskExecutor">
+        &lt;property name="corePoolSize" value="20"/>
+        &lt;property name="maxPoolSize" value="100"/>
+        &lt;property name="waitForTasksToCompleteOnShutdown" value="true"/>
+    &lt;/bean>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="eventbus-config-co">
+                        <para>Bean definition of the event bus to use. In this case, the
+                            asynchronous event bus implementation is used.</para>
+                    </callout>
+                    <callout arearefs="taskexecutor-config-co">
+                        <para>Instead of using the default task executor, you can define your own to
+                            get more control over the number of threads to create. In this sample,
+                            we define one of Spring's executor implementations, which uses a thread
+                            pool.</para>
+                    </callout>
+                    <callout arearefs="wait-on-shutdown-co">
+                        <para>This property ensures that the events that are in the dispatching
+                            process are handled before the executor is shut down. This help ensure
+                            that all events are processed, even when the application is
+                            stopped.</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
+        <para>Configuring a <code>taskExecutor</code> is optional. By default, the
+                <code>AsyncEventBus</code> uses a <code>ScheduledThreadPoolExecutor</code> instance
+            with 5 core threads, a maximum pool size of 25 and a keep alive timeout of 5 minutes.
+            These settings are probably fine for smaller applications, but when the application
+            contains more than 25 listeners, event processing can stall, waiting for events. Whether
+            this is a problem heavily relies on your application's requirements.</para>
+        <para>The <code>AsyncEventBus</code> can be configured with any <code>Executor</code>
+            instance you like. However, if the provided instance implements the
+                <code>ScheduledExecutorService</code> interface (of the
+                <code>java.util.concurrent</code> package), the event bus will use it's scheduling
+            capability to schedule retries. Executor's that do not implement this interface will be
+            forced to delay processing with a <code>Thread.sleep()</code>.</para>
+        <para>Alternatively, you could use the <code>SynchronousEventBus</code>, but be aware that
+            this implementation is not transactional (i.e. it will not call the
+                <code>beforeTransaction()</code> and <code>afterTransaction()</code> methods) and
+            will dispatch all event in the calling thread. This makes it ideal for some testing
+            purposes, but unsuitable for most production environments.</para>
+    </sect1>
+    <sect1>
+        <title>Wiring the Repository</title>
+        <para>Wiring a repository is very similar to any other bean you would use in a Spring
+            application. Axon only provides abstract implementations for repositories, which means
+            you need to extend one of them. See <xref linkend="repositories-and-event-stores"/> for the
+            available implementations.</para>
+        <para>Repository implementations that do support event sourcing just need the event bus to
+            be configured, as well as any dependencies that your own implementation has.
+            <programlisting language="xml">&lt;bean id="simpleRepository" class="my.package.SimpleRepository">
+    &lt;property name="eventBus" ref="eventBus"/>
+&lt;/bean></programlisting></para>
+        <para>Repositories that support event sourcing will also need an event store, which takes
+            care of the actual storage and retrieval of events. The example below shows a repository
+            configuration of a repository that extends the
+            <code>EventSourcingRepository</code>.<programlisting language="xml">&lt;bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
+    &lt;property name="eventBus" ref="eventBus"/>
+    &lt;property name="eventStore" ref="eventStore"/>
+&lt;/bean></programlisting></para>
+        <para>The repository will delegate the storage of events to the configured
+                <code>eventStore</code>, while these events are dispatched using the provided
+                <code>eventBus</code>.</para>
+    </sect1>
+</chapter>

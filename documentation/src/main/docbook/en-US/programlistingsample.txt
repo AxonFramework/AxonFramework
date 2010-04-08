@@ -1,0 +1,38 @@
+
+
+            <programlistingco>
+                <areaspec units="LineColumn">
+                    <area coords="3 41" id="getUncommittedEvents-co"/>
+
+                    <area coords="4 27" id="getIdentifier-co"/>
+
+                    <area coords="5 26" id="commitEvents-co"/>
+
+                    <area coords="6 37" id="getUncommittedEventCount-co"/>
+                </areaspec>
+                <programlisting language="java"><![CDATA[@Annotated
+public interface AggregateRoot {
+    EventStream getUncommittedEvents();
+    UUID getIdentifier();
+    void commitEvents();
+    int getUncommittedEventCount();
+}]]></programlisting>
+            </programlistingco>
+
+            <calloutlist>
+                <callout arearefs="getUncommittedEvents-co" id="select-uri">
+                    <para>blabla</para>
+                </callout>
+
+                <callout arearefs="getIdentifier-co" id="dataimport-uri">
+                    <para>some more</para>
+                </callout>
+
+                <callout arearefs="commitEvents-co" id="luke-uri">
+                    <para>jibberish</para>
+                </callout>
+
+                <callout arearefs="getUncommittedEventCount-co" id="spellcheck-uri">
+                    <para>bull</para>
+                </callout>
+            </calloutlist>
