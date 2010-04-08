@@ -46,7 +46,7 @@
         <profile>
             <id>with-doc</id>
             <modules>
-                <module>reference-guide</module>
+                <module>documentation</module>
             </modules>
         </profile>
         <profile>
