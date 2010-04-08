@@ -37,6 +37,7 @@
                 <exclude>images/*-hires.png</exclude>
                 <exclude>images/*_large.*</exclude>
                 <exclude>**/*.svg</exclude>
+                <exclude>**/addressbook-*.png</exclude>
             </excludes>
             <outputDirectory>/</outputDirectory>
         </fileSet>

@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
@@ -40,7 +41,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <descriptorSourceDirectory>src/main/assembly/</descriptorSourceDirectory>
+                    <descriptorSourceDirectory>src/main/assembly/reference-guide/</descriptorSourceDirectory>
+                    <finalName>axon-reference-guide-${project.version}</finalName>
                 </configuration>
             </plugin>
             <plugin>
@@ -56,7 +58,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-							<sourceDocumentName>reference-guide.xml</sourceDocumentName>
+                            <sourceDocumentName>reference-guide.xml</sourceDocumentName>
                             <formats>
                                 <format>
                                     <formatName>html_single</formatName>
@@ -111,7 +113,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-							<sourceDocumentName>reference-guide.xml</sourceDocumentName>
+                            <sourceDocumentName>reference-guide.xml</sourceDocumentName>
                             <formats>
                                 <format>
                                     <formatName>pdf</formatName>
@@ -151,7 +153,7 @@
                             </options>
                         </configuration>
                     </execution>
-				</executions>
+                </executions>
                 <dependencies>
                     <dependency>
                         <groupId>net.sf.xslthl</groupId>
@@ -163,20 +165,20 @@
                         <artifactId>saxon</artifactId>
                         <version>8.7</version>
                     </dependency>
-					<dependency>
-						<groupId>net.sf.docbook</groupId>
-						<artifactId>docbook</artifactId>
-						<!--  The 1.74.0 version doesn't properly parse link elements-->
-						<version>1.72.0</version>
-					</dependency>
+                    <dependency>
+                        <groupId>net.sf.docbook</groupId>
+                        <artifactId>docbook</artifactId>
+                        <!--  The 1.74.0 version doesn't properly parse link elements-->
+                        <version>1.72.0</version>
+                    </dependency>
                 </dependencies>
                 <configuration>
                     <sourceDirectory>${basedir}/src/main/docbook</sourceDirectory>
                     <masterTranslation>en-US</masterTranslation>
                     <publishDirectory>${basedir}/target</publishDirectory>
-					<imageResource>
-						<directory>${basedir}/src/main/resources/</directory>
-					</imageResource>
+                    <imageResource>
+                        <directory>${basedir}/src/main/resources/</directory>
+                    </imageResource>
                     <injections>
                         <injection>
                             <name>version</name>
