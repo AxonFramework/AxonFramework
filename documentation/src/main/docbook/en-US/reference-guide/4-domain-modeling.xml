@@ -16,7 +16,13 @@
 -->
 <chapter id="domain-modeling" xmlns="http://docbook.org/ns/docbook">
     <title>Domain Modeling</title>
-    <para>TODO: Explain what a domain model is, and what the Event and Aggregate chapters do in this chapter</para>
+    <para>In a CQRS-based application, a Domain Model (as defined by Eric Evans and Martin Fowler)
+        can be a very powerful mechanism to harness the complexity involved in the validation and
+        execution of state changes. Although a typical Domain Model has a great number of building
+        blocks, two of them play a major role when applied to CQRS: the Event and the
+        Aggregate.</para>
+    <para>The following chapters will explain the role of these building blocks and how to implement
+        them using the Axon Framework.</para>
     <sect1 xml:id="events">
         <title>Events</title>
         <para>The Axon Framework makes a distinction between three types of events, each with a
@@ -129,6 +135,20 @@
             state. The aggregate root is the object on top of the aggregate tree that is responsible
             for maintaining this consistent state.
         </para>
+        <note>
+            <para>The term "Aggregate" refers to the aggregate as defined by Evans in Domain Driven
+                Design: </para>
+            <para>
+                <quote>A cluster of associated objects that are treated as a unit for the purpose of
+                    data changes. External references are restricted to one member of the Aggregate,
+                    designated as the root. A set of consistency rules applies within the
+                    Aggregate's boundaries. </quote>
+            </para>
+            <para>A more extensive definition can be found on: <link
+                    xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://domaindrivendesign.org/freelinking/Aggregate">
+                    http://domaindrivendesign.org/freelinking/Aggregate</link>. </para>
+        </note>
         <para>For example, a "Contact" aggregate will contain two entities: contact and address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
             be done via the contact entity. In this case, the Contact entity is the appointed

@@ -16,15 +16,14 @@
 -->
 <chapter id="repositories-and-event-stores" xmlns="http://docbook.org/ns/docbook">
     <title>Repositories and Event Stores</title>
-        <para>The repository is the mechanism that provides access to aggregates. In the Axon
-            Framework, aggregates can only be loaded based on their unique identifier. All
-            repositories must implement the
-            <code>Repository</code>
-            interface. This interface
-            prescribes three methods: <code>load(identifier)</code>,
-            <code>save(aggregate)</code>
-            and <code>delete(identifier)</code>.
-        </para>
+        <para>The repository is the mechanism that provides access to aggregates. The repository
+        acts as a gateway to the actual storage mechanism used to persist the data. In CQRS, the
+        repositories only need to be able to find aggregates based on their unique identifier. Any
+        other types of queries should be performed against the query database, not the
+        Repository.</para>
+    <para>In the Axon Framework, all repositories must implement the <code>Repository</code>
+        interface. This interface prescribes two methods: <code>load(identifier)</code> and
+            <code>save(aggregate)</code>. </para>
         <para>Depending on your underlying persistence storage and auditing needs, there are a
             number of base implementations that provide basic functionality needed by most
             repositories. Axon Framework makes a distinction between repositories that save the
@@ -33,17 +32,25 @@
         </para>
         <sect1 xml:id="standard-repositories">
             <title>Standard repositories</title>
+        <para>Standard repositories store the actual state of an Aggregate. Upon each change, the
+            new state will overwrite the old. This makes it possible for the query components of the
+            application to use the same information the command component also uses. This could,
+            depending on the type of application you are creating, be the simplest solution. If that
+            is the case, Axon provides some building blocks that help you implement such a
+            repository.</para>
+        <para>Note that the Repository interface does not prescribe a
+                <code>delete(identifier)</code> method. This is because not all types of
+            repositories use that functionality. Of course, nothing witholds you from adding it to
+            your repository implementation.</para>
             <simplesect>
                 <title>
                     <code>AbstractRepository</code>
                 </title>
             </simplesect>
             <para>The most basic implementation of the repository is AbstractRepository. It takes
-                care of the event publishing when an aggregate is saved or deleted. The actual
-                persistence mechanism must still be implemented. This implementation doesn't provide
-                any locking mechanism and expects the underlying data storage mechanism to provide
-                it.
-            </para>
+            care of the event publishing when an aggregate is saved. The actual persistence
+            mechanism must still be implemented. This implementation doesn't provide any locking
+            mechanism and expects the underlying data storage mechanism to provide it. </para>
             <simplesect xml:id="locking-repository">
                 <title>
                     <code>LockingRepository</code>
@@ -175,17 +182,38 @@
                 </programlistingco>
             </simplesect>
             <simplesect>
-                <title>Implementing your own event store</title>
-                <para>If you have specific requirements for an event store, it is quite easy to
-                    implement one using different underlying data sources. Reading and appending
-                    events is done using a <code>DomainEventStream</code>, which is quite similar to
-                    iterator implementations. </para>
-                <tip>
-                    <para>The <code>SimpleDomainEventStream</code> class will make the contents of a
-                        sequence (<code>List</code> or <code>array</code>) of
-                        <code>DomainEvent</code> instances accessible as event stream. </para>
-                </tip>
-            </simplesect>
+            <title>Implementing your own event store</title>
+            <para>If you have specific requirements for an event store, it is quite easy to
+                implement one using different underlying data sources. Reading and appending events
+                is done using a <code>DomainEventStream</code>, which is quite similar to iterator
+                implementations. </para>
+            <tip>
+                <para>The <code>SimpleDomainEventStream</code> class will make the contents of a
+                    sequence (<code>List</code> or <code>array</code>) of <code>DomainEvent</code>
+                    instances accessible as event stream. </para>
+            </tip>
+        </simplesect>
+        <simplesect>
+            <title>Influencing the serialization process</title>
+            <para>Event Stores need a way to serialize the Domain Event to prepare it for storage.
+                By default, Axon uses the <code>XStreamEventSerializer</code>, which uses XStream
+                (see <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>) to
+                serialize Domain Events into XML and vice versa. XStream is very fast and is more
+                flexible than Java Serialization. For example, if you remove a field from a class,
+                you can still deserialize instances from that class using the old XML. XStream will
+                simply ignore that field. Furthermore, the result of XStream serialization is human
+                readable. Quite useful for logging and debugging purposes.</para>
+            <para>The XStreamEventSerializer can be configured. You can define aliases it should use
+                for certain packages, classes or even fields. Besides being a nice way to shorten
+                potentially long names, aliases can also be used when class definitions of event
+                change. For more information about aliases, visit the XStream website: <link
+                    xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
+                    >xstream.codehaus.org</link>.</para>
+            <para>You may also implement your own Event Serializer, simply by creating a class that
+                implements <code>EventSerializer</code>, and configuring the Event Store to use that
+                implementation instead of the default.</para>
+        </simplesect>
         </sect1>
         <sect1 xml:id="using-snapshot-events">
             <title>Using Snapshot Events</title>
