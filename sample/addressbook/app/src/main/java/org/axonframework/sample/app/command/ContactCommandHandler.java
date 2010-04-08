@@ -45,11 +45,12 @@ public class ContactCommandHandler {
      * @param command CreateContactCommand object that contains the needed data to create a new contact
      */
     @CommandHandler
-    public void handle(CreateContactCommand command) {
+    public UUID handle(CreateContactCommand command) {
         logger.debug("Received a command for a new contact with name : {}",command.getNewContactName());
         Assert.notNull(command.getNewContactName(), "Name may not be null");
         Contact contact = new Contact(command.getNewContactName());
         repository.save(contact);
+        return contact.getIdentifier();
     }
 
     /**

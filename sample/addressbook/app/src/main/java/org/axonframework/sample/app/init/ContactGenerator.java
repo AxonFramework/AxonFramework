@@ -17,11 +17,14 @@
 package org.axonframework.sample.app.init;
 
 import org.axonframework.core.command.CommandBus;
+import org.axonframework.sample.app.AddressType;
 import org.axonframework.sample.app.command.CreateContactCommand;
+import org.axonframework.sample.app.command.RegisterAddressCommand;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -45,26 +48,35 @@ public class ContactGenerator implements ApplicationListener {
         if (initialized.compareAndSet(false, true)) {
             CreateContactCommand commandAllard = new CreateContactCommand();
             commandAllard.setNewContactName("Allard");
-            commandBus.dispatch(commandAllard);
+            UUID uuidAllard = (UUID) commandBus.dispatch(commandAllard);
 
             CreateContactCommand commandJettro = new CreateContactCommand();
             commandJettro.setNewContactName("Jettro");
-            commandBus.dispatch(commandJettro);
+            UUID uuidJettro = (UUID) commandBus.dispatch(commandJettro);
 
-// TODO jettro : do not have the uuid anymore now that we use commands
-            
-//            UUID contact1 = contactCommandHandler.createContact("Allard");
-//            contactCommandHandler.registerAddress(contact1, AddressType.PRIVATE, new Address("AxonBoulevard 1",
-//                                                                                             "1234AB",
-//                                                                                             "The Hague"));
-//            contactCommandHandler.registerAddress(contact1, AddressType.WORK, new Address("JTeam avenue",
-//                                                                                          "1234AB",
-//                                                                                          "Amsterdam"));
-//
-//            UUID contact2 = contactCommandHandler.createContact("Jettro");
-//            contactCommandHandler.registerAddress(contact2, AddressType.PRIVATE, new Address("Feyenoordlaan 010",
-//                                                                                             "3000AA",
-//                                                                                             "Rotterdam"));
+            RegisterAddressCommand registerPrivateAddressCommand = new RegisterAddressCommand();
+            registerPrivateAddressCommand.setAddressType(AddressType.PRIVATE);
+            registerPrivateAddressCommand.setCity("The Hague");
+            registerPrivateAddressCommand.setContactId(uuidAllard.toString());
+            registerPrivateAddressCommand.setStreetAndNumber("AxonBoulevard 1");
+            registerPrivateAddressCommand.setZipCode("1234AB");
+            commandBus.dispatch(registerPrivateAddressCommand);
+
+            RegisterAddressCommand registerWorkAddressCommand = new RegisterAddressCommand();
+            registerWorkAddressCommand.setAddressType(AddressType.WORK);
+            registerWorkAddressCommand.setCity("Amsterdam");
+            registerWorkAddressCommand.setContactId(uuidAllard.toString());
+            registerWorkAddressCommand.setStreetAndNumber("JTeam avenue");
+            registerWorkAddressCommand.setZipCode("1234AB");
+            commandBus.dispatch(registerWorkAddressCommand);
+
+            RegisterAddressCommand registerJettroAddressCommand = new RegisterAddressCommand();
+            registerJettroAddressCommand.setAddressType(AddressType.PRIVATE);
+            registerJettroAddressCommand.setCity("Rotterdam");
+            registerJettroAddressCommand.setContactId(uuidJettro.toString());
+            registerJettroAddressCommand.setStreetAndNumber("Feyenoordlaan 010");
+            registerJettroAddressCommand.setZipCode("3000AA");
+            commandBus.dispatch(registerJettroAddressCommand);
         }
     }
 }

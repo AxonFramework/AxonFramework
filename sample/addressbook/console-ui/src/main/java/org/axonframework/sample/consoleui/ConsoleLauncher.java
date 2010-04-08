@@ -16,8 +16,10 @@
 
 package org.axonframework.sample.consoleui;
 
+import org.axonframework.core.command.CommandBus;
 import org.axonframework.core.eventhandler.EventBus;
 import org.axonframework.sample.app.command.ContactCommandHandler;
+import org.axonframework.sample.app.command.CreateContactCommand;
 import org.axonframework.sample.app.query.ContactEntry;
 import org.axonframework.sample.app.query.ContactRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -38,6 +41,9 @@ public class ConsoleLauncher {
 
     @Autowired
     private EventBus eventBus;
+
+    @Autowired
+    private CommandBus commandBus;
 
     @Autowired
     private ContactRepository repository;
@@ -56,9 +62,10 @@ public class ConsoleLauncher {
             System.out.print("> ");
             command = scanner.nextLine();
             if (command.startsWith("add ")) {
-// TODO jettro : this cannot work with the new command handling                
-//                UUID id = commandHandler.createContact(command.substring(4));
-//                System.out.println("Contact created: " + id.toString());
+                CreateContactCommand createCommand = new CreateContactCommand();
+                createCommand.setNewContactName(command.substring(4));
+                UUID id = (UUID) commandBus.dispatch(createCommand);
+                System.out.println("Contact created: " + id.toString());
             } else if (command.startsWith("list")) {
                 List<ContactEntry> contacts = repository.findAllContacts();
                 for (ContactEntry entry : contacts) {
