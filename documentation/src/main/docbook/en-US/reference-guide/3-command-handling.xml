@@ -49,35 +49,32 @@
                 the specific types of Command they can handle. See <xref
                     linkend="configuring-command-bus"/>.</para>
         </note>
-            <sect2>
-                <title>Annotation support</title>
-                <para>Comparable to the annotation support for Event Listeners, you can also use any
-                    POJO as command handler. The added advantage is that you can configure a single
-                    class to process several types of (related) commands. Just add the
+            <para><emphasis role="bold">Annotation support</emphasis></para>
+            <para>Comparable to the annotation support for Event Listeners, you can also use any
+                POJO as command handler. The added advantage is that you can configure a single
+                class to process several types of (related) commands. Just add the
                     <code>@CommandHandler</code> annotated to your methods to turn them into a
-                    command handler. These methods may only accept a single parameter, which is the
-                    command to process. Note that for each command type, there may only be one
-                    handler! This restriction counts for all handlers registered to the same command
-                    bus.</para>
-                <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
-                    annotated class into a <code>CommandHandler</code>. The adapter also needs the
-                    CommandBus instance. Use the <code>subscribe()</code> method on the adapter to
-                    subscribe the annotated handlers to the command bus using the correct command
-                    type.</para>
-                <para>If you use Spring, you may also define a
+                command handler. These methods may only accept a single parameter, which is the
+                command to process. Note that for each command type, there may only be one handler!
+                This restriction counts for all handlers registered to the same command bus.</para>
+            <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
+                annotated class into a <code>CommandHandler</code>. The adapter also needs the
+                CommandBus instance. Use the <code>subscribe()</code> method on the adapter to
+                subscribe the annotated handlers to the command bus using the correct command
+                type.</para>
+            <para>If you use Spring, you may also define a
                     <code>AnnotationCommandHandlerBeanPostProcessor</code>. This post processor
-                    detects any beans that have an <code>@CommandHandler</code> annotated method in
-                    them and wrap them in an <code>AnnotationCommandHandlerAdapter</code>
-                    automatically. They will also be automatically subscribed to the
-                    <code>CommandBus</code>. </para>
-                <note>
-                    <para>Note that you need to be careful when mixing manual wrapping and the use
-                    of the post processor. This might result in command handler being subscribed
-                    twice. This does not have to be a problem for most command handlers, since only
-                    a single command handler can be subscribed to a specific type of command at any
+                detects any beans that have an <code>@CommandHandler</code> annotated method in them
+                and wrap them in an <code>AnnotationCommandHandlerAdapter</code> automatically. They
+                will also be automatically subscribed to the <code>CommandBus</code>. </para>
+            <note>
+                <para>Note that you need to be careful when mixing manual wrapping and the use of
+                    the post processor. This might result in command handler being subscribed twice.
+                    This does not have to be a problem for most command handlers, since only a
+                    single command handler can be subscribed to a specific type of command at any
                     one time. Their subscriptions will just overwrite eachother.</para>
-                </note>
-            </sect2>
+            </note>
+        
         </sect1>
         <sect1 xml:id="configuring-command-bus">
         <title>Configuring the Command Bus</title>

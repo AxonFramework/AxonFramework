@@ -43,8 +43,7 @@
                 frustrating to find out that a seemingly easy-to-implement feature can require
                 development teams to take apart an entire application. Furthermore, today's
                 webapplications target an audience of potentially billions of people, making
-                scalability a bare necessity.
-            </para>
+                scalability a bare necessity. </para>
             <para>Although there are many applications and frameworks around that deal with
                 scalability issues, such as GigaSpaces and Terracotta, they share one fundamental
                 flaw. These stacks try to solve the scalability issues while letting developers
@@ -52,8 +51,7 @@
                 they even prevent or severely limit the use of a real domain model, forcing all
                 domain logic into services. Although that is faster to start building an
                 application, eventually this approach will cause complexity to increase and
-                development to slow down.
-            </para>
+                development to slow down. </para>
             <para>Greg Young, initiator of the Command Query Responsiblity Segregation (CQRS)
                 pattern addressed these issues by drastically changing the way applications are
                 architected. Instead of separating logic into separate layers, logic is separated
@@ -64,15 +62,12 @@
                 there are different technical and non-technical requirements for each of them. When
                 commands are executed, the query components are asynchronously updated using events.
                 These asynchronous updates through events is what makes this architecture is
-                extensible, scalable and ultimately more maintainable.
-                <note>
+                extensible, scalable and ultimately more maintainable. <note>
                     <para>A full explanation of CQRS is not within the scope of this document. If
                         you would like to have more background information about CQRS, visit the
                         Axon Framework website:<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                                                     ns1:href="http://www.axonframework.org/">
-                            www.axonframework.org</link>.
-                        It contains links to background information.
-                    </para>
+                            ns1:href="http://www.axonframework.org/"> www.axonframework.org</link>.
+                        It contains links to background information. </para>
                 </note>
             </para>
             <para>Since CQRS is so fundamentally different than the layered-architecture which
@@ -92,8 +87,7 @@
                 Axon provides annotation support, which allows you to build aggregates and event
                 listeners withouth tying your code to Axon specific logic. This allows you to focus
                 on your business logic, instead of the plumbing, and helps you makes your code
-                easier to test in isolation.
-            </para>
+                easier to test in isolation. </para>
             <para>Axon does not, in any way, try to hide the CQRS architecture or any of its
                 components from developers. Therefore, depending on team size, it is still advisable
                 to have one or more developers with a thorough understanding of CQRS on each team.
@@ -102,16 +96,13 @@
                 multi-threading concerns are typically hard to deal with, leading to hard-to-trace
                 bugs and sometimes complete application failure. When you have a tight deadline, you
                 probably don't even want to care about these concerns. Axon's code is thoroughly
-                tested to prevent these types of bugs.
-            </para>
+                tested to prevent these types of bugs. </para>
             <para>Most of the concerns Axon addresses are located inside the JVM. However, for an
                 application to be scalable, a single JVM is not enough. Therefore, Axon provides the
-                <code>axon-intregration</code>
-                module, which allows events to be sent to a
+                    <code>axon-intregration</code> module, which allows events to be sent to a
                 Spring Integration channel. From there, you can use Spring Integration to dispatch
                 events to application components on different machines. In the near future, Axon
-                will provide more ways to dispatch events between JVM's and physical
-                machines.
+                will provide more ways to dispatch events between JVM's and physical machines.
             </para>
         </sect2>
         <sect2>
@@ -119,11 +110,9 @@
             <para>Will each application benefit from Axon? Unfortunately not. Simple CRUD (Create,
                 Read, Update, Delete) applications which are not expected to scale will probably not
                 benefit from CQRS or Axon. Fortunately, there is a wide variety of applications that
-                does benefit from Axon.
-            </para>
+                does benefit from Axon. </para>
             <para>Applications that will most likely benefit from CQRS and Axon are those that show
-                one or more of the following characteristics:
-                <itemizedlist>
+                one or more of the following characteristics: <itemizedlist>
                     <listitem>
                         <para>The application is likely to be extended with new functionality during
                             a long period of time. For example, an online store might start off with
@@ -132,8 +121,7 @@
                             when items are sold. Even later, accounting can require financial
                             statistics of sales to be recorded, etc. Although it is hard to predict
                             how software projects will evolve in the future, the majority of this
-                            type of application is clearly presented as such.
-                        </para>
+                            type of application is clearly presented as such. </para>
                     </listitem>
                     <listitem>
                         <para>The application has a high read-to-write ratio. That means data is
@@ -141,8 +129,7 @@
                             for queries are different to those that are used for command validation,
                             it is possible to optimize these data sources for fast querying.
                             Duplicate data is no longer an issue, since events are published when
-                            data changes.
-                        </para>
+                            data changes. </para>
                     </listitem>
                     <listitem>
                         <para>The application presents data in many different formats. Many
@@ -154,8 +141,7 @@
                             information into reports that show data evolution over time. This,
                             again, is a different format of the same data. Using Axon, each data
                             source can be updated independently of each other on a real-time or
-                            scheduled basis.
-                        </para>
+                            scheduled basis. </para>
                     </listitem>
                     <listitem>
                         <para>When an application has clearly separated components with different
@@ -165,25 +151,10 @@
                             their order status. With Axon, these components can be deployed on
                             separate machines and scaled completely differently. They are kept
                             up-to-date using the events, which Axon will dispatch to all subscribed
-                            components, regardles of the machine they are deployed on.
-                        </para>
+                            components, regardles of the machine they are deployed on. </para>
                     </listitem>
-                </itemizedlist>
-            </para>
+                </itemizedlist></para>
         </sect2>
-        <!--
-        <sect2>
-            <title>Axon sample application</title>
-            <para>To show how applications can benefit from Axon, and as a guide when developing
-                applications, Axon Framework comes with a sample application: the addressbook. This
-                application has a Adobe Flex front-end, with an Axon-based server side component.
-                The application and its sources can be downloaded from the Axon Framework website:
-                    <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://www.axonframework.org">www.axonframework.org</link>. <xref
-                    linkend="sample-applications"/> contains more information about the sample
-                application.</para>
-        </sect2>
-        -->
     </sect1>
     <sect1 xml:id="getting-started">
         <title>Getting started</title>
@@ -251,7 +222,7 @@
                 <para>The event sourcing repository that is provided in Axon
                         (<code>XStreamFileSystemEventStore</code>) uses XStream by default. You need
                     to add the following maven dependency to your project to use this repository
-                    implementation if you would like to use these default. If you provide your own
+                    implementation if you would like to use these defaults. If you provide your own
                     serialization strategy based on another library, then you do not have to include
                     this dependency. </para>
                 <programlisting language="xml"><![CDATA[<dependency>
@@ -281,31 +252,27 @@
             scalabale and extensible application easier. This means we are constantly looking for
             help in developing our framework.
         </para>
-        <para>There is a number of ways in which you can contribute to the Axon Framework:
-            <itemizedlist>
+        <para>There is a number of ways in which you can contribute to the Axon Framework: <itemizedlist>
                 <listitem>
                     <para>You can report any bugs, feature requests or ideas about improvemens on
                         our issue page: <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                                             ns1:href="http://www.axonframework.org/issues"> axonframework.org/issues</link>. All ideas are welcome. Please be as
+                            ns1:href="http://www.axonframework.org/issues">
+                            axonframework.org/issues</link>. All ideas are welcome. Please be as
                         exact as possible when reporting bugs. This will help us reproduce and thus
-                        solve the problem faster.
-                    </para>
+                        solve the problem faster. </para>
                 </listitem>
                 <listitem>
                     <para>If you have created a component for your own application that you think
                         might be useful to include in the framework, send us a patch or a zip
                         containing the source code. We will evaluate it and try to fit it in the
                         framework. Please make sure code is properly documented using javadoc. This
-                        helps us to understand what is going on.
-                    </para>
+                        helps us to understand what is going on. </para>
                 </listitem>
                 <listitem>
                     <para>If you know of any other way you think you can help us, please do not
-                        hesitate to contact us.
-                    </para>
+                        hesitate to contact us. </para>
                 </listitem>
-            </itemizedlist>
-        </para>
+            </itemizedlist></para>
     </sect1>
     <sect1 xml:id="license">
         <title>License information</title>
