@@ -31,6 +31,9 @@ public class BaseController {
     [Inject(id="remoteAddressService")]
     public var addressService:RemoteObject;
 
+    [Inject(id="remoteCommandReceiver")]
+    public var commandReceiver:RemoteObject;
+
 
     public function BaseController() {
         // default constructor

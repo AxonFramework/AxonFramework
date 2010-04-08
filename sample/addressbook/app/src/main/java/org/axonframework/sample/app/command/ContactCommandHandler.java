@@ -16,9 +16,11 @@
 
 package org.axonframework.sample.app.command;
 
+import org.axonframework.core.command.annotation.CommandHandler;
 import org.axonframework.core.repository.Repository;
 import org.axonframework.sample.app.Address;
-import org.axonframework.sample.app.AddressType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 import java.util.UUID;
@@ -30,38 +32,52 @@ import java.util.UUID;
  * @author Allard Buijze
  */
 public class ContactCommandHandler {
+    private final static Logger logger = LoggerFactory.getLogger(ContactCommandHandler.class);
+    private Repository<Contact> repository;
 
-    private final Repository<Contact> repository;
-
-    public ContactCommandHandler(Repository<Contact> repository) {
+    public void setRepository(Repository<Contact> repository) {
         this.repository = repository;
     }
 
     /**
-     * Creates a contact with the provided name.
+     * Creates a new contact based on the provided data
      *
-     * @param name String required field that contains the contact of the name to be created.
-     * @return UUID of the person that is created.
+     * @param command CreateContactCommand object that contains the needed data to create a new contact
      */
-    public UUID createContact(String name) {
-        Assert.notNull(name, "Name may not be null");
-        Contact contact = new Contact(name);
+    @CommandHandler
+    public void handle(CreateContactCommand command) {
+        logger.debug("Received a command for a new contact with name : {}",command.getNewContactName());
+        Assert.notNull(command.getNewContactName(), "Name may not be null");
+        Contact contact = new Contact(command.getNewContactName());
         repository.save(contact);
-        return contact.getIdentifier();
     }
 
     /**
-     * Changes the name of the contact with the provided UUID. An {@code AggregateNotFoundException} is thrown if the
-     * UUID does not represent a valid contact.
+     * Changes the provided data for the contact found based on the provided identifier
      *
-     * @param contactId UUID required field representing the contact to change
-     * @param name      String required field containing the new value of the name of the contact
+     * An {@code AggregateNotFoundException} is thrown if the UUID does not represent a valid contact.
+     *
+     * @param command ChangeContactNameCommand that contains the identifier and the data to be updated
      */
-    public void changeContactName(UUID contactId, String name) {
-        Assert.notNull(contactId, "ContactIdentifier may not be null");
-        Assert.notNull(name, "Name may not be null");
-        Contact contact = repository.load(contactId);
-        contact.changeName(name);
+    @CommandHandler
+    public void handle(ChangeContactNameCommand command) {
+        Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
+        Assert.notNull(command.getContactNewName(), "Name may not be null");
+        Contact contact = repository.load(UUID.fromString(command.getContactNewName()));
+        contact.changeName(command.getContactNewName());
+        repository.save(contact);        
+    }
+
+    /**
+     * Removes the contact belonging to the contactId as provided by the command
+     *
+     * @param command RemoveContactCommand containing the identifier of the contact to be removed
+     */
+    @CommandHandler
+    public void handle(RemoveContactCommand command) {
+        Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
+        Contact contact = repository.load(UUID.fromString(command.getContactId()));
+        contact.delete();
         repository.save(contact);
     }
 
@@ -70,17 +86,17 @@ public class ContactCommandHandler {
      * provided type, this address will be updated. An {@code AggregateNotFoundException} is thrown if the provided UUID
      * does not exist.
      *
-     * @param contactId UUID required field containing the identifier of the contact to add an address to.
-     * @param type      AddressType required field containing the type of the address to register.
-     * @param address   Address Value object that contains the data of the new address to register
+     * @param command RegisterAddressCommand that contains all required data
      */
-    public void registerAddress(UUID contactId, AddressType type, Address address) {
-        Assert.notNull(contactId, "ContactIdentifier may not be null");
-        Assert.notNull(type, "AddressType may not be null");
-        Assert.notNull(address, "Address may not be null");
-        Contact contact = repository.load(contactId);
-        contact.registerAddress(type, address);
+    @CommandHandler
+    public void handle(RegisterAddressCommand command) {
+        Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
+        Assert.notNull(command.getAddressType(), "AddressType may not be null");
+        Address address = new Address(command.getStreetAndNumber(),command.getZipCode(),command.getCity());
+        Contact contact = repository.load(UUID.fromString(command.getContactId()));
+        contact.registerAddress(command.getAddressType(), address);
         repository.save(contact);
+
     }
 
     /**
@@ -88,27 +104,14 @@ public class ContactCommandHandler {
      * an {@code AggregateNotFoundException} is thrown. If the contact does not have an address with specified type
      * nothing happens.
      *
-     * @param contactId UUID required field containing the identifier of the contact to remove the address from
-     * @param type      AddressType required field containing the type of the address to remove from the contact
+     * @param command RemoveAddressCommand that contains all required data to remove an address from a contact
      */
-    public void removeAddress(UUID contactId, AddressType type) {
-        Assert.notNull(contactId, "ContactIdentifier may not be null");
-        Assert.notNull(type, "AddressType may not be null");
-        Contact contact = repository.load(contactId);
-        contact.removeAddress(type);
+    @CommandHandler
+    public void handle(RemoveAddressCommand command) {
+        Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
+        Assert.notNull(command.getAddressType(), "AddressType may not be null");
+        Contact contact = repository.load(UUID.fromString(command.getContactId()));
+        contact.removeAddress(command.getAddressType());
         repository.save(contact);
     }
-
-    /**
-     * Delete a contact with the provided UUID
-     *
-     * @param contactId UUID required field containing the identifier of the contact to be removed
-     */
-    public void deleteContact(UUID contactId) {
-        Assert.notNull(contactId, "ContactIdentifier may not be null");
-        Contact contact = repository.load(contactId);
-        contact.delete();
-        repository.save(contact);
-    }
-
 }

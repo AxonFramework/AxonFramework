@@ -17,8 +17,9 @@
 package org.axonframework.examples.addressbook.controllers {
 import mx.rpc.AsyncToken;
 
-import org.axonframework.examples.addressbook.messages.notification.NotificationMessage;
+import org.axonframework.examples.addressbook.commands.RemoveAddressCommand;
 import org.axonframework.examples.addressbook.messages.command.RemoveAddressCommandMessage;
+import org.axonframework.examples.addressbook.messages.notification.NotificationMessage;
 import org.axonframework.examples.addressbook.model.Address;
 import org.axonframework.examples.addressbook.model.Contact;
 
@@ -34,7 +35,11 @@ public class RemoveAddressController extends BaseController {
         this.address = message.address;
         this.contact = message.contact;
 
-        return addressService.removeAddressFor(this.contact.uuid, this.address.type);
+        var removeAddressCommand:RemoveAddressCommand = new RemoveAddressCommand();
+        removeAddressCommand.contactId = address.contactUUID;
+        removeAddressCommand.addressType = address.type;
+
+        return commandReceiver.sendCommand(removeAddressCommand);
     }
 
     public function result():void {

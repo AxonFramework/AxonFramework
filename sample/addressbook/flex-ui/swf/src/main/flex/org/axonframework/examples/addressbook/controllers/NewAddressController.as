@@ -17,6 +17,8 @@
 package org.axonframework.examples.addressbook.controllers {
 import mx.rpc.AsyncToken;
 
+import org.axonframework.examples.addressbook.commands.RegisterAddressCommand;
+import org.axonframework.examples.addressbook.messages.ValidationMessage;
 import org.axonframework.examples.addressbook.messages.command.NewAddressCommandMessage;
 import org.axonframework.examples.addressbook.messages.notification.NotificationMessage;
 import org.axonframework.examples.addressbook.model.Address;
@@ -32,9 +34,31 @@ public class NewAddressController extends BaseController {
     }
 
     public function execute(message:NewAddressCommandMessage):AsyncToken {
-        // TODO We should implement some validation here
+        if (message.address.city.length < 1) {
+            dispatcher(new ValidationMessage("City is required for address"));
+            return null;
+        }
+
+        if (message.address.street.length < 1) {
+            dispatcher(new ValidationMessage("Street is required for address"));
+            return null;
+        }
+
+        if (message.address.zipCode.length < 1) {
+            dispatcher(new ValidationMessage("Zipcode is required for address"));
+            return null
+        }
+
         this.address = message.address;
-        return addressService.createAddress(message.address);
+
+        var registerAddressCommand:RegisterAddressCommand = new RegisterAddressCommand();
+        registerAddressCommand.contactId = address.contactUUID;
+        registerAddressCommand.streetAndNumber = address.street;
+        registerAddressCommand.zipCode = address.zipCode;
+        registerAddressCommand.city = address.city;
+        registerAddressCommand.addressType = address.type;
+
+        return commandReceiver.sendCommand(registerAddressCommand);
     }
 
     public function result():void {

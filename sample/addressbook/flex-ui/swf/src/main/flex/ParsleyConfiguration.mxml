@@ -28,6 +28,12 @@
             endpoint="messagebroker/amf"
             showBusyCursor="true"/>
 
+    <mx:RemoteObject
+            id="remoteCommandReceiver"
+            destination="commandReceiver"
+            endpoint="messagebroker/amf"
+            showBusyCursor="true"/>
+
     <cons:Consumer/>
 
     <sf:DynamicCommand type="{NewAddressController}" messageType="{NewAddressCommandMessage}"/>
@@ -46,25 +52,15 @@
 
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.controllers.*;
-        import org.axonframework.examples.addressbook.messages.*;
         import org.axonframework.examples.addressbook.messages.command.NewAddressCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.NewContactCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.RemoveAddressCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.RemoveContactCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.SearchForAddressesCommandMessage;
-        import org.axonframework.examples.addressbook.messages.command.SearchForAddressesCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.SelectContactCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.ShowContactsCommandMessage;
-        import org.axonframework.examples.addressbook.messages.command.ShowContactsCommandMessage;
-        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactAddressNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactNotificationMessage;
-        import org.axonframework.examples.addressbook.messages.command.NewAddressCommandMessage;
-        import org.axonframework.examples.addressbook.messages.command.NewContactCommandMessage;
-        import org.axonframework.examples.addressbook.messages.command.RemoveAddressCommandMessage;
-        import org.axonframework.examples.addressbook.messages.command.RemoveContactCommandMessage;
-        import org.axonframework.examples.addressbook.messages.command.SelectContactCommandMessage;
         import org.axonframework.examples.addressbook.messages.notification.RemovedItemNotificationMessage;
         import org.axonframework.examples.addressbook.messages.notification.UpdatedContactAddressNotificationMessage;
+        import org.axonframework.examples.addressbook.messages.notification.UpdatedContactNotificationMessage;
         ]]></mx:Script>
 </mx:Object>

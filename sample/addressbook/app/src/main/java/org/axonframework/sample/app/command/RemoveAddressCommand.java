@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.web;
+package org.axonframework.sample.app.command;
 
-import org.axonframework.examples.addressbook.web.dto.AddressDTO;
-import org.axonframework.examples.addressbook.web.dto.ContactDTO;
-
-import java.util.List;
+import org.axonframework.sample.app.AddressType;
 
 /**
  * @author Jettro Coenradie
  */
-public interface AddressService {
-    List<AddressDTO> searchAddresses(AddressDTO searchAddress);
+public class RemoveAddressCommand {
+    private String contactId;
+    private AddressType addressType;
 
-    List<ContactDTO> obtainAllContacts();
+    public AddressType getAddressType() {
+        return addressType;
+    }
 
-    List<AddressDTO> obtainContactAddresses(String contactIdentifier);
+    public void setAddressType(AddressType addressType) {
+        this.addressType = addressType;
+    }
 
+    public String getContactId() {
+        return contactId;
+    }
+
+    public void setContactId(String contactId) {
+        this.contactId = contactId;
+    }
 }

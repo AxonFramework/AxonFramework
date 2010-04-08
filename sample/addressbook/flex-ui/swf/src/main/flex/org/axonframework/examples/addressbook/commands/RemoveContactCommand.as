@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.web;
+package org.axonframework.examples.addressbook.commands {
 
-import org.axonframework.examples.addressbook.web.dto.AddressDTO;
-import org.axonframework.examples.addressbook.web.dto.ContactDTO;
-
-import java.util.List;
-
-/**
- * @author Jettro Coenradie
- */
-public interface AddressService {
-    List<AddressDTO> searchAddresses(AddressDTO searchAddress);
-
-    List<ContactDTO> obtainAllContacts();
-
-    List<AddressDTO> obtainContactAddresses(String contactIdentifier);
-
+[Bindable]
+[RemoteClass(alias="org.axonframework.sample.app.command.RemoveContactCommand")]
+public class RemoveContactCommand {
+    public var contactId:String;
+    
+    public function RemoveContactCommand() {
+    }
+}
 }

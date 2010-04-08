@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.web;
-
-import org.axonframework.examples.addressbook.web.dto.AddressDTO;
-import org.axonframework.examples.addressbook.web.dto.ContactDTO;
-
-import java.util.List;
+package org.axonframework.sample.app.command;
 
 /**
  * @author Jettro Coenradie
  */
-public interface AddressService {
-    List<AddressDTO> searchAddresses(AddressDTO searchAddress);
+public class CreateContactCommand {
+    private String newContactName;
 
-    List<ContactDTO> obtainAllContacts();
+    public void setNewContactName(String newContactName) {
+        this.newContactName = newContactName;
+    }
 
-    List<AddressDTO> obtainContactAddresses(String contactIdentifier);
-
+    public String getNewContactName() {
+        return newContactName;
+    }
 }

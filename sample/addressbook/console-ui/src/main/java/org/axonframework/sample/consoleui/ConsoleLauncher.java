@@ -27,7 +27,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Scanner;
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -57,8 +56,9 @@ public class ConsoleLauncher {
             System.out.print("> ");
             command = scanner.nextLine();
             if (command.startsWith("add ")) {
-                UUID id = commandHandler.createContact(command.substring(4));
-                System.out.println("Contact created: " + id.toString());
+// TODO jettro : this cannot work with the new command handling                
+//                UUID id = commandHandler.createContact(command.substring(4));
+//                System.out.println("Contact created: " + id.toString());
             } else if (command.startsWith("list")) {
                 List<ContactEntry> contacts = repository.findAllContacts();
                 for (ContactEntry entry : contacts) {

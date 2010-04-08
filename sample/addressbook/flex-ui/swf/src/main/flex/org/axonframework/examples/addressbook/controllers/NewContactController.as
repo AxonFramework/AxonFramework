@@ -17,9 +17,10 @@
 package org.axonframework.examples.addressbook.controllers {
 import mx.rpc.AsyncToken;
 
+import org.axonframework.examples.addressbook.commands.CreateContactCommand;
+import org.axonframework.examples.addressbook.messages.ValidationMessage;
 import org.axonframework.examples.addressbook.messages.command.NewContactCommandMessage;
 import org.axonframework.examples.addressbook.messages.notification.NotificationMessage;
-import org.axonframework.examples.addressbook.messages.ValidationMessage;
 import org.axonframework.examples.addressbook.model.Contact;
 
 /**
@@ -38,7 +39,9 @@ public class NewContactController extends BaseController {
             return null;
         }
         this.contact = message.contact;
-        return addressService.createContact(this.contact);
+        var addContactCommand:CreateContactCommand = new CreateContactCommand();
+        addContactCommand.newContactName = message.contact.name;
+        return commandReceiver.sendCommand(addContactCommand); 
     }
 
     public function result():void {

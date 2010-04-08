@@ -26,6 +26,12 @@
         <property name="executor" ref="taskExecutor"/>
     </bean>
 
+    <bean class="org.axonframework.core.command.annotation.postprocessor.AnnotationCommandHandlerBeanPostProcessor">
+        <property name="commandBus" ref="commandBus"/>    
+    </bean>
+
+    <bean id="commandBus" class="org.axonframework.core.command.SimpleCommandBus"/>
+
     <bean id="eventBus" class="org.axonframework.core.eventhandler.SimpleEventBus"/>
 
     <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
@@ -45,7 +51,7 @@
     </bean>
 
     <bean id="contactCommandHandler" class="org.axonframework.sample.app.command.ContactCommandHandler">
-        <constructor-arg ref="contactRepository"/>
+        <property name="repository" ref="contactRepository"/>
     </bean>
 
 </beans>

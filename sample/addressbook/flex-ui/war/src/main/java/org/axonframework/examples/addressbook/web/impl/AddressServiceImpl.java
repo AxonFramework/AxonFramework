@@ -19,9 +19,6 @@ package org.axonframework.examples.addressbook.web.impl;
 import org.axonframework.examples.addressbook.web.AddressService;
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.axonframework.examples.addressbook.web.dto.ContactDTO;
-import org.axonframework.sample.app.Address;
-import org.axonframework.sample.app.AddressType;
-import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.query.AddressEntry;
 import org.axonframework.sample.app.query.ContactEntry;
 import org.axonframework.sample.app.query.ContactRepository;
@@ -40,12 +37,10 @@ import java.util.UUID;
 @Service("addressService")
 @RemotingDestination(channels = {"my-amf"})
 public class AddressServiceImpl implements AddressService {
-    private ContactCommandHandler contactCommandHandler;
     private ContactRepository repository;
 
     @Autowired
-    public AddressServiceImpl(ContactCommandHandler contactCommandHandler, ContactRepository repository) {
-        this.contactCommandHandler = contactCommandHandler;
+    public AddressServiceImpl(ContactRepository repository) {
         this.repository = repository;
     }
 
@@ -62,13 +57,6 @@ public class AddressServiceImpl implements AddressService {
         return foundAddresses;
     }
 
-    @RemotingInclude
-    @Override
-    public void createAddress(AddressDTO addressDTO) {
-        Address address = new Address(addressDTO.getStreet(), addressDTO.getZipCode(), addressDTO.getCity());
-        contactCommandHandler.registerAddress(UUID.fromString(addressDTO.getContactUUID()), addressDTO.getType(), address);
-    }
-
     @Override
     @RemotingInclude
     public List<ContactDTO> obtainAllContacts() {
@@ -78,12 +66,6 @@ public class AddressServiceImpl implements AddressService {
             contacts.add(ContactDTO.createContactDTOFrom(contactEntry));
         }
         return contacts;
-    }
-
-    @Override
-    @RemotingInclude
-    public void createContact(ContactDTO contactDTO) {
-        contactCommandHandler.createContact(contactDTO.getName());
     }
 
     @Override
@@ -99,15 +81,4 @@ public class AddressServiceImpl implements AddressService {
         return foundAddresses;
     }
 
-    @Override
-    @RemotingInclude
-    public void removeAddressFor(String contactIdentifier, AddressType addressType) {
-        contactCommandHandler.removeAddress(UUID.fromString(contactIdentifier), addressType);
-    }
-
-    @Override
-    @RemotingInclude
-    public void removeContact(String contactIdentifier) {
-        contactCommandHandler.deleteContact(UUID.fromString(contactIdentifier));
-    }
 }

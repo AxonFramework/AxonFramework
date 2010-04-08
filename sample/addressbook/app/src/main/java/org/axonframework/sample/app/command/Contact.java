@@ -18,15 +18,7 @@ package org.axonframework.sample.app.command;
 
 import org.axonframework.core.eventhandler.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.sample.app.Address;
-import org.axonframework.sample.app.AddressAddedEvent;
-import org.axonframework.sample.app.AddressChangedEvent;
-import org.axonframework.sample.app.AddressRegisteredEvent;
-import org.axonframework.sample.app.AddressRemovedEvent;
-import org.axonframework.sample.app.AddressType;
-import org.axonframework.sample.app.ContactCreatedEvent;
-import org.axonframework.sample.app.ContactDeletedEvent;
-import org.axonframework.sample.app.ContactNameChangedEvent;
+import org.axonframework.sample.app.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +42,13 @@ class Contact extends AbstractAnnotatedAggregateRoot {
         super(identifier);
     }
 
+    /**
+     * Register the provided address with the provided type. If a contact already has an address of the provided
+     * type, that address is changed.
+     *
+     * @param type AddressType of the address to add or change
+     * @param address Address to add or change
+     */
     public void registerAddress(AddressType type, Address address) {
         if (addresses.containsKey(type)) {
             apply(new AddressChangedEvent(type, address));
@@ -58,12 +57,22 @@ class Contact extends AbstractAnnotatedAggregateRoot {
         }
     }
 
+    /**
+     * Removes the address with the provided type if it exists.
+     *
+     * @param type AddressType of the address that needs to be removed
+     */
     public void removeAddress(AddressType type) {
         if (addresses.remove(type) != null) {
             apply(new AddressRemovedEvent(type));
         }
     }
 
+    /**
+     * Change the name of the contact
+     *
+     * @param name String containing the new name
+     */
     public void changeName(String name) {
         apply(new ContactNameChangedEvent(name));
     }

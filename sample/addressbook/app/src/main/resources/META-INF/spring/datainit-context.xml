@@ -20,7 +20,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean class="org.axonframework.sample.app.init.ContactGenerator">
-        <constructor-arg ref="contactCommandHandler"/>
+        <constructor-arg ref="commandBus"/>
     </bean>
 
 </beans>
