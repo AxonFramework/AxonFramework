@@ -47,7 +47,7 @@ public class AbstractAnnotatedAggregateRootTest {
             });
             fail("Expected UnsupportedOperationException. There is no event handler for this aggregate.");
         }
-        catch (UnsupportedOperationException e) {
+        catch (UnhandledEventException e) {
             // this is what we wanted
         }
 
