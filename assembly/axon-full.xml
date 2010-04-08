@@ -48,14 +48,14 @@
     </moduleSets>
     <fileSets>
         <fileSet>
-            <directory>reference-guide/target/en-US/pdf/</directory>
+            <directory>documentation/target/en-US/pdf/</directory>
             <outputDirectory>documentation</outputDirectory>
             <includes>
                 <include>*.pdf</include>
             </includes>
         </fileSet>
         <fileSet>
-            <directory>reference-guide/target/</directory>
+            <directory>documentation/target/</directory>
             <outputDirectory>documentation</outputDirectory>
             <includes>
                 <include>*html*.zip</include>
