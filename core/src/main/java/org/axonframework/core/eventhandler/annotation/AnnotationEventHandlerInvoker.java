@@ -58,7 +58,18 @@ class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
      * @param event the event to handle
      */
     protected void invokeEventHandlerMethod(Event event) {
-        invokeHandlerMethod(event, TransactionStatus.current());
+        try {
+            invokeHandlerMethod(event, TransactionStatus.current());
+        } catch (IllegalAccessException e) {
+            throw new UnsupportedOperationException(String.format(
+                    "An error occurred when handling an event of type [%s]",
+                    event.getClass().getSimpleName()), e);
+        } catch (InvocationTargetException e) {
+            throw new UnsupportedOperationException(String.format(
+                    "An error occurred when handling an event of type [%s]",
+                    event.getClass().getSimpleName()), e);
+        }
+
     }
 
     /**

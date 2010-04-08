@@ -51,8 +51,11 @@ public abstract class AbstractHandlerInvoker {
      *
      * @param parameter the event to handle
      * @return the return value of the invocation
+     *
+     * @throws IllegalAccessException    When a security policy prevents invocation using reflection
+     * @throws InvocationTargetException If the handler method threw an exception
      */
-    protected Object invokeHandlerMethod(Object parameter) {
+    protected Object invokeHandlerMethod(Object parameter) throws InvocationTargetException, IllegalAccessException {
         return invokeHandlerMethod(parameter, null);
     }
 
@@ -63,35 +66,29 @@ public abstract class AbstractHandlerInvoker {
      * @param parameter              the event to handle
      * @param secondHandlerParameter An optional second parameter allowed on the annotated method
      * @return the return value of the invocation
+     *
+     * @throws IllegalAccessException    When a security policy prevents invocation using reflection
+     * @throws InvocationTargetException If the handler method threw an exception
      */
-    protected Object invokeHandlerMethod(Object parameter, Object secondHandlerParameter) {
+    protected Object invokeHandlerMethod(Object parameter, Object secondHandlerParameter)
+            throws InvocationTargetException, IllegalAccessException {
         final Method m = findHandlerMethod(parameter.getClass());
         if (m == null) {
             // event listener doesn't support this type of event
             return onNoMethodFound(parameter.getClass());
         }
-        try {
-            if (!m.isAccessible()) {
-                doPrivileged(new PrivilegedAccessibilityAction(m));
+        if (!m.isAccessible()) {
+            doPrivileged(new PrivilegedAccessibilityAction(m));
+        }
+        if (m.getParameterTypes().length == 1) {
+            Object retVal = m.invoke(target, parameter);
+            // let's make a clear distinction between null return value and void methods
+            if (Void.TYPE.equals(m.getReturnType())) {
+                return Void.TYPE;
             }
-            if (m.getParameterTypes().length == 1) {
-                Object retVal = m.invoke(target, parameter);
-                // let's make a clear distinction between null return value and void methods
-                if (Void.TYPE.equals(m.getReturnType())) {
-                    return Void.TYPE;
-                }
-                return retVal;
-            } else {
-                return m.invoke(target, parameter, secondHandlerParameter);
-            }
-        } catch (IllegalAccessException e) {
-            throw new UnsupportedOperationException(String.format(
-                    "An error occurred when applying an event of type [%s]",
-                    parameter.getClass().getSimpleName()), e);
-        } catch (InvocationTargetException e) {
-            throw new UnsupportedOperationException(String.format(
-                    "An error occurred when applying an event of type [%s]",
-                    parameter.getClass().getSimpleName()), e);
+            return retVal;
+        } else {
+            return m.invoke(target, parameter, secondHandlerParameter);
         }
     }
 

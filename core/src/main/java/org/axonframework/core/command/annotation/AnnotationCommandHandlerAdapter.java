@@ -24,6 +24,7 @@ import org.springframework.util.ReflectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,7 +69,20 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      */
     @Override
     public Object handle(Object command) {
-        return invokeHandlerMethod(command);
+        try {
+            return invokeHandlerMethod(command);
+        } catch (IllegalAccessException e) {
+            throw new UnsupportedOperationException(String.format(
+                    "An error occurred when handling a command of type [%s]",
+                    command.getClass().getSimpleName()), e);
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new UnsupportedOperationException(String.format(
+                    "An error occurred when handling a command of type [%s]",
+                    command.getClass().getSimpleName()), e);
+        }
     }
 
     /**
