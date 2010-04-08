@@ -79,7 +79,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
             }
-            throw new UnsupportedOperationException(String.format(
+            throw new CommandHandlerInvocationException(String.format(
                     "An error occurred when handling a command of type [%s]",
                     command.getClass().getSimpleName()), e);
         }

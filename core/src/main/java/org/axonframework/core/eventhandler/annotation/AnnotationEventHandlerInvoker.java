@@ -65,7 +65,10 @@ class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
                     "An error occurred when handling an event of type [%s]",
                     event.getClass().getSimpleName()), e);
         } catch (InvocationTargetException e) {
-            throw new UnsupportedOperationException(String.format(
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new EventHandlerInvocationException(String.format(
                     "An error occurred when handling an event of type [%s]",
                     event.getClass().getSimpleName()), e);
         }
