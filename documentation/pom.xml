@@ -103,6 +103,9 @@
                                     </property>
                                 </transformerParameters>
                             </options>
+                            <imageResource>
+                                <directory>${project.basedir}/src/main/resources</directory>
+                            </imageResource>
                         </configuration>
                     </execution>
                     <execution>
@@ -151,6 +154,9 @@
                                     </property>
                                 </transformerParameters>
                             </options>
+                            <imageResource>
+                                <directory>${project.basedir}/src/main/resources/images</directory>
+                            </imageResource>
                         </configuration>
                     </execution>
                 </executions>
@@ -176,9 +182,6 @@
                     <sourceDirectory>${basedir}/src/main/docbook</sourceDirectory>
                     <masterTranslation>en-US</masterTranslation>
                     <publishDirectory>${basedir}/target</publishDirectory>
-                    <imageResource>
-                        <directory>${basedir}/src/main/resources/</directory>
-                    </imageResource>
                     <injections>
                         <injection>
                             <name>version</name>
