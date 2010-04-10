@@ -388,16 +388,19 @@ public class MyCustomPolicy implements EventSequencingPolicy {
             <simplesect>
                 <title>Annotation support</title>
                 <para>As with many of the other supported features in Axon, there is also annotation
-                    support for transaction management. The methods annotated with
-                    <code>@BeforeTransaction</code>
-                    and
-                    <code>@AfterTransaction</code>
-                    will be
-                    called before and after the execution of a transactional batch, respectively.
-                    The annotated methods may accept a single parameter of type
-                    <code>TransactionStatus</code>, which provides access to transaction
-                    details, such as current status and configuration.
-                </para>
+                    support for transaction management. You have several options to configure
+                    transactions.</para>
+                <para>The first is to annotate methods on your EventListener with
+                        <code>@BeforeTransaction</code> and <code>@AfterTransaction</code>. These
+                    methods will be called before and after the execution of a transactional batch,
+                    respectively. The annotated methods may accept a single parameter of type
+                        <code>TransactionStatus</code>, which provides access to transaction
+                    details, such as current status and configuration.</para>
+                <para>Alternatively, you can use an external Transaction Manager, which you assign
+                    to a field. If you annotate that field with @TransactionManager, Axon will
+                    autodetect it and use it as transaction manager for that listener. The
+                    transaction manager may be either one that implements the TransactionManager
+                    interface, or any other type that uses annotations.</para>
             </simplesect>
         </sect2>
     </sect1>
