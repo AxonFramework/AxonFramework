@@ -49,6 +49,10 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
 
     /**
      * {@inheritDoc}
+     *
+     * @throws IllegalStateException     if this aggregate was already initialized.
+     * @throws AggregateDeletedException if the event stream contains an event of type {@link AggregateDeletedEvent} (or
+     *                                   subtype).
      */
     @Override
     public void initializeState(DomainEventStream domainEventStream) {
