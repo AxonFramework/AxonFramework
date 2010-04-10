@@ -41,24 +41,23 @@ public interface CommandHandlerInterceptor {
      * Invoked before the command handler handles the command. Command handling can be prevented by throwing an
      * exception from this method.
      *
-     * @param commandContext The context in which the command is executed. It contains both the command and any
-     *                       information that previous CommandHandlerInterceptors may have added to it.
-     * @param handler        The handler that will handle the command.
+     * @param context The context in which the command is executed. It contains both the command and any information
+     *                that previous CommandHandlerInterceptors may have added to it.
+     * @param handler The handler that will handle the command.
      * @throws RuntimeException when an error occurs that should block command handling.
      */
-    void beforeCommandHandling(CommandContext commandContext, CommandHandler handler);
+    void beforeCommandHandling(CommandContext context, CommandHandler handler);
 
     /**
      * Invoked after the command handler handled the command or when a CommandHandlerInterceptor further down the chain
      * has thrown an Exception. The CommandContext provides information about whether the handler was invoked and
      * whether the execution was successful or resulted in an Exception.
      *
-     * @param commandContext The context in which the command is executed. It contains the command, the result of
-     *                       command handling, if any, and information that previous CommandHandlerInterceptors may have
-     *                       added to it.
-     * @param handler        The handler that has handled the command.
+     * @param context The context in which the command is executed. It contains the command, the result of command
+     *                handling, if any, and information that previous CommandHandlerInterceptors may have added to it.
+     * @param handler The handler that has handled the command.
      * @throws RuntimeException when an error occurs that should block command handling.
      */
-    void afterCommandHandling(CommandContext commandContext, CommandHandler handler);
+    void afterCommandHandling(CommandContext context, CommandHandler handler);
 
 }
