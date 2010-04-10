@@ -16,12 +16,12 @@
 
 package org.axonframework.core.util.annotation;
 
+import org.axonframework.core.util.MethodAccessibilityCallback;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.PrivilegedAction;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -78,7 +78,7 @@ public abstract class AbstractHandlerInvoker {
             return onNoMethodFound(parameter.getClass());
         }
         if (!m.isAccessible()) {
-            doPrivileged(new PrivilegedAccessibilityAction(m));
+            doPrivileged(new MethodAccessibilityCallback(m));
         }
         if (m.getParameterTypes().length == 1) {
             Object retVal = m.invoke(target, parameter);
@@ -123,29 +123,6 @@ public abstract class AbstractHandlerInvoker {
      */
     public Object getTarget() {
         return target;
-    }
-
-    private static class PrivilegedAccessibilityAction implements PrivilegedAction<Object> {
-
-        private final Method method;
-
-        /**
-         * Initialize a new privileged action to make given method accessible
-         *
-         * @param method The method to make accessible
-         */
-        public PrivilegedAccessibilityAction(Method method) {
-            this.method = method;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Object run() {
-            method.setAccessible(true);
-            return Void.class;
-        }
     }
 
     /**

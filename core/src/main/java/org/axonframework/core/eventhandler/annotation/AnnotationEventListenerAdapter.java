@@ -24,12 +24,19 @@ import org.axonframework.core.eventhandler.EventSequencingPolicy;
 import org.axonframework.core.eventhandler.SequentialPolicy;
 import org.axonframework.core.eventhandler.TransactionManager;
 import org.axonframework.core.eventhandler.TransactionStatus;
+import org.axonframework.core.util.FieldAccessibilityCallback;
 import org.axonframework.core.util.annotation.AnnotatedHandlerAdapter;
+import org.springframework.util.ReflectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static java.security.AccessController.doPrivileged;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 /**
@@ -132,10 +139,28 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
         TransactionManager tm;
         if (bean instanceof TransactionManager) {
             tm = (TransactionManager) bean;
+        } else if (hasTransactionalMethods(bean)) {
+            tm = new AnnotationTransactionManager(bean);
         } else {
+            tm = findTransactionManagerInField(bean);
+        }
+        if (tm == null) {
             tm = new AnnotationTransactionManager(bean);
         }
         return tm;
+    }
+
+    private TransactionManager findTransactionManagerInField(Object bean) {
+        TransactionManagerFieldCallback transactionManagerFieldCallback = new TransactionManagerFieldCallback(bean);
+        ReflectionUtils.doWithFields(bean.getClass(), transactionManagerFieldCallback);
+        return transactionManagerFieldCallback.getTransactionManager();
+    }
+
+    private boolean hasTransactionalMethods(Object bean) {
+        HasTransactionMethodCallback hasTransactionMethodCallback = new HasTransactionMethodCallback();
+        ReflectionUtils.doWithMethods(bean.getClass(), hasTransactionMethodCallback);
+        return hasTransactionMethodCallback.isFound();
+
     }
 
     private AsynchronousEventHandlerWrapper createAsynchronousWrapperForBean(Object bean,
@@ -184,6 +209,52 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
         @Override
         public void handle(Event event) {
             eventHandlerInvoker.invokeEventHandlerMethod(event);
+        }
+    }
+
+    private static class HasTransactionMethodCallback implements ReflectionUtils.MethodCallback {
+
+        private final AtomicBoolean found = new AtomicBoolean(false);
+
+        @Override
+        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+            if (method.isAnnotationPresent(BeforeTransaction.class) ||
+                    method.isAnnotationPresent(AfterTransaction.class)) {
+                found.set(true);
+            }
+        }
+
+        public boolean isFound() {
+            return found.get();
+        }
+
+    }
+
+    private static class TransactionManagerFieldCallback implements ReflectionUtils.FieldCallback {
+
+        private final AtomicReference<TransactionManager> tm;
+        private final Object bean;
+
+        public TransactionManagerFieldCallback(Object bean) {
+            this.bean = bean;
+            tm = new AtomicReference<TransactionManager>();
+        }
+
+        @Override
+        public void doWith(final Field field) throws IllegalArgumentException, IllegalAccessException {
+            if (field.isAnnotationPresent(org.axonframework.core.eventhandler.annotation.TransactionManager.class)) {
+                doPrivileged(new FieldAccessibilityCallback(field));
+
+                if (TransactionManager.class.isAssignableFrom(field.getType())) {
+                    tm.set((TransactionManager) field.get(bean));
+                } else {
+                    tm.set(new AnnotationTransactionManager(field.get(bean)));
+                }
+            }
+        }
+
+        public TransactionManager getTransactionManager() {
+            return tm.get();
         }
     }
 }

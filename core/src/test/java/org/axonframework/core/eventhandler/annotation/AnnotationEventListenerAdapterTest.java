@@ -19,6 +19,7 @@ package org.axonframework.core.eventhandler.annotation;
 import org.axonframework.core.Event;
 import org.axonframework.core.StubDomainEvent;
 import org.axonframework.core.eventhandler.EventSequencingPolicy;
+import org.axonframework.core.eventhandler.TransactionManager;
 import org.axonframework.core.eventhandler.TransactionStatus;
 import org.junit.*;
 
@@ -105,6 +106,74 @@ public class AnnotationEventListenerAdapterTest {
         }
         catch (UnsupportedPolicyException e) {
             assertTrue(e.getMessage().contains("no-arg constructor"));
+        }
+    }
+
+    @Test
+    public void testManagerWithAnnotatedMethods() {
+        AnnotatedTransactionMethods bean = new AnnotatedTransactionMethods();
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(bean, null);
+        adapter.beforeTransaction(null);
+        adapter.afterTransaction(null);
+
+        assertEquals(1, bean.beforeCallCount);
+        assertEquals(1, bean.afterCallCount);
+    }
+
+    @Test
+    public void testManagerWithField() {
+        TransactionManagerField bean = new TransactionManagerField();
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(bean, null);
+        adapter.beforeTransaction(null);
+        adapter.afterTransaction(null);
+
+        assertEquals(1, bean.getBeforeCalls());
+        assertEquals(1, bean.getAfterCalls());
+    }
+
+    public static class AnnotatedTransactionMethods {
+
+        private int beforeCallCount = 0;
+        private int afterCallCount = 0;
+
+        @BeforeTransaction
+        public void beforeTransaction() {
+            beforeCallCount++;
+        }
+
+        @AfterTransaction
+        public void afterTransaction() {
+            afterCallCount++;
+        }
+    }
+
+    public static class TransactionManagerField {
+
+        @org.axonframework.core.eventhandler.annotation.TransactionManager
+        private RecordingTransactionManager transactionManager = new RecordingTransactionManager();
+
+        int getBeforeCalls() {
+            return transactionManager.beforeCallCount;
+        }
+
+        int getAfterCalls() {
+            return transactionManager.afterCallCount;
+        }
+    }
+
+    private static class RecordingTransactionManager implements TransactionManager {
+
+        private int beforeCallCount = 0;
+        private int afterCallCount = 0;
+
+        @Override
+        public void beforeTransaction(TransactionStatus status) {
+            beforeCallCount++;
+        }
+
+        @Override
+        public void afterTransaction(TransactionStatus status) {
+            afterCallCount++;
         }
     }
 
