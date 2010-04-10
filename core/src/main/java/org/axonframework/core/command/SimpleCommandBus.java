@@ -91,9 +91,8 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param handlers The handlers to subscribe in the form of a Map of Class - CommandHandler entries.
      */
-    @SuppressWarnings({"unchecked"})
-    public void setSubscriptions(Map<Class<?>, CommandHandler<?>> handlers) {
-        for (Map.Entry<Class<?>, CommandHandler<?>> classCommandHandlerEntry : handlers.entrySet()) {
+    public <T> void setSubscriptions(Map<Class<T>, CommandHandler<? super T>> handlers) {
+        for (Map.Entry<Class<T>, CommandHandler<? super T>> classCommandHandlerEntry : handlers.entrySet()) {
             subscribe(classCommandHandlerEntry.getKey(), classCommandHandlerEntry.getValue());
         }
     }
