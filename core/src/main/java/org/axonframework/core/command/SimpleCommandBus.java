@@ -18,6 +18,7 @@ package org.axonframework.core.command;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -81,5 +82,19 @@ public class SimpleCommandBus implements CommandBus {
      */
     public void setInterceptors(List<CommandHandlerInterceptor> interceptors) {
         this.interceptorChain = new InterceptorChain(interceptors);
+    }
+
+    /**
+     * Convenience method that allows you to register command handlers using a Dependency Injection framework. The
+     * parameter of this method is a <code>Map&lt;Class&lt;T&gt;, CommandHandler&lt;? super T&gt;&gt;</code>. The key
+     * represents the type of command to register the handler for, the value is the actual handler.
+     *
+     * @param handlers The handlers to subscribe in the form of a Map of Class - CommandHandler entries.
+     */
+    @SuppressWarnings({"unchecked"})
+    public void setSubscriptions(Map<Class<?>, CommandHandler<?>> handlers) {
+        for (Map.Entry<Class<?>, CommandHandler<?>> classCommandHandlerEntry : handlers.entrySet()) {
+            subscribe(classCommandHandlerEntry.getKey(), classCommandHandlerEntry.getValue());
+        }
     }
 }
