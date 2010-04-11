@@ -16,9 +16,9 @@
 
 package org.axonframework.sample.app.query;
 
-import org.axonframework.core.eventhandler.RetryPolicy;
-import org.axonframework.core.eventhandler.TransactionManager;
-import org.axonframework.core.eventhandler.TransactionStatus;
+import org.axonframework.eventhandling.RetryPolicy;
+import org.axonframework.eventhandling.TransactionManager;
+import org.axonframework.eventhandling.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

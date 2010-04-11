@@ -16,9 +16,9 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.core.Event;
-import org.axonframework.core.eventhandler.EventBus;
-import org.axonframework.core.eventhandler.EventListener;
+import org.axonframework.domain.Event;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.integration.core.MessageChannel;
 import org.springframework.integration.message.GenericMessage;

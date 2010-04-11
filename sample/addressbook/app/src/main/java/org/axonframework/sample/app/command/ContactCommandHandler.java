@@ -16,8 +16,8 @@
 
 package org.axonframework.sample.app.command;
 
-import org.axonframework.core.command.annotation.CommandHandler;
-import org.axonframework.core.repository.Repository;
+import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.repository.Repository;
 import org.axonframework.sample.app.Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +32,7 @@ import java.util.UUID;
  * @author Allard Buijze
  */
 public class ContactCommandHandler {
+
     private final static Logger logger = LoggerFactory.getLogger(ContactCommandHandler.class);
     private Repository<Contact> repository;
 
@@ -46,7 +47,7 @@ public class ContactCommandHandler {
      */
     @CommandHandler
     public UUID handle(CreateContactCommand command) {
-        logger.debug("Received a command for a new contact with name : {}",command.getNewContactName());
+        logger.debug("Received a command for a new contact with name : {}", command.getNewContactName());
         Assert.notNull(command.getNewContactName(), "Name may not be null");
         Contact contact = new Contact(command.getNewContactName());
         repository.save(contact);
@@ -55,7 +56,7 @@ public class ContactCommandHandler {
 
     /**
      * Changes the provided data for the contact found based on the provided identifier
-     *
+     * <p/>
      * An {@code AggregateNotFoundException} is thrown if the UUID does not represent a valid contact.
      *
      * @param command ChangeContactNameCommand that contains the identifier and the data to be updated
@@ -66,7 +67,7 @@ public class ContactCommandHandler {
         Assert.notNull(command.getContactNewName(), "Name may not be null");
         Contact contact = repository.load(UUID.fromString(command.getContactNewName()));
         contact.changeName(command.getContactNewName());
-        repository.save(contact);        
+        repository.save(contact);
     }
 
     /**
@@ -93,7 +94,7 @@ public class ContactCommandHandler {
     public void handle(RegisterAddressCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
-        Address address = new Address(command.getStreetAndNumber(),command.getZipCode(),command.getCity());
+        Address address = new Address(command.getStreetAndNumber(), command.getZipCode(), command.getCity());
         Contact contact = repository.load(UUID.fromString(command.getContactId()));
         contact.registerAddress(command.getAddressType(), address);
         repository.save(contact);

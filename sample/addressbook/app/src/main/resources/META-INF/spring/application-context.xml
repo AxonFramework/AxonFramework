@@ -22,17 +22,17 @@
 
     <context:annotation-config/>
 
-    <bean class="org.axonframework.core.eventhandler.annotation.postprocessor.AnnotationEventListenerBeanPostProcessor">
+    <bean class="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor">
         <property name="executor" ref="taskExecutor"/>
     </bean>
 
-    <bean class="org.axonframework.core.command.annotation.postprocessor.AnnotationCommandHandlerBeanPostProcessor">
-        <property name="commandBus" ref="commandBus"/>    
+    <bean class="org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor">
+        <property name="commandBus" ref="commandBus"/>
     </bean>
 
-    <bean id="commandBus" class="org.axonframework.core.command.SimpleCommandBus"/>
+    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus"/>
 
-    <bean id="eventBus" class="org.axonframework.core.eventhandler.SimpleEventBus"/>
+    <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
     <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
         <property name="corePoolSize" value="20"/>
@@ -40,13 +40,13 @@
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 
-    <bean id="contactRepository" class="org.axonframework.core.repository.eventsourcing.GenericEventSourcingRepository">
+    <bean id="contactRepository" class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
         <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
         <property name="eventBus" ref="eventBus"/>
         <property name="eventStore" ref="eventStore"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore">
+    <bean id="eventStore" class="org.axonframework.eventstore.fs.FileSystemEventStore">
         <property name="baseDir" value="file:${java.io.tmpdir}/"/>
     </bean>
 

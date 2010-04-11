@@ -16,7 +16,7 @@
 
 package org.axonframework.sample.app;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.domain.DomainEvent;
 
 import java.util.UUID;
 

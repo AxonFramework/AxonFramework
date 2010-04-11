@@ -16,8 +16,8 @@
 
 package org.axonframework.integration.eventbus;
 
-import org.axonframework.core.DomainEvent;
-import org.axonframework.core.eventhandler.EventListener;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.springframework.integration.message.GenericMessage;

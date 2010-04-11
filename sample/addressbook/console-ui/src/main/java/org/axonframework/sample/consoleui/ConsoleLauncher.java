@@ -16,8 +16,8 @@
 
 package org.axonframework.sample.consoleui;
 
-import org.axonframework.core.command.CommandBus;
-import org.axonframework.core.eventhandler.EventBus;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.command.CreateContactCommand;
 import org.axonframework.sample.app.query.ContactEntry;

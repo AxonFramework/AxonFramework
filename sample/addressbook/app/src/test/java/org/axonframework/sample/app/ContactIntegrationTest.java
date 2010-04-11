@@ -16,15 +16,14 @@
 
 package org.axonframework.sample.app;
 
-import org.axonframework.core.DomainEvent;
-import org.axonframework.core.Event;
-import org.axonframework.core.eventhandler.annotation.EventHandler;
-import org.axonframework.core.repository.eventsourcing.fs.FileSystemEventStore;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.Event;
+import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.query.ContactRepository;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -35,7 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze

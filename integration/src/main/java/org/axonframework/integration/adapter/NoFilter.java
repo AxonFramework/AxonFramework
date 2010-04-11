@@ -16,7 +16,7 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.core.Event;
+import org.axonframework.domain.Event;
 
 /**
  * @author Allard Buijze

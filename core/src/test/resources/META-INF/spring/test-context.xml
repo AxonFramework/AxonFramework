@@ -19,9 +19,9 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <bean class="org.axonframework.core.repository.eventsourcing.jpa.JpaEventStore">
+    <bean class="org.axonframework.eventstore.jpa.JpaEventStore">
         <constructor-arg>
-            <bean class="org.axonframework.core.repository.eventsourcing.XStreamEventSerializer"/>
+            <bean class="org.axonframework.eventstore.XStreamEventSerializer"/>
         </constructor-arg>
     </bean>
 </beans>

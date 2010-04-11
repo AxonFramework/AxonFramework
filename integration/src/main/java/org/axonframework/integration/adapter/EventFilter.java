@@ -16,7 +16,7 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.core.Event;
+import org.axonframework.domain.Event;
 
 /**
  * Interface describing an Event Filter. The Event Filter decides which events may be forwarded by adapters and which

@@ -16,8 +16,8 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.core.Event;
-import org.axonframework.core.eventhandler.EventBus;
+import org.axonframework.domain.Event;
+import org.axonframework.eventhandling.EventBus;
 import org.springframework.integration.core.Message;
 import org.springframework.integration.message.MessageHandler;
 import org.springframework.integration.message.MessageRejectedException;
@@ -60,7 +60,7 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
 
     /**
      * Handles the given <code>message</code>. The message is expected to contain an object of type {@link
-     * org.axonframework.core.Event} in its payload. If that is not the case, a {@link MessageRejectedException} is
+     * org.axonframework.domain.Event} in its payload. If that is not the case, a {@link MessageRejectedException} is
      * thrown.
      * <p/>
      * If the <code>message</code> does contain an {@link Event}, but the filter refuses it, a {@link

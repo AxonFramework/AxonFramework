@@ -16,9 +16,9 @@
 
 package org.axonframework.sample.app.query;
 
-import org.axonframework.core.eventhandler.SequentialPerAggregatePolicy;
-import org.axonframework.core.eventhandler.annotation.AsynchronousEventListener;
-import org.axonframework.core.eventhandler.annotation.EventHandler;
+import org.axonframework.eventhandling.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.annotation.AsynchronousEventListener;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.sample.app.AddressAddedEvent;
 import org.axonframework.sample.app.AddressChangedEvent;
 import org.axonframework.sample.app.AddressRemovedEvent;

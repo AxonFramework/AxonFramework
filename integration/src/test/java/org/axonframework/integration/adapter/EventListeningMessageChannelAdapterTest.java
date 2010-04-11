@@ -16,8 +16,8 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.core.Event;
-import org.axonframework.core.eventhandler.EventBus;
+import org.axonframework.domain.Event;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;

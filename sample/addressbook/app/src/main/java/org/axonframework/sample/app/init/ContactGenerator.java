@@ -16,7 +16,7 @@
 
 package org.axonframework.sample.app.init;
 
-import org.axonframework.core.command.CommandBus;
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.sample.app.AddressType;
 import org.axonframework.sample.app.command.CreateContactCommand;
 import org.axonframework.sample.app.command.RegisterAddressCommand;
@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  */
 public class ContactGenerator implements ApplicationListener {
+
     private CommandBus commandBus;
     private AtomicBoolean initialized = new AtomicBoolean();
 

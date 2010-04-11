@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.addressbook.web.impl;
 
-import org.axonframework.core.command.CommandBus;
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.examples.addressbook.web.CommandReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 @Service("commandReceiver")
 @RemotingDestination(channels = {"my-amf"})
 public class CommandReceiverImpl implements CommandReceiver {
+
     private final static Logger logger = LoggerFactory.getLogger(CommandReceiverImpl.class);
     private CommandBus commandBus;
 
@@ -42,7 +43,7 @@ public class CommandReceiverImpl implements CommandReceiver {
     @RemotingInclude
     @Override
     public void sendCommand(Object command) {
-        logger.debug("Received a command of type : {}",command.getClass().getSimpleName());
+        logger.debug("Received a command of type : {}", command.getClass().getSimpleName());
         commandBus.dispatch(command);
     }
 }

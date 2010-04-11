@@ -16,7 +16,7 @@
 
 package org.axonframework.integration;
 
-import org.axonframework.core.DomainEvent;
+import org.axonframework.domain.DomainEvent;
 
 import java.io.Serializable;
 

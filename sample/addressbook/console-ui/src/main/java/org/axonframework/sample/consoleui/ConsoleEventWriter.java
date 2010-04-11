@@ -16,8 +16,8 @@
 
 package org.axonframework.sample.consoleui;
 
-import org.axonframework.core.Event;
-import org.axonframework.core.eventhandler.EventListener;
+import org.axonframework.domain.Event;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.sample.app.ContactCreatedEvent;
 
 /**
@@ -28,9 +28,9 @@ public class ConsoleEventWriter implements EventListener {
     @Override
     public void handle(Event event) {
         if (event.getClass().isAssignableFrom(ContactCreatedEvent.class)) {
-        System.out.println(String.format("Received event of type [%s] at [%s]",
-                                         event.getClass().getSimpleName(),
-                                         event.getTimestamp().toString()));
+            System.out.println(String.format("Received event of type [%s] at [%s]",
+                                             event.getClass().getSimpleName(),
+                                             event.getTimestamp().toString()));
         }
     }
 
