@@ -149,24 +149,23 @@
                     transactions. The JPA event store can also load events based on their
                     timestamps. </para>
                 <para>To use the <code>JpaEventStore</code>, you must have the
-                    <code>javax.persistence</code> annotations on your classpath. Furthermore,
-                    you should configure your persistence context (defined in
+                    <code>javax.persistence</code> annotations on your classpath. Furthermore, you
+                should configure your persistence context (defined in
                     <code>META-INF/persistence.xml</code> file) to contain the classes
-                    <code>org.axonframework.core.repository.eventsourcing.jpa.DomainEventEntry</code>
-                    and
-                    <code>org.axonframework.core.repository.eventsourcing.jpa.SnapshotEventEntry</code>. </para>
+                    <code>org.axonframework.eventstore.jpa.DomainEventEntry</code> and
+                    <code>org.axonframework.eventstore.jpa.SnapshotEventEntry</code>. </para>
                 <para>Below is an example configuration of a persistence context configuration: </para>
                 <programlistingco>
                     <areaspec units="LineColumn">
                         <area coords="2 40" id="persistence-unit-name-co"/>
                         <area coords="3 93" id="domain-event-entry-co"/>
                     </areaspec>
-                    <programlisting language="xml">&lt;persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
-    &lt;persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
-        &lt;class>org.axonframework.core.repository.eventsourcing.jpa.DomainEventEntry&lt;/class>
-        &lt;class>org.axonframework.core.repository.eventsourcing.jpa.SnapshotEventEntry&lt;/class>
-    &lt;/persistence-unit>
-&lt;/persistence>                    </programlisting>
+                    <programlisting language="xml"><![CDATA[<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
+    <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
+        <class>org.axonframework.eventsourcing.eventstoreventstore.jpa.DomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+    </persistence-unit>
+</persistence>]]></programlisting>
                     <calloutlist>
                         <callout arearefs="persistence-unit-name-co">
                             <para>In this sample, there is is specific persistence unit for the
@@ -197,8 +196,7 @@
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Domain Event to prepare it for storage.
                 By default, Axon uses the <code>XStreamEventSerializer</code>, which uses XStream
-                (see <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>) to
+                (see <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>) to
                 serialize Domain Events into XML and vice versa. XStream is very fast and is more
                 flexible than Java Serialization. For example, if you remove a field from a class,
                 you can still deserialize instances from that class using the old XML. XStream will
@@ -207,9 +205,7 @@
             <para>The XStreamEventSerializer can be configured. You can define aliases it should use
                 for certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
-                change. For more information about aliases, visit the XStream website: <link
-                    xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
-                    >xstream.codehaus.org</link>.</para>
+                change. For more information about aliases, visit the XStream website: <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>.</para>
             <para>You may also implement your own Event Serializer, simply by creating a class that
                 implements <code>EventSerializer</code>, and configuring the Event Store to use that
                 implementation instead of the default.</para>

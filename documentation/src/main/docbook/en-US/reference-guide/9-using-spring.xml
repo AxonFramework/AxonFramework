@@ -106,45 +106,13 @@
         <title>Wiring the event bus</title>
         <para>In a typical Axon application, there is only one event bus. Wiring it is just a matter
             of creating a bean of a subtype of <code>EventBus</code>. The
-            <code>AsyncEventBus</code>, the default implementation of choice, also takes an optional
-            executor property for the event processing.<programlistingco>
-                <areaspec>
-                    <area xml:id="eventbus-config-co" coords="3 84"/>
-                    <area xml:id="taskexecutor-config-co" coords="7 88"/>
-                    <area xml:id="wait-on-shutdown-co" coords="10 74"/>
-                </areaspec>
+                <code>SimpleEventBus</code>, the default implementation of choice.
                 <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean id="eventBus" class="org.axonframework.core.eventhandler.AsyncEventBus">
-        &lt;property name="executor" ref="taskExecutor"/>
-    &lt;/bean>
-
-    &lt;bean id="taskExecutor" class="org.springfr..sched..conc..ThreadPoolTaskExecutor">
-        &lt;property name="corePoolSize" value="20"/>
-        &lt;property name="maxPoolSize" value="100"/>
-        &lt;property name="waitForTasksToCompleteOnShutdown" value="true"/>
-    &lt;/bean>
+    &lt;bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
 &lt;/beans></programlisting>
-                <calloutlist>
-                    <callout arearefs="eventbus-config-co">
-                        <para>Bean definition of the event bus to use. In this case, the
-                            asynchronous event bus implementation is used.</para>
-                    </callout>
-                    <callout arearefs="taskexecutor-config-co">
-                        <para>Instead of using the default task executor, you can define your own to
-                            get more control over the number of threads to create. In this sample,
-                            we define one of Spring's executor implementations, which uses a thread
-                            pool.</para>
-                    </callout>
-                    <callout arearefs="wait-on-shutdown-co">
-                        <para>This property ensures that the events that are in the dispatching
-                            process are handled before the executor is shut down. This help ensure
-                            that all events are processed, even when the application is
-                            stopped.</para>
-                    </callout>
-                </calloutlist>
-            </programlistingco></para>
+                </para>
         <para>Configuring a <code>taskExecutor</code> is optional. By default, the
                 <code>AsyncEventBus</code> uses a <code>ScheduledThreadPoolExecutor</code> instance
             with 5 core threads, a maximum pool size of 25 and a keep alive timeout of 5 minutes.
