@@ -17,9 +17,13 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.junit.*;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -59,7 +63,7 @@ public class AnnotationCommandHandlerAdapterTest {
     @Test
     public void testHandlerDispatching_ThrowingCheckedException() {
         try {
-            testSubject.handle(new Object());
+            testSubject.handle(new HashSet());
             fail("Expected exception");
         }
         catch (CommandHandlerInvocationException ex) {
@@ -84,9 +88,20 @@ public class AnnotationCommandHandlerAdapterTest {
 
         verify(mockBus).subscribe(Long.class, testSubject);
         verify(mockBus).subscribe(String.class, testSubject);
-        verify(mockBus).subscribe(Object.class, testSubject);
+        verify(mockBus).subscribe(HashSet.class, testSubject);
         verify(mockBus).subscribe(ArrayList.class, testSubject);
         verifyNoMoreInteractions(mockBus);
+    }
+
+    @Test
+    public void testFindHandlerMethod() {
+        Method method = testSubject.findCommandHandlerMethodFor("");
+        assertEquals("myVoidHandler", method.getName());
+    }
+
+    @Test(expected = NoHandlerForCommandException.class)
+    public void testHandle_NoHandlerForCommand() {
+        testSubject.handle(new LinkedList());
     }
 
     private static class MyCommandHandler {
@@ -106,7 +121,7 @@ public class AnnotationCommandHandlerAdapterTest {
         }
 
         @CommandHandler
-        public void exceptionThrowingHandler(Object o) throws Exception {
+        public void exceptionThrowingHandler(HashSet o) throws Exception {
             throw new Exception("Some exception");
         }
 
