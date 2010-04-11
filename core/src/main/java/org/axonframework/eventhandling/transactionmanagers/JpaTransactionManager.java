@@ -37,7 +37,7 @@ import java.sql.SQLTransientException;
  * @author Allard Buijze
  * @since 0.5
  */
-public abstract class JpaTransactionManager implements TransactionManager {
+public class JpaTransactionManager implements TransactionManager {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
