@@ -26,6 +26,8 @@ import org.springframework.flex.remoting.RemotingInclude;
 import org.springframework.stereotype.Service;
 
 /**
+ * <p>Implementation of the CommandReceiver interface to be used as an endpoint for flex clients</p>
+ * 
  * @author Jettro Coenradie
  */
 @Service("commandReceiver")
@@ -42,8 +44,8 @@ public class CommandReceiverImpl implements CommandReceiver {
 
     @RemotingInclude
     @Override
-    public void sendCommand(Object command) {
+    public Object sendCommand(Object command) {
         logger.debug("Received a command of type : {}", command.getClass().getSimpleName());
-        commandBus.dispatch(command);
+        return commandBus.dispatch(command);
     }
 }

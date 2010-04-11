@@ -17,8 +17,15 @@
 package org.axonframework.examples.addressbook.web;
 
 /**
+ * <p>Generic command receiver which accepts all commands. By calling the sendCommand method you expect the command
+ * to be put on the CommandBus</p>
  * @author Jettro Coenradie
  */
 public interface CommandReceiver {
-    void sendCommand(Object command);
+    /**
+     * Send a new command to the command bus. If a return value is available it is passed on.
+     * @param command Object representing the command to be dispatched to the command bus
+     * @return Object as returned by the command bus
+     */
+    Object sendCommand(Object command);
 }
