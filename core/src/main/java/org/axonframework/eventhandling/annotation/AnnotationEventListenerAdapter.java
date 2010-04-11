@@ -218,8 +218,8 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
 
         @Override
         public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-            if (method.isAnnotationPresent(BeforeTransaction.class) ||
-                    method.isAnnotationPresent(AfterTransaction.class)) {
+            if (method.isAnnotationPresent(BeforeTransaction.class)
+                    || method.isAnnotationPresent(AfterTransaction.class)) {
                 found.set(true);
             }
         }
