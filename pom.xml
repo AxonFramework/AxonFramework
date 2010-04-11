@@ -165,4 +165,26 @@
         <developerConnection>scm:svn:https://axonframework.googlecode.com/svn/trunk</developerConnection>
         <url>http://code.google.com/p/axonframework/source/browse/</url>
     </scm>
+
+    <developers>
+        <developer>
+            <name>Allard Buijze</name>
+            <email>allard@jteam.nl</email>
+            <organization>JTeam</organization>
+            <organizationUrl>www.jteam.nl</organizationUrl>
+            <roles>
+                <role>Project Owner</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Jettro Coenradie</name>
+            <email>jettro@jteam.nl</email>
+            <organization>JTeam</organization>
+            <organizationUrl>www.jteam.nl</organizationUrl>
+            <roles>
+                <role>Committer</role>
+                <role>Sample Application Developer</role>
+            </roles>
+        </developer>
+    </developers>
 </project>
