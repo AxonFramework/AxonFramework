@@ -80,7 +80,7 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param interceptors The interceptors to invoke when commands are dispatched
      */
-    public void setInterceptors(List<CommandHandlerInterceptor> interceptors) {
+    public void setInterceptors(List<? extends CommandHandlerInterceptor> interceptors) {
         this.interceptorChain = new InterceptorChain(interceptors);
     }
 

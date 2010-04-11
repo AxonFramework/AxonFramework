@@ -40,7 +40,7 @@ class InterceptorChain {
      * @param interceptors The list of interceptors to create the chain for. May not be <code>null</code>
      * @throws NullPointerException if the given list of <code>interceptors</code> is <code>null</code>
      */
-    public InterceptorChain(List<CommandHandlerInterceptor> interceptors) {
+    public InterceptorChain(List<? extends CommandHandlerInterceptor> interceptors) {
         if (interceptors.size() > 0) {
             current = interceptors.get(0);
             next = new InterceptorChain(interceptors.subList(1, interceptors.size()));
