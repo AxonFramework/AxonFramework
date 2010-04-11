@@ -16,6 +16,8 @@
 
 package org.axonframework.examples.addressbook.web.listener;
 
+import org.axonframework.eventhandling.SequentialPolicy;
+import org.axonframework.eventhandling.annotation.AsynchronousEventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.axonframework.examples.addressbook.web.dto.RemovedDTO;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Component;
  * @author Jettro Coenradie
  */
 @Component
+@AsynchronousEventListener(sequencingPolicyClass = SequentialPolicy.class)
 public class AddressListener {
 
     private final static Logger logger = LoggerFactory.getLogger(AddressListener.class);
@@ -38,7 +41,7 @@ public class AddressListener {
 
     @EventHandler
     public void handleAddressCreatedEvent(AddressRegisteredEvent event) {
-        logger.debug("Received and event with name {} and identifier {}",
+        logger.debug("Received an event with name {} and identifier {}",
                      event.getAggregateIdentifier(), event.getEventIdentifier());
         AddressDTO addressDTO = AddressDTO.createFrom(
                 event.getAddress(), event.getContactIdentifier(), event.getType());

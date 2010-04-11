@@ -16,8 +16,6 @@
 
 package org.axonframework.sample.app.query;
 
-import org.axonframework.eventhandling.SequentialPerAggregatePolicy;
-import org.axonframework.eventhandling.annotation.AsynchronousEventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.sample.app.AddressAddedEvent;
 import org.axonframework.sample.app.AddressChangedEvent;
@@ -25,8 +23,6 @@ import org.axonframework.sample.app.AddressRemovedEvent;
 import org.axonframework.sample.app.ContactCreatedEvent;
 import org.axonframework.sample.app.ContactDeletedEvent;
 import org.axonframework.sample.app.ContactNameChangedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -34,10 +30,7 @@ import javax.persistence.PersistenceContext;
 /**
  * @author Allard Buijze
  */
-@AsynchronousEventListener(sequencingPolicyClass = SequentialPerAggregatePolicy.class)
-public class AddressTableUpdater extends AbstractTransactionalEventListener {
-
-    private static final Logger logger = LoggerFactory.getLogger(AddressTableUpdater.class);
+public class AddressTableUpdater {
 
     @PersistenceContext
     private EntityManager entityManager;

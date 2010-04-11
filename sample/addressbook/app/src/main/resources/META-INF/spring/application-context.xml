@@ -30,13 +30,19 @@
         <property name="commandBus" ref="commandBus"/>
     </bean>
 
-    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus"/>
+    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
+        <property name="interceptors">
+            <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+                <property name="transactionManager" ref="transactionManager"/>
+            </bean>
+        </property>
+    </bean>
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
     <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
-        <property name="corePoolSize" value="20"/>
-        <property name="maxPoolSize" value="100"/>
+        <property name="corePoolSize" value="2"/>
+        <property name="maxPoolSize" value="5"/>
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 
@@ -46,9 +52,7 @@
         <property name="eventStore" ref="eventStore"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.fs.FileSystemEventStore">
-        <property name="baseDir" value="file:${java.io.tmpdir}/"/>
-    </bean>
+    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
 
     <bean id="contactCommandHandler" class="org.axonframework.sample.app.command.ContactCommandHandler">
         <property name="repository" ref="contactRepository"/>

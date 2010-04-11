@@ -20,9 +20,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-    <bean class="org.axonframework.sample.app.query.AddressTableUpdater">
-        <property name="transactionManager" ref="transactionManager"/>
-    </bean>
+    <bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
 
     <bean class="org.axonframework.sample.app.query.ContactRepositoryImpl"/>
 
@@ -55,8 +53,8 @@
         <property name="jdbcUrl" value="${jdbc.url}"/>
         <property name="user" value="${jdbc.username}"/>
         <property name="password" value="${jdbc.password}"/>
-        <property name="maxPoolSize" value="150"/>
-        <property name="minPoolSize" value="50"/>
+        <property name="maxPoolSize" value="15"/>
+        <property name="minPoolSize" value="5"/>
     </bean>
 
 </beans>
