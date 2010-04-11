@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app.query;
+package org.axonframework.eventhandling.transactionmanagers;
 
 import org.axonframework.eventhandling.RetryPolicy;
 import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
@@ -29,9 +28,16 @@ import java.sql.SQLRecoverableException;
 import java.sql.SQLTransientException;
 
 /**
+ * TransactionManager implementation for event listeners that update data in JPA managed data sources.
+ * <p/>
+ * The transaction manager will commit the transaction when event handling is successful. If a non-transient
+ * (non-recoverable) exception occurs, the failing event is discarded and the transaction is committed. If a transient
+ * exception occurs, such as a failing connection, the transaction is rolled back and scheduled for a retry.
+ *
  * @author Allard Buijze
+ * @since 0.5
  */
-public abstract class AbstractTransactionalEventListener implements TransactionManager {
+public abstract class JpaTransactionManager implements TransactionManager {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -71,7 +77,11 @@ public abstract class AbstractTransactionalEventListener implements TransactionM
         underlyingTransaction.remove();
     }
 
-    @Autowired
+    /**
+     * The PlatformTransactionManager that manages the transactions with the underlying data source.
+     *
+     * @param transactionManager the transaction manager that manages transactions with underlying data sources
+     */
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
     }
