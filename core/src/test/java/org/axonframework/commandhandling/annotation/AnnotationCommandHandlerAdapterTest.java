@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.junit.*;
 
+import java.util.ArrayList;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -55,11 +57,35 @@ public class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
+    public void testHandlerDispatching_ThrowingCheckedException() {
+        try {
+            testSubject.handle(new Object());
+            fail("Expected exception");
+        }
+        catch (CommandHandlerInvocationException ex) {
+            assertEquals(Exception.class, ex.getCause().getClass());
+        }
+    }
+
+    @Test
+    public void testHandlerDispatching_ThrowingRuntimeException() {
+        try {
+            testSubject.handle(new ArrayList());
+            fail("Expected exception");
+        }
+        catch (RuntimeException ex) {
+            assertEquals(RuntimeException.class, ex.getClass());
+        }
+    }
+
+    @Test
     public void testSubscribe() {
         testSubject.subscribe();
 
         verify(mockBus).subscribe(Long.class, testSubject);
         verify(mockBus).subscribe(String.class, testSubject);
+        verify(mockBus).subscribe(Object.class, testSubject);
+        verify(mockBus).subscribe(ArrayList.class, testSubject);
         verifyNoMoreInteractions(mockBus);
     }
 
@@ -77,6 +103,16 @@ public class AnnotationCommandHandlerAdapterTest {
         public Long myReturningHandler(Long longCommand) {
             returningHandlerInvoked++;
             return longCommand;
+        }
+
+        @CommandHandler
+        public void exceptionThrowingHandler(Object o) throws Exception {
+            throw new Exception("Some exception");
+        }
+
+        @CommandHandler
+        public void exceptionThrowingHandler(ArrayList o) throws Exception {
+            throw new RuntimeException("Some exception");
         }
     }
 }

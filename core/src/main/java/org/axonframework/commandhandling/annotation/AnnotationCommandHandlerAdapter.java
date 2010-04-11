@@ -80,7 +80,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
             }
             throw new CommandHandlerInvocationException(String.format(
                     "An error occurred when handling a command of type [%s]",
-                    command.getClass().getSimpleName()), e);
+                    command.getClass().getSimpleName()), e.getCause());
         }
     }
 
