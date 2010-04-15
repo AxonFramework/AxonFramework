@@ -28,7 +28,7 @@ public interface FixtureConfiguration {
 
     FixtureConfiguration registerRepository(EventSourcingRepository<?> repository);
 
-    GivenWhenThenTestFixture registerAnnotatedCommandHandler(Object annotatedCommandHandler);
+    FixtureConfiguration registerAnnotatedCommandHandler(Object annotatedCommandHandler);
 
     FixtureConfiguration registerCommandHandler(Class<?> commandType, CommandHandler commandHandler);
 
