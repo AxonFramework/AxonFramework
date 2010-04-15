@@ -18,7 +18,6 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.repository.Repository;
@@ -109,7 +108,7 @@ public class FixtureTest {
 
     }
 
-    public static class MyEvent extends StubDomainEvent {
+    public static class MyEvent extends DomainEvent {
 
         private int someValue;
 
