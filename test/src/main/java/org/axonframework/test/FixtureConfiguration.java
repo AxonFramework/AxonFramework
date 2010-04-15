@@ -17,6 +17,7 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.domain.DomainEvent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 
 /**
@@ -32,4 +33,5 @@ public interface FixtureConfiguration {
 
     FixtureConfiguration registerCommandHandler(Class<?> commandType, CommandHandler commandHandler);
 
+    TestExecutor given(DomainEvent... domainEvents);
 }
