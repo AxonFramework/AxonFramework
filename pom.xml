@@ -24,6 +24,7 @@
     <modules>
         <module>core</module>
         <module>integration</module>
+        <module>test</module>
     </modules>
     <packaging>pom</packaging>
 
