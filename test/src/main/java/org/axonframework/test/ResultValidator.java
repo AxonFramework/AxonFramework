@@ -28,4 +28,6 @@ public interface ResultValidator {
     ResultValidator expectReturnValue(Object expectedReturnValue);
 
     ResultValidator expectException(Class<? extends Throwable> expectedException);
+
+    ResultValidator expectVoidReturnType();
 }

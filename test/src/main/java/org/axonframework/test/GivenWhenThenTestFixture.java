@@ -141,6 +141,11 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     }
 
     @Override
+    public ResultValidator expectVoidReturnType() {
+        return expectReturnValue(Void.TYPE);
+    }
+
+    @Override
     public ResultValidator expectReturnValue(Object expectedReturnValue) {
         if (actualException != null) {
             actualException.printStackTrace();
