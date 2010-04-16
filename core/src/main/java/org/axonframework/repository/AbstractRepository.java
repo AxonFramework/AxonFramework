@@ -61,6 +61,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * {@inheritDoc}
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
+     * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
     public T load(UUID aggregateIdentifier) {

@@ -124,6 +124,7 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
      * {@inheritDoc}
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
+     * @throws RuntimeException           any exception thrown by implementing classes
      */
     @SuppressWarnings({"unchecked"})
     @Override
