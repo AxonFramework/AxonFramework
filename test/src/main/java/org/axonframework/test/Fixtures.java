@@ -21,27 +21,21 @@ import org.axonframework.repository.Repository;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Allard Buijze
  */
 public abstract class Fixtures {
 
-    private static ThreadLocal<GivenWhenThenTestFixture> currentFixture = new ThreadLocal<GivenWhenThenTestFixture>();
+    private static final ThreadLocal<GivenWhenThenTestFixture> currentFixture = new ThreadLocal<GivenWhenThenTestFixture>();
 
     public static FixtureConfiguration givenWhenThenFixture() {
-        GivenWhenThenTestFixture fixture = new GivenWhenThenTestFixture();
-        currentFixture.set(fixture);
-        return fixture;
+        return getCurrentFixture();
     }
 
     @SuppressWarnings({"unchecked"})
     public static <T extends AggregateRoot> Repository<T> genericRepository(Class<T> aggregateType) {
         GivenWhenThenTestFixture fixture = getCurrentFixture();
-        if (fixture.getRepository() == null) {
-            fixture.registerGenericRepository(aggregateType);
-        }
+        fixture.registerGenericRepository(aggregateType);
 
         return (Repository<T>) fixture.getRepository();
     }
@@ -57,9 +51,10 @@ public abstract class Fixtures {
 
     private static GivenWhenThenTestFixture getCurrentFixture() {
         GivenWhenThenTestFixture fixture = currentFixture.get();
-        assertNotNull("The fixture was not properly initialized. "
-                + "You must create a fixture instance first, using givenWhenThenFixture()",
-                      fixture);
+        if (fixture == null) {
+            fixture = new GivenWhenThenTestFixture();
+            currentFixture.set(fixture);
+        }
         return fixture;
     }
 }

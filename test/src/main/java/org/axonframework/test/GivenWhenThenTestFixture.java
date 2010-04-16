@@ -49,9 +49,9 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     private CommandBus commandBus;
     private EventBus eventBus;
     private UUID aggregateIdentifier;
-    private List<DomainEvent> givenEvents;
     private EventStore eventStore;
 
+    private List<DomainEvent> givenEvents;
     private List<DomainEvent> storedEvents;
     private List<DomainEvent> publishedEvents;
     private Object actualReturnValue;
@@ -64,9 +64,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
-        storedEvents = new ArrayList<DomainEvent>();
-        publishedEvents = new ArrayList<DomainEvent>();
-        givenEvents = new ArrayList<DomainEvent>();
+        clearGivenWhenState();
     }
 
     @Override
@@ -101,6 +99,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     }
 
     public TestExecutor given(DomainEvent... domainEvents) {
+        clearGivenWhenState();
         for (DomainEvent event : domainEvents) {
             setByReflection(DomainEvent.class, "aggregateIdentifier", event, aggregateIdentifier);
             setByReflection(DomainEvent.class, "sequenceNumber", event, sequenceNumber++);
@@ -118,6 +117,15 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
             actualException = ex;
         }
         return this;
+    }
+
+    private void clearGivenWhenState() {
+        storedEvents = new ArrayList<DomainEvent>();
+        publishedEvents = new ArrayList<DomainEvent>();
+        givenEvents = new ArrayList<DomainEvent>();
+        sequenceNumber = 0;
+        actualReturnValue = null;
+        actualException = null;
     }
 
     @Override

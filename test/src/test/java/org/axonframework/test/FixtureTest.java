@@ -33,16 +33,6 @@ import static org.axonframework.test.Fixtures.*;
 public class FixtureTest {
 
     @Test
-    public void testFixture() {
-        givenWhenThenFixture()
-                .registerAnnotatedCommandHandler(new MyCommandHandler(genericRepository(MyAggregate.class)))
-                .given(new MyEvent(1), new MyEvent(2))
-                .when(new TestCommand())
-                .expectReturnValue(Void.TYPE)
-                .expectEvents(new MyEvent(3));
-    }
-
-    @Test
     public void testFirstFixture() {
         givenWhenThenFixture()
                 .registerAnnotatedCommandHandler(new MyCommandHandler(genericRepository(MyAggregate.class)))
@@ -50,6 +40,18 @@ public class FixtureTest {
                 .when(new TestCommand())
                 .expectReturnValue(Void.TYPE)
                 .expectEvents(new MyEvent(2));
+    }
+
+    @Test
+    public void testFixture_SetterInjection() {
+        MyCommandHandler commandHandler = new MyCommandHandler();
+        commandHandler.setRepository(genericRepository(MyAggregate.class));
+        givenWhenThenFixture()
+                .registerAnnotatedCommandHandler(commandHandler)
+                .given(new MyEvent(1), new MyEvent(2))
+                .when(new TestCommand())
+                .expectReturnValue(Void.TYPE)
+                .expectEvents(new MyEvent(3));
     }
 
     @Test
@@ -90,10 +92,13 @@ public class FixtureTest {
 
     private class MyCommandHandler {
 
-        private final Repository<MyAggregate> repository;
+        private Repository<MyAggregate> repository;
 
-        public MyCommandHandler(Repository<MyAggregate> repository) {
+        private MyCommandHandler(Repository<MyAggregate> repository) {
             this.repository = repository;
+        }
+
+        private MyCommandHandler() {
         }
 
         @CommandHandler
@@ -101,6 +106,10 @@ public class FixtureTest {
             MyAggregate aggregate = repository.load(aggregateIdentifier());
             aggregate.doSomething();
             repository.save(aggregate);
+        }
+
+        public void setRepository(Repository<MyAggregate> repository) {
+            this.repository = repository;
         }
     }
 
