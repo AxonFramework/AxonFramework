@@ -23,24 +23,22 @@
             <para>Every good framework needs a sample application. You want to have an application
                 that demonstrates enough of the framework and is easy enough to understand. The
                 Address book sample we have created is such an application. A very simple domain to
-                understand with enough features to show the event mechanism as well as the separate
-                data store and query database.
-            </para>
-            <para>The address book sample shows an Adobe flex user interface. With this flex client,
-                the event handling becomes very interesting. The server side domain events are
-                pushed to the flex clients to stay up to date.
-            </para>
+                understand with enough features to show things like the event mechanism, the
+                commands and the separate data store and query database. </para>
+            <para>The address book sample shows an Adobe flex user interface. The flex client makes
+                the event handling interesting. The server side domain events are pushed to the flex
+                clients to keep them up to date. </para>
             <para>So what does the sample provide? The sample contains contacts with addresses. Each
                 contact can have a maximum of three addresses, one for each available type. Using
                 the query database, you can request all contacts, request contact details and search
                 the addresses. For this kind of queries, the query database is used. You can also
                 create new contacts and addresses or provided updates.
             </para>
-            <para>The framework creates events for things like: contact created, contact updated,
-                address changed. These events are picket up by special listeners that publish these
-                events to all flex clients using BlazeDS. More on this part follows in section<xref
-                        linkend="addressbook-flex-client"/>.
-            </para>
+            <para>To interact with the application, you have to dispatch comamnds. The domain
+                creates events for things like: contact created, contact updated, address changed.
+                These events are picket up by special listeners that publish these events to all
+                flex clients using BlazeDS. More on this part follows in section<xref
+                    linkend="addressbook-flex-client"/>. </para>
             <para>The following image gives an overview of the architecture as discussed in this
                 section.
             </para>
@@ -133,9 +131,8 @@ public class AddressListener {
                 <note>
                     <para>Since this is not a reference manual for flex or parsley you will not find
                         a detailed description of the flex client. If you want more information on
-                        the flex client, refer to this blog item. TODO Create reference to more
-                        documentation about the flex part of the sample.
-                    </para>
+                        the flex client, refer to this blog item.
+                        http://www.gridshore.nl/2010/02/25/creating-a-sample-for-axon-using-flex-and-parsley/ </para>
                 </note>
             </para>
         </sect2>
@@ -150,18 +147,16 @@ public class AddressListener {
                 an immutable value object. The most important business rule is that each address is
                 of a certain type and a contact can only have one address of each type.
             </para>
-            <para>Providing new or updated data to the application is done using command handlers.
-                The
-                <code>ContactCommandHandler</code>
-                is use to create new contacts, update
-                existing contacts and do all address related actions. The handler creates or updates
-                the aggregate roots, in this case the<code>Contact</code>, and registers them with
-                the repository. The aggregate root creates events like
-                <code>ContactCreatedEvent</code>. These events are dispatched by the
-                <code>ContactRepository</code>
-                when storing the change has taken place. The
-                following image gives you an idea what happens when a contact is created.
-            </para>
+            <para>Providing new or updated data to the application is done using commands and
+                command handlers. The <code>CreateContactCommand</code> is used to create new
+                contacts, the <code>UpdateContactCommand</code> to update existing and more commands
+                to provide data for other tasks. All these commands are handled by the
+                    <code>ContactCommandHandler</code>. The handler creates or updates the aggregate
+                roots, in this case the<code>Contact</code>, and registers them with the repository.
+                The aggregate root creates events like <code>ContactCreatedEvent</code>. These
+                events are dispatched by the <code>ContactRepository</code> when storing the change
+                has taken place. The following image gives you an idea what happens when a contact
+                is created. </para>
             <figure>
                 <title>Interaction between the different components</title>
                 <mediaobject>
@@ -180,12 +175,12 @@ public class AddressListener {
                 <xref linkend="addressbook-flex-client"/>
                 listens for these events.
             </para>
-            <para>Now that we have covered adding data by calling the command handler class. The
-                next part is querying the data. The address book sample makes use of a separate
-                data source for querying the data. Two databases configurations are available, mysql
-                and hsqldb. The configuration is available in the file database-context.xml. By
-                changing the following lines you can switch between an hsqldb or mysql.
-            </para>
+            <para>Now that we have covered adding data by dispatching commands that are handled
+                command handler class, the next part is about querying the data. The address book
+                sample makes use of a separate data source for querying the data. Two databases
+                configurations are available, mysql and hsqldb. The configuration is available in
+                the file database-context.xml. By changing the following lines you can switch
+                between an hsqldb or mysql. </para>
             <programlisting language="xml">
                 &lt;bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
                 &lt;property name="locations" value="classpath:hsqldb.database.properties"/>
@@ -207,7 +202,6 @@ public class AddressListener {
             <para>It is important to understand that this query datasource registers listeners, just
                 like the flex client, to get updates about contact and address changes.
             </para>
-            <para>TODO nog iets schrijven over de listeners en transacties en dergelijke</para>
         </sect2>
     </sect1>
 </appendix>
