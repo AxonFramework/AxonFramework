@@ -94,28 +94,39 @@
             another command was subscribed to that type of command, nothing happens.</para>
     </sect1>
         <sect1>
-            <title>Command Handler Interceptors</title>
-            <para>One of the advantages of using a command bus is the ability to undertake action
-                based on any incoming command, such as logging or authentication. The
-                <code>SimpleCommandBus</code> provides the ability to register interceptors.
-                These interceptors provide the ability to take action both before and after command
-                processing.</para>
-            <para>Interceptors must implement the <code>CommandHandlerInterceptor</code> interface.
-                This interface declares two methods, <code>beforeCommandHandling()</code> and
+        <title>Command Handler Interceptors</title>
+        <para>One of the advantages of using a command bus is the ability to undertake action based
+            on any incoming command, such as logging or authentication. The
+                <code>SimpleCommandBus</code> provides the ability to register interceptors. These
+            interceptors provide the ability to take action both before and after command
+            processing.</para>
+        <para>Interceptors must implement the <code>CommandHandlerInterceptor</code> interface. This
+            interface declares two methods, <code>beforeCommandHandling()</code> and
                 <code>afterCommandHandling()</code>, that both take two parameters: a
-                <code>CommandContext</code> and a <code>CommandHandler</code>. The first
-                contains the actual command and provides the possiblity to add meta-data to the
-                command. This meta-data is not forwarded to the command handler, but is intended for
-                the command handler interceptor itself. You could, for example, store transactional
-                information in the context if your transactional boundary is at the command
-                handling. The second parameter, the <code>CommandHandler</code> is the command
-                handler that processed the command. You could, for example, base authorization
-                requirements on information in the command handler.</para>
-            <para>If you use annotation support, the <code>AnnotationCommandHandlerAdapter</code> is
+                <code>CommandContext</code> and a <code>CommandHandler</code>. The first contains
+            the actual command and provides the possiblity to add meta-data to the command. This
+            meta-data is not forwarded to the command handler, but is intended for the command
+            handler interceptor itself. You could, for example, store transactional information in
+            the context if your transactional boundary is at the command handling. The second
+            parameter, the <code>CommandHandler</code> is the command handler that processed the
+            command. You could, for example, base authorization requirements on information in the
+            command handler.</para>
+        <para>If you use annotation support, the <code>AnnotationCommandHandlerAdapter</code> is
             passed as the command handler. You may call <code>getTarget()</code> on it to obtain the
             actual annotated command handler. To obtain a reference to the method that handles the
             command, you can use the <code>findCommandHandlerMethodFor(Object command)</code>
             method. You could, for example, use the reference to this method to find
             security-related annotations and perform authorization on them.</para>
-        </sect1>
+            <sect2><title>Managing transactions</title>
+            <para>In some cases, it is desirable to set a transaction scope around the command
+                handling process. For example when using synchronous event handling with event
+                handlers that update tables in a database in combintation with the
+                    <code>JpaEventStore</code>. By setting the transaction scope in the command
+                dispatching process, all changes can be performed within a single transaction. This
+                provides full consistency guarantees.</para>
+            <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses Spring's
+                    <code>PlatformTransactionManager</code> to manage the actual transactions. A
+                transaction is committed when command handling is successful, or rolled back if the
+                command handler (or one of the downstream interceptors) threw an exception.</para></sect2>
+    </sect1>
 </chapter>

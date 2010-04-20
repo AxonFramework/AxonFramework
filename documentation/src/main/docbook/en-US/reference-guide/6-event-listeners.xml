@@ -402,6 +402,14 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                     transaction manager may be either one that implements the TransactionManager
                     interface, or any other type that uses annotations.</para>
             </simplesect>
+            <simplesect>
+                <title>Provided TransactionManager implementations</title>
+                <para>Currently, Axon Framework provides one TransactionManager implementation, the
+                        <code>SpringTransactionManager</code>. This implemenation uses Spring's
+                        <code>PlatformTransactionManager</code> as underlying transaction mechanism.
+                    That means the <code>SpringTransactionManager</code> can manage any transactions
+                    in resources that Spring supports.</para>
+            </simplesect>
         </sect2>
     </sect1>
 </chapter>
