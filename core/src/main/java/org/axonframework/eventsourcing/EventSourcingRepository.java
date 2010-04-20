@@ -41,8 +41,7 @@ import java.util.UUID;
  * @see org.axonframework.eventstore.fs.FileSystemEventStore
  * @since 0.1
  */
-public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot>
-        extends LockingRepository<T> {
+public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
 
     private EventStore eventStore;
 
