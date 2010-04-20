@@ -28,7 +28,8 @@ import java.sql.SQLRecoverableException;
 import java.sql.SQLTransientException;
 
 /**
- * TransactionManager implementation for event listeners that update data in JPA managed data sources.
+ * TransactionManager implementation that uses a {@link org.springframework.transaction.PlatformTransactionManager} as
+ * underlying transaction manager.
  * <p/>
  * The transaction manager will commit the transaction when event handling is successful. If a non-transient
  * (non-recoverable) exception occurs, the failing event is discarded and the transaction is committed. If a transient
@@ -37,9 +38,9 @@ import java.sql.SQLTransientException;
  * @author Allard Buijze
  * @since 0.5
  */
-public class JpaTransactionManager implements TransactionManager {
+public class SpringTransactionManager implements TransactionManager {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private static final Logger logger = LoggerFactory.getLogger(SpringTransactionManager.class);
 
     private PlatformTransactionManager transactionManager;
 

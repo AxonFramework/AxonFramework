@@ -31,9 +31,9 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class JpaTransactionManagerTest {
+public class SpringTransactionManagerTest {
 
-    private JpaTransactionManager testSubject;
+    private SpringTransactionManager testSubject;
     private PlatformTransactionManager transactionManager;
     private org.springframework.transaction.TransactionStatus underlyingTransactionStatus;
 
@@ -41,7 +41,7 @@ public class JpaTransactionManagerTest {
     public void setUp() {
         underlyingTransactionStatus = mock(org.springframework.transaction.TransactionStatus.class);
         transactionManager = mock(PlatformTransactionManager.class);
-        testSubject = new JpaTransactionManager();
+        testSubject = new SpringTransactionManager();
         testSubject.setTransactionManager(transactionManager);
         when(transactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(underlyingTransactionStatus);
