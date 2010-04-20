@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class SimpleDomainEventStream implements DomainEventStream {
 
-    private final Iterator<DomainEvent> iterator;
+    private final Iterator<? extends DomainEvent> iterator;
     private volatile DomainEvent peeked;
 
     /**
@@ -37,7 +37,7 @@ public class SimpleDomainEventStream implements DomainEventStream {
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if the given list is empty
      */
-    public SimpleDomainEventStream(List<DomainEvent> events) {
+    public SimpleDomainEventStream(List<? extends DomainEvent> events) {
         this.iterator = events.iterator();
     }
 
