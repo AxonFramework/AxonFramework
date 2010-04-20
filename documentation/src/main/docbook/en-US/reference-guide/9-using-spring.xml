@@ -106,30 +106,12 @@
         <title>Wiring the event bus</title>
         <para>In a typical Axon application, there is only one event bus. Wiring it is just a matter
             of creating a bean of a subtype of <code>EventBus</code>. The
-                <code>SimpleEventBus</code>, the default implementation of choice.
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+                <code>SimpleEventBus</code> is the provided implementation.
+            <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
 
     &lt;bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-&lt;/beans></programlisting>
-                </para>
-        <para>Configuring a <code>taskExecutor</code> is optional. By default, the
-                <code>AsyncEventBus</code> uses a <code>ScheduledThreadPoolExecutor</code> instance
-            with 5 core threads, a maximum pool size of 25 and a keep alive timeout of 5 minutes.
-            These settings are probably fine for smaller applications, but when the application
-            contains more than 25 listeners, event processing can stall, waiting for events. Whether
-            this is a problem heavily relies on your application's requirements.</para>
-        <para>The <code>AsyncEventBus</code> can be configured with any <code>Executor</code>
-            instance you like. However, if the provided instance implements the
-                <code>ScheduledExecutorService</code> interface (of the
-                <code>java.util.concurrent</code> package), the event bus will use it's scheduling
-            capability to schedule retries. Executor's that do not implement this interface will be
-            forced to delay processing with a <code>Thread.sleep()</code>.</para>
-        <para>Alternatively, you could use the <code>SynchronousEventBus</code>, but be aware that
-            this implementation is not transactional (i.e. it will not call the
-                <code>beforeTransaction()</code> and <code>afterTransaction()</code> methods) and
-            will dispatch all event in the calling thread. This makes it ideal for some testing
-            purposes, but unsuitable for most production environments.</para>
+&lt;/beans></programlisting></para>
     </sect1>
     <sect1>
         <title>Wiring the Repository</title>

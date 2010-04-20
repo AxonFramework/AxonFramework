@@ -22,15 +22,12 @@
         web application built using Axon that shows how you can leverage the provided features to
         quickly build a dynamic and extensible application.
     </para>
-    <para>If you want to know more about Axon and its background, continue reading in<xref
+    <para>If you want to know more about Axon and its background, continue reading in <xref
             linkend="about-axon"/>. If you're eager to get started building your own application
-        using Axon, go quickly to<xref linkend="getting-started"/>. All help is welcome. If you're
-        interested in helping out building the Axon Framework,
-        <xref linkend="contributing"/>
-        will
+        using Axon, go quickly to <xref linkend="getting-started"/>. All help is welcome. If you're
+        interested in helping out building the Axon Framework, <xref linkend="contributing"/> will
         contain the information you require. Finally, this chapter covers some legal concerns in
-        <xref linkend="license"/>.
-    </para>
+            <xref linkend="license"/>. </para>
     <sect1 id="about-axon">
         <title>Axon Framework Background</title>
         <sect2>
