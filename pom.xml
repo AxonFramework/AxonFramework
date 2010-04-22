@@ -35,6 +35,7 @@
         The Axon framework supports developers with the plumbing and wiring required to build a CQRS architecture, by
         providing (abstract) implementations of common CQRS building blocks.
     </description>
+    <url>http://www.axonframework.org</url>
 
     <licenses>
         <license>
@@ -158,6 +159,9 @@
             </plugin>
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
