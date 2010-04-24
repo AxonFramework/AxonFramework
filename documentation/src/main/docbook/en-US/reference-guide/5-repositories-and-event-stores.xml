@@ -43,18 +43,14 @@
             repositories use that functionality. Of course, nothing witholds you from adding it to
             your repository implementation.</para>
             <simplesect>
-                <title>
-                    <code>AbstractRepository</code>
-                </title>
+                <title><code>AbstractRepository</code></title>
             </simplesect>
             <para>The most basic implementation of the repository is AbstractRepository. It takes
             care of the event publishing when an aggregate is saved. The actual persistence
             mechanism must still be implemented. This implementation doesn't provide any locking
             mechanism and expects the underlying data storage mechanism to provide it. </para>
             <simplesect xml:id="locking-repository">
-                <title>
-                    <code>LockingRepository</code>
-                </title>
+                <title><code>LockingRepository</code></title>
             </simplesect>
             <para>If the underlying data store does not provide any locking mechanism to prevent
                 concurrent modifications of aggregates, consider using the abstract
@@ -104,18 +100,13 @@
                 </para>
             </simplesect>
             <simplesect>
-                <title>
-                    <code>CachingEventSourcingRepository</code>
-                </title>
+                <title><code>CachingEventSourcingRepository</code></title>
                 <para>Initializing aggregates based on the events can be a time-consuming effort,
-                    compared to the direct aggregate loading of the simple repository
-                    implementations. The
-                    <code>CachingEventSourcingRepository</code>
-                    provides a
-                    cache from which aggregates can be loaded if available. You can configure any
-                    jcache implementation with this repository. Note that this implementation can
-                    only use caching in combination with a pessimistic locking strategy.
-                </para>
+                compared to the direct aggregate loading of the simple repository implementations.
+                The <code>CachingEventSourcingRepository</code> provides a cache from which
+                aggregates can be loaded if available. You can configure any jcache implementation
+                with this repository. Note that this implementation can only use caching in
+                combination with a pessimistic locking strategy.</para>
             </simplesect>
         </sect1>
         <sect1 xml:id="implementing-an-eventstore">
@@ -129,9 +120,7 @@
                 By default, Axon provides an implementation of the Event Serializer that serializes
                 events to XML: the <code>XStreamEventSerializer</code>. </para>
             <simplesect>
-                <title>
-                    <code>FileSystemEventStore</code>
-                </title>
+                <title><code>FileSystemEventStore</code></title>
                 <para>The <code>FileSystemEventStore</code> stores the events in a file on the file
                     system. It provides good performance and easy configuration. The only downside
                     of this event store is that is does not provide transaction support and doesn't
@@ -141,9 +130,7 @@
                     due to the way Spring's <code>Resource</code> implementations work. </para>
             </simplesect>
             <simplesect>
-                <title>
-                    <code>JpaEventStore</code>
-                </title>
+                <title><code>JpaEventStore</code></title>
                 <para>The <code>JpaEventStore</code> stores events in a JPA-compatible data source.
                     Unlike the XStream version, the <code>JPAEventStore</code> supports
                     transactions. The JPA event store can also load events based on their
@@ -158,12 +145,12 @@
                 <programlistingco>
                     <areaspec units="LineColumn">
                         <area coords="2 40" id="persistence-unit-name-co"/>
-                        <area coords="3 93" id="domain-event-entry-co"/>
+                        <area coords="3 62" id="domain-event-entry-co"/>
                     </areaspec>
                     <programlisting language="xml"><![CDATA[<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.eventsourcing.eventstoreventstore.jpa.DomainEventEntry</class>
-        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org...eventstore.jpa.DomainEventEntry</class>
+        <class>org...eventstore.jpa.SnapshotEventEntry</class>
     </persistence-unit>
 </persistence>]]></programlisting>
                     <calloutlist>
@@ -214,12 +201,12 @@
         <sect1 xml:id="using-snapshot-events">
             <title>Using Snapshot Events</title>
             <para>When aggregates live for a long time, and their state constantly change, they will
-                generate a large amount of events. Having to load all these events in to rebuild an
-                aggregate's state may have a big performance impact. The snapshot event is a domain
-                event with a special purpose: it summarises an arbitrary amount of events into a
-                single one. By regularly creating an storing a snapshot event, the event store does
-                not have to return long lists of events. Just the last snapshot events and all
-                events that occurred after the snapshot was made.</para>
+            generate a large amount of events. Having to load all these events in to rebuild an
+            aggregate's state may have a big performance impact. The snapshot event is a domain
+            event with a special purpose: it summarises an arbitrary amount of events into a single
+            one. By regularly creating and storing a snapshot event, the event store does not have
+            to return long lists of events. Just the last snapshot events and all events that
+            occurred after the snapshot was made.</para>
             <para>For example, items in stock tend to change quite often. Each time an item is sold,
                 an event reduces the stock by one. Every time a shipment of new items comes in, the
                 stock is incremented by some larger number. If you sell a hundred items each day,
@@ -268,10 +255,29 @@
             <simplesect>
                 <title>Initializing an aggregate based on a Snapshot Event</title>
                 <para>A snapshot event is just a regular <code>DomainEvent</code>. That means a
-                    snapshot event is handled just like any other domain event. When using
-                    annotations to demarcate event handers (<code>@EventHandler</code>), you can
-                    annotate a method that initializes full aggregate state based on a snapshot
-                    event.</para>
+                snapshot event is handled just like any other domain event. When using annotations
+                to demarcate event handers (<code>@EventHandler</code>), you can annotate a method
+                that initializes full aggregate state based on a snapshot event. The code sample
+                below shows how snapshot events are treated like any other domain event within the
+                aggregate.</para>
+            <para>
+                <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
+
+    // ... code omitted for brevity
+
+    @EventHandler
+    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
+        // ...
+    }
+
+    @EventHandler
+    protected void applySnapshot(MySnapshotEvent event) {
+        // the snapshot event should contain all relevant state
+        this.someState = event.someState;
+        this.otherState = event.otherState;
+    }
+}</programlisting>
+            </para>
             </simplesect>
         </sect1>
 </chapter>

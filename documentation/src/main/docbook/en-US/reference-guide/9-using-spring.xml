@@ -114,11 +114,33 @@
 &lt;/beans></programlisting></para>
     </sect1>
     <sect1>
+        <title>Wiring the command bus</title>
+        <para>The command bus doesn't take any configuration to use. However, it allows you to
+            configure a number of interceptors that should take action based on each incoming
+            command.</para>
+        <para>
+            <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean id="eventBus" class="org.axonframework.commandhandling.CommandBus">
+        &lt;property name="interceptors">
+            &lt;list>
+                &lt;bean class="org.axonframework...SpringTransactionalInterceptor">
+                    &lt;property name="transactionManager" ref="transactionManager"/>
+                &lt;/bean>
+                &lt;bean class="other-interceptors"/>
+            &lt;/list>
+        &lt;/property>
+    &lt;/bean>
+
+&lt;/beans></programlisting>
+        </para>
+    </sect1>
+    <sect1>
         <title>Wiring the Repository</title>
         <para>Wiring a repository is very similar to any other bean you would use in a Spring
             application. Axon only provides abstract implementations for repositories, which means
-            you need to extend one of them. See <xref linkend="repositories-and-event-stores"/> for the
-            available implementations.</para>
+            you need to extend one of them. See <xref linkend="repositories-and-event-stores"/> for
+            the available implementations.</para>
         <para>Repository implementations that do support event sourcing just need the event bus to
             be configured, as well as any dependencies that your own implementation has.
             <programlisting language="xml">&lt;bean id="simpleRepository" class="my.package.SimpleRepository">
@@ -131,8 +153,34 @@
     &lt;property name="eventBus" ref="eventBus"/>
     &lt;property name="eventStore" ref="eventStore"/>
 &lt;/bean></programlisting></para>
+        <para>In many cases, you can use the <code>GenericEventSourcingRepository</code>. Below is
+            an example of XML application context configuration to wire such a repository.</para>
+        <para>
+            <programlisting language="xml">&lt;bean id="myRepository" class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
+    &lt;constructor-arg value="fully.qualified.class.Name"/>
+    &lt;property name="eventBus" ref="eventBus"/>
+    &lt;property name="eventStore" ref="eventStore"/>
+&lt;/bean></programlisting>
+        </para>
         <para>The repository will delegate the storage of events to the configured
                 <code>eventStore</code>, while these events are dispatched using the provided
                 <code>eventBus</code>.</para>
+    </sect1>
+    <sect1>
+        <title>Wiring the event store</title>
+        <para>All event sourcing repositorties need an event store. Wiring the
+                <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> is very
+            similar, but the <code>JpaEventStore</code> needs to run in a Spring managed
+            transaction. Unless you use the <code>SpringTransactionalInterceptor</code> on your
+            command bus, you need to declare the annotation-driven transaction-manager as shown in
+            the sample below.</para>
+        <para>
+            <programlisting>&lt;bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
+
+&lt;!-- enable the configuration of transactional behavior based on annotations -->
+&lt;tx:annotation-driven transaction-manager="txManager"/>
+
+&lt;!-- declare transaction manager, data source, EntityManagerFactoryBean, etc --></programlisting>
+        </para>
     </sect1>
 </chapter>

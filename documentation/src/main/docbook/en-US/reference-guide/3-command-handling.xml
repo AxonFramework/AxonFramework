@@ -40,10 +40,10 @@
             implement the <code>CommandHandler</code> interface. This interface declares only a
             single method: <code>Object handle(T command)</code>, where T is the type of Command
             this Handler can process. It is not recommended to use return values, but they are
-            allowed. Always consider using a "fire and forget" style of event handlers, where a
+            allowed. Always consider using a "fire and forget" style of command handlers, where a
             client does not have to wait for a response. As return value in such a case, you are
             recommended to use either <code>null</code> or <code>Void.TYPE</code>. The latter being
-            the official representation of the <code>void</code> keyword.</para>
+            the official representation of the <code>void</code>keyword.</para>
         <note>
             <para>Note that Command Handlers need to be explicitly subscribed to the Command Bus for
                 the specific types of Command they can handle. See <xref
@@ -62,29 +62,30 @@
                 CommandBus instance. Use the <code>subscribe()</code> method on the adapter to
                 subscribe the annotated handlers to the command bus using the correct command
                 type.</para>
-            <para>If you use Spring, you may also define a
-                    <code>AnnotationCommandHandlerBeanPostProcessor</code>. This post processor
-                detects any beans that have an <code>@CommandHandler</code> annotated method in them
-                and wrap them in an <code>AnnotationCommandHandlerAdapter</code> automatically. They
-                will also be automatically subscribed to the <code>CommandBus</code>. </para>
+            <para>If you use Spring, you may also define an
+                <code>AnnotationCommandHandlerBeanPostProcessor</code>. This post processor detects
+            any beans that have an <code>@CommandHandler</code> annotated method in them and wrap
+            them in an <code>AnnotationCommandHandlerAdapter</code> automatically. They will also be
+            automatically subscribed to the <code>CommandBus</code>. </para>
             <note>
                 <para>Note that you need to be careful when mixing manual wrapping and the use of
-                    the post processor. This might result in command handler being subscribed twice.
-                    This does not have to be a problem for most command handlers, since only a
-                    single command handler can be subscribed to a specific type of command at any
-                    one time. Their subscriptions will just overwrite eachother.</para>
+                the post processor. This might result in command handler being subscribed twice.
+                This does not have to be a problem for most command handlers, since only a single
+                command handler can be subscribed to a specific type of command at any one time.
+                Their subscriptions will just overwrite each other.</para>
             </note>
         
         </sect1>
         <sect1 xml:id="configuring-command-bus">
         <title>Configuring the Command Bus</title>
-        <para>The Command Bus is the mechanism that dispatches command to their respective Command
+        <para>The Command Bus is the mechanism that dispatches commands to their respective Command
             Handler. Though similar to the Event Bus, there is a very clear distinction to be made
-            between the two. Where Events are published to all registered listeners, commands are
-            sent to only one (and exactly one) command handler. If no command handler is available,
-            an exception (<code>NoHandlerForCommandException</code>) is thrown. Subscribing multiple
-            command handlers to the same command type will result in subscriptions replacing
-            eachother. In that case, the last subscription wins.</para>
+            between the command bus and the event bus. Where Events are published to all registered
+            listeners, commands are sent to only one (and exactly one) command handler. If no
+            command handler is available for a dispatched command, an exception
+                (<code>NoHandlerForCommandException</code>) is thrown. Subscribing multiple command
+            handlers to the same command type will result in subscriptions replacing each other. In
+            that case, the last subscription wins.</para>
         <para>Axon provides a single implementation of the Command Bus:
                 <code>SimpleCommandBus</code>. You can subscribe and unsubscribe command handlers
             using the <code>subscribe</code> and <code>unsubscribe</code> methods, respectively.
@@ -96,7 +97,7 @@
         <sect1>
         <title>Command Handler Interceptors</title>
         <para>One of the advantages of using a command bus is the ability to undertake action based
-            on any incoming command, such as logging or authentication. The
+            on all incoming commands, such as logging or authentication. The
                 <code>SimpleCommandBus</code> provides the ability to register interceptors. These
             interceptors provide the ability to take action both before and after command
             processing.</para>
@@ -108,9 +109,9 @@
             meta-data is not forwarded to the command handler, but is intended for the command
             handler interceptor itself. You could, for example, store transactional information in
             the context if your transactional boundary is at the command handling. The second
-            parameter, the <code>CommandHandler</code> is the command handler that processed the
-            command. You could, for example, base authorization requirements on information in the
-            command handler.</para>
+            parameter, the <code>CommandHandler</code> is the command handler that will process or
+            has processed the command. You could, for example, base authorization requirements on
+            information in the command handler.</para>
         <para>If you use annotation support, the <code>AnnotationCommandHandlerAdapter</code> is
             passed as the command handler. You may call <code>getTarget()</code> on it to obtain the
             actual annotated command handler. To obtain a reference to the method that handles the

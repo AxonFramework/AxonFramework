@@ -43,13 +43,14 @@
         Command Handling
     </emphasis>
         </para>
-    <para>Command are represented by simple and straightforward object that contain all data
-        necessary for a command handler to execute it. Typically, the command expresses some intent
-        by its name. In Java terms, that means the class name is used to figure out what needs to be
+    <para>Commands are represented by simple and straightforward objects that contain all data
+        necessary for a command handler to execute it. Typically, a command expresses some intent by
+        its name. In Java terms, that means the class name is used to figure out what needs to be
         done, and the fields of the command provide the information required to do it.</para>
-    <para>Command Handlers respond to specific command and execute logic based on their contents. In
-        some cases, you would want to do generic things, regardless of the actual type of command,
-        such as logging or authorization.</para>
+    <para>The Command Bus receives commands and routes them to the Command Handlers. Each command
+        handler responds to a specific type of command and execute logic based on their contents. In
+        some cases, however, you would also want to do things regardless of the actual type of
+        command, such as logging or authorization.</para>
     <para>Axon provides building blocks to help you implement a command handling infrastructure with
         these features. These buidling block are thorougly described in <xref
             linkend="command-handling"/>.</para>
@@ -70,8 +71,8 @@
         this aggregate. Furthermore, events are handed over to the event bus, which is reposonsible
         for dispatching them to all interested listeners.</para>
     <para>Axon provides support for both the direct way of persisting aggregates (using
-        object-relational-mapping, for example) and for event sourcing. More about aggregates can be
-        found in <xref linkend="repositories-and-event-stores"/>.</para>
+        object-relational-mapping, for example) and for event sourcing. More about repositories and
+        event stores can be found in <xref linkend="repositories-and-event-stores"/>.</para>
     
         <para><emphasis role="bold">Event Processing</emphasis></para>
     
@@ -80,22 +81,28 @@
         to return and hand over control to the user, while the events are being dispatched and
         processed in the background. Not having to wait for event processing to complete makes an
         application more responsive. Synchronous event processing, on the other hand, is simpler and
-        is usual a sensible default. Synchronous processing also allows several event listeners to
-        process events within the same transaction.</para>
+        is a sensible default. Synchronous processing also allows several event listeners to process
+        events within the same transaction.</para>
     <para>Event listeners receive events and handle them. Some handlers might issue commands to
         update other aggregates, based on information in the event. An example of this is the
         placement of an order in an online store. When an order comes in, you might want to update
         stock information for all ordered items. The listener would listen to events regarding
         placed orders and send stock update commands to the inventory. Other event listeners will
         update data sources used for querying or send messages to external systems. </para>
-    <para>The data sources are updated and ready for querying by the user interface. The thin data
-        layer in between the user interface and the data sources provides a clearly defined
-        interface to the actual query implementation used. This data layer typically returns
-        read-only DTO objects containing query results. </para>
     <para>As you might notice, the command handlers are completely unaware of the components that
         are interested in the changes they make. This means that it is very non-intrusive to extend
         the application with new functionality. All you need to do is add another event listener.
         The events loosely couple all components in your application together. </para>
     <para>The building blocks related to event handling and dispatching are explained in <xref
             linkend="event-processing"/>.</para>
+    <simplesect>
+        <title>Querying for data</title>
+        <para>Some event handlers will update data in data sources, such as tables in a database.
+            The thin data layer in between the user interface and the data sources provides a
+            clearly defined interface to the actual query implementation used. This data layer
+            typically returns read-only DTO objects containing query results.</para>
+        <para>Axon does not provide any building blocks for this part of the application. The main
+            reason is that this is very straightforward and doesn't differ from the layered
+            architecture.</para>
+    </simplesect>
 </chapter>

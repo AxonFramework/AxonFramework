@@ -21,7 +21,7 @@
         execution of state changes. Although a typical Domain Model has a great number of building
         blocks, two of them play a major role when applied to CQRS: the Event and the
         Aggregate.</para>
-    <para>The following chapters will explain the role of these building blocks and how to implement
+    <para>The following sections will explain the role of these building blocks and how to implement
         them using the Axon Framework.</para>
     <sect1 xml:id="events">
         <title>Events</title>
@@ -85,7 +85,7 @@
                 that the event indicates a migration to a "deleted" state of the aggregate.
                 Repositories must consider aggregates that have applied such an event as deleted.
                 Loading such an aggregate in again results in an exception.</para>
-            <para>Snapsot events are instances of <code>DomainEvent</code> with a special intent.
+            <para>Snapshot events are instances of <code>DomainEvent</code> with a special intent.
                 They are typically not dispatched via the event bus, but are used to summarize an
                 arbitrary number of events from the past into a single entry. This can drastically
                 improve performance when initializing an aggregate's state from a series of events.
@@ -146,8 +146,8 @@
             </para>
             <para>A more extensive definition can be found on: <link
                     xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://domaindrivendesign.org/freelinking/Aggregate">
-                    http://domaindrivendesign.org/freelinking/Aggregate</link>. </para>
+                    ns1:href="http://domaindrivendesign.org/freelinking/Aggregate"
+                    >http://domaindrivendesign.org/freelinking/Aggregate</link>. </para>
         </note>
         <para>For example, a "Contact" aggregate will contain two entities: contact and address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
@@ -160,13 +160,11 @@
                 <title>
                     <code xmlns="http://docbook.org/ns/docbook">AggregateRoot</code>
                 </title>
-                <para>In Axon, all aggregate roots must implement the
-                    <code>AggregateRoot</code>
-                    interface. This interface describes that basic operations needed by the
+                <para>In Axon, all aggregate roots must implement the <code>AggregateRoot</code>
+                    interface. This interface describes the basic operations needed by the
                     Repository to store and publish the generated domain events. However, Axon
                     Framework provides a number of abstract implementations that help you writing
-                    your own aggregates.
-                </para>
+                    your own aggregates. </para>
                 <note>
                     <para>Note that only the aggregate root needs to implement the AggregateRoot
                         interface or implement one of the abstract classes mentioned below. The
@@ -313,7 +311,7 @@
 
     @EventHandler
     private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
-    // do something with someProperty
+        // do something with someProperty
     }
 }                </programlisting>
                 <para>In all circumstances, exactly one event handler method is invoked. The

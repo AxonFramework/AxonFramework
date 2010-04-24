@@ -27,10 +27,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Spring Bean post processor that automatically generates an adapter for each bean containing {@link
- * org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
+ * org.axonframework.commandhandling.annotation.CommandHandler} annotated methods.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 0.5
  */
 public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor {
 
