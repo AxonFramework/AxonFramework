@@ -20,7 +20,7 @@
     <parent>
         <artifactId>axon-samples</artifactId>
         <groupId>org.axonframework.samples</groupId>
-        <version>0.5</version>
+        <version>0.6-SNAPSHOT</version>
     </parent>
 
     <groupId>org.axonframework.samples</groupId>
