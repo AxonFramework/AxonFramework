@@ -25,7 +25,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>axon-documentation</artifactId>
     <packaging>pom</packaging>
-    <name>Axon Reference Guide</name>
+    <name>Axon Documentation</name>
 
     <build>
         <plugins>
