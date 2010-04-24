@@ -170,25 +170,18 @@
                 </configuration>
             </plugin>
         </plugins>
-        <extensions>
-            <extension>
-                <groupId>org.jvnet.wagon-svn</groupId>
-                <artifactId>wagon-svn</artifactId>
-                <version>1.9</version>
-            </extension>
-        </extensions>
     </build>
 
     <!-- deploy and release configuration -->
     <distributionManagement>
         <snapshotRepository>
-            <id>googleCode</id>
-            <url>svn:https://axonframework.googlecode.com/svn/repo/</url>
+            <id>sonatype</id>
+            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
             <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
         <repository>
-            <id>googleCode</id>
-            <url>svn:https://axonframework.googlecode.com/svn/repo/</url>
+            <id>sonatype</id>
+            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
             <uniqueVersion>false</uniqueVersion>
         </repository>
     </distributionManagement>
