@@ -158,6 +158,57 @@
                             </imageResource>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>make-sample-pdf</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>resources</goal>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDocumentName>sample-documentation.xml</sourceDocumentName>
+                            <formats>
+                                <format>
+                                    <formatName>pdf</formatName>
+                                    <finalName>sample-documentation-${project.version}.pdf</finalName>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/pdf/custom.xsl
+                                    </stylesheetResource>
+                                </format>
+                            </formats>
+                            <options>
+                                <xincludeSupported>true</xincludeSupported>
+                                <localeSeparator>-</localeSeparator>
+                                <useRelativeImageUris>true</useRelativeImageUris>
+                                <transformerParameters>
+                                    <property>
+                                        <name>admon.graphics.path</name>
+                                        <value>${basedir}/src/main/resources/images/</value>
+                                    </property>
+                                    <property>
+                                        <name>admon.graphics.extension</name>
+                                        <value>_large.png</value>
+                                    </property>
+                                    <property>
+                                        <name>callout.graphics.path</name>
+                                        <value>${basedir}/src/main/resources/images/callouts/</value>
+                                    </property>
+                                    <property>
+                                        <name>callout.graphics.extension</name>
+                                        <value>.svg</value>
+                                    </property>
+                                    <property>
+                                        <name>highlight.xslthl.config.path</name>
+                                        <value>
+                                            file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
+                                        </value>
+                                    </property>
+                                </transformerParameters>
+                            </options>
+                            <imageResource>
+                                <directory>${project.basedir}/src/main/resources/images</directory>
+                            </imageResource>
+                        </configuration>
+                    </execution>
                 </executions>
                 <dependencies>
                     <dependency>

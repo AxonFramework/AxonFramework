@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   ~ Copyright (c) 2010. Axon Framework
   ~
@@ -14,11 +15,9 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<appendix id="sample-applications" xmlns="http://docbook.org/ns/docbook">
-    <title>Sample Applications</title>
-    <sect1 xml:id="sample-addressbook">
+    <chapter xml:id="sample-addressbook">
         <title>Address Book</title>
-        <sect2>
+        <sect1>
             <title>Introduction</title>
             <para>Every good framework needs a sample application. You want to have an application
                 that demonstrates enough of the framework and is easy enough to understand. The
@@ -37,7 +36,7 @@
             <para>To interact with the application, you have to dispatch comamnds. The domain
                 creates events for things like: contact created, contact updated, address changed.
                 These events are picket up by special listeners that publish these events to all
-                flex clients using BlazeDS. More on this part follows in section<xref
+                flex clients using BlazeDS. More on this part follows in section <xref
                     linkend="addressbook-flex-client"/>. </para>
             <para>The following image gives an overview of the architecture as discussed in this
                 section.
@@ -69,8 +68,8 @@
                     </imageobject>
                 </mediaobject>
             </figure>
-        </sect2>
-        <sect2 xml:id="addressbook-flex-client">
+        </sect1>
+        <sect1 xml:id="addressbook-flex-client">
             <title>Flex client</title>
             <para>In this section we will describe the main components of the flex client. The flex
                 client makes use of an Inversion Of Control framework called parsley. This framework
@@ -80,12 +79,7 @@
             </para>
             <note>
                 <para>For the flex application we use the parsley framework. More information about
-                    the framework can be found on the Parsley website:
-                    <link
-                            xmlns:ns1="http://www.w3.org/1999/xlink"
-                            ns1:href="http://www.spicefactory.org/parsley/"
-                            >http://www.spicefactory.org/parsley/
-                    </link>
+                    the framework can be found on the Parsley website: <uri>http://www.spicefactory.org/parsley/</uri>
                 </para>
             </note>
             <para>The flex client talks to the server. Remote objects are used to ask data from the
@@ -135,8 +129,8 @@ public class AddressListener {
                         http://www.gridshore.nl/2010/02/25/creating-a-sample-for-axon-using-flex-and-parsley/ </para>
                 </note>
             </para>
-        </sect2>
-        <sect2>
+        </sect1>
+        <sect1>
             <title>Application logic</title>
             <para>Axon is a framework. Axon makes it easier to create your own application following
                 the Axon principles. This section discusses the components of the sample that make
@@ -202,6 +196,5 @@ public class AddressListener {
             <para>It is important to understand that this query datasource registers listeners, just
                 like the flex client, to get updates about contact and address changes.
             </para>
-        </sect2>
-    </sect1>
-</appendix>
+        </sect1>
+    </chapter>
