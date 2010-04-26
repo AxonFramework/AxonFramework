@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotProducer;
 import org.junit.*;
 import org.junit.runner.*;
@@ -111,6 +112,11 @@ public class JpaEventStoreTest {
         }
 
         assertEquals(2, domainEvents.size());
+    }
+
+    @Test(expected = EventStreamNotFoundException.class)
+    public void testLoadNonExistent() {
+        testSubject.readEvents("test", UUID.randomUUID());
     }
 
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot implements SnapshotProducer {
