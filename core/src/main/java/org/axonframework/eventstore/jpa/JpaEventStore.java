@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventSerializer;
+import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.springframework.transaction.annotation.Propagation;
@@ -103,6 +104,12 @@ public class JpaEventStore implements SnapshotEventStore {
         }
         for (DomainEventEntry entry : entries) {
             events.add(entry.getDomainEvent(eventSerializer));
+        }
+        if (events.isEmpty()) {
+            throw new EventStreamNotFoundException(
+                    String.format("Aggregate of type [%s] with identifier [%s] cannot be found.",
+                                  type,
+                                  identifier.toString()));
         }
         return new SimpleDomainEventStream(events);
     }
