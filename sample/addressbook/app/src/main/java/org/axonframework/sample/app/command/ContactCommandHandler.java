@@ -65,7 +65,7 @@ public class ContactCommandHandler {
     public void handle(ChangeContactNameCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getContactNewName(), "Name may not be null");
-        Contact contact = repository.load(UUID.fromString(command.getContactNewName()));
+        Contact contact = repository.load(UUID.fromString(command.getContactId()));
         contact.changeName(command.getContactNewName());
         repository.save(contact);
     }
