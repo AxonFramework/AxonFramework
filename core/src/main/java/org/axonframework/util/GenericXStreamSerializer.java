@@ -36,7 +36,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 
 /**
+ * Serializer that uses XStream to serialize and deserialize arbitrary objects. These objects do not have to implement
+ * the Serializable interface, but the underlying XStream needs to be told how to (un)marshal certain types. See {@link
+ * com.thoughtworks.xstream.XStream}.
+ *
  * @author Allard Buijze
+ * @since 0.6
  */
 public class GenericXStreamSerializer {
 
