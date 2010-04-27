@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.eventstore;
+package org.axonframework.eventstore;
 
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.eventstore.XStreamEventSerializer;
+import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
 import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -48,30 +50,9 @@ public class XStreamEventSerializerTest {
         assertEquals("Henk", actualEvent.getName());
     }
 
-    @Test
-    public void testSerialize_WithStrangeCharset() {
+    @Test(expected = UnsupportedCharsetException.class)
+    public void testInitialize_WithStrangeCharset() {
         testSubject = new XStreamEventSerializer("Weird");
-        try {
-            testSubject.serialize(new TestEvent("Klaas"));
-            fail("Expected EventStoreException");
-        }
-        catch (EventStoreException e) {
-            assertTrue("Not the type of exception that was expected",
-                       e.getCause() instanceof UnsupportedEncodingException);
-        }
-    }
-
-    @Test
-    public void testDeserialize_WithStrangeCharset() {
-        testSubject = new XStreamEventSerializer("Weird");
-        try {
-            testSubject.deserialize(new byte[]{});
-            fail("Expected EventStoreException");
-        }
-        catch (EventStoreException e) {
-            assertTrue("Not the type of exception that was expected",
-                       e.getCause() instanceof UnsupportedEncodingException);
-        }
     }
 
     @Test
@@ -114,9 +95,15 @@ public class XStreamEventSerializerTest {
     public static class TestEvent extends DomainEvent {
 
         private String name;
+        private DateMidnight date;
+        private DateTime dateTime;
+        private Period period;
 
         public TestEvent(String name) {
             this.name = name;
+            this.date = new DateMidnight();
+            this.dateTime = new DateTime();
+            this.period = new Period(100);
         }
 
         public String getName() {

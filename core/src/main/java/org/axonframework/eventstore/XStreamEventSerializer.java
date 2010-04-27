@@ -17,17 +17,12 @@
 package org.axonframework.eventstore;
 
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.converters.SingleValueConverter;
-import com.thoughtworks.xstream.io.xml.CompactWriter;
-import com.thoughtworks.xstream.io.xml.XppDriver;
 import org.axonframework.domain.DomainEvent;
-import org.joda.time.LocalDateTime;
+import org.axonframework.util.GenericXStreamSerializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 /**
  * Implementation of the serializer that uses XStream as underlying serialization mechanism. Events are serialized to
@@ -38,9 +33,8 @@ import java.io.UnsupportedEncodingException;
  */
 public class XStreamEventSerializer implements EventSerializer {
 
-    private final XStream xStream;
-    private static final String DEFAULT_CHARSET_NAME = "UTF-8";
-    private final String charsetName;
+    private GenericXStreamSerializer genericXStreamSerializer;
+    private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
 
     /**
      * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
@@ -58,9 +52,11 @@ public class XStreamEventSerializer implements EventSerializer {
      * @param charsetName The name of the character set to use.
      */
     public XStreamEventSerializer(String charsetName) {
-        xStream = new XStream(new XppDriver());
-        xStream.registerConverter(new LocalDateTimeConverter());
-        this.charsetName = charsetName;
+        this(Charset.forName(charsetName));
+    }
+
+    public XStreamEventSerializer(Charset charset) {
+        genericXStreamSerializer = new GenericXStreamSerializer(charset);
     }
 
     /**
@@ -71,11 +67,7 @@ public class XStreamEventSerializer implements EventSerializer {
     @Override
     public byte[] serialize(DomainEvent event) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            xStream.marshal(event, new CompactWriter(new OutputStreamWriter(baos, charsetName)));
-        } catch (UnsupportedEncodingException e) {
-            throw new EventStoreException("The '" + charsetName + "' encoding is not supported.", e);
-        }
+        genericXStreamSerializer.serialize(event, baos);
         return baos.toByteArray();
     }
 
@@ -86,42 +78,7 @@ public class XStreamEventSerializer implements EventSerializer {
      */
     @Override
     public DomainEvent deserialize(byte[] serializedEvent) {
-        try {
-            return (DomainEvent) xStream.fromXML(new InputStreamReader(new ByteArrayInputStream(serializedEvent),
-                                                                       charsetName));
-        } catch (UnsupportedEncodingException e) {
-            throw new EventStoreException("The '" + charsetName + "' encoding is not supported.", e);
-        }
-    }
-
-    /**
-     * XStream Converter to serialize LocalDateTime classes as a String.
-     */
-    private static class LocalDateTimeConverter implements SingleValueConverter {
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean canConvert(Class type) {
-            return type.equals(LocalDateTime.class);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString(Object obj) {
-            return obj.toString();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Object fromString(String str) {
-            return new LocalDateTime(str);
-        }
+        return (DomainEvent) genericXStreamSerializer.deserialize(new ByteArrayInputStream(serializedEvent));
     }
 
     /**
@@ -132,7 +89,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see XStream#alias(String, Class)
      */
     public void addAlias(String name, Class type) {
-        xStream.alias(name, type);
+        genericXStreamSerializer.addAlias(name, type);
     }
 
     /**
@@ -147,7 +104,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see XStream#aliasPackage(String, String)
      */
     public void addPackageAlias(String alias, String pkgName) {
-        xStream.aliasPackage(alias, pkgName);
+        genericXStreamSerializer.addPackageAlias(alias, pkgName);
     }
 
     /**
@@ -159,7 +116,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see XStream#aliasField(String, Class, String)
      */
     public void addFieldAlias(String alias, Class definedIn, String fieldName) {
-        xStream.aliasField(alias, definedIn, fieldName);
+        genericXStreamSerializer.addFieldAlias(alias, definedIn, fieldName);
     }
 
     /**
@@ -171,6 +128,6 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
-        return xStream;
+        return genericXStreamSerializer.getXStream();
     }
 }
