@@ -101,7 +101,7 @@
 
         <dependency>
             <groupId>org.axonframework.samples</groupId>
-            <artifactId>swf</artifactId>
+            <artifactId>axon-addressbook-swf</artifactId>
             <version>${project.version}</version>
             <type>swf</type>
         </dependency>
