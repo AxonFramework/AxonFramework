@@ -24,7 +24,6 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.XppDriver;
-import org.axonframework.eventstore.EventStoreException;
 import org.joda.time.LocalDateTime;
 
 import java.io.InputStream;
@@ -163,13 +162,13 @@ public class GenericXStreamSerializer {
                 return constructor.newInstance(reader.getValue());
             }
             catch (NoSuchMethodException e) {
-                throw new EventStoreException("Unable to read the event due to an initialization exception", e);
+                throw new SerializationException("Unable to read the event due to an initialization exception", e);
             } catch (InvocationTargetException e) {
-                throw new EventStoreException("Unable to read the event due to an initialization exception", e);
+                throw new SerializationException("Unable to read the event due to an initialization exception", e);
             } catch (InstantiationException e) {
-                throw new EventStoreException("Unable to read the event due to an initialization exception", e);
+                throw new SerializationException("Unable to read the event due to an initialization exception", e);
             } catch (IllegalAccessException e) {
-                throw new EventStoreException("Unable to read the event due to an initialization exception", e);
+                throw new SerializationException("Unable to read the event due to an initialization exception", e);
             }
         }
     }
