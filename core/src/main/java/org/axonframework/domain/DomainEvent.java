@@ -66,7 +66,7 @@ public abstract class DomainEvent extends EventBase {
 
     /**
      * Returns the sequence number of this event, if available. Will return null if this event has not been added to an
-     * {@link org.axonframework.core.EventContainer}.
+     * {@link org.axonframework.domain.EventContainer}.
      *
      * @return the sequence number of this event, or null if unknown.
      */
