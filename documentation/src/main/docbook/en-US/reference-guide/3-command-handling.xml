@@ -118,7 +118,8 @@
             command, you can use the <code>findCommandHandlerMethodFor(Object command)</code>
             method. You could, for example, use the reference to this method to find
             security-related annotations and perform authorization on them.</para>
-            <sect2><title>Managing transactions</title>
+            <sect2>
+            <title>Managing transactions</title>
             <para>In some cases, it is desirable to set a transaction scope around the command
                 handling process. For example when using synchronous event handling with event
                 handlers that update tables in a database in combintation with the
@@ -128,6 +129,40 @@
             <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses Spring's
                     <code>PlatformTransactionManager</code> to manage the actual transactions. A
                 transaction is committed when command handling is successful, or rolled back if the
-                command handler (or one of the downstream interceptors) threw an exception.</para></sect2>
+                command handler (or one of the downstream interceptors) threw an exception.</para>
+        </sect2>
+        <sect2 xml:id="auditing-interceptor">
+            <title>Auditing</title>
+            <para>Auditing is the process of tagging incoming commands and events with identifiers
+                that allow you to see which actions were taken under which circumstances. Axon
+                provides a command handler interceptor that keeps track of incoming command and the
+                events that were raised as a result of this command. This information is kept inside
+                an AuditingContext, which is created for each specific command. Besides the commands
+                and events, it is also possible to attach the current principal. This allow you to
+                find out who initiated certain actions.</para>
+            <para>The <code>AuditingInterceptor</code> is an abstract class that you can extend to
+                implement auditing. You need to implement two methods:
+                    <code>getCurrentPrincipal()</code>, which returns the user that is currently
+                logged in, and <code>writeSuccessful(AuditingContext)</code>, which is called when
+                command handling executed successfully. If security is not enabled in your
+                application, simply return <code>null</code> as the current principal.</para>
+            <para>In some applications, even failed attempts to execute a command must be logged. In
+                that case, you should extend the <code>writeFailed(AuditingContext,
+                    Exception)</code> method. This method is called when command handling resulted
+                in an exception. The default implementation does nothing.</para>
+            <para>If you use event sourcing, you should be aware that the event log already contains
+                the exact details of each event. In that case, it could suffice to just log the
+                event identifier or aggregate identifier and sequence number combination. If you
+                would like to use XStream to serialize your auditing context, consider using the
+                    <code>GenericXStreamSerializer</code>.</para>
+            <note>
+                <para>Note that the log method is called in the same thread as the command
+                    processing. This means that logging to slow sources may result in higher
+                    response times for the client. When important, make sure logging is done
+                    asynchronously from the command handling thread.</para>
+            </note>
+            <para>It is also possible to attach the correlation identifier and the current principal
+                to domain events. See <xref linkend="domain-events"/> for more information.</para>
+        </sect2>
     </sect1>
 </chapter>
