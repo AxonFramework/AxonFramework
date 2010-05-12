@@ -26,36 +26,73 @@ import org.axonframework.eventhandling.EventListener;
 import java.security.Principal;
 
 /**
+ * Interceptor that keeps track of commands and the events that were dispatched as a result of handling that command.
+ * For each incoming command, an {@link AuditingContext} is created and maintained. After command handling, the
+ * implementation of this interceptor may log the information contained in the context.
+ *
  * @author Allard Buijze
+ * @since 0.6
  */
 public abstract class AuditingInterceptor implements CommandHandlerInterceptor {
 
-    private final AuditLogger auditLogger;
-    private final EventListener eventListener;
-
-    public AuditingInterceptor() {
-        this(new NullLogger());
-    }
-
-    public AuditingInterceptor(AuditLogger auditLogger) {
-        this.auditLogger = auditLogger;
-        this.eventListener = new AuditingEventListener();
-    }
+    private final EventListener eventListener = new AuditingEventListener();
 
     @Override
     public void beforeCommandHandling(CommandContext context, CommandHandler handler) {
-        AuditingContext auditingContext = new AuditingContext(getCurrentPrincipal(), context.getCommand());
+        AuditingContext existingAuditingContext = AuditingContextHolder.currentAuditingContext();
+        AuditingContext auditingContext;
+        if (existingAuditingContext != null) {
+            context.setProperty("previousAuditingContext", existingAuditingContext);
+            auditingContext = new AuditingContext(getCurrentPrincipal(),
+                                                  existingAuditingContext.getCorrelationId(),
+                                                  context.getCommand());
+        } else {
+            auditingContext = new AuditingContext(getCurrentPrincipal(), context.getCommand());
+        }
         AuditingContextHolder.setContext(auditingContext);
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void afterCommandHandling(CommandContext context, CommandHandler handler) {
         AuditingContext auditingContext = AuditingContextHolder.currentAuditingContext();
-        auditLogger.log(auditingContext);
-        AuditingContextHolder.clear();
+        if (context.isSuccessful()) {
+            writeSuccessful(auditingContext);
+        } else {
+            writeFailed(auditingContext, context.getException());
+        }
+        if (context.isPropertySet("previousAuditingContext")) {
+            AuditingContextHolder.setContext((AuditingContext) context.getProperty("previousAuditingContext"));
+        } else {
+            AuditingContextHolder.clear();
+        }
     }
 
+    /**
+     * Returns the {@link Principal} object of the principal running this thread, or <code>null</code> if none is
+     * available. Typically this Principal is provided by a security framework or ThreadLocal instance.
+     *
+     * @return the {@link Principal} object of the principal running this thread, or <code>null</code> if none is
+     *         available
+     */
     protected abstract Principal getCurrentPrincipal();
+
+    /**
+     * Called when the command handling executed successfully.
+     *
+     * @param context the auditing context containing the command, related events and current principal.
+     */
+    protected abstract void writeSuccessful(AuditingContext context);
+
+    /**
+     * Called when the command handling execution failed. Subclasses may add behavior by implementing this method. The
+     * default implementation does nothing.
+     *
+     * @param context      the auditing context containing the command, related events and current principal.
+     * @param failureCause The exception that was raised
+     */
+    protected void writeFailed(AuditingContext context, Exception failureCause) {
+    }
 
     private static class AuditingEventListener implements EventListener {
 
@@ -68,13 +105,12 @@ public abstract class AuditingInterceptor implements CommandHandlerInterceptor {
         }
     }
 
-    private static class NullLogger implements AuditLogger {
-
-        @Override
-        public void log(AuditingContext context) {
-        }
-    }
-
+    /**
+     * Configures the event bus that the interceptor will check events on. These events are assigned to their respective
+     * auditing context.
+     *
+     * @param eventBus The event bus dispatching the events
+     */
     public void setEventBus(EventBus eventBus) {
         eventBus.subscribe(eventListener);
     }

@@ -27,13 +27,6 @@ public abstract class AuditingContextHolder {
     private static final ThreadLocal<AuditingContext> currentContext = new ThreadLocal<AuditingContext>();
 
     /**
-     * Clears the AuditingContext stored for the current thread, if any.
-     */
-    public static void clear() {
-        currentContext.remove();
-    }
-
-    /**
      * Returns the AuditingContext stored for the current thread, or <code>null</code> if none was set.
      *
      * @return the AuditingContext stored for the current thread, or <code>null</code> if none was set.
@@ -43,12 +36,19 @@ public abstract class AuditingContextHolder {
     }
 
     /**
+     * Clears the AuditingContext stored for the current thread, if any.
+     */
+    static void clear() {
+        currentContext.remove();
+    }
+
+    /**
      * Registers the given <code>context</code> with the current thread. If one was already present, it is overwritten
      * with the new one.
      *
      * @param context The context to store for the current context.
      */
-    public static void setContext(AuditingContext context) {
+    static void setContext(AuditingContext context) {
         currentContext.set(context);
     }
 }

@@ -42,11 +42,18 @@ public class AuditingContext {
     private final Principal principal;
     private final UUID correlationId;
 
-    public AuditingContext(Principal principal, Object command) {
+    /**
+     * Creates an auditing context with given <code>principal</code> and <code>command</code>, using a randomly
+     * generated correlation ID.
+     *
+     * @param principal The principal to associate with the current auditing context
+     * @param command   The command that was sent
+     */
+    AuditingContext(Principal principal, Object command) {
         this(principal, UUID.randomUUID(), command);
     }
 
-    public AuditingContext(Principal principal, UUID correlationId, Object command) {
+    AuditingContext(Principal principal, UUID correlationId, Object command) {
         this.principal = principal;
         this.correlationId = correlationId;
         this.command = command;

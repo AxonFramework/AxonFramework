@@ -18,19 +18,16 @@ package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.junit.*;
-import org.mockito.internal.matchers.*;
 
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -38,15 +35,13 @@ import static org.mockito.Mockito.*;
 public class AuditingInterceptorTest {
 
     private SimpleCommandBus commandBus;
-    private AuditLogger mockAuditLogger;
     private Principal principal;
-    private SimpleEventBus eventBus;
+    private StubAuditingInterceptor auditingInterceptor;
 
     @Before
     public void setUp() {
-        mockAuditLogger = mock(AuditLogger.class);
-        AuditingInterceptor auditingInterceptor = new StubAuditingInterceptor(mockAuditLogger);
-        eventBus = new SimpleEventBus();
+        auditingInterceptor = new StubAuditingInterceptor();
+        SimpleEventBus eventBus = new SimpleEventBus();
         auditingInterceptor.setEventBus(eventBus);
         StubCommandHandler stubCommandHandler = new StubCommandHandler(eventBus);
         SimpleCommandBus commandBus = new SimpleCommandBus();
@@ -57,7 +52,6 @@ public class AuditingInterceptorTest {
 
     @Test
     public void testInterceptCommand() {
-        CapturingMatcher<AuditingContext> contextCapture = new CapturingMatcher<AuditingContext>();
         principal = new Principal() {
             @Override
             public String getName() {
@@ -65,8 +59,8 @@ public class AuditingInterceptorTest {
             }
         };
         Object result = commandBus.dispatch("Command");
-        verify(mockAuditLogger).log(argThat(contextCapture));
-        AuditingContext actual = (AuditingContext) contextCapture.getLastValue();
+        assertEquals(1, auditingInterceptor.getLoggedContexts().size());
+        AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
         assertEquals(1, actual.getEvents().size());
         assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
         assertEquals("Axon", actual.getPrincipal().getName());
@@ -78,10 +72,9 @@ public class AuditingInterceptorTest {
 
     @Test
     public void testInterceptCommand_NoCurrentPrincipal() {
-        CapturingMatcher<AuditingContext> contextCapture = new CapturingMatcher<AuditingContext>();
         Object result = commandBus.dispatch("Command");
-        verify(mockAuditLogger).log(argThat(contextCapture));
-        AuditingContext actual = contextCapture.getLastValue();
+        assertEquals(1, auditingInterceptor.getLoggedContexts().size());
+        AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
         assertEquals(1, actual.getEvents().size());
         assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
         assertNull(actual.getPrincipal());
@@ -89,30 +82,52 @@ public class AuditingInterceptorTest {
     }
 
     @Test
-    public void testInterceptCommand_NullLogger() {
-        AuditingInterceptor auditingInterceptor = new StubAuditingInterceptor();
-        auditingInterceptor.setEventBus(eventBus);
-        this.commandBus.setInterceptors(Arrays.asList(auditingInterceptor));
-        ContextValidatingEventListener contextCheckingEventListener = new ContextValidatingEventListener();
-        eventBus.subscribe(contextCheckingEventListener);
-        Object result = commandBus.dispatch("Command");
-        assertNotNull(result);
-        contextCheckingEventListener.assertInvoked();
+    public void testInterceptCommand_PreviousContextIsRestored() {
+        AuditingContext previousContext = new AuditingContext(null, "Previous");
+        AuditingContextHolder.setContext(previousContext);
+        commandBus.dispatch("Command");
+        assertSame(previousContext, AuditingContextHolder.currentAuditingContext());
+    }
+
+    @Test
+    public void testInterceptCommand_FailedCommandExecution() {
+        try {
+            commandBus.dispatch("Fail");
+            fail("Expected exception");
+        }
+        catch (RuntimeException e) {
+            assertEquals(RuntimeException.class, e.getClass());
+        }
+        assertEquals(0, auditingInterceptor.getLoggedContexts().size());
+        assertEquals(1, auditingInterceptor.getFailedContexts().size());
     }
 
     private class StubAuditingInterceptor extends AuditingInterceptor {
 
-        private StubAuditingInterceptor(AuditLogger auditLogger) {
-            super(auditLogger);
-        }
-
-        public StubAuditingInterceptor() {
-            super();
-        }
+        private List<AuditingContext> loggedContexts = new LinkedList<AuditingContext>();
+        private List<AuditingContext> failedContexts = new LinkedList<AuditingContext>();
 
         @Override
         protected Principal getCurrentPrincipal() {
             return principal;
+        }
+
+        @Override
+        protected void writeSuccessful(AuditingContext context) {
+            loggedContexts.add(context);
+        }
+
+        @Override
+        protected void writeFailed(AuditingContext context, Exception failureCause) {
+            this.failedContexts.add(context);
+        }
+
+        public List<AuditingContext> getLoggedContexts() {
+            return loggedContexts;
+        }
+
+        public List<AuditingContext> getFailedContexts() {
+            return failedContexts;
         }
     }
 
@@ -126,24 +141,11 @@ public class AuditingInterceptorTest {
 
         @Override
         public Object handle(String command) {
+            if ("Fail".equals(command)) {
+                throw new RuntimeException("Mock");
+            }
             eventBus.publish(new StubDomainEvent());
             return "ok";
-        }
-    }
-
-    private static class ContextValidatingEventListener implements EventListener {
-
-        private boolean isInvoked;
-
-        @Override
-        public void handle(Event event) {
-            isInvoked = true;
-            assertNotNull(AuditingContextHolder.currentAuditingContext());
-        }
-
-        public void assertInvoked() {
-            assertTrue(this.isInvoked);
-
         }
     }
 }
