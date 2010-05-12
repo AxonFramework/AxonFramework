@@ -23,7 +23,7 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.junit.*;
-import org.mockito.*;
+import org.mockito.internal.matchers.*;
 
 import java.security.Principal;
 import java.util.Arrays;
@@ -57,6 +57,7 @@ public class AuditingInterceptorTest {
 
     @Test
     public void testInterceptCommand() {
+        CapturingMatcher<AuditingContext> contextCapture = new CapturingMatcher<AuditingContext>();
         principal = new Principal() {
             @Override
             public String getName() {
@@ -64,35 +65,27 @@ public class AuditingInterceptorTest {
             }
         };
         Object result = commandBus.dispatch("Command");
-        verify(mockAuditLogger).log(argThat(new ArgumentMatcher<AuditingContext>() {
-            @Override
-            public boolean matches(Object o) {
-                AuditingContext actual = (AuditingContext) o;
-                assertEquals(1, actual.getEvents().size());
-                assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
-                assertEquals("Axon", actual.getPrincipal().getName());
-                assertEquals("Command", actual.getCommand());
-                return true;
-            }
-        }));
+        verify(mockAuditLogger).log(argThat(contextCapture));
+        AuditingContext actual = (AuditingContext) contextCapture.getLastValue();
+        assertEquals(1, actual.getEvents().size());
+        assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
+        assertEquals("Axon", actual.getPrincipal().getName());
+        assertEquals("Command", actual.getCommand());
         assertNull("AuditingContext should be cleared after command processing",
                    AuditingContextHolder.currentAuditingContext());
+        assertEquals("ok", result);
     }
 
     @Test
     public void testInterceptCommand_NoCurrentPrincipal() {
-        principal = null;
+        CapturingMatcher<AuditingContext> contextCapture = new CapturingMatcher<AuditingContext>();
         Object result = commandBus.dispatch("Command");
-        verify(mockAuditLogger).log(argThat(new ArgumentMatcher<AuditingContext>() {
-            @Override
-            public boolean matches(Object o) {
-                AuditingContext actual = (AuditingContext) o;
-                assertEquals(1, actual.getEvents().size());
-                assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
-                assertNull(actual.getPrincipal());
-                return true;
-            }
-        }));
+        verify(mockAuditLogger).log(argThat(contextCapture));
+        AuditingContext actual = contextCapture.getLastValue();
+        assertEquals(1, actual.getEvents().size());
+        assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
+        assertNull(actual.getPrincipal());
+        assertEquals("ok", result);
     }
 
     @Test
