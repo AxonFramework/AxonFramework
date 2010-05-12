@@ -24,6 +24,10 @@ package org.axonframework.auditing;
  */
 public abstract class AuditingContextHolder {
 
+    AuditingContextHolder() {
+        // prevent instantiation
+    }
+
     private static final ThreadLocal<AuditingContext> currentContext = new ThreadLocal<AuditingContext>();
 
     /**

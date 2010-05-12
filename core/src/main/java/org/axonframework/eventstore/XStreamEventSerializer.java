@@ -45,9 +45,9 @@ public class XStreamEventSerializer implements EventSerializer {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given character
-     * set. If the character set is not supported by the JVM, any attempt to serialize or deserialize a DomainEvent will
-     * result in an EventStoreException.
+     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using thy character
+     * set with the given name. If the character set is not supported by the JVM an UnsupportedCharsetException is
+     * thrown.
      *
      * @param charsetName The name of the character set to use.
      */
@@ -55,6 +55,12 @@ public class XStreamEventSerializer implements EventSerializer {
         this(Charset.forName(charsetName));
     }
 
+    /**
+     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given character
+     * set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
+     *
+     * @param charset The character set to use.
+     */
     public XStreamEventSerializer(Charset charset) {
         genericXStreamSerializer = new GenericXStreamSerializer(charset);
     }

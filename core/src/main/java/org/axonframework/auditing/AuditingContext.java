@@ -53,28 +53,61 @@ public class AuditingContext {
         this(principal, UUID.randomUUID(), command);
     }
 
+    /**
+     * Creates an auditing context with given <code>principal</code>, <code>command</code> and
+     * <code>correlationId</code>.
+     *
+     * @param principal     The principal to associate with the current auditing context
+     * @param correlationId The correlation ID to use for this context
+     * @param command       The command that was sent
+     */
     AuditingContext(Principal principal, UUID correlationId, Object command) {
         this.principal = principal;
         this.correlationId = correlationId;
         this.command = command;
     }
 
+    /**
+     * Returns a read-only list of events that are related to this auditing context.
+     *
+     * @return a read-only list of events that are related to this auditing context
+     */
     public List<Event> getEvents() {
         return Collections.unmodifiableList(events);
     }
 
-    public void registerEvent(Event event) {
+    /**
+     * Registers the given <code>event</code> with the current auditing context
+     *
+     * @param event The event to register with this context
+     */
+    void registerEvent(Event event) {
         events.add(event);
     }
 
+    /**
+     * Returns the principal assigned to this context
+     *
+     * @return the principal assigned to this context
+     */
     public Principal getPrincipal() {
         return principal;
     }
 
+    /**
+     * Returns the command assigned to this context
+     *
+     * @return the command assigned to this context
+     */
     public Object getCommand() {
         return command;
     }
 
+    /**
+     * Returns the correlation Id of this context
+     *
+     * @return the correlation Id of this context
+     */
     public UUID getCorrelationId() {
         return correlationId;
     }
