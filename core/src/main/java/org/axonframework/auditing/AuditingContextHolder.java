@@ -24,7 +24,7 @@ package org.axonframework.auditing;
  */
 public abstract class AuditingContextHolder {
 
-    AuditingContextHolder() {
+    private AuditingContextHolder() {
         // prevent instantiation
     }
 
