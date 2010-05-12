@@ -40,6 +40,7 @@ public class AuditingInterceptorTest {
 
     @Before
     public void setUp() {
+        AuditingContextHolder.clear();
         auditingInterceptor = new StubAuditingInterceptor();
         SimpleEventBus eventBus = new SimpleEventBus();
         auditingInterceptor.setEventBus(eventBus);
@@ -48,6 +49,11 @@ public class AuditingInterceptorTest {
         this.commandBus = commandBus;
         this.commandBus.setInterceptors(Arrays.asList(auditingInterceptor));
         commandBus.subscribe(String.class, stubCommandHandler);
+    }
+
+    @After
+    public void tearDown() {
+        AuditingContextHolder.clear();
     }
 
     @Test
