@@ -30,6 +30,7 @@
             classpath:META-INF/spring/application-context.xml,
             classpath:META-INF/spring/database-context.xml,
             classpath:META-INF/spring/datainit-context.xml,
+            classpath:META-INF/spring/jmx-context.xml,
             classpath:message-push-context.xml
         </param-value>
     </context-param>
