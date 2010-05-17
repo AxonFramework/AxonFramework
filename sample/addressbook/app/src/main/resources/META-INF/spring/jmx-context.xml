@@ -22,4 +22,11 @@
         <property name="eventBus" ref="eventBus"/>
         <property name="commandBus" ref="commandBus"/>
     </bean>
+
+    <bean id="managementContext" class="org.axonframework.monitoring.ManagementContext"/>
+
+    <bean id="simpleEventBusManager" class="org.axonframework.monitoring.eventhandling.SimpleEventBusManager">
+        <constructor-arg index="0" ref="eventBus"/>
+        <constructor-arg index="1" ref="managementContext"/>
+    </bean>
 </beans>

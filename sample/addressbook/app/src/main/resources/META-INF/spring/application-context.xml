@@ -42,11 +42,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="eventBus" class="org.axonframework.monitoring.eventhandling.MonitoredEventBus">
-        <constructor-arg>
-            <bean class="org.axonframework.eventhandling.SimpleEventBus"/>
-        </constructor-arg>
-    </bean>
+    <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
     <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
         <property name="corePoolSize" value="2"/>

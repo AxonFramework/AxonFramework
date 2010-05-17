@@ -16,12 +16,17 @@
 
 package org.axonframework.monitoring.eventhandling;
 
+import java.util.List;
+
 /**
  * @author Jettro Coenradie
  */
-public interface EventBusViewMXBean {
+public interface SimpleEventBusManagerMXBean {
     long getAmountOfListeners();
+    List<String> getListeners();
     long getAmountOfDispatchedEvents();
 
     void resetDispatchedEvents();
+    void enable();
+    void disable();
 }

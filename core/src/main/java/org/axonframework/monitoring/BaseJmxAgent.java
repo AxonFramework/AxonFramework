@@ -16,12 +16,10 @@
 
 package org.axonframework.monitoring;
 
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.monitoring.commandhandling.CommandBusView;
 import org.axonframework.monitoring.commandhandling.CommandBusViewMXBean;
 import org.axonframework.monitoring.commandhandling.MonitoredCommandBus;
-import org.axonframework.monitoring.eventhandling.EventBusView;
-import org.axonframework.monitoring.eventhandling.EventBusViewMXBean;
-import org.axonframework.monitoring.eventhandling.MonitoredEventBus;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
@@ -35,16 +33,16 @@ import java.lang.management.ManagementFactory;
 public class BaseJmxAgent {
     private MBeanServer mbeanServer;
 
-    private MonitoredEventBus eventBus;
+    private SimpleEventBus eventBus;
     private MonitoredCommandBus commandBus;
 
     @PostConstruct
     public void init() throws Exception {
         mbeanServer = ManagementFactory.getPlatformMBeanServer();
 
-        EventBusViewMXBean eventBusView = new EventBusView(this.eventBus);
-        ObjectName eventBusName = new ObjectName("BaseJmxAgent:name=MonitoredEventBus");
-        mbeanServer.registerMBean(eventBusView, eventBusName);
+//        SimpleEventBusManagerMXBean eventBusManager = new SimpleEventBusManager(this.eventBus);
+//        ObjectName eventBusName = new ObjectName("BaseJmxAgent:name=MonitoredEventBus");
+//        mbeanServer.registerMBean(eventBusManager, eventBusName);
 
         CommandBusViewMXBean commandBusView = new CommandBusView(this.commandBus);
         ObjectName commandBusName = new ObjectName("BaseJmxAgent:name=MonitoredCommandBus");
@@ -52,7 +50,7 @@ public class BaseJmxAgent {
     }
 
     @Required
-    public void setEventBus(MonitoredEventBus eventBus) {
+    public void setEventBus(SimpleEventBus eventBus) {
         this.eventBus = eventBus;
     }
 

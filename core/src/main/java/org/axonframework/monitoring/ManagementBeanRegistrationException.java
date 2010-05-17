@@ -14,32 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring.eventhandling;
+package org.axonframework.monitoring;
 
 /**
  * @author Jettro Coenradie
  */
-public class EventBusView implements EventBusViewMXBean {
-    private EventBusMonitor monitor;
-
-    public EventBusView(MonitoredEventBus monitoredEventBus) {
-        monitor = monitoredEventBus.requestMonitor();
+public class ManagementBeanRegistrationException extends RuntimeException {
+    public ManagementBeanRegistrationException(String message) {
+        super(message);
     }
 
-    @Override
-    public long getAmountOfListeners() {
-        return monitor.amountOfListeners();
+    public ManagementBeanRegistrationException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    @Override
-    public long getAmountOfDispatchedEvents() {
-        return monitor.amountOfPublishedMessages();
+    public ManagementBeanRegistrationException(Throwable cause) {
+        super(cause);
     }
-
-    @Override
-    public void resetDispatchedEvents() {
-        monitor.resetAmountOfDispatchedMessages();
-    }
-
-
 }

@@ -35,8 +35,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class SimpleEventBus implements EventBus {
 
-    private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
+    private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
+    private volatile SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
+
 
     /**
      * {@inheritDoc}
@@ -44,6 +46,7 @@ public class SimpleEventBus implements EventBus {
     @Override
     public void unsubscribe(EventListener eventListener) {
         if (listeners.remove(eventListener)) {
+            statistics.listenerUnregistered(eventListener.getClass().getSimpleName());
             logger.debug("EventListener {} unsubscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener {} not removed. It was already unsubscribed",
@@ -57,6 +60,7 @@ public class SimpleEventBus implements EventBus {
     @Override
     public void subscribe(EventListener eventListener) {
         if (listeners.add(eventListener)) {
+            statistics.listenerRegistered(eventListener.getClass().getSimpleName());
             logger.debug("EventListener [{}] subscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener [{}] not added. It was already subscribed",
@@ -69,11 +73,17 @@ public class SimpleEventBus implements EventBus {
      */
     @Override
     public void publish(Event event) {
+        statistics.newEventReceived();
+        
         for (EventListener listener : listeners) {
             logger.debug("Dispatching Event [{}] to EventListener [{}]",
                          event.getClass().getSimpleName(),
                          listener.getClass().getSimpleName());
             listener.handle(event);
         }
+    }
+
+    public SimpleEventBusStatistics getStatistics() {
+        return statistics;
     }
 }
