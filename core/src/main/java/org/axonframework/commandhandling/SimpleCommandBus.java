@@ -34,14 +34,16 @@ public class SimpleCommandBus implements CommandBus {
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private volatile InterceptorChain interceptorChain = new InterceptorChain(Collections.<CommandHandlerInterceptor>emptyList());
+    private volatile SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
 
     @SuppressWarnings({"unchecked"})
     @Override
     public Object dispatch(Object command) {
+        statistics.newCommandReceived();
         CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
             throw new NoHandlerForCommandException(String.format("No handler was subscribed to commands of type [%s]",
-                                                                 command.getClass().getSimpleName()));
+                    command.getClass().getSimpleName()));
         }
         CommandContextImpl context = new CommandContextImpl(command);
         interceptorChain.handle(context, handler);
@@ -63,6 +65,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <T> void subscribe(Class<T> commandType, CommandHandler<? super T> handler) {
         subscriptions.put(commandType, handler);
+        statistics.handlerRegistered(commandType.getSimpleName());
     }
 
     /**
@@ -71,6 +74,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <T> void unsubscribe(Class<T> commandType, CommandHandler<? super T> handler) {
         subscriptions.remove(commandType, handler);
+        statistics.handlerUnregistered(commandType.getSimpleName());
     }
 
     /**
@@ -96,5 +100,9 @@ public class SimpleCommandBus implements CommandBus {
         for (Map.Entry<?, ?> entry : handlers.entrySet()) {
             subscribe((Class<?>) entry.getKey(), (CommandHandler) entry.getValue());
         }
+    }
+
+    public SimpleCommandBusStatistics getStatistics() {
+        return statistics;
     }
 }

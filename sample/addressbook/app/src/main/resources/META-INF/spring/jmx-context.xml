@@ -18,15 +18,15 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
-    <bean id="jmxAgent" class="org.axonframework.monitoring.BaseJmxAgent">
-        <property name="eventBus" ref="eventBus"/>
-        <property name="commandBus" ref="commandBus"/>
-    </bean>
-
     <bean id="managementContext" class="org.axonframework.monitoring.ManagementContext"/>
 
     <bean id="simpleEventBusManager" class="org.axonframework.monitoring.eventhandling.SimpleEventBusManager">
         <constructor-arg index="0" ref="eventBus"/>
+        <constructor-arg index="1" ref="managementContext"/>
+    </bean>
+
+    <bean id="simpleCommandBusManager" class="org.axonframework.monitoring.commandhandling.SimpleCommandBusManager">
+        <constructor-arg index="0" ref="commandBus"/>
         <constructor-arg index="1" ref="managementContext"/>
     </bean>
 </beans>

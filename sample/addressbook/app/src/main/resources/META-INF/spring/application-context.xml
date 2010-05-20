@@ -30,16 +30,12 @@
         <property name="commandBus" ref="commandBus"/>
     </bean>
 
-    <bean id="commandBus" class="org.axonframework.monitoring.commandhandling.MonitoredCommandBus">
-        <constructor-arg>
-            <bean class="org.axonframework.commandhandling.SimpleCommandBus">
-                <property name="interceptors">
-                    <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
-                        <property name="transactionManager" ref="transactionManager"/>
-                    </bean>
-                </property>
+    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
+        <property name="interceptors">
+            <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+                <property name="transactionManager" ref="transactionManager"/>
             </bean>
-        </constructor-arg>
+        </property>
     </bean>
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>

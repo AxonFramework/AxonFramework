@@ -16,12 +16,21 @@
 
 package org.axonframework.monitoring.commandhandling;
 
+import java.util.List;
+
 /**
  * @author Jettro Coenradie
  */
-public interface CommandBusViewMXBean {
+public interface SimpleCommandBusManagerMXBean {
     long getAmountOfHandlers();
+
+    List<String> getHandlers();
+
     long getAmountOfReceivedCommands();
 
     void resetReceivedCommandsCounter();
+
+    void enable();
+
+    void disable();
 }
