@@ -16,17 +16,44 @@
 
 package org.axonframework.monitoring.eventhandling;
 
+import org.axonframework.monitoring.Statistics;
+
 import java.util.List;
 
 /**
+ * <p>Management interface the SimpleEventBus monitor</p>
+ * <p>Management interface as required by the JMX specification. In combination with the implementation, this
+ * interface specifies and delivers the actual JMX bean.</p>
+ * <p>The <code>Statistics</code> interface is extended to be able to enable and disable the statistics.</p>
+ *
  * @author Jettro Coenradie
+ * @see SimpleEventBusManager
+ * @since 0.6
  */
-public interface SimpleEventBusManagerMXBean {
+public interface SimpleEventBusManagerMXBean extends Statistics {
+    /**
+     * Returns the amount of registered listeners
+     *
+     * @return long representing the amount of registered listeners
+     */
     long getAmountOfListeners();
-    List<String> getListeners();
-    long getAmountOfDispatchedEvents();
 
-    void resetDispatchedEvents();
-    void enable();
-    void disable();
+    /**
+     * Returns a list of names of the registered listeners. Multiple listeners with the same name are supported
+     *
+     * @return List of string representing the names of the registered listeners
+     */
+    List<String> getListeners();
+
+    /**
+     * Returns the amount of received events
+     *
+     * @return long representing the amount of received events
+     */
+    long getAmountOfReceivedEvents();
+
+    /**
+     * resets the amount of events received
+     */
+    void resetreceivedEvents();
 }

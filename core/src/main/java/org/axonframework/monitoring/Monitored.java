@@ -17,8 +17,17 @@
 package org.axonframework.monitoring;
 
 /**
+ * <p>Classes implementing this interface can be monitored by requesting their statistics object</p>
+ *
  * @author Jettro Coenradie
+ * @since 0.6
  */
-public interface Monitored<T extends Monitor> {
-    T requestMonitor();
+public interface Monitored<T extends Statistics> {
+
+    /**
+     * Returns the statistics object specific for the class implementing this interface
+     *
+     * @return T specific statistics object
+     */
+    T getStatistics();
 }

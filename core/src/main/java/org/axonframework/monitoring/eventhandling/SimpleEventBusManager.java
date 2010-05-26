@@ -23,48 +23,65 @@ import org.axonframework.monitoring.ManagementContext;
 import java.util.List;
 
 /**
+ * <p>JMX implementation to manage the monitor of the SimpleEventBus.</p>
+ *
  * @author Jettro Coenradie
+ * @since 0.6
  */
 public class SimpleEventBusManager implements SimpleEventBusManagerMXBean {
     private SimpleEventBusStatistics statistics;
-    private ManagementContext context;
 
     public SimpleEventBusManager(SimpleEventBus simpleEventBus, ManagementContext context) {
-        this.context = context;
         this.statistics = simpleEventBus.getStatistics();
 
-        context.registerMBean(this,"SimpleEventBus");
+        context.registerMBean(this, "SimpleEventBus");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getAmountOfListeners() {
         return statistics.getAmountOfListeners();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<String> getListeners() {
         return statistics.listeners();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public long getAmountOfDispatchedEvents() {
+    public long getAmountOfReceivedEvents() {
         return statistics.getAmountOfReceivedEvents();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void resetDispatchedEvents() {
+    public void resetreceivedEvents() {
         statistics.resetEventsReceived();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void enable() {
-        statistics.setEnabled();
+        statistics.enable();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void disable() {
-        statistics.setDisabled();
+        statistics.disable();
     }
-
-
 }

@@ -17,7 +17,10 @@
 package org.axonframework.monitoring;
 
 /**
+ * <p>Exception used when something fails during the registration of MBeans</p>
+ *
  * @author Jettro Coenradie
+ * @since 0.6
  */
 public class ManagementBeanRegistrationException extends RuntimeException {
     public ManagementBeanRegistrationException(String message) {

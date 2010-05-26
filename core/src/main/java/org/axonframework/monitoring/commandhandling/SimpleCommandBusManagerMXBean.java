@@ -16,21 +16,44 @@
 
 package org.axonframework.monitoring.commandhandling;
 
+import org.axonframework.monitoring.Statistics;
+
 import java.util.List;
 
 /**
+ * <p>Management interface for the SimpleCommandBus monitor</p>
+ * <p>As required by the JMX specification. In combination with the implementation, this
+ * interface specifies and delivers the actual JMX bean.</p>
+ * <p>The <code>Statistics</code> interface is extended to be able to enable and disable the statistics.</p>
+ *
  * @author Jettro Coenradie
+ * @since 0.6
  */
-public interface SimpleCommandBusManagerMXBean {
+public interface SimpleCommandBusManagerMXBean extends Statistics {
+    /**
+     * Returns the amount of registered handlers
+     *
+     * @return long representing the amount of handlers
+     */
     long getAmountOfHandlers();
 
+    /**
+     * Returns a list with names of the registered handlers
+     *
+     * @return List of strings representing the names of registered handlers
+     */
     List<String> getHandlers();
 
+    /**
+     * Returns the amount of received commands
+     *
+     * @return long representing the amount of commands received
+     */
     long getAmountOfReceivedCommands();
 
+    /**
+     * Reset the amount of commands received counter
+     */
     void resetReceivedCommandsCounter();
 
-    void enable();
-
-    void disable();
 }

@@ -23,16 +23,17 @@ import org.axonframework.monitoring.ManagementContext;
 import java.util.List;
 
 /**
+ * <p>JMX implementation to manage the monitor of the SimpleCommandBus.</p>
+ *
  * @author Jettro Coenradie
+ * @since 0.6
  */
 public class SimpleCommandBusManager implements SimpleCommandBusManagerMXBean {
     private SimpleCommandBusStatistics statistics;
-    private ManagementContext context;
 
     public SimpleCommandBusManager(SimpleCommandBus commandBus, ManagementContext context) {
         this.statistics = commandBus.getStatistics();
-        this.context = context;
-        this.context.registerMBean(this, "SimpleCommandBus");
+        context.registerMBean(this, "SimpleCommandBus");
     }
 
     @Override
@@ -57,11 +58,11 @@ public class SimpleCommandBusManager implements SimpleCommandBusManagerMXBean {
 
     @Override
     public void enable() {
-        statistics.setEnabled();
+        statistics.enable();
     }
 
     @Override
     public void disable() {
-        statistics.setDisabled();
+        statistics.disable();
     }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.Event;
+import org.axonframework.monitoring.Monitored;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * @see AsynchronousEventHandlerWrapper
  * @since 0.5
  */
-public class SimpleEventBus implements EventBus {
+public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatistics> {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
@@ -50,7 +51,7 @@ public class SimpleEventBus implements EventBus {
             logger.debug("EventListener {} unsubscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener {} not removed. It was already unsubscribed",
-                        eventListener.getClass().getSimpleName());
+                    eventListener.getClass().getSimpleName());
         }
     }
 
@@ -64,7 +65,7 @@ public class SimpleEventBus implements EventBus {
             logger.debug("EventListener [{}] subscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener [{}] not added. It was already subscribed",
-                        eventListener.getClass().getSimpleName());
+                    eventListener.getClass().getSimpleName());
         }
     }
 
@@ -74,15 +75,19 @@ public class SimpleEventBus implements EventBus {
     @Override
     public void publish(Event event) {
         statistics.newEventReceived();
-        
+
         for (EventListener listener : listeners) {
             logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                         event.getClass().getSimpleName(),
-                         listener.getClass().getSimpleName());
+                    event.getClass().getSimpleName(),
+                    listener.getClass().getSimpleName());
             listener.handle(event);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public SimpleEventBusStatistics getStatistics() {
         return statistics;
     }

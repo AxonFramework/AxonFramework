@@ -21,19 +21,27 @@ import javax.management.*;
 import java.lang.management.ManagementFactory;
 
 /**
+ * <p>Registers the provided beans with the platform MBean server.</p>
+ * <p>You can enable all statistics by setting the enabled property to true.</p>
+ *
  * @author Jettro Coenradie
+ * @since 0.6
  */
 public class ManagementContext {
     private MBeanServer mbeanServer;
+    private boolean enabled = false;
 
     @PostConstruct
     public void init() {
         mbeanServer = ManagementFactory.getPlatformMBeanServer();
     }
 
-    public void registerMBean(Object mxBean,String objectName) {
+    public void registerMBean(Statistics mxBean, String objectName) {
         try {
-            ObjectName eventBusName = new ObjectName("BaseJmxAgent:name="+objectName);
+            if (enabled) {
+                mxBean.enable();
+            }
+            ObjectName eventBusName = new ObjectName("BaseJmxAgent:name=" + objectName);
             mbeanServer.registerMBean(mxBean, eventBusName);
         } catch (MalformedObjectNameException e) {
             throw new ManagementBeanRegistrationException(e);
@@ -44,6 +52,9 @@ public class ManagementContext {
         } catch (MBeanRegistrationException e) {
             throw new ManagementBeanRegistrationException(e);
         }
+    }
 
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.monitoring.Monitored;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,11 +28,13 @@ import java.util.concurrent.ConcurrentMap;
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific type of
  * command. Interceptors may be configured to add processing to commands regardless of their type, for example logging,
  * security (authorization), sla monitoring, etc.
+ * <p/>
+ * This class can be monitored as the implementation of the <code>Monitored</code> interface indicates.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class SimpleCommandBus implements CommandBus {
+public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusStatistics> {
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private volatile InterceptorChain interceptorChain = new InterceptorChain(Collections.<CommandHandlerInterceptor>emptyList());
@@ -102,6 +106,10 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public SimpleCommandBusStatistics getStatistics() {
         return statistics;
     }

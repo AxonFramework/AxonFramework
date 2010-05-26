@@ -17,7 +17,19 @@
 package org.axonframework.monitoring;
 
 /**
+ * Interface to be implemented by all object that represent statistics of a monitored resource
+ *
  * @author Jettro Coenradie
+ * @since 0.6
  */
-public interface Monitor {
+public interface Statistics {
+    /**
+     * Enable the statistics gathering
+     */
+    void enable();
+
+    /**
+     * Disable the statistics gathering
+     */
+    void disable();
 }
