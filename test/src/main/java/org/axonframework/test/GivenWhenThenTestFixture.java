@@ -23,13 +23,15 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdap
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
+import org.axonframework.domain.EventBase;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.eventstore.EventStoreException;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -38,10 +40,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-
 /**
+ * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
+ * {@link org.axonframework.test.FixtureConfiguration}.
+ *
  * @author Allard Buijze
+ * @since 0.6
  */
 class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration, TestExecutor {
 
@@ -53,13 +57,18 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
 
     private List<DomainEvent> givenEvents;
     private List<DomainEvent> storedEvents;
-    private List<DomainEvent> publishedEvents;
+    private List<Event> publishedEvents;
     private Object actualReturnValue;
     private Throwable actualException;
 
     private long sequenceNumber = 0;
 
-    public GivenWhenThenTestFixture() {
+    private final Reporter reporter = new Reporter();
+
+    /**
+     * Initializes a new given-when-then style test fixture.
+     */
+    GivenWhenThenTestFixture() {
         aggregateIdentifier = UUID.randomUUID();
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
@@ -67,23 +76,24 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         clearGivenWhenState();
     }
 
-    @Override
     @SuppressWarnings({"unchecked"})
-    public FixtureConfiguration registerGenericRepository(Class<?> aggregateClass) {
+    @Override
+    public <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createGenericRepository(
+            Class<T> aggregateClass) {
         registerRepository(new GenericEventSourcingRepository(aggregateClass));
+        return (EventSourcingRepository<T>) repository;
+    }
+
+    @Override
+    public FixtureConfiguration registerRepository(EventSourcingRepository<?> eventSourcingRepository) {
+        this.repository = eventSourcingRepository;
+        eventSourcingRepository.setEventBus(eventBus);
+        eventSourcingRepository.setEventStore(eventStore);
         return this;
     }
 
     @Override
-    public FixtureConfiguration registerRepository(EventSourcingRepository<?> repository) {
-        this.repository = repository;
-        repository.setEventBus(eventBus);
-        repository.setEventStore(eventStore);
-        return this;
-    }
-
-    @Override
-    public GivenWhenThenTestFixture registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
+    public FixtureConfiguration registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
         AnnotationCommandHandlerAdapter commandHandlerAdapter = new AnnotationCommandHandlerAdapter(
                 annotatedCommandHandler,
                 commandBus);
@@ -98,13 +108,19 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         return this;
     }
 
+    @Override
     public TestExecutor given(DomainEvent... domainEvents) {
+        return given(Arrays.asList(domainEvents));
+    }
+
+    @Override
+    public TestExecutor given(List<DomainEvent> domainEvents) {
         clearGivenWhenState();
         for (DomainEvent event : domainEvents) {
             setByReflection(DomainEvent.class, "aggregateIdentifier", event, aggregateIdentifier);
             setByReflection(DomainEvent.class, "sequenceNumber", event, sequenceNumber++);
         }
-        this.givenEvents = Arrays.asList(domainEvents);
+        this.givenEvents.addAll(domainEvents);
         return this;
     }
 
@@ -119,23 +135,42 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         return this;
     }
 
-    private void clearGivenWhenState() {
-        storedEvents = new ArrayList<DomainEvent>();
-        publishedEvents = new ArrayList<DomainEvent>();
-        givenEvents = new ArrayList<DomainEvent>();
-        sequenceNumber = 0;
-        actualReturnValue = null;
-        actualException = null;
+    @Override
+    public ResultValidator expectEvents(DomainEvent... expectedEvents) {
+        if (publishedEvents.size() != storedEvents.size()) {
+            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents);
+        }
+
+        return expectPublishedEvents(expectedEvents);
     }
 
     @Override
-    public ResultValidator expectEvents(DomainEvent... expectedEvents) {
-        assertEquals(publishedEvents.size(), storedEvents.size());
-        assertEquals("Wrong number of events. ", expectedEvents.length, publishedEvents.size());
-        Iterator<DomainEvent> iterator = publishedEvents.iterator();
-        for (DomainEvent expectedEvent : expectedEvents) {
+    public ResultValidator expectPublishedEvents(Event... expectedEvents) {
+        if (expectedEvents.length != publishedEvents.size()) {
+            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents));
+        }
+
+        Iterator<Event> iterator = publishedEvents.iterator();
+        for (Event expectedEvent : expectedEvents) {
             Event actualEvent = iterator.next();
-            verifyEventEquality(expectedEvent, actualEvent);
+            if (!verifyEventEquality(expectedEvent, actualEvent)) {
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents));
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectStoredEvents(DomainEvent... expectedEvents) {
+        if (expectedEvents.length != storedEvents.size()) {
+            reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents));
+        }
+        Iterator<DomainEvent> iterator = storedEvents.iterator();
+        for (DomainEvent expectedEvent : expectedEvents) {
+            DomainEvent actualEvent = iterator.next();
+            if (!verifyEventEquality(expectedEvent, actualEvent)) {
+                reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents));
+            }
         }
         return this;
     }
@@ -148,67 +183,98 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     @Override
     public ResultValidator expectReturnValue(Object expectedReturnValue) {
         if (actualException != null) {
-            actualException.printStackTrace();
-            fail(String.format("Expected return value (a %s), but got exception: %s",
-                               expectedReturnValue.getClass().getSimpleName(),
-                               actualException));
+            reporter.reportUnexpectedException(actualException, expectedReturnValue);
         }
-        assertEquals("Return value of command handler not as", expectedReturnValue, actualReturnValue);
+        if ((expectedReturnValue != null && !expectedReturnValue.equals(actualReturnValue) ||
+                expectedReturnValue == null && actualReturnValue != null)) {
+            reporter.reportWrongResult(actualReturnValue, expectedReturnValue);
+        }
         return this;
     }
 
     @Override
     public ResultValidator expectException(Class<? extends Throwable> expectedException) {
         if (actualReturnValue != null) {
-            fail(String.format("Expected exception (%s), but got return value: %s",
-                               expectedException.getSimpleName(),
-                               actualReturnValue));
+            reporter.reportUnexpectedReturnValue(actualReturnValue, expectedException);
         }
-        assertEquals(expectedException, actualException.getClass());
+        if (!expectedException.equals(actualException.getClass())) {
+            reporter.reportWrongException(actualException, expectedException);
+        }
         return this;
     }
 
-    UUID getAggregateIdentifier() {
+    private void clearGivenWhenState() {
+        storedEvents = new ArrayList<DomainEvent>();
+        publishedEvents = new ArrayList<Event>();
+        givenEvents = new ArrayList<DomainEvent>();
+        sequenceNumber = 0;
+        actualReturnValue = null;
+        actualException = null;
+    }
+
+    @Override
+    public UUID getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
-    private void verifyEventEquality(DomainEvent expectedEvent, Event actualEvent) {
-        assertEquals("Event of wrong type. ", expectedEvent.getClass().getName(), actualEvent.getClass().getName());
-        verifyEqualFields(expectedEvent.getClass(), expectedEvent, actualEvent);
+    @Override
+    public CommandBus getCommandBus() {
+        return commandBus;
     }
 
-    private void setByReflection(Class<?> eventClass, String fieldName, DomainEvent event, Object value
-    ) {
+    @Override
+    public EventBus getEventBus() {
+        return eventBus;
+    }
+
+    @Override
+    public EventStore getEventStore() {
+        return eventStore;
+    }
+
+    @Override
+    public EventSourcingRepository<?> getRepository() {
+        return repository;
+    }
+
+    private boolean verifyEventEquality(Event expectedEvent, Event actualEvent) {
+        if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
+            return false;
+        }
+        verifyEqualFields(expectedEvent.getClass(), expectedEvent, actualEvent);
+        return true;
+    }
+
+    private void setByReflection(Class<?> eventClass, String fieldName, DomainEvent event, Object value) {
         try {
             Field field = eventClass.getDeclaredField(fieldName);
             field.setAccessible(true);
             field.set(event, value);
         }
         catch (Exception e) {
-            throw new IllegalStateException("Test fixture cannot do its work", e);
+            throw new FixtureExecutionException("This test fixture needs to be able to set fields by reflection", e);
         }
     }
 
-    private void verifyEqualFields(Class<?> aClass, DomainEvent expectedEvent, Event actualEvent) {
+    private void verifyEqualFields(Class<?> aClass, Event expectedEvent, Event actualEvent) {
         for (Field field : aClass.getDeclaredFields()) {
             field.setAccessible(true);
             try {
-                assertEquals(String.format("Field [%s] in event of type [%s],",
-                                           aClass.getSimpleName() + "." + field.getName(),
-                                           expectedEvent.getClass().getSimpleName()),
-                             field.get(expectedEvent),
-                             field.get(actualEvent));
+
+                Object expected = field.get(expectedEvent);
+                Object actual = field.get(actualEvent);
+                if ((expected != null && !expected.equals(actual)) || expected == null && actual != null) {
+                    reporter.reportDifferentEventContents(expectedEvent.getClass(), field, actual, expected);
+                }
             } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+                throw new FixtureExecutionException("Could not confirm event equality due to an exception", e);
             }
         }
-        if (aClass.getSuperclass() != DomainEvent.class) {
+        if (aClass.getSuperclass() != DomainEvent.class
+                && aClass.getSuperclass() != EventBase.class
+                && aClass.getSuperclass() != Object.class) {
             verifyEqualFields(aClass.getSuperclass(), expectedEvent, actualEvent);
         }
-    }
-
-    public EventSourcingRepository<?> getRepository() {
-        return repository;
     }
 
     private class RecordingEventStore implements EventStore {
@@ -224,7 +290,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         @Override
         public DomainEventStream readEvents(String type, UUID identifier) {
             if (!aggregateIdentifier.equals(identifier)) {
-                throw new AggregateNotFoundException("You probably want to use Fixtures.aggregateIdentifier() "
+                throw new EventStoreException("You probably want to use Fixtures.aggregateIdentifier() "
                         + "to get the aggregate identifier to load");
             }
             return new SimpleDomainEventStream(givenEvents);
@@ -235,7 +301,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
 
         @Override
         public void publish(Event event) {
-            publishedEvents.add((DomainEvent) event);
+            publishedEvents.add(event);
         }
 
         @Override

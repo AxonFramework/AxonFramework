@@ -17,9 +17,20 @@
 package org.axonframework.test;
 
 /**
+ * Interface describing the operations available on a test fixture in the execution stage. In this stage, there is only
+ * on operation: {@link #when(Object)}, which dispatches a command on this fixture's Command Bus.
+ *
  * @author Allard Buijze
+ * @since 0.6
  */
 public interface TestExecutor {
 
+    /**
+     * Dispatches the given command to the appropriate command handler and records all activity in the fixture for
+     * result validation.
+     *
+     * @param command The command to execute
+     * @return a ResultValidator that can be used to validate the resulting actions of the command execution
+     */
     ResultValidator when(Object command);
 }

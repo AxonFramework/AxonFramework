@@ -17,25 +17,36 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.repository.Repository;
 import org.junit.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-import static org.axonframework.test.Fixtures.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
  */
 public class FixtureTest {
 
+    private FixtureConfiguration fixture;
+
+    @Before
+    public void setUp() {
+        fixture = Fixtures.newGivenWhenThenFixture();
+    }
+
     @Test
     public void testFirstFixture() {
-        givenWhenThenFixture()
-                .registerAnnotatedCommandHandler(new MyCommandHandler(genericRepository(MyAggregate.class)))
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                                     fixture.getEventBus()))
                 .given(new MyEvent(1))
                 .when(new TestCommand())
                 .expectReturnValue(Void.TYPE)
@@ -45,9 +56,8 @@ public class FixtureTest {
     @Test
     public void testFixture_SetterInjection() {
         MyCommandHandler commandHandler = new MyCommandHandler();
-        commandHandler.setRepository(genericRepository(MyAggregate.class));
-        givenWhenThenFixture()
-                .registerAnnotatedCommandHandler(commandHandler)
+        commandHandler.setRepository(fixture.createGenericRepository(MyAggregate.class));
+        fixture.registerAnnotatedCommandHandler(commandHandler)
                 .given(new MyEvent(1), new MyEvent(2))
                 .when(new TestCommand())
                 .expectReturnValue(Void.TYPE)
@@ -55,13 +65,177 @@ public class FixtureTest {
     }
 
     @Test
-    public void testFixture2() {
-        givenWhenThenFixture()
-                .registerAnnotatedCommandHandler(new MyCommandHandler(genericRepository(MyAggregate.class)))
-                .given(new MyEvent(1), new MyEvent(2), new MyEvent(3))
+    public void testFixture_GivenAList() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        fixture
+                .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                                      fixture.getEventBus()))
+                .given(givenEvents)
                 .when(new TestCommand())
                 .expectEvents(new MyEvent(4))
-                .expectReturnValue(Void.TYPE);
+                .expectVoidReturnType();
+    }
+
+    @Test
+    public void testFixture_CommandHandlerDispatchesNonDomainEvents() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        fixture
+                .registerAnnotatedCommandHandler(commandHandler)
+                .given(givenEvents)
+                .when(new StrangeCommand())
+                .expectStoredEvents(new MyEvent(4))
+                .expectPublishedEvents(new MyEvent(4), new MyApplicationEvent(commandHandler, "Strange"))
+                .expectException(StrangeCommandReceivedException.class);
+    }
+
+    @Test
+    public void testFixture_ReportWrongNumberOfEvents() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new TestCommand())
+                    .expectEvents(new MyEvent(4), new MyEvent(5));
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertTrue(e.getMessage().contains("org.axonframework.test.FixtureTest$MyEvent <|> "));
+        }
+
+    }
+
+    @Test
+    public void testFixture_ReportWrongEvents() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new TestCommand())
+                    .expectEvents(new MyOtherEvent());
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertTrue(e.getMessage().contains("org.axonframework.test.FixtureTest$MyOtherEvent <|>"
+                    + " org.axonframework.test.FixtureTest$MyEvent"));
+        }
+    }
+
+    @Test
+    public void testFixture_UnexpectedException() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new StrangeCommand())
+                    .expectVoidReturnType();
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertTrue(e.getMessage().contains("but got <exception of type [StrangeCommandReceivedException]>"));
+        }
+    }
+
+    @Test
+    public void testFixture_UnexpectedReturnValue() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new TestCommand())
+                    .expectException(RuntimeException.class);
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertTrue(e.getMessage().contains("The command handler returned normally, but an exception was expected"));
+            assertTrue(e.getMessage().contains(
+                    "<exception of type [RuntimeException]> but returned with <void return type>"));
+        }
+    }
+
+    @Test
+    public void testFixture_WrongReturnValue() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new TestCommand())
+                    .expectReturnValue(null);
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertTrue(e.getMessage().contains("<null return value> but got <void return type>"));
+        }
+    }
+
+    @Test
+    public void testFixture_WrongExceptionType() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new StrangeCommand())
+                    .expectException(RuntimeException.class);
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertTrue(e.getMessage().contains(
+                    "<exception of type [RuntimeException]> but got <exception of type [StrangeCommandReceivedException]>"));
+        }
+    }
+
+    @Test
+    public void testFixture_WrongEventContents() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new TestCommand())
+                    .expectEvents(new MyEvent(5)) // should be 4
+                    .expectVoidReturnType();
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            e.printStackTrace();
+            assertTrue(e.getMessage().contains(
+                    "In an event of type [MyEvent], the property [someValue] was not as expected."));
+            assertTrue(e.getMessage().contains("Expected <4> but got <5>"));
+        }
+    }
+
+    @Test
+    public void testFixture_ExpectedPublishedSameAsStored() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new StrangeCommand())
+                    .expectEvents(new MyEvent(4)) // should be 4
+                    .expectException(StrangeCommandReceivedException.class);
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            e.printStackTrace();
+            assertTrue(e.getMessage().contains("The stored events do not match the published events."));
+            assertTrue(e.getMessage().contains(" <|> org.axonframework.test.FixtureTest$MyApplicationEvent"));
+        }
     }
 
     public static class MyAggregate extends AbstractAnnotatedAggregateRoot {
@@ -93,9 +267,11 @@ public class FixtureTest {
     private class MyCommandHandler {
 
         private Repository<MyAggregate> repository;
+        private EventBus eventBus;
 
-        private MyCommandHandler(Repository<MyAggregate> repository) {
+        private MyCommandHandler(Repository<MyAggregate> repository, EventBus eventBus) {
             this.repository = repository;
+            this.eventBus = eventBus;
         }
 
         private MyCommandHandler() {
@@ -103,17 +279,34 @@ public class FixtureTest {
 
         @CommandHandler
         public void handleTestCommand(TestCommand testCommand) {
-            MyAggregate aggregate = repository.load(aggregateIdentifier());
+            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier());
             aggregate.doSomething();
             repository.save(aggregate);
+        }
+
+        @CommandHandler
+        public void handleStrangeCommand(StrangeCommand testCommand) {
+            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier());
+            aggregate.doSomething();
+            repository.save(aggregate);
+            eventBus.publish(new MyApplicationEvent(this, "Strange"));
+            throw new StrangeCommandReceivedException("Strange command received");
         }
 
         public void setRepository(Repository<MyAggregate> repository) {
             this.repository = repository;
         }
+
+        public void setEventBus(EventBus eventBus) {
+            this.eventBus = eventBus;
+        }
     }
 
     private class TestCommand {
+
+    }
+
+    private class StrangeCommand {
 
     }
 
@@ -124,6 +317,31 @@ public class FixtureTest {
         public MyEvent(int someValue) {
             this.someValue = someValue;
         }
+
+    }
+
+    private class MyApplicationEvent extends ApplicationEvent {
+
+        private final String message;
+
+        public MyApplicationEvent(Object source, String message) {
+            super(source);
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
+
+    private static class StrangeCommandReceivedException extends RuntimeException {
+
+        private StrangeCommandReceivedException(String message) {
+            super(message);
+        }
+    }
+
+    private class MyOtherEvent extends DomainEvent {
 
     }
 }

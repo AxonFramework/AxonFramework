@@ -17,24 +17,29 @@
 package org.axonframework.test;
 
 /**
- * Utility class providing access to fixture instances in the Axon Test module.
+ * Exception indicating that an error occurred that prevented successful execution of a test fixture
  *
  * @author Allard Buijze
  * @since 0.6
  */
-public abstract class Fixtures {
+public class FixtureExecutionException extends RuntimeException {
 
-    private Fixtures() {
-        // prevent instantiation
+    /**
+     * Construct the exception with the given <code>message</code>
+     *
+     * @param message the message describing the cause
+     */
+    public FixtureExecutionException(String message) {
+        super(message);
     }
 
     /**
-     * Returns a new given-when-then style test fixture in configuration mode. See {@link
-     * org.axonframework.test.FixtureConfiguration} for more detailed usage information.
+     * Construct the exception with the given <code>message</code> and <code>cause</code>.
      *
-     * @return a new given-when-then style test fixture in configuration mode
+     * @param message the message describing the cause
+     * @param cause   the underlying cause
      */
-    public static FixtureConfiguration newGivenWhenThenFixture() {
-        return new GivenWhenThenTestFixture();
+    public FixtureExecutionException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
