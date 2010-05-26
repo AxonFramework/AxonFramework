@@ -21,6 +21,8 @@
         components, Events and Commands have clear meaning the the domain expert of business owner.
         This means that tests expressed in terms of Events and Commands don't only have a functional
         meaning, it also means that they hardly depend on any implementation choices.</para>
+    <para>The features described in this chapter require the <code>axon-test</code> module, which
+        can be obtained by configuration a maven dependency or from the full package download. </para>
     <sect1>
         <title>Behavior Driven Testing</title>
         <para>The command handling component is typically the component in any CQRS based
