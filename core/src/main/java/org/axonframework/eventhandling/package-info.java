@@ -15,7 +15,7 @@
  */
 
 /**
- * Classes related to event handling and dispatching, such as {@link EventListener
- * Event Listeners} and the {@link EventBus Event Bus}.
+ * Classes related to event handling and dispatching, such as {@link org.axonframework.eventhandling.EventListener
+ * Event Listeners} and the {@link org.axonframework.eventhandling.EventBus Event Bus}.
  */
 package org.axonframework.eventhandling;
