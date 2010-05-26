@@ -70,4 +70,11 @@
             </includes>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>target/${project.artifactId}-${project.version}-javadoc.jar</source>
+            <destName>axon-apidoc-${project.version}.zip</destName>
+            <outputDirectory>documentation</outputDirectory>
+        </file>
+    </files>
 </assembly>

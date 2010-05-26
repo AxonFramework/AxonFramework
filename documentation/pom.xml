@@ -59,13 +59,6 @@
                         <configuration>
                             <sourceDocumentName>reference-guide.xml</sourceDocumentName>
                             <formats>
-                                <!-- Not relevant at the moment...
-			<format>
-                                    <formatName>html_single</formatName>
-                                    <finalName>index.html</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/single.xsl
-                                    </stylesheetResource>
-                                </format>-->
                                 <format>
                                     <formatName>html</formatName>
                                     <finalName>index.html</finalName>
