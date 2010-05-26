@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    ~ Copyright (c) 2010. Axon Framework
+    ~
+    ~ Licensed under the Apache License, Version 2.0 (the "License");
+    ~ you may not use this file except in compliance with the License.
+    ~ You may obtain a copy of the License at
+    ~
+    ~     http://www.apache.org/licenses/LICENSE-2.0
+    ~
+    ~ Unless required by applicable law or agreed to in writing, software
+    ~ distributed under the License is distributed on an "AS IS" BASIS,
+    ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    ~ See the License for the specific language governing permissions and
+    ~ limitations under the License.
+-->
+<chapter id="testing" xmlns="http://docbook.org/ns/docbook">
+    <title>Testing</title>
+    <para>One of the biggest benefits of CQRS, and especially that of event sourcing is that it is
+        possible to express tests purely in terms of Events and Commands. Both being functional
+        components, Events and Commands have clear meaning the the domain expert of business owner.
+        This means that tests expressed in terms of Events and Commands don't only have a functional
+        meaning, it also means that they hardly depend on any implementation choices.</para>
+    <sect1>
+        <title>Behavior Driven Testing</title>
+        <para>The command handling component is typically the component in any CQRS based
+            architecture that contains the most complexity. Being more complex than the others, this
+            also means that there are extra test related requirements for this component. Simply
+            put: the more complex a component, the better it must be tested.</para>
+        <para>Although being more complex, the API of a command handling component is fairly easy.
+            It has command coming in, and events coming out. In some cases, there might be a query
+            as part of command execution. Other than that, commands and events are the only part of
+            the API. This means that it is possible to completely define a test scenario in terms of
+            events and commands. Typically, in the shape of:<itemizedlist>
+                <listitem>
+                    <para>given certain events in the past,</para>
+                </listitem>
+                <listitem>
+                    <para>when executing this command,</para>
+                </listitem>
+                <listitem>
+                    <para>expect these events to be published and/or stored.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para>Axon Framework provides a test fixture that allows you to do exactly that. This
+            GivenWhenThenTestFixture allows you to configure a certain infrastructure, composed of
+            the necessary command handler and repository, and express you scenario in terms of
+            given-when-then events and commands.</para>
+        <para>The following example shows the usage of the given-when-then test fixture with JUnit
+            4:</para>
+        <para>
+            <programlistingco>
+                <areaspec>
+                    <area coords="7 55" xml:id="create-new-fixture-co"/>
+                    <area coords="9 84" xml:id="create-generic-repository-co"/>
+                    <area xml:id="register-command-handler-co" coords="10 68"/>
+                    <area xml:id="given-when-then-co" coords="15 39"/>
+                </areaspec>
+                <programlisting language="java">public class MyCommandComponentTest {
+
+    private FixtureConfiguration fixture;
+
+    @Before
+    public void setUp() {
+        fixture = Fixtures.newGivenWhenThenFixture();
+        MyCommandHandler myCommandHandler = new MyCommandHandler(
+                              fixture.createGenericRepository(MyAggregate.class));
+        fixture.registerAnnotatedCommandHandler(myCommandHandler);
+    }
+
+    @Test
+    public void testFirstFixture() {
+        fixture.given(new MyEvent(1))
+               .when(new TestCommand())
+               .expectVoidReturnType()
+               .expectEvents(new MyEvent(2));
+    }
+}</programlisting>
+                <calloutlist>
+                    <callout arearefs="create-new-fixture-co">
+                        <para>This line creates a fixture instance that can deal with
+                            given-when-then style tests. It is created in configuration stage, which
+                            allows us to configure the components that we need to process the
+                            command, such as command handler and repository. An event bus and
+                            command bus are automatically created as part of the fixture.</para>
+                    </callout>
+                    <callout arearefs="create-generic-repository-co">
+                        <para>The <code>createGenericRepository</code> method creates, as expected,
+                            a <code>GenericEventSourcingRepository</code> instance capable of
+                            storing <code>MyAggregate</code> instances. This requires some
+                            conventions on the MyAggregate class, as described in <xref
+                                linkend="event-sourcing-repositories"/>.</para>
+                    </callout>
+                    <callout arearefs="register-command-handler-co">
+                        <para>The <code>registerAnnotatedCommandHandler</code> method will register
+                            any bean as being an <code>@CommandHandler</code> with the command bus.
+                            All supported command types are automatically registered with the event
+                            bus.</para>
+                    </callout>
+                    <callout arearefs="given-when-then-co">
+                        <para>These four lines define the actual scenario and its expected result.
+                            The first line defines the events that happened in the past. These
+                            events define the state of the aggregate under test. In practical terms,
+                            these are the events that the event store returns when an aggregate is
+                            loaded. The second line defines the command that we wish to execute
+                            against our system. Finally, we have two more methods that define
+                            expected behavior. In the example, we use the recommended void return
+                            type. The last method defines that we expect a single event as result of
+                            the command execution.</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco>
+        </para>
+        <para>The given-when-then test fixture defines three stages: configuration, execution and
+            validation. Each of these stages is represented by a different interface:
+                <code>FixtureConfiguration</code>, <code>TestExecutor</code> and
+                <code>ResultValidator</code>, respectively. The static
+                <code>newGivenWhenThenFixture()</code> method on the <code>Fixtures</code> class
+            provides a reference to the first of these, which in turn may provide the validator, and
+            so forth.</para>
+        <note>
+            <para>To make optimal use of the migration between these stages, it is best to use the
+                fluent interface provided by these methods, as shown in the example above.</para>
+        </note>
+        <simplesect>
+            <title>Configuration</title>
+            <para>During the configuration phase, you provide the building blocks required to
+                execute the test. Specialized versions of the event bus, command bus and event store
+                are provided as part of the fixture. There are getters in place to obtain references
+                to them. The repository and command handlers need to be provided. This can be done
+                using the <code>registerRepository</code> and <code>registerCommandHandler</code>
+                (or <code>registerAnnotatedCommandHandler</code>) methods. If your aggregate allows
+                the use of a generic repository, you can use the
+                    <code>createGenericRepository</code> method to create a generic repository and
+                register it with the fixture in a single call. The example above uses this
+                feature.</para>
+            <para>If the command handler and repository are configured, you can define the "given"
+                events. These events need to be subclasses of <code>DomainEvent</code>, as they
+                represent events coming from the event store. You do not need to set aggregate
+                identifiers of sequence numbers. The fixture will inject those for you (using the
+                aggregate identifier exposed by <code>getAggregateIdentifier</code> and a sequence
+                number starting with 0.</para>
+        </simplesect>
+        <simplesect>
+            <title>Execution</title>
+            <para>The execution phase allows you to provide a command to be executed against the
+                command handling component. That's all. Note that successful execution of this
+                command requires that a command handler that can handle this type of command has
+                been configured with the test fixture.</para>
+        </simplesect>
+        <simplesect>
+            <title>Validation</title>
+            <para>The last phase is the validation phase, and allows you to check on the activities
+                of the command handling component. This is done purely in terms of return values and
+                events (both stored and dispatched).</para>
+            <para>The test fixture allows you to validate return values of you command handlers. You
+                can explicitly define an expected void return value or any arbitrary value. You may
+                also express the expectancy of an exception.</para>
+            <para>The other component is validation of stored and dispatched events. In most cases,
+                the stored and dispatched are equal. In some cases however, you may dispatch events
+                (e.g. <code>ApplicationEvent</code>) that are not stored in the event store. In the
+                first case, you can use the <code>expectEvents</code> method to validate events. In
+                the latter case, you may use the <code>expectPublishedEvents</code> and
+                    <code>expectStoredEvents</code> methods to validate published and stored events,
+                respectively.</para>
+        </simplesect>
+    </sect1>
+</chapter>

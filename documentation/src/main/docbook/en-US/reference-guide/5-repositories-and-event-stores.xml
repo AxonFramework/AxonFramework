@@ -102,11 +102,23 @@
             <simplesect>
                 <title><code>CachingEventSourcingRepository</code></title>
                 <para>Initializing aggregates based on the events can be a time-consuming effort,
-                compared to the direct aggregate loading of the simple repository implementations.
-                The <code>CachingEventSourcingRepository</code> provides a cache from which
-                aggregates can be loaded if available. You can configure any jcache implementation
-                with this repository. Note that this implementation can only use caching in
-                combination with a pessimistic locking strategy.</para>
+                    compared to the direct aggregate loading of the simple repository implementations.
+                    The <code>CachingEventSourcingRepository</code> provides a cache from which
+                    aggregates can be loaded if available. You can configure any jcache implementation
+                    with this repository. Note that this implementation can only use caching in
+                    combination with a pessimistic locking strategy.</para>
+            </simplesect>
+            <simplesect>
+                <title><code>GenericEventSourcingRepository</code></title>
+                <para>The <code>GenericEventSourcingRepository</code> is a special
+                    <code>EventSourcingRepository</code> implementation that can act as a repository
+                for any type of Event Sourced Aggregate Root. There is however, a convention that
+                these <code>EventSourcedAggregateRoot</code> classes must adhere to: the type must
+                declare an accessible constructor accepting a UUID as single parameter. This
+                constructor may not perform any initialization on the aggregate, other than setting
+                the identifier.</para>
+            <para>In many cases, this generic repository will suffice. If not, you can always choose
+                to extend any of the other event sourcing repository implementations.</para>
             </simplesect>
         </sect1>
         <sect1 xml:id="implementing-an-eventstore">
