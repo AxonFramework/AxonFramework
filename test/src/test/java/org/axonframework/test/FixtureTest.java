@@ -211,7 +211,6 @@ public class FixtureTest {
                     .expectVoidReturnType();
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            e.printStackTrace();
             assertTrue(e.getMessage().contains(
                     "In an event of type [MyEvent], the property [someValue] was not as expected."));
             assertTrue(e.getMessage().contains("Expected <4> but got <5>"));
@@ -232,7 +231,6 @@ public class FixtureTest {
                     .expectException(StrangeCommandReceivedException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            e.printStackTrace();
             assertTrue(e.getMessage().contains("The stored events do not match the published events."));
             assertTrue(e.getMessage().contains(" <|> org.axonframework.test.FixtureTest$MyApplicationEvent"));
         }
