@@ -23,12 +23,12 @@
         <property name="enabled" value="true"/>
     </bean>
 
-    <bean id="simpleEventBusManager" class="org.axonframework.monitoring.eventhandling.SimpleEventBusManager">
+    <bean id="simpleEventBusManager" class="org.axonframework.monitoring.jmx.eventhandling.SimpleEventBusManager">
         <constructor-arg index="0" ref="eventBus"/>
         <constructor-arg index="1" ref="managementContext"/>
     </bean>
 
-    <bean id="simpleCommandBusManager" class="org.axonframework.monitoring.commandhandling.SimpleCommandBusManager">
+    <bean id="simpleCommandBusManager" class="org.axonframework.monitoring.jmx.commandhandling.SimpleCommandBusManager">
         <constructor-arg index="0" ref="commandBus"/>
         <constructor-arg index="1" ref="managementContext"/>
     </bean>
