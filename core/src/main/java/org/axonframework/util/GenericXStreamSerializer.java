@@ -31,7 +31,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 
 /**
@@ -161,14 +160,10 @@ public class GenericXStreamSerializer {
                 Constructor constructor = context.getRequiredType().getConstructor(Object.class);
                 return constructor.newInstance(reader.getValue());
             }
-            catch (NoSuchMethodException e) {
-                throw new SerializationException("Unable to read the event due to an initialization exception", e);
-            } catch (InvocationTargetException e) {
-                throw new SerializationException("Unable to read the event due to an initialization exception", e);
-            } catch (InstantiationException e) {
-                throw new SerializationException("Unable to read the event due to an initialization exception", e);
-            } catch (IllegalAccessException e) {
-                throw new SerializationException("Unable to read the event due to an initialization exception", e);
+            catch (Exception e) {
+                throw new SerializationException(String.format(
+                        "An exception occurred while deserializing a Joda Time object: %s",
+                        context.getRequiredType().getSimpleName()), e);
             }
         }
     }
