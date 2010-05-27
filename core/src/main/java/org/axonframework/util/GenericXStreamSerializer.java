@@ -147,7 +147,7 @@ public class GenericXStreamSerializer {
          */
         @Override
         public boolean canConvert(Class type) {
-            return type.getPackage().equals(LocalDateTime.class.getPackage());
+            return type != null && LocalDateTime.class.getPackage().equals(type.getPackage());
         }
 
         @Override
