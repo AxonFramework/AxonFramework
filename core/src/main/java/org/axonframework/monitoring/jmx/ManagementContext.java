@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring;
+package org.axonframework.monitoring.jmx;
+
+import org.axonframework.monitoring.Statistics;
 
 import javax.annotation.PostConstruct;
 import javax.management.MBeanServer;

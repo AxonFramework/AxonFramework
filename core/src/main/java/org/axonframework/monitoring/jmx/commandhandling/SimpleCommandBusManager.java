@@ -16,9 +16,9 @@
 
 package org.axonframework.monitoring.jmx.commandhandling;
 
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBusStatistics;
-import org.axonframework.monitoring.ManagementContext;
+import org.axonframework.monitoring.Monitored;
+import org.axonframework.monitoring.jmx.ManagementContext;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ import java.util.List;
 public class SimpleCommandBusManager implements SimpleCommandBusManagerMXBean {
     private SimpleCommandBusStatistics statistics;
 
-    public SimpleCommandBusManager(SimpleCommandBus commandBus, ManagementContext context) {
+    public SimpleCommandBusManager(Monitored<SimpleCommandBusStatistics> commandBus, ManagementContext context) {
         this.statistics = commandBus.getStatistics();
         context.registerMBean(this, "SimpleCommandBus");
     }

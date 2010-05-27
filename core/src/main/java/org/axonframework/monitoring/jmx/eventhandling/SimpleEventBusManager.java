@@ -16,9 +16,9 @@
 
 package org.axonframework.monitoring.jmx.eventhandling;
 
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventBusStatistics;
-import org.axonframework.monitoring.ManagementContext;
+import org.axonframework.monitoring.Monitored;
+import org.axonframework.monitoring.jmx.ManagementContext;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ import java.util.List;
 public class SimpleEventBusManager implements SimpleEventBusManagerMXBean {
     private SimpleEventBusStatistics statistics;
 
-    public SimpleEventBusManager(SimpleEventBus simpleEventBus, ManagementContext context) {
+    public SimpleEventBusManager(Monitored<SimpleEventBusStatistics> simpleEventBus, ManagementContext context) {
         this.statistics = simpleEventBus.getStatistics();
 
         context.registerMBean(this, "SimpleEventBus");

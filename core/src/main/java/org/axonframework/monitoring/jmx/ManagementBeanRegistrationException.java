@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring;
+package org.axonframework.monitoring.jmx;
 
 /**
  * <p>Exception used when something fails during the registration of MBeans</p>
@@ -24,10 +24,21 @@ package org.axonframework.monitoring;
  */
 public class ManagementBeanRegistrationException extends RuntimeException {
 
+    /**
+     * Initialize the exception with the given <code>message</code>
+     *
+     * @param message Message describing the exception
+     */
     public ManagementBeanRegistrationException(String message) {
         super(message);
     }
 
+    /**
+     * Initialize the exception with the given <code>message</code> and <code>cause</code>
+     *
+     * @param message Message describing the exception
+     * @param cause   The actual cause of the exception
+     */
     public ManagementBeanRegistrationException(String message, Throwable cause) {
         super(message, cause);
     }
