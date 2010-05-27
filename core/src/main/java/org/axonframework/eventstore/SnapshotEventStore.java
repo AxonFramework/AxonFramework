@@ -19,7 +19,9 @@ package org.axonframework.eventstore;
 import org.axonframework.domain.DomainEvent;
 
 /**
- * Interface describing an event store that is able to store snapshot events.
+ * Interface describing an event store that is able to store snapshot events. Implementations must also take the stored
+ * snapshots into account when loading events. That means that any call to {@link #readEvents(String, java.util.UUID)}
+ * should return an event stream that starts with the latest suitable snapshot event available in the event store.
  *
  * @author Allard Buijze
  * @since 0.5
