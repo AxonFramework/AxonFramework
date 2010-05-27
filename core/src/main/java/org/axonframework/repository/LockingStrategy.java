@@ -40,5 +40,11 @@ public enum LockingStrategy {
      *
      * @see LockingRepository
      */
-    PESSIMISTIC
+    PESSIMISTIC,
+
+    /**
+     * Indicator of no locking strategy. This strategy expects another mechanism to perform the necessary locking, such
+     * as an event store using a relational database.
+     */
+    NO_LOCKING
 }
