@@ -25,6 +25,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * <p>Statistics object to store information about the internals of the <code>SimpleCommandBus</code>.</p>
+ * <p>You can request information about the registered handlers but also about the number of received commands.</p>
+ * <p>Next to requesting information it is also possible to reset the counters</p>
+ * <p>Finally, the statistics are only gathered when explicitly enabled. By default they are switched off.</p>
+ *
  * @author Jettro Coenradie
  */
 public class SimpleCommandBusStatistics implements Statistics {
@@ -45,14 +50,29 @@ public class SimpleCommandBusStatistics implements Statistics {
 
     /* getters */
 
+    /**
+     * Returns the amount of registered handlers
+     *
+     * @return long representing the amount of registered handlers
+     */
     public long getAmountOfHandlers() {
         return amountOfHandlers.get();
     }
 
+    /**
+     * Returns the amount of received commands from the beginning of starting up or after the last reset
+     *
+     * @return long representing the amount of received commands
+     */
     public long getAmountOfReceivedCommands() {
         return amountOfReceivedCommands.get();
     }
 
+    /**
+     * Returns a list with the names of registered handlers
+     *
+     * @return List of strings with the names of the registered handlers
+     */
     public List<String> getHandlers() {
         return Collections.unmodifiableList(handlers);
     }
@@ -60,33 +80,25 @@ public class SimpleCommandBusStatistics implements Statistics {
     /* operations */
 
     /**
-     * TODO jettro : decide if we want to be able to enable or disable this.
-     * <p/>
      * Indicate a new handler with the provided name is registered. Multiple handlers with the same name are
      * supported.
      *
      * @param name String representing the name of the handler to register
      */
     public void handlerRegistered(String name) {
-        if (enabled.get()) {
-            this.handlers.add(name);
-            this.amountOfHandlers.incrementAndGet();
-        }
+        this.handlers.add(name);
+        this.amountOfHandlers.incrementAndGet();
     }
 
     /**
-     * TODO jettro : decide if we want to be able to enable or disable this.
-     * <p/>
      * Indicate a handler with the provided name is unregistered. In case multiple handlers with the same name are
      * registered, only one is unregistered. If no handler exists with the provided name no action is taken.
      *
      * @param name String representing the name of the handler to un-register
      */
     public void handlerUnregistered(String name) {
-        if (enabled.get()) {
-            this.handlers.remove(name);
-            this.amountOfHandlers.decrementAndGet();
-        }
+        this.handlers.remove(name);
+        this.amountOfHandlers.decrementAndGet();
     }
 
     /**
@@ -99,14 +111,10 @@ public class SimpleCommandBusStatistics implements Statistics {
     }
 
     /**
-     * TODO jettro : decide if we want to be able to enable or disable this.
-     * <p/>
      * Resets the amount of commands received
      */
     public void resetCommandsReceived() {
-        if (enabled.get()) {
-            amountOfReceivedCommands.set(0);
-        }
+        amountOfReceivedCommands.set(0);
     }
 
     /**

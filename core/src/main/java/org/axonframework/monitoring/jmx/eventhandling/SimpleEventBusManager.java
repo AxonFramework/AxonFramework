@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring.eventhandling;
+package org.axonframework.monitoring.jmx.eventhandling;
 
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventBusStatistics;

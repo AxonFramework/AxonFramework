@@ -23,15 +23,12 @@ package org.axonframework.monitoring;
  * @since 0.6
  */
 public class ManagementBeanRegistrationException extends RuntimeException {
+
     public ManagementBeanRegistrationException(String message) {
         super(message);
     }
 
     public ManagementBeanRegistrationException(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public ManagementBeanRegistrationException(Throwable cause) {
-        super(cause);
     }
 }

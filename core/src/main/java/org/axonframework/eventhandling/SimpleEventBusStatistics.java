@@ -82,32 +82,25 @@ public class SimpleEventBusStatistics implements Statistics {
     /* operations */
 
     /**
-     * TODO jettro : decide if we want to be able to enable or disable this.
-     * <p/>
      * Indicate that a new listener is registered by providing it's name. It is possible to store multiple listeners
      * with the same name.
      *
      * @param name String representing the name of the registered listener
      */
     public void listenerRegistered(String name) {
-        if (enabled.get()) {
-            this.listeners.add(name);
-            this.amountOfListeners.incrementAndGet();
-        }
+        this.listeners.add(name);
+        this.amountOfListeners.incrementAndGet();
     }
 
     /**
-     * TODO jettro : decide if we want to be able to enable or disable this.
      * Indicate that a listener is unregistered with the provided name. If multiple listeners with the same name exist
      * only one listener is removed. No action is taken when the provided name does not exist.
      *
      * @param name String representing the name of the listener to un-register.
      */
     public void listenerUnregistered(String name) {
-        if (enabled.get()) {
-            this.listeners.remove(name);
-            this.amountOfListeners.decrementAndGet();
-        }
+        this.listeners.remove(name);
+        this.amountOfListeners.decrementAndGet();
     }
 
     /**
@@ -120,13 +113,10 @@ public class SimpleEventBusStatistics implements Statistics {
     }
 
     /**
-     * TODO jettro : decide if we want to be able to enable or disable this.
      * Reset the amount of events that was received
      */
     public void resetEventsReceived() {
-        if (enabled.get()) {
-            amountOfReceivedEvents.set(0);
-        }
+        amountOfReceivedEvents.set(0);
     }
 
     /**

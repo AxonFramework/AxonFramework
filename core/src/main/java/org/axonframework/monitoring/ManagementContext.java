@@ -17,7 +17,8 @@
 package org.axonframework.monitoring;
 
 import javax.annotation.PostConstruct;
-import javax.management.*;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 
 /**
@@ -43,14 +44,8 @@ public class ManagementContext {
             }
             ObjectName eventBusName = new ObjectName("BaseJmxAgent:name=" + objectName);
             mbeanServer.registerMBean(mxBean, eventBusName);
-        } catch (MalformedObjectNameException e) {
-            throw new ManagementBeanRegistrationException(e);
-        } catch (NotCompliantMBeanException e) {
-            throw new ManagementBeanRegistrationException(e);
-        } catch (InstanceAlreadyExistsException e) {
-            throw new ManagementBeanRegistrationException(e);
-        } catch (MBeanRegistrationException e) {
-            throw new ManagementBeanRegistrationException(e);
+        } catch (Exception e) {
+            throw new ManagementBeanRegistrationException("Problem while registering an mxbean", e);
         }
     }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring.commandhandling;
+package org.axonframework.monitoring.jmx.commandhandling;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBusStatistics;
