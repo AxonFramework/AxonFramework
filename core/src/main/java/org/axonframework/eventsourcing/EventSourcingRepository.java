@@ -23,8 +23,8 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.LockingRepository;
 import org.axonframework.repository.LockingStrategy;
-import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.Resource;
 import java.util.UUID;
 
 /**
@@ -118,7 +118,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      *
      * @param eventStore the event bus to publish events to
      */
-    @Required
+    @Resource
     public void setEventStore(EventStore eventStore) {
         this.eventStore = eventStore;
     }
