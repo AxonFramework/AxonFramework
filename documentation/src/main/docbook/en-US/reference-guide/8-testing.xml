@@ -18,7 +18,7 @@
     <title>Testing</title>
     <para>One of the biggest benefits of CQRS, and especially that of event sourcing is that it is
         possible to express tests purely in terms of Events and Commands. Both being functional
-        components, Events and Commands have clear meaning the the domain expert of business owner.
+        components, Events and Commands have clear meaning to the domain expert or business owner.
         This means that tests expressed in terms of Events and Commands don't only have a functional
         meaning, it also means that they hardly depend on any implementation choices.</para>
     <para>The features described in this chapter require the <code>axon-test</code> module, which
