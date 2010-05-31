@@ -52,7 +52,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         mockAdapter = mock(AnnotationEventListenerAdapter.class);
         mockEventBus = mock(EventBus.class);
         mockApplicationContext = mock(ApplicationContext.class);
-        testSubject = new AnnotationEventListenerBeanPostProcessor();
+        testSubject = spy(new AnnotationEventListenerBeanPostProcessor());
         testSubject.setEventBus(mockEventBus);
         testSubject.setApplicationContext(mockApplicationContext);
     }
@@ -119,6 +119,39 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         testSubject.postProcessBeforeDestruction(postProcessedBean, "beanName");
 
         verify(mockEventBus).unsubscribe(isA(EventListener.class));
+    }
+
+    @Test
+    public void testPostProcessBean_AlreadyHandlerIsNotEnhanced() {
+        RealEventListener eventHandler = new RealEventListener();
+        Object actualResult = testSubject.postProcessAfterInitialization(eventHandler, "beanName");
+        assertFalse(Enhancer.isEnhanced(actualResult.getClass()));
+        assertSame(eventHandler, actualResult);
+    }
+
+    @Test
+    public void testPostProcessBean_PlainObjectIsIgnored() {
+        NotAnEventHandler eventHandler = new NotAnEventHandler();
+        Object actualResult = testSubject.postProcessAfterInitialization(eventHandler, "beanName");
+        assertFalse(Enhancer.isEnhanced(actualResult.getClass()));
+        assertSame(eventHandler, actualResult);
+    }
+
+    public static class NotAnEventHandler {
+
+    }
+
+    public static class RealEventListener implements EventListener {
+
+        @Override
+        public void handle(Event event) {
+            // not relevant
+        }
+
+        @EventHandler
+        public void handleEvent(Event event) {
+
+        }
     }
 
     public static class SyncEventListener {
