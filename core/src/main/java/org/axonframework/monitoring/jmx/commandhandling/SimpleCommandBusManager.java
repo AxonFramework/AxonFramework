@@ -31,6 +31,12 @@ import java.util.List;
 public class SimpleCommandBusManager implements SimpleCommandBusManagerMXBean {
     private SimpleCommandBusStatistics statistics;
 
+    /**
+     * Initialize the monitor manager using the <code>ManagementContext</code> and the <code>SimpleEventBusStatistics</code>
+     *
+     * @param commandBus Used to obtain the statistics object from
+     * @param context    Used to register the MBean with
+     */
     public SimpleCommandBusManager(Monitored<SimpleCommandBusStatistics> commandBus, ManagementContext context) {
         this.statistics = commandBus.getStatistics();
         context.registerMBean(this, "SimpleCommandBus");

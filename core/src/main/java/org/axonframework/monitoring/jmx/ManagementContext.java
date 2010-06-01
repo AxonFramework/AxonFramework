@@ -34,11 +34,20 @@ public class ManagementContext {
     private MBeanServer mbeanServer;
     private boolean enabled = false;
 
+    /**
+     * Initialize the used <code>MBeanServer</code> using the mBeanServer from the platform
+     */
     @PostConstruct
     public void init() {
         mbeanServer = ManagementFactory.getPlatformMBeanServer();
     }
 
+    /**
+     * Registers the provided mxBean using the provided objectName with the obtained MBeanServer
+     *
+     * @param mxBean     MXBean to register
+     * @param objectName Name of the bean to register
+     */
     public void registerMBean(Statistics mxBean, String objectName) {
         try {
             if (enabled) {
@@ -51,6 +60,12 @@ public class ManagementContext {
         }
     }
 
+    /**
+     * In case the statistics are enabled, all statistics are gathered. Providing true will enable the statistics,
+     * false with disable them.
+     *
+     * @param enabled true to enable, false to disable
+     */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }

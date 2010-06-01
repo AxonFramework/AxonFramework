@@ -40,10 +40,18 @@ public class SimpleCommandBusStatistics implements Statistics {
 
     /* construction */
 
+    /**
+     * Initialize the statistics object. By default gathering fine grained statistics is disabled.
+     */
     public SimpleCommandBusStatistics() {
         this(true);
     }
 
+    /**
+     * Initialize the statistics with the provided value. If true fine grained statistics are enabled.
+     *
+     * @param enabled true to enable, false to disable
+     */
     public SimpleCommandBusStatistics(boolean enabled) {
         this.enabled.set(enabled);
     }
