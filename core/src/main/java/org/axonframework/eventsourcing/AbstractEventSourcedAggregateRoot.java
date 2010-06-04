@@ -53,6 +53,17 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
 
     /**
      * {@inheritDoc}
+     * <p/>
+     * This implementation is aware of two special types of <code>DomainEvents</code>: The
+     * <code>AggregateDeletedEvent</code>, which indicates that the aggregate is deleted and the
+     * <code>AggregateSnapshot</code>, which is a snapshot event, containing the actual aggregate inside.
+     * <p/>
+     * When an <code>AggregateDeletedEvent</code> is encountered, a <code>AggregateDeletedException</code> is thrown,
+     * unless there are events following the <code>AggregateDeletedEvent</code>. This could be the case when an event is
+     * added to the stream as a correction to an earlier event.
+     * <p/>
+     * <code>AggregateSnapshot</code> events are used to initialize the aggregate with the correct version ({@link
+     * #getLastCommittedEventSequenceNumber()}).
      *
      * @throws IllegalStateException     if this aggregate was already initialized.
      * @throws AggregateDeletedException if the event stream contains an event of type {@link AggregateDeletedEvent} (or
@@ -70,7 +81,9 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
                         event.getAggregateIdentifier()));
             }
             lastSequenceNumber = event.getSequenceNumber();
-            handle(event);
+            if (!(event instanceof AggregateSnapshot)) {
+                handle(event);
+            }
         }
         initializeEventStream(lastSequenceNumber);
     }

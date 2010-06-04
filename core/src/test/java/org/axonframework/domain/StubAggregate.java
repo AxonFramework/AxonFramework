@@ -17,14 +17,13 @@
 package org.axonframework.domain;
 
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventstore.SnapshotProducer;
 
 import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
-public class StubAggregate extends AbstractEventSourcedAggregateRoot implements SnapshotProducer {
+public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     private int invocationCount;
 
@@ -48,7 +47,6 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot implements 
         return invocationCount;
     }
 
-    @Override
     public DomainEvent createSnapshotEvent() {
         return new StubDomainEvent(getIdentifier(), 5);
     }

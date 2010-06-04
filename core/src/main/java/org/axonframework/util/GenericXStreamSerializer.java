@@ -32,13 +32,17 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
+import java.util.UUID;
 
 /**
- * Serializer that uses XStream to serialize and deserialize arbitrary objects. These objects do not have to implement
- * the Serializable interface, but the underlying XStream needs to be told how to (un)marshal certain types. See {@link
- * com.thoughtworks.xstream.XStream}.
+ * Serializer that uses XStream to serialize and deserialize arbitrary objects.
+ * <p/>
+ * When running on a Sun JVM, XStream does not pose any restrictions on classes to serialize. On other JVM's, however,
+ * you need to either implement Serializable, or provide a default constructor (accesible under the JVM's security
+ * policy). That means that for portability, you should do either of these two.
  *
  * @author Allard Buijze
+ * @see com.thoughtworks.xstream.XStream
  * @since 0.6
  */
 public class GenericXStreamSerializer {
@@ -62,6 +66,7 @@ public class GenericXStreamSerializer {
         this.charset = charset;
         xStream = new XStream(new XppDriver());
         xStream.registerConverter(new JodaTimeConverter());
+        xStream.addImmutableType(UUID.class);
     }
 
     /**

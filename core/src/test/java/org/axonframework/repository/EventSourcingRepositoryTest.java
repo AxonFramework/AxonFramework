@@ -26,8 +26,10 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AggregateDeletedException;
+import org.axonframework.eventsourcing.AggregateSnapshot;
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.SnapshotEventStore;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -42,13 +44,13 @@ import static org.mockito.Mockito.*;
  */
 public class EventSourcingRepositoryTest {
 
-    private EventStore mockEventStore;
+    private SnapshotEventStore mockEventStore;
     private EventBus mockEventBus;
     private EventSourcingRepository<TestAggregate> testSubject;
 
     @Before
     public void setUp() {
-        mockEventStore = mock(EventStore.class);
+        mockEventStore = mock(SnapshotEventStore.class);
         mockEventBus = mock(EventBus.class);
         testSubject = new EventSourcingRepositoryImpl();
         testSubject.setEventBus(mockEventBus);
@@ -98,6 +100,23 @@ public class EventSourcingRepositoryTest {
         } catch (AggregateDeletedException e) {
             assertTrue(e.getMessage().contains(identifier.toString()));
         }
+    }
+
+    @Test
+    public void testLoadWithAggregateSnapshot() {
+        UUID identifier = UUID.randomUUID();
+        TestAggregate simpleAggregate = new TestAggregate(identifier);
+        simpleAggregate.apply(new StubDomainEvent(identifier, 0));
+        simpleAggregate.commitEvents();
+        AggregateSnapshot snapshotEvent = new AggregateSnapshot(simpleAggregate);
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(snapshotEvent,
+                                                                                                   new StubDomainEvent(
+                                                                                                           identifier,
+                                                                                                           1)));
+        EventSourcedAggregateRoot actual = testSubject.load(identifier);
+
+        assertSame(simpleAggregate, actual);
+        assertEquals(Long.valueOf(1), actual.getLastCommittedEventSequenceNumber());
     }
 
     private static class EventSourcingRepositoryImpl extends EventSourcingRepository<TestAggregate> {

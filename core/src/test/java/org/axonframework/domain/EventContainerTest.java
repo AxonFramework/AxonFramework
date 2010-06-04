@@ -34,7 +34,7 @@ public class EventContainerTest {
 
         EventContainer eventContainer = new EventContainer(identifier);
         assertEquals(identifier, eventContainer.getAggregateIdentifier());
-        eventContainer.setFirstSequenceNumber(12);
+        eventContainer.initializeSequenceNumber(11L);
 
         assertEquals(0, eventContainer.size());
         assertFalse(eventContainer.getEventStream().hasNext());
@@ -57,7 +57,7 @@ public class EventContainerTest {
         StubDomainEvent domainEvent = new StubDomainEvent(identifier);
 
         EventContainer eventContainer = new EventContainer(UUID.randomUUID());
-        eventContainer.setFirstSequenceNumber(12);
+        eventContainer.initializeSequenceNumber(11L);
 
         try {
             eventContainer.addEvent(domainEvent);

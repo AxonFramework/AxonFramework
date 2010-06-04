@@ -93,7 +93,7 @@ public abstract class AbstractAggregateRoot implements VersionedAggregateRoot {
      * @param lastSequenceNumber The sequence number of the last event from this aggregate
      */
     protected void initializeEventStream(long lastSequenceNumber) {
-        uncommittedEvents.setFirstSequenceNumber(lastSequenceNumber + 1);
+        uncommittedEvents.initializeSequenceNumber(lastSequenceNumber);
         lastCommitted = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
     }
 

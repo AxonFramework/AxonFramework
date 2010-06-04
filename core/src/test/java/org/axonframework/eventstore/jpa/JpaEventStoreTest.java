@@ -21,7 +21,6 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.eventstore.SnapshotProducer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,7 +118,7 @@ public class JpaEventStoreTest {
         testSubject.readEvents("test", UUID.randomUUID());
     }
 
-    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot implements SnapshotProducer {
+    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
         public void changeState() {
             apply(new StubStateChangedEvent());
@@ -129,7 +128,6 @@ public class JpaEventStoreTest {
         public void handleStateChange(StubStateChangedEvent event) {
         }
 
-        @Override
         public DomainEvent createSnapshotEvent() {
             return new StubStateChangedEvent(getLastCommittedEventSequenceNumber(), getIdentifier());
         }

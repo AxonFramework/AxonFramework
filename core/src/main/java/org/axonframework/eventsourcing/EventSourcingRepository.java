@@ -43,7 +43,7 @@ import java.util.UUID;
  */
 public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
 
-    private EventStore eventStore;
+    private volatile EventStore eventStore;
 
     /**
      * Initializes a repository with the default locking strategy.
@@ -90,8 +90,19 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         } catch (EventStreamNotFoundException e) {
             throw new AggregateNotFoundException("The aggregate was not found", e);
         }
-        T aggregate = instantiateAggregate(aggregateIdentifier, events.peek());
+        T aggregate = createAggregate(aggregateIdentifier, events.peek());
         aggregate.initializeState(events);
+        return aggregate;
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private T createAggregate(UUID aggregateIdentifier, DomainEvent firstEvent) {
+        T aggregate;
+        if (AggregateSnapshot.class.isInstance(firstEvent)) {
+            aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
+        } else {
+            aggregate = instantiateAggregate(aggregateIdentifier, firstEvent);
+        }
         return aggregate;
     }
 
