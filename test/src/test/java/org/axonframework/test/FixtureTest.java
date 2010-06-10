@@ -23,13 +23,15 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.repository.Repository;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Allard Buijze
@@ -118,7 +120,7 @@ public class FixtureTest {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand())
-                    .expectEvents(new MyOtherEvent());
+                    .expectEvents(new MyOtherEvent("Hello"));
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("org.axonframework.test.FixtureTest$MyOtherEvent <|>"
@@ -213,7 +215,27 @@ public class FixtureTest {
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(
                     "In an event of type [MyEvent], the property [someValue] was not as expected."));
-            assertTrue(e.getMessage().contains("Expected <4> but got <5>"));
+            assertTrue(e.getMessage().contains("Expected <5> but got <4>"));
+        }
+    }
+
+    @Test
+    public void testFixture_WrongEventContents_WithNullValues() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                               fixture.getEventBus());
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(commandHandler)
+                    .given(givenEvents)
+                    .when(new TestCommand())
+                    .expectEvents(new MyEvent(null)) // should be 4
+                    .expectVoidReturnType();
+            fail("Expected an AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertTrue(e.getMessage().contains(
+                    "In an event of type [MyEvent], the property [someValue] was not as expected."));
+            assertTrue(e.getMessage().contains("Expected <null> but got <4>"));
         }
     }
 
@@ -310,9 +332,9 @@ public class FixtureTest {
 
     public static class MyEvent extends DomainEvent {
 
-        private int someValue;
+        private Integer someValue;
 
-        public MyEvent(int someValue) {
+        public MyEvent(Integer someValue) {
             this.someValue = someValue;
         }
 
@@ -341,5 +363,14 @@ public class FixtureTest {
 
     private class MyOtherEvent extends DomainEvent {
 
+        private String aValue;
+
+        private MyOtherEvent(final String aValue) {
+            this.aValue = aValue;
+        }
+
+        public String getaValue() {
+            return aValue;
+        }
     }
 }

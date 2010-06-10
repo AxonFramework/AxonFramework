@@ -173,12 +173,19 @@ class Reporter {
         sb.append("was not as expected.")
                 .append(NEWLINE)
                 .append("Expected <")
-                .append(actual.toString())
+                .append(nullSafeToString(expected))
                 .append("> but got <")
-                .append(expected.toString())
+                .append(nullSafeToString(actual))
                 .append(">")
                 .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
+    }
+
+    private String nullSafeToString(final Object value) {
+        if (value == null) {
+            return "null";
+        }
+        return value.toString();
     }
 
     private void describe(Object value, StringBuilder sb) {
