@@ -53,7 +53,7 @@ public class ManagementContext {
             if (enabled) {
                 mxBean.enable();
             }
-            ObjectName eventBusName = new ObjectName("BaseJmxAgent:name=" + objectName);
+            ObjectName eventBusName = new ObjectName("org.axonframework:name=" + objectName);
             mbeanServer.registerMBean(mxBean, eventBusName);
         } catch (Exception e) {
             throw new ManagementBeanRegistrationException("Problem while registering an mxbean", e);
