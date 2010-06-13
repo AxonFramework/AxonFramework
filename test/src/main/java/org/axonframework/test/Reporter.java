@@ -19,6 +19,8 @@ package org.axonframework.test;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -82,7 +84,9 @@ class Reporter {
         }
         sb.append("> but got <exception of type [")
                 .append(actualException.getClass().getSimpleName());
-        sb.append("]>");
+        sb.append("]>. Stack trace follows:");
+        sb.append(NEWLINE);
+        writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
@@ -141,8 +145,10 @@ class Reporter {
                 .append(expectedException.getSimpleName())
                 .append("]> but got <exception of type [")
                 .append(actualException.getClass().getSimpleName())
-                .append("]>")
+                .append("]>. Stacktrace follows: ")
                 .append(NEWLINE);
+        writeStackTrace(actualException, sb);
+        sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -179,6 +185,14 @@ class Reporter {
                 .append(">")
                 .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
+    }
+
+    private void writeStackTrace(Throwable actualException, StringBuilder sb) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintWriter pw = new PrintWriter(baos);
+        actualException.printStackTrace(pw);
+        pw.flush();
+        sb.append(new String(baos.toByteArray()));
     }
 
     private String nullSafeToString(final Object value) {
