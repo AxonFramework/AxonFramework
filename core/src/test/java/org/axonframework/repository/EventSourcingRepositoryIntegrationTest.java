@@ -201,7 +201,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        protected String getTypeIdentifier() {
+        public String getTypeIdentifier() {
             return "test";
         }
     }

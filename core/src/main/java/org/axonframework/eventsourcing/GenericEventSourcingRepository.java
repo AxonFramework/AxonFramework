@@ -96,7 +96,7 @@ public class GenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * @return the simple name of the aggregate class.
      */
     @Override
-    protected String getTypeIdentifier() {
+    public String getTypeIdentifier() {
         return aggregateType;
     }
 

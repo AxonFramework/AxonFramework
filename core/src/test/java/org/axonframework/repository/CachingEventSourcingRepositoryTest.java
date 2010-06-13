@@ -95,7 +95,7 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        protected String getTypeIdentifier() {
+        public String getTypeIdentifier() {
             return "mock";
         }
     }

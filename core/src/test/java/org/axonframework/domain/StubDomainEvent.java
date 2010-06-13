@@ -27,7 +27,7 @@ public class StubDomainEvent extends DomainEvent implements Serializable {
     public StubDomainEvent() {
     }
 
-    public StubDomainEvent(int sequenceNumber) {
+    public StubDomainEvent(long sequenceNumber) {
         setSequenceNumber(sequenceNumber);
     }
 
@@ -35,7 +35,7 @@ public class StubDomainEvent extends DomainEvent implements Serializable {
         setAggregateIdentifier(aggregateIdentifier);
     }
 
-    public StubDomainEvent(UUID aggregateIdentifier, int sequenceNumber) {
+    public StubDomainEvent(UUID aggregateIdentifier, long sequenceNumber) {
         setAggregateIdentifier(aggregateIdentifier);
         setSequenceNumber(sequenceNumber);
     }

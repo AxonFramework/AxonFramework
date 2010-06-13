@@ -19,14 +19,26 @@ package org.axonframework.eventsourcing;
 import org.axonframework.domain.DomainEvent;
 
 /**
+ * Snapshot event that captures the entire aggregate. The motivation is that the aggregate contains all relevant state.
+ *
  * @author Allard Buijze
+ * @param <T> The type of aggregate this snapshot captures
  * @since 0.6
  */
-public class AggregateSnapshot extends DomainEvent {
+public class AggregateSnapshot<T extends EventSourcedAggregateRoot> extends DomainEvent {
 
-    private final EventSourcedAggregateRoot aggregate;
+    private static final long serialVersionUID = -4553033098609759034L;
 
-    public AggregateSnapshot(EventSourcedAggregateRoot aggregate) {
+    private final T aggregate;
+
+    /**
+     * Initialize a new AggregateSnapshot for the given <code>aggregate</code>. Note that the aggregate may not contain
+     * uncommitted modifications.
+     *
+     * @param aggregate The aggregate containing the state to capture in the snapshot
+     * @throws IllegalArgumentException if the aggregate contains uncommitted modifications
+     */
+    public AggregateSnapshot(T aggregate) {
         super(aggregate.getLastCommittedEventSequenceNumber(), aggregate.getIdentifier());
         if (aggregate.getUncommittedEventCount() != 0) {
             throw new IllegalArgumentException("Aggregate may not have uncommitted modifications");
@@ -34,7 +46,12 @@ public class AggregateSnapshot extends DomainEvent {
         this.aggregate = aggregate;
     }
 
-    public EventSourcedAggregateRoot getAggregate() {
+    /**
+     * Return the aggregate that was captured in this snapshot.
+     *
+     * @return the aggregate that was captured in this snapshot.
+     */
+    public T getAggregate() {
         return aggregate;
     }
 }

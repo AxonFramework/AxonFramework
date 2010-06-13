@@ -41,7 +41,8 @@ import java.util.UUID;
  * @see org.axonframework.eventstore.fs.FileSystemEventStore
  * @since 0.1
  */
-public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
+public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T>
+        implements AggregateFactory<T> {
 
     private volatile EventStore eventStore;
 
@@ -95,8 +96,15 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         return aggregate;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation is aware of the AggregateSnapshot type events. When <code>firstEvent</code> is an instance of
+     * {@link AggregateSnapshot}, the aggregate is extracted from the event. Otherwise, aggregate creation is delegated
+     * to the abstract {@link #instantiateAggregate(java.util.UUID, org.axonframework.domain.DomainEvent)} method.
+     */
     @SuppressWarnings({"unchecked"})
-    private T createAggregate(UUID aggregateIdentifier, DomainEvent firstEvent) {
+    public T createAggregate(UUID aggregateIdentifier, DomainEvent firstEvent) {
         T aggregate;
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
@@ -133,15 +141,5 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     public void setEventStore(EventStore eventStore) {
         this.eventStore = eventStore;
     }
-
-    /**
-     * Returns the type identifier for this aggregate. The type identifier is used by the EventStore to organize data
-     * related to the same type of aggregate.
-     * <p/>
-     * Tip: in most cases, the simple class name would be a good start.
-     *
-     * @return the type identifier of the aggregates this repository stores
-     */
-    protected abstract String getTypeIdentifier();
 
 }

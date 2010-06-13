@@ -108,7 +108,8 @@ public class EventSourcingRepositoryTest {
         TestAggregate simpleAggregate = new TestAggregate(identifier);
         simpleAggregate.apply(new StubDomainEvent(identifier, 0));
         simpleAggregate.commitEvents();
-        AggregateSnapshot snapshotEvent = new AggregateSnapshot(simpleAggregate);
+        AggregateSnapshot<AbstractEventSourcedAggregateRoot> snapshotEvent =
+                new AggregateSnapshot<AbstractEventSourcedAggregateRoot>(simpleAggregate);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(snapshotEvent,
                                                                                                    new StubDomainEvent(
                                                                                                            identifier,
@@ -127,7 +128,7 @@ public class EventSourcingRepositoryTest {
         }
 
         @Override
-        protected String getTypeIdentifier() {
+        public String getTypeIdentifier() {
             return "test";
         }
     }

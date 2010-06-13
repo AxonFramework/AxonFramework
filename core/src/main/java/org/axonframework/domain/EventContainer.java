@@ -101,12 +101,12 @@ class EventContainer {
     /**
      * Sets the first sequence number that should be assigned to an incoming event.
      *
-     * @param lastSequenceNumber the sequence number to assign to the first incoming event
+     * @param lastKnownSequenceNumber the sequence number of the last known event
      */
-    public void initializeSequenceNumber(Long lastSequenceNumber) {
+    public void initializeSequenceNumber(Long lastKnownSequenceNumber) {
         Assert.state(events.size() == 0, "Cannot set first sequence number if events have already been added");
-        this.firstSequenceNumber = lastSequenceNumber == null ? 0 : lastSequenceNumber + 1;
-        this.lastSequenceNumber = lastSequenceNumber;
+        this.firstSequenceNumber = lastKnownSequenceNumber == null ? 0 : lastKnownSequenceNumber + 1;
+        this.lastSequenceNumber = lastKnownSequenceNumber;
     }
 
     /**

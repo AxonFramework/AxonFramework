@@ -24,9 +24,15 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SynchronousTaskExecutor implements Executor {
+public final class SynchronousTaskExecutor implements Executor {
 
+    /**
+     * Returns a singleton instance of the SynchronousTaskExecutor.
+     */
     public static final SynchronousTaskExecutor INSTANCE = new SynchronousTaskExecutor();
+
+    private SynchronousTaskExecutor() {
+    }
 
     /**
      * Executes the given <code>command</code> immediately in the current thread.
