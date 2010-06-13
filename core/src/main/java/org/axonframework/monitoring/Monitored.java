@@ -17,18 +17,19 @@
 package org.axonframework.monitoring;
 
 /**
- * <p>Classes implementing this interface can be monitored by requesting their statistics object</p>
+ * Interface describing classes subject to monitoring. These classes provide a statistics object, which monitors may use
+ * to obtain information about internal state and activity.
  *
  * @author Jettro Coenradie
- * @param <T> Statistics object used to obtain monitored statistics from
+ * @param <T> The type of statistics object the implementation returns.
  * @since 0.6
  */
 public interface Monitored<T extends Statistics> {
 
     /**
-     * Returns the statistics object specific for the class implementing this interface
+     * Returns the statistics object providing information about internal state and activity of the implementation.
      *
-     * @return T specific statistics object
+     * @return T the statistics object providing information about internal state and activity of the implementation
      */
     T getStatistics();
 }

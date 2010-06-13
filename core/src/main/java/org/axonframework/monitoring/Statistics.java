@@ -17,12 +17,15 @@
 package org.axonframework.monitoring;
 
 /**
- * Interface to be implemented by all object that represent statistics of a monitored resource
+ * Interface to be implemented by all statistics instances. Statistics can enabled and disabled. When disabled, they may
+ * choose only to record activity partially, or none at all, for performance reasons. When enabled, all information
+ * provided by the statistics instance should be made available.
  *
  * @author Jettro Coenradie
  * @since 0.6
  */
 public interface Statistics {
+
     /**
      * Enable the statistics gathering
      */

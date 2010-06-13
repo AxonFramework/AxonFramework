@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring.jmx.commandhandling;
+package org.axonframework.monitoring.jmx;
 
 import org.axonframework.commandhandling.SimpleCommandBusStatistics;
 import org.axonframework.monitoring.Monitored;
-import org.axonframework.monitoring.jmx.ManagementContext;
+import org.axonframework.monitoring.Statistics;
 
 import java.util.List;
 
@@ -28,38 +28,42 @@ import java.util.List;
  * @author Jettro Coenradie
  * @since 0.6
  */
-public class SimpleCommandBusManager implements SimpleCommandBusManagerMXBean {
+public class SimpleCommandBusMonitor implements SimpleCommandBusMonitorMXBean, Statistics {
+
     private SimpleCommandBusStatistics statistics;
 
     /**
-     * Initialize the monitor manager using the <code>ManagementContext</code> and the <code>SimpleEventBusStatistics</code>
+     * Creates an instance of this monitor for the given <code>commandBus</code>.
      *
-     * @param commandBus Used to obtain the statistics object from
-     * @param context    Used to register the MBean with
+     * @param simpleCommandBus The command bus to monitor
      */
-    public SimpleCommandBusManager(Monitored<SimpleCommandBusStatistics> commandBus, ManagementContext context) {
-        this.statistics = commandBus.getStatistics();
-        context.registerMBean(this, "SimpleCommandBus");
+    public SimpleCommandBusMonitor(Monitored<SimpleCommandBusStatistics> simpleCommandBus) {
+        this.statistics = simpleCommandBus.getStatistics();
     }
 
     @Override
-    public long getAmountOfHandlers() {
-        return statistics.getAmountOfHandlers();
+    public long getCommandHandlerCount() {
+        return statistics.getCommandHandlerCount();
     }
 
     @Override
-    public List<String> getHandlers() {
-        return statistics.getHandlers();
+    public List<String> getHandlerTypes() {
+        return statistics.getHandlerTypes();
     }
 
     @Override
-    public long getAmountOfReceivedCommands() {
-        return statistics.getAmountOfReceivedCommands();
+    public long getReceivedCommandCount() {
+        return statistics.getReceivedCommandCount();
     }
 
     @Override
     public void resetReceivedCommandsCounter() {
-        statistics.resetCommandsReceived();
+        statistics.resetReceivedCommandsCounter();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return statistics.isEnabled();
     }
 
     @Override

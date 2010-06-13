@@ -21,50 +21,30 @@ import org.axonframework.monitoring.Statistics;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * <p>Statistics object to store information about the internals of the <code>SimpleCommandBus</code>.</p>
- * <p>You can request information about the registered handlers but also about the number of received commands.</p>
- * <p>Next to requesting information it is also possible to reset the counters</p>
- * <p>Finally, the statistics are only gathered when explicitly enabled. By default they are switched off.</p>
+ * <p>Statistics object to store information about the internals of the <code>SimpleCommandBus</code>.</p> <p>You can
+ * request information about the registered handlers but also about the number of received commands.</p> <p>Next to
+ * requesting information it is also possible to reset the counters</p> <p>Finally, the statistics are only gathered
+ * when explicitly enabled. By default they are switched off.</p>
  *
  * @author Jettro Coenradie
  */
 public class SimpleCommandBusStatistics implements Statistics {
-    private AtomicBoolean enabled = new AtomicBoolean(true);
-    private AtomicLong amountOfHandlers = new AtomicLong(0);
-    private AtomicLong amountOfReceivedCommands = new AtomicLong(0);
-    private List<String> handlers = new CopyOnWriteArrayList<String>();
 
-    /* construction */
-
-    /**
-     * Initialize the statistics object. By default gathering fine grained statistics is disabled.
-     */
-    public SimpleCommandBusStatistics() {
-        this(true);
-    }
-
-    /**
-     * Initialize the statistics with the provided value. If true fine grained statistics are enabled.
-     *
-     * @param enabled true to enable, false to disable
-     */
-    public SimpleCommandBusStatistics(boolean enabled) {
-        this.enabled.set(enabled);
-    }
-
-    /* getters */
+    private volatile boolean enabled = false;
+    private AtomicLong handlerCounter = new AtomicLong(0);
+    private AtomicLong receivedCommandCounter = new AtomicLong(0);
+    private List<String> handlerTypes = new CopyOnWriteArrayList<String>();
 
     /**
      * Returns the amount of registered handlers
      *
      * @return long representing the amount of registered handlers
      */
-    public long getAmountOfHandlers() {
-        return amountOfHandlers.get();
+    public long getCommandHandlerCount() {
+        return handlerCounter.get();
     }
 
     /**
@@ -72,30 +52,36 @@ public class SimpleCommandBusStatistics implements Statistics {
      *
      * @return long representing the amount of received commands
      */
-    public long getAmountOfReceivedCommands() {
-        return amountOfReceivedCommands.get();
+    public long getReceivedCommandCount() {
+        return receivedCommandCounter.get();
     }
 
     /**
-     * Returns a list with the names of registered handlers
+     * Returns a list with the names of the types of the registered handlers
      *
      * @return List of strings with the names of the registered handlers
      */
-    public List<String> getHandlers() {
-        return Collections.unmodifiableList(handlers);
+    public List<String> getHandlerTypes() {
+        return Collections.unmodifiableList(handlerTypes);
     }
 
-    /* operations */
+    /**
+     * Indicates whether this statistics instance is enabled
+     *
+     * @return <code>true</code> if this statistics instance is enabled, otherwise <code>false</code>.
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
 
     /**
-     * Indicate a new handler with the provided name is registered. Multiple handlers with the same name are
-     * supported.
+     * Indicate a new handler with the provided name is registered. Multiple handlers with the same name are supported.
      *
      * @param name String representing the name of the handler to register
      */
-    public void handlerRegistered(String name) {
-        this.handlers.add(name);
-        this.amountOfHandlers.incrementAndGet();
+    public void reportHandlerRegistered(String name) {
+        this.handlerTypes.add(name);
+        this.handlerCounter.incrementAndGet();
     }
 
     /**
@@ -104,40 +90,40 @@ public class SimpleCommandBusStatistics implements Statistics {
      *
      * @param name String representing the name of the handler to un-register
      */
-    public void handlerUnregistered(String name) {
-        this.handlers.remove(name);
-        this.amountOfHandlers.decrementAndGet();
+    public void recordUnregisteredHandler(String name) {
+        this.handlerTypes.remove(name);
+        this.handlerCounter.decrementAndGet();
     }
 
     /**
      * Indicate a new command is received. The statistics are only gathered if they are enabled.
      */
-    public void newCommandReceived() {
-        if (enabled.get()) {
-            amountOfReceivedCommands.incrementAndGet();
+    public void recordReceivedCommand() {
+        if (enabled) {
+            receivedCommandCounter.incrementAndGet();
         }
     }
 
     /**
-     * Resets the amount of commands received
+     * Resets the received command counter
      */
-    public void resetCommandsReceived() {
-        amountOfReceivedCommands.set(0);
+    public void resetReceivedCommandsCounter() {
+        receivedCommandCounter.set(0);
     }
 
     /**
-     * {@inheritDoc}
+     * Enables this statistics instance
      */
     @Override
     public void enable() {
-        this.enabled.set(true);
+        this.enabled = true;
     }
 
     /**
-     * {@inheritDoc}
+     * Disables this statistics instance
      */
     @Override
     public void disable() {
-        this.enabled.set(false);
+        this.enabled = false;
     }
 }

@@ -20,6 +20,7 @@ import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.AsynchronousEventHandlerWrapper;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventListenerProxy;
 import org.axonframework.eventhandling.EventSequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
@@ -52,12 +53,13 @@ import static org.springframework.core.annotation.AnnotationUtils.findAnnotation
  * @see org.axonframework.eventhandling.AsynchronousEventHandlerWrapper
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, EventListener, TransactionManager {
+public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, EventListenerProxy, TransactionManager {
 
     private final EventListener targetEventListener;
     private final Executor executor;
     private final TransactionManager transactionManager;
     private final EventBus eventBus;
+    private final Object annotatedEventListener;
 
     /**
      * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>. When the adapter
@@ -80,6 +82,7 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
      * @param eventBus               the event bus to register the event listener to
      */
     public AnnotationEventListenerAdapter(Object annotatedEventListener, Executor executor, EventBus eventBus) {
+        this.annotatedEventListener = annotatedEventListener;
         EventListener adapter = new TargetEventListener(new AnnotationEventHandlerInvoker(annotatedEventListener));
         this.transactionManager = createTransactionManagerFor(annotatedEventListener);
         this.executor = executor;
@@ -193,6 +196,11 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
                             + "Is the no-arg constructor accessible?",
                     policyClass.getSimpleName()), e);
         }
+    }
+
+    @Override
+    public Object getTarget() {
+        return annotatedEventListener;
     }
 
     private static final class TargetEventListener implements EventListener {

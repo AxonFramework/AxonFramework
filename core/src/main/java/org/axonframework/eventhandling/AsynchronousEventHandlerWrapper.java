@@ -34,7 +34,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author Allard Buijze
  * @since 0.3
  */
-public class AsynchronousEventHandlerWrapper implements EventListener {
+public class AsynchronousEventHandlerWrapper implements EventListenerProxy {
 
     private static final Logger logger = LoggerFactory.getLogger(AsynchronousEventHandlerWrapper.class);
 
@@ -149,6 +149,11 @@ public class AsynchronousEventHandlerWrapper implements EventListener {
             EventProcessingScheduler.ShutdownCallback shutDownCallback) {
         logger.debug("Initializing new processing scheduler.");
         return new EventProcessingScheduler(eventListener, transactionManager, executor, eventQueue, shutDownCallback);
+    }
+
+    @Override
+    public Object getTarget() {
+        return eventListener;
     }
 
     private final class TransactionCleanUp implements EventProcessingScheduler.ShutdownCallback {

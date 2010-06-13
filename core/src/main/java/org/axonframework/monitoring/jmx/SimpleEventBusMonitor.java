@@ -14,48 +14,46 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring.jmx.eventhandling;
+package org.axonframework.monitoring.jmx;
 
 import org.axonframework.eventhandling.SimpleEventBusStatistics;
 import org.axonframework.monitoring.Monitored;
-import org.axonframework.monitoring.jmx.ManagementContext;
+import org.axonframework.monitoring.Statistics;
 
 import java.util.List;
 
 /**
- * <p>JMX implementation to manage the monitor of the SimpleEventBus.</p>
+ * JMX implementation to manage the monitor of the SimpleEventBus.
  *
  * @author Jettro Coenradie
  * @since 0.6
  */
-public class SimpleEventBusManager implements SimpleEventBusManagerMXBean {
+public class SimpleEventBusMonitor implements SimpleEventBusMonitorMXBean, Statistics {
+
     private SimpleEventBusStatistics statistics;
 
     /**
-     * Initialize the monitor manager using the <code>ManagementContext</code> and the <code>SimpleEventBusStatistics</code>
+     * Creates an instance of the monitor for the given <code>simpleEventBus</code>.
      *
      * @param simpleEventBus Used to obtain the statistics object from
-     * @param context        Used to register the MBean with
      */
-    public SimpleEventBusManager(Monitored<SimpleEventBusStatistics> simpleEventBus, ManagementContext context) {
+    public SimpleEventBusMonitor(Monitored<SimpleEventBusStatistics> simpleEventBus) {
         this.statistics = simpleEventBus.getStatistics();
-
-        context.registerMBean(this, "SimpleEventBus");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public long getAmountOfListeners() {
-        return statistics.getAmountOfListeners();
+    public long getListenerCount() {
+        return statistics.getListenerCount();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<String> getListeners() {
+    public List<String> getListenerTypes() {
         return statistics.listeners();
     }
 
@@ -63,16 +61,21 @@ public class SimpleEventBusManager implements SimpleEventBusManagerMXBean {
      * {@inheritDoc}
      */
     @Override
-    public long getAmountOfReceivedEvents() {
-        return statistics.getAmountOfReceivedEvents();
+    public long getReceivedEventsCount() {
+        return statistics.getPublishedEventCounter();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void resetreceivedEvents() {
-        statistics.resetEventsReceived();
+    public void resetReceivedEventsCount() {
+        statistics.resetReceivedEventCount();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return statistics.isEnabled();
     }
 
     /**

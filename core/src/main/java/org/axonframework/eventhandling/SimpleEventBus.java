@@ -40,18 +40,18 @@ public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatist
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
     private volatile SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
 
-
     /**
      * {@inheritDoc}
      */
     @Override
     public void unsubscribe(EventListener eventListener) {
         if (listeners.remove(eventListener)) {
-            statistics.listenerUnregistered(eventListener.getClass().getSimpleName());
+            Object listener = getActualListenerFrom(eventListener);
+            statistics.recordUnregisteredListener(listener.getClass().getSimpleName());
             logger.debug("EventListener {} unsubscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener {} not removed. It was already unsubscribed",
-                    eventListener.getClass().getSimpleName());
+                        eventListener.getClass().getSimpleName());
         }
     }
 
@@ -61,12 +61,21 @@ public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatist
     @Override
     public void subscribe(EventListener eventListener) {
         if (listeners.add(eventListener)) {
-            statistics.listenerRegistered(eventListener.getClass().getSimpleName());
+            Object listener = getActualListenerFrom(eventListener);
+            statistics.listenerRegistered(listener.getClass().getSimpleName());
             logger.debug("EventListener [{}] subscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener [{}] not added. It was already subscribed",
-                    eventListener.getClass().getSimpleName());
+                        eventListener.getClass().getSimpleName());
         }
+    }
+
+    private Object getActualListenerFrom(EventListener eventListener) {
+        Object listener = eventListener;
+        while (listener instanceof EventListenerProxy) {
+            listener = ((EventListenerProxy) listener).getTarget();
+        }
+        return listener;
     }
 
     /**
@@ -74,12 +83,12 @@ public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatist
      */
     @Override
     public void publish(Event event) {
-        statistics.newEventReceived();
+        statistics.recordPublishedEvent();
 
         for (EventListener listener : listeners) {
             logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                    event.getClass().getSimpleName(),
-                    listener.getClass().getSimpleName());
+                         event.getClass().getSimpleName(),
+                         listener.getClass().getSimpleName());
             listener.handle(event);
         }
     }

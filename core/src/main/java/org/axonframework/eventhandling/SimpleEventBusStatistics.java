@@ -21,52 +21,32 @@ import org.axonframework.monitoring.Statistics;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * <p>Statistics object to store information about the internal of the <code>SimpleEventBus</code>.</p>
- * <p>You can request information about the registered listeners but also about the number of received events.</p>
- * <p>Next to requesting information it is also possible to reset the counters</p>
- * <p>Finally, the statistics are only gathered when explicitly enabled. By default they are switched off.</p>
+ * <p>Statistics object to store information about the internal of the <code>SimpleEventBus</code>.</p> <p>You can
+ * request information about the registered listeners but also about the number of received events.</p> <p>Next to
+ * requesting information it is also possible to reset the counters</p> <p>Finally, the statistics are only gathered
+ * when explicitly enabled. By default they are switched off.</p>
  *
  * @author Jettro Coenradie
  * @see SimpleEventBus
  * @since 0.6
  */
 public class SimpleEventBusStatistics implements Statistics {
-    private AtomicBoolean enabled = new AtomicBoolean(false);
-    private AtomicLong amountOfListeners = new AtomicLong(0);
-    private AtomicLong amountOfReceivedEvents = new AtomicLong(0);
+
+    private volatile boolean enabled = false;
+    private AtomicLong listenerCount = new AtomicLong(0);
+    private AtomicLong publishedEventCounter = new AtomicLong(0);
     private List<String> listeners = new CopyOnWriteArrayList<String>();
-
-    /* construction */
-
-    /**
-     * Initialize the statistics object. By default gathering fine grained statistics is disabled.
-     */
-    public SimpleEventBusStatistics() {
-        this(false);
-    }
-
-    /**
-     * Initialize the statistics with the provided value. If true fine grained statistics are enabled.
-     *
-     * @param enabled true to enable, false to disable
-     */
-    public SimpleEventBusStatistics(boolean enabled) {
-        this.enabled.set(enabled);
-    }
-
-    /* getters */
 
     /**
      * Returns the amount of registered listeners
      *
      * @return long representing the amount of listeners registered
      */
-    public long getAmountOfListeners() {
-        return amountOfListeners.get();
+    public long getListenerCount() {
+        return listenerCount.get();
     }
 
     /**
@@ -83,11 +63,9 @@ public class SimpleEventBusStatistics implements Statistics {
      *
      * @return long representing the amount events received
      */
-    public long getAmountOfReceivedEvents() {
-        return amountOfReceivedEvents.get();
+    public long getPublishedEventCounter() {
+        return publishedEventCounter.get();
     }
-
-    /* operations */
 
     /**
      * Indicate that a new listener is registered by providing it's name. It is possible to store multiple listeners
@@ -97,7 +75,7 @@ public class SimpleEventBusStatistics implements Statistics {
      */
     public void listenerRegistered(String name) {
         this.listeners.add(name);
-        this.amountOfListeners.incrementAndGet();
+        this.listenerCount.incrementAndGet();
     }
 
     /**
@@ -106,40 +84,49 @@ public class SimpleEventBusStatistics implements Statistics {
      *
      * @param name String representing the name of the listener to un-register.
      */
-    public void listenerUnregistered(String name) {
+    public void recordUnregisteredListener(String name) {
         this.listeners.remove(name);
-        this.amountOfListeners.decrementAndGet();
+        this.listenerCount.decrementAndGet();
     }
 
     /**
      * Indicate that a new event is received. Statistics are only gathered if enabled
      */
-    public void newEventReceived() {
-        if (enabled.get()) {
-            amountOfReceivedEvents.incrementAndGet();
+    public void recordPublishedEvent() {
+        if (enabled) {
+            publishedEventCounter.incrementAndGet();
         }
     }
 
     /**
      * Reset the amount of events that was received
      */
-    public void resetEventsReceived() {
-        amountOfReceivedEvents.set(0);
+    public void resetReceivedEventCount() {
+        publishedEventCounter.set(0);
     }
 
     /**
-     * {@inheritDoc}
+     * Indicates whether this statistics instance is enabled
+     *
+     * @return <code>true</code> if this statistics instance is enabled, otherwise <code>false</code>.
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Enables statistics registration
      */
     @Override
     public void enable() {
-        this.enabled.set(true);
+        this.enabled = true;
     }
 
     /**
-     * {@inheritDoc}
+     * Disables statistics registration
      */
     @Override
     public void disable() {
-        this.enabled.set(false);
+        this.enabled = false;
     }
 }
