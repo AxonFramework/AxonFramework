@@ -73,6 +73,7 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
                 break;
             case NO_LOCKING:
                 lockManager = new NullLockManager();
+                break;
             default:
                 throw new IllegalArgumentException(
                         String.format("This repository implementation does not support the [%s] locking strategy",
