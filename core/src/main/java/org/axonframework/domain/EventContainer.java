@@ -18,6 +18,7 @@ package org.axonframework.domain;
 
 import org.axonframework.util.Assert;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +32,9 @@ import java.util.UUID;
  * @see org.axonframework.domain.AbstractAggregateRoot
  * @since 0.1
  */
-class EventContainer {
+class EventContainer implements Serializable {
+
+    private static final long serialVersionUID = -3981639335939587822L;
 
     private final List<DomainEvent> events = new LinkedList<DomainEvent>();
     private final UUID aggregateIdentifier;
