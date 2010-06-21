@@ -127,10 +127,19 @@
                 aggregates. Typically, event stores are capable of storing events from multiple
                 types of aggregates, but it is not a requirement. </para>
             <para>Axon provides two implementations of event stores, both are capable of storing all
-                domain events (those that extend the <code>DomainEvent</code> class). These event
-                stores use an <code>EventSerializer</code> to serialize and deserialize the event.
-                By default, Axon provides an implementation of the Event Serializer that serializes
-                events to XML: the <code>XStreamEventSerializer</code>. </para>
+            domain events (those that extend the <code>DomainEvent</code> class). These event stores
+            use an <code>EventSerializer</code> to serialize and deserialize the event. By default,
+            Axon provides an implementation of the Event Serializer that serializes events to XML:
+            the <code>XStreamEventSerializer</code>.<note>
+                <para>Note that although the <code>XStreamEventSerializer</code> is highly
+                    configurable, it does pose a requirement on the objects to serialize. You
+                    objects either need to implement the <code>Serializable</code> interface, or
+                    have an accessible default constructor. If you only expect to deploy to a Sun
+                    JVM, you do not to do any of this. In that case, XStream will use some Sun
+                    proprietary logic to create object instances. However, not making them
+                    Serializable or providing a default constructor will severly reduce protability
+                    of your application.</para>
+            </note></para>
             <simplesect>
                 <title><code>FileSystemEventStore</code></title>
                 <para>The <code>FileSystemEventStore</code> stores the events in a file on the file
