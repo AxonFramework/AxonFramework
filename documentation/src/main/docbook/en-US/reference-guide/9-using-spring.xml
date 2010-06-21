@@ -175,12 +175,49 @@
             command bus, you need to declare the annotation-driven transaction-manager as shown in
             the sample below.</para>
         <para>
-            <programlisting>&lt;bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
+            <programlisting language="xml">&lt;bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
 
 &lt;!-- enable the configuration of transactional behavior based on annotations -->
 &lt;tx:annotation-driven transaction-manager="txManager"/>
 
 &lt;!-- declare transaction manager, data source, EntityManagerFactoryBean, etc --></programlisting>
         </para>
+    </sect1>
+    <sect1>
+        <title>Configuring Snapshotting</title>
+        <para>Configuring snapshotting using Spring is not complex, but does require a number of
+            beans to be configured in your application context.</para>
+        <para>The <code>EventCountSnapshotterTrigger</code> needs to be configured as a proxy for
+            your event store. That means all repositories should load and save aggregate from the
+                <code>EventCountSnapshotterTrigger</code>, instead of the acutal event store.</para>
+        <programlisting language="xml">&lt;bean id="triggeringEventStore" class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
+    &lt;property name="eventStore" ref="eventStore"/>
+    &lt;property name="snapshotter" ref="snapshotter"/>
+    &lt;property name="triggerConfiguration">
+        &lt;props>
+            &lt;prop key="Contact">20&lt;/prop>
+        &lt;/props>
+    &lt;/property>
+&lt;/bean></programlisting>
+        <para>The sample above configures an EventCountSnapshotter trigger that will trigger
+            Snapshot creation for a Contact when 20 or more events are required to reload its
+            current state. Any other aggregate type will revert to the default, which is 50 unless
+            defined otherwise.</para>
+        <para>The snapshotter is configured as follows:</para>
+        <programlisting language="xml">&lt;bean id="snapshotter" class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
+    &lt;property name="eventStore" ref="eventStore"/>
+    &lt;property name="executor" ref="taskExecutor"/>
+&lt;/bean>
+
+&lt;bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+    &lt;property name="corePoolSize" value="2"/>
+    &lt;property name="maxPoolSize" value="5"/>
+    &lt;property name="waitForTasksToCompleteOnShutdown" value="true"/>
+&lt;/bean></programlisting>
+        <para>In this sample, a <code>SpringAggregateSnapshotter</code> is used. This snapshotter
+            will automatically detect any <code>PlatformTransactionManager</code> in your
+            application context, as well as <code>AggregateFactory</code> instances, which all
+            repositories typically are. That means you only need very little configuration to use a
+                <code>Snapshotter</code> within Spring.</para>
     </sect1>
 </chapter>
