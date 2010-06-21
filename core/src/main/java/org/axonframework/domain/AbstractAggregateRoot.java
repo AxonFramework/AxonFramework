@@ -100,6 +100,7 @@ public abstract class AbstractAggregateRoot implements VersionedAggregateRoot {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Long getLastCommittedEventSequenceNumber() {
         return lastCommitted;
     }
