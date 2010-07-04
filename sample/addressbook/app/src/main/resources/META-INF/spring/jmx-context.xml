@@ -19,13 +19,8 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <bean id="managementContext" class="org.axonframework.monitoring.jmx.JmxMonitoringBeanPostProcessor"/>
-
-    <bean id="simpleEventBusManager" class="org.axonframework.monitoring.jmx.SimpleEventBusMonitor">
-        <constructor-arg ref="eventBus"/>
+    <bean id="managementContext" class="org.axonframework.monitoring.jmx.JmxMonitorHolder">
+        <property name="enableMonitors" value="true"/>
     </bean>
 
-    <bean id="simpleCommandBusManager" class="org.axonframework.monitoring.jmx.SimpleCommandBusMonitor">
-        <constructor-arg ref="commandBus"/>
-    </bean>
 </beans>

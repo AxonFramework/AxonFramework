@@ -17,10 +17,13 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.Event;
+import org.axonframework.eventhandling.monitoring.SimpleEventBusStatistics;
 import org.axonframework.monitoring.Monitored;
+import org.axonframework.monitoring.jmx.JmxMonitorHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -39,6 +42,12 @@ public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatist
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
     private volatile SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
+
+    @PostConstruct
+    public void afterInitialization() {
+        JmxMonitorHolder.registerMonitor("SimpleEventBusMonitor",statistics);
+    }
+
 
     /**
      * {@inheritDoc}

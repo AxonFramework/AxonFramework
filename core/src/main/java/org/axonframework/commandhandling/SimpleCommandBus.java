@@ -16,8 +16,11 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.monitoring.SimpleCommandBusStatistics;
 import org.axonframework.monitoring.Monitored;
+import org.axonframework.monitoring.jmx.JmxMonitorHolder;
 
+import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,11 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private volatile InterceptorChain interceptorChain = new InterceptorChain(Collections.<CommandHandlerInterceptor>emptyList());
     private volatile SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
+
+    @PostConstruct
+    public void afterInitialization() {
+        JmxMonitorHolder.registerMonitor("SimpleCommandBusMonitor",statistics);
+    }
 
     @SuppressWarnings({"unchecked"})
     @Override

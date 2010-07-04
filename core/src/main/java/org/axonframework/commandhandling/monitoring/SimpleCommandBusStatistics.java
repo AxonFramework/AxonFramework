@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.commandhandling.monitoring;
 
 import org.axonframework.monitoring.Statistics;
 
@@ -31,13 +31,14 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Jettro Coenradie
  */
-public class SimpleCommandBusStatistics implements Statistics {
+public class SimpleCommandBusStatistics implements Statistics, SimpleCommandBusStatisticsMXBean {
 
     private volatile boolean enabled = false;
     private AtomicLong handlerCounter = new AtomicLong(0);
     private AtomicLong receivedCommandCounter = new AtomicLong(0);
     private List<String> handlerTypes = new CopyOnWriteArrayList<String>();
 
+    /*------ jmx enabled methods -----*/
     /**
      * Returns the amount of registered handlers
      *
@@ -75,6 +76,31 @@ public class SimpleCommandBusStatistics implements Statistics {
     }
 
     /**
+     * Resets the received command counter
+     */
+    public void resetReceivedCommandsCounter() {
+        receivedCommandCounter.set(0);
+    }
+
+
+    /**
+     * Disables this statistics instance
+     */
+    @Override
+    public void disable() {
+        this.enabled = false;
+    }
+
+    /**
+     * Enables this statistics instance
+     */
+    @Override
+    public void enable() {
+        this.enabled = true;
+    }
+    /*------ end of jmx enabled methods -----*/
+
+    /**
      * Indicate a new handler with the provided name is registered. Multiple handlers with the same name are supported.
      *
      * @param name String representing the name of the handler to register
@@ -104,26 +130,4 @@ public class SimpleCommandBusStatistics implements Statistics {
         }
     }
 
-    /**
-     * Resets the received command counter
-     */
-    public void resetReceivedCommandsCounter() {
-        receivedCommandCounter.set(0);
-    }
-
-    /**
-     * Enables this statistics instance
-     */
-    @Override
-    public void enable() {
-        this.enabled = true;
-    }
-
-    /**
-     * Disables this statistics instance
-     */
-    @Override
-    public void disable() {
-        this.enabled = false;
-    }
 }

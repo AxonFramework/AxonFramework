@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring.jmx;
+package org.axonframework.commandhandling.monitoring;
 
 import org.axonframework.monitoring.Monitor;
 
@@ -29,8 +29,7 @@ import java.util.List;
  * @author Jettro Coenradie
  * @since 0.6
  */
-public interface SimpleCommandBusMonitorMXBean extends Monitor {
-
+public interface SimpleCommandBusStatisticsMXBean extends Monitor {
     /**
      * Returns the amount of registered handlers
      *
