@@ -125,6 +125,7 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
     /**
      * Unsubscribe the EventListener with the configured EventBus.
      */
+    @Override
     @PreDestroy
     public void unsubscribe() {
         eventBus.unsubscribe(this);
@@ -133,6 +134,7 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
     /**
      * Subscribe the EventListener with the configured EventBus.
      */
+    @Override
     @PostConstruct
     public void subscribe() {
         eventBus.subscribe(this);
