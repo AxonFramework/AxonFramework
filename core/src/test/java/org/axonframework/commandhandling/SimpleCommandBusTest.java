@@ -112,15 +112,19 @@ public class SimpleCommandBusTest {
         RuntimeException someException = new RuntimeException("Mocking");
         doThrow(someException).when(mockInterceptor2).afterCommandHandling(isA(CommandContext.class),
                                                                            isA(CommandHandler.class));
-        Object actualResult = testSubject.dispatch("Hi there!");
-
+        try {
+            testSubject.dispatch("Hi there!");
+            fail("Expected exception to be propagated");
+        }
+        catch (RuntimeException e) {
+            assertEquals("Mocking", e.getMessage());
+        }
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2);
         inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
         inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
         inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
         inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
 
-        assertEquals("Hi there!", actualResult);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})

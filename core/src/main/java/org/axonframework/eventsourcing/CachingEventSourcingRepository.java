@@ -18,6 +18,8 @@ package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
 import org.axonframework.repository.LockingStrategy;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.UUID;
 
@@ -58,7 +60,7 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
      * @param aggregate the aggregate to save
      */
     @Override
-    public void doSave(T aggregate) {
+    public void doSave(final T aggregate) {
         cache.put(aggregate.getIdentifier(), aggregate);
         try {
             super.doSave(aggregate);
@@ -81,11 +83,12 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
     @SuppressWarnings({"unchecked"})
     @Override
     public T doLoad(UUID aggregateIdentifier) {
-        T existingAggregate = (T) cache.get(aggregateIdentifier);
-        if (existingAggregate == null) {
-            return super.doLoad(aggregateIdentifier);
+        T aggregate = (T) cache.get(aggregateIdentifier);
+        if (aggregate == null) {
+            aggregate = super.doLoad(aggregateIdentifier);
         }
-        return existingAggregate;
+        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
+        return aggregate;
     }
 
     /**
@@ -97,4 +100,17 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
         this.cache = cache;
     }
 
+    private class CacheClearingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
+
+        private UUID identifier;
+
+        public CacheClearingUnitOfWorkListener(UUID identifier) {
+            this.identifier = identifier;
+        }
+
+        @Override
+        public void onRollback() {
+            cache.remove(identifier);
+        }
+    }
 }

@@ -79,6 +79,7 @@ class InterceptorChain {
         }
         catch (RuntimeException ex) {
             logger.error("An interceptor threw an exception in the afterCommandHandling method:", ex);
+            context.markFailedInterceptorExecution(ex);
         }
     }
 

@@ -17,8 +17,7 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandContext;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -32,42 +31,28 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * @see org.springframework.transaction.PlatformTransactionManager
  * @since 0.5
  */
-public class SpringTransactionalInterceptor implements CommandHandlerInterceptor {
+public class SpringTransactionalInterceptor extends TransactionalUnitOfWorkInterceptor {
 
     private static final String TRANSACTION_ATTRIBUTE = "SpringTransactionalInterceptor.Transaction";
 
     private PlatformTransactionManager transactionManager;
 
-    /**
-     * Starts a transaction and registers it with the CommandContext.
-     *
-     * @param context The context in which the command is executed. It contains both the command and any information
-     *                that previous CommandHandlerInterceptors may have added to it.
-     * @param handler The handler that will handle the command.
-     */
     @Override
-    public void beforeCommandHandling(CommandContext context, CommandHandler handler) {
+    protected void startTransaction(UnitOfWork unitOfWork, CommandContext context) {
         TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
         context.setProperty(TRANSACTION_ATTRIBUTE, transaction);
     }
 
-    /**
-     * Will commit the transaction upon successful execution of the command handler. If an exception occurs, the
-     * transaction will be rolled back.
-     *
-     * @param context The context in which the command is executed. It contains the command, the result of command
-     *                handling, if any, and information that previous CommandHandlerInterceptors may have added to it.
-     * @param handler The handler that has handled the command.
-     */
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    public void afterCommandHandling(CommandContext context, CommandHandler handler) {
+    protected void commitTransaction(UnitOfWork unitOfWork, CommandContext context) {
         TransactionStatus transaction = (TransactionStatus) context.getProperty(TRANSACTION_ATTRIBUTE);
-        if (context.isSuccessful()) {
-            transactionManager.commit(transaction);
-        } else {
-            transactionManager.rollback(transaction);
-        }
+        transactionManager.commit(transaction);
+    }
+
+    @Override
+    protected void rollbackTransaction(UnitOfWork unitOfWork, CommandContext context) {
+        TransactionStatus transaction = (TransactionStatus) context.getProperty(TRANSACTION_ATTRIBUTE);
+        transactionManager.rollback(transaction);
     }
 
     /**

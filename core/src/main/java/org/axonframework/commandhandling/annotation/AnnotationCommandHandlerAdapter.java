@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.util.AbstractHandlerInvoker;
 import org.axonframework.util.AnnotatedHandlerAdapter;
 import org.springframework.util.ReflectionUtils;
@@ -69,7 +70,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     @Override
     public Object handle(Object command) {
         try {
-            return invokeHandlerMethod(command);
+            return invokeHandlerMethod(command, CurrentUnitOfWork.get());
         } catch (IllegalAccessException e) {
             throw new UnsupportedOperationException(String.format(
                     "An error occurred when handling a command of type [%s]",

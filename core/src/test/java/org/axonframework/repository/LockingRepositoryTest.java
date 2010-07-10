@@ -19,12 +19,9 @@ package org.axonframework.repository;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
 import org.mockito.*;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -41,7 +38,7 @@ public class LockingRepositoryTest {
     @Before
     public void setUp() {
         mockEventBus = mock(EventBus.class);
-        lockManager = spy(new PessimisticLockManager());
+        lockManager = spy(new OptimisticLockManager());
         testSubject = spy(new InMemoryLockingRepository(lockManager));
         testSubject.setEventBus(mockEventBus);
     }
@@ -52,6 +49,7 @@ public class LockingRepositoryTest {
         aggregate.doSomething();
         testSubject.save(aggregate);
         verifyZeroInteractions(lockManager);
+        CurrentUnitOfWork.get().commit();
         verify(mockEventBus).publish(isA(DomainEvent.class));
     }
 
@@ -60,17 +58,18 @@ public class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.save(aggregate);
-        reset(mockEventBus);
 
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier());
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
         loadedAggregate.doSomething();
         testSubject.save(loadedAggregate);
-        InOrder inOrder = inOrder(lockManager, mockEventBus, testSubject);
+
+        InOrder inOrder = inOrder(lockManager, testSubject);
         inOrder.verify(lockManager).validateLock(loadedAggregate);
-        inOrder.verify(testSubject).doSave(loadedAggregate);
-        inOrder.verify(mockEventBus).publish(isA(DomainEvent.class));
+        inOrder.verify(testSubject).doSave(eq(loadedAggregate));
+        CurrentUnitOfWork.get().commit();
+        verify(mockEventBus, times(2)).publish(any(DomainEvent.class));
         inOrder.verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
     }
 
@@ -80,7 +79,6 @@ public class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.save(aggregate);
-        reset(mockEventBus);
 
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier());
         verify(lockManager).obtainLock(aggregate.getIdentifier());
@@ -94,18 +92,14 @@ public class LockingRepositoryTest {
         catch (RuntimeException e) {
             assertEquals("Mock Exception", e.getMessage());
         }
+        CurrentUnitOfWork.get().rollback();
 
         // make sure the lock is released
         verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
 
-        // but we may reattempt
-        reset(lockManager);
-        doCallRealMethod().when(testSubject).doSave(isA(StubAggregate.class));
-        testSubject.save(loadedAggregate);
-        verify(lockManager).validateLock(aggregate);
-        verify(lockManager).releaseLock(aggregate.getIdentifier());
     }
 
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() {
         lockManager = spy(new PessimisticLockManager());
@@ -113,25 +107,51 @@ public class LockingRepositoryTest {
         testSubject.setEventBus(mockEventBus);
 
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
-        testLoadAndStoreAggregate_LockReleasedOnException();
+        StubAggregate aggregate = new StubAggregate();
+        aggregate.doSomething();
+        testSubject.save(aggregate);
+
+        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier());
+        verify(lockManager).obtainLock(aggregate.getIdentifier());
+
+        doThrow(new RuntimeException("Mock Exception")).when(testSubject).doSave(isA(StubAggregate.class));
+
+        try {
+            testSubject.save(loadedAggregate);
+            fail("Expected exception to be thrown");
+        }
+        catch (RuntimeException e) {
+            assertEquals("Mock Exception", e.getMessage());
+        }
+        CurrentUnitOfWork.get().rollback();
+
+        // make sure the lock is released
+        verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
     }
 
-    private static class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
+    @Test
+    public void testSaveAggregate_RefusedDueToLackingLock() {
+        lockManager = spy(new PessimisticLockManager());
+        testSubject = spy(new InMemoryLockingRepository(lockManager));
+        testSubject.setEventBus(mockEventBus);
 
-        private Map<UUID, StubAggregate> store = new HashMap<UUID, StubAggregate>();
+        StubAggregate aggregate = new StubAggregate();
+        aggregate.doSomething();
+        testSubject.save(aggregate);
+        CurrentUnitOfWork.get().commit();
+        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier());
+        loadedAggregate.doSomething();
 
-        private InMemoryLockingRepository(LockManager lockManager) {
-            super(lockManager);
-        }
-
-        @Override
-        protected void doSave(StubAggregate aggregate) {
-            store.put(aggregate.getIdentifier(), aggregate);
-        }
-
-        @Override
-        protected StubAggregate doLoad(UUID aggregateIdentifier) {
-            return store.get(aggregateIdentifier);
+        testSubject.save(aggregate);
+        CurrentUnitOfWork.get().commit();
+        loadedAggregate.doSomething();
+        try {
+            testSubject.save(loadedAggregate);
+            CurrentUnitOfWork.get().commit();
+            fail("This should have failed due to lacking lock");
+        } catch (ConcurrencyException e) {
+            // that's ok
         }
     }
+
 }

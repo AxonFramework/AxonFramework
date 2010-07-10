@@ -17,6 +17,8 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.VersionedAggregateRoot;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,23 +105,21 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
      * @throws ConcurrencyException when another thread was first in saving the aggregate.
      */
     @Override
-    public void save(T aggregate) {
+    public void save(final T aggregate) {
         // make sure no events were previously committed
-        boolean isNewAggregate = (aggregate.getLastCommittedEventSequenceNumber() == null);
+        final boolean isNewAggregate = (aggregate.getLastCommittedEventSequenceNumber() == null);
         if (!isNewAggregate && !lockManager.validateLock(aggregate)) {
             throw new ConcurrencyException(String.format(
                     "The aggregate of type [%s] with identifier [%s] could not be "
-                            + "saved due to concurrent access to the repository",
+                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
+                            + "the current thread had released its lock earlier on.",
                     aggregate.getClass().getSimpleName(),
                     aggregate.getIdentifier()));
         }
         try {
             super.save(aggregate);
-        }
-        finally {
-            if (!isNewAggregate) {
-                lockManager.releaseLock(aggregate.getIdentifier());
-            }
+        } finally {
+            CurrentUnitOfWork.get().reportAggregateSaved(aggregate);
         }
     }
 
@@ -134,7 +134,16 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
     public T load(UUID aggregateIdentifier) {
         lockManager.obtainLock(aggregateIdentifier);
         try {
-            return super.load(aggregateIdentifier);
+            final T aggregate = super.load(aggregateIdentifier);
+            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
+                @Override
+                public void onCommitOrRollback() {
+                    if (lockManager.validateLock(aggregate)) {
+                        lockManager.releaseLock(aggregate.getIdentifier());
+                    }
+                }
+            });
+            return aggregate;
         } catch (RuntimeException ex) {
             logger.warn("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregateIdentifier);

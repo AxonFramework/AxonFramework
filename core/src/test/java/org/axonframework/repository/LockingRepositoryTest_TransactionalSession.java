@@ -16,23 +16,23 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.commandhandling.interceptors.TransactionalUnitOfWork;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.junit.*;
+
 /**
- * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying the
- * same aggregate.
- *
  * @author Allard Buijze
- * @since 0.3
  */
-public class ConcurrencyException extends RuntimeException {
+public class LockingRepositoryTest_TransactionalSession extends LockingRepositoryTest {
 
-    private static final long serialVersionUID = -739879545165860129L;
-
-    /**
-     * Initialize a ConcurrencyException with the given <code>message</code>
-     *
-     * @param message The message describing the cause of the exception
-     */
-    public ConcurrencyException(String message) {
-        super(message);
+    @Before
+    public void startSession() {
+        CurrentUnitOfWork.set(new TransactionalUnitOfWork());
     }
+
+    @After
+    public void tearDown() {
+        CurrentUnitOfWork.clear();
+    }
+
 }

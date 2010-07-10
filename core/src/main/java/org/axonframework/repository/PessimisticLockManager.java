@@ -40,17 +40,9 @@ class PessimisticLockManager implements LockManager {
     @Override
     public boolean validateLock(VersionedAggregateRoot aggregate) {
         UUID aggregateIdentifier = aggregate.getIdentifier();
-        boolean currentThreadHoldsLock = isLockAvailableFor(aggregateIdentifier)
-                && lockFor(aggregateIdentifier).isHeldByCurrentThread();
-        boolean lockIsAvailable = !isLockAvailableFor(aggregateIdentifier) || !lockFor(aggregateIdentifier).isLocked();
 
-        if (!currentThreadHoldsLock && lockIsAvailable) {
-            // if the thread lost the lock due to an exception, it could get it back, if it's lucky.
-            createLockIfAbsent(aggregateIdentifier);
-            return lockFor(aggregateIdentifier).tryLock();
-        } else {
-            return currentThreadHoldsLock;
-        }
+        return isLockAvailableFor(aggregateIdentifier)
+                && lockFor(aggregateIdentifier).isHeldByCurrentThread();
     }
 
     /**
@@ -124,14 +116,6 @@ class PessimisticLockManager implements LockManager {
             }
             lock.lock();
             return true;
-        }
-
-        private synchronized boolean tryLock() {
-            return !isClosed && lock.tryLock();
-        }
-
-        private boolean isLocked() {
-            return lock.isLocked();
         }
 
         private synchronized void disposeIfUnused(UUID aggregateIdentifier) {

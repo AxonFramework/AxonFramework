@@ -18,7 +18,9 @@ package org.axonframework.repository;
 
 import org.axonframework.domain.VersionedAggregateRoot;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -76,7 +78,7 @@ class OptimisticLockManager implements LockManager {
     private final class OptimisticLock {
 
         private Long versionNumber;
-        private int lockCount = 0;
+        private Map<Thread, Integer> threadsHoldingLock = new WeakHashMap<Thread, Integer>();
         private boolean closed = false;
 
         private OptimisticLock() {
@@ -96,13 +98,22 @@ class OptimisticLockManager implements LockManager {
             if (closed) {
                 return false;
             }
-            lockCount++;
+            Integer lockCount = threadsHoldingLock.get(Thread.currentThread());
+            if (lockCount == null) {
+                lockCount = 0;
+            }
+            threadsHoldingLock.put(Thread.currentThread(), lockCount + 1);
             return true;
         }
 
         private synchronized void unlock(UUID aggregateIdentifier) {
-            lockCount--;
-            if (lockCount == 0) {
+            Integer lockCount = threadsHoldingLock.get(Thread.currentThread());
+            if (lockCount == null || lockCount == 1) {
+                threadsHoldingLock.remove(Thread.currentThread());
+            } else {
+                threadsHoldingLock.put(Thread.currentThread(), lockCount - 1);
+            }
+            if (threadsHoldingLock.isEmpty()) {
                 closed = true;
                 locks.remove(aggregateIdentifier, this);
             }

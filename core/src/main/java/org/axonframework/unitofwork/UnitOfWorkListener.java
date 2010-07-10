@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
+package org.axonframework.unitofwork;
 
 /**
- * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying the
- * same aggregate.
+ * Interface describing a listener that is notified of state changes in the UnitOfWork it has been registered with.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 0.6
  */
-public class ConcurrencyException extends RuntimeException {
-
-    private static final long serialVersionUID = -739879545165860129L;
+public interface UnitOfWorkListener {
 
     /**
-     * Initialize a ConcurrencyException with the given <code>message</code>
+     * Invoked when the UnitOfWork is committed. When processing of this method causes an exception, a UnitOfWork may
+     * choose to call {@link #onRollback()} consecutively.
      *
-     * @param message The message describing the cause of the exception
+     * @see UnitOfWork#commit()
      */
-    public ConcurrencyException(String message) {
-        super(message);
-    }
+    void afterCommit();
+
+    /**
+     * Invoked when the UnitOfWork is rolled back. The UnitOfWork may choose to invoke this method when committing the
+     * UnitOfWork failed, too.
+     *
+     * @see UnitOfWork#rollback()
+     */
+    void onRollback();
 }

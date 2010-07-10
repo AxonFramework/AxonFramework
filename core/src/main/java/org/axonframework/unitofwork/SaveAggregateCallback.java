@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
+package org.axonframework.unitofwork;
+
+import org.axonframework.domain.AggregateRoot;
 
 /**
- * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying the
- * same aggregate.
+ * Callback used by UnitOfWork instances to be invoked when the UnitOfWork wishes to store an aggregate. This callback
+ * abstracts the actual storage mechanism away from the UnitOfWork itself.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 0.6
  */
-public class ConcurrencyException extends RuntimeException {
-
-    private static final long serialVersionUID = -739879545165860129L;
+public interface SaveAggregateCallback<T extends AggregateRoot> {
 
     /**
-     * Initialize a ConcurrencyException with the given <code>message</code>
+     * Invoked when the UnitOfWork wishes to store an aggregate
      *
-     * @param message The message describing the cause of the exception
+     * @param aggregate The aggregate to store
      */
-    public ConcurrencyException(String message) {
-        super(message);
-    }
+    void save(T aggregate);
+
 }

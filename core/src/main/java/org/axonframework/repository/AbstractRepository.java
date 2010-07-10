@@ -20,6 +20,8 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
 
     private EventBus eventBus;
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
 
     /**
      * Saves the given aggregate and publishes all uncommitted events to the EventBus.
@@ -65,7 +68,9 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      */
     @Override
     public T load(UUID aggregateIdentifier) {
-        return doLoad(aggregateIdentifier);
+        T aggregate = doLoad(aggregateIdentifier);
+        CurrentUnitOfWork.get().registerAggregate(aggregate, saveAggregateCallback);
+        return aggregate;
     }
 
     /**
@@ -90,7 +95,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
         while (uncommittedEvents.hasNext()) {
             DomainEvent event = uncommittedEvents.next();
             logger.debug("Publishing event [{}] to the EventBus", event.getClass().getSimpleName());
-            eventBus.publish(event);
+            CurrentUnitOfWork.get().publishEvent(event, eventBus);
         }
         aggregate.commitEvents();
     }
@@ -105,5 +110,13 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     @Required
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
+    }
+
+    private class SimpleSaveAggregateCallback implements SaveAggregateCallback<T> {
+
+        @Override
+        public void save(final T aggregate) {
+            AbstractRepository.this.save(aggregate);
+        }
     }
 }
