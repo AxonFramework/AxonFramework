@@ -16,13 +16,17 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.util.AxonException;
+
 /**
  * Exception indicating that no suitable handler could be found for the given command.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class NoHandlerForCommandException extends RuntimeException {
+public class NoHandlerForCommandException extends AxonException {
+
+    private static final long serialVersionUID = -7242262641697288852L;
 
     /**
      * Initialize a NoHandlerForCommandException with the given <code>message</code>

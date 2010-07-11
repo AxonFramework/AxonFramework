@@ -16,13 +16,17 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.util.AxonException;
+
 /**
  * Indicates that the given events stream could not be stored or read due to an underlying exception.
  *
  * @author Allard Buijze
  * @since 0.1
  */
-public class EventStoreException extends RuntimeException {
+public class EventStoreException extends AxonException {
+
+    private static final long serialVersionUID = -4514732518167514479L;
 
     /**
      * Initialize the exception with the given <code>message</code>.

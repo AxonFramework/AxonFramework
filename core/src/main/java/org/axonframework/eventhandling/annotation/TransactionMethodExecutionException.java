@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.util.AxonException;
+
 /**
  * Wrapper for exceptions that occurred while calling an @BeforeTransaction or @AfterTransaction annotated method. This
  * might indicate that a transaction could not be committed successfully with a third party.
@@ -23,7 +25,9 @@ package org.axonframework.eventhandling.annotation;
  * @author Allard Buijze
  * @since 0.3
  */
-public class TransactionMethodExecutionException extends RuntimeException {
+public class TransactionMethodExecutionException extends AxonException {
+
+    private static final long serialVersionUID = 1952095576024390566L;
 
     /**
      * Initialize the exception with given <code>message</code> and <code>cause</code>.

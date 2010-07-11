@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.util.AxonNonTransientException;
+
 /**
  * Exception indicating that an aggregate was not compatible with the requirements of the {@link
  * GenericEventSourcingRepository}.
@@ -23,7 +25,9 @@ package org.axonframework.eventsourcing;
  * @author Allard Buijze
  * @since 0.5
  */
-public class IncompatibleAggregateException extends RuntimeException {
+public class IncompatibleAggregateException extends AxonNonTransientException {
+
+    private static final long serialVersionUID = -3045725345744416856L;
 
     /**
      * Initialize the exception with given <code>message</code> and <code>cause</code>.

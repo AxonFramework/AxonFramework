@@ -16,13 +16,17 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.util.AxonException;
+
 /**
  * EventHandlerInvocationException is a runtime exception that wraps an exception thrown by an invoked event handler.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class EventHandlerInvocationException extends RuntimeException {
+public class EventHandlerInvocationException extends AxonException {
+
+    private static final long serialVersionUID = 664867158607341533L;
 
     /**
      * Initialize the EventHandlerInvocationException using given <code>message</code> and <code>cause</code>.

@@ -16,13 +16,17 @@
 
 package org.axonframework.test;
 
+import org.axonframework.util.AxonNonTransientException;
+
 /**
  * Exception indicating that an error occurred that prevented successful execution of a test fixture
  *
  * @author Allard Buijze
  * @since 0.6
  */
-public class FixtureExecutionException extends RuntimeException {
+public class FixtureExecutionException extends AxonNonTransientException {
+
+    private static final long serialVersionUID = 2867528683103491260L;
 
     /**
      * Construct the exception with the given <code>message</code>

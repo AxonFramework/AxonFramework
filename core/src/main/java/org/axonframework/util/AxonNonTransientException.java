@@ -17,21 +17,24 @@
 package org.axonframework.util;
 
 /**
- * Indicates that an exception occurred while serializing or deserializing an object.
+ * Exception indicating an error has been cause that cannot be resolved without intervention. Retrying the operation
+ * that threw the exception will most likely result in the same exception being thrown.
+ * <p/>
+ * Examples of such errors are programming errors and infrastructure errors (e.g. failed connection).
  *
  * @author Allard Buijze
  * @since 0.6
  */
-public class SerializationException extends AxonException {
+public abstract class AxonNonTransientException extends AxonException {
 
-    private static final long serialVersionUID = 4649672453752098762L;
+    private static final long serialVersionUID = -2119569988731244940L;
 
     /**
      * Initializes the exception using the given <code>message</code>.
      *
      * @param message The message describing the exception
      */
-    public SerializationException(String message) {
+    public AxonNonTransientException(String message) {
         super(message);
     }
 
@@ -41,7 +44,7 @@ public class SerializationException extends AxonException {
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception
      */
-    public SerializationException(String message, Throwable cause) {
+    public AxonNonTransientException(String message, Throwable cause) {
         super(message, cause);
     }
 }

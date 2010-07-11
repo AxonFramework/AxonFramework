@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.util.AxonException;
+
 /**
  * CommandHandlerInvocationException is a runtime exception that wraps an exception thrown by an invoked command
  * handler.
@@ -23,7 +25,9 @@ package org.axonframework.commandhandling.annotation;
  * @author Allard Buijze
  * @since 0.5
  */
-public class CommandHandlerInvocationException extends RuntimeException {
+public class CommandHandlerInvocationException extends AxonException {
+
+    private static final long serialVersionUID = -8316136310475727263L;
 
     /**
      * Initialize the CommandHandlerInvocationException using given <code>message</code> and <code>cause</code>.

@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.util.AxonNonTransientException;
+
 /**
  * Exception indicating that a given {@link org.axonframework.eventhandling.EventSequencingPolicy} could not be
  * initialized.
@@ -23,7 +25,9 @@ package org.axonframework.eventhandling.annotation;
  * @author Allard Buijze
  * @since 0.3
  */
-public class UnsupportedPolicyException extends RuntimeException {
+public class UnsupportedPolicyException extends AxonNonTransientException {
+
+    private static final long serialVersionUID = 2687996947706338112L;
 
     /**
      * Initializes this exception with given <code>message</code> and <code>cause</code>.

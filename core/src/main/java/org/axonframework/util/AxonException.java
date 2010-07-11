@@ -14,36 +14,34 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
-
-import org.axonframework.util.AxonNonTransientException;
+package org.axonframework.util;
 
 /**
- * Exception indicating that the an aggregate could not be found in the repository.
+ * Base exception of all Axon Framework related exceptions.
  *
  * @author Allard Buijze
- * @since 0.4
+ * @since 0.6
  */
-public class AggregateNotFoundException extends AxonNonTransientException {
+public abstract class AxonException extends RuntimeException {
 
-    private static final long serialVersionUID = 1343530021245649274L;
+    private static final long serialVersionUID = 5157720304497629941L;
 
     /**
-     * Initialize a AggregateNotFoundException with the given <code>message</code>
+     * Initializes the exception using the given <code>message</code>.
      *
-     * @param message The message describing the cause of the exception
+     * @param message The message describing the exception
      */
-    public AggregateNotFoundException(String message) {
+    public AxonException(String message) {
         super(message);
     }
 
     /**
-     * Initialize a AggregateNotFoundException with the given <code>message</code> and <code>cause</code>
+     * Initializes the exception using the given <code>message</code> and <code>cause</code>.
      *
-     * @param message The message describing the cause of the exception
+     * @param message The message describing the exception
      * @param cause   The underlying cause of the exception
      */
-    public AggregateNotFoundException(String message, Throwable cause) {
+    public AxonException(String message, Throwable cause) {
         super(message, cause);
     }
 }

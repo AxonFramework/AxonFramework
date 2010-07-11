@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.domain.Event;
+import org.axonframework.util.AxonNonTransientException;
 
 /**
  * Raised when an event could not be handled by an Aggregate. This is an exceptional situation, as an aggregate is
@@ -29,9 +30,10 @@ import org.axonframework.domain.Event;
  * @author Allard Buijze
  * @since 0.1
  */
-public class UnhandledEventException extends RuntimeException {
+public class UnhandledEventException extends AxonNonTransientException {
 
     private final Event unhandledEvent;
+    private static final long serialVersionUID = -6196093464661273424L;
 
     /**
      * Initialize the exception with the given <code>message</code> and <code>unhandledEvent</code>.
