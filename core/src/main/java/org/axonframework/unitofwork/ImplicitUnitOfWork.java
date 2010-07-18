@@ -20,54 +20,54 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Implementation of a UnitOfWork that is used when no explicit UnitOfWork has been defined. The UnitOfWork
- * automatically commits itself when the last loaded aggregate has been saved. Registered events are published
- * immediately to the event bus.
+ * Special case of the unit of work, that clears itself when all aggregates have been committed. This removed the need
+ * for an interceptor or other mechanism to clean up the UnitOfWork after committing.
  * <p/>
- * When an error occurs while committing this UnitOfWork, the "onRollback" will be called listener causing the error,
- * but not on the others. Therefore, this UnitOfWork is not very suitable for commands that deal with multiple
- * aggregates.
+ * The ImplicitUnitOfWork will also force all generated events to be dispatched immediately to the event bus.
  *
  * @author Allard Buijze
  * @since 0.6
  */
-class ImplicitUnitOfWork implements UnitOfWork {
+class ImplicitUnitOfWork extends DefaultUnitOfWork {
 
     private int managedAggregates = 0;
-    private List<UnitOfWorkListener> listeners = new ArrayList<UnitOfWorkListener>();
 
     @Override
-    public <T extends AggregateRoot> void registerAggregate(T aggregateRoot, SaveAggregateCallback<T> repository) {
+    public void commitAggregate(AggregateRoot aggregate) {
+        try {
+            super.commitAggregate(aggregate);
+        } finally {
+            managedAggregates--;
+            if (managedAggregates == 0) {
+                clear();
+            }
+        }
+    }
+
+    @Override
+    public <T extends AggregateRoot> void registerAggregate(T aggregate, Long expectedVersion,
+                                                            SaveAggregateCallback<T> callback) {
+        super.registerAggregate(aggregate, expectedVersion, callback);
         managedAggregates++;
     }
 
     @Override
-    public <T extends AggregateRoot> void reportAggregateSaved(T aggregateRoot) {
-        managedAggregates--;
-        RuntimeException reportedError = null;
-        if (managedAggregates <= 0) {
-            CurrentUnitOfWork.clear(this);
-            for (UnitOfWorkListener listener : listeners) {
-                try {
-                    listener.afterCommit();
-                } catch (RuntimeException e) {
-                    listener.onRollback();
-                    reportedError = e;
-                }
-            }
-        }
-        if (reportedError != null) {
-            throw reportedError;
+    public void rollback() {
+        try {
+            super.rollback();
+        } finally {
+            clear();
         }
     }
 
     @Override
-    public void registerListener(UnitOfWorkListener listener) {
-        listeners.add(listener);
+    public void commit() {
+        try {
+            super.commit();
+        } finally {
+            clear();
+        }
     }
 
     @Override
@@ -75,11 +75,7 @@ class ImplicitUnitOfWork implements UnitOfWork {
         eventBus.publish(event);
     }
 
-    @Override
-    public void rollback() {
-    }
-
-    @Override
-    public void commit() {
+    private void clear() {
+        CurrentUnitOfWork.clear(this);
     }
 }

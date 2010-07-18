@@ -29,6 +29,15 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
     /**
      * {@inheritDoc}
      * <p/>
+     * This implementation does nothing.
+     */
+    @Override
+    public void onPrepareCommit() {
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
      * This implementation only calls the {@link #onCommitOrRollback()} method.
      */
     @Override

@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
-package org.axonframework.unitofwork;
+package org.axonframework.eventsourcing.conflictresolvers;
 
-import org.axonframework.domain.AggregateRoot;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.eventsourcing.ConflictResolver;
+
+import java.util.List;
 
 /**
- * Callback used by UnitOfWork instances to be invoked when the UnitOfWork wishes to store an aggregate. This callback
- * abstracts the actual storage mechanism away from the UnitOfWork itself.
+ * Implementation of the conflict resolver that will accept all changes made to an aggregate,  even if the aggregate
+ * contains changes that were not expected by the command handler.
  *
  * @author Allard Buijze
- * @param <T> The type of aggregate this callback handles
  * @since 0.6
  */
-public interface SaveAggregateCallback<T extends AggregateRoot> {
+public class AcceptAllConflictResolver implements ConflictResolver {
 
     /**
-     * Invoked when the UnitOfWork wishes to store an aggregate.
-     *
-     * @param aggregate The aggregate to store
+     * {@inheritDoc}
+     * <p/>
+     * This implementation does nothing, hence accepting all unseen changes
      */
-    void save(T aggregate);
-
+    @Override
+    public void resolveConflicts(List<DomainEvent> appliedChanges, List<DomainEvent> committedChanges) {
+    }
 }

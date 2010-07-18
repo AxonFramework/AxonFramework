@@ -81,7 +81,6 @@ public class JpaEventStore implements SnapshotEventStore {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings({"unchecked"})
     @Override
     public DomainEventStream readEvents(String type, UUID identifier) {
         long snapshotSequenceNumber = -1;
@@ -90,20 +89,9 @@ public class JpaEventStore implements SnapshotEventStore {
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
-        List<DomainEventEntry> entries = (List<DomainEventEntry>) entityManager.createQuery(
-                "SELECT e FROM DomainEventEntry e "
-                        + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND sequenceNumber > :seq "
-                        + "ORDER BY e.sequenceNumber ASC")
-                .setParameter("id", identifier.toString())
-                .setParameter("type", type)
-                .setParameter("seq", snapshotSequenceNumber)
-                .getResultList();
-        List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
+        List<DomainEvent> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.add(lastSnapshotEvent.getDomainEvent(eventSerializer));
-        }
-        for (DomainEventEntry entry : entries) {
-            events.add(entry.getDomainEvent(eventSerializer));
+            events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
         if (events.isEmpty()) {
             throw new EventStreamNotFoundException(
@@ -112,6 +100,42 @@ public class JpaEventStore implements SnapshotEventStore {
                                   identifier.toString()));
         }
         return new SimpleDomainEventStream(events);
+    }
+
+    /**
+     * Reads a segment of the events of an aggregate. The sequence number of the first event in de the domain event
+     * stream is equal to the given <code>firstSequenceNumber</code>, if any. If no events with sequence number equal or
+     * greater to the <code>firstSequenceNumber</code> are available, an empty DomainEventStream is returned.
+     * <p/>
+     * The DomainEventStream returned by this call will <em>never</em> contain any snapshot events.
+     * <p/>
+     * Note: To return all events after the <code>firstSequenceNumber</code>, use <code>Long.MAX_VALUE</code> as
+     * <code>lastSequenceNumber</code>.
+     *
+     * @param type                The type descriptor of the object to retrieve
+     * @param identifier          The unique aggregate identifier of the events to load
+     * @param firstSequenceNumber The sequence number of the first event to return
+     * @return a DomainEventStream containing a segment of past events of an aggregate
+     */
+    public DomainEventStream readEventSegment(String type, UUID identifier, long firstSequenceNumber) {
+        return new SimpleDomainEventStream(readEventSegmentInternal(type, identifier, firstSequenceNumber));
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private List<DomainEvent> readEventSegmentInternal(String type, UUID identifier, long firstSequenceNumber) {
+        List<DomainEventEntry> entries = (List<DomainEventEntry>) entityManager.createQuery(
+                "SELECT e FROM DomainEventEntry e "
+                        + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
+                        + "ORDER BY e.sequenceNumber ASC")
+                .setParameter("id", identifier.toString())
+                .setParameter("type", type)
+                .setParameter("seq", firstSequenceNumber)
+                .getResultList();
+        List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
+        for (DomainEventEntry entry : entries) {
+            events.add(entry.getDomainEvent(eventSerializer));
+        }
+        return events;
     }
 
     @SuppressWarnings({"unchecked"})

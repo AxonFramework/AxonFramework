@@ -63,7 +63,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * added to the stream as a correction to an earlier event.
      * <p/>
      * <code>AggregateSnapshot</code> events are used to initialize the aggregate with the correct version ({@link
-     * #getLastCommittedEventSequenceNumber()}).
+     * #getVersion()}).
      *
      * @throws IllegalStateException     if this aggregate was already initialized.
      * @throws AggregateDeletedException if the event stream contains an event of type {@link AggregateDeletedEvent} (or

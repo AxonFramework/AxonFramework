@@ -21,7 +21,7 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
-public abstract class AbstractAggregateRoot implements VersionedAggregateRoot {
+public abstract class AbstractAggregateRoot implements AggregateRoot {
 
     private final EventContainer uncommittedEvents;
     private final UUID identifier;
@@ -101,7 +101,7 @@ public abstract class AbstractAggregateRoot implements VersionedAggregateRoot {
      * {@inheritDoc}
      */
     @Override
-    public Long getLastCommittedEventSequenceNumber() {
+    public Long getVersion() {
         return lastCommitted;
     }
 }

@@ -19,13 +19,17 @@ package org.axonframework.commandhandling.interceptors;
 import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * CommandHandlerInterceptor that starts a {@link TransactionalUnitOfWork} when a command is received. If command
- * handling is successful, the UnitOfWork is committed, otherwise, it is rolled back.
+ * CommandHandlerInterceptor that starts a {@link org.axonframework.unitofwork.DefaultUnitOfWork} when a command is
+ * received. If command handling is successful, the UnitOfWork is committed, otherwise, it is rolled back.
+ * <p/>
+ * The UnitOfWork makes the changes made during command handling more atomic. Events are only dispatched when all
+ * changes to the aggregates have been successfully persisted.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -115,13 +119,14 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
     }
 
     /**
-     * Creates a new instance of a UnitOfWork. This implementation creates a new {@link TransactionalUnitOfWork}.
-     * Subclasses may override this method to provide another instance instead.
+     * Creates a new instance of a UnitOfWork. This implementation creates a new {@link
+     * org.axonframework.unitofwork.DefaultUnitOfWork}. Subclasses may override this method to provide another instance
+     * instead.
      *
      * @return The UnitOfWork to bind to the current thread.
      */
     protected UnitOfWork createUnitOfWork() {
-        return new TransactionalUnitOfWork();
+        return new DefaultUnitOfWork();
     }
 
     /**

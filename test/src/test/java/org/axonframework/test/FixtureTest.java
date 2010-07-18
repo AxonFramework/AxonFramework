@@ -23,15 +23,13 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.repository.Repository;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -88,7 +86,7 @@ public class FixtureTest {
                 .given(givenEvents)
                 .when(new StrangeCommand())
                 .expectStoredEvents(new MyEvent(4))
-                .expectPublishedEvents(new MyEvent(4), new MyApplicationEvent(commandHandler, "Strange"))
+                .expectPublishedEvents(new MyEvent(4), new MyApplicationEvent(commandHandler))
                 .expectException(StrangeCommandReceivedException.class);
     }
 
@@ -120,7 +118,7 @@ public class FixtureTest {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand())
-                    .expectEvents(new MyOtherEvent("Hello"));
+                    .expectEvents(new MyOtherEvent());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("org.axonframework.test.FixtureTest$MyOtherEvent <|>"
@@ -262,9 +260,6 @@ public class FixtureTest {
 
         private int lastNumber;
 
-        public MyAggregate() {
-        }
-
         public MyAggregate(UUID aggregateIdentifier) {
             super(aggregateIdentifier);
         }
@@ -299,26 +294,22 @@ public class FixtureTest {
 
         @CommandHandler
         public void handleTestCommand(TestCommand testCommand) {
-            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier());
+            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier(), null);
             aggregate.doSomething();
             repository.save(aggregate);
         }
 
         @CommandHandler
         public void handleStrangeCommand(StrangeCommand testCommand) {
-            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier());
+            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier(), null);
             aggregate.doSomething();
             repository.save(aggregate);
-            eventBus.publish(new MyApplicationEvent(this, "Strange"));
+            eventBus.publish(new MyApplicationEvent(this));
             throw new StrangeCommandReceivedException("Strange command received");
         }
 
         public void setRepository(Repository<MyAggregate> repository) {
             this.repository = repository;
-        }
-
-        public void setEventBus(EventBus eventBus) {
-            this.eventBus = eventBus;
         }
     }
 
@@ -332,6 +323,7 @@ public class FixtureTest {
 
     public static class MyEvent extends DomainEvent {
 
+        private static final long serialVersionUID = -8646752013150772644L;
         private Integer someValue;
 
         public MyEvent(Integer someValue) {
@@ -342,19 +334,16 @@ public class FixtureTest {
 
     private class MyApplicationEvent extends ApplicationEvent {
 
-        private final String message;
+        private static final long serialVersionUID = 8291016745540119918L;
 
-        public MyApplicationEvent(Object source, String message) {
+        public MyApplicationEvent(Object source) {
             super(source);
-            this.message = message;
-        }
-
-        public String getMessage() {
-            return message;
         }
     }
 
     private static class StrangeCommandReceivedException extends RuntimeException {
+
+        private static final long serialVersionUID = -486498386422064414L;
 
         private StrangeCommandReceivedException(String message) {
             super(message);
@@ -363,14 +352,9 @@ public class FixtureTest {
 
     private class MyOtherEvent extends DomainEvent {
 
-        private String aValue;
+        private static final long serialVersionUID = 7157370425417821865L;
 
-        private MyOtherEvent(final String aValue) {
-            this.aValue = aValue;
-        }
-
-        public String getaValue() {
-            return aValue;
+        private MyOtherEvent() {
         }
     }
 }

@@ -36,23 +36,36 @@ public interface UnitOfWork {
 
     /**
      * Register an aggregate with this UnitOfWork. These aggregates will be saved (at the latest) when the UnitOfWork is
-     * committed.
+     * committed. The given <code>expectedVersion</code> will be returned in the callback, allowing repositories to make
+     * decisions about concurrent modifications.
      *
      * @param aggregateRoot         The aggregate root to register in the UnitOfWork
+     * @param expectedVersion       The expected version of the aggregate.
      * @param saveAggregateCallback The callback that is invoked when the UnitOfWork wants to store the registered
      *                              aggregate
-     * @param <T>                   The type of aggregate
+     * @param <T>                   the type of aggregate to register
      */
-    <T extends AggregateRoot> void registerAggregate(T aggregateRoot, SaveAggregateCallback<T> saveAggregateCallback);
+    <T extends AggregateRoot> void registerAggregate(T aggregateRoot, Long expectedVersion,
+                                                     SaveAggregateCallback<T> saveAggregateCallback);
 
     /**
      * Reports the fact that a repository has stored an aggregate. This could either be as part of committing the
      * UnitOfWork, or by an explicit call by the command handling code.
      *
      * @param aggregateRoot The aggregate root that has been saved.
-     * @param <T>           The type of aggregate
+     * @throws IllegalStateException if the given <code>aggregateRoot</code> has not been registered first.
      */
-    <T extends AggregateRoot> void reportAggregateSaved(T aggregateRoot);
+    void commitAggregate(AggregateRoot aggregateRoot);
+
+    /**
+     * Indicates whether the given <code>aggregate</code> has been registered with this unit of work. Will return
+     * <code>true</code> if the aggregate has been registered, and has not yet been committed or rolled back. Otherwise,
+     * this method returns <code>false</code>.
+     *
+     * @param aggregate The aggregate to look for
+     * @return <code>true</code> if the aggregate is registered with this UnitOfWork, otherwise <code>false</code>.
+     */
+    boolean isRegistered(AggregateRoot aggregate);
 
     /**
      * Request to publish the given <code>event</code> on the given <code>eventBus</code>. The UnitOfWork may either
@@ -78,9 +91,11 @@ public interface UnitOfWork {
 
     /**
      * Register a listener that listens to state changes in this UnitOfWork. This typically allows components to clean
-     * up resources, such as locks, when a UnitOfWork is committed or rolled back.
+     * up resources, such as locks, when a UnitOfWork is committed or rolled back. If a UnitOfWork is partially
+     * committed, only the listeners bound to one of the committed aggregates is notified.
      *
-     * @param listener The listener to notify when the UnitOfWork's state changes.
+     * @param aggregate The aggregate to bind the listener to.
+     * @param listener  The listener to notify when the UnitOfWork's state changes.
      */
-    void registerListener(UnitOfWorkListener listener);
+    void registerListener(AggregateRoot aggregate, UnitOfWorkListener listener);
 }

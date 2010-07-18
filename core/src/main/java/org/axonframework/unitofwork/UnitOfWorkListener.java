@@ -39,4 +39,10 @@ public interface UnitOfWorkListener {
      * @see UnitOfWork#rollback()
      */
     void onRollback();
+
+    /**
+     * Invoked before aggregates are committed, and before any events are published. This phase can be used to do
+     * validation or other activity that should be able to prevent event dispatching in certain circumstances.
+     */
+    void onPrepareCommit();
 }

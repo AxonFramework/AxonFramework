@@ -78,16 +78,17 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
      * aggregate.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
+     * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T doLoad(UUID aggregateIdentifier) {
+    public T doLoad(UUID aggregateIdentifier, Long expectedVersion) {
         T aggregate = (T) cache.get(aggregateIdentifier);
         if (aggregate == null) {
-            aggregate = super.doLoad(aggregateIdentifier);
+            aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
         }
-        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
+        CurrentUnitOfWork.get().registerListener(aggregate, new CacheClearingUnitOfWorkListener(aggregateIdentifier));
         return aggregate;
     }
 

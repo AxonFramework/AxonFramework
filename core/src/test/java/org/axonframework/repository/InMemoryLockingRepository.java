@@ -45,7 +45,7 @@ public class InMemoryLockingRepository extends LockingRepository<StubAggregate> 
     }
 
     @Override
-    protected StubAggregate doLoad(UUID aggregateIdentifier) {
+    protected StubAggregate doLoad(UUID aggregateIdentifier, Long expectedVersion) {
         return store.get(aggregateIdentifier);
     }
 

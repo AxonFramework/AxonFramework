@@ -41,7 +41,7 @@ public class AbstractEventSourcedAggregateRootTest {
         assertEquals(identifier, testSubject.getIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());
         assertEquals(1, testSubject.invocationCount);
-        assertEquals(new Long(243), testSubject.getLastCommittedEventSequenceNumber());
+        assertEquals(new Long(243), testSubject.getVersion());
     }
 
     @Test
@@ -50,16 +50,16 @@ public class AbstractEventSourcedAggregateRootTest {
 
         assertNotNull(testSubject.getIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());
-        assertEquals(null, testSubject.getLastCommittedEventSequenceNumber());
+        assertEquals(null, testSubject.getVersion());
 
         testSubject.apply(new StubDomainEvent());
 
         assertEquals(1, testSubject.invocationCount);
         assertEquals(1, testSubject.getUncommittedEventCount());
-        assertEquals(null, testSubject.getLastCommittedEventSequenceNumber());
+        assertEquals(null, testSubject.getVersion());
 
         testSubject.commitEvents();
-        assertEquals(new Long(0), testSubject.getLastCommittedEventSequenceNumber());
+        assertEquals(new Long(0), testSubject.getVersion());
         assertFalse(testSubject.getUncommittedEvents().hasNext());
     }
 

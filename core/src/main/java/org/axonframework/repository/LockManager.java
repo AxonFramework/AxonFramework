@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.VersionedAggregateRoot;
+import org.axonframework.domain.AggregateRoot;
 
 import java.util.UUID;
 
@@ -34,7 +34,7 @@ interface LockManager {
      * @param aggregate the aggregate to validate the lock for
      * @return true if a valid lock is held, false otherwise
      */
-    boolean validateLock(VersionedAggregateRoot aggregate);
+    boolean validateLock(AggregateRoot aggregate);
 
     /**
      * Obtain a lock for an aggregate with the given <code>aggregateIdentifier</code>. Depending on the strategy, this

@@ -80,7 +80,8 @@ public class SimpleUnitOfWorkInterceptorTest {
         dispatchCommand(new SimpleCommand(true, failure, aggregateIdentifier1), failure);
 
         assertEquals(1, repository.getSaveCount());
-        verify(eventBus, never()).publish(isA(StubDomainEvent.class));
+        // an explicit save will always result in the events being thrown
+        verify(eventBus).publish(isA(StubDomainEvent.class));
         verifyNoLocksRemain();
     }
 
@@ -96,8 +97,9 @@ public class SimpleUnitOfWorkInterceptorTest {
         RuntimeException failure = new RuntimeException();
         dispatchCommand(new SimpleCommand(true, failure, aggregateIdentifier1, aggregateIdentifier2), failure);
 
+        // an explicit save will always result in the events being thrown
         assertEquals(2, repository.getSaveCount());
-        verify(eventBus, never()).publish(isA(StubDomainEvent.class));
+        verify(eventBus, times(2)).publish(isA(StubDomainEvent.class));
         verifyNoLocksRemain();
     }
 
@@ -161,12 +163,14 @@ public class SimpleUnitOfWorkInterceptorTest {
         @Override
         public Object handle(SimpleCommand command) {
             for (UUID aggregateIdentifier : command.getAggregatesToActOn()) {
-                StubAggregate aggregate = repository.load(aggregateIdentifier);
+                StubAggregate aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.doSomething();
                 if (command.isIncludeSave()) {
                     repository.save(aggregate);
-                    verify(eventBus, never()).publish(isA(Event.class));
                 }
+            }
+            if (command.isIncludeSave()) {
+                verify(eventBus, times(command.getAggregatesToActOn().size())).publish(isA(Event.class));
             }
             command.causeFailure();
             return Void.TYPE;

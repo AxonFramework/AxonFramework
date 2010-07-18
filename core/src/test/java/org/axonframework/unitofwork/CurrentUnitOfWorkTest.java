@@ -33,7 +33,7 @@ public class CurrentUnitOfWorkTest {
 
     @Test
     public void testGetSession_DefaultsToImplicitSession() {
-        assertTrue(CurrentUnitOfWork.get() instanceof ImplicitUnitOfWork);
+        assertEquals(ImplicitUnitOfWork.class, CurrentUnitOfWork.get().getClass());
     }
 
     @Test

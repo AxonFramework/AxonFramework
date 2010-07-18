@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.VersionedAggregateRoot;
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.util.Assert;
 
 import java.util.UUID;
@@ -38,7 +38,7 @@ class PessimisticLockManager implements LockManager {
      * {@inheritDoc}
      */
     @Override
-    public boolean validateLock(VersionedAggregateRoot aggregate) {
+    public boolean validateLock(AggregateRoot aggregate) {
         UUID aggregateIdentifier = aggregate.getIdentifier();
 
         return isLockAvailableFor(aggregateIdentifier)

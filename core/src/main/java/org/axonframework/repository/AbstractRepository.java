@@ -49,15 +49,27 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
 
     /**
-     * Saves the given aggregate and publishes all uncommitted events to the EventBus.
+     * Saves the given aggregate and publishes all uncommitted events to the UnitOfWork to be published to the EventBus.
+     * The given <code>version</code> indicates which version was expected to be loaded. Typically, you would use the
+     * save value as used when calling {@link #load(java.util.UUID, Long)}.
+     * <p/>
+     * Note: You are recommended to use a {@link org.axonframework.unitofwork.UnitOfWork UnitOfWork} instead of calling
+     * <code>save()</code> explicitly.
      *
      * @param aggregate The aggregate root of the aggregate to store.
      * @see #setEventBus(org.axonframework.eventhandling.EventBus)
      */
     @Override
     public void save(T aggregate) {
-        doSave(aggregate);
-        dispatchUncommittedEvents(aggregate);
+        if (!CurrentUnitOfWork.get().isRegistered(aggregate)) {
+            CurrentUnitOfWork.get().registerAggregate(aggregate, null, saveAggregateCallback);
+        }
+        CurrentUnitOfWork.get().commitAggregate(aggregate);
+    }
+
+    @Override
+    public void add(T aggregate) {
+        CurrentUnitOfWork.get().registerAggregate(aggregate, null, saveAggregateCallback);
     }
 
     /**
@@ -67,10 +79,47 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
-    public T load(UUID aggregateIdentifier) {
-        T aggregate = doLoad(aggregateIdentifier);
-        CurrentUnitOfWork.get().registerAggregate(aggregate, saveAggregateCallback);
+    public T load(UUID aggregateIdentifier, Long expectedVersion) {
+        T aggregate = doLoad(aggregateIdentifier, expectedVersion);
+        validateOnLoad(aggregate, expectedVersion);
+        CurrentUnitOfWork.get().registerAggregate(aggregate, expectedVersion, saveAggregateCallback);
         return aggregate;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Implementation provided for backwards compatibility.
+     */
+    @Deprecated
+    @Override
+    public T load(UUID aggregateIdentifier) {
+        return load(aggregateIdentifier, null);
+    }
+
+    /**
+     * Checks the aggregate for concurrent changes. Throws a {@link org.axonframework.repository.ConflictingModificationException}
+     * when conflicting changes have been detected.
+     * <p/>
+     * This implementation throws a {@link ConflictingAggregateVersionException} if the expected version is not null and
+     * the version number of the aggregate does not match the expected version
+     *
+     * @param aggregate       The loaded aggregate
+     * @param expectedVersion The expected version of the aggregate
+     * @throws ConflictingModificationException
+     *
+     * @throws ConflictingAggregateVersionException
+     *
+     */
+    protected void validateOnLoad(T aggregate, Long expectedVersion) {
+        if (expectedVersion != null && aggregate.getVersion() != null && aggregate.getVersion() > expectedVersion) {
+            throw new ConflictingAggregateVersionException(
+                    String.format("Aggregate with identifier [%s] contains conflicting changes. "
+                            + "Expected version [%s], but was [%s]",
+                                  aggregate.getIdentifier(),
+                                  aggregate.getVersion(),
+                                  expectedVersion));
+        }
     }
 
     /**
@@ -84,21 +133,12 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * Loads and initialized the aggregate with the given aggregateIdentifier.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
+     * @param expectedVersion     The expected version of the aggregate to load
      * @return a fully initialized aggregate
      *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
-    protected abstract T doLoad(UUID aggregateIdentifier);
-
-    private void dispatchUncommittedEvents(T aggregate) {
-        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
-        while (uncommittedEvents.hasNext()) {
-            DomainEvent event = uncommittedEvents.next();
-            logger.debug("Publishing event [{}] to the EventBus", event.getClass().getSimpleName());
-            CurrentUnitOfWork.get().publishEvent(event, eventBus);
-        }
-        aggregate.commitEvents();
-    }
+    protected abstract T doLoad(UUID aggregateIdentifier, Long expectedVersion);
 
     /**
      * Sets the event bus to which newly stored events should be published. Optional. By default, the repository tries
@@ -116,7 +156,19 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
 
         @Override
         public void save(final T aggregate) {
-            AbstractRepository.this.save(aggregate);
+            doSave(aggregate);
+            dispatchUncommittedEvents(aggregate);
         }
+
+        private void dispatchUncommittedEvents(T aggregate) {
+            DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
+            while (uncommittedEvents.hasNext()) {
+                DomainEvent event = uncommittedEvents.next();
+                logger.debug("Publishing event [{}] to the UnitOfWork", event.getClass().getSimpleName());
+                CurrentUnitOfWork.get().publishEvent(event, eventBus);
+            }
+            aggregate.commitEvents();
+        }
+
     }
 }

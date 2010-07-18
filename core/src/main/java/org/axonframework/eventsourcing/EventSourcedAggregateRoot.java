@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.VersionedAggregateRoot;
 
 /**
  * Aggregate that can be initialized using a {@link org.axonframework.domain.DomainEventStream}. Aggregates that are
@@ -27,7 +27,7 @@ import org.axonframework.domain.VersionedAggregateRoot;
  * @see org.axonframework.eventsourcing.EventSourcingRepository
  * @since 0.3
  */
-public interface EventSourcedAggregateRoot extends VersionedAggregateRoot {
+public interface EventSourcedAggregateRoot extends AggregateRoot {
 
     /**
      * Initialize the state of this aggregate using the events in the provided {@link

@@ -27,12 +27,14 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.eventsourcing.AggregateSnapshot;
+import org.axonframework.eventsourcing.ConflictResolver;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.junit.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,7 +66,7 @@ public class EventSourcingRepositoryTest {
         StubDomainEvent event2 = new StubDomainEvent(identifier, 2);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(event1, event2));
 
-        TestAggregate aggregate = testSubject.load(identifier);
+        TestAggregate aggregate = testSubject.load(identifier, null);
 
         assertEquals(0, aggregate.getUncommittedEventCount());
         assertEquals(2, aggregate.getHandledEvents().size());
@@ -95,7 +97,7 @@ public class EventSourcingRepositoryTest {
                 new SimpleDomainEventStream(event1, event2, event3));
 
         try {
-            testSubject.load(identifier);
+            testSubject.load(identifier, null);
             fail("Expected AggregateDeletedException");
         } catch (AggregateDeletedException e) {
             assertTrue(e.getMessage().contains(identifier.toString()));
@@ -114,10 +116,59 @@ public class EventSourcingRepositoryTest {
                                                                                                    new StubDomainEvent(
                                                                                                            identifier,
                                                                                                            1)));
-        EventSourcedAggregateRoot actual = testSubject.load(identifier);
+        EventSourcedAggregateRoot actual = testSubject.load(identifier, null);
 
         assertSame(simpleAggregate, actual);
-        assertEquals(Long.valueOf(1), actual.getLastCommittedEventSequenceNumber());
+        assertEquals(Long.valueOf(1), actual.getVersion());
+    }
+
+    @Test
+    public void testLoadAndSaveWithConflictingChanges() {
+        ConflictResolver conflictResolver = mock(ConflictResolver.class);
+        UUID identifier = UUID.randomUUID();
+        DomainEvent event2 = new StubDomainEvent(identifier, 2);
+        DomainEvent event3 = new StubDomainEvent(identifier, 3);
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(
+                new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
+                                            event2,
+                                            event3));
+        testSubject.setConflictResolver(conflictResolver);
+        TestAggregate actual = testSubject.load(identifier, 1L);
+        verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
+        DomainEvent appliedEvent = new StubDomainEvent();
+        actual.apply(appliedEvent);
+        testSubject.save(actual);
+        verify(conflictResolver).resolveConflicts(Arrays.asList(appliedEvent), Arrays.asList(event2, event3));
+    }
+
+    @Test(expected = ConflictingAggregateVersionException.class)
+    public void testLoadWithConflictingChanges_NoConflictResolverSet() {
+        ConflictResolver conflictResolver = mock(ConflictResolver.class);
+        UUID identifier = UUID.randomUUID();
+        DomainEvent event2 = new StubDomainEvent(identifier, 2);
+        DomainEvent event3 = new StubDomainEvent(identifier, 3);
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(
+                new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
+                                            event2,
+                                            event3));
+
+        testSubject.load(identifier, 1L);
+    }
+
+    @Test
+    public void testLoadAndSaveWithoutConflictingChanges() {
+        ConflictResolver conflictResolver = mock(ConflictResolver.class);
+        UUID identifier = UUID.randomUUID();
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(
+                new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
+                                            new StubDomainEvent(identifier, 2),
+                                            new StubDomainEvent(identifier, 3)));
+        testSubject.setConflictResolver(conflictResolver);
+        TestAggregate actual = testSubject.load(identifier, 3L);
+        verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
+        actual.apply(new StubDomainEvent());
+        testSubject.save(actual);
+        verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
     }
 
     private static class EventSourcingRepositoryImpl extends EventSourcingRepository<TestAggregate> {

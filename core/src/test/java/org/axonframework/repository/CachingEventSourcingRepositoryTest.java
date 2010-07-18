@@ -26,6 +26,7 @@ import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public class CachingEventSourcingRepositoryTest {
 
     @Before
     public void setUp() {
+        CurrentUnitOfWork.clear();
         testSubject = new StubCachingEventSourcingRepository();
         mockEventBus = mock(EventBus.class);
         testSubject.setEventBus(mockEventBus);
@@ -60,12 +62,17 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.setCache(cache);
     }
 
+    @After
+    public void tearDown() {
+        CurrentUnitOfWork.clear();
+    }
+
     @Test
     public void testAggregatesRetrievedFromCache() {
         StubAggregate aggregate1 = new StubAggregate();
         testSubject.save(aggregate1);
 
-        StubAggregate reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier());
+        StubAggregate reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
         assertSame(aggregate1, reloadedAggregate1);
         aggregate1.doSomething();
         aggregate1.doSomething();
@@ -80,11 +87,11 @@ public class CachingEventSourcingRepositoryTest {
         verify(mockEventBus, times(2)).publish(isA(DomainEvent.class));
         cache.clear();
 
-        reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier());
+        reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
 
         assertNotSame(aggregate1, reloadedAggregate1);
-        assertEquals(aggregate1.getLastCommittedEventSequenceNumber(),
-                     reloadedAggregate1.getLastCommittedEventSequenceNumber());
+        assertEquals(aggregate1.getVersion(),
+                     reloadedAggregate1.getVersion());
     }
 
     private static class StubCachingEventSourcingRepository extends CachingEventSourcingRepository<StubAggregate> {

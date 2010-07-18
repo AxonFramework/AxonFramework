@@ -92,6 +92,35 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    public void testLoadSegment() {
+        assertNotNull(testSubject);
+        // aggregate1 has 10 uncommitted events
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        entityManager.flush();
+        assertEquals((long) aggregate1.getUncommittedEventCount(),
+                     entityManager.createQuery("SELECT count(e) FROM DomainEventEntry e").getSingleResult());
+
+        DomainEventStream events = testSubject.readEventSegment("test", aggregate1.getIdentifier(), 4);
+        while (events.hasNext()) {
+            DomainEvent event = events.next();
+            assertTrue(event.getSequenceNumber() >= 4);
+        }
+    }
+
+    @Test
+    public void testLoadSegment_NoCandidates() {
+        assertNotNull(testSubject);
+        // aggregate1 has 10 uncommitted events
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        entityManager.flush();
+        assertEquals((long) aggregate1.getUncommittedEventCount(),
+                     entityManager.createQuery("SELECT count(e) FROM DomainEventEntry e").getSingleResult());
+
+        DomainEventStream events = testSubject.readEventSegment("test", aggregate1.getIdentifier(), 10);
+        assertFalse(events.hasNext());
+    }
+
+    @Test
     public void testLoadWithSnapshotEvent() {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
@@ -129,11 +158,13 @@ public class JpaEventStoreTest {
         }
 
         public DomainEvent createSnapshotEvent() {
-            return new StubStateChangedEvent(getLastCommittedEventSequenceNumber(), getIdentifier());
+            return new StubStateChangedEvent(getVersion(), getIdentifier());
         }
     }
 
     private static class StubStateChangedEvent extends DomainEvent {
+
+        private static final long serialVersionUID = 3459228620192273869L;
 
         private StubStateChangedEvent() {
         }

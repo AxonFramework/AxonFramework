@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.VersionedAggregateRoot;
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
@@ -47,7 +47,7 @@ import java.util.UUID;
  * @param <T> The type that this aggregate stores
  * @since 0.3
  */
-public abstract class LockingRepository<T extends VersionedAggregateRoot> extends AbstractRepository<T> {
+public abstract class LockingRepository<T extends AggregateRoot> extends AbstractRepository<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
@@ -61,7 +61,7 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
     }
 
     /**
-     * Initialize the repository with the given <code>lockingStrategy</code>
+     * Initialize the repository with the given <code>lockingStrategy</code>.
      *
      * @param lockingStrategy the locking strategy to use
      */
@@ -84,43 +84,12 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
     }
 
     /**
-     * Utility constructor for testing
+     * Utility constructor for testing.
      *
      * @param lockManager the lock manager to use
      */
     LockingRepository(LockManager lockManager) {
         this.lockManager = lockManager;
-    }
-
-    /**
-     * Saves the given aggregate in the repository. Consistency is safeguarded using the chosen {@link
-     * LockingStrategy}.
-     * <p/>
-     * <strong>Important</strong>: If an exception is thrown during the saving process, the lock is released. The
-     * calling thread may reattempt saving the aggregate immediately. If the lock is still available, the thread
-     * automatically recovers the lock. If, however, another thread has obtained the lock before it is recovered, a
-     * ConcurrencyException is thrown.
-     *
-     * @param aggregate The aggregate to store in the repository
-     * @throws ConcurrencyException when another thread was first in saving the aggregate.
-     */
-    @Override
-    public void save(final T aggregate) {
-        // make sure no events were previously committed
-        final boolean isNewAggregate = (aggregate.getLastCommittedEventSequenceNumber() == null);
-        if (!isNewAggregate && !lockManager.validateLock(aggregate)) {
-            throw new ConcurrencyException(String.format(
-                    "The aggregate of type [%s] with identifier [%s] could not be "
-                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                            + "the current thread had released its lock earlier on.",
-                    aggregate.getClass().getSimpleName(),
-                    aggregate.getIdentifier()));
-        }
-        try {
-            super.save(aggregate);
-        } finally {
-            CurrentUnitOfWork.get().reportAggregateSaved(aggregate);
-        }
     }
 
     /**
@@ -131,18 +100,11 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T load(UUID aggregateIdentifier) {
+    public T load(UUID aggregateIdentifier, Long expectedVersion) {
         lockManager.obtainLock(aggregateIdentifier);
         try {
-            final T aggregate = super.load(aggregateIdentifier);
-            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
-                @Override
-                public void onCommitOrRollback() {
-                    if (lockManager.validateLock(aggregate)) {
-                        lockManager.releaseLock(aggregate.getIdentifier());
-                    }
-                }
-            });
+            final T aggregate = super.load(aggregateIdentifier, expectedVersion);
+            CurrentUnitOfWork.get().registerListener(aggregate, new LockManagingListener(aggregate));
             return aggregate;
         } catch (RuntimeException ex) {
             logger.warn("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
@@ -163,11 +125,39 @@ public abstract class LockingRepository<T extends VersionedAggregateRoot> extend
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
+     * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     @Override
-    protected abstract T doLoad(UUID aggregateIdentifier);
+    protected abstract T doLoad(UUID aggregateIdentifier, Long expectedVersion);
 
+    private class LockManagingListener extends UnitOfWorkListenerAdapter {
+
+        private final T aggregate;
+
+        public LockManagingListener(T aggregate) {
+            this.aggregate = aggregate;
+        }
+
+        @Override
+        public void onPrepareCommit() {
+            if (!lockManager.validateLock(aggregate)) {
+                throw new ConcurrencyException(String.format(
+                        "The aggregate of type [%s] with identifier [%s] could not be "
+                                + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
+                                + "the current thread had released its lock earlier on.",
+                        aggregate.getClass().getSimpleName(),
+                        aggregate.getIdentifier()));
+            }
+        }
+
+        @Override
+        public void onCommitOrRollback() {
+            if (lockManager.validateLock(aggregate)) {
+                lockManager.releaseLock(aggregate.getIdentifier());
+            }
+        }
+    }
 }

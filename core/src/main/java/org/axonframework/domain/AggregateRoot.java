@@ -28,15 +28,7 @@ import java.util.UUID;
 public interface AggregateRoot {
 
     /**
-     * Returns a DomainEventStream to the events in the aggregate that have been raised since creation or the last
-     * commit.
-     *
-     * @return the DomainEventStream to the uncommitted events.
-     */
-    DomainEventStream getUncommittedEvents();
-
-    /**
-     * Returns the identifier of this aggregate
+     * Returns the identifier of this aggregate.
      *
      * @return the identifier of this aggregate
      */
@@ -53,4 +45,26 @@ public interface AggregateRoot {
      * @return the number of uncommitted events currently available in the aggregate.
      */
     int getUncommittedEventCount();
+
+    /**
+     * Returns a DomainEventStream to the events in the aggregate that have been raised since creation or the last
+     * commit.
+     *
+     * @return the DomainEventStream to the uncommitted events.
+     */
+    DomainEventStream getUncommittedEvents();
+
+    /**
+     * Returns the current version number of the aggregate, or <code>null</code> if the aggregate is newly created. This
+     * version must reflect the version number of the aggregate on which changes are applied.
+     * <p/>
+     * Each time the aggregate is <em>modified and stored</em> in a repository, the version number must be increased by
+     * at least 1. This version number can be used by optimistic locking strategies and detection of conflicting
+     * concurrent modification.
+     * <p/>
+     * Typically the sequence number of the last committed event on this aggregate is used as version number.
+     *
+     * @return the current version number of this aggregate, or <code>null</code> if no events were ever committed
+     */
+    Long getVersion();
 }

@@ -16,8 +16,8 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.commandhandling.interceptors.TransactionalUnitOfWork;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
 
 /**
@@ -27,7 +27,7 @@ public class LockingRepositoryTest_TransactionalSession extends LockingRepositor
 
     @Before
     public void startSession() {
-        CurrentUnitOfWork.set(new TransactionalUnitOfWork());
+        CurrentUnitOfWork.set(new DefaultUnitOfWork());
     }
 
     @After

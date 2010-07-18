@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.VersionedAggregateRoot;
+import org.axonframework.domain.AggregateRoot;
 
 import java.util.Map;
 import java.util.UUID;
@@ -43,7 +43,7 @@ class OptimisticLockManager implements LockManager {
      * {@inheritDoc}
      */
     @Override
-    public boolean validateLock(VersionedAggregateRoot aggregate) {
+    public boolean validateLock(AggregateRoot aggregate) {
         OptimisticLock lock = locks.get(aggregate.getIdentifier());
         return lock != null && lock.validate(aggregate);
     }
@@ -84,8 +84,8 @@ class OptimisticLockManager implements LockManager {
         private OptimisticLock() {
         }
 
-        private synchronized boolean validate(VersionedAggregateRoot aggregate) {
-            Long lastCommittedEventSequenceNumber = aggregate.getLastCommittedEventSequenceNumber();
+        private synchronized boolean validate(AggregateRoot aggregate) {
+            Long lastCommittedEventSequenceNumber = aggregate.getVersion();
             if (versionNumber == null || versionNumber.equals(lastCommittedEventSequenceNumber)) {
                 long last = lastCommittedEventSequenceNumber == null ? 0 : lastCommittedEventSequenceNumber;
                 versionNumber = last + aggregate.getUncommittedEventCount();

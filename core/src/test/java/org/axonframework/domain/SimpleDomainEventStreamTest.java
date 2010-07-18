@@ -37,10 +37,16 @@ public class SimpleDomainEventStreamTest {
 
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testPeek_EmptyStream() {
         SimpleDomainEventStream testSubject = new SimpleDomainEventStream();
-        testSubject.peek();
+        assertFalse(testSubject.hasNext());
+        try {
+            testSubject.peek();
+            fail("Expected NoSuchElementException");
+        } catch (NoSuchElementException e) {
+            // what we expect
+        }
     }
 
     @Test

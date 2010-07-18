@@ -16,6 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.util.AxonTransientException;
+
 /**
  * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying the
  * same aggregate.
@@ -23,12 +25,12 @@ package org.axonframework.repository;
  * @author Allard Buijze
  * @since 0.3
  */
-public class ConcurrencyException extends RuntimeException {
+public class ConcurrencyException extends AxonTransientException {
 
     private static final long serialVersionUID = -739879545165860129L;
 
     /**
-     * Initialize a ConcurrencyException with the given <code>message</code>
+     * Initialize a ConcurrencyException with the given <code>message</code>.
      *
      * @param message The message describing the cause of the exception
      */

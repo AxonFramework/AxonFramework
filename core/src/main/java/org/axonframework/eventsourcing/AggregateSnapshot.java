@@ -39,7 +39,7 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> extends Doma
      * @throws IllegalArgumentException if the aggregate contains uncommitted modifications
      */
     public AggregateSnapshot(T aggregate) {
-        super(aggregate.getLastCommittedEventSequenceNumber(), aggregate.getIdentifier());
+        super(aggregate.getVersion(), aggregate.getIdentifier());
         if (aggregate.getUncommittedEventCount() != 0) {
             throw new IllegalArgumentException("Aggregate may not have uncommitted modifications");
         }

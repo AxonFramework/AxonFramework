@@ -20,7 +20,11 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.domain.*;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.Event;
+import org.axonframework.domain.EventBase;
+import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -30,7 +34,11 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see

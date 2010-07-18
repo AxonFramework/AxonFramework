@@ -23,8 +23,12 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.LockingRepository;
 import org.axonframework.repository.LockingStrategy;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -45,6 +49,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         implements AggregateFactory<T> {
 
     private volatile EventStore eventStore;
+    private ConflictResolver conflictResolver;
 
     /**
      * Initializes a repository with the default locking strategy.
@@ -77,6 +82,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
+     * @param expectedVersion     The expected version of the loaded aggregate
      * @return the fully initialized aggregate
      *
      * @throws AggregateDeletedException in case an aggregate existed in the past, but has been deleted
@@ -84,16 +90,26 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      *                                   when an aggregate with the given identifier does not exist
      */
     @Override
-    protected T doLoad(UUID aggregateIdentifier) {
+    protected T doLoad(UUID aggregateIdentifier, final Long expectedVersion) {
         DomainEventStream events;
         try {
             events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
         } catch (EventStreamNotFoundException e) {
             throw new AggregateNotFoundException("The aggregate was not found", e);
         }
-        T aggregate = createAggregate(aggregateIdentifier, events.peek());
-        aggregate.initializeState(events);
+        final T aggregate = createAggregate(aggregateIdentifier, events.peek());
+        List<DomainEvent> unseenEvents = new ArrayList<DomainEvent>();
+        aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
+        CurrentUnitOfWork.get().registerListener(aggregate, new ConflictResolvingListener(aggregate, unseenEvents));
         return aggregate;
+    }
+
+    private List<DomainEvent> asList(DomainEventStream domainEventStream) {
+        List<DomainEvent> unseenEvents = new ArrayList<DomainEvent>();
+        while (domainEventStream.hasNext()) {
+            unseenEvents.add(domainEventStream.next());
+        }
+        return unseenEvents;
     }
 
     /**
@@ -103,6 +119,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * {@link AggregateSnapshot}, the aggregate is extracted from the event. Otherwise, aggregate creation is delegated
      * to the abstract {@link #instantiateAggregate(java.util.UUID, org.axonframework.domain.DomainEvent)} method.
      */
+    @Override
     @SuppressWarnings({"unchecked"})
     public T createAggregate(UUID aggregateIdentifier, DomainEvent firstEvent) {
         T aggregate;
@@ -133,6 +150,19 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     protected abstract T instantiateAggregate(UUID aggregateIdentifier, DomainEvent firstEvent);
 
     /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation will do nothing if a conflict resolver (See {@link #setConflictResolver(ConflictResolver)} is
+     * set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
+     */
+    @Override
+    protected void validateOnLoad(T aggregate, Long expectedVersion) {
+        if (conflictResolver == null) {
+            super.validateOnLoad(aggregate, expectedVersion);
+        }
+    }
+
+    /**
      * Sets the event store that would physically store the events.
      *
      * @param eventStore the event bus to publish events to
@@ -142,4 +172,75 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         this.eventStore = eventStore;
     }
 
+    /**
+     * Sets the conflict resolver to use for this repository. If not set (or <code>null</code>), the repository will
+     * throw an exception if any unexpected changes appear in loaded aggregates.
+     *
+     * @param conflictResolver The conflict resolver to use for this repository
+     */
+    public void setConflictResolver(ConflictResolver conflictResolver) {
+        this.conflictResolver = conflictResolver;
+    }
+
+    private final class ConflictResolvingListener extends UnitOfWorkListenerAdapter {
+
+        private final T aggregate;
+        private final List<DomainEvent> unseenEvents;
+
+        private ConflictResolvingListener(T aggregate, List<DomainEvent> unseenEvents) {
+            this.aggregate = aggregate;
+            this.unseenEvents = unseenEvents;
+        }
+
+        @Override
+        public void onPrepareCommit() {
+            if (hasPotentialConflicts()) {
+                conflictResolver.resolveConflicts(asList(aggregate.getUncommittedEvents()), unseenEvents);
+            }
+        }
+
+        private boolean hasPotentialConflicts() {
+            return aggregate.getUncommittedEventCount() > 0
+                    && aggregate.getVersion() != null
+                    && !unseenEvents.isEmpty();
+        }
+    }
+
+    /**
+     * Wrapper around a DomainEventStream that captures all passing events of which the sequence number is larger than
+     * the expected version number.
+     */
+    private static final class CapturingEventStream implements DomainEventStream {
+
+        private final DomainEventStream eventStream;
+        private final List<DomainEvent> unseenEvents;
+        private final Long expectedVersion;
+
+        private CapturingEventStream(DomainEventStream events,
+                                     List<DomainEvent> unseenEvents,
+                                     Long expectedVersion) {
+            eventStream = events;
+            this.unseenEvents = unseenEvents;
+            this.expectedVersion = expectedVersion;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return eventStream.hasNext();
+        }
+
+        @Override
+        public DomainEvent next() {
+            DomainEvent next = eventStream.next();
+            if (expectedVersion != null && next.getSequenceNumber() > expectedVersion) {
+                unseenEvents.add(next);
+            }
+            return next;
+        }
+
+        @Override
+        public DomainEvent peek() {
+            return eventStream.peek();
+        }
+    }
 }

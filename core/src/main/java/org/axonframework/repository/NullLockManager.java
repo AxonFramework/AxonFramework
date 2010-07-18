@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.VersionedAggregateRoot;
+import org.axonframework.domain.AggregateRoot;
 
 import java.util.UUID;
 
@@ -36,7 +36,7 @@ class NullLockManager implements LockManager {
      * This implementation always returns true.
      */
     @Override
-    public boolean validateLock(VersionedAggregateRoot aggregate) {
+    public boolean validateLock(AggregateRoot aggregate) {
         return true;
     }
 
