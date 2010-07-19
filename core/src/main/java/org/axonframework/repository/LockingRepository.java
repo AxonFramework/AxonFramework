@@ -113,6 +113,19 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
         }
     }
 
+    @Override
+    public void save(T aggregate) {
+        if (aggregate.getVersion() != null && !lockManager.validateLock(aggregate)) {
+            throw new ConcurrencyException(String.format(
+                    "The aggregate of type [%s] with identifier [%s] could not be "
+                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
+                            + "the current thread had released its lock earlier on.",
+                    aggregate.getClass().getSimpleName(),
+                    aggregate.getIdentifier()));
+        }
+        super.save(aggregate);
+    }
+
     /**
      * Perform the actual saving of the aggregate. All necessary locks have been verified.
      *
@@ -139,18 +152,6 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
 
         public LockManagingListener(T aggregate) {
             this.aggregate = aggregate;
-        }
-
-        @Override
-        public void onPrepareCommit() {
-            if (!lockManager.validateLock(aggregate)) {
-                throw new ConcurrencyException(String.format(
-                        "The aggregate of type [%s] with identifier [%s] could not be "
-                                + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                                + "the current thread had released its lock earlier on.",
-                        aggregate.getClass().getSimpleName(),
-                        aggregate.getIdentifier()));
-            }
         }
 
         @Override
