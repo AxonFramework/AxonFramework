@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandContext;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 
 /**
@@ -31,53 +32,11 @@ import org.axonframework.unitofwork.UnitOfWork;
  */
 public abstract class TransactionalUnitOfWorkInterceptor extends SimpleUnitOfWorkInterceptor {
 
-    /**
-     * Starts a new transaction. See {@link #startTransaction(org.axonframework.unitofwork.UnitOfWork ,
-     * org.axonframework.commandhandling.CommandContext)}
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The unitOfWork that has been started
-     */
     @Override
-    protected void afterCreated(CommandContext context, UnitOfWork unitOfWork) {
-        startTransaction(getUnitOfWork(context), context);
-    }
-
-    /**
-     * Rolls back a transaction. See {@link #rollbackTransaction(org.axonframework.unitofwork.UnitOfWork ,
-     * org.axonframework.commandhandling.CommandContext)}
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The unitOfWork that has been started
-     */
-    @Override
-    protected void afterRollback(CommandContext context, UnitOfWork unitOfWork) {
-        rollbackTransaction(unitOfWork, context);
-    }
-
-    /**
-     * Commits a transaction. See {@link #commitTransaction(org.axonframework.unitofwork.UnitOfWork ,
-     * org.axonframework.commandhandling.CommandContext)}.
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The unitOfWork that has been started
-     */
-    @Override
-    protected void afterCommit(CommandContext context, UnitOfWork unitOfWork) {
-        commitTransaction(unitOfWork, context);
-    }
-
-    /**
-     * Rolls back the transaction. See {@link #rollbackTransaction(org.axonframework.unitofwork.UnitOfWork ,
-     * org.axonframework.commandhandling.CommandContext)}.
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The unitOfWork that has been started
-     * @param exception  The exception thrown while committing the UnitOfWork
-     */
-    @Override
-    protected void onCommitFailed(CommandContext context, UnitOfWork unitOfWork, RuntimeException exception) {
-        rollbackTransaction(unitOfWork, context);
+    protected UnitOfWork createUnitOfWork(CommandContext commandContext) {
+        TransactionalUnitOfWork unitOfWork = new TransactionalUnitOfWork(commandContext);
+        startTransaction(unitOfWork, commandContext);
+        return unitOfWork;
     }
 
     /**
@@ -106,4 +65,25 @@ public abstract class TransactionalUnitOfWorkInterceptor extends SimpleUnitOfWor
      * @param context    The command context of the command being executed
      */
     protected abstract void rollbackTransaction(UnitOfWork unitOfWork, CommandContext context);
+
+    private class TransactionalUnitOfWork extends DefaultUnitOfWork {
+
+        private final CommandContext commandContext;
+
+        private TransactionalUnitOfWork(CommandContext commandContext) {
+            this.commandContext = commandContext;
+        }
+
+        @Override
+        protected void notifyListenersAfterCommit() {
+            commitTransaction(this, commandContext);
+            super.notifyListenersAfterCommit();
+        }
+
+        @Override
+        protected void notifyListenersRollback() {
+            rollbackTransaction(this, commandContext);
+            super.notifyListenersRollback();
+        }
+    }
 }

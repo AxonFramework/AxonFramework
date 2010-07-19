@@ -41,10 +41,9 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
 
     @Override
     protected void onIncomingCommand(Object command, CommandContext context, CommandHandler handler) {
-        UnitOfWork unitOfWork = createUnitOfWork();
+        UnitOfWork unitOfWork = createUnitOfWork(context);
         context.setProperty(UNIT_OF_WORK_ATTRIBUTE, unitOfWork);
         CurrentUnitOfWork.set(unitOfWork);
-        afterCreated(context, unitOfWork);
     }
 
     @Override
@@ -53,11 +52,9 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
         UnitOfWork unitOfWork = getUnitOfWork(context);
         try {
             unitOfWork.commit();
-            afterCommit(context, unitOfWork);
         } catch (RuntimeException e) {
             logger.warn("An error occurred while committing the UnitOfWork. Rolling back the UnitOfWork instead.", e);
             unitOfWork.rollback();
-            onCommitFailed(context, unitOfWork, e);
         } finally {
             CurrentUnitOfWork.clear();
             context.removeProperty(UNIT_OF_WORK_ATTRIBUTE);
@@ -70,7 +67,6 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
         try {
             UnitOfWork unitOfWork = (UnitOfWork) context.getProperty(UNIT_OF_WORK_ATTRIBUTE);
             unitOfWork.rollback();
-            afterRollback(context, unitOfWork);
         } finally {
             CurrentUnitOfWork.clear();
             context.removeProperty(UNIT_OF_WORK_ATTRIBUTE);
@@ -78,54 +74,14 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
     }
 
     /**
-     * Invoked after a new UnitOfWork has been created. This method is provided for overriding purposes. It does nothing
-     * by itself.
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The UnitOfWork that has been created
-     */
-    protected void afterCreated(CommandContext context, UnitOfWork unitOfWork) {
-    }
-
-    /**
-     * Invoked after a UnitOfWork was rolled back. This method is provided for overriding purposes. It does nothing by
-     * itself.
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The UnitOfWork that has been started
-     */
-    protected void afterRollback(CommandContext context, UnitOfWork unitOfWork) {
-    }
-
-    /**
-     * Invoked after a UnitOfWork was committed. This method is provided for overriding purposes. It does nothing by
-     * itself.
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The UnitOfWork that has been committed
-     */
-    protected void afterCommit(CommandContext context, UnitOfWork unitOfWork) {
-    }
-
-    /**
-     * Invoked when an exception occurred during UnitOfWork commit. This method is provided for overriding purposes. It
-     * does nothing by itself.
-     *
-     * @param context    The command context describing the command execution
-     * @param unitOfWork The UnitOfWork that has been committed
-     * @param exception  The exception thrown while committing the UnitOfWork
-     */
-    protected void onCommitFailed(CommandContext context, UnitOfWork unitOfWork, RuntimeException exception) {
-    }
-
-    /**
      * Creates a new instance of a UnitOfWork. This implementation creates a new {@link
      * org.axonframework.unitofwork.DefaultUnitOfWork}. Subclasses may override this method to provide another instance
      * instead.
      *
+     * @param commandContext
      * @return The UnitOfWork to bind to the current thread.
      */
-    protected UnitOfWork createUnitOfWork() {
+    protected UnitOfWork createUnitOfWork(CommandContext commandContext) {
         return new DefaultUnitOfWork();
     }
 

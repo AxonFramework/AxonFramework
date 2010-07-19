@@ -48,9 +48,7 @@ public class DefaultUnitOfWork implements UnitOfWork {
     public void rollback() {
         registeredAggregates.clear();
         eventsToPublish.clear();
-        for (UnitOfWorkListener listener : allListeners()) {
-            listener.onRollback();
-        }
+        notifyListenersRollback();
         listeners.clear();
     }
 
@@ -78,7 +76,10 @@ public class DefaultUnitOfWork implements UnitOfWork {
     @Override
     public void commit() {
         try {
-            performCommit();
+            notifyListenersPrepareCommit();
+            saveAggregates();
+            publishEvents();
+            notifyListenersAfterCommit();
         } catch (RuntimeException e) {
             rollback();
             throw e;
@@ -117,19 +118,49 @@ public class DefaultUnitOfWork implements UnitOfWork {
         this.publishEventImmediately = false;
     }
 
-    private void performCommit() {
+    /**
+     * Send a {@link UnitOfWorkListener#onRollback()} notification to all registered listeners.
+     */
+    protected void notifyListenersRollback() {
         for (UnitOfWorkListener listener : allListeners()) {
-            listener.onPrepareCommit();
+            listener.onRollback();
         }
+    }
+
+    /**
+     * Send a {@link UnitOfWorkListener#afterCommit()} notification to all registered listeners.
+     */
+    protected void notifyListenersAfterCommit() {
+        for (UnitOfWorkListener listener : allListeners()) {
+            listener.afterCommit();
+        }
+    }
+
+    /**
+     * Publishes all registered events to their respective event bus.
+     */
+    protected void publishEvents() {
+        while (!eventsToPublish.isEmpty()) {
+            eventsToPublish.poll().publishEvent();
+        }
+    }
+
+    /**
+     * Saves all registered aggregates by calling their respective callbacks.
+     */
+    protected void saveAggregates() {
         for (AggregateEntry entry : registeredAggregates.values()) {
             entry.saveAggregate();
         }
         registeredAggregates.clear();
-        while (!eventsToPublish.isEmpty()) {
-            eventsToPublish.poll().publishEvent();
-        }
+    }
+
+    /**
+     * Send a {@link UnitOfWorkListener#onPrepareCommit()} notification to all registered listeners.
+     */
+    protected void notifyListenersPrepareCommit() {
         for (UnitOfWorkListener listener : allListeners()) {
-            listener.afterCommit();
+            listener.onPrepareCommit();
         }
     }
 
