@@ -176,25 +176,6 @@
             </simplesect>
             <simplesect>
                 <title>
-                    <code>VersionedAggregateRoot</code>
-                </title>
-                <para>The
-                    <code>VersionedAggregateRoot</code>
-                    interface provides the information
-                    needed by repositories to perform optimistic locking. The only method added to
-                    the
-                    <code>AggregateRoot</code>
-                    interface is
-                    <code>getLastCommittedEventSequenceNumber</code>, which returns the sequence
-                    number of the event that was last committed. See
-                    <xref linkend="locking-repository"/>
-                    for more information about the abstract
-                    <code>LockingRepository</code>
-                    implementation.
-                </para>
-            </simplesect>
-            <simplesect>
-                <title>
                     <code>AbstractAggregateRoot</code>
                 </title>
                 <para>The
@@ -230,7 +211,7 @@
                     <code>EventSourcedAggregateRoot</code>
                     defines an extra method,
                     <code>initializeState()</code>, on top of the
-                    <code>VersionedAggregateRoot</code>
+                    <code>AggregateRoot</code>
                     interface. This method initializes an
                     aggregate's state based on an event stream.
                 </para>
