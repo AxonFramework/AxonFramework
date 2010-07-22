@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.commandhandling.callbacks;
+
+import org.axonframework.commandhandling.CommandCallback;
 
 /**
- * Marks an instance that is capable of handling commands. CommandHandlers need to be subscribed to a {@link CommandBus}
- * in order to receive command of the specified type <code>T</code>.
+ * Abstract implementation that provides a default implementation for the {@link #onStart()} method. As that method is
+ * not used most of the times, anonymous inner classes can extend this class to remove the need to provide an
+ * implementation for that method.
  *
  * @author Allard Buijze
- * @param <T> The type of command this handler can handle
- * @since 0.5
+ * @param <T> the type of result of the command handling
+ * @since 0.6
  */
-public interface CommandHandler<T> {
+public abstract class AbstractCallback<T> implements CommandCallback<T> {
 
-    /**
-     * Handles the given <code>command</code>.
-     *
-     * @param command The command to process.
-     * @return The result of the command processing, if any.
-     *
-     * @throws Throwable any exception that occurs during command handling
-     */
-    Object handle(T command) throws Throwable;
-
+    @Override
+    public void onStart() {
+    }
 }

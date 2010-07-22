@@ -44,9 +44,9 @@ public interface CommandHandlerInterceptor {
      * @param context The context in which the command is executed. It contains both the command and any information
      *                that previous CommandHandlerInterceptors may have added to it.
      * @param handler The handler that will handle the command.
-     * @throws RuntimeException when an error occurs that should block command handling.
+     * @throws Exception when an error occurs that should block command handling.
      */
-    void beforeCommandHandling(CommandContext context, CommandHandler handler);
+    void beforeCommandHandling(CommandContext context, CommandHandler handler) throws Exception;
 
     /**
      * Invoked after the command handler handled the command or when a CommandHandlerInterceptor further down the chain
@@ -56,8 +56,9 @@ public interface CommandHandlerInterceptor {
      * @param context The context in which the command is executed. It contains the command, the result of command
      *                handling, if any, and information that previous CommandHandlerInterceptors may have added to it.
      * @param handler The handler that has handled the command.
-     * @throws RuntimeException when an error occurs that should block command handling.
+     * @throws Exception when an error occurs that should block command handling. Note that events may already have been
+     *                   dispatched at this point
      */
-    void afterCommandHandling(CommandContext context, CommandHandler handler);
+    void afterCommandHandling(CommandContext context, CommandHandler handler) throws Exception;
 
 }

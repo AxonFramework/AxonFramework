@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.annotation;
+package org.axonframework.commandhandling;
 
 import org.axonframework.util.AxonException;
 
@@ -24,7 +24,10 @@ import org.axonframework.util.AxonException;
  *
  * @author Allard Buijze
  * @since 0.5
+ * @deprecated This exception only occurs while invoking the deprecated {@link org.axonframework.commandhandling.CommandBus#dispatch(Object)}
+ *             method.
  */
+@Deprecated
 public class CommandHandlerInvocationException extends AxonException {
 
     private static final long serialVersionUID = -8316136310475727263L;

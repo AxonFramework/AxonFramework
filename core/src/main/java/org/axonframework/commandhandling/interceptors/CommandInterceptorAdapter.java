@@ -28,7 +28,7 @@ import org.axonframework.commandhandling.CommandHandlerInterceptor;
  * @author Allard Buijze
  * @see #onIncomingCommand(Object,org.axonframework.commandhandling.CommandContext,org.axonframework.commandhandling.CommandHandler)
  * @see #onSuccessfulExecution(Object, Object,org.axonframework.commandhandling.CommandContext,org.axonframework.commandhandling.CommandHandler)
- * @see #onFailedExecution(Object, Exception,org.axonframework.commandhandling.CommandContext,org.axonframework.commandhandling.CommandHandler)
+ * @see #onFailedExecution(Object, Throwable,org.axonframework.commandhandling.CommandContext,org.axonframework.commandhandling.CommandHandler)
  * @since 0.6
  */
 public abstract class CommandInterceptorAdapter implements CommandHandlerInterceptor {
@@ -88,7 +88,7 @@ public abstract class CommandInterceptorAdapter implements CommandHandlerInterce
      * @param context   The complete command execution context
      * @param handler   The handler that executed the command
      */
-    protected void onFailedExecution(Object command, Exception exception, CommandContext context,
+    protected void onFailedExecution(Object command, Throwable exception, CommandContext context,
                                      CommandHandler handler) {
     }
 }

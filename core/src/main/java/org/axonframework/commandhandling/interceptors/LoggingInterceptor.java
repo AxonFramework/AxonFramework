@@ -91,7 +91,7 @@ public class LoggingInterceptor extends CommandInterceptorAdapter {
      */
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    protected void onFailedExecution(Object command, Exception exception, CommandContext context,
+    protected void onFailedExecution(Object command, Throwable exception, CommandContext context,
                                      CommandHandler handler) {
         logger.warn(format("[%s] execution failed:", command.getClass().getSimpleName()),
                     exception);

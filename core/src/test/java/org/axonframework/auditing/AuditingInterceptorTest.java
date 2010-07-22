@@ -18,6 +18,7 @@ package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.callbacks.AbstractCallback;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.junit.*;
@@ -64,31 +65,49 @@ public class AuditingInterceptorTest {
                 return "Axon";
             }
         };
-        Object result = commandBus.dispatch("Command");
-        assertEquals(1, auditingInterceptor.getLoggedContexts().size());
-        AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
-        assertEquals(1, actual.getEvents().size());
-        assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
-        assertEquals("Axon", actual.getPrincipal().getName());
-        assertEquals("Command", actual.getCommand());
-        assertNull("AuditingContext should be cleared after command processing",
-                   AuditingContextHolder.currentAuditingContext());
-        assertEquals("ok", result);
+        commandBus.dispatch("Command", new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                assertEquals(1, auditingInterceptor.getLoggedContexts().size());
+                AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
+                assertEquals(1, actual.getEvents().size());
+                assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
+                assertEquals("Axon", actual.getPrincipal().getName());
+                assertEquals("Command", actual.getCommand());
+                assertNull("AuditingContext should be cleared after command processing",
+                           AuditingContextHolder.currentAuditingContext());
+                assertEquals("ok", result);
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                fail("Did not expect exception");
+            }
+        });
     }
 
     @Test
     public void testInterceptCommand_NoCurrentPrincipal() {
-        Object result = commandBus.dispatch("Command");
-        assertEquals(1, auditingInterceptor.getLoggedContexts().size());
-        AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
-        assertEquals(1, actual.getEvents().size());
-        assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
-        assertNull(actual.getPrincipal());
-        assertEquals("ok", result);
+        commandBus.dispatch("Command", new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                assertEquals(1, auditingInterceptor.getLoggedContexts().size());
+                AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
+                assertEquals(1, actual.getEvents().size());
+                assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
+                assertNull(actual.getPrincipal());
+                assertEquals("ok", result);
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                fail("Did not expect exception");
+            }
+        });
     }
 
     @Test
-    public void testInterceptCommand_PreviousContextIsRestored() {
+    public void testInterceptCommand_PreviousContextIsRestored() throws Exception {
         AuditingContext previousContext = new AuditingContext(null, "Previous");
         AuditingContextHolder.setContext(previousContext);
         commandBus.dispatch("Command");
@@ -97,13 +116,17 @@ public class AuditingInterceptorTest {
 
     @Test
     public void testInterceptCommand_FailedCommandExecution() {
-        try {
-            commandBus.dispatch("Fail");
-            fail("Expected exception");
-        }
-        catch (RuntimeException e) {
-            assertEquals(RuntimeException.class, e.getClass());
-        }
+        commandBus.dispatch("Fail", new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                fail("Expected exception");
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                assertEquals(RuntimeException.class, cause.getClass());
+            }
+        });
         assertEquals(0, auditingInterceptor.getLoggedContexts().size());
         assertEquals(1, auditingInterceptor.getFailedContexts().size());
     }
@@ -124,7 +147,7 @@ public class AuditingInterceptorTest {
         }
 
         @Override
-        protected void writeFailed(AuditingContext context, Exception failureCause) {
+        protected void writeFailed(AuditingContext context, Throwable failureCause) {
             this.failedContexts.add(context);
         }
 

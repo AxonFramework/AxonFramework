@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.callbacks.AbstractCallback;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
@@ -126,12 +127,17 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
 
     @Override
     public ResultValidator when(Object command) {
-        try {
-            actualReturnValue = commandBus.dispatch(command);
-        }
-        catch (Exception ex) {
-            actualException = ex;
-        }
+        commandBus.dispatch(command, new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                actualReturnValue = result;
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                actualException = cause;
+            }
+        });
         return this;
     }
 
@@ -147,14 +153,14 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     @Override
     public ResultValidator expectPublishedEvents(Event... expectedEvents) {
         if (expectedEvents.length != publishedEvents.size()) {
-            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents));
+            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
         }
 
         Iterator<Event> iterator = publishedEvents.iterator();
         for (Event expectedEvent : expectedEvents) {
             Event actualEvent = iterator.next();
             if (!verifyEventEquality(expectedEvent, actualEvent)) {
-                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents));
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
         return this;
@@ -163,13 +169,13 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     @Override
     public ResultValidator expectStoredEvents(DomainEvent... expectedEvents) {
         if (expectedEvents.length != storedEvents.size()) {
-            reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents));
+            reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
         }
         Iterator<DomainEvent> iterator = storedEvents.iterator();
         for (DomainEvent expectedEvent : expectedEvents) {
             DomainEvent actualEvent = iterator.next();
             if (!verifyEventEquality(expectedEvent, actualEvent)) {
-                reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents));
+                reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
         return this;

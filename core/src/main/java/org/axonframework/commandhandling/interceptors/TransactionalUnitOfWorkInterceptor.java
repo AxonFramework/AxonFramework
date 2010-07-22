@@ -66,7 +66,7 @@ public abstract class TransactionalUnitOfWorkInterceptor extends SimpleUnitOfWor
      */
     protected abstract void rollbackTransaction(UnitOfWork unitOfWork, CommandContext context);
 
-    private class TransactionalUnitOfWork extends DefaultUnitOfWork {
+    private final class TransactionalUnitOfWork extends DefaultUnitOfWork {
 
         private final CommandContext commandContext;
 

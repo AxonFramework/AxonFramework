@@ -31,7 +31,7 @@ class CommandContextImpl implements CommandContext {
     private final Object command;
     private boolean executed = false;
     private boolean successful = true;
-    private RuntimeException exception;
+    private Throwable exception;
     private Object result;
 
     private final Map<String, Object> properties = new HashMap<String, Object>();
@@ -86,7 +86,7 @@ class CommandContextImpl implements CommandContext {
     }
 
     @Override
-    public RuntimeException getException() {
+    public Throwable getException() {
         return exception;
     }
 
@@ -101,22 +101,22 @@ class CommandContextImpl implements CommandContext {
     }
 
     /**
-     * Mark the context to indicate an exception was thrown from the command handler
+     * Mark the context to indicate an exception was thrown from the command handler.
      *
      * @param actualException the exception thrown from the command handler
      */
-    public void markFailedHandlerExecution(RuntimeException actualException) {
+    public void markFailedHandlerExecution(Throwable actualException) {
         this.executed = true;
         this.successful = false;
         this.exception = actualException;
     }
 
     /**
-     * Mark the context to indicate an exception was thrown from one of the interceptors
+     * Mark the context to indicate an exception was thrown from one of the interceptors.
      *
      * @param actualException The exception thrown from the interceptor
      */
-    public void markFailedInterceptorExecution(RuntimeException actualException) {
+    public void markFailedInterceptorExecution(Throwable actualException) {
         this.successful = false;
         this.exception = actualException;
     }

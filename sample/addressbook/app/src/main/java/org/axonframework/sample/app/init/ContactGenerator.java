@@ -49,11 +49,15 @@ public class ContactGenerator implements ApplicationListener {
         if (initialized.compareAndSet(false, true)) {
             CreateContactCommand commandAllard = new CreateContactCommand();
             commandAllard.setNewContactName("Allard");
-            UUID uuidAllard = (UUID) commandBus.dispatch(commandAllard);
+            UUID uuidAllard = UUID.randomUUID();
+            commandAllard.setIdentifier(uuidAllard);
+            commandBus.dispatch(commandAllard);
 
             CreateContactCommand commandJettro = new CreateContactCommand();
             commandJettro.setNewContactName("Jettro");
-            UUID uuidJettro = (UUID) commandBus.dispatch(commandJettro);
+            UUID uuidJettro = UUID.randomUUID();
+            commandJettro.setIdentifier(uuidJettro);
+            commandBus.dispatch(commandJettro);
 
             RegisterAddressCommand registerPrivateAddressCommand = new RegisterAddressCommand();
             registerPrivateAddressCommand.setAddressType(AddressType.PRIVATE);

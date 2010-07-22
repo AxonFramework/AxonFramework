@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 
 import java.io.ByteArrayOutputStream;
+import java.io.CharArrayWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -53,11 +54,22 @@ class Reporter {
      *
      * @param actualEvents   The events that were found
      * @param expectedEvents The events that were expected
+     * @param probableCause  An optional exception that might be the reason for wrong events
      */
-    public void reportWrongEvent(List<? extends Event> actualEvents, List<? extends Event> expectedEvents) {
+    public void reportWrongEvent(List<? extends Event> actualEvents, List<? extends Event> expectedEvents,
+                                 Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events");
         appendEventOverview(sb, expectedEvents, actualEvents, "Expected", "Actual");
+        if (probableCause != null) {
+            sb.append(NEWLINE);
+            sb.append("A probable cause for the wrong chain of events is an "
+                    + "exception that occurred while handling the command");
+            CharArrayWriter charArrayWriter = new CharArrayWriter();
+            probableCause.printStackTrace(new PrintWriter(charArrayWriter));
+            sb.append(charArrayWriter.toCharArray());
+        }
+
         throw new AxonAssertionError(sb.toString());
     }
 

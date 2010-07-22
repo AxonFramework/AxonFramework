@@ -45,7 +45,7 @@ public class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    public void testHandlerDispatching_VoidReturnType() {
+    public void testHandlerDispatching_VoidReturnType() throws Throwable {
         Object actualReturnValue = testSubject.handle("");
         assertEquals(void.class, actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
@@ -53,7 +53,7 @@ public class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    public void testHandlerDispatching_WithReturnType() {
+    public void testHandlerDispatching_WithReturnType() throws Throwable {
         Object actualReturnValue = testSubject.handle(1L);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
@@ -61,24 +61,13 @@ public class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    public void testHandlerDispatching_ThrowingCheckedException() {
+    public void testHandlerDispatching_ThrowingException() throws Throwable {
         try {
             testSubject.handle(new HashSet());
             fail("Expected exception");
         }
-        catch (CommandHandlerInvocationException ex) {
-            assertEquals(Exception.class, ex.getCause().getClass());
-        }
-    }
-
-    @Test
-    public void testHandlerDispatching_ThrowingRuntimeException() {
-        try {
-            testSubject.handle(new ArrayList());
-            fail("Expected exception");
-        }
-        catch (RuntimeException ex) {
-            assertEquals(RuntimeException.class, ex.getClass());
+        catch (Exception ex) {
+            assertEquals(Exception.class, ex.getClass());
         }
     }
 
@@ -100,7 +89,7 @@ public class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test(expected = NoHandlerForCommandException.class)
-    public void testHandle_NoHandlerForCommand() {
+    public void testHandle_NoHandlerForCommand() throws Throwable {
         testSubject.handle(new LinkedList());
     }
 

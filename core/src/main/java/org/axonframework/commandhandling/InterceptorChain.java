@@ -71,13 +71,13 @@ class InterceptorChain {
             current.beforeCommandHandling(context, handler);
             next.handle(context, handler);
         }
-        catch (RuntimeException ex) {
+        catch (Exception ex) {
             context.markFailedInterceptorExecution(ex);
         }
         try {
             current.afterCommandHandling(context, handler);
         }
-        catch (RuntimeException ex) {
+        catch (Exception ex) {
             logger.error("An interceptor threw an exception in the afterCommandHandling method:", ex);
             context.markFailedInterceptorExecution(ex);
         }
@@ -89,7 +89,7 @@ class InterceptorChain {
             Object returnValue = handler.handle(context.getCommand());
             context.markSuccessfulExecution(returnValue);
         }
-        catch (RuntimeException ex) {
+        catch (Throwable ex) {
             context.markFailedHandlerExecution(ex);
         }
     }

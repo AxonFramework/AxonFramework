@@ -42,7 +42,8 @@ class Contact extends AbstractAnnotatedAggregateRoot {
 
     private Map<AddressType, Address> addresses = new HashMap<AddressType, Address>();
 
-    public Contact(String name) {
+    public Contact(UUID identifier, String name) {
+        super(identifier);
         apply(new ContactCreatedEvent(name));
     }
 

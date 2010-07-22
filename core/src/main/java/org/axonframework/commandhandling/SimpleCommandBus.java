@@ -45,10 +45,10 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
 
     @PostConstruct
     public void afterInitialization() {
-        JmxMonitorHolder.registerMonitor("SimpleCommandBusMonitor",statistics);
+        JmxMonitorHolder.registerMonitor("SimpleCommandBusMonitor", statistics);
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public Object dispatch(Object command) {
         statistics.recordReceivedCommand();
@@ -62,7 +62,30 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
         if (context.isSuccessful()) {
             return context.getResult();
         } else {
-            throw context.getException();
+            if (context.getException() instanceof RuntimeException) {
+                throw (RuntimeException) context.getException();
+            } else {
+                throw new CommandHandlerInvocationException("An exception occurred while handling a command",
+                                                            context.getException());
+            }
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
+    @Override
+    public void dispatch(Object command, final CommandCallback callback) {
+        statistics.recordReceivedCommand();
+        final CommandHandler handler = subscriptions.get(command.getClass());
+        if (handler == null) {
+            throw new NoHandlerForCommandException(String.format("No handler was subscribed to commands of type [%s]",
+                                                                 command.getClass().getSimpleName()));
+        }
+        CommandContextImpl context = new CommandContextImpl(command);
+        interceptorChain.handle(context, new CallbackNotifyingCommandHandler(callback, handler));
+        if (context.isSuccessful()) {
+            callback.onSuccess(context.getResult());
+        } else {
+            callback.onFailure(context.getException());
         }
     }
 
@@ -120,5 +143,29 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
     @Override
     public SimpleCommandBusStatistics getStatistics() {
         return statistics;
+    }
+
+    private static class CallbackNotifyingCommandHandler implements CommandHandler {
+
+        private final CommandCallback callback;
+        private final CommandHandler handler;
+
+        /**
+         * Wraps the given <code>handler</code> to notify the given <code>callback</code> when handling starts.
+         *
+         * @param callback The callback to notify
+         * @param handler  The handler to invoke
+         */
+        public CallbackNotifyingCommandHandler(CommandCallback callback, CommandHandler handler) {
+            this.callback = callback;
+            this.handler = handler;
+        }
+
+        @SuppressWarnings({"unchecked"})
+        @Override
+        public Object handle(Object command) throws Throwable {
+            callback.onStart();
+            return handler.handle(command);
+        }
     }
 }

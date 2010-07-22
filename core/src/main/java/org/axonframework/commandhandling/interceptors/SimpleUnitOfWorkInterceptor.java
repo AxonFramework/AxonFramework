@@ -62,7 +62,7 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
     }
 
     @Override
-    protected void onFailedExecution(Object command, Exception exception, CommandContext context,
+    protected void onFailedExecution(Object command, Throwable exception, CommandContext context,
                                      CommandHandler handler) {
         try {
             UnitOfWork unitOfWork = (UnitOfWork) context.getProperty(UNIT_OF_WORK_ATTRIBUTE);
@@ -78,7 +78,7 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
      * org.axonframework.unitofwork.DefaultUnitOfWork}. Subclasses may override this method to provide another instance
      * instead.
      *
-     * @param commandContext
+     * @param commandContext The context for which to create a UnitOfWork
      * @return The UnitOfWork to bind to the current thread.
      */
     protected UnitOfWork createUnitOfWork(CommandContext commandContext) {

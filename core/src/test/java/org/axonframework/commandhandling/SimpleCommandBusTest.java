@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.callbacks.AbstractCallback;
 import org.junit.*;
 import org.mockito.*;
 
@@ -39,17 +40,26 @@ public class SimpleCommandBusTest {
     @Test
     public void testDispatchCommand_HandlerSubscribed() {
         testSubject.subscribe(String.class, new MyStringCommandHandler());
-        Object actualResult = testSubject.dispatch("Say hi!");
-        assertEquals("Say hi!", actualResult);
+        testSubject.dispatch("Say hi!", new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                assertEquals("Say hi!", result);
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                fail("Did not expect exception");
+            }
+        });
     }
 
     @Test(expected = NoHandlerForCommandException.class)
-    public void testDispatchCommand_NoHandlerSubscribed() {
+    public void testDispatchCommand_NoHandlerSubscribed() throws Exception {
         testSubject.dispatch("Say hi!");
     }
 
     @Test(expected = NoHandlerForCommandException.class)
-    public void testDispatchCommand_HandlerUnsubscribed() {
+    public void testDispatchCommand_HandlerUnsubscribed() throws Exception {
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
         testSubject.subscribe(String.class, commandHandler);
         testSubject.unsubscribe(String.class, commandHandler);
@@ -61,75 +71,100 @@ public class SimpleCommandBusTest {
         testSubject.unsubscribe(String.class, new MyStringCommandHandler());
     }
 
+    @SuppressWarnings({"unchecked"})
     @Test
-    public void testInterceptorChain_CommandHandledSuccessfully() {
+    public void testInterceptorChain_CommandHandledSuccessfully() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
         CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        MyStringCommandHandler commandHandler = new MyStringCommandHandler();
+        CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        when(commandHandler.handle("Hi there!")).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);
 
-        Object actualResult = testSubject.dispatch("Hi there!");
-        assertEquals("Hi there!", actualResult);
-        InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2);
-        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
+        testSubject.dispatch("Hi there!", new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                assertEquals("Hi there!", result);
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                fail("Did not expect failure");
+            }
+        });
+
+        InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
+        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(commandHandler).handle("Hi there!");
+        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
     }
 
     @Test
-    public void testInterceptorChain_CommandHandlerThrowsException() {
+    public void testInterceptorChain_CommandHandlerThrowsException() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
         CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        MyFailingCommandHandler commandHandler = new MyFailingCommandHandler();
+        CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        when(commandHandler.handle("Hi there!")).thenThrow(new RuntimeException("Faking failed command handling"));
         testSubject.subscribe(String.class, commandHandler);
 
-        try {
-            testSubject.dispatch("Hi there!");
-            fail("Expected exception to be thrown");
-        }
-        catch (RuntimeException actual) {
-            assertEquals("Faking failed command handling", actual.getMessage());
-        }
+        testSubject.dispatch("Hi there!", new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                fail("Expected exception to be thrown");
+            }
 
-        InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2);
-        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
+            @Override
+            public void onFailure(Throwable cause) {
+                assertEquals("Faking failed command handling", cause.getMessage());
+            }
+        });
+
+        InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
+        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(commandHandler).handle("Hi there!");
+        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    public void testInterceptorChain_InterceptorThrowsExceptionInAfterHandle() {
+    public void testInterceptorChain_InterceptorThrowsExceptionInAfterHandle() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
         CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        MyStringCommandHandler commandHandler = new MyStringCommandHandler();
+        CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        when(commandHandler.handle("Hi there!")).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
         doThrow(someException).when(mockInterceptor2).afterCommandHandling(isA(CommandContext.class),
                                                                            isA(CommandHandler.class));
-        try {
-            testSubject.dispatch("Hi there!");
-            fail("Expected exception to be propagated");
-        }
-        catch (RuntimeException e) {
-            assertEquals("Mocking", e.getMessage());
-        }
-        InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2);
-        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
+        testSubject.dispatch("Hi there!", new AbstractCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                fail("Expected exception to be propagated");
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                assertEquals("Mocking", cause.getMessage());
+            }
+        });
+        InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
+        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(commandHandler).handle("Hi there!");
+        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
 
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    public void testInterceptorChain_InterceptorThrowsException() {
+    public void testInterceptorChain_InterceptorThrowsException() throws Exception {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
         CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
         CommandHandlerInterceptor mockInterceptor3 = mock(CommandHandlerInterceptor.class);
@@ -143,7 +178,7 @@ public class SimpleCommandBusTest {
             testSubject.dispatch("Hi there!");
             fail("Expected exception to be thrown");
         }
-        catch (RuntimeException actual) {
+        catch (Exception actual) {
             assertSame(expected, actual);
         }
         verifyZeroInteractions(commandHandler);
@@ -160,14 +195,6 @@ public class SimpleCommandBusTest {
         @Override
         public Object handle(String command) {
             return command;
-        }
-    }
-
-    private static class MyFailingCommandHandler implements CommandHandler<String> {
-
-        @Override
-        public Object handle(String command) {
-            throw new RuntimeException("Faking failed command handling");
         }
     }
 }

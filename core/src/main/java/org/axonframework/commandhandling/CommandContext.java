@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling;
 
 /**
+ * Interface describing an object that maintains context information during the command dispatching process.
+ *
  * @author Allard Buijze
  * @since 0.5
  */
@@ -99,6 +101,6 @@ public interface CommandContext {
      *
      * @return the exception thrown by either the command handler or by one of the interceptors
      */
-    Exception getException();
+    Throwable getException();
 
 }

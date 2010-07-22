@@ -64,7 +64,9 @@ public class ConsoleLauncher {
             if (command.startsWith("add ")) {
                 CreateContactCommand createCommand = new CreateContactCommand();
                 createCommand.setNewContactName(command.substring(4));
-                UUID id = (UUID) commandBus.dispatch(createCommand);
+                UUID id = UUID.randomUUID();
+                createCommand.setIdentifier(id);
+                commandBus.dispatch(createCommand);
                 System.out.println("Contact created: " + id.toString());
             } else if (command.startsWith("list")) {
                 List<ContactEntry> contacts = repository.findAllContacts();

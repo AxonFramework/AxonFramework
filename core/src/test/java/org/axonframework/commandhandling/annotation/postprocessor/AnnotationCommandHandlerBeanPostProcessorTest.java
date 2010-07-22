@@ -71,7 +71,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testEventHandlerCallsRedirectToAdapter() {
+    public void testEventHandlerCallsRedirectToAdapter() throws Throwable {
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 

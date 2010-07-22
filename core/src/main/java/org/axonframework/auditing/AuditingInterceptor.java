@@ -91,7 +91,7 @@ public abstract class AuditingInterceptor implements CommandHandlerInterceptor {
      * @param context      the auditing context containing the command, related events and current principal.
      * @param failureCause The exception that was raised
      */
-    protected void writeFailed(AuditingContext context, Exception failureCause) {
+    protected void writeFailed(AuditingContext context, Throwable failureCause) {
     }
 
     private static class AuditingEventListener implements EventListener {

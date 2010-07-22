@@ -60,7 +60,7 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
      * @throws InterruptedException
      */
     @Test
-    public void testConcurrentModifications() throws InterruptedException {
+    public void testConcurrentModifications() throws Exception {
         final UUID aggregateId = UUID.randomUUID();
         commandBus.dispatch(new CreateStubAggregateCommand(aggregateId));
         final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);
@@ -68,9 +68,13 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId));
-                    commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId));
-                    cdl.countDown();
+                    try {
+                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId));
+                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId));
+                        cdl.countDown();
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             });
             thread.setUncaughtExceptionHandler(ConcurrentModificationTest_PessimisticLocking.this);

@@ -56,7 +56,7 @@ public class SpringTransactionalInterceptorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testTransactionManagement_SuccessfulExecution() {
+    public void testTransactionManagement_SuccessfulExecution() throws Throwable {
         commandBus.dispatch(new Object());
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
@@ -67,7 +67,7 @@ public class SpringTransactionalInterceptorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testTransactionManagement_RuntimeException() {
+    public void testTransactionManagement_RuntimeException() throws Throwable {
         RuntimeException exception = new RuntimeException("Mock");
         when(commandHandler.handle(isA(Object.class))).thenThrow(exception);
         try {

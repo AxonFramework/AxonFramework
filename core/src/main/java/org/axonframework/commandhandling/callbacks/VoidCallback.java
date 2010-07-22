@@ -14,26 +14,30 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.commandhandling.callbacks;
+
+import org.axonframework.commandhandling.CommandCallback;
 
 /**
- * Marks an instance that is capable of handling commands. CommandHandlers need to be subscribed to a {@link CommandBus}
- * in order to receive command of the specified type <code>T</code>.
+ * Abstract callback that can be extended when no result is expected from the command handler execution.
  *
  * @author Allard Buijze
- * @param <T> The type of command this handler can handle
- * @since 0.5
+ * @since 0.6
  */
-public interface CommandHandler<T> {
+public abstract class VoidCallback implements CommandCallback<Void> {
 
     /**
-     * Handles the given <code>command</code>.
-     *
-     * @param command The command to process.
-     * @return The result of the command processing, if any.
-     *
-     * @throws Throwable any exception that occurs during command handling
+     * {@inheritDoc}
+     * <p/>
+     * This implementation merely invokes {@link #onSuccess()}.
      */
-    Object handle(T command) throws Throwable;
+    @Override
+    public void onSuccess(Void result) {
+        onSuccess();
+    }
 
+    /**
+     * Invoked when command handling execution was successful.
+     */
+    abstract void onSuccess();
 }

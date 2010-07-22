@@ -17,6 +17,7 @@
 package org.axonframework.examples.addressbook.web.impl;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.examples.addressbook.web.CommandReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * <p>Implementation of the CommandReceiver interface to be used as an endpoint for flex clients</p>
- * 
+ *
  * @author Jettro Coenradie
  */
 @Service("commandReceiver")
@@ -46,6 +47,12 @@ public class CommandReceiverImpl implements CommandReceiver {
     @Override
     public Object sendCommand(Object command) {
         logger.debug("Received a command of type : {}", command.getClass().getSimpleName());
-        return commandBus.dispatch(command);
+        FutureCallback callback = new FutureCallback();
+        commandBus.dispatch(command, callback);
+        try {
+            return callback.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

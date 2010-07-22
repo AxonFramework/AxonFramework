@@ -68,7 +68,7 @@ public class SimpleUnitOfWorkInterceptorTest {
     }
 
     @Test
-    public void testLoadAndSaveSingleAggregate() {
+    public void testLoadAndSaveSingleAggregate() throws Exception {
         commandBus.dispatch(new SimpleCommand(true, aggregateIdentifier1));
         assertEquals(1, repository.getSaveCount());
         verify(eventBus).publish(isA(StubDomainEvent.class));
@@ -86,7 +86,7 @@ public class SimpleUnitOfWorkInterceptorTest {
     }
 
     @Test
-    public void testLoadAndSaveTwoAggregates() {
+    public void testLoadAndSaveTwoAggregates() throws Exception {
         commandBus.dispatch(new SimpleCommand(true, aggregateIdentifier1, aggregateIdentifier2));
         assertEquals(2, repository.getSaveCount());
         verify(eventBus, times(2)).publish(isA(StubDomainEvent.class));
@@ -143,7 +143,7 @@ public class SimpleUnitOfWorkInterceptorTest {
         try {
             commandBus.dispatch(command);
             fail("Expected exception to be propagated");
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             assertSame(failure, e);
         }
     }

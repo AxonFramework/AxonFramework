@@ -66,9 +66,10 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      *         <code>void</code> return value.
      *
      * @throws NoHandlerForCommandException when no handler is found for given <code>command</code>.
+     * @throws Throwable                    any exception occurring while handling the command
      */
     @Override
-    public Object handle(Object command) {
+    public Object handle(Object command) throws Throwable {
         try {
             return invokeHandlerMethod(command, CurrentUnitOfWork.get());
         } catch (IllegalAccessException e) {
@@ -76,12 +77,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
                     "An error occurred when handling a command of type [%s]",
                     command.getClass().getSimpleName()), e);
         } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            }
-            throw new CommandHandlerInvocationException(String.format(
-                    "An error occurred when handling a command of type [%s]",
-                    command.getClass().getSimpleName()), e.getCause());
+            throw e.getCause();
         }
     }
 
@@ -89,6 +85,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      * Subscribe the command handlers to the command bus assigned during the initialization. A subscription is made with
      * the command bus for each accepted type of command.
      */
+    @Override
     @PostConstruct
     public void subscribe() {
         List<Class<?>> acceptedCommands = findAcceptedHandlerParameters();
@@ -100,6 +97,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     /**
      * Unsubscribe the command handlers from the command bus assigned during the initialization.
      */
+    @Override
     @PreDestroy
     public void unsubscribe() {
         List<Class<?>> acceptedCommands = findAcceptedHandlerParameters();

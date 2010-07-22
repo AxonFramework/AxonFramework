@@ -28,13 +28,33 @@ public interface CommandBus {
 
     /**
      * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
+     * The return value or exception resulting from the command is thrown
      *
      * @param command The Command to dispatch
      * @return the result of the command handler invocation.
      *
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
+     * @throws CommandHandlerInvocationException
+     *                                      if the command handler threw a checked exception
+     * @throws RuntimeException             any unchecked exception raised by the command handler
+     * @deprecated This method has been deprecated in favor of {@link #dispatch(Object, CommandCallback)}.
      */
+    @Deprecated
     Object dispatch(Object command);
+
+    /**
+     * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
+     * When the command is processed, on of the callback methods is called, depending on the result of the processing.
+     * <p/>
+     * When the method returns, the only guarantee provided by the CommandBus implementation, is that the command has
+     * been successfully received. Implementations are highly recommended to perform basic validation of the command
+     * before returning from this method call.
+     *
+     * @param command  The Command to dispatch
+     * @param callback The callback to invoke when command processing is complete
+     * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
+     */
+    void dispatch(Object command, CommandCallback<?> callback);
 
     /**
      * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>.
