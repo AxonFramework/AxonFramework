@@ -24,15 +24,16 @@ import java.util.Map;
  * process.
  *
  * @author Allard Buijze
+ * @param <T> the type of result expected from command handler execution
  * @since 0.5
  */
-class CommandContextImpl implements CommandContext {
+class CommandContextImpl<T> implements CommandContext<T> {
 
     private final Object command;
     private boolean executed = false;
     private boolean successful = true;
     private Throwable exception;
-    private Object result;
+    private T result;
 
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
@@ -81,7 +82,7 @@ class CommandContextImpl implements CommandContext {
     }
 
     @Override
-    public Object getResult() {
+    public T getResult() {
         return result;
     }
 
@@ -95,7 +96,7 @@ class CommandContextImpl implements CommandContext {
      *
      * @param actualResult the result of the handler execution
      */
-    public void markSuccessfulExecution(Object actualResult) {
+    public void markSuccessfulExecution(T actualResult) {
         this.executed = true;
         this.result = actualResult;
     }

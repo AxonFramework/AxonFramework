@@ -20,9 +20,10 @@ package org.axonframework.commandhandling;
  * Interface describing an object that maintains context information during the command dispatching process.
  *
  * @author Allard Buijze
+ * @param <T> The type of result expected from command execution
  * @since 0.5
  */
-public interface CommandContext {
+public interface CommandContext<T> {
 
     /**
      * Returns the command which has been dispatched for handling.
@@ -93,7 +94,7 @@ public interface CommandContext {
      *
      * @return the result of the command handler invocation, if any.
      */
-    Object getResult();
+    T getResult();
 
     /**
      * Returns the exception that was thrown by either the command handler or by one of the interceptors. Use the {@link

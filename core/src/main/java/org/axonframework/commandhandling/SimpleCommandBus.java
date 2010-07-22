@@ -73,14 +73,14 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
 
     @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
     @Override
-    public void dispatch(Object command, final CommandCallback callback) {
+    public <T> void dispatch(Object command, final CommandCallback<T> callback) {
         statistics.recordReceivedCommand();
         final CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
             throw new NoHandlerForCommandException(String.format("No handler was subscribed to commands of type [%s]",
                                                                  command.getClass().getSimpleName()));
         }
-        CommandContextImpl context = new CommandContextImpl(command);
+        CommandContextImpl<T> context = new CommandContextImpl<T>(command);
         interceptorChain.handle(context, new CallbackNotifyingCommandHandler(callback, handler));
         if (context.isSuccessful()) {
             callback.onSuccess(context.getResult());

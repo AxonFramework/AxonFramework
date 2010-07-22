@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.CommandCallback;
  * @author Allard Buijze
  * @since 0.6
  */
-public class NoOpCallback implements CommandCallback {
+public class NoOpCallback implements CommandCallback<Void> {
 
     /**
      * A statically available instance of the NoOpCallback. Provided for performance reasons.
@@ -47,7 +47,7 @@ public class NoOpCallback implements CommandCallback {
      * This implementation does nothing.
      */
     @Override
-    public void onSuccess(Object result) {
+    public void onSuccess(Void result) {
     }
 
     /**

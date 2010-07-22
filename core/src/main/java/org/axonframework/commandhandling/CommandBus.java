@@ -54,7 +54,7 @@ public interface CommandBus {
      * @param callback The callback to invoke when command processing is complete
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
      */
-    void dispatch(Object command, CommandCallback<?> callback);
+    <T> void dispatch(Object command, CommandCallback<T> callback);
 
     /**
      * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>.
