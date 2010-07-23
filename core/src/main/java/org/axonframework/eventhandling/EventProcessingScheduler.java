@@ -270,19 +270,18 @@ public class EventProcessingScheduler implements Runnable {
         switch (status.getRetryPolicy()) {
             case RETRY_LAST_EVENT:
                 markLastEventForRetry();
-                logger.warn("Transactional event processing batch failed. Rescheduling last event for retry.");
+                logger.warn("Transactional event processing batch failed. Rescheduling last event for retry.", e);
                 break;
             case SKIP_FAILED_EVENT:
-                logger.warn("Transactional event processing batch failed. Ignoring failed events.");
+                logger.error("Transactional event processing batch failed. Ignoring failed event.", e);
                 currentBatch.clear();
                 status.setRetryInterval(0);
                 break;
             case RETRY_TRANSACTION:
-                logger.warn(
-                        "Transactional event processing batch failed. "
-                                + "Retrying entire batch of {} events, with {} more in queue.",
-                        currentBatch.size(),
-                        queuedEventCount());
+                logger.warn("Transactional event processing batch failed. ", e);
+                logger.warn("Retrying entire batch of {} events, with {} more in queue.",
+                            currentBatch.size(),
+                            queuedEventCount());
                 break;
         }
         this.retryAfter = System.currentTimeMillis() + status.getRetryInterval();
