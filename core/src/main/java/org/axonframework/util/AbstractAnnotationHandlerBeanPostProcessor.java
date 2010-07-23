@@ -26,12 +26,17 @@ import org.springframework.beans.factory.config.DestructionAwareBeanPostProcesso
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Abstract bean post processor that finds candidates for proxying. Typically used to wrap annotated beans with their
+ * respective interface implementations.
+ *
  * @author Allard Buijze
+ * @since 0.4
  */
 public abstract class AbstractAnnotationHandlerBeanPostProcessor
         implements DestructionAwareBeanPostProcessor, ApplicationContextAware, InitializingBean {
@@ -120,7 +125,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
     }
 
     /**
-     * Returns the ApplicationContext this Bean Post Processor is registered in
+     * Returns the ApplicationContext this Bean Post Processor is registered in.
      *
      * @return the ApplicationContext this Bean Post Processor is registered in
      */
@@ -153,12 +158,16 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
          */
         @Override
         public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
-            // this is where we test the method
-            Class declaringClass = method.getDeclaringClass();
-            if (declaringClass.equals(adapterInterface)) {
-                return method.invoke(adapter, arguments);
+            try {
+                // this is where we test the method
+                Class declaringClass = method.getDeclaringClass();
+                if (declaringClass.equals(adapterInterface)) {
+                    return method.invoke(adapter, arguments);
+                }
+                return method.invoke(bean, arguments);
+            } catch (InvocationTargetException e) {
+                throw e.getTargetException();
             }
-            return method.invoke(bean, arguments);
         }
     }
 }

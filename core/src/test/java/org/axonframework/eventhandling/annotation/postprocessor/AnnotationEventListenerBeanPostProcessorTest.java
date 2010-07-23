@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.annotation.postprocessor;
 
 import net.sf.cglib.proxy.Enhancer;
+import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
@@ -103,7 +104,27 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         eventListener.handle(domainEvent);
 
         assertEquals(1, annotatedEventListener.getInvocationCount());
+    }
 
+    @Test
+    // verifies issue #73
+    public void testEventHandlerCallsRedirectToAdapter_ExceptionPropagated() {
+        Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
+        Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
+
+        assertTrue(Enhancer.isEnhanced(postProcessedBean.getClass()));
+        assertTrue(postProcessedBean instanceof EventListener);
+        assertTrue(postProcessedBean instanceof SyncEventListener);
+
+        EventListener eventListener = (EventListener) postProcessedBean;
+        SyncEventListener annotatedEventListener = (SyncEventListener) postProcessedBean;
+        DomainEvent domainEvent = new FailingEvent();
+        try {
+            eventListener.handle(domainEvent);
+            fail("Expected exception to be propagated");
+        } catch (RuntimeException e) {
+            assertEquals("Don't like this event", e.getMessage());
+        }
     }
 
     @Test
@@ -163,9 +184,18 @@ public class AnnotationEventListenerBeanPostProcessorTest {
             invocationCount++;
         }
 
+        @EventHandler
+        public void handleFailingEvent(FailingEvent event) {
+            throw new RuntimeException("Don't like this event");
+        }
+
         public int getInvocationCount() {
             return invocationCount;
         }
+    }
+
+    public static class FailingEvent extends DomainEvent {
+
     }
 
     public static class StubExecutor implements Executor {
