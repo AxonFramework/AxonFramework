@@ -17,28 +17,40 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandContext;
 
 /**
  * Callback that does absolutely nothing when invoked. For performance reasons, an instance of this callback can be
- * obtained using <code>NoOpCallback.INSTANCE</code>.
+ * obtained using <code>NoOpCallback.INSTANCE</code>. A generics-compatible alternative is provided by
+ * <code>NoOpCallback.&lt;C&gt;instance()</code>.
  *
  * @author Allard Buijze
+ * @param <C> The type of command
  * @since 0.6
  */
-public class NoOpCallback implements CommandCallback<Void> {
+public final class NoOpCallback<C> implements CommandCallback<C, Object> {
 
     /**
      * A statically available instance of the NoOpCallback. Provided for performance reasons.
+     * <p/>
+     * For generics support, consider using the {@link #instance()} method.
      */
     public static final NoOpCallback INSTANCE = new NoOpCallback();
 
     /**
-     * {@inheritDoc}
+     * Method provided to return a generics compatible version of the {@link #INSTANCE}. This method will always return
+     * the same instance of the NoOpCallback, for performance reasons.
      * <p/>
-     * This implementation does nothing.
+     * <em>Usage example: </em>
+     * <p/>
+     * <code>commandBus.dispatch(new MyCommand(), NoOpCallback.&lt;MyCommand&gt;instance());</code>
+     *
+     * @param <C> The type of command
+     * @return a statically available instance of the NoOpCallback
      */
-    @Override
-    public void onStart() {
+    @SuppressWarnings({"unchecked"})
+    public static <C> NoOpCallback<C> instance() {
+        return INSTANCE;
     }
 
     /**
@@ -47,7 +59,7 @@ public class NoOpCallback implements CommandCallback<Void> {
      * This implementation does nothing.
      */
     @Override
-    public void onSuccess(Void result) {
+    public void onSuccess(Object result, CommandContext<C> context) {
     }
 
     /**
@@ -56,6 +68,6 @@ public class NoOpCallback implements CommandCallback<Void> {
      * This implementation does nothing.
      */
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(Throwable cause, CommandContext<C> context) {
     }
 }

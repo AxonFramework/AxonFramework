@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -31,27 +30,22 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * @see org.springframework.transaction.PlatformTransactionManager
  * @since 0.5
  */
-public class SpringTransactionalInterceptor extends TransactionalUnitOfWorkInterceptor {
-
-    private static final String TRANSACTION_ATTRIBUTE = "SpringTransactionalInterceptor.Transaction";
+public class SpringTransactionalInterceptor extends TransactionalUnitOfWorkInterceptor<TransactionStatus> {
 
     private PlatformTransactionManager transactionManager;
 
     @Override
-    protected void startTransaction(UnitOfWork unitOfWork, CommandContext context) {
-        TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        context.setProperty(TRANSACTION_ATTRIBUTE, transaction);
+    protected TransactionStatus startTransaction(UnitOfWork unitOfWork) {
+        return transactionManager.getTransaction(new DefaultTransactionDefinition());
     }
 
     @Override
-    protected void commitTransaction(UnitOfWork unitOfWork, CommandContext context) {
-        TransactionStatus transaction = (TransactionStatus) context.getProperty(TRANSACTION_ATTRIBUTE);
+    protected void commitTransaction(UnitOfWork unitOfWork, TransactionStatus transaction) {
         transactionManager.commit(transaction);
     }
 
     @Override
-    protected void rollbackTransaction(UnitOfWork unitOfWork, CommandContext context) {
-        TransactionStatus transaction = (TransactionStatus) context.getProperty(TRANSACTION_ATTRIBUTE);
+    protected void rollbackTransaction(UnitOfWork unitOfWork, TransactionStatus transaction) {
         transactionManager.rollback(transaction);
     }
 

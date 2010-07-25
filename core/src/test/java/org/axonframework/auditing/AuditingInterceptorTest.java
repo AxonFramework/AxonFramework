@@ -16,9 +16,10 @@
 
 package org.axonframework.auditing;
 
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.callbacks.AbstractCallback;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.junit.*;
@@ -65,9 +66,9 @@ public class AuditingInterceptorTest {
                 return "Axon";
             }
         };
-        commandBus.dispatch("Command", new AbstractCallback<Object>() {
+        commandBus.dispatch("Command", new CommandCallback<String, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext context) {
                 assertEquals(1, auditingInterceptor.getLoggedContexts().size());
                 AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
                 assertEquals(1, actual.getEvents().size());
@@ -80,17 +81,17 @@ public class AuditingInterceptorTest {
             }
 
             @Override
-            public void onFailure(Throwable cause) {
-                fail("Did not expect exception");
+            public void onFailure(Throwable cause, CommandContext context) {
+                throw new RuntimeException("Got an unexpected exception", cause);
             }
         });
     }
 
     @Test
     public void testInterceptCommand_NoCurrentPrincipal() {
-        commandBus.dispatch("Command", new AbstractCallback<Object>() {
+        commandBus.dispatch("Command", new CommandCallback<String, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext context) {
                 assertEquals(1, auditingInterceptor.getLoggedContexts().size());
                 AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
                 assertEquals(1, actual.getEvents().size());
@@ -100,7 +101,7 @@ public class AuditingInterceptorTest {
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(Throwable cause, CommandContext context) {
                 fail("Did not expect exception");
             }
         });
@@ -116,14 +117,14 @@ public class AuditingInterceptorTest {
 
     @Test
     public void testInterceptCommand_FailedCommandExecution() {
-        commandBus.dispatch("Fail", new AbstractCallback<Object>() {
+        commandBus.dispatch("Fail", new CommandCallback<String, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext context) {
                 fail("Expected exception");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(Throwable cause, CommandContext context) {
                 assertEquals(RuntimeException.class, cause.getClass());
             }
         });

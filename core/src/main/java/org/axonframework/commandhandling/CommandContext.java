@@ -20,7 +20,7 @@ package org.axonframework.commandhandling;
  * Interface describing an object that maintains context information during the command dispatching process.
  *
  * @author Allard Buijze
- * @param <T> The type of result expected from command execution
+ * @param <T> The type of command
  * @since 0.5
  */
 public interface CommandContext<T> {
@@ -30,7 +30,7 @@ public interface CommandContext<T> {
      *
      * @return the command which has been dispatched for handling.
      */
-    Object getCommand();
+    T getCommand();
 
     /**
      * Returns the value assigned to the property with given <code>name</code>. Returns <code>null</code> if the
@@ -69,39 +69,11 @@ public interface CommandContext<T> {
     boolean isPropertySet(String name);
 
     /**
-     * Indicates whether the command has been passed to the handler for execution. Will always return <code>false</code>
-     * in the <code>beforeCommandHandling</code> method. In the <code>afterCommandHandling</code>, it will return
-     * <code>true</code> if the handler has been executed, and <code>false</code> if a {@link CommandHandlerInterceptor}
-     * has blocked execution.
+     * Returns the command handler chosen to process this command. Interceptors are not supposed to call this command
+     * handler directly. They should use the given InterceptorChain and call <code>proceed</code> on that instance
+     * instead.
      *
-     * @return <code>true</code> if the handler has executed the command, <code>false</code> otherwise.
+     * @return the command handler chosen to process this command.
      */
-    boolean isExecuted();
-
-    /**
-     * Indicates whether the execution of the command handler was succesful. Will always return <code>true</code> (even
-     * when the command handler has not been executed) unless either the command handler or one of the command handler
-     * interceptors threw an exception.
-     *
-     * @return <code>false</code> if the handler or any of the interceptors threw an exception, <code>true</code>
-     *         otherwise.
-     */
-    boolean isSuccessful();
-
-    /**
-     * Returns the result of the command handler invocation. Returns <code>null</code> if the command handler was not
-     * invoked or when invocation resulted in an exception.
-     *
-     * @return the result of the command handler invocation, if any.
-     */
-    T getResult();
-
-    /**
-     * Returns the exception that was thrown by either the command handler or by one of the interceptors. Use the {@link
-     * #isExecuted()} method to make the distinction.
-     *
-     * @return the exception thrown by either the command handler or by one of the interceptors
-     */
-    Throwable getException();
-
+    CommandHandler<T> getCommandHandler();
 }

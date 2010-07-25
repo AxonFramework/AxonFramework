@@ -20,17 +20,6 @@ package org.axonframework.commandhandling;
  * Workflow interface that allows for customized command handler invocation chains. A CommandHandlerInterceptor can add
  * customized behavior to command handler invocations, both before and after the invocation.
  * <p/>
- * The {@link #beforeCommandHandling(CommandContext, CommandHandler)} method is called before the {@link CommandHandler}
- * is invoked (but after the CommandHandler has been resolved).
- * <p/>
- * The {@link #afterCommandHandling(CommandContext, CommandHandler)} method is called after the command handler
- * invocation.
- * <p/>
- * A CommandHandlerInterceptor may block an incoming command by throwing an Exception. In such case, all
- * CommandHandlerInterceptors that had their {@link #beforeCommandHandling(CommandContext, CommandHandler)} method
- * invoked will also have the {@link #afterCommandHandling(CommandContext, CommandHandler)} method invoked. The {@link
- * CommandContext} parameter provides information about whether the CommandHandler was invoked and what the result of
- * the invocation is.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -38,27 +27,26 @@ package org.axonframework.commandhandling;
 public interface CommandHandlerInterceptor {
 
     /**
-     * Invoked before the command handler handles the command. Command handling can be prevented by throwing an
-     * exception from this method.
+     * The handle method is invoked each time a command is dispatched through the event bus that the
+     * CommandHandlerInterceptor is declared on. The incoming command and contextual information can be found in the
+     * given <code>commandContext</code>.
+     * <p/>
+     * The interceptor is responsible for the continuation of the dispatch process by invoking the {@link
+     * org.axonframework.commandhandling.InterceptorChain#proceed(CommandContext)} method on the given
+     * <code>interceptorChain</code>.
+     * <p/>
+     * Any information gathered by interceptors may be attached to the command context. This information is made
+     * available to the CommandCallback provided by the dispatching component.
+     * <p/>
+     * Interceptors are highly recommended not to change the type of the command handling result, as the dispatching
+     * component might expect a result of a specific type.
      *
-     * @param context The context in which the command is executed. It contains both the command and any information
-     *                that previous CommandHandlerInterceptors may have added to it.
-     * @param handler The handler that will handle the command.
-     * @throws Exception when an error occurs that should block command handling.
-     */
-    void beforeCommandHandling(CommandContext context, CommandHandler handler) throws Exception;
-
-    /**
-     * Invoked after the command handler handled the command or when a CommandHandlerInterceptor further down the chain
-     * has thrown an Exception. The CommandContext provides information about whether the handler was invoked and
-     * whether the execution was successful or resulted in an Exception.
+     * @param commandContext   A wrapper around the command and contextual information added by interceptors
+     * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process
+     * @return the result of the command handler. May have been modified by interceptors.
      *
-     * @param context The context in which the command is executed. It contains the command, the result of command
-     *                handling, if any, and information that previous CommandHandlerInterceptors may have added to it.
-     * @param handler The handler that has handled the command.
-     * @throws Exception when an error occurs that should block command handling. Note that events may already have been
-     *                   dispatched at this point
+     * @throws Throwable any exception that occurs while handling the command
      */
-    void afterCommandHandling(CommandContext context, CommandHandler handler) throws Exception;
+    Object handle(CommandContext commandContext, InterceptorChain interceptorChain) throws Throwable;
 
 }

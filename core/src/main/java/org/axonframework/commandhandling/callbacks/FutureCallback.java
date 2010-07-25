@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandContext;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -29,28 +30,25 @@ import java.util.concurrent.TimeoutException;
  * mechanism. This callback allows the caller to synchronize calls when an asynchronous command bus is being used.
  *
  * @author Allard Buijze
- * @param <T> the type of result of the command handling
+ * @param <C> the type of the dispatched command
+ * @param <R> the type of result of the command handling
  * @since 0.6
  */
-public class FutureCallback<T> implements CommandCallback<T>, Future<T> {
+public class FutureCallback<C, R> implements CommandCallback<C, R>, Future<R> {
 
-    private T result;
+    private R result;
     private Throwable failure;
 
     private final CountDownLatch latch = new CountDownLatch(1);
 
     @Override
-    public void onStart() {
-    }
-
-    @Override
-    public void onSuccess(T executionResult) {
+    public void onSuccess(R executionResult, CommandContext<C> context) {
         this.result = executionResult;
         latch.countDown();
     }
 
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(Throwable cause, CommandContext<C> context) {
         this.failure = cause;
         latch.countDown();
     }
@@ -64,7 +62,7 @@ public class FutureCallback<T> implements CommandCallback<T>, Future<T> {
      * @throws ExecutionException   if the command handler threw an exception
      */
     @Override
-    public T get() throws InterruptedException, ExecutionException {
+    public R get() throws InterruptedException, ExecutionException {
         latch.await();
         return doGetResult();
     }
@@ -82,7 +80,7 @@ public class FutureCallback<T> implements CommandCallback<T>, Future<T> {
      * @throws ExecutionException   if the command handler threw an exception
      */
     @Override
-    public T get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException, ExecutionException {
+    public R get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException, ExecutionException {
         if (!latch.await(timeout, unit)) {
             throw new TimeoutException("The timeout of the getResult operation was reached");
         }
@@ -121,7 +119,7 @@ public class FutureCallback<T> implements CommandCallback<T>, Future<T> {
         return latch.getCount() == 0L;
     }
 
-    private T doGetResult() throws ExecutionException {
+    private R doGetResult() throws ExecutionException {
         if (result != null) {
             return result;
         } else if (failure != null) {

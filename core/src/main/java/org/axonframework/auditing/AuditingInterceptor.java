@@ -17,8 +17,8 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandContext;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -38,11 +38,10 @@ public abstract class AuditingInterceptor implements CommandHandlerInterceptor {
     private final EventListener eventListener = new AuditingEventListener();
 
     @Override
-    public void beforeCommandHandling(CommandContext context, CommandHandler handler) {
+    public Object handle(CommandContext context, InterceptorChain chain) throws Throwable {
         AuditingContext existingAuditingContext = AuditingContextHolder.currentAuditingContext();
         AuditingContext auditingContext;
         if (existingAuditingContext != null) {
-            context.setProperty("previousAuditingContext", existingAuditingContext);
             auditingContext = new AuditingContext(getCurrentPrincipal(),
                                                   existingAuditingContext.getCorrelationId(),
                                                   context.getCommand());
@@ -50,22 +49,22 @@ public abstract class AuditingInterceptor implements CommandHandlerInterceptor {
             auditingContext = new AuditingContext(getCurrentPrincipal(), context.getCommand());
         }
         AuditingContextHolder.setContext(auditingContext);
-    }
 
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-    @Override
-    public void afterCommandHandling(CommandContext context, CommandHandler handler) {
-        AuditingContext auditingContext = AuditingContextHolder.currentAuditingContext();
-        if (context.isSuccessful()) {
+        try {
+            Object returnValue = chain.proceed(context);
             writeSuccessful(auditingContext);
-        } else {
-            writeFailed(auditingContext, context.getException());
+            return returnValue;
+        } catch (Throwable t) {
+            writeFailed(auditingContext, t);
+            throw t;
+        } finally {
+            if (existingAuditingContext != null) {
+                AuditingContextHolder.setContext(existingAuditingContext);
+            } else {
+                AuditingContextHolder.clear();
+            }
         }
-        if (context.isPropertySet("previousAuditingContext")) {
-            AuditingContextHolder.setContext((AuditingContext) context.getProperty("previousAuditingContext"));
-        } else {
-            AuditingContextHolder.clear();
-        }
+
     }
 
     /**

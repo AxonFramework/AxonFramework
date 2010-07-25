@@ -16,9 +16,10 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.callbacks.AbstractCallback;
 import org.junit.*;
 import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.Arrays;
 
@@ -40,14 +41,14 @@ public class SimpleCommandBusTest {
     @Test
     public void testDispatchCommand_HandlerSubscribed() {
         testSubject.subscribe(String.class, new MyStringCommandHandler());
-        testSubject.dispatch("Say hi!", new AbstractCallback<Object>() {
+        testSubject.dispatch("Say hi!", new CommandCallback<String, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext context) {
                 assertEquals("Say hi!", result);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(Throwable cause, CommandContext context) {
                 fail("Did not expect exception");
             }
         });
@@ -75,119 +76,133 @@ public class SimpleCommandBusTest {
     @Test
     public void testInterceptorChain_CommandHandledSuccessfully() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
-        CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
+        final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
+        final CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        when(mockInterceptor1.handle(isA(CommandContext.class), isA(InterceptorChain.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return mockInterceptor2.handle((CommandContext) invocation.getArguments()[0],
+                                                       (InterceptorChain) invocation.getArguments()[1]);
+                    }
+                });
+        when(mockInterceptor2.handle(isA(CommandContext.class), isA(InterceptorChain.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return commandHandler.handle((String) commandContextFrom(invocation).getCommand());
+                    }
+                });
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        CommandHandler<String> commandHandler = mock(CommandHandler.class);
         when(commandHandler.handle("Hi there!")).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);
 
-        testSubject.dispatch("Hi there!", new AbstractCallback<Object>() {
+        testSubject.dispatch("Hi there!", new CommandCallback<String, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext<String> context) {
                 assertEquals("Hi there!", result);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
-                fail("Did not expect failure");
+            public void onFailure(Throwable cause, CommandContext context) {
+                throw new RuntimeException("Unexpected exception", cause);
             }
         });
 
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
-        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
-        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor1).handle(isA(CommandContext.class),
+                                                isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor2).handle(isA(CommandContext.class),
+                                                isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle("Hi there!");
-        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
-        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
     }
 
     @Test
     public void testInterceptorChain_CommandHandlerThrowsException() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
-        CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
+        final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
+        final CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        when(mockInterceptor1.handle(isA(CommandContext.class), isA(InterceptorChain.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return mockInterceptor2.handle((CommandContext) invocation.getArguments()[0],
+                                                       (InterceptorChain) invocation.getArguments()[1]);
+                    }
+                });
+        when(mockInterceptor2.handle(isA(CommandContext.class), isA(InterceptorChain.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return commandHandler.handle((String) commandContextFrom(invocation).getCommand());
+                    }
+                });
+
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        CommandHandler<String> commandHandler = mock(CommandHandler.class);
         when(commandHandler.handle("Hi there!")).thenThrow(new RuntimeException("Faking failed command handling"));
         testSubject.subscribe(String.class, commandHandler);
 
-        testSubject.dispatch("Hi there!", new AbstractCallback<Object>() {
+        testSubject.dispatch("Hi there!", new CommandCallback<String, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext context) {
                 fail("Expected exception to be thrown");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(Throwable cause, CommandContext context) {
                 assertEquals("Faking failed command handling", cause.getMessage());
             }
         });
 
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
-        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
-        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor1).handle(isA(CommandContext.class),
+                                                isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor2).handle(isA(CommandContext.class),
+                                                isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle("Hi there!");
-        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
-        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+    }
+
+    private CommandContext commandContextFrom(InvocationOnMock invocation) {
+        return ((CommandContext) invocation.getArguments()[0]);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    public void testInterceptorChain_InterceptorThrowsExceptionInAfterHandle() throws Throwable {
+    public void testInterceptorChain_InterceptorThrowsException() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
-        CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
+        final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
+        when(mockInterceptor1.handle(isA(CommandContext.class), isA(InterceptorChain.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return mockInterceptor2.handle((CommandContext) invocation.getArguments()[0],
+                                                       (InterceptorChain) invocation.getArguments()[1]);
+                    }
+                });
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         CommandHandler<String> commandHandler = mock(CommandHandler.class);
         when(commandHandler.handle("Hi there!")).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
-        doThrow(someException).when(mockInterceptor2).afterCommandHandling(isA(CommandContext.class),
-                                                                           isA(CommandHandler.class));
-        testSubject.dispatch("Hi there!", new AbstractCallback<Object>() {
+        doThrow(someException).when(mockInterceptor2).handle(isA(CommandContext.class), isA(InterceptorChain.class));
+        testSubject.dispatch("Hi there!", new CommandCallback<String, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext context) {
                 fail("Expected exception to be propagated");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(Throwable cause, CommandContext context) {
                 assertEquals("Mocking", cause.getMessage());
             }
         });
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
-        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
-        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
-        inOrder.verify(commandHandler).handle("Hi there!");
-        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
-        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), isA(CommandHandler.class));
+        inOrder.verify(mockInterceptor1).handle(isA(CommandContext.class),
+                                                isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor2).handle(isA(CommandContext.class),
+                                                isA(InterceptorChain.class));
+        inOrder.verify(commandHandler, never()).handle("Hi there!");
 
-    }
-
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    @Test
-    public void testInterceptorChain_InterceptorThrowsException() throws Exception {
-        CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
-        CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
-        CommandHandlerInterceptor mockInterceptor3 = mock(CommandHandlerInterceptor.class);
-        testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2, mockInterceptor3));
-        MyStringCommandHandler commandHandler = mock(MyStringCommandHandler.class);
-        testSubject.subscribe(String.class, commandHandler);
-        RuntimeException expected = new RuntimeException("Mocking");
-        doThrow(expected).when(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class),
-                                                                       isA(CommandHandler.class));
-        try {
-            testSubject.dispatch("Hi there!");
-            fail("Expected exception to be thrown");
-        }
-        catch (Exception actual) {
-            assertSame(expected, actual);
-        }
-        verifyZeroInteractions(commandHandler);
-        verifyZeroInteractions(mockInterceptor3);
-        InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2);
-        inOrder.verify(mockInterceptor1).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).beforeCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor2).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
-        inOrder.verify(mockInterceptor1).afterCommandHandling(isA(CommandContext.class), same(commandHandler));
     }
 
     private static class MyStringCommandHandler implements CommandHandler<String> {

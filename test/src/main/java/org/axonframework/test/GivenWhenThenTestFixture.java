@@ -17,10 +17,12 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.callbacks.AbstractCallback;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
@@ -34,6 +36,7 @@ import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,7 +84,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     @Override
     public <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createGenericRepository(
             Class<T> aggregateClass) {
-        registerRepository(new GenericEventSourcingRepository(aggregateClass));
+        registerRepository(new GenericEventSourcingRepository<T>(aggregateClass));
         return (EventSourcingRepository<T>) repository;
     }
 
@@ -127,14 +130,15 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
 
     @Override
     public ResultValidator when(Object command) {
-        commandBus.dispatch(command, new AbstractCallback<Object>() {
+        commandBus.dispatch("", NoOpCallback.<String>instance());
+        commandBus.dispatch(command, new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Object result, CommandContext context) {
                 actualReturnValue = result;
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(Throwable cause, CommandContext context) {
                 actualException = cause;
             }
         });
@@ -251,7 +255,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         return true;
     }
 
-    private void setByReflection(Class<?> eventClass, String fieldName, DomainEvent event, Object value) {
+    private void setByReflection(Class<?> eventClass, String fieldName, DomainEvent event, Serializable value) {
         try {
             Field field = eventClass.getDeclaredField(fieldName);
             field.setAccessible(true);

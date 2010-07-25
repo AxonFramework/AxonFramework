@@ -19,6 +19,7 @@ package org.axonframework.commandhandling;
 import org.junit.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -31,7 +32,7 @@ public class CommandContextImplTest {
     @Before
     public void setUp() {
         command = new Object();
-        testSubject = new CommandContextImpl(command);
+        testSubject = new CommandContextImpl(command, mock(CommandHandler.class));
     }
 
     @Test
@@ -46,56 +47,6 @@ public class CommandContextImplTest {
         assertTrue(testSubject.isPropertySet("testProp"));
         testSubject.removeProperty("testProp");
         assertFalse(testSubject.isPropertySet("testProp"));
-    }
-
-    @SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
-    @Test
-    public void testMarkHandlerExecutionFailed() {
-        assertTrue(testSubject.isSuccessful());
-        assertFalse(testSubject.isExecuted());
-        assertNull(testSubject.getResult());
-        assertNull(testSubject.getException());
-        RuntimeException exception = new RuntimeException("Mock");
-
-        testSubject.markFailedHandlerExecution(exception);
-
-        assertSame(exception, testSubject.getException());
-        assertFalse(testSubject.isSuccessful());
-        assertTrue(testSubject.isExecuted());
-        assertNull(testSubject.getResult());
-    }
-
-    @SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
-    @Test
-    public void testMarkInterceptorExecutionFailed() {
-        assertTrue(testSubject.isSuccessful());
-        assertFalse(testSubject.isExecuted());
-        assertNull(testSubject.getResult());
-        assertNull(testSubject.getException());
-        RuntimeException exception = new RuntimeException("Mock");
-
-        testSubject.markFailedInterceptorExecution(exception);
-
-        assertSame(exception, testSubject.getException());
-        assertFalse(testSubject.isSuccessful());
-        assertFalse(testSubject.isExecuted());
-        assertNull(testSubject.getResult());
-    }
-
-    @SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
-    @Test
-    public void testMarkHandlerExecutionSuccessull() {
-        assertTrue(testSubject.isSuccessful());
-        assertFalse(testSubject.isExecuted());
-        assertNull(testSubject.getResult());
-        assertNull(testSubject.getException());
-
-        testSubject.markSuccessfulExecution("OK!");
-
-        assertEquals("OK!", testSubject.getResult());
-        assertTrue(testSubject.isSuccessful());
-        assertTrue(testSubject.isExecuted());
-        assertNull(testSubject.getException());
     }
 
 }

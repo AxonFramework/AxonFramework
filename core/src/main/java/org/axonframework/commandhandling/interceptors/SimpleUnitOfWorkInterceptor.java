@@ -17,7 +17,8 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandContext;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -34,42 +35,32 @@ import org.slf4j.LoggerFactory;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
+public class SimpleUnitOfWorkInterceptor implements CommandHandlerInterceptor {
 
-    private static final String UNIT_OF_WORK_ATTRIBUTE = "SimpleUnitOfWorkInterceptor.UnitOfWork";
     private static final Logger logger = LoggerFactory.getLogger(SimpleUnitOfWorkInterceptor.class);
 
     @Override
-    protected void onIncomingCommand(Object command, CommandContext context, CommandHandler handler) {
-        UnitOfWork unitOfWork = createUnitOfWork(context);
-        context.setProperty(UNIT_OF_WORK_ATTRIBUTE, unitOfWork);
+    public Object handle(CommandContext context, InterceptorChain chain) throws Throwable {
+        logger.debug("Incoming command. Creating new UnitOfWork instance");
+        UnitOfWork unitOfWork = createUnitOfWork();
+        logger.debug("Registering new UnitOfWork instance with CurrentUnitOfWork");
         CurrentUnitOfWork.set(unitOfWork);
-    }
 
-    @Override
-    protected void onSuccessfulExecution(Object command, Object result, CommandContext context,
-                                         CommandHandler handler) {
-        UnitOfWork unitOfWork = getUnitOfWork(context);
         try {
+            logger.debug("Proceeding interceptor chain");
+            Object returnValue = chain.proceed(context);
+            logger.debug("Committing UnitOfWork after successful command execution");
             unitOfWork.commit();
-        } catch (RuntimeException e) {
-            logger.warn("An error occurred while committing the UnitOfWork. Rolling back the UnitOfWork instead.", e);
+            logger.debug("UnitOfWork successfully committed");
+            return returnValue;
+        } catch (Throwable t) {
+            logger.debug("Rolling back UnitOfWork after execution error");
             unitOfWork.rollback();
+            logger.debug("UnitOfWork rolled back");
+            throw t;
         } finally {
+            logger.debug("Clearing UnitOfWork from CurrentUnitOfWork");
             CurrentUnitOfWork.clear();
-            context.removeProperty(UNIT_OF_WORK_ATTRIBUTE);
-        }
-    }
-
-    @Override
-    protected void onFailedExecution(Object command, Throwable exception, CommandContext context,
-                                     CommandHandler handler) {
-        try {
-            UnitOfWork unitOfWork = (UnitOfWork) context.getProperty(UNIT_OF_WORK_ATTRIBUTE);
-            unitOfWork.rollback();
-        } finally {
-            CurrentUnitOfWork.clear();
-            context.removeProperty(UNIT_OF_WORK_ATTRIBUTE);
         }
     }
 
@@ -78,20 +69,9 @@ public class SimpleUnitOfWorkInterceptor extends CommandInterceptorAdapter {
      * org.axonframework.unitofwork.DefaultUnitOfWork}. Subclasses may override this method to provide another instance
      * instead.
      *
-     * @param commandContext The context for which to create a UnitOfWork
      * @return The UnitOfWork to bind to the current thread.
      */
-    protected UnitOfWork createUnitOfWork(CommandContext commandContext) {
+    protected UnitOfWork createUnitOfWork() {
         return new DefaultUnitOfWork();
-    }
-
-    /**
-     * Gets the UnitOfWork from the given execution context.
-     *
-     * @param context The command context of the current execution
-     * @return The UnitOfWork bound to the context, or <code>null</code> if not found.
-     */
-    protected UnitOfWork getUnitOfWork(CommandContext context) {
-        return (UnitOfWork) context.getProperty(UNIT_OF_WORK_ATTRIBUTE);
     }
 }

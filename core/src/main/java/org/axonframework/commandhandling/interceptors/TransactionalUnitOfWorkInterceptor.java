@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 
@@ -28,14 +27,15 @@ import org.axonframework.unitofwork.UnitOfWork;
  * transaction are rolled back.
  *
  * @author Allard Buijze
+ * @param <T> The type of object representing the transaction
  * @since 0.6
  */
-public abstract class TransactionalUnitOfWorkInterceptor extends SimpleUnitOfWorkInterceptor {
+public abstract class TransactionalUnitOfWorkInterceptor<T> extends SimpleUnitOfWorkInterceptor {
 
     @Override
-    protected UnitOfWork createUnitOfWork(CommandContext commandContext) {
-        TransactionalUnitOfWork unitOfWork = new TransactionalUnitOfWork(commandContext);
-        startTransaction(unitOfWork, commandContext);
+    protected UnitOfWork createUnitOfWork() {
+        TransactionalUnitOfWork unitOfWork = new TransactionalUnitOfWork();
+        unitOfWork.start();
         return unitOfWork;
     }
 
@@ -44,45 +44,45 @@ public abstract class TransactionalUnitOfWorkInterceptor extends SimpleUnitOfWor
      * <code>unitOfWork</code> is the unitOfWork bound to the current thread.
      *
      * @param unitOfWork The UnitOfWork bound to the current thread.
-     * @param context    The command context of the command being executed
+     * @return A reference to the current transaction
      */
-    protected abstract void startTransaction(UnitOfWork unitOfWork, CommandContext context);
+    protected abstract T startTransaction(UnitOfWork unitOfWork);
 
     /**
      * Commits the transaction for the command execution described by the given <code>context</code>. The given
      * <code>unitOfWork</code> is the unitOfWork bound to the current thread.
      *
-     * @param unitOfWork The unitOfWork bound to the current thread.
-     * @param context    The command context of the command being executed
+     * @param unitOfWork  The unitOfWork bound to the current thread.
+     * @param transaction The transaction object returned during during {@link #startTransaction(org.axonframework.unitofwork.UnitOfWork)}
      */
-    protected abstract void commitTransaction(UnitOfWork unitOfWork, CommandContext context);
+    protected abstract void commitTransaction(UnitOfWork unitOfWork, T transaction);
 
     /**
      * Rolls back a transaction for a command execution described by the given <code>context</code>. The given
      * <code>unitOfWork</code> is the unitOfWork bound to the current thread.
      *
-     * @param unitOfWork The unitOfWork bound to the current thread.
-     * @param context    The command context of the command being executed
+     * @param unitOfWork  The unitOfWork bound to the current thread.
+     * @param transaction The transaction object returned during during {@link #startTransaction(org.axonframework.unitofwork.UnitOfWork)}
      */
-    protected abstract void rollbackTransaction(UnitOfWork unitOfWork, CommandContext context);
+    protected abstract void rollbackTransaction(UnitOfWork unitOfWork, T transaction);
 
     private final class TransactionalUnitOfWork extends DefaultUnitOfWork {
 
-        private final CommandContext commandContext;
+        private T transaction;
 
-        private TransactionalUnitOfWork(CommandContext commandContext) {
-            this.commandContext = commandContext;
+        protected void start() {
+            this.transaction = startTransaction(this);
         }
 
         @Override
         protected void notifyListenersAfterCommit() {
-            commitTransaction(this, commandContext);
+            commitTransaction(this, transaction);
             super.notifyListenersAfterCommit();
         }
 
         @Override
         protected void notifyListenersRollback() {
-            rollbackTransaction(this, commandContext);
+            rollbackTransaction(this, transaction);
             super.notifyListenersRollback();
         }
     }

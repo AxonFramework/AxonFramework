@@ -17,7 +17,8 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandContext;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.InterceptorChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,14 +30,11 @@ import static java.lang.String.format;
  * <p/>
  * Incoming commands and successful executions are logged at the <code>INFO</code> level. Processing errors are logged
  * using the <code>WARN</code> level.
- * <p/>
- * If these levels or the messages are not appropriate for your application, consider extending the {@link
- * CommandInterceptorAdapter} instead.
  *
  * @author Allard Buijze
  * @since 0.6
  */
-public class LoggingInterceptor extends CommandInterceptorAdapter {
+public class LoggingInterceptor implements CommandHandlerInterceptor {
 
     private final Logger logger;
 
@@ -61,39 +59,20 @@ public class LoggingInterceptor extends CommandInterceptorAdapter {
         this.logger = LoggerFactory.getLogger(LoggingInterceptor.class);
     }
 
-    /**
-     * Logs a simple message to the INFO log level containing the simple class name of the incoming command.
-     * {@inheritDoc}
-     */
     @Override
-    protected void onIncomingCommand(Object command, CommandContext context, CommandHandler handler) {
+    public Object handle(CommandContext context, InterceptorChain chain) throws Throwable {
+        Object command = context.getCommand();
         logger.info("Incoming command: [{}]", command.getClass().getSimpleName());
-    }
-
-    /**
-     * {@inheritDoc} Logs a simple message to the INFO log level containing the simple class name of the incoming
-     * command and that of the return value.
-     */
-    @Override
-    protected void onSuccessfulExecution(Object command, Object result, CommandContext context,
-                                         CommandHandler handler) {
-        logger.info("[{}] executed successfully with [{}] return type",
-                    command.getClass().getSimpleName(),
-                    result == null ? "null" :
-                            Void.TYPE.equals(result) ?
-                                    "void" :
-                                    result.getClass().getSimpleName());
-    }
-
-    /**
-     * {@inheritDoc} Logs a simple message to the WARN log level containing the simple class name of the incoming
-     * command and the complete stack trace of the thrown exception.
-     */
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-    @Override
-    protected void onFailedExecution(Object command, Throwable exception, CommandContext context,
-                                     CommandHandler handler) {
-        logger.warn(format("[%s] execution failed:", command.getClass().getSimpleName()),
-                    exception);
+        try {
+            Object returnValue = chain.proceed(context);
+            logger.info("[{}] executed successfully with [{}] return type",
+                        command.getClass().getSimpleName(),
+                        returnValue == null ? "null" : Void.TYPE.equals(returnValue) ? "void" : returnValue.getClass()
+                                .getSimpleName());
+            return returnValue;
+        } catch (Throwable t) {
+            logger.warn(format("[%s] execution failed:", command.getClass().getSimpleName()), t);
+            throw t;
+        }
     }
 }

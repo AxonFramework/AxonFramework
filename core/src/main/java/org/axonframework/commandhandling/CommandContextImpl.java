@@ -24,16 +24,12 @@ import java.util.Map;
  * process.
  *
  * @author Allard Buijze
- * @param <T> the type of result expected from command handler execution
  * @since 0.5
  */
-class CommandContextImpl<T> implements CommandContext<T> {
+class CommandContextImpl implements CommandContext {
 
     private final Object command;
-    private boolean executed = false;
-    private boolean successful = true;
-    private Throwable exception;
-    private T result;
+    private final CommandHandler commandHandler;
 
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
@@ -41,9 +37,11 @@ class CommandContextImpl<T> implements CommandContext<T> {
      * Initialize a context for the given <code>command</code>.
      *
      * @param command The command to be executed
+     * @param handler The command handler that will process the command
      */
-    CommandContextImpl(Object command) {
+    CommandContextImpl(Object command, CommandHandler handler) {
         this.command = command;
+        this.commandHandler = handler;
     }
 
     @Override
@@ -72,53 +70,7 @@ class CommandContextImpl<T> implements CommandContext<T> {
     }
 
     @Override
-    public boolean isExecuted() {
-        return executed;
-    }
-
-    @Override
-    public boolean isSuccessful() {
-        return successful;
-    }
-
-    @Override
-    public T getResult() {
-        return result;
-    }
-
-    @Override
-    public Throwable getException() {
-        return exception;
-    }
-
-    /**
-     * Mark the context as being successfully executed.
-     *
-     * @param actualResult the result of the handler execution
-     */
-    public void markSuccessfulExecution(T actualResult) {
-        this.executed = true;
-        this.result = actualResult;
-    }
-
-    /**
-     * Mark the context to indicate an exception was thrown from the command handler.
-     *
-     * @param actualException the exception thrown from the command handler
-     */
-    public void markFailedHandlerExecution(Throwable actualException) {
-        this.executed = true;
-        this.successful = false;
-        this.exception = actualException;
-    }
-
-    /**
-     * Mark the context to indicate an exception was thrown from one of the interceptors.
-     *
-     * @param actualException The exception thrown from the interceptor
-     */
-    public void markFailedInterceptorExecution(Throwable actualException) {
-        this.successful = false;
-        this.exception = actualException;
+    public CommandHandler getCommandHandler() {
+        return commandHandler;
     }
 }

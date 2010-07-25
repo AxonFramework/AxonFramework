@@ -20,7 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.axonframework.commandhandling.CommandContext;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.InterceptorChain;
 import org.junit.*;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.Log4jLoggerAdapter;
@@ -34,6 +34,7 @@ import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
 
 /**
  * @author Allard Buijze
@@ -43,6 +44,7 @@ public class LoggingInterceptorTest {
 
     private LoggingInterceptor testSubject;
     private org.apache.log4j.Logger mockLogger;
+    private InterceptorChain interceptorChain;
 
     @Before
     public void setUp() throws Exception {
@@ -52,80 +54,70 @@ public class LoggingInterceptorTest {
         ReflectionUtils.makeAccessible(loggerField);
         mockLogger = mock(Logger.class);
         loggerField.set(logger, mockLogger);
+        interceptorChain = mock(InterceptorChain.class);
     }
 
     @Test
-    public void testIncomingLogging() {
-        CommandContext mockCommandContext = mock(CommandContext.class);
-        when(mockCommandContext.getCommand()).thenReturn(new StubCommand());
+    public void testIncomingLogging_NullReturnValue() throws Throwable {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        testSubject.beforeCommandHandling(mockCommandContext, mock(CommandHandler.class));
+        when(interceptorChain.proceed(isA(CommandContext.class))).thenReturn(null);
+
+        CommandContext context = createContext(new StubCommand());
+        testSubject.handle(context, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
-        verify(mockLogger).log(any(String.class), any(Priority.class), contains("[StubCommand]"), any(Throwable.class));
-        verifyNoMoreInteractions(mockLogger);
-    }
-
-    @Test
-    public void testSuccessfulExecution_NullReturnValue() {
-        CommandContext mockCommandContext = mock(CommandContext.class);
-        when(mockCommandContext.getCommand()).thenReturn(new StubCommand());
-        when(mockCommandContext.getResult()).thenReturn(null);
-        when(mockCommandContext.isSuccessful()).thenReturn(Boolean.TRUE);
-        when(mockLogger.isInfoEnabled()).thenReturn(true);
-        testSubject.afterCommandHandling(mockCommandContext, mock(CommandHandler.class));
-
-        verify(mockLogger, atLeast(1)).isInfoEnabled();
+        verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
+                                         any(Throwable.class));
         verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubCommand]"),
                                                                            contains("[null]")), any(Throwable.class));
         verifyNoMoreInteractions(mockLogger);
     }
 
     @Test
-    public void testSuccessfulExecution_VoidReturnValue() {
-        CommandContext mockCommandContext = mock(CommandContext.class);
-        when(mockCommandContext.getCommand()).thenReturn(new StubCommand());
-        when(mockCommandContext.getResult()).thenReturn(Void.TYPE);
-        when(mockCommandContext.isSuccessful()).thenReturn(Boolean.TRUE);
+    public void testSuccessfulExecution_VoidReturnValue() throws Throwable {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        testSubject.afterCommandHandling(mockCommandContext, mock(CommandHandler.class));
+        when(interceptorChain.proceed(isA(CommandContext.class))).thenReturn(Void.TYPE);
+
+        testSubject.handle(createContext(new StubCommand()), interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
+        verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
+                                         any(Throwable.class));
         verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubCommand]"),
                                                                            contains("[void]")), any(Throwable.class));
         verifyNoMoreInteractions(mockLogger);
     }
 
     @Test
-    public void testSuccessfulExecution_CustomReturnValue() {
-        CommandContext mockCommandContext = mock(CommandContext.class);
-        when(mockCommandContext.getCommand()).thenReturn(new StubCommand());
-        when(mockCommandContext.getResult()).thenReturn(new StubResponse());
-        when(mockCommandContext.isSuccessful()).thenReturn(Boolean.TRUE);
+    public void testSuccessfulExecution_CustomReturnValue() throws Throwable {
+        when(interceptorChain.proceed(isA(CommandContext.class))).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        testSubject.afterCommandHandling(mockCommandContext, mock(CommandHandler.class));
+
+        testSubject.handle(createContext(new StubCommand()), interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
-        verify(mockLogger).log(any(String.class), eq(Level.INFO), and(contains("[StubCommand]"),
-                                                                      contains("[StubResponse]")),
+        verify(mockLogger).log(any(String.class), eq(Level.INFO),
+                               and(contains("[StubCommand]"), contains("[StubResponse]")),
                                any(Throwable.class));
         verifyNoMoreInteractions(mockLogger);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    public void testFailedExecution() {
-        CommandContext mockCommandContext = mock(CommandContext.class);
-        when(mockCommandContext.getCommand()).thenReturn(new StubCommand());
-        when(mockCommandContext.isSuccessful()).thenReturn(Boolean.FALSE);
-        RuntimeException exception = new RuntimeException("Mock");
-        when(mockCommandContext.getException()).thenReturn(exception);
+    public void testFailedExecution() throws Throwable {
+        RuntimeException exception = new RuntimeException();
+        when(interceptorChain.proceed(isA(CommandContext.class))).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        testSubject.afterCommandHandling(mockCommandContext, mock(CommandHandler.class));
+
+        try {
+            testSubject.handle(createContext(new StubCommand()), interceptorChain);
+            fail("Expected exception to be propagated");
+        } catch (RuntimeException e) {
+            // expected
+        }
 
         verify(mockLogger).log(any(String.class), eq(Level.WARN), and(contains("[StubCommand]"),
                                                                       contains("failed")), eq(exception));
-        verifyNoMoreInteractions(mockLogger);
     }
 
     @Test
@@ -135,6 +127,12 @@ public class LoggingInterceptorTest {
         field.setAccessible(true);
         Log4jLoggerAdapter logger = (Log4jLoggerAdapter) field.get(testSubject);
         assertEquals("my.custom.logger", logger.getName());
+    }
+
+    private CommandContext createContext(StubCommand command) {
+        CommandContext context = mock(CommandContext.class);
+        when(context.getCommand()).thenReturn(command);
+        return context;
     }
 
     private static class StubCommand {
