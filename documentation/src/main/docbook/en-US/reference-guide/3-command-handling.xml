@@ -33,10 +33,10 @@
         <para>The next sections provide an overview of the tasks related to creating a Command
             Handling infrastructure with the Axon Framework.</para>
         <sect1>
-            <title>Creating a Command Handler</title>
-            <para>The Command Handler is the object that receives a Command of a pre-defined type
-            and takes action based on its contents. In Axon, a Command may be any object. There is
-            no predefined type that needs to be implemented. The Command Handler, however, must
+        <title>Creating a Command Handler</title>
+        <para>The Command Handler is the object that receives a Command of a pre-defined type and
+            takes action based on its contents. In Axon, a Command may be any object. There is no
+            predefined type that needs to be implemented. The Command Handler, however, must
             implement the <code>CommandHandler</code> interface. This interface declares only a
             single method: <code>Object handle(T command)</code>, where T is the type of Command
             this Handler can process. It is not recommended to use return values, but they are
@@ -49,33 +49,53 @@
                 the specific types of Command they can handle. See <xref
                     linkend="configuring-command-bus"/>.</para>
         </note>
-            <para><emphasis role="bold">Annotation support</emphasis></para>
-            <para>Comparable to the annotation support for Event Listeners, you can also use any
-                POJO as command handler. The added advantage is that you can configure a single
-                class to process several types of (related) commands. Just add the
-                    <code>@CommandHandler</code> annotated to your methods to turn them into a
-                command handler. These methods may only accept a single parameter, which is the
-                command to process. Note that for each command type, there may only be one handler!
-                This restriction counts for all handlers registered to the same command bus.</para>
-            <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
-                annotated class into a <code>CommandHandler</code>. The adapter also needs the
-                CommandBus instance. Use the <code>subscribe()</code> method on the adapter to
-                subscribe the annotated handlers to the command bus using the correct command
-                type.</para>
-            <para>If you use Spring, you may also define an
+        <para><emphasis role="bold">Annotation support</emphasis></para>
+        <para>Comparable to the annotation support for Event Listeners, you can also use any POJO as
+            command handler. The added advantage is that you can configure a single class to process
+            several types of (related) commands. Just add the <code>@CommandHandler</code> annotated
+            to your methods to turn them into a command handler. These methods should declare the
+            command to process as the first parameter. They may take an optional second parameter,
+            which is the <code>CommandContext</code> for that command. Note that for each command
+            type, there may only be one handler! This restriction counts for all handlers registered
+            to the same command bus.</para>
+        <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your annotated
+            class into a <code>CommandHandler</code>. The adapter also needs a
+                <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on the
+            adapter to subscribe all the annotated handlers to the command bus using the correct
+            command type.</para>
+        <para>If you use Spring, you may also define an
                 <code>AnnotationCommandHandlerBeanPostProcessor</code>. This post processor detects
             any beans that have an <code>@CommandHandler</code> annotated method in them and wrap
             them in an <code>AnnotationCommandHandlerAdapter</code> automatically. They will also be
             automatically subscribed to the <code>CommandBus</code>. </para>
-            <note>
-                <para>Note that you need to be careful when mixing manual wrapping and the use of
-                the post processor. This might result in command handler being subscribed twice.
-                This does not have to be a problem for most command handlers, since only a single
-                command handler can be subscribed to a specific type of command at any one time.
-                Their subscriptions will just overwrite each other.</para>
-            </note>
-        
-        </sect1>
+        <note>
+            <para>Note that you need to be careful when mixing manual wrapping and the use of the
+                post processor. This might result in command handler being subscribed twice. This
+                does not have to be a problem for most command handlers, since only a single command
+                handler can be subscribed to a specific type of command at any one time. Their
+                subscriptions will just overwrite each other.</para>
+        </note>
+    </sect1>
+    <sect1>
+        <title>Dispatching commands</title>
+        <para>The CommandBus provides a single method to dispatch command to their respective
+            handler: <code>dispatch(command, callback)</code>. The first parameter is the actual
+            command to dispatch. The second parameter takes a callback that is allows the
+            dispatching component to be notified when command handling is completed. This callback
+            has two methods: <code>onSuccess()</code> and <code>onFailure()</code>, which are called
+            when command handling returned normally, or when it threw an exception,
+            respectively.</para>
+        <para>The calling component may not assume that the callback is invoked in the same thread
+            that dispatched the command. In some cases, however, the dispatching thread might need
+            to wait for the command to execute. In that case, you can use a
+                <code>FutureCallback</code>. It is a combination of a <code>Future</code> (as
+            defined in the java.concurrent package) and Axon's <code>CommandCallback</code>.</para>
+        <para>In other cases, you might not be interested in the result of the dispatch process at
+            all. In that case, you can supply a <code>NoOpCallback</code>. An instance of this
+            callback can be obtained using the static <code>INSTANCE</code> property or the static
+                <code>instance()</code> method. The latter provides compatiblity with Java's
+            Generics.</para>
+    </sect1>
         <sect1 xml:id="configuring-command-bus">
         <title>Configuring the Command Bus</title>
         <para>The Command Bus is the mechanism that dispatches commands to their respective Command
@@ -102,34 +122,70 @@
             interceptors provide the ability to take action both before and after command
             processing.</para>
         <para>Interceptors must implement the <code>CommandHandlerInterceptor</code> interface. This
-            interface declares two methods, <code>beforeCommandHandling()</code> and
-                <code>afterCommandHandling()</code>, that both take two parameters: a
-                <code>CommandContext</code> and a <code>CommandHandler</code>. The first contains
-            the actual command and provides the possiblity to add meta-data to the command. This
-            meta-data is not forwarded to the command handler, but is intended for the command
-            handler interceptor itself. You could, for example, store transactional information in
-            the context if your transactional boundary is at the command handling. The second
-            parameter, the <code>CommandHandler</code> is the command handler that will process or
-            has processed the command. You could, for example, base authorization requirements on
-            information in the command handler.</para>
-        <para>If you use annotation support, the <code>AnnotationCommandHandlerAdapter</code> is
-            passed as the command handler. You may call <code>getTarget()</code> on it to obtain the
-            actual annotated command handler. To obtain a reference to the method that handles the
-            command, you can use the <code>findCommandHandlerMethodFor(Object command)</code>
-            method. You could, for example, use the reference to this method to find
-            security-related annotations and perform authorization on them.</para>
-            <sect2>
-            <title>Managing transactions</title>
-            <para>In some cases, it is desirable to set a transaction scope around the command
-                handling process. For example when using synchronous event handling with event
-                handlers that update tables in a database in combintation with the
-                    <code>JpaEventStore</code>. By setting the transaction scope in the command
-                dispatching process, all changes can be performed within a single transaction. This
-                provides full consistency guarantees.</para>
-            <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses Spring's
-                    <code>PlatformTransactionManager</code> to manage the actual transactions. A
-                transaction is committed when command handling is successful, or rolled back if the
-                command handler (or one of the downstream interceptors) threw an exception.</para>
+            interface declares one  method, <code>handle</code>, that takes two parameters: a
+                <code>CommandContext</code> and an <code>InterceptorChain</code>. The first contains
+            the actual command and provides the possiblity to add meta-data to that command. This
+            meta-data is forwarded to the command handler, and is provided to the callback when
+            command execution completes. You could, for example, store information valuable for
+            logging, or provide the principal of the user executing the command. The second
+            parameter, the <code>InterceptorChain</code> is used to continue the dispatching
+            process.</para>
+        <note>
+            <para>The <code>CommandContext</code> also provides access to the command handler that
+                will execute the command. You are higly discouraged from directly sending the
+                command to the command handler, as it will prevent any downstream interceptors from
+                being called, possibly leading to unexpected results.</para>
+            <para>If you use annotation support, an <code>AnnotationCommandHandlerAdapter</code>
+                (the wrapper for annotated command handlers) is passed as the command handler. You
+                may call <code>getTarget()</code> on it to obtain the actual annotated command
+                handler. To obtain a reference to the method that handles the command, you can use
+                the <code>findCommandHandlerMethodFor(Object command)</code> method. You could, for
+                example, use the reference to this method to find security-related annotations and
+                perform authorization on them.</para>
+        </note>
+        <sect2 xml:id="unit-of-work">
+            <title>Unit Of Work and Transactions</title>
+            <para>In many cases, a commmand handler will perform several actions on one or more
+                aggregates. In such a case, you would want either all changes to all aggregates to
+                be applied, or none at all. By default, all repositories provided by Axon will
+                register actions with a Unit of Work. This Unit of Work will keep track of all
+                loaded aggregates and events registered to be published. Instead of publishing these
+                directly, it will wait to do so until all actions have been performed.</para>
+            <para>Axon always makes use of a Unit of Work. The default is, however, rather limited
+                and will still require you to explicitly save an aggregate, which will cause events
+                of that aggregate to be dispatched. When another aggregate is saved, and that
+                operation fails, there is no way to revert the changes of the first
+                aggregate.</para>
+            <para>To overcome this problem, you can confige a Unit of Work interceptor on your
+                command bus. This interceptor will start a new Unit of Work, and will commit that
+                automatically when command handling completed successfully or roll back all changes
+                when an exception occurs. Using this explicit Unit Of Work removes the need to
+                explicitly call <code>save()</code> on the repository. The Unit of Work will
+                automatically save all changes made to all loaded aggregates.</para>
+            <simplesect>
+                <title>Managing transactions</title>
+                <para>In some cases, it is desirable to set a transaction scope around the command
+                    handling process. For example when using synchronous event handling with event
+                    handlers that update tables in a database in combintation with the
+                        <code>JpaEventStore</code>. By setting the transaction scope in the command
+                    dispatching process, all changes can be performed within a single transaction.
+                    This provides full consistency guarantees.</para>
+                <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses
+                    Spring's <code>PlatformTransactionManager</code> to manage the actual
+                    transactions. A transaction is committed when command handling is successful, or
+                    rolled back if the command handler (or one of the downstream interceptors) threw
+                    an exception.<note>
+                        <para>You are highly recommended not to call <code>save()</code> on a
+                            repository to store an aggregate. Although this will store all changes
+                            made and publish the event, it will also release locks on aggregates.
+                            Other processes could then start reading aggregate state, which is
+                            incomplete, since the first thread did not commit the changes to the
+                            database yet. This will ultimately result in Unique Key Constraint
+                            violations. When a Unit of Work stores the aggregates, it will only
+                            release the locks after the database transaction has been
+                            committed.</para>
+                    </note></para>
+            </simplesect>
         </sect2>
         <sect2 xml:id="auditing-interceptor">
             <title>Auditing</title>

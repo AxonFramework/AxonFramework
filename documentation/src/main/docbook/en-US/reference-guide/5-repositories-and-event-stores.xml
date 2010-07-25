@@ -22,14 +22,18 @@
         other types of queries should be performed against the query database, not the
         Repository.</para>
     <para>In the Axon Framework, all repositories must implement the <code>Repository</code>
-        interface. This interface prescribes two methods: <code>load(identifier)</code> and
-            <code>save(aggregate)</code>. </para>
+        interface. This interface prescribes three methods: <code>load(identifier, version)</code>,
+            <code>add(aggregate)</code> and <code>save(aggregate)</code>. The <code>load</code>
+        method allows you to load aggregates from the repository. The <code>version</code> parameter
+        is used to detect concurrent modifications. <code>add</code> is used to register newly
+        created aggregates in the repository. Use <code>save</code> to persist changes made to
+        aggregates with the repository. Although save is a effective method to persist your changes,
+        it is not as powerful and easy as using an explicit Unit of Work (see <xref linkend="unit-of-work"/>).</para>
         <para>Depending on your underlying persistence storage and auditing needs, there are a
-            number of base implementations that provide basic functionality needed by most
-            repositories. Axon Framework makes a distinction between repositories that save the
-            current state of the aggregate (see <xref linkend="standard-repositories"/>), and those
-            that store the events of an aggregate (see <xref linkend="event-sourcing-repositories"/>).
-        </para>
+        number of base implementations that provide basic functionality needed by most repositories.
+        Axon Framework makes a distinction between repositories that save the current state of the
+        aggregate (see <xref linkend="standard-repositories"/>), and those that store the events of
+        an aggregate (see <xref linkend="event-sourcing-repositories"/>).</para>
         <sect1 xml:id="standard-repositories">
             <title>Standard repositories</title>
         <para>Standard repositories store the actual state of an Aggregate. Upon each change, the
@@ -59,14 +63,18 @@
                 dispatching logic, it will also ensure that aggregates are not concurrently
                 modified.
             </para>
-            <para>You can configure the
-                <code>LockingRepository</code>
-                to use an optimistic locking
-                strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
-                the second thread saving an aggregate will receive a
-                <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
-                access to the aggregate alltogether.
-            </para>
+            <para>You can configure the <code>LockingRepository</code> to use an optimistic locking
+            strategy, or a pessimistic one. When the optimistic lock detects concurrent access, the
+            second thread saving an aggregate will receive a <code>ConcurrencyException</code>. The
+            pessimistic lock will prevent concurrent access to the aggregate alltogether.<note>
+                <para>Note that there is a clear distinction between a
+                        <code>ConcurrencyException</code> and a
+                        <code>ConflictingModificationException</code>. The first is used to indicate
+                    a repository cannot save an aggregate, because the changes it contains were not
+                    applied to the latest available version. The latter indicates that the loaded
+                    aggregate contains changes that might not have been seen by the end-user. See
+                        <xref linkend="conflict-resolution"/> for more information.</para>
+            </note></para>
         </sect1>
         <sect1 xml:id="event-sourcing-repositories">
             <title>Event Sourcing repositories</title>
@@ -220,22 +228,22 @@
         </simplesect>
         </sect1>
         <sect1 xml:id="using-snapshot-events">
-            <title>Snapshotting</title>
-            <para>When aggregates live for a long time, and their state constantly change, they will
+        <title>Snapshotting</title>
+        <para>When aggregates live for a long time, and their state constantly change, they will
             generate a large amount of events. Having to load all these events in to rebuild an
             aggregate's state may have a big performance impact. The snapshot event is a domain
             event with a special purpose: it summarises an arbitrary amount of events into a single
             one. By regularly creating and storing a snapshot event, the event store does not have
             to return long lists of events. Just the last snapshot events and all events that
             occurred after the snapshot was made.</para>
-            <para>For example, items in stock tend to change quite often. Each time an item is sold,
-                an event reduces the stock by one. Every time a shipment of new items comes in, the
-                stock is incremented by some larger number. If you sell a hundred items each day,
-                you will produce at least 100 events per day. After a few days, your system will
-                spend too much time reading in all these events just to find out wheter it should
-                raise an "ItemOutOfStockEvent". A single snapshot event could replace a lot of these
-                events, just by storing the current number of items in stock.</para>
-            <sect2>
+        <para>For example, items in stock tend to change quite often. Each time an item is sold, an
+            event reduces the stock by one. Every time a shipment of new items comes in, the stock
+            is incremented by some larger number. If you sell a hundred items each day, you will
+            produce at least 100 events per day. After a few days, your system will spend too much
+            time reading in all these events just to find out wheter it should raise an
+            "ItemOutOfStockEvent". A single snapshot event could replace a lot of these events, just
+            by storing the current number of items in stock.</para>
+        <sect2>
             <title>Creating a snapshot</title>
             <para>Snapshot creation can be triggered by a number of factors, for example the number
                 of events created since the last snapshot, the time to initialize an aggregate
@@ -375,7 +383,7 @@
                 that using this snapshot event requires that the event serialization mechanism needs
                 to be able to serialize the aggregate.</para>
         </sect2>
-            <sect2>
+        <sect2>
             <title>Initializing an Aggregate based on a Snapshot Event</title>
             <para>Every snapshot event is a <code>DomainEvent</code> instance. That means a snapshot
                 event is handled just like any other domain event. When using annotations to
@@ -408,5 +416,44 @@
                 That means aggregates never need to be able to deal with
                     <code>AggregateSnapshot</code> instances themselves.</para>
         </sect2>
-        </sect1>
+    </sect1>
+    <sect1 linkend="conflict-resolution">
+        <title>Advanced conflict detection and resolution</title>
+        <para>One of the major advantages of being explicit about the meaning of changes, is that
+            you can detect conflicting changes with more precision. Typically, these conflicting
+            changes occur when two users are acting on the same data (nearly) simulatneously.
+            Imagine two users, both looking at a specific version of the data. They both decide to
+            make a change to that data. They will both send a command like "on version X of this
+            aggregate, do that". One of them will have the changes actually applied to the expected
+            version. The other user won't.</para>
+        <para>Instead of simply rejecting all incoming commands when aggregates have been modified
+            by another process, you could check whether the user's intent conflicts with any unseen
+            changes. One way to do this, is to apply the command on the latest version of the
+            aggregate, and check the generated events against the events that occurred since the
+            version the user expected. For example, two users look at a Customer, which has version
+            4. One user notices a typo in the customer's address, and decides to fix it. Another
+            user wants to register the fact that the customer moved to another address. If the fist
+            user applied his command first, the second one will make the change to version 5,
+            instead of the version 4 that he expected. This second command will generate a
+            CustomerMovedEvent. This event is compared to all unseen events: AddressCorrectedEvent,
+            in this case. A ConflictResolver will compare these events, and decide that these
+            conflicts may be merged. If the other user had committed first, the ConflictResolver
+            would have decided that a AddressCorrectedEvent on top of an unseen CustomerMovedEvent
+            is considered a conflicting change.</para>
+        <para>Axon provides the necessary infrastructure to implement advanced conflict detection.
+            By default, all aggregates will throw a <code>ConflictingModificationException</code>
+            when the version of a loaded aggregate is not equal to the expected version. Event
+            Sourcing Repositories offer support for more advanced conflict detection, as decribed in
+            the paragraph above.</para>
+        <para>To enable advanced conflict detection, configure a <code>ConflictResolver</code> on
+            the <code>EventSourcingRepository</code>. This <code>ConflictResolver</code> is
+            responsible for detecting conflicting modifications, based on the events that represent
+            these changes. Detecting these conflicts is a matter of comparing the two lists of
+            DomainEvents provided in the <code>resolveConflicts</code> method declared on the
+                <code>ConflictResolver</code>. If such a conflict is found, a
+                <code>ConflictingModificationException</code> (or better, a more explicit and
+            explanatory subclass of it) must be thrown. If the <code>ConflictResolver</code> returns
+            normally, the events are persisted, effectively meaning that the concurrent changes have
+            been merged.</para>
+    </sect1>
 </chapter>
