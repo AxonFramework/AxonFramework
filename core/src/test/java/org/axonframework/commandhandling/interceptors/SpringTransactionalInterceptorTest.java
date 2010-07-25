@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.junit.*;
@@ -60,7 +61,7 @@ public class SpringTransactionalInterceptorTest {
         commandBus.dispatch(new Object());
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(commandHandler).handle(isA(Object.class));
+        inOrder.verify(commandHandler).handle(isA(Object.class), isA(CommandContext.class));
         inOrder.verify(mockTransactionManager).commit(mockTransactionStatus);
         verifyNoMoreInteractions(mockTransactionManager, commandHandler);
     }
@@ -69,7 +70,7 @@ public class SpringTransactionalInterceptorTest {
     @Test
     public void testTransactionManagement_RuntimeException() throws Throwable {
         RuntimeException exception = new RuntimeException("Mock");
-        when(commandHandler.handle(isA(Object.class))).thenThrow(exception);
+        when(commandHandler.handle(isA(Object.class), isA(CommandContext.class))).thenThrow(exception);
         try {
             commandBus.dispatch(new Object());
             fail("Exception should be propagated");
@@ -78,7 +79,7 @@ public class SpringTransactionalInterceptorTest {
         }
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(commandHandler).handle(isA(Object.class));
+        inOrder.verify(commandHandler).handle(isA(Object.class), isA(CommandContext.class));
         inOrder.verify(mockTransactionManager).rollback(mockTransactionStatus);
         verifyNoMoreInteractions(mockTransactionManager, commandHandler);
     }

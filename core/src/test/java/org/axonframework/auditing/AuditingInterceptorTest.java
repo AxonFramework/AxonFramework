@@ -170,7 +170,7 @@ public class AuditingInterceptorTest {
         }
 
         @Override
-        public Object handle(String command) {
+        public Object handle(String command, CommandContext<String> context) {
             if ("Fail".equals(command)) {
                 throw new RuntimeException("Mock");
             }

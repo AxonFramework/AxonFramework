@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation.postprocessor;
 
 import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.junit.*;
@@ -82,7 +83,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         CommandHandler<MyCommand> commandHandler = (CommandHandler<MyCommand>) postProcessedBean;
         AnnotatedCommandHandler annotatedCommandHandler = (AnnotatedCommandHandler) postProcessedBean;
         MyCommand myCommand = new MyCommand();
-        commandHandler.handle(myCommand);
+        commandHandler.handle(myCommand, mock(CommandContext.class));
 
         assertEquals(1, annotatedCommandHandler.getInvocationCount());
 
@@ -109,7 +110,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         private int invocationCount;
 
         @org.axonframework.commandhandling.annotation.CommandHandler
-        public void handleCommand(MyCommand command) {
+        public void handleCommand(MyCommand command, CommandContext<MyCommand> context) {
             invocationCount++;
         }
 

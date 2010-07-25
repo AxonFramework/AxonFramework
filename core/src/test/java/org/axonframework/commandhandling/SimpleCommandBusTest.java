@@ -90,11 +90,12 @@ public class SimpleCommandBusTest {
                 .thenAnswer(new Answer<Object>() {
                     @Override
                     public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return commandHandler.handle((String) commandContextFrom(invocation).getCommand());
+                        return commandHandler.handle((String) commandContextFrom(invocation).getCommand(),
+                                                     commandContextFrom(invocation));
                     }
                 });
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        when(commandHandler.handle("Hi there!")).thenReturn("Hi there!");
+        when(commandHandler.handle(eq("Hi there!"), isA(CommandContext.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);
 
         testSubject.dispatch("Hi there!", new CommandCallback<String, Object>() {
@@ -114,9 +115,10 @@ public class SimpleCommandBusTest {
                                                 isA(InterceptorChain.class));
         inOrder.verify(mockInterceptor2).handle(isA(CommandContext.class),
                                                 isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle("Hi there!");
+        inOrder.verify(commandHandler).handle(eq("Hi there!"), isA(CommandContext.class));
     }
 
+    @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
     @Test
     public void testInterceptorChain_CommandHandlerThrowsException() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
@@ -132,14 +134,17 @@ public class SimpleCommandBusTest {
                 });
         when(mockInterceptor2.handle(isA(CommandContext.class), isA(InterceptorChain.class)))
                 .thenAnswer(new Answer<Object>() {
+                    @SuppressWarnings({"unchecked"})
                     @Override
                     public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return commandHandler.handle((String) commandContextFrom(invocation).getCommand());
+                        return commandHandler.handle((String) commandContextFrom(invocation).getCommand(),
+                                                     commandContextFrom(invocation));
                     }
                 });
 
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        when(commandHandler.handle("Hi there!")).thenThrow(new RuntimeException("Faking failed command handling"));
+        when(commandHandler.handle(eq("Hi there!"), isA(CommandContext.class)))
+                .thenThrow(new RuntimeException("Faking failed command handling"));
         testSubject.subscribe(String.class, commandHandler);
 
         testSubject.dispatch("Hi there!", new CommandCallback<String, Object>() {
@@ -159,14 +164,14 @@ public class SimpleCommandBusTest {
                                                 isA(InterceptorChain.class));
         inOrder.verify(mockInterceptor2).handle(isA(CommandContext.class),
                                                 isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle("Hi there!");
+        inOrder.verify(commandHandler).handle(eq("Hi there!"), isA(CommandContext.class));
     }
 
     private CommandContext commandContextFrom(InvocationOnMock invocation) {
         return ((CommandContext) invocation.getArguments()[0]);
     }
 
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    @SuppressWarnings({"ThrowableInstanceNeverThrown", "unchecked"})
     @Test
     public void testInterceptorChain_InterceptorThrowsException() throws Throwable {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
@@ -181,7 +186,7 @@ public class SimpleCommandBusTest {
                 });
         testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         CommandHandler<String> commandHandler = mock(CommandHandler.class);
-        when(commandHandler.handle("Hi there!")).thenReturn("Hi there!");
+        when(commandHandler.handle(eq("Hi there!"), isA(CommandContext.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
         doThrow(someException).when(mockInterceptor2).handle(isA(CommandContext.class), isA(InterceptorChain.class));
@@ -201,14 +206,14 @@ public class SimpleCommandBusTest {
                                                 isA(InterceptorChain.class));
         inOrder.verify(mockInterceptor2).handle(isA(CommandContext.class),
                                                 isA(InterceptorChain.class));
-        inOrder.verify(commandHandler, never()).handle("Hi there!");
+        inOrder.verify(commandHandler, never()).handle(eq("Hi there!"), isA(CommandContext.class));
 
     }
 
     private static class MyStringCommandHandler implements CommandHandler<String> {
 
         @Override
-        public Object handle(String command) {
+        public Object handle(String command, CommandContext<String> context) {
             return command;
         }
     }

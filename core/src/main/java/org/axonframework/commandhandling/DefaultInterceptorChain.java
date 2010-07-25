@@ -51,7 +51,7 @@ class DefaultInterceptorChain implements InterceptorChain {
         if (current != null) {
             return current.handle(commandContext, next);
         } else {
-            return commandContext.getCommandHandler().handle(commandContext.getCommand());
+            return commandContext.getCommandHandler().handle(commandContext.getCommand(), commandContext);
         }
     }
 }

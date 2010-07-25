@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.domain.Event;
@@ -161,7 +162,7 @@ public class SimpleUnitOfWorkInterceptorTest {
     private class LoadAndSaveCommandHandler implements CommandHandler<SimpleCommand> {
 
         @Override
-        public Object handle(SimpleCommand command) {
+        public Object handle(SimpleCommand command, CommandContext<SimpleCommand> context) {
             for (UUID aggregateIdentifier : command.getAggregatesToActOn()) {
                 StubAggregate aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.doSomething();
