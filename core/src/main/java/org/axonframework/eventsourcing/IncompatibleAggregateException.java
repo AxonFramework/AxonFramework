@@ -38,4 +38,13 @@ public class IncompatibleAggregateException extends AxonNonTransientException {
     public IncompatibleAggregateException(String message, Exception cause) {
         super(message, cause);
     }
+
+    /**
+     * Initialize the exception with given <code>message</code>.
+     *
+     * @param message Message describing the reason the aggregate is not compatible
+     */
+    public IncompatibleAggregateException(String message) {
+        super(message);
+    }
 }
