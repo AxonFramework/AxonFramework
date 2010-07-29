@@ -43,8 +43,11 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
     private volatile DefaultInterceptorChain interceptorChain = new DefaultInterceptorChain(Collections.<CommandHandlerInterceptor>emptyList());
     private volatile SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
 
+    /**
+     * Registers the statistics object as a jmx monitor
+     */
     @PostConstruct
-    public void afterInitialization() {
+    public void registerAsMonitor() {
         JmxMonitorHolder.registerMonitor("SimpleCommandBusMonitor", statistics);
     }
 

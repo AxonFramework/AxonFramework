@@ -56,6 +56,10 @@ public interface SimpleCommandBusStatisticsMXBean extends Monitor {
      */
     void resetReceivedCommandsCounter();
 
+    /**
+     * Returns true if the statistics are enabled
+     * @return Boolean true if enabled
+     */
     boolean isEnabled();
 
 }

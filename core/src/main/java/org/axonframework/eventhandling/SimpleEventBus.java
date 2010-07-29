@@ -43,8 +43,11 @@ public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatist
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
     private volatile SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
 
+    /**
+     * Registers the current statistics object as a jmx monitor
+     */
     @PostConstruct
-    public void afterInitialization() {
+    public void registerAsMonitor() {
         JmxMonitorHolder.registerMonitor("SimpleEventBusMonitor",statistics);
     }
 

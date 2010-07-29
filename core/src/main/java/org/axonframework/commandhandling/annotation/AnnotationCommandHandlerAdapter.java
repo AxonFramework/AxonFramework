@@ -62,6 +62,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      * Invokes the @CommandHandler annotated method that accepts the given <code>command</code>.
      *
      * @param command The command to handle
+     * @param context CommandContext for the invocation
      * @return the result of the command handling. Is {@link Void#TYPE} when the annotated handler has a
      *         <code>void</code> return value.
      *
