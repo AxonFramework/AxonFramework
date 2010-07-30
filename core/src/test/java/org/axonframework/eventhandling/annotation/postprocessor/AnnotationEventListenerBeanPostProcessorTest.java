@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.annotation.postprocessor;
 import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
+import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -104,6 +105,14 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         eventListener.handle(domainEvent);
 
         assertEquals(1, annotatedEventListener.getInvocationCount());
+    }
+
+    @Test
+    public void testAggregatesAreNotEligibleForPostProcessing() {
+        StubAggregate aggregate = new StubAggregate();
+        Object actualResult = testSubject.postProcessAfterInitialization(aggregate, "aggregate");
+        assertEquals(aggregate.getClass(), actualResult.getClass());
+        assertSame("Actual result was modified. It has probably been proxied", aggregate, actualResult);
     }
 
     @Test

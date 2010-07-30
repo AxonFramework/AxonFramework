@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.util.AbstractAnnotationHandlerBeanPostProcessor;
@@ -50,6 +51,7 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
      * @param bean The bean that the EventListenerAdapter has to adapt
      * @return an event handler adapter for the given {@code bean}
      */
+    @Override
     protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
         AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(bean, executor, eventBus);
         adapter.subscribe();
@@ -58,7 +60,9 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
 
     @Override
     protected boolean isPostProcessingCandidate(Class<?> targetClass) {
-        return isNotEventHandlerSubclass(targetClass) && hasEventHandlerMethod(targetClass);
+        return isNotAggregateRoot(targetClass) &&
+                isNotEventHandlerSubclass(targetClass) &&
+                hasEventHandlerMethod(targetClass);
     }
 
     /**
@@ -77,6 +81,10 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
             }
             this.eventBus = beans.entrySet().iterator().next().getValue();
         }
+    }
+
+    private boolean isNotAggregateRoot(Class<?> targetClass) {
+        return !AggregateRoot.class.isAssignableFrom(targetClass);
     }
 
     private boolean isNotEventHandlerSubclass(Class<?> beanClass) {

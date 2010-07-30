@@ -16,6 +16,7 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 
 import java.util.UUID;
@@ -38,6 +39,7 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
         apply(new StubDomainEvent());
     }
 
+    @EventHandler
     @Override
     protected void handle(DomainEvent event) {
         invocationCount++;
