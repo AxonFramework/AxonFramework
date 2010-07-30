@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.interceptors.SimpleUnitOfWorkInterceptor;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
@@ -53,7 +54,7 @@ import java.util.UUID;
 class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration, TestExecutor {
 
     private EventSourcingRepository<?> repository;
-    private CommandBus commandBus;
+    private SimpleCommandBus commandBus;
     private EventBus eventBus;
     private UUID aggregateIdentifier;
     private EventStore eventStore;
@@ -75,6 +76,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         aggregateIdentifier = UUID.randomUUID();
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
+        commandBus.setInterceptors(Arrays.asList(new SimpleUnitOfWorkInterceptor()));
         eventStore = new RecordingEventStore();
         clearGivenWhenState();
     }
