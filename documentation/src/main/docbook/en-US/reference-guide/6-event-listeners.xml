@@ -226,15 +226,22 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                 performance impact. In Axon, events are processed in batches. The batch size depends
                 of the number of events that need to be processed and the settings provided by the
                 event handler. By default, the batch size is set to the number of events available
-                in the processing queue at the time a batch starts.
-            </para>
+                in the processing queue at the time a batch starts.</para>
+            <note>
+                <para>Typically, when using synchronous event handling, the transaction boundary is
+                    managed at the Command Bus level. Asynchronous event handlers, on the other
+                    hand, run in another thread and are often unable to act within the same
+                    transaction. The transaction managers used by event handlers should not be
+                    confused with the transaction interceptors, which are used with the Command Bus.
+                    See <xref linkend="unit-of-work"/> for more information about transactions in
+                    the command bus.</para>
+            </note>
             <para>In most cases, event handling is done using a thread pool executor, or scheduler.
                 The scheduler will schedule batches of event processing as soon as event become
                 available. When a batch is completed, the scheduler will reschedule processing of
                 the next batch, as long as more events are available. The smaller a batch, the more
                 "fair" the distribution of event handler processing is, but also the more scheduling
-                overhead you create.
-            </para>
+                overhead you create.</para>
             <para>When an event listener is wrapped with the
                 <code>AsynchronousEventHandlerWrapper</code>, you can configure a
                 <code>TransactionManager</code>
