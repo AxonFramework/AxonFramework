@@ -68,7 +68,7 @@
     <para>Once the command execution is complete, the command handler saves the aggregate's state by
         handing it over to the repository. The repository does two things when it saves an
         aggregate. It persists the aggregate's state for future commands that need to execute on
-        this aggregate. Furthermore, events are handed over to the event bus, which is reposonsible
+        this aggregate. Furthermore, events are handed over to the event bus, which is responsible
         for dispatching them to all interested listeners.</para>
     <para>Axon provides support for both the direct way of persisting aggregates (using
         object-relational-mapping, for example) and for event sourcing. More about repositories and

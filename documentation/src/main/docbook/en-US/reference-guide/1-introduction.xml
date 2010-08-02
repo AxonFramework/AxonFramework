@@ -192,13 +192,12 @@
             <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-core</artifactId>
-    <version>0.5</version>
+    <version>0.6</version>
 </dependency>]]></programlisting>
             <para>Most of the features provided by the Axon Framework are optional and require
                 additional dependencies. We have chosen not to add these dependencies by default, as
-                they would potentioly clutter your project with artifacts you don't need. This
-                section discusses these dependecies and describes in what scenarios you need them.
-            </para>
+                they would potentially clutter your project with artifacts you don't need. This
+                section discusses these dependecies and describes in what scenarios you need them. </para>
             <simplesect>
                 <title>Event Sourcing</title>
                 <para>The event sourcing repository that is provided in Axon
@@ -222,7 +221,7 @@
                 <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.springframework.integration</groupId>
     <artifactId>spring-integration-core</artifactId>
-    <version>1.0.3.RELEASE</version>
+    <version>1.0.4.RELEASE</version>
 </dependency>]]></programlisting>
             </simplesect>
         </sect2>
