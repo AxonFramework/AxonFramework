@@ -117,8 +117,8 @@
                     combination with a pessimistic locking strategy.</para>
             </simplesect>
             <simplesect>
-                <title><code>GenericEventSourcingRepository</code></title>
-                <para>The <code>GenericEventSourcingRepository</code> is a special
+            <title><code>GenericEventSourcingRepository</code></title>
+            <para>The <code>GenericEventSourcingRepository</code> is a special
                     <code>EventSourcingRepository</code> implementation that can act as a repository
                 for any type of Event Sourced Aggregate Root. There is however, a convention that
                 these <code>EventSourcedAggregateRoot</code> classes must adhere to: the type must
@@ -127,7 +127,19 @@
                 the identifier.</para>
             <para>In many cases, this generic repository will suffice. If not, you can always choose
                 to extend any of the other event sourcing repository implementations.</para>
-            </simplesect>
+        </simplesect>
+        <simplesect>
+            <title><code>SpringPrototypeEventSourcingRepository</code></title>
+            <para>Depending on your architectural choices, it might be useful to inject dependencies
+                into your aggregates using Spring. You could, for example, inject query repositories
+                into your aggregate to ensure the existance (or inexistance) of certain
+                values.</para>
+            <para>To inject dependencies into your aggregates, you need to configure a prototype
+                bean of your aggregate root in the Spring context that also defines the
+                SpringPrototypeEventSourcingRepository. Instead of creating regular instances of
+                using a constructor, it uses the Spring Application Context to instantiate your
+                aggregates. This will also inject any dependencies in your aggregate.</para>
+        </simplesect>
         </sect1>
         <sect1 xml:id="implementing-an-eventstore">
             <title>Event store implementations</title>
@@ -151,12 +163,12 @@
             <simplesect>
                 <title><code>FileSystemEventStore</code></title>
                 <para>The <code>FileSystemEventStore</code> stores the events in a file on the file
-                    system. It provides good performance and easy configuration. The only downside
-                    of this event store is that is does not provide transaction support and doesn't
-                    cluster very well. The only configuration needed is the location where the event
-                    store may store its files and the serializer to use to actually serialize and
-                    deserialize the events. Note that the provided url must end on a slash. This is
-                    due to the way Spring's <code>Resource</code> implementations work. </para>
+                system. It provides good performance and easy configuration. The downside of this
+                event store is that is does not provide transaction support and doesn't cluster very
+                well. The only configuration needed is the location where the event store may store
+                its files and the serializer to use to actually serialize and deserialize the
+                events. Note that the provided url must end on a slash. This is due to the way
+                Spring's <code>Resource</code> implementations work. </para>
             </simplesect>
             <simplesect>
                 <title><code>JpaEventStore</code></title>
