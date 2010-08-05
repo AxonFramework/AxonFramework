@@ -54,11 +54,11 @@
                     that indicates the intention of the change. For example, you could have an
                     abstract <code>AddressChangedEvent</code>, and two implementations
                         <code>ContactMovedEvent</code> and <code>AddressCorrectedEvent</code> that
-                    capture the intent of the state change. Some listeners will care about the
-                    intent (e.g. to send an address change confirmation email to the customer),
-                    while others don't (e.g. database updating event listeners). The latter will
-                    listen to events of the abstract type, while the former will listen to the
-                    concrete subtypes. </para>
+                    capture the intent of the state change. Some listeners don't care about the
+                    intent (e.g. database updating event listeners). These will listen to the
+                    abstract type. Other listeners do care about the intent and these will listen to
+                    the concrete subtypes (e.g. to send an address change confirmation email to the
+                    customer). </para>
                 <figure>
                     <title>Adding intent to events</title>
                     <mediaobject>
@@ -102,17 +102,14 @@
                 being successfully send. The usefulness of these events depend on the type of
                 application you are creating.
             </para>
-            <para>In the Axon Framework, you can extend the abtract
-                <code>ApplicationEvent</code>
+            <para>In the Axon Framework, you can extend the abtract <code>ApplicationEvent</code>
                 class for application events. This class will generate a unique identifier and a
                 time stamp for the current event. Optionally, you can attach an object that acts as
-                the source of the event. This source is loosely attached, which means that if the
+                the source of the event. This source is loosely referenced, which means that if the
                 garbage collector cleans up the source, or when the event is serialized and
                 deserialized, the original source class is not available anymore. Instead, you will
-                have access to the type of source and the value of it's
-                <code>toString()</code>
-                method.
-            </para>
+                have access to the type of source and the value of it's <code>toString()</code>
+                method. </para>
         </sect2>
         <sect2>
             <title>System Events</title>
@@ -121,13 +118,10 @@
                 could, for example, indicate that a subsystem is non-responsive or has raised an
                 exception.
             </para>
-            <para>All system events extend the abstract
-                <code>SystemEvent</code>
-                class. Upon
+            <para>All system events extend the abstract <code>SystemEvent</code> class. Upon
                 construction of this event, you may pass an exception, defining the cause of the
-                event, and a source object which is considered the source of the event. This object
-                is loosely referenced from the event.
-            </para>
+                event, and a source object which is considered the source of the event. As with
+                application events, the source is loosely referenced from the event. </para>
         </sect2>
     </sect1>
     <sect1>
@@ -197,46 +191,32 @@
             <title>Event sourcing aggregates</title>
             <para>Axon framework provides a few repository implementations that can use event
                 sourcing as storage method for aggregates. These repositories require that
-                aggregates implement the
-                <code>EventSourcedAggregateRoot</code>
-                interface. As with
-                most interfaces in Axon, we also provide one or more abstract implementation to help
-                you on your way.
-            </para>
+                aggregates implement the <code>EventSourcedAggregateRoot</code> interface. As with
+                most interfaces in Axon, we also provide one or more abstract implementations to
+                help you on your way. </para>
             <simplesect>
                 <title>
                     <code>EventSourcedAggregateRoot</code>
                 </title>
-                <para>The
-                    <code>EventSourcedAggregateRoot</code>
-                    defines an extra method,
-                    <code>initializeState()</code>, on top of the
-                    <code>AggregateRoot</code>
-                    interface. This method initializes an
-                    aggregate's state based on an event stream.
-                </para>
+                <para>The interface <code>EventSourcedAggregateRoot</code> defines an extra method,
+                        <code>initializeState()</code>, on top of the <code>AggregateRoot</code>
+                    interface. This method initializes an aggregate's state based on an event
+                    stream. </para>
             </simplesect>
             <simplesect>
                 <title>
                     <code>AbstractEventSourcedAggregateRoot</code>
                 </title>
-                <para>The
-                    <code>AbstractEventSourcedAggregateRoot</code>
-                    implements all methods on
-                    the
-                    <code>EventSourcedAggregateRoot</code>
-                    interface. It defines an abstract
-                    <code>handle()</code>
-                    method, which you need to implement with the actual
+                <para>The <code>AbstractEventSourcedAggregateRoot</code> implements all methods on
+                    the <code>EventSourcedAggregateRoot</code> interface. It defines an abstract
+                        <code>handle()</code> method, which you need to implement with the actual
                     logic to apply state changes based on domain events. When you extend the
-                    <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
-                    using the
-                    <code>apply()</code>
-                    method. This method will register the event to be
-                    committed when the aggregate is saved, and will call the
-                    <code>handle()</code>
-                    method with the event as parameter.
-                </para>
+                        <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
+                    using <code>apply()</code>. This method will register the event to be committed
+                    when the aggregate is saved, and will call the <code>handle()</code> method with
+                    the event as parameter. You need to implement this <code>handle()</code> method
+                    to apply the state changes represented by that event. Below is a sample
+                    implementation of an aggregate.</para>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
     private String someProperty;
@@ -309,9 +289,8 @@
                     </listitem>
                     <listitem>
                         <para>If one or more methods are found of which the parameter is of the
-                            event type or a super type, the method with the most specific class (the
-                            subclass) is chosen and invoked
-                        </para>
+                            event type or a super type, the method with the most specific type is
+                            chosen and invoked </para>
                     </listitem>
                     <listitem>
                         <para>If no methods are found on this level of the class hierarchy, the
