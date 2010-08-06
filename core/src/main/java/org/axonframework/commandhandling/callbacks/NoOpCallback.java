@@ -25,32 +25,22 @@ import org.axonframework.commandhandling.CommandContext;
  * <code>NoOpCallback.&lt;C&gt;instance()</code>.
  *
  * @author Allard Buijze
- * @param <C> The type of command
  * @since 0.6
  */
-public final class NoOpCallback<C> implements CommandCallback<C, Object> {
+public final class NoOpCallback implements CommandCallback<Object, Object> {
 
     /**
      * A statically available instance of the NoOpCallback. Provided for performance reasons.
-     * <p/>
-     * For generics support, consider using the {@link #instance()} method.
      */
     public static final NoOpCallback INSTANCE = new NoOpCallback();
 
     /**
-     * Method provided to return a generics compatible version of the {@link #INSTANCE}. This method will always return
-     * the same instance of the NoOpCallback, for performance reasons.
+     * {@inheritDoc}
      * <p/>
-     * <em>Usage example: </em>
-     * <p/>
-     * <code>commandBus.dispatch(new MyCommand(), NoOpCallback.&lt;MyCommand&gt;instance());</code>
-     *
-     * @param <C> The type of command
-     * @return a statically available instance of the NoOpCallback
+     * This implementation does nothing.
      */
-    @SuppressWarnings({"unchecked"})
-    public static <C> NoOpCallback<C> instance() {
-        return INSTANCE;
+    @Override
+    public void onSuccess(Object result, CommandContext<Object> context) {
     }
 
     /**
@@ -59,15 +49,6 @@ public final class NoOpCallback<C> implements CommandCallback<C, Object> {
      * This implementation does nothing.
      */
     @Override
-    public void onSuccess(Object result, CommandContext<C> context) {
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
-     */
-    @Override
-    public void onFailure(Throwable cause, CommandContext<C> context) {
+    public void onFailure(Throwable cause, CommandContext<Object> context) {
     }
 }

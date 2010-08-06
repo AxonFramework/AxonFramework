@@ -46,7 +46,9 @@ public class SpringTransactionalInterceptor extends TransactionalUnitOfWorkInter
 
     @Override
     protected void rollbackTransaction(UnitOfWork unitOfWork, TransactionStatus transaction) {
-        transactionManager.rollback(transaction);
+        if (!transaction.isCompleted()) {
+            transactionManager.rollback(transaction);
+        }
     }
 
     /**

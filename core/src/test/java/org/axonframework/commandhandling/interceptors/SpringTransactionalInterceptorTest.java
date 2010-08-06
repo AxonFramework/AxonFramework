@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.interceptors;
 import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -53,6 +55,15 @@ public class SpringTransactionalInterceptorTest {
         commandBus.setInterceptors(Arrays.asList(testSubject));
         commandHandler = mock(CommandHandler.class);
         commandBus.subscribe(Object.class, commandHandler);
+    }
+
+    @Test
+    public void testTransactionManagement_CommitFails() {
+        doThrow(new RuntimeException()).when(mockTransactionManager).commit(mockTransactionStatus);
+        when(mockTransactionStatus.isCompleted()).thenReturn(true);
+        commandBus.dispatch(new Object(), NoOpCallback.INSTANCE);
+        verify(mockTransactionManager).commit(mockTransactionStatus);
+        verify(mockTransactionManager, never()).rollback(any(TransactionStatus.class));
     }
 
     @SuppressWarnings({"unchecked"})
