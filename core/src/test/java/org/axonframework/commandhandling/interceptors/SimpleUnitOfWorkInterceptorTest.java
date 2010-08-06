@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubAggregate;
@@ -26,7 +27,11 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.repository.InMemoryLockingRepository;
 import org.axonframework.repository.LockingRepository;
 import org.axonframework.repository.LockingStrategy;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -60,6 +65,13 @@ public class SimpleUnitOfWorkInterceptorTest {
         aggregateIdentifier2 = createAggregate();
         commandBus.subscribe(SimpleCommand.class, new LoadAndSaveCommandHandler());
         repository.resetSaveCount();
+    }
+
+    @After
+    public void tearDown() {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.clear();
+        }
     }
 
     private UUID createAggregate() {
@@ -138,6 +150,41 @@ public class SimpleUnitOfWorkInterceptorTest {
         assertEquals(0, repository.getSaveCount());
         verify(eventBus, never()).publish(isA(StubDomainEvent.class));
         verifyNoLocksRemain();
+    }
+
+    @Test
+    public void testNesting_NoNestingAllowed() throws Throwable {
+        SimpleUnitOfWorkInterceptor interceptor = new SimpleUnitOfWorkInterceptor();
+        final DefaultUnitOfWork unitOfWork = new DefaultUnitOfWork();
+        CurrentUnitOfWork.set(unitOfWork);
+        InterceptorChain chain = mock(InterceptorChain.class);
+        when(chain.proceed(isA(CommandContext.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                assertSame(unitOfWork, CurrentUnitOfWork.get());
+                return null;
+            }
+        });
+        interceptor.handle(mock(CommandContext.class), chain);
+        CurrentUnitOfWork.clear();
+    }
+
+    @Test
+    public void testNesting_NestingAllowed() throws Throwable {
+        SimpleUnitOfWorkInterceptor interceptor = new SimpleUnitOfWorkInterceptor();
+        interceptor.setAllowNesting(true);
+        final DefaultUnitOfWork unitOfWork = new DefaultUnitOfWork();
+        CurrentUnitOfWork.set(unitOfWork);
+        InterceptorChain chain = mock(InterceptorChain.class);
+        when(chain.proceed(isA(CommandContext.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                assertNotSame(unitOfWork, CurrentUnitOfWork.get());
+                return null;
+            }
+        });
+        interceptor.handle(mock(CommandContext.class), chain);
+        CurrentUnitOfWork.clear();
     }
 
     private void dispatchCommand(SimpleCommand command, RuntimeException failure) {

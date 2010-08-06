@@ -38,9 +38,17 @@ import org.slf4j.LoggerFactory;
 public class SimpleUnitOfWorkInterceptor implements CommandHandlerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleUnitOfWorkInterceptor.class);
+    private boolean allowNesting = false;
 
     @Override
     public Object handle(CommandContext context, InterceptorChain chain) throws Throwable {
+        if (!allowNesting && CurrentUnitOfWork.isStarted()) {
+            return chain.proceed(context);
+        }
+        return startNewUnitOfWorkAndProceed(context, chain);
+    }
+
+    private Object startNewUnitOfWorkAndProceed(CommandContext context, InterceptorChain chain) throws Throwable {
         logger.debug("Incoming command. Creating new UnitOfWork instance");
         UnitOfWork unitOfWork = createUnitOfWork();
         logger.debug("Registering new UnitOfWork instance with CurrentUnitOfWork");
@@ -73,5 +81,19 @@ public class SimpleUnitOfWorkInterceptor implements CommandHandlerInterceptor {
      */
     protected UnitOfWork createUnitOfWork() {
         return new DefaultUnitOfWork();
+    }
+
+    /**
+     * Indicates whether nesting of UnitOfWork is allowed. When UnitOfWorks are nested, a new UnitOfWork is started for
+     * each incoming command, even if triggered by the handling of another command, and committed.
+     * <p/>
+     * When nesting is off (false, default), all commands triggered by the handling of another command will run in a
+     * single UnitOfWork.
+     *
+     * @param allowNesting <code>true</code> to allow nesting. <code>false</code> to use an existing UnitOfWork if
+     *                     possible. Defaults to <code>false</code>.
+     */
+    public void setAllowNesting(boolean allowNesting) {
+        this.allowNesting = allowNesting;
     }
 }

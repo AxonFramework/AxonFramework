@@ -39,6 +39,16 @@ public abstract class CurrentUnitOfWork {
     }
 
     /**
+     * Indicates whether a unit of work has already been started. This method can be used by interceptors to prevent
+     * nesting of UnitOfWork instances.
+     *
+     * @return whether a UnitOfWork has already been started.
+     */
+    public static boolean isStarted() {
+        return !current.get().isEmpty();
+    }
+
+    /**
      * Gets the UnitOfWork bound to the current thread. If no UnitOfWork has been registered with {@link
      * #set(UnitOfWork)}, an {@link ImplicitUnitOfWork} is returned.
      *

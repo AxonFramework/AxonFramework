@@ -25,8 +25,9 @@ package org.axonframework.unitofwork;
 public interface UnitOfWorkListener {
 
     /**
-     * Invoked when the UnitOfWork is committed. When processing of this method causes an exception, a UnitOfWork may
-     * choose to call {@link #onRollback()} consecutively.
+     * Invoked when the UnitOfWork is committed. The aggregate has been saved and the events have been scheduled for
+     * dispatching. In some cases, the events could already have been dispathed. When processing of this method causes
+     * an exception, a UnitOfWork may choose to call {@link #onRollback()} consecutively.
      *
      * @see UnitOfWork#commit()
      */

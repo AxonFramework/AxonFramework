@@ -17,8 +17,6 @@
 package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.Event;
-import org.axonframework.eventhandling.EventBus;
 
 /**
  * Special case of the unit of work, that clears itself when all aggregates have been committed. This removed the need
@@ -68,11 +66,6 @@ class ImplicitUnitOfWork extends DefaultUnitOfWork {
         } finally {
             clear();
         }
-    }
-
-    @Override
-    public void publishEvent(Event event, EventBus eventBus) {
-        eventBus.publish(event);
     }
 
     private void clear() {

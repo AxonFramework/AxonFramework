@@ -42,7 +42,12 @@ public class DefaultUnitOfWork implements UnitOfWork {
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
     private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
     private final Map<AggregateRoot, List<UnitOfWorkListener>> listeners = new HashMap<AggregateRoot, List<UnitOfWorkListener>>();
-    private boolean publishEventImmediately;
+    private Status dispatcherStatus = Status.READY;
+
+    private static enum Status {
+
+        READY, DISPATCHING
+    }
 
     @Override
     public void rollback() {
@@ -99,23 +104,18 @@ public class DefaultUnitOfWork implements UnitOfWork {
 
     @Override
     public void publishEvent(Event event, EventBus eventBus) {
-        if (publishEventImmediately) {
-            eventBus.publish(event);
-        } else {
-            eventsToPublish.add(new EventEntry(event, eventBus));
-        }
+        eventsToPublish.add(new EventEntry(event, eventBus));
     }
 
     private void performPartialCommit(AggregateRoot aggregateRoot) {
-        this.publishEventImmediately = true;
         for (UnitOfWorkListener listener : listenersFor(aggregateRoot)) {
             listener.onPrepareCommit();
         }
         registeredAggregates.remove(aggregateRoot).saveAggregate();
+        publishEvents();
         for (UnitOfWorkListener listener : listenersFor(aggregateRoot)) {
             listener.afterCommit();
         }
-        this.publishEventImmediately = false;
     }
 
     /**
@@ -140,9 +140,15 @@ public class DefaultUnitOfWork implements UnitOfWork {
      * Publishes all registered events to their respective event bus.
      */
     protected void publishEvents() {
+        if (dispatcherStatus == Status.DISPATCHING) {
+            // this prevents events from overtaking each other
+            return;
+        }
+        dispatcherStatus = Status.DISPATCHING;
         while (!eventsToPublish.isEmpty()) {
             eventsToPublish.poll().publishEvent();
         }
+        dispatcherStatus = Status.READY;
     }
 
     /**

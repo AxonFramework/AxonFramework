@@ -17,14 +17,17 @@
 package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.integrationtests.eventhandling.RegisteringEventHandler;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +44,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(locations = {
         "/META-INF/spring/infrastructure-context.xml",
         "/META-INF/spring/application-context-pessimistic.xml"})
+@Transactional
 public class ConcurrentModificationTest_PessimisticLocking implements Thread.UncaughtExceptionHandler {
 
     @Autowired
@@ -52,6 +56,14 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
     private List<Throwable> uncaughtExceptions = new ArrayList<Throwable>();
     private static final int THREAD_COUNT = 50;
 
+    @Before
+    public void clearUnitsOfWork() {
+        // somewhere, a process is not properly clearing the UnitOfWork
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.clear();
+        }
+    }
+
     /**
      * This test shows the presence, or better, the absence of a problem caused by repository locks being released
      * before a database transaction is committed. This would cause an aggregate waiting for a lock to be release, to
@@ -61,16 +73,17 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
      */
     @Test
     public void testConcurrentModifications() throws Exception {
+        assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final UUID aggregateId = UUID.randomUUID();
-        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId));
+        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
         final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);
         for (int t = 0; t < THREAD_COUNT; t++) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId));
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId));
+                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
+                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
                         cdl.countDown();
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
