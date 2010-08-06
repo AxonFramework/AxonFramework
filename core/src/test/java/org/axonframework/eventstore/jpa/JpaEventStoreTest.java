@@ -18,9 +18,12 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.eventstore.EventVisitor;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +38,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -145,6 +149,25 @@ public class JpaEventStoreTest {
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
         testSubject.readEvents("test", UUID.randomUUID());
+    }
+
+    @Test
+    public void testDoWithAllEvents() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        testSubject.appendEvents("type1", new SimpleDomainEventStream(createDomainEvents(77)));
+        testSubject.appendEvents("type2", new SimpleDomainEventStream(createDomainEvents(23)));
+
+        testSubject.visitEvents(eventVisitor);
+        verify(eventVisitor, times(100)).doWithEvent(isA(DomainEvent.class));
+    }
+
+    private List<? extends DomainEvent> createDomainEvents(int numberOfEvents) {
+        List<StubDomainEvent> events = new ArrayList<StubDomainEvent>();
+        UUID aggregateIdentifier = UUID.randomUUID();
+        for (int t = 0; t < numberOfEvents; t++) {
+            events.add(new StubDomainEvent(aggregateIdentifier, t));
+        }
+        return events;
     }
 
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {

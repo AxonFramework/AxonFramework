@@ -20,7 +20,9 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventSerializer;
+import org.axonframework.eventstore.EventStoreManagement;
 import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.springframework.transaction.annotation.Propagation;
@@ -42,11 +44,12 @@ import java.util.UUID;
  * @author Allard Buijze
  * @since 0.5
  */
-public class JpaEventStore implements SnapshotEventStore {
+public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     private EntityManager entityManager;
 
     private final EventSerializer eventSerializer;
+    private static final int EVENT_VISITOR_BATCH_SIZE = 50;
 
     /**
      * Initialize a JpaEventStore using an {@link org.axonframework.eventstore.XStreamEventSerializer}, which serializes
@@ -158,6 +161,30 @@ public class JpaEventStore implements SnapshotEventStore {
     @Override
     public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
         entityManager.persist(new SnapshotEventEntry(type, snapshotEvent, eventSerializer));
+    }
+
+    @Override
+    public void visitEvents(EventVisitor visitor) {
+        int first = 0;
+        List<DomainEventEntry> batch;
+        boolean shouldContinue = true;
+        while (shouldContinue) {
+            batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE);
+            for (DomainEventEntry entry : batch) {
+                visitor.doWithEvent(entry.getDomainEvent(eventSerializer));
+            }
+            shouldContinue = (batch.size() >= EVENT_VISITOR_BATCH_SIZE);
+            first += EVENT_VISITOR_BATCH_SIZE;
+        }
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private List<DomainEventEntry> fetchBatch(int startPosition, int batchSize) {
+        return entityManager.createQuery(
+                "SELECT e FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
+                .setFirstResult(startPosition)
+                .setMaxResults(batchSize)
+                .getResultList();
     }
 
     /**
