@@ -120,11 +120,10 @@ public class FutureCallback<C, R> implements CommandCallback<C, R>, Future<R> {
     }
 
     private R doGetResult() throws ExecutionException {
-        if (result != null) {
-            return result;
-        } else if (failure != null) {
+        if (failure != null) {
             throw new ExecutionException(failure);
+        } else {
+            return result;
         }
-        throw new IllegalStateException("The callback was released, but there is no result to report.");
     }
 }
