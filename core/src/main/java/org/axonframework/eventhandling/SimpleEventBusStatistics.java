@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.monitoring;
-
-import org.axonframework.monitoring.Statistics;
+package org.axonframework.eventhandling;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,17 +31,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see org.axonframework.eventhandling.SimpleEventBus
  * @since 0.6
  */
-public class SimpleEventBusStatistics implements Statistics, SimpleEventBusStatisticsMXBean {
+class SimpleEventBusStatistics implements SimpleEventBusStatisticsMXBean {
 
-    private volatile boolean enabled = false;
     private AtomicLong listenerCount = new AtomicLong(0);
     private AtomicLong publishedEventCounter = new AtomicLong(0);
     private List<String> listeners = new CopyOnWriteArrayList<String>();
 
-    /*------ jmx enabled methods -----*/
-
     /**
-     * Returns the amount of registered listeners
+     * Returns the amount of registered listeners.
      *
      * @return long representing the amount of listeners registered
      */
@@ -53,7 +48,7 @@ public class SimpleEventBusStatistics implements Statistics, SimpleEventBusStati
     }
 
     /**
-     * Returns the amount of received events, from the beginning or after the last reset
+     * Returns the amount of received events, from the beginning or after the last reset.
      *
      * @return long representing the amount events received
      */
@@ -63,7 +58,7 @@ public class SimpleEventBusStatistics implements Statistics, SimpleEventBusStati
     }
 
     /**
-     * Reset the amount of events that was received
+     * Reset the amount of events that was received.
      */
     @Override
     public void resetReceivedEventsCount() {
@@ -71,29 +66,13 @@ public class SimpleEventBusStatistics implements Statistics, SimpleEventBusStati
     }
 
     /**
-     * Returns the list of names of the registered listeners
+     * Returns the list of names of the registered listeners.
      *
      * @return List of strings representing the names of the registered listeners
      */
     @Override
     public List<String> getListenerTypes() {
         return Collections.unmodifiableList(listeners);
-    }
-
-    /**
-     * Enables statistics registration
-     */
-    @Override
-    public void enable() {
-        this.enabled = true;
-    }
-
-    /**
-     * Disables statistics registration
-     */
-    @Override
-    public void disable() {
-        this.enabled = false;
     }
 
     /*----- end of jmx enabled methods -----*/
@@ -104,7 +83,7 @@ public class SimpleEventBusStatistics implements Statistics, SimpleEventBusStati
      *
      * @param name String representing the name of the registered listener
      */
-    public void listenerRegistered(String name) {
+    void listenerRegistered(String name) {
         this.listeners.add(name);
         this.listenerCount.incrementAndGet();
     }
@@ -115,7 +94,7 @@ public class SimpleEventBusStatistics implements Statistics, SimpleEventBusStati
      *
      * @param name String representing the name of the listener to un-register.
      */
-    public void recordUnregisteredListener(String name) {
+    void recordUnregisteredListener(String name) {
         this.listeners.remove(name);
         this.listenerCount.decrementAndGet();
     }
@@ -123,18 +102,7 @@ public class SimpleEventBusStatistics implements Statistics, SimpleEventBusStati
     /**
      * Indicate that a new event is received. Statistics are only gathered if enabled
      */
-    public void recordPublishedEvent() {
-        if (enabled) {
-            publishedEventCounter.incrementAndGet();
-        }
-    }
-
-    /**
-     * Indicates whether this statistics instance is enabled
-     *
-     * @return <code>true</code> if this statistics instance is enabled, otherwise <code>false</code>.
-     */
-    public boolean isEnabled() {
-        return enabled;
+    void recordPublishedEvent() {
+        publishedEventCounter.incrementAndGet();
     }
 }

@@ -17,13 +17,10 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.Event;
-import org.axonframework.eventhandling.monitoring.SimpleEventBusStatistics;
-import org.axonframework.monitoring.Monitored;
-import org.axonframework.monitoring.jmx.JmxMonitorHolder;
+import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -37,20 +34,18 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * @see AsynchronousEventHandlerWrapper
  * @since 0.5
  */
-public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatistics> {
+public class SimpleEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
     private volatile SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
 
     /**
-     * Registers the current statistics object as a jmx monitor
+     * Initializes the SimpleEventBus.
      */
-    @PostConstruct
-    public void registerAsMonitor() {
-        JmxMonitorHolder.registerMonitor("SimpleEventBusMonitor",statistics);
+    public SimpleEventBus() {
+        JmxConfiguration.getInstance().registerMBean(statistics, getClass());
     }
-
 
     /**
      * {@inheritDoc}
@@ -103,13 +98,5 @@ public class SimpleEventBus implements EventBus, Monitored<SimpleEventBusStatist
                          listener.getClass().getSimpleName());
             listener.handle(event);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SimpleEventBusStatistics getStatistics() {
-        return statistics;
     }
 }

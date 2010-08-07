@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.monitoring;
-
-import org.axonframework.monitoring.Monitor;
+package org.axonframework.eventhandling;
 
 import java.util.List;
 
@@ -27,10 +25,12 @@ import java.util.List;
  * specifies and delivers the actual JMX bean.
  *
  * @author Jettro Coenradie
+ * @since 0.6
  */
-public interface SimpleEventBusStatisticsMXBean extends Monitor {
+public interface SimpleEventBusStatisticsMXBean {
+
     /**
-     * Returns the amount of registered listeners
+     * Returns the amount of registered listeners.
      *
      * @return long representing the amount of registered listeners
      */
@@ -45,22 +45,14 @@ public interface SimpleEventBusStatisticsMXBean extends Monitor {
     List<String> getListenerTypes();
 
     /**
-     * Returns the amount of received events
+     * Returns the amount of received events.
      *
      * @return long representing the amount of received events
      */
     long getReceivedEventsCount();
 
     /**
-     * resets the amount of events received
+     * resets the amount of events received.
      */
     void resetReceivedEventsCount();
-
-    /**
-     * Returns true if detailed statistics are enabled.
-     *
-     * @return true if enabled
-     */
-    boolean isEnabled();
-    
 }

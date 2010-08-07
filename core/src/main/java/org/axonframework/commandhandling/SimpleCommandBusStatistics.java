@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.monitoring;
-
-import org.axonframework.monitoring.Statistics;
+package org.axonframework.commandhandling;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,82 +28,59 @@ import java.util.concurrent.atomic.AtomicLong;
  * when explicitly enabled. By default they are switched off.</p>
  *
  * @author Jettro Coenradie
+ * @author Allard Buijze
+ * @since 0.6
  */
-public class SimpleCommandBusStatistics implements Statistics, SimpleCommandBusStatisticsMXBean {
+class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXBean {
 
-    private volatile boolean enabled = false;
     private AtomicLong handlerCounter = new AtomicLong(0);
     private AtomicLong receivedCommandCounter = new AtomicLong(0);
     private List<String> handlerTypes = new CopyOnWriteArrayList<String>();
 
-    /*------ jmx enabled methods -----*/
     /**
-     * Returns the amount of registered handlers
+     * Returns the amount of registered handlers.
      *
      * @return long representing the amount of registered handlers
      */
+    @Override
     public long getCommandHandlerCount() {
         return handlerCounter.get();
     }
 
     /**
-     * Returns the amount of received commands from the beginning of starting up or after the last reset
+     * Returns the amount of received commands from the beginning of starting up or after the last reset.
      *
      * @return long representing the amount of received commands
      */
+    @Override
     public long getReceivedCommandCount() {
         return receivedCommandCounter.get();
     }
 
     /**
-     * Returns a list with the names of the types of the registered handlers
+     * Returns a list with the names of the types of the registered handlers.
      *
      * @return List of strings with the names of the registered handlers
      */
+    @Override
     public List<String> getHandlerTypes() {
         return Collections.unmodifiableList(handlerTypes);
     }
 
     /**
-     * Indicates whether this statistics instance is enabled
-     *
-     * @return <code>true</code> if this statistics instance is enabled, otherwise <code>false</code>.
+     * Resets the received command counter.
      */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Resets the received command counter
-     */
+    @Override
     public void resetReceivedCommandsCounter() {
         receivedCommandCounter.set(0);
     }
-
-
-    /**
-     * Disables this statistics instance
-     */
-    @Override
-    public void disable() {
-        this.enabled = false;
-    }
-
-    /**
-     * Enables this statistics instance
-     */
-    @Override
-    public void enable() {
-        this.enabled = true;
-    }
-    /*------ end of jmx enabled methods -----*/
 
     /**
      * Indicate a new handler with the provided name is registered. Multiple handlers with the same name are supported.
      *
      * @param name String representing the name of the handler to register
      */
-    public void reportHandlerRegistered(String name) {
+    void reportHandlerRegistered(String name) {
         this.handlerTypes.add(name);
         this.handlerCounter.incrementAndGet();
     }
@@ -116,7 +91,7 @@ public class SimpleCommandBusStatistics implements Statistics, SimpleCommandBusS
      *
      * @param name String representing the name of the handler to un-register
      */
-    public void recordUnregisteredHandler(String name) {
+    void recordUnregisteredHandler(String name) {
         this.handlerTypes.remove(name);
         this.handlerCounter.decrementAndGet();
     }
@@ -124,10 +99,8 @@ public class SimpleCommandBusStatistics implements Statistics, SimpleCommandBusS
     /**
      * Indicate a new command is received. The statistics are only gathered if they are enabled.
      */
-    public void recordReceivedCommand() {
-        if (enabled) {
-            receivedCommandCounter.incrementAndGet();
-        }
+    void recordReceivedCommand() {
+        receivedCommandCounter.incrementAndGet();
     }
 
 }

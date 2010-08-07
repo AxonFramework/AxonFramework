@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.monitoring;
-
-import org.axonframework.monitoring.Monitor;
+package org.axonframework.commandhandling;
 
 import java.util.List;
 
@@ -29,37 +27,31 @@ import java.util.List;
  * @author Jettro Coenradie
  * @since 0.6
  */
-public interface SimpleCommandBusStatisticsMXBean extends Monitor {
+public interface SimpleCommandBusStatisticsMXBean {
+
     /**
-     * Returns the amount of registered handlers
+     * Returns the amount of registered handlers.
      *
      * @return long representing the amount of handlers
      */
     long getCommandHandlerCount();
 
     /**
-     * Returns a list with names of the registered handlers
+     * Returns a list with names of the registered handlers.
      *
      * @return List of strings representing the names of registered handlers
      */
     List<String> getHandlerTypes();
 
     /**
-     * Returns the amount of received commands
+     * Returns the amount of received commands.
      *
      * @return long representing the amount of commands received
      */
     long getReceivedCommandCount();
 
     /**
-     * Reset the amount of commands received counter
+     * Reset the amount of commands received counter.
      */
     void resetReceivedCommandsCounter();
-
-    /**
-     * Returns true if the statistics are enabled
-     * @return Boolean true if enabled
-     */
-    boolean isEnabled();
-
 }
