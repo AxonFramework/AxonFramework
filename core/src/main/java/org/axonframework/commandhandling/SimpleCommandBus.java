@@ -16,11 +16,8 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.monitoring.SimpleCommandBusStatistics;
-import org.axonframework.monitoring.Monitored;
-import org.axonframework.monitoring.jmx.JmxMonitorHolder;
+import org.axonframework.monitoring.jmx.JmxConfiguration;
 
-import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,23 +29,22 @@ import java.util.concurrent.ConcurrentMap;
  * command. Interceptors may be configured to add processing to commands regardless of their type, for example logging,
  * security (authorization), sla monitoring, etc.
  * <p/>
- * This class can be monitored as the implementation of the <code>Monitored</code> interface indicates.
+ * This class can be monitored as the implementation of the <code>StatisticsProvider</code> interface indicates.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusStatistics> {
+public class SimpleCommandBus implements CommandBus {
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private volatile DefaultInterceptorChain interceptorChain = new DefaultInterceptorChain(Collections.<CommandHandlerInterceptor>emptyList());
     private volatile SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
 
     /**
-     * Registers the statistics object as a jmx monitor
+     * Initializes the SimpleCommandBus.
      */
-    @PostConstruct
-    public void registerAsMonitor() {
-        JmxMonitorHolder.registerMonitor("SimpleCommandBusMonitor", statistics);
+    public SimpleCommandBus() {
+        JmxConfiguration.getInstance().registerMBean(statistics, getClass());
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
@@ -62,12 +58,10 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
         }
         try {
             return interceptorChain.proceed(new CommandContextImpl(command, handler));
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Throwable t) {
-            if (t instanceof RuntimeException) {
-                throw (RuntimeException) t;
-            } else {
-                throw new CommandHandlerInvocationException("An exception occurred while handling a command", t);
-            }
+            throw new CommandHandlerInvocationException("An exception occurred while handling a command", t);
         }
     }
 
@@ -140,13 +134,5 @@ public class SimpleCommandBus implements CommandBus, Monitored<SimpleCommandBusS
         for (Map.Entry<?, ?> entry : handlers.entrySet()) {
             subscribe((Class<?>) entry.getKey(), (CommandHandler) entry.getValue());
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SimpleCommandBusStatistics getStatistics() {
-        return statistics;
     }
 }
