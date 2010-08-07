@@ -46,6 +46,10 @@
             <id>axon</id>
             <url>http://oss.sonatype.org/content/groups/public/</url>
         </repository>
+        <repository>
+            <id>spicefactory</id>
+            <url>http://axonframework.googlecode.com/svn/repo</url>
+        </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>

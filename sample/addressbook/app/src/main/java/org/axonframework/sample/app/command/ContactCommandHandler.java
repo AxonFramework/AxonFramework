@@ -49,7 +49,11 @@ public class ContactCommandHandler {
     public void handle(CreateContactCommand command) {
         logger.debug("Received a command for a new contact with name : {}", command.getNewContactName());
         Assert.notNull(command.getNewContactName(), "Name may not be null");
-        Contact contact = new Contact(command.getIdentifier(), command.getNewContactName());
+        UUID contactId = command.getIdentifier();
+        if (contactId == null) {
+            contactId = UUID.randomUUID();
+        }
+        Contact contact = new Contact(contactId, command.getNewContactName());
         repository.save(contact);
     }
 
