@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.monitoring.jmx.JmxConfiguration;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -73,6 +74,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
      * Initializes a new given-when-then style test fixture.
      */
     GivenWhenThenTestFixture() {
+        JmxConfiguration.getInstance().disableMonitoring();
         aggregateIdentifier = UUID.randomUUID();
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();

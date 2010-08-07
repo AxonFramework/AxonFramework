@@ -41,6 +41,7 @@ public final class JmxConfiguration {
     private static final JmxConfiguration INSTANCE = new JmxConfiguration();
 
     private MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+    private boolean enabled;
 
     private JmxConfiguration() {
     }
@@ -64,14 +65,20 @@ public final class JmxConfiguration {
      *                      of the MBean.
      */
     public void registerMBean(Object mBean, Class<?> monitoredType) {
-        try {
-            mBeanServer.registerMBean(mBean, objectNameFor(monitoredType));
-        } catch (InstanceAlreadyExistsException e) {
-            logger.warn("Object {} has already been registered as an MBean", mBean);
-        } catch (MBeanRegistrationException e) {
-            logger.error("An error occurred registering an MBean", e);
-        } catch (NotCompliantMBeanException e) {
-            logger.error("Non-compliant MBean registered.", e);
+        if (enabled) {
+            try {
+
+                mBeanServer.registerMBean(mBean, objectNameFor(monitoredType));
+            } catch (InstanceAlreadyExistsException
+                    e) {
+                logger.warn("Object {} has already been registered as an MBean", mBean);
+            } catch (MBeanRegistrationException
+                    e) {
+                logger.error("An error occurred registering an MBean", e);
+            } catch (NotCompliantMBeanException
+                    e) {
+                logger.error("Non-compliant MBean registered.", e);
+            }
         }
     }
 
@@ -83,4 +90,10 @@ public final class JmxConfiguration {
         }
     }
 
+    /**
+     * Disables monitoring. Any calls to {@link #registerMBean(Object, Class)} will be ignored.
+     */
+    public void disableMonitoring() {
+        this.enabled = false;
+    }
 }
