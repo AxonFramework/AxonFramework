@@ -177,8 +177,8 @@ public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, 
                                                    executor);
     }
 
-    private EventSequencingPolicy getSequencingPolicyFor(Object annotatedEventListener) {
-        AsynchronousEventListener annotation = findAnnotation(annotatedEventListener.getClass(),
+    private EventSequencingPolicy getSequencingPolicyFor(Object listener) {
+        AsynchronousEventListener annotation = findAnnotation(listener.getClass(),
                                                               AsynchronousEventListener.class);
         if (annotation == null) {
             return new SequentialPolicy();
