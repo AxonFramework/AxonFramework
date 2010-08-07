@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
@@ -164,12 +165,21 @@ public class GenericXStreamSerializer {
             try {
                 Constructor constructor = context.getRequiredType().getConstructor(Object.class);
                 return constructor.newInstance(reader.getValue());
+            } catch (InvocationTargetException e) {
+                throw new SerializationException(buildExceptionMessage(context), e);
+            } catch (NoSuchMethodException e) {
+                throw new SerializationException(buildExceptionMessage(context), e);
+            } catch (InstantiationException e) {
+                throw new SerializationException(buildExceptionMessage(context), e);
+            } catch (IllegalAccessException e) {
+                throw new SerializationException(buildExceptionMessage(context), e);
             }
-            catch (Exception e) {
-                throw new SerializationException(String.format(
-                        "An exception occurred while deserializing a Joda Time object: %s",
-                        context.getRequiredType().getSimpleName()), e);
-            }
+        }
+
+        private String buildExceptionMessage(UnmarshallingContext context) {
+            return String.format(
+                    "An exception occurred while deserializing a Joda Time object: %s",
+                    context.getRequiredType().getSimpleName());
         }
     }
 }
