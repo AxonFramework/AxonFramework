@@ -28,7 +28,7 @@ public abstract class AuditingContextHolder {
         // prevent instantiation
     }
 
-    private static final ThreadLocal<AuditingContext> currentContext = new ThreadLocal<AuditingContext>();
+    private static final ThreadLocal<AuditingContext> CURRENT = new ThreadLocal<AuditingContext>();
 
     /**
      * Returns the AuditingContext stored for the current thread, or <code>null</code> if none was set.
@@ -36,14 +36,14 @@ public abstract class AuditingContextHolder {
      * @return the AuditingContext stored for the current thread, or <code>null</code> if none was set.
      */
     public static AuditingContext currentAuditingContext() {
-        return currentContext.get();
+        return CURRENT.get();
     }
 
     /**
      * Clears the AuditingContext stored for the current thread, if any.
      */
     static void clear() {
-        currentContext.remove();
+        CURRENT.remove();
     }
 
     /**
@@ -53,6 +53,6 @@ public abstract class AuditingContextHolder {
      * @param context The context to store for the current context.
      */
     static void setContext(AuditingContext context) {
-        currentContext.set(context);
+        CURRENT.set(context);
     }
 }

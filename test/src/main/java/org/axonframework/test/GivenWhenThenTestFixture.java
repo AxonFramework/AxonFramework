@@ -195,8 +195,8 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedReturnValue);
         }
-        if ((expectedReturnValue != null && !expectedReturnValue.equals(actualReturnValue) ||
-                expectedReturnValue == null && actualReturnValue != null)) {
+        if ((expectedReturnValue != null && !expectedReturnValue.equals(actualReturnValue)
+                || expectedReturnValue == null && actualReturnValue != null)) {
             reporter.reportWrongResult(actualReturnValue, expectedReturnValue);
         }
         return this;

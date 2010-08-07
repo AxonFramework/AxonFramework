@@ -28,7 +28,7 @@ import java.util.LinkedList;
  */
 public abstract class CurrentUnitOfWork {
 
-    private static final ThreadLocal<Deque<UnitOfWork>> current = new ThreadLocal<Deque<UnitOfWork>>() {
+    private static final ThreadLocal<Deque<UnitOfWork>> CURRENT = new ThreadLocal<Deque<UnitOfWork>>() {
         @Override
         protected Deque<UnitOfWork> initialValue() {
             return new LinkedList<UnitOfWork>();
@@ -45,7 +45,7 @@ public abstract class CurrentUnitOfWork {
      * @return whether a UnitOfWork has already been started.
      */
     public static boolean isStarted() {
-        return !current.get().isEmpty();
+        return !CURRENT.get().isEmpty();
     }
 
     /**
@@ -55,7 +55,7 @@ public abstract class CurrentUnitOfWork {
      * @return The UnitOfWork bound to the current thread.
      */
     public static UnitOfWork get() {
-        Deque<UnitOfWork> currentUnitOfWork = current.get();
+        Deque<UnitOfWork> currentUnitOfWork = CURRENT.get();
         if (currentUnitOfWork.isEmpty()) {
             set(new ImplicitUnitOfWork());
         }
@@ -69,7 +69,7 @@ public abstract class CurrentUnitOfWork {
      * @param unitOfWork The UnitOfWork to bind to the current thread.
      */
     public static void set(UnitOfWork unitOfWork) {
-        current.get().push(unitOfWork);
+        CURRENT.get().push(unitOfWork);
     }
 
     /**
@@ -77,8 +77,8 @@ public abstract class CurrentUnitOfWork {
      * restored.
      */
     public static void clear() {
-        if (!current.get().isEmpty()) {
-            current.get().pop();
+        if (!CURRENT.get().isEmpty()) {
+            CURRENT.get().pop();
         }
     }
 
@@ -89,8 +89,8 @@ public abstract class CurrentUnitOfWork {
      * @param unitOfWork The UnitOfWork expected to be bound to the current thread.
      */
     public static void clear(UnitOfWork unitOfWork) {
-        if (!current.get().isEmpty() && current.get().peek() == unitOfWork) {
-            current.get().pop();
+        if (!CURRENT.get().isEmpty() && CURRENT.get().peek() == unitOfWork) {
+            CURRENT.get().pop();
         }
 
     }

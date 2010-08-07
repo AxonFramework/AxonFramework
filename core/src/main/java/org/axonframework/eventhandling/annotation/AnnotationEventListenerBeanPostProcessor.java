@@ -60,9 +60,9 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
 
     @Override
     protected boolean isPostProcessingCandidate(Class<?> targetClass) {
-        return isNotAggregateRoot(targetClass) &&
-                isNotEventHandlerSubclass(targetClass) &&
-                hasEventHandlerMethod(targetClass);
+        return isNotAggregateRoot(targetClass)
+                && isNotEventHandlerSubclass(targetClass)
+                && hasEventHandlerMethod(targetClass);
     }
 
     /**
@@ -98,7 +98,8 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
     }
 
     /**
-     * Sets the Executor to use when the AnnotationEventListenerBeanPostProcessor encounters event listeners w
+     * Sets the Executor to use when the AnnotationEventListenerBeanPostProcessor encounters event listeners with the
+     * {@link org.axonframework.eventhandling.annotation.AsynchronousEventListener} annotation.
      *
      * @param executor the Executor to use for asynchronous event listeners
      */

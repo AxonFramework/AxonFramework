@@ -44,38 +44,38 @@ public class SpringTransactionManager implements TransactionManager {
 
     private PlatformTransactionManager transactionManager;
 
-    private static final ThreadLocal<org.springframework.transaction.TransactionStatus> underlyingTransaction =
+    private static final ThreadLocal<org.springframework.transaction.TransactionStatus> TRANSACTION =
             new ThreadLocal<org.springframework.transaction.TransactionStatus>();
 
     @Override
     public void beforeTransaction(TransactionStatus transactionStatus) {
         transactionStatus.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
         transactionStatus.setMaxTransactionSize(25);
-        underlyingTransaction.set(transactionManager.getTransaction(new DefaultTransactionDefinition()));
+        TRANSACTION.set(transactionManager.getTransaction(new DefaultTransactionDefinition()));
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void afterTransaction(TransactionStatus transactionStatus) {
         if (transactionStatus.isSuccessful()) {
-            transactionManager.commit(underlyingTransaction.get());
+            transactionManager.commit(TRANSACTION.get());
         } else {
             logger.warn("Found failed transaction: [{}].", transactionStatus.getException().getClass().getSimpleName());
             if (!isTransient(transactionStatus.getException())) {
                 logger.error("ERROR! Exception is not transient or recoverable! Committing transaction and "
                         + "skipping Event processing", transactionStatus.getException());
                 transactionStatus.setRetryPolicy(RetryPolicy.SKIP_FAILED_EVENT);
-                transactionManager.commit(underlyingTransaction.get());
+                transactionManager.commit(TRANSACTION.get());
             } else {
                 logger.warn("Performing rollback on transaction due to recoverable exception: [{}]",
                             transactionStatus.getException().getClass().getSimpleName());
                 transactionStatus.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
-                if (underlyingTransaction.get() != null) {
-                    transactionManager.rollback(underlyingTransaction.get());
+                if (TRANSACTION.get() != null) {
+                    transactionManager.rollback(TRANSACTION.get());
                 }
             }
         }
-        underlyingTransaction.remove();
+        TRANSACTION.remove();
     }
 
     /**
@@ -87,9 +87,9 @@ public class SpringTransactionManager implements TransactionManager {
         this.transactionManager = transactionManager;
     }
 
+    @SuppressWarnings({"SimplifiableIfStatement"})
     private boolean isTransient(Throwable exception) {
-        if (exception instanceof SQLTransientException ||
-                exception instanceof SQLRecoverableException) {
+        if (exception instanceof SQLTransientException || exception instanceof SQLRecoverableException) {
             return true;
         }
         if (exception.getCause() != null && exception.getCause() != exception) {
