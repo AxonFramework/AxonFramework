@@ -92,7 +92,7 @@ public class GenericXStreamSerializer {
     }
 
     /**
-     * Adds an alias to use instead of the fully qualified class name
+     * Adds an alias to use instead of the fully qualified class name.
      *
      * @param name The alias to use
      * @param type The Class to use the alias for
