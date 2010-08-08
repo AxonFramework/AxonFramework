@@ -34,9 +34,9 @@ public enum LockingStrategy {
     OPTIMISTIC,
 
     /**
-     * Indicator of a pessimistic locking strategy. This strategy will block any thread that tries to load an aggregate
+     * Indicator of a pessimistic locking strategy. This strategy will block any thread that tries to get an aggregate
      * that has already been loaded by another thread. Once the other thread saves the aggregate, the lock is released,
-     * giving waiting threads the opportunity to obtain it and load the aggregate.
+     * giving waiting threads the opportunity to obtain it and get the aggregate.
      *
      * @see LockingRepository
      */

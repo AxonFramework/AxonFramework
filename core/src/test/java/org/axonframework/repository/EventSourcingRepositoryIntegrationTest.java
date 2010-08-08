@@ -148,7 +148,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
             public void run() {
                 try {
                     awaitFor.await();
-                    SimpleAggregateRoot aggregate = repository.load(aggregateIdentifier, null);
+                    SimpleAggregateRoot aggregate = repository.get(aggregateIdentifier, null);
                     aggregate.doOperation();
                     aggregate.doOperation();
                     repository.save(aggregate);

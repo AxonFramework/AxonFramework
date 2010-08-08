@@ -294,14 +294,14 @@ public class FixtureTest {
 
         @CommandHandler
         public void handleTestCommand(TestCommand testCommand) {
-            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier(), null);
+            MyAggregate aggregate = repository.get(fixture.getAggregateIdentifier(), null);
             aggregate.doSomething();
             repository.save(aggregate);
         }
 
         @CommandHandler
         public void handleStrangeCommand(StrangeCommand testCommand) {
-            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier(), null);
+            MyAggregate aggregate = repository.get(fixture.getAggregateIdentifier(), null);
             aggregate.doSomething();
             repository.save(aggregate);
             eventBus.publish(new MyApplicationEvent(this));

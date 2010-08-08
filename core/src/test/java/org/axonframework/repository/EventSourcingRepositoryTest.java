@@ -66,7 +66,7 @@ public class EventSourcingRepositoryTest {
         StubDomainEvent event2 = new StubDomainEvent(identifier, 2);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(event1, event2));
 
-        TestAggregate aggregate = testSubject.load(identifier, null);
+        TestAggregate aggregate = testSubject.get(identifier, null);
 
         assertEquals(0, aggregate.getUncommittedEventCount());
         assertEquals(2, aggregate.getHandledEvents().size());
@@ -97,7 +97,7 @@ public class EventSourcingRepositoryTest {
                 new SimpleDomainEventStream(event1, event2, event3));
 
         try {
-            testSubject.load(identifier, null);
+            testSubject.get(identifier, null);
             fail("Expected AggregateDeletedException");
         } catch (AggregateDeletedException e) {
             assertTrue(e.getMessage().contains(identifier.toString()));
@@ -116,7 +116,7 @@ public class EventSourcingRepositoryTest {
                                                                                                    new StubDomainEvent(
                                                                                                            identifier,
                                                                                                            1)));
-        EventSourcedAggregateRoot actual = testSubject.load(identifier, null);
+        EventSourcedAggregateRoot actual = testSubject.get(identifier, null);
 
         assertSame(simpleAggregate, actual);
         assertEquals(Long.valueOf(1), actual.getVersion());
@@ -133,7 +133,7 @@ public class EventSourcingRepositoryTest {
                                             event2,
                                             event3));
         testSubject.setConflictResolver(conflictResolver);
-        TestAggregate actual = testSubject.load(identifier, 1L);
+        TestAggregate actual = testSubject.get(identifier, 1L);
         verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
         DomainEvent appliedEvent = new StubDomainEvent();
         actual.apply(appliedEvent);
@@ -152,7 +152,7 @@ public class EventSourcingRepositoryTest {
                                             event2,
                                             event3));
 
-        testSubject.load(identifier, 1L);
+        testSubject.get(identifier, 1L);
     }
 
     @Test
@@ -164,7 +164,7 @@ public class EventSourcingRepositoryTest {
                                             new StubDomainEvent(identifier, 2),
                                             new StubDomainEvent(identifier, 3)));
         testSubject.setConflictResolver(conflictResolver);
-        TestAggregate actual = testSubject.load(identifier, 3L);
+        TestAggregate actual = testSubject.get(identifier, 3L);
         verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
         actual.apply(new StubDomainEvent());
         testSubject.save(actual);

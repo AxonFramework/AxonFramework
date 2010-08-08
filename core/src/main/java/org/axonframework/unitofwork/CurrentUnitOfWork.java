@@ -63,6 +63,17 @@ public abstract class CurrentUnitOfWork {
     }
 
     /**
+     * Commits the current UnitOfWork. If no UnitOfWork was started, this operation does nothing.
+     *
+     * @see org.axonframework.unitofwork.UnitOfWork#commit()
+     */
+    public static void commit() {
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().commit();
+        }
+    }
+
+    /**
      * Binds the given <code>unitOfWork</code> to the current thread. If other UnitOfWork instances were bound, they
      * will be marked as inactive until the given UnitOfWork is cleared.
      *
@@ -77,7 +88,7 @@ public abstract class CurrentUnitOfWork {
      * restored.
      */
     public static void clear() {
-        if (!CURRENT.get().isEmpty()) {
+        if (isStarted()) {
             CURRENT.get().pop();
         }
     }
@@ -89,7 +100,7 @@ public abstract class CurrentUnitOfWork {
      * @param unitOfWork The UnitOfWork expected to be bound to the current thread.
      */
     public static void clear(UnitOfWork unitOfWork) {
-        if (!CURRENT.get().isEmpty() && CURRENT.get().peek() == unitOfWork) {
+        if (isStarted() && CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
         }
 

@@ -138,7 +138,7 @@ public interface FixtureConfiguration {
     TestExecutor given(List<DomainEvent> domainEvents);
 
     /**
-     * Returns the identifier of the aggregate that this fixture prepares. When commands need to load an aggregate using
+     * Returns the identifier of the aggregate that this fixture prepares. When commands need to get an aggregate using
      * a specific identifier, use this method to obtain the correct identifier to use.
      *
      * @return the identifier of the aggregate prepared in this fixture

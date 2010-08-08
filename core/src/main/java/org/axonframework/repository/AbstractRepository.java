@@ -51,7 +51,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     /**
      * Saves the given aggregate and publishes all uncommitted events to the UnitOfWork to be published to the EventBus.
      * The given <code>version</code> indicates which version was expected to be loaded. Typically, you would use the
-     * save value as used when calling {@link #load(java.util.UUID, Long)}.
+     * save value as used when calling {@link #get(java.util.UUID, Long)}.
      * <p/>
      * Note: You are recommended to use a {@link org.axonframework.unitofwork.UnitOfWork UnitOfWork} instead of calling
      * <code>save()</code> explicitly.
@@ -79,7 +79,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
-    public T load(UUID aggregateIdentifier, Long expectedVersion) {
+    public T get(UUID aggregateIdentifier, Long expectedVersion) {
         T aggregate = doLoad(aggregateIdentifier, expectedVersion);
         validateOnLoad(aggregate, expectedVersion);
         CurrentUnitOfWork.get().registerAggregate(aggregate, expectedVersion, saveAggregateCallback);
@@ -94,7 +94,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     @Deprecated
     @Override
     public T load(UUID aggregateIdentifier) {
-        return load(aggregateIdentifier, null);
+        return get(aggregateIdentifier, null);
     }
 
     /**
@@ -132,8 +132,8 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     /**
      * Loads and initialized the aggregate with the given aggregateIdentifier.
      *
-     * @param aggregateIdentifier the identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the aggregate to load
+     * @param aggregateIdentifier the identifier of the aggregate to get
+     * @param expectedVersion     The expected version of the aggregate to get
      * @return a fully initialized aggregate
      *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist

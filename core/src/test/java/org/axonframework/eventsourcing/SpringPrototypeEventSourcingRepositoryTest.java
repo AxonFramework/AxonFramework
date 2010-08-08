@@ -72,8 +72,8 @@ public class SpringPrototypeEventSourcingRepositoryTest {
                         return new SimpleDomainEventStream(new StubDomainEvent(aggregateIdentifier, 0L));
                     }
                 });
-        StubAggregate aggregate1 = repository.load(aggregateIdentifier, 0L);
-        StubAggregate aggregate2 = repository.load(aggregateIdentifier, 0L);
+        StubAggregate aggregate1 = repository.get(aggregateIdentifier, 0L);
+        StubAggregate aggregate2 = repository.get(aggregateIdentifier, 0L);
 
         assertNotSame(aggregate1, aggregate2);
         assertEquals(Long.valueOf(0L), aggregate1.getVersion());

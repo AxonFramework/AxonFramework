@@ -51,7 +51,7 @@ public class GenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * If the constructor is not accessible, the GenericEventSourcingRepository will attempt to make it so. If JVM
      * security restrictions don't allow that, an exception is thrown.
      *
-     * @param aggregateType The type this repository should load and save
+     * @param aggregateType The type of aggregate this repository holds
      * @throws IncompatibleAggregateException If there is no accessible constructor accepting a UUID as single
      *                                        parameter
      */
@@ -67,7 +67,7 @@ public class GenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * If the constructor is not accessible, the GenericEventSourcingRepository will attempt to make it so. If JVM
      * security restrictions don't allow that, an exception is thrown.
      *
-     * @param aggregateType   The type this repository should load and save
+     * @param aggregateType   The type of aggregate this repository holds
      * @param lockingStrategy The locking strategy to use for this repository
      * @throws IncompatibleAggregateException If there is no accessible constructor accepting a UUID as single
      *                                        parameter

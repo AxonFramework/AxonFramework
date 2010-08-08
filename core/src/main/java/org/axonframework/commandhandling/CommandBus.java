@@ -37,7 +37,10 @@ public interface CommandBus {
      * @throws CommandHandlerInvocationException
      *                                      if the command handler threw a checked exception
      * @throws RuntimeException             any unchecked exception raised by the command handler
-     * @deprecated This method has been deprecated in favor of {@link #dispatch(Object, CommandCallback)}.
+     * @deprecated This method has been deprecated in favor of {@link #dispatch(Object, CommandCallback)}. Users of this
+     *             method are highly encouraged to that method instead. As of version 0.7, this method will be replaced
+     *             by <code>void dispatch(Object command)</code> as a fire-and-forget alternative to {@link
+     *             #dispatch(Object, CommandCallback)}.
      */
     @Deprecated
     Object dispatch(Object command);

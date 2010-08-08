@@ -68,7 +68,7 @@ public class ContactCommandHandler {
     public void handle(ChangeContactNameCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getContactNewName(), "Name may not be null");
-        Contact contact = repository.load(UUID.fromString(command.getContactId()), null);
+        Contact contact = repository.get(UUID.fromString(command.getContactId()), null);
         contact.changeName(command.getContactNewName());
         repository.save(contact);
     }
@@ -81,7 +81,7 @@ public class ContactCommandHandler {
     @CommandHandler
     public void handle(RemoveContactCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
-        Contact contact = repository.load(UUID.fromString(command.getContactId()), null);
+        Contact contact = repository.get(UUID.fromString(command.getContactId()), null);
         contact.delete();
         repository.save(contact);
     }
@@ -98,7 +98,7 @@ public class ContactCommandHandler {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
         Address address = new Address(command.getStreetAndNumber(), command.getZipCode(), command.getCity());
-        Contact contact = repository.load(UUID.fromString(command.getContactId()), null);
+        Contact contact = repository.get(UUID.fromString(command.getContactId()), null);
         contact.registerAddress(command.getAddressType(), address);
         repository.save(contact);
 
@@ -115,7 +115,7 @@ public class ContactCommandHandler {
     public void handle(RemoveAddressCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
-        Contact contact = repository.load(UUID.fromString(command.getContactId()), null);
+        Contact contact = repository.get(UUID.fromString(command.getContactId()), null);
         contact.removeAddress(command.getAddressType());
         repository.save(contact);
     }

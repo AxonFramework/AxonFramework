@@ -303,7 +303,7 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         public DomainEventStream readEvents(String type, UUID identifier) {
             if (!aggregateIdentifier.equals(identifier)) {
                 throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
-                        + "to get the aggregate identifier to load");
+                        + "to get the aggregate identifier to use");
             }
             return new SimpleDomainEventStream(givenEvents);
         }

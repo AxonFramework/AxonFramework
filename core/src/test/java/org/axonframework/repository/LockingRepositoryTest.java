@@ -60,7 +60,7 @@ public class LockingRepositoryTest {
         aggregate.doSomething();
         testSubject.save(aggregate);
 
-        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        StubAggregate loadedAggregate = testSubject.get(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
         loadedAggregate.doSomething();
@@ -79,7 +79,7 @@ public class LockingRepositoryTest {
         aggregate.doSomething();
         testSubject.save(aggregate);
 
-        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        StubAggregate loadedAggregate = testSubject.get(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
         CurrentUnitOfWork.get().registerListener(loadedAggregate, new UnitOfWorkListenerAdapter() {
@@ -114,7 +114,7 @@ public class LockingRepositoryTest {
         aggregate.doSomething();
         testSubject.save(aggregate);
 
-        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        StubAggregate loadedAggregate = testSubject.get(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
         CurrentUnitOfWork.get().registerListener(loadedAggregate, new UnitOfWorkListenerAdapter() {
@@ -146,7 +146,7 @@ public class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.save(aggregate);
-        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        StubAggregate loadedAggregate = testSubject.get(aggregate.getIdentifier(), 0L);
         loadedAggregate.doSomething();
 
         testSubject.save(aggregate);
