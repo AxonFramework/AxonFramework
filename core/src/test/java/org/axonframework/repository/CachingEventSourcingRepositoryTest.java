@@ -72,7 +72,7 @@ public class CachingEventSourcingRepositoryTest {
         StubAggregate aggregate1 = new StubAggregate();
         testSubject.save(aggregate1);
 
-        StubAggregate reloadedAggregate1 = testSubject.get(aggregate1.getIdentifier(), null);
+        StubAggregate reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
         assertSame(aggregate1, reloadedAggregate1);
         aggregate1.doSomething();
         aggregate1.doSomething();
@@ -87,7 +87,7 @@ public class CachingEventSourcingRepositoryTest {
         verify(mockEventBus, times(2)).publish(isA(DomainEvent.class));
         cache.clear();
 
-        reloadedAggregate1 = testSubject.get(aggregate1.getIdentifier(), null);
+        reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
 
         assertNotSame(aggregate1, reloadedAggregate1);
         assertEquals(aggregate1.getVersion(),

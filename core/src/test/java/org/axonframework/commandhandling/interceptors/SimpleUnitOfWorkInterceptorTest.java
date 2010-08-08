@@ -211,7 +211,7 @@ public class SimpleUnitOfWorkInterceptorTest {
         @Override
         public Object handle(SimpleCommand command, CommandContext<SimpleCommand> context) {
             for (UUID aggregateIdentifier : command.getAggregatesToActOn()) {
-                StubAggregate aggregate = repository.get(aggregateIdentifier, null);
+                StubAggregate aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.doSomething();
                 if (command.isIncludeSave()) {
                     repository.save(aggregate);

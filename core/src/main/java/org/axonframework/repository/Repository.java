@@ -30,27 +30,23 @@ import java.util.UUID;
 public interface Repository<T extends AggregateRoot> {
 
     /**
-     * Gets the aggregate with the given unique identifier. If the actual version of the aggregate does not match the
-     * given <code>expectedVersion</code>, the repository may throw a {@link ConflictingModificationException} if that
-     * is considered a conflict. This exception may be thrown at any time during the UnitOfWork lifecycle.
+     * Load the aggregate with the given unique identifier.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to get
-     * @param expectedVersion     The expected version of the aggregate to get
+     * @param aggregateIdentifier The identifier of the aggregate to load
+     * @param expectedVersion     The expected version of the aggregate to load
      * @return The aggregate root with the given identifier.
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
-     * @throws ConflictingModificationException
-     *                                    if the expected version does not match the actual version in the repository.
      */
-    T get(UUID aggregateIdentifier, Long expectedVersion);
+    T load(UUID aggregateIdentifier, Long expectedVersion);
 
     /**
      * Adds the given <code>aggregate</code> to the repository. The version of this aggregate must be <code>null</code>,
      * indicating that it has not been previously persisted.
      * <p/>
      * This method will not force the repository to save the aggregate. Instead, it is registered with the current
-     * UnitOfWork. To force the aggregate from being saved, use either {@link #save(AggregateRoot)}, or commit the
-     * UnitOfWork.
+     * UnitOfWork. To force the aggregate from being saved, use either {@link #save(org.axonframework.domain.AggregateRoot)},
+     * or commit the UnitOfWork.
      *
      * @param aggregate The aggregate to add to the repository.
      */
@@ -63,23 +59,21 @@ public interface Repository<T extends AggregateRoot> {
      * New aggregates will automatically be added to the repository, if that has not been done explicitly using {@link
      * #add(org.axonframework.domain.AggregateRoot)}
      * <p/>
-     * Note: It is recommended to use a UnitOfWork instead. This method will be deprecated soon in favor of a call to
-     * <code>CurrentUnitOfWork.commit()</code>, or better, a UnitOfWork interceptor on the command bus.
+     * Note: It is recommended to use a UnitOfWork instead. See {@link org.axonframework.commandhandling.interceptors.SimpleUnitOfWorkInterceptor}.
      *
      * @param aggregate The aggregate root of the aggregate to store.
-     * @see org.axonframework.commandhandling.interceptors.SimpleUnitOfWorkInterceptor
      */
     void save(T aggregate);
 
     /**
      * Load the aggregate with the given unique identifier.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to get
+     * @param aggregateIdentifier The identifier of the aggregate to load
      * @return The aggregate root with the given identifier.
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      * @deprecated This method does not allow you to check for concurrent modification. Use the {@link
-     *             #get(java.util.UUID, Long)} method instead.
+     *             #load(java.util.UUID, Long)} method instead.
      */
     @Deprecated
     T load(UUID aggregateIdentifier);

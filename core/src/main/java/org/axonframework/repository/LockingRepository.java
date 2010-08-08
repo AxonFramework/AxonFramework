@@ -32,7 +32,7 @@ import java.util.UUID;
  * The LockingRepository can be initialized with two strategies: <ul><li><em>Optimistic Locking</em> strategy (default):
  * This strategy performs better than the pessimistic one, but you will only discover a concurrency issue at the time a
  * thread tries to save an aggregate. If another thread has saved the same aggregate earlier (but after the first thread
- * loaded its copy), an exception is thrown. The only way to recover from this exception is to get the aggregate from
+ * loaded its copy), an exception is thrown. The only way to recover from this exception is to load the aggregate from
  * the repository again, replay all actions on it and save it. <li><em>Pessimistic Locking</em> strategy: Pessimistic
  * Locking requires an exclusive lock to be handed to a thread loading an aggregate before the aggregate is handed over.
  * This means that, once an aggregate is loaded, it has full exclusive access to it, until it saves the aggregate. With
@@ -100,14 +100,14 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T get(UUID aggregateIdentifier, Long expectedVersion) {
+    public T load(UUID aggregateIdentifier, Long expectedVersion) {
         lockManager.obtainLock(aggregateIdentifier);
         try {
-            final T aggregate = super.get(aggregateIdentifier, expectedVersion);
+            final T aggregate = super.load(aggregateIdentifier, expectedVersion);
             CurrentUnitOfWork.get().registerListener(aggregate, new LockManagingListener(aggregate));
             return aggregate;
         } catch (RuntimeException ex) {
-            logger.warn("Exception occurred while trying to get an aggregate. Releasing lock.", ex);
+            logger.warn("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregateIdentifier);
             throw ex;
         }
@@ -137,7 +137,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
     /**
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
-     * @param aggregateIdentifier the identifier of the aggregate to get
+     * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
      *

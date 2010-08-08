@@ -77,7 +77,7 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
      * in the cache, it is returned from there. Otherwise the underlying persistence logic is called to retrieve the
      * aggregate.
      *
-     * @param aggregateIdentifier the identifier of the aggregate to get
+     * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
      */

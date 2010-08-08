@@ -33,7 +33,7 @@ public class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateUpdated(UpdateStubAggregateCommand command) {
-        StubAggregate aggregate = repository.get(command.getAggregateId(), command.getAggregateVersion());
+        StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
         aggregate.makeAChange();
     }
 

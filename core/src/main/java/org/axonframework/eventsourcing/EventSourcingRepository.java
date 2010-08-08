@@ -81,7 +81,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     /**
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
-     * @param aggregateIdentifier the identifier of the aggregate to get
+     * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the loaded aggregate
      * @return the fully initialized aggregate
      *
