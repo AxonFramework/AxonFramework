@@ -50,6 +50,16 @@ public class AnnotationEventHandlerInvokerTest {
         assertEquals("Expected Method handler 3 to be invoked. Calls", 1, secondSubclass.invocationCount3);
     }
 
+    @Test
+    public void testInvokeEventHandler_InterfaceBased() {
+        ListeningToInterface handler = new ListeningToInterface();
+        testSubject = new AnnotationEventHandlerInvoker(handler);
+        testSubject.invokeEventHandlerMethod(new StubEventTwo());
+
+        assertEquals("Handler should not have been triggered. Calls", 0, handler.invocationCount2);
+        assertEquals("Handler should have been triggered by interface. Calls", 1, handler.invocationCount1);
+    }
+
     /*
     Test scenario:
     within a single class, the most specific handler is chosen, even if an exact handler isn't found.
@@ -196,6 +206,22 @@ public class AnnotationEventHandlerInvokerTest {
         }
     }
 
+    private static class ListeningToInterface {
+
+        protected int invocationCount1;
+        protected int invocationCount2;
+
+        @EventHandler
+        public void handle(SomeInterface event) {
+            invocationCount1++;
+        }
+
+        @EventHandler
+        public void handle(StubEventOne event) {
+            invocationCount2++;
+        }
+    }
+
     private static class SecondSubclass extends FirstSubclass {
 
         protected int invocationCount3;
@@ -242,7 +268,11 @@ public class AnnotationEventHandlerInvokerTest {
 
     }
 
-    private static class StubEventTwo extends StubEventOne {
+    private static class StubEventTwo extends StubEventOne implements SomeInterface {
+
+    }
+
+    private static interface SomeInterface extends Event {
 
     }
 

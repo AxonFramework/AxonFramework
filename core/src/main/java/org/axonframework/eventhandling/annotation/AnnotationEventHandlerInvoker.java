@@ -167,7 +167,7 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
                 if (!Event.class.isAssignableFrom(method.getParameterTypes()[0])) {
                     throw new UnsupportedHandlerMethodException(String.format(
                             "Event Handling class %s contains method %s that has an invalid parameter. "
-                                    + "Parameter must extend from DomainEvent",
+                                    + "Parameter must extend from Event",
                             method.getDeclaringClass().getSimpleName(),
                             method.getName()),
                                                                 method);
