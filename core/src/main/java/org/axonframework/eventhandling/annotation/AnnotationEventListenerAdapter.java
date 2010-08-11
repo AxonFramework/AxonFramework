@@ -44,9 +44,8 @@ import static org.springframework.core.annotation.AnnotationUtils.findAnnotation
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
  * org.axonframework.eventhandling.EventListener}.
  * <p/>
- * If the event listener has the {@link @AsynchronousEventListener} annotation, it is also configured to handle events
- * asynchronously.
- * <p/>
+ * If the event listener has the {@link AsynchronousEventListener} annotation, it is also configured to handle events
+ * asynchronously. In that case, event processing is handed over to the given {@link java.util.concurrent.Executor}.
  *
  * @author Allard Buijze
  * @see EventListener
