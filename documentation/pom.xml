@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
@@ -62,10 +63,15 @@
                                 <format>
                                     <formatName>html</formatName>
                                     <finalName>index.html</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/chunked.xsl</stylesheetResource>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/chunked.xsl
+                                    </stylesheetResource>
+                                </format>
+                                <format>
+                                    <formatName>html_single</formatName>
+                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/single.xsl
+                                    </stylesheetResource>
                                 </format>
                             </formats>
-
                             <options>
                                 <xincludeSupported>true</xincludeSupported>
                                 <localeSeparator>-</localeSeparator>
