@@ -73,11 +73,11 @@
                     </mediaobject>
                 </figure>
             </note>
-            <para>There is a special type of <code>DomainEvent</code>, which has a special meaning:
-                    the<code>AggregateDeletedEvent</code>. This event can be extended to indicate
-                that the event indicates a migration to a "deleted" state of the aggregate.
-                Repositories must consider aggregates that have applied such an event as deleted.
-                Loading such an aggregate in again results in an exception.</para>
+            <para>There is a special type of <code>Event</code>, which has a special meaning: the
+                    <code>AggregateDeletedEvent</code>. This is a marker interface that indicates a
+                migration to a "deleted" state of the aggregate. Repositories must consider
+                aggregates that have applied such an event as deleted. Hence, loading an aggregate
+                that has an <code>AggregateDeletedEvent</code> results in an exception.</para>
             <para>Snapshot events are instances of <code>DomainEvent</code> with a special intent.
                 They are typically not dispatched via the event bus, but are used to summarize an
                 arbitrary number of events from the past into a single entry. This can drastically
