@@ -21,7 +21,7 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
-public class StubAggregateDeletedEvent extends AggregateDeletedEvent {
+public class StubAggregateDeletedEvent extends DomainEvent implements AggregateDeletedEvent {
 
     public StubAggregateDeletedEvent() {
     }

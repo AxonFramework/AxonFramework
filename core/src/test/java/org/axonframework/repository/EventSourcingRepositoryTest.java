@@ -16,7 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateDeletedEvent;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
@@ -92,7 +91,7 @@ public class EventSourcingRepositoryTest {
         UUID identifier = UUID.randomUUID();
         StubDomainEvent event1 = new StubDomainEvent(identifier, 1);
         StubDomainEvent event2 = new StubDomainEvent(identifier, 2);
-        AggregateDeletedEvent event3 = new StubAggregateDeletedEvent(identifier, 3);
+        StubAggregateDeletedEvent event3 = new StubAggregateDeletedEvent(identifier, 3);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(event1, event2, event3));
 
