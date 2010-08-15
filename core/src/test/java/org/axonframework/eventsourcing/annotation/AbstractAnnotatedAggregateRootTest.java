@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.*;
@@ -40,17 +39,6 @@ public class AbstractAnnotatedAggregateRootTest {
         assertEquals(1, testSubject.getUncommittedEventCount());
 
         testSubject.handle(new StubDomainEvent());
-
-        assertEquals(2, testSubject.invocationCount);
-
-        try {
-            testSubject.handle(new DomainEvent() {
-            });
-            fail("Expected UnsupportedOperationException. There is no event handler for this aggregate.");
-        }
-        catch (UnhandledEventException e) {
-            // this is what we wanted
-        }
 
         assertEquals(2, testSubject.invocationCount);
     }

@@ -16,13 +16,9 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.axonframework.domain.AggregateDeletedEvent;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
@@ -30,10 +26,7 @@ import java.util.UUID;
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
  * org.axonframework.eventhandling.annotation.EventHandler} annotation.
  * <p/>
- * Implementations can call the {@link #apply(DomainEvent)} method to have an event applied.
- * <p/>
- * Any events that are passed to the {@link #apply(org.axonframework.domain.DomainEvent)} method for which no event
- * handler can be found will cause an {@link UnhandledEventException} to be thrown.
+ * Implementations can call the {@link #apply(DomainEvent)} method to have an event applied. S *
  *
  * @author Allard Buijze
  * @see org.axonframework.eventhandling.annotation.EventHandler
@@ -41,11 +34,10 @@ import java.util.UUID;
  */
 public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractAnnotatedAggregateRoot.class);
     private final AnnotationEventHandlerInvoker eventHandlerInvoker;
 
     /**
-     * Initialize the aggregate root with a random identifier
+     * Initialize the aggregate root with a random identifier.
      */
     protected AbstractAnnotatedAggregateRoot() {
         super();
@@ -73,32 +65,4 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
     protected void handle(DomainEvent event) {
         eventHandlerInvoker.invokeEventHandlerMethod(event);
     }
-
-    /**
-     * Event Handler that will throw an exception if no better (read any) event handler could be found for the processed
-     * event. Throws an {@link UnhandledEventException}.
-     *
-     * @param event the event that could not be processed by any other event handler
-     * @throws UnhandledEventException when called.
-     */
-    @EventHandler
-    protected void onUnhandledEvents(DomainEvent event) {
-        String message = String.format("No EventHandler method could be found for [%s] on aggregate [%s]",
-                                       event.getClass().getSimpleName(),
-                                       getClass().getSimpleName());
-        logger.error(message);
-        throw new UnhandledEventException(message, event);
-    }
-
-    /**
-     * Event Handler that suppresses errors when an AggregateDeletedEvent is applied, but is not handled by this
-     * aggregate. Typically, these events do not change any state within the aggregate.
-     *
-     * @param event The deletion event
-     */
-    @EventHandler
-    protected void onUnhandledDeleteEvent(AggregateDeletedEvent event) {
-        // that is allowed.
-    }
-
 }
