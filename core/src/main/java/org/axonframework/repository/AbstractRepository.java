@@ -88,10 +88,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
 
     /**
      * {@inheritDoc}
-     *
-     * @deprecated Implementation provided for backwards compatibility.
      */
-    @Deprecated
     @Override
     public T load(UUID aggregateIdentifier) {
         return load(aggregateIdentifier, null);
