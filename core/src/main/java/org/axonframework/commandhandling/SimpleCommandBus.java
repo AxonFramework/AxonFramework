@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.jmx.JmxConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SimpleCommandBus implements CommandBus {
 
+    private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private volatile DefaultInterceptorChain interceptorChain = new DefaultInterceptorChain(Collections.<CommandHandlerInterceptor>emptyList());
     private volatile SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
@@ -49,7 +52,7 @@ public class SimpleCommandBus implements CommandBus {
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    public Object dispatch(Object command) {
+    public void dispatch(Object command) {
         statistics.recordReceivedCommand();
         CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
@@ -57,11 +60,11 @@ public class SimpleCommandBus implements CommandBus {
                                                                  command.getClass().getSimpleName()));
         }
         try {
-            return interceptorChain.proceed(new CommandContextImpl(command, handler));
-        } catch (RuntimeException e) {
+            interceptorChain.proceed(new CommandContextImpl(command, handler));
+        } catch (Error e) {
             throw e;
-        } catch (Throwable t) {
-            throw new CommandHandlerInvocationException("An exception occurred while handling a command", t);
+        } catch (Throwable throwable) {
+            logger.error("An error occurred while dispatching a command.", throwable);
         }
     }
 

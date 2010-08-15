@@ -27,23 +27,14 @@ package org.axonframework.commandhandling;
 public interface CommandBus {
 
     /**
-     * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
-     * The return value or exception resulting from the command is thrown
+     * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>. No
+     * feedback is given about the status of the dispatching process. Implementations may return immediately after
+     * asserting a valid handler is registered for the given command.
      *
      * @param command The Command to dispatch
-     * @return the result of the command handler invocation.
-     *
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
-     * @throws CommandHandlerInvocationException
-     *                                      if the command handler threw a checked exception
-     * @throws RuntimeException             any unchecked exception raised by the command handler
-     * @deprecated This method has been deprecated in favor of {@link #dispatch(Object, CommandCallback)}. Users of this
-     *             method are highly encouraged to that method instead. As of version 0.7, this method will be replaced
-     *             by <code>void dispatch(Object command)</code> as a fire-and-forget alternative to {@link
-     *             #dispatch(Object, CommandCallback)}.
      */
-    @Deprecated
-    Object dispatch(Object command);
+    void dispatch(Object command);
 
     /**
      * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
@@ -70,9 +61,9 @@ public interface CommandBus {
      *
      * @param commandType The type of command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
-     * @param <T>         The Type of command
+     * @param <C>         The Type of command
      */
-    <T> void subscribe(Class<T> commandType, CommandHandler<? super T> handler);
+    <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler);
 
     /**
      * Unsubscribe the given <code>handler</code> to commands of type <code>commandType</code>. If the handler is not
@@ -80,8 +71,8 @@ public interface CommandBus {
      *
      * @param commandType The type of command the handler is subscribed to
      * @param handler     The handler instance to unsubscribe from the CommandBus
-     * @param <T>         The Type of command
+     * @param <C>         The Type of command
      */
-    <T> void unsubscribe(Class<T> commandType, CommandHandler<? super T> handler);
+    <C> void unsubscribe(Class<C> commandType, CommandHandler<? super C> handler);
 
 }
