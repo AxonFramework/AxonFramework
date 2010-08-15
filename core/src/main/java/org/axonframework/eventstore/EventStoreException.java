@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.util.AxonException;
+import org.axonframework.util.AxonNonTransientException;
 
 /**
  * Indicates that the given events stream could not be stored or read due to an underlying exception.
@@ -24,7 +24,7 @@ import org.axonframework.util.AxonException;
  * @author Allard Buijze
  * @since 0.1
  */
-public class EventStoreException extends AxonException {
+public class EventStoreException extends AxonNonTransientException {
 
     private static final long serialVersionUID = -4514732518167514479L;
 

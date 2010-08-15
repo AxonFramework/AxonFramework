@@ -22,7 +22,7 @@ package org.axonframework.util;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SerializationException extends AxonException {
+public class SerializationException extends AxonNonTransientException {
 
     private static final long serialVersionUID = 4649672453752098762L;
 

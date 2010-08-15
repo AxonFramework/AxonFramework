@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.util.AxonException;
+import org.axonframework.util.AxonNonTransientException;
 
 /**
  * Exception indicating that no suitable handler could be found for the given command.
@@ -24,12 +24,12 @@ import org.axonframework.util.AxonException;
  * @author Allard Buijze
  * @since 0.5
  */
-public class NoHandlerForCommandException extends AxonException {
+public class NoHandlerForCommandException extends AxonNonTransientException {
 
     private static final long serialVersionUID = -7242262641697288852L;
 
     /**
-     * Initialize a NoHandlerForCommandException with the given <code>message</code>
+     * Initialize a NoHandlerForCommandException with the given <code>message</code>.
      *
      * @param message The message describing the cause of the exception
      */
