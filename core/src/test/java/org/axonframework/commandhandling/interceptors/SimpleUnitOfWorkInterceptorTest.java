@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.InterceptorChain;
@@ -187,13 +188,20 @@ public class SimpleUnitOfWorkInterceptorTest {
         CurrentUnitOfWork.clear();
     }
 
-    private void dispatchCommand(SimpleCommand command, RuntimeException failure) {
-        try {
-            commandBus.dispatch(command);
-            fail("Expected exception to be propagated");
-        } catch (Exception e) {
-            assertSame(failure, e);
-        }
+    private void dispatchCommand(SimpleCommand command, final RuntimeException failure) {
+        commandBus.dispatch(command, new CommandCallback<SimpleCommand, Object>() {
+            @Override
+            public void onSuccess(Object result,
+                                  CommandContext<SimpleCommand> simpleCommandCommandContext) {
+                fail("Expected exception to be propagated");
+            }
+
+            @Override
+            public void onFailure(Throwable actual,
+                                  CommandContext<SimpleCommand> simpleCommandCommandContext) {
+                assertSame(failure, actual);
+            }
+        });
     }
 
     private void verifyNoLocksRemain() throws Exception {

@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -80,14 +81,19 @@ public class SpringTransactionalInterceptorTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testTransactionManagement_RuntimeException() throws Throwable {
-        RuntimeException exception = new RuntimeException("Mock");
+        final RuntimeException exception = new RuntimeException("Mock");
         when(commandHandler.handle(isA(Object.class), isA(CommandContext.class))).thenThrow(exception);
-        try {
-            commandBus.dispatch(new Object());
-            fail("Exception should be propagated");
-        } catch (RuntimeException ex) {
-            assertSame(exception, ex);
-        }
+        commandBus.dispatch(new Object(), new CommandCallback<Object, Object>() {
+            @Override
+            public void onSuccess(Object result, CommandContext<Object> objectCommandContext) {
+                fail("Exception should be propagated");
+            }
+
+            @Override
+            public void onFailure(Throwable actual, CommandContext<Object> objectCommandContext) {
+                assertSame(exception, actual);
+            }
+        });
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
         inOrder.verify(commandHandler).handle(isA(Object.class), isA(CommandContext.class));
