@@ -18,41 +18,78 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+       xmlns:axon="http://www.axonframework.org/schema/axon-framework-1.0"
+       xsi:schemaLocation="http://www.axonframework.org/schema/axon-framework-1.0 http://www.axonframework.org/schema/axon-framework-1.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:annotation-config/>
 
-    <bean class="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor">
-        <property name="executor" ref="taskExecutor"/>
+    <axon:annotation-configuration commandBus="commandBus" executor="taskExecutor"/>
+
+    <!--
+     <bean
+         class="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor">
+         <property name="executor" ref="taskExecutor" />
+     </bean>
+
+     <bean
+         class="org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor">
+         <property name="commandBus" ref="commandBus" />
+     </bean>
+     -->
+
+    <!-- ================================================ -->
+    <!-- Example with an embedded ref -->
+    <!-- ================================================ -->
+    <!-- <axon:commandBus id="commandBus"> <axon:interceptors> <ref local="commandbus-interceptor"/>
+         </axon:interceptors> </axon:commandBus> -->
+
+    <!-- ================================================ -->
+    <!-- Example with an embedded bean -->
+    <!-- ================================================ -->
+    <!--
+     <axon:commandBus id="commandBus">
+         <axon:interceptors>
+             <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+                 <property name="transactionManager" ref="transactionManager" />
+             </bean>
+         </axon:interceptors>
+     </axon:commandBus>
+     -->
+
+    <!-- ================================================ -->
+    <!-- Example with a single interceptor ref            -->
+    <!-- ================================================ -->
+    <axon:commandBus id="commandBus" interceptor="commandbus-interceptor"/>
+
+    <bean id="commandbus-interceptor"
+          class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+        <property name="transactionManager" ref="transactionManager"/>
     </bean>
 
-    <bean class="org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor">
-        <property name="commandBus" ref="commandBus"/>
-    </bean>
+    <!-- <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
+         <property name="interceptors"> <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+         <property name="transactionManager" ref="transactionManager"/> </bean> </property>
+         </bean> -->
 
-    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
-        <property name="interceptors">
-            <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
-                <property name="transactionManager" ref="transactionManager"/>
-            </bean>
-        </property>
-    </bean>
+    <!--	<bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus" />-->
+    <axon:eventBus id="eventBus"/>
 
-    <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
-
-    <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+    <bean id="taskExecutor"
+          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
         <property name="corePoolSize" value="2"/>
         <property name="maxPoolSize" value="5"/>
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 
-    <bean id="contactRepository" class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
+    <bean id="contactRepository"
+          class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
         <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
         <property name="eventBus" ref="eventBus"/>
         <property name="eventStore" ref="triggeringEventStore"/>
     </bean>
 
-    <bean id="triggeringEventStore" class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
+    <bean id="triggeringEventStore"
+          class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
         <property name="eventStore" ref="eventStore"/>
         <property name="snapshotter" ref="snapshotter"/>
         <property name="triggerConfiguration">
@@ -62,14 +99,17 @@
         </property>
     </bean>
 
-    <bean id="snapshotter" class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
+    <bean id="snapshotter"
+          class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
         <property name="eventStore" ref="eventStore"/>
         <property name="executor" ref="taskExecutor"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
+    <!--	<bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore" />-->
+    <axon:eventStore id="eventStore" type="JPA"/>
 
-    <bean id="contactCommandHandler" class="org.axonframework.sample.app.command.ContactCommandHandler">
+    <bean id="contactCommandHandler"
+          class="org.axonframework.sample.app.command.ContactCommandHandler">
         <property name="repository" ref="contactRepository"/>
     </bean>
 
