@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.axonframework.contextsupport.spring;
+
+import static org.junit.Assert.*;
 
 import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
@@ -29,44 +30,42 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
-
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
+@ContextConfiguration(locations={"classpath:contexts/axon-namespace-support-context.xml"})
 public class EventStoreBeanDefinitionParserTest {
 
-    @Autowired
-    private DefaultListableBeanFactory beanFactory;
+	@Autowired
+	private DefaultListableBeanFactory beanFactory;
+	
+	@Test
+	public void jpaEventStore() {
+		BeanDefinition definition = beanFactory.getBeanDefinition("eventStore");
+		assertNotNull("BeanDefinition not created", definition);
+		assertEquals("Wrong bean class", JpaEventStore.class.getName(), definition.getBeanClassName());
+		assertNotNull("Entity manager not defined", definition.getPropertyValues().getPropertyValue("entityManager"));
+		ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, EventSerializer.class);
+		assertNotNull("Event serializer reference is wrong", reference);
+		RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
+		assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());
+		
+		JpaEventStore jpaEventStore = beanFactory.getBean("eventStore", JpaEventStore.class);
+		assertNotNull(jpaEventStore);
+	}
 
-    @Test
-    public void jpaEventStore() {
-        BeanDefinition definition = beanFactory.getBeanDefinition("eventStore");
-        assertNotNull("BeanDefinition not created", definition);
-        assertEquals("Wrong bean class", JpaEventStore.class.getName(), definition.getBeanClassName());
-        assertNotNull("Entity manager not defined", definition.getPropertyValues().getPropertyValue("entityManager"));
-        ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, EventSerializer.class);
-        assertNotNull("Event serializer reference is wrong", reference);
-        RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
-        assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());
-
-        JpaEventStore jpaEventStore = beanFactory.getBean("eventStore", JpaEventStore.class);
-        assertNotNull(jpaEventStore);
-    }
-
-    @Test
-    public void fileEventStore() {
-        BeanDefinition definition = beanFactory.getBeanDefinition("fileEventStore");
-        assertNotNull("BeanDefinition not created", definition);
-        assertEquals("Wrong bean class", FileSystemEventStore.class.getName(), definition.getBeanClassName());
-        assertNull("Entity manager should not have been defined", definition.getPropertyValues().getPropertyValue("entityManager"));
-        ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, EventSerializer.class);
-        assertNotNull("Event serializer reference is wrong", reference);
-        RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
-        assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());
-        assertNotNull("Base directory property is missing", definition.getPropertyValues().getPropertyValue("baseDir"));
-        assertEquals("Base directory property has wrong value", "/tmp", definition.getPropertyValues().getPropertyValue("baseDir").getValue());
-
-        FileSystemEventStore fileEventStore = beanFactory.getBean("fileEventStore", FileSystemEventStore.class);
-        assertNotNull(fileEventStore);
-    }
+	@Test
+	public void fileEventStore() {
+		BeanDefinition definition = beanFactory.getBeanDefinition("fileEventStore");
+		assertNotNull("BeanDefinition not created", definition);
+		assertEquals("Wrong bean class", FileSystemEventStore.class.getName(), definition.getBeanClassName());
+		assertNull("Entity manager should not have been defined", definition.getPropertyValues().getPropertyValue("entityManager"));
+		ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, EventSerializer.class);
+		assertNotNull("Event serializer reference is wrong", reference);
+		RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
+		assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());
+		assertNotNull("Base directory property is missing", definition.getPropertyValues().getPropertyValue("baseDir"));
+		assertEquals("Base directory property has wrong value", "/tmp", definition.getPropertyValues().getPropertyValue("baseDir").getValue());
+		
+		FileSystemEventStore fileEventStore = beanFactory.getBean("fileEventStore", FileSystemEventStore.class);
+		assertNotNull(fileEventStore);		
+	}
 }

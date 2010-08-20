@@ -20,17 +20,73 @@
         building blocks in Axon are Spring configurable. Furthermore, there are some Bean Post
         Processors that scan the application context for building blocks and automatically wires
         them.</para>
-    <para>Axon uses JSR 250 annotations (<code>@PostConstruct</code> and <code>@PreDestroy</code>)
+    <para>In addition, the Axon Framework makes use of Spring's Extensible Schema-based configuration feature to make Axon
+        application configuration even easier. Axon Framework sports a Spring context configuration namespace of its own that
+        allows you to create common configurations using Spring's XML configuration syntax, but in a more functionally
+        expressive way than by wiring together explicit bean declarations.</para>
+
+	<sect1>
+		<title>Adding support for the Java Platform Common Annotations</title>
+    	<para>Axon uses JSR 250 annotations (<code>@PostConstruct</code> and <code>@PreDestroy</code>)
         to annotate lifecycle methods of some of the building blocks. Spring doesn't always
         automatically evaluate these annotations. To force Spring to do so, add the
             <code>&lt;context:annotation-config/></code> tag to your application context, as shown
         in the example
-        below:<programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans" 
+        below:
+        <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans" 
        xmlns:context="http://www.springframework.org/schema/context">
+
 
     &lt;context:annotation-config/>
 
-&lt;/beans></programlisting></para>
+&lt;/beans></programlisting>
+		</para>
+	</sect1>
+	
+    <sect1>
+		<title>Getting started with the Axon namespace</title>
+			<para>As mentioned earlier, the Axon Framework provides a separate namespace full of elements that allow you to
+				configure your Axon applications quickly when using Spring. In order to use this namespace you must first add the
+				declaration for this namespace to your Spring XML configuration files.</para>
+			<para>Assume you already have an XML configuration file like this:</para>
+    
+			<programlisting language="xml">&lt;?xml version="1.0" encoding="UTF-8"?>
+			
+&lt;beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">			
+	
+		...
+               
+&lt;/beans>
+			</programlisting>
+               
+			<para>To modify this configuration file to use elements from the Axon namespace, just add the following declarations:</para>
+               
+			<programlistingco>
+				<areaspec>
+					<area coords="3" xml:id="ex.nmsp.decl"/>
+					<area coords="5" xml:id="ex.nmsp.loc"/>
+				</areaspec>
+
+				<programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:axon="http://www.axonframework.org/schema/axon-framework-1.0"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.axonframework.org/schema/axon-framework-1.0 http://www.axonframework.org/schema/axon-framework-1.0.xsd">
+				</programlisting>
+                       
+				<calloutlist>
+					<callout arearefs="ex.nmsp.decl">
+						<para>The declaration of the <code>axon</code> namespace reference that you will use through the configuration file.</para>
+					</callout>
+					<callout arearefs="ex.nmsp.loc">
+						<para>Maps the Axon namespace to the XSD where the namespace is defined.</para>
+					</callout>
+				</calloutlist>
+			</programlistingco>
+	</sect1>
+	
     <sect1>
         <title>Wiring event handlers</title>
         <para>Using the annotated event listeners is very easy when you use Spring. All you need to

@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.axonframework.contextsupport.spring;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.junit.Test;
@@ -25,23 +27,22 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
+@ContextConfiguration(locations={"classpath:contexts/axon-namespace-support-context.xml"})
 public class EventBusBeanDefinitionParserTest {
 
-    @Autowired
-    private DefaultListableBeanFactory beanFactory;
-
-    @Test
-    public void eventBusElement() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("eventBus");
-        assertNotNull("Bean definition not created", beanDefinition);
-        assertEquals("Wrong bean class", SimpleEventBus.class.getName(), beanDefinition.getBeanClassName());
-
-        SimpleEventBus eventBus = beanFactory.getBean("eventBus", SimpleEventBus.class);
-        assertNotNull(eventBus);
-    }
+	@Autowired
+	private DefaultListableBeanFactory beanFactory;
+	
+	@Test
+	public void eventBusElement() {
+		BeanDefinition beanDefinition = beanFactory.getBeanDefinition("eventBus");
+		assertNotNull("Bean definition not created", beanDefinition);
+		assertEquals("Wrong bean class", SimpleEventBus.class.getName(), beanDefinition.getBeanClassName());
+		
+		SimpleEventBus eventBus = beanFactory.getBean("eventBus", SimpleEventBus.class);
+		assertNotNull(eventBus);
+	}
+	
 }
