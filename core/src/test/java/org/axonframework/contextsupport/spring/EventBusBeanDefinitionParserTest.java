@@ -17,15 +17,16 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
@@ -43,5 +44,4 @@ public class EventBusBeanDefinitionParserTest {
         SimpleEventBus eventBus = beanFactory.getBean("eventBus", SimpleEventBus.class);
         assertNotNull(eventBus);
     }
-
 }

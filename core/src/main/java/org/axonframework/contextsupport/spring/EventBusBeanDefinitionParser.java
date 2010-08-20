@@ -31,9 +31,7 @@ import org.w3c.dom.Element;
  */
 public class EventBusBeanDefinitionParser extends AbstractSimpleBeanDefinitionParser implements BeanDefinitionParser {
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     protected Class<?> getBeanClass(Element element) {
         return SimpleEventBus.class;

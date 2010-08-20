@@ -36,13 +36,10 @@ import java.util.Map;
  * interceptors and subscribers.
  *
  * @author Ben Z. Tels
- * @since 0.7
  */
 public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinitionParser implements BeanDefinitionParser {
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition commandBusDefinition = new GenericBeanDefinition();
@@ -61,12 +58,10 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
      * @param parserContext        The running {@link ParserContext}.
      * @param commandBusDefinition The {@link BeanDefinition} being built.
      */
-    private void parseSubscribersConfiguration(Element element, ParserContext parserContext,
-                                               GenericBeanDefinition commandBusDefinition) {
+    private void parseSubscribersConfiguration(Element element, ParserContext parserContext, GenericBeanDefinition commandBusDefinition) {
         Element subscribersElement = DomUtils.getChildElementByTagName(element, "subscribers");
         if (subscribersElement != null) {
-            Map<?, ?> subscribersMap = parserContext.getDelegate().parseMapElement(subscribersElement,
-                                                                                   commandBusDefinition);
+            Map<?, ?> subscribersMap = parserContext.getDelegate().parseMapElement(subscribersElement, commandBusDefinition);
             commandBusDefinition.getPropertyValues().add("subscribers", subscribersMap);
         }
     }
@@ -78,17 +73,14 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
      * @param parserContext        The running {@link ParserContext}.
      * @param commandBusDefinition The {@link BeanDefinition} being built.
      */
-    private void parseInterceptorConfiguration(Element element, ParserContext parserContext,
-                                               GenericBeanDefinition commandBusDefinition) {
+    private void parseInterceptorConfiguration(Element element, ParserContext parserContext, GenericBeanDefinition commandBusDefinition) {
         Element interceptorsElement = DomUtils.getChildElementByTagName(element, "interceptors");
         if (interceptorsElement != null) {
-            List<?> interceptorsList = parserContext.getDelegate().parseListElement(interceptorsElement,
-                                                                                    commandBusDefinition);
+            List<?> interceptorsList = parserContext.getDelegate().parseListElement(interceptorsElement, commandBusDefinition);
             commandBusDefinition.getPropertyValues().add("interceptors", interceptorsList);
         } else if (element.hasAttribute("interceptor")) {
             RuntimeBeanReference beanReference = new RuntimeBeanReference(element.getAttribute("interceptor"));
             commandBusDefinition.getPropertyValues().add("interceptors", beanReference);
-		}
-	}
-
+        }
+    }
 }

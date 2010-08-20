@@ -35,39 +35,24 @@ import org.w3c.dom.Element;
  */
 public class EventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser implements BeanDefinitionParser {
 
-    /**
-     * The entity manager attribute.
-     */
+    /** The entity manager attribute. */
     private static final String ENTITY_MANAGER_ATTRIBUTE = "entityManager";
-    /**
-     * The base directory attribute.
-     */
+    /** The base directory attribute. */
     private static final String BASE_DIR_ATTRIBUTE = "baseDir";
-    /**
-     * the event serializer attribute.
-     */
+    /** the event serializer attribute. */
     private static final String EVENT_SERIALIZER_ATTRIBUTE = "eventSerializer";
-    /**
-     * String that identifies a choice for a JPA event store.
-     */
+    /** String that identifies a choice for a JPA event store. */
     private static final String JPA_EVENTSTORE_TYPE = "JPA";
-    /**
-     * String that identifies a choice for a file event store.
-     */
+    /** String that identifies a choice for a file event store. */
     private static final String FILE_EVENTSTORE_TYPE = "FILE";
-    /**
-     * The type attribute.
-     */
+    /** The type attribute. */
     private static final String TYPE_ATTRIBUTE = "type";
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     protected Class<?> getBeanClass(Element element) {
         if (!element.hasAttribute(TYPE_ATTRIBUTE)) {
-            throw new IllegalStateException(
-                    "The eventStore element must declare a type attribute with the type of the event store.");
+            throw new IllegalStateException("The eventStore element must declare a type attribute with the type of the event store.");
         }
 
         if (isFileEventStore(element)) {
@@ -78,13 +63,10 @@ public class EventStoreBeanDefinitionParser extends AbstractSingleBeanDefinition
             return JpaEventStore.class;
         }
 
-        throw new IllegalArgumentException(
-                "The eventStore element's type attribute must have a value of either FILE or JPA");
+        throw new IllegalArgumentException("The eventStore element's type attribute must have a value of either FILE or JPA");
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {

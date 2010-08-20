@@ -19,8 +19,8 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.jpa.JpaEventStore;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
@@ -58,15 +58,13 @@ public class EventStoreBeanDefinitionParserTest {
         BeanDefinition definition = beanFactory.getBeanDefinition("fileEventStore");
         assertNotNull("BeanDefinition not created", definition);
         assertEquals("Wrong bean class", FileSystemEventStore.class.getName(), definition.getBeanClassName());
-        assertNull("Entity manager should not have been defined", definition.getPropertyValues().getPropertyValue(
-                "entityManager"));
+        assertNull("Entity manager should not have been defined", definition.getPropertyValues().getPropertyValue("entityManager"));
         ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, EventSerializer.class);
         assertNotNull("Event serializer reference is wrong", reference);
         RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
         assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());
         assertNotNull("Base directory property is missing", definition.getPropertyValues().getPropertyValue("baseDir"));
-        assertEquals("Base directory property has wrong value", "/tmp", definition.getPropertyValues().getPropertyValue(
-                "baseDir").getValue());
+        assertEquals("Base directory property has wrong value", "/tmp", definition.getPropertyValues().getPropertyValue("baseDir").getValue());
 
         FileSystemEventStore fileEventStore = beanFactory.getBean("fileEventStore", FileSystemEventStore.class);
         assertNotNull(fileEventStore);

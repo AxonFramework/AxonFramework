@@ -40,6 +40,7 @@
         </xsd:complexType>
     </xsd:element>
 
+
     <!-- ================================== -->
     <!-- ==== commandBus ================== -->
     <!-- ================================== -->
@@ -159,6 +160,58 @@
                         <xsd:annotation>
                             <xsd:documentation>The base directory for this event store (mandatory for a FILE type event
                                 store).
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- == repository ==================== -->
+    <!-- ================================== -->
+    <xsd:element name="repository">
+        <xsd:annotation>
+            <xsd:documentation>Spring context schema extension for the definition of a Repository instance.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attribute name="aggregateRootType" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>The fully qualified class name of the AggregateRoot type that this
+                                repository will store.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="lockingStrategy" use="optional" default="OPTIMISTIC">
+                        <xsd:annotation>
+                            <xsd:documentation>The locking strategy used by this repository (default: OPTIMISTIC).
+                            </xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="OPTIMISTIC"/>
+                                <xsd:enumeration value="PESSIMISTIC"/>
+                                <xsd:enumeration value="NO_LOCKING"/>
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="eventStore" use="optional" type="xsd:IDREF">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the EventStore used by this repository.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="eventBus" use="optional" type="xsd:IDREF">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the EventBus used by this repository.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="conflictResolver" use="optional" type="xsd:IDREF">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the ConflictResolver used by this repository.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>

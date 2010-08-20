@@ -42,31 +42,19 @@ import java.util.concurrent.Executor;
 public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDefinitionParser
         implements BeanDefinitionParser {
 
-    /**
-     * The executor attribute text.
-     */
+    /** The executor attribute text. */
     private static final String EXECUTOR_ATTRIBUTE = "executor";
-    /**
-     * The eventBus attribute text.
-     */
+    /** The eventBus attribute text. */
     private static final String EVENT_BUS_ATTRIBUTE = "eventBus";
-    /**
-     * The commandBus attribute text.
-     */
+    /** The commandBus attribute text. */
     private static final String COMMAND_BUS_ATTRIBUTE = "commandBus";
 
-    /**
-     * The bean name used for registering the {@link AnnotationEventListenerBeanPostProcessor}.
-     */
+    /** The bean name used for registering the {@link AnnotationEventListenerBeanPostProcessor}. */
     private static final String EVENT_LISTENER_BEAN_NAME = "__axon-annotation-event-listener-bean-post-processor";
-    /**
-     * The bean name used for registering the {@link AnnotationCommandHandlerBeanPostProcessor}.
-     */
+    /** The bean name used for registering the {@link AnnotationCommandHandlerBeanPostProcessor}. */
     private static final String COMMAND_HANDLER_BEAN_NAME = "__axon-annotation-command-handler-bean-post-processor";
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         registerAnnotationCommandHandlerBeanPostProcessor(element, parserContext);
