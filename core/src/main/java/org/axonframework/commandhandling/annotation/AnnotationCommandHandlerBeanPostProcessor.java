@@ -59,7 +59,7 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
     @SuppressWarnings({"unchecked"})
     @Override
     public void afterPropertiesSet() throws Exception {
-        // if no EventBus is set, find one in the application context
+        // if no CommandBus is set, find one in the application context
         if (commandBus == null) {
             Map<String, CommandBus> beans = getApplicationContext().getBeansOfType(CommandBus.class);
             if (beans.size() != 1) {
