@@ -65,8 +65,8 @@
                
 			<programlistingco>
 				<areaspec>
-					<area coords="3" xml:id="ex.nmsp.decl"/>
-					<area coords="5" xml:id="ex.nmsp.loc"/>
+					<area coords="3 70" xml:id="ex.nmsp.decl"/>
+					<area coords="5 118" xml:id="ex.nmsp.loc"/>
 				</areaspec>
 
 				<programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans"
@@ -88,7 +88,9 @@
 	</sect1>
 	
     <sect1>
-        <title>Wiring event handlers</title>
+        <title>Wiring event and command handlers</title>
+        <sect2>
+        <title>Event handlers</title>
         <para>Using the annotated event listeners is very easy when you use Spring. All you need to
             do is configure the <code>AnnotationEventListenerBeanPostProcessor</code> in your
             application context. This post processor will discover beans with <code>@EventHandler</code>
@@ -157,10 +159,136 @@
                     <code>AnnotationEventListenerBeanPostProcessor</code> in the application
                 context. This will cause the event listener to be wired twice.</para>
         </warning>
+        </sect2>
+    
+    	<sect2>
+    		<title>Command handlers</title>
+    		<para>Wiring command handlers is very much like wiring event handlers: there is an
+			<code>AnnotationCommandHandlerBeanPostProcessor</code> which will automatically register 
+			classes containing command handler methods (i.e. methods annotated with the
+			<code>@CommandHandler</code> annotation) with a command bus.
+			
+			<programlistingco>
+                <areaspec>
+                    <area xml:id="commandpostprocessor-co" coords="3 68"/>
+                    <area xml:id="optional-commandbus-reference-co" coords="4 56"/>
+                    <area xml:id="commandhandler-co" coords="7 80"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean class="org...AnnotationCommandHandlerBeanPostProcessor">
+        &lt;property name="commandBus" ref="commandBus"/>
+    &lt;/bean>
+
+    &lt;bean class="org.axonframework.sample.app.command.ContactCommandHandler"/>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="commandpostprocessor-co">
+                        <para>This bean post processor will scan the application context for beans
+                            with a <code>@CommandHandler</code> annotated method.</para>
+                    </callout>
+                    <callout arearefs="optional-commandbus-reference-co">
+                        <para>The reference to the command bus is optional, if only a single
+                                <code>CommandBus</code> implementation is configured in the
+                            application context. The bean postprocessor will automatically find and
+                            wire it. If there is more than one <code>CommandBus</code> in the context,
+                            you must specify the one to use in the postprocessor.</para>
+                    </callout>
+                    <callout arearefs="commandhandler-co">
+                        <para>This command handler will be automatically recognized and subscribed to
+                            the command bus.</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
+            
+            <para>As with event listeners, you can also wire command handlers "manually" by explicitly defining them within a
+                <code>AnnotationCommandHandlerAdapter</code> bean, as shown in the code sample below.<programlistingco>
+                <areaspec>
+                    <area xml:id="commandadapter-co" coords="3 83"/>
+                    <area xml:id="commandbus-reference-co" coords="7 56"/>
+                </areaspec>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+
+    &lt;bean class="org.axonframework...annotation.AnnotationCommandHandlerAdapter">
+        &lt;constructor-arg>
+            &lt;bean class="org.axonframework.sample.app.command.ContactCommandHandler"/>
+        &lt;/constructor-arg>
+        &lt;property name="commandBus" ref="commandBus"/>
+    &lt;/bean>
+
+&lt;/beans></programlisting>
+                <calloutlist>
+                    <callout arearefs="commandadapter-co">
+                        <para>The adapter turns any bean with <code>@EventHandler</code> methods
+                            into an <code>EventListener</code></para>
+                    </callout>
+                    <callout arearefs="commandbus-reference-co">
+                        <para>You need to explicitly reference the event bus to which you like to
+                            register the event listener</para>
+                    </callout>
+                </calloutlist>
+            </programlistingco></para>
+        <warning>
+            <para>Be careful when wiring command handlers "manually" while there is also an
+                    <code>AnnotationCommandHandlerBeanPostProcessor</code> in the application
+                context. This will cause the command handler to be wired twice.</para>
+        </warning>
+    	</sect2>
+    
+    	<sect2>
+    		<title>Using the Axon namespace shortcut</title>
+    		<para>
+	The previous two sections explained how you wire bean post processors to activate annotation support for your command
+	handlers and event listeners. Using support from the Axon namespace you can accomplish the same in one go, using the
+	<code>annotation-configuration</code>
+	element:
+	
+				<programlisting>&lt;axon:annotation-configuration /></programlisting></para>
+				
+			<para>The <code>annotation-configuration</code> element has the following attributes that allow you to configure annotation support further:</para>
+			
+			<table frame="all">
+				<title>Attributes for annotation-configuration</title>
+				<tgroup cols="4" colsep="1" rowsep="1" align="center">
+					<thead style="bgcolor:black;color:white">
+						<row>
+							<entry>Attribute name</entry>
+							<entry>Optional/Mandatory/Conditional</entry>
+							<entry>Expected value type</entry>
+							<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>commandBus</entry>
+							<entry>Conditional</entry>
+							<entry>Reference to a CommandBus Bean</entry>
+							<entry>Needed only if the application context contains more than one command bus.</entry>
+						</row>
+						<row>
+							<entry>eventBus</entry>
+							<entry>Conditional</entry>
+							<entry>Reference to an EventBus Bean</entry>
+							<entry>Needed only if the application context contains more than one event bus.</entry>
+						</row>
+						<row>
+							<entry>executor</entry>
+							<entry>Optional</entry>
+							<entry>Reference to a java.util.concurrent.Executor instance bean</entry>
+							<entry>An executor to be used with asynchronous event listeners</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+    	</sect2>
     </sect1>
+    
+    
+    
     <sect1>
         <title>Wiring the event bus</title>
-        <para>In a typical Axon application, there is only one event bus. Wiring it is just a matter
+        <para>In a typical Axon application there is only one event bus. Wiring it is just a matter
             of creating a bean of a subtype of <code>EventBus</code>. The
                 <code>SimpleEventBus</code> is the provided implementation.
             <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
@@ -168,14 +296,21 @@
     &lt;bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
 &lt;/beans></programlisting></para>
+
+		<para>Setting up an event bus can also be accomplished using support from the axon namespace:
+		
+			<programlisting language="xml">&lt;axon:eventBus id="eventBus"/></programlisting></para>
+
     </sect1>
     <sect1>
         <title>Wiring the command bus</title>
-        <para>The command bus doesn't take any configuration to use. However, it allows you to
-            configure a number of interceptors that should take action based on each incoming
-            command.</para>
-        <para>
-            <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+        <sect2>
+        	<title>The basics</title>
+	        <para>The command bus doesn't take any configuration to use. However, it allows you to
+	            configure a number of interceptors that should take action based on each incoming
+	            command.</para>
+	        <para>
+	            <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
 
     &lt;bean id="eventBus" class="org.axonframework.commandhandling.CommandBus">
         &lt;property name="interceptors">
@@ -189,7 +324,80 @@
     &lt;/bean>
 
 &lt;/beans></programlisting>
-        </para>
+        	</para>
+        </sect2>
+        <sect2>
+        	<title>Using the Axon namespace</title>
+        	<para>Setting up a basic command bus using the Axon namspace is a piece of cake: you can use the <code>commandBus</code> element:
+        	
+        		<programlisting language="xml">&lt;axon:commandBus id="commandBus"/></programlisting></para>
+        		
+        	<para>Configuring command interceptors for your command bus is also possible using the <code>commandBus</code> element. In fact, you have two options for this:
+        		<orderedlist>
+        			<listitem>
+	        			<para>If you only want to use a single interceptor, the quickest way is to use the optional <code>interceptor</code> attribute like so:
+	        				<programlisting language="xml">&lt;axon:commandBus id="commandBus" interceptor="commandbus-interceptor"/></programlisting>
+	        			</para>
+        			</listitem>
+        			<listitem>
+        				<para>If you want to set up an interceptor chain, you must use the nested <code>interceptors</code> element:
+	        				<programlisting language="xml">&lt;axon:commandBus id="commandBus">
+	&lt;axon:interceptors>
+		&lt;ref>interceptor-zero&lt;/ref>
+		&lt;ref>interceptor-one&lt;/ref>
+		&lt;ref>interceptor-two&lt;/ref>
+	&lt;/axon:interceptors>
+&lt;/axon:commandBus>	        				
+	        				</programlisting>
+	        				Of course you are not limited to bean references; you can also include local bean definitions if you want.
+	        			</para>
+        			</listitem>
+        		</orderedlist>
+        		<warning>
+        			<para>Don't try to use the <code>interceptors</code> element and the <code>interceptor</code> attribute at the same time. If the <code>interceptors</code> element is present, the attribute is ignored.</para>
+        		</warning>
+        	</para>
+        	
+        	<para>
+	In case you aren't using annotation-based command handler configuration, you can configure your command bus with a map
+	of command handler subscriptions. You do this using the
+	<code>subscriptions</code>
+	child element of
+	<code>commandBus</code>
+	, in which you then include a list of Spring-standard
+	<code>entry</code>
+	elements. You use the command type as the key and the handler as the value in each mapping.
+	
+				<programlistingco>
+					<areaspec>
+						<area coords="2 23" xml:id="ex.subscriptions.elt"/>
+						<area coords="4 38" xml:id="ex.subscriptions.key"/>
+						<area coords="5 45" xml:id="ex.subscriptions.val"/>
+					</areaspec>
+					<programlisting language="xml">&lt;axon:commandBus id="commandBus">
+	&lt;axon:subscriptions>
+		&lt;entry>
+			&lt;key>org...MyExampleCommand&lt;/key>
+			&lt;value>&lt;ref>commandHandler&lt;/ref>&lt;/value>
+		&lt;/entry>
+	&lt;/axon:subscriptions>
+&lt;/axon:commandBus>
+					</programlisting>
+					
+					<calloutlist>
+						<callout arearefs="ex.subscriptions.elt">
+							<para>The subscriptions element is used to set up a map of subscriptions.</para>
+						</callout>
+						<callout arearefs="ex.subscriptions.key">
+							<para>The command class that a handler is to be subscribed to.</para>
+						</callout>
+						<callout arearefs="ex.subscriptions.val">
+							<para>The command handler interested in the command type.</para>
+						</callout>
+					</calloutlist>
+				</programlistingco>		
+			</para>
+        </sect2>
     </sect1>
     <sect1>
         <title>Wiring the Repository</title>
@@ -238,6 +446,63 @@
 
 &lt;!-- declare transaction manager, data source, EntityManagerFactoryBean, etc --></programlisting>
         </para>
+        
+        <sect2>
+        	<title>Event stores using the Axon namespace</title>
+        	<para>Using the Axon namespace support, you can quickly configure event stores backed either by the file system or a JPA layer using the <code>eventStore</code> element:
+        		<programlisting language="xml">&lt;axon:eventStore id="eventStore" type="JPA"/></programlisting>
+        	</para>
+        	
+        	<para>The <code>eventStore</code> element has several configuration options, accessible through a number of attributes:
+        	
+        		<table frame="all">
+        			<title>Attributes of the eventStore element</title>
+        			<tgroup cols="4" colsep="1" rowsep="1" align="center">
+						<thead style="bgcolor:black;color:white">
+							<row>
+								<entry>Attribute name</entry>
+								<entry>Optional/Mandatory/Conditional</entry>
+								<entry>Expected value type</entry>
+								<entry>Description</entry>
+							</row>
+						</thead>
+						<tbody>
+							<row>
+								<entry>id</entry>
+								<entry>Mandatory</entry>
+								<entry>String</entry>
+								<entry>Spring bean id.</entry>
+							</row>
+							<row>
+								<entry>type</entry>
+								<entry>Mandatory</entry>
+								<entry>"JPA" or "FILE"</entry>
+								<entry>Determines whether the event store will be backed by the file system or a JPA datasource.</entry>
+							</row>
+							<row>
+								<entry>entityManager</entry>
+								<entry>Optional</entry>
+								<entry>Bean reference</entry>
+								<entry>Reference to a JPA entity manager, for JPA-based event stores; you can leave this off and let the system go through the platform EntityManagerFactory.</entry>
+							</row>
+							<row>
+								<entry>baseDir</entry>
+								<entry>Conditional</entry>
+								<entry>String</entry>
+								<entry>The name of the directory used for the event store file(s). Mandatory if the <code>type</code> attribute is set to "FILE"</entry>
+							</row>
+							<row>
+								<entry>eventSerializer</entry>
+								<entry>Optional</entry>
+								<entry>Bean reference</entry>
+								<entry>Reference to a helper bean that serializes events.</entry>
+							</row>
+						</tbody>
+					</tgroup>
+        		</table>
+        	</para>
+        </sect2>
+        
     </sect1>
     <sect1>
         <title>Configuring Snapshotting</title>
