@@ -18,6 +18,7 @@ package org.axonframework.test;
 
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
+import org.hamcrest.Matcher;
 
 /**
  * Interface describing the operations available on the "validate result" (a.k.a. "then") stage of the test execution.
@@ -89,6 +90,14 @@ public interface ResultValidator {
     ResultValidator expectReturnValue(Object expectedReturnValue);
 
     /**
+     * Expect the command handler to return a value that matches the given <code>matcher</code> after execution.
+     *
+     * @param matcher The matcher to verify the actual return value against
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator expectReturnValue(Matcher<?> matcher);
+
+    /**
      * Expect the given <code>expectedException</code> to occur during command handler execution. The actual exception
      * should be exactly of that type, subclasses are not accepted.
      *
@@ -96,6 +105,14 @@ public interface ResultValidator {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator expectException(Class<? extends Throwable> expectedException);
+
+    /**
+     * Expect an exception to occur during command handler execution that matches with the given <code>matcher</code>.
+     *
+     * @param matcher The matcher to validate the actual exception
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator expectException(Matcher<?> matcher);
 
     /**
      * Explicitly expect a <code>void</code> return type on the given command handler. <code>void</code> is the

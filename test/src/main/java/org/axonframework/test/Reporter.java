@@ -18,6 +18,7 @@ package org.axonframework.test;
 
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
+import org.hamcrest.Description;
 
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
@@ -77,23 +78,15 @@ class Reporter {
      * Reports an error due to an unexpected exception. This means a return value was expected, but an exception was
      * thrown by the command handler
      *
-     * @param actualException     The actual exception
-     * @param expectedReturnValue The expected return value
+     * @param actualException The actual exception
+     * @param expectation     A text describing what was expected
      */
-    public void reportUnexpectedException(Throwable actualException, Object expectedReturnValue) {
+    public void reportUnexpectedException(Throwable actualException, Description expectation) {
         StringBuilder sb = new StringBuilder("The command handler threw an unexpected exception");
         sb.append(NEWLINE);
         sb.append(NEWLINE);
         sb.append("Expected <");
-        if (expectedReturnValue == null) {
-            sb.append("null return value");
-        } else if (expectedReturnValue == Void.TYPE) {
-            sb.append("void return value");
-        } else {
-            sb.append("return value of type [");
-            sb.append(expectedReturnValue.getClass().getSimpleName());
-            sb.append("]");
-        }
+        sb.append(expectation.toString());
         sb.append("> but got <exception of type [")
                 .append(actualException.getClass().getSimpleName());
         sb.append("]>. Stack trace follows:");
@@ -106,15 +99,15 @@ class Reporter {
     /**
      * Reports an error due to a wrong return value.
      *
-     * @param actualReturnValue   The actual return value
-     * @param expectedReturnValue The expected return value
+     * @param actualReturnValue The actual return value
+     * @param expectation       A description of the expected value
      */
-    public void reportWrongResult(Object actualReturnValue, Object expectedReturnValue) {
+    public void reportWrongResult(Object actualReturnValue, Description expectation) {
         StringBuilder sb = new StringBuilder("The command handler returned an unexpected value");
         sb.append(NEWLINE)
                 .append(NEWLINE)
                 .append("Expected <");
-        describe(expectedReturnValue, sb);
+        sb.append(expectation.toString());
         sb.append("> but got <");
         describe(actualReturnValue, sb);
         sb.append(">")
@@ -126,16 +119,15 @@ class Reporter {
      * Report an error due to an unexpected return value, while an exception was expected.
      *
      * @param actualReturnValue The actual return value
-     * @param expectedException The expected exception
+     * @param description       A description describing the expected value
      */
-    public void reportUnexpectedReturnValue(Object actualReturnValue, Class<? extends Throwable> expectedException) {
+    public void reportUnexpectedReturnValue(Object actualReturnValue, Description description) {
         StringBuilder sb = new StringBuilder("The command handler returned normally, but an exception was expected");
         sb.append(NEWLINE)
                 .append(NEWLINE)
                 .append("Expected <");
-        sb.append("exception of type [")
-                .append(expectedException.getSimpleName());
-        sb.append("]> but returned with <");
+        sb.append(description.toString());
+        sb.append("> but returned with <");
         describe(actualReturnValue, sb);
         sb.append(">")
                 .append(NEWLINE);
@@ -143,19 +135,18 @@ class Reporter {
     }
 
     /**
-     * Report an error due to a an exception of an unexpected type
+     * Report an error due to a an exception of an unexpected type.
      *
-     * @param actualException   The actual exception
-     * @param expectedException The expected exception type
+     * @param actualException The actual exception
+     * @param description     A description describing the expected value
      */
-    public void reportWrongException(Throwable actualException, Class<? extends Throwable> expectedException) {
+    public void reportWrongException(Throwable actualException, Description description) {
         StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type");
         sb.append(NEWLINE)
                 .append(NEWLINE)
                 .append("Expected <")
-                .append("exception of type [")
-                .append(expectedException.getSimpleName())
-                .append("]> but got <exception of type [")
+                .append(description.toString())
+                .append("> but got <exception of type [")
                 .append(actualException.getClass().getSimpleName())
                 .append("]>. Stacktrace follows: ")
                 .append(NEWLINE);
@@ -165,7 +156,7 @@ class Reporter {
     }
 
     /**
-     * Report an error due to a difference in on of the fields of an event
+     * Report an error due to a difference in on of the fields of an event.
      *
      * @param eventType The (runtime) type of event the difference was found in
      * @param field     The field that contains the difference
@@ -209,16 +200,16 @@ class Reporter {
 
     private String nullSafeToString(final Object value) {
         if (value == null) {
-            return "null";
+            return "<null>";
         }
         return value.toString();
     }
 
     private void describe(Object value, StringBuilder sb) {
         if (value == null) {
-            sb.append("null return value");
+            sb.append("null");
         } else if (value == Void.TYPE) {
-            sb.append("void return type");
+            sb.append("void");
         } else {
             sb.append(value.toString());
         }

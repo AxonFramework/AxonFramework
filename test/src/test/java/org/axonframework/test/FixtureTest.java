@@ -23,17 +23,18 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.repository.Repository;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-/**
- * @author Allard Buijze
- */
+/** @author Allard Buijze */
 public class FixtureTest {
 
     private FixtureConfiguration fixture;
@@ -46,7 +47,7 @@ public class FixtureTest {
     @Test
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                                     fixture.getEventBus()))
+                fixture.getEventBus()))
                 .given(new MyEvent(1))
                 .when(new TestCommand())
                 .expectReturnValue(Void.TYPE)
@@ -69,7 +70,7 @@ public class FixtureTest {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         fixture
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                                      fixture.getEventBus()))
+                        fixture.getEventBus()))
                 .given(givenEvents)
                 .when(new TestCommand())
                 .expectEvents(new MyEvent(4))
@@ -80,7 +81,7 @@ public class FixtureTest {
     public void testFixture_CommandHandlerDispatchesNonDomainEvents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         fixture
                 .registerAnnotatedCommandHandler(commandHandler)
                 .given(givenEvents)
@@ -94,7 +95,7 @@ public class FixtureTest {
     public void testFixture_ReportWrongNumberOfEvents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -112,7 +113,7 @@ public class FixtureTest {
     public void testFixture_ReportWrongEvents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -130,7 +131,7 @@ public class FixtureTest {
     public void testFixture_UnexpectedException() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -147,7 +148,7 @@ public class FixtureTest {
     public void testFixture_UnexpectedReturnValue() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -158,7 +159,7 @@ public class FixtureTest {
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("The command handler returned normally, but an exception was expected"));
             assertTrue(e.getMessage().contains(
-                    "<exception of type [RuntimeException]> but returned with <void return type>"));
+                    "<an instance of java.lang.RuntimeException> but returned with <void>"));
         }
     }
 
@@ -166,16 +167,15 @@ public class FixtureTest {
     public void testFixture_WrongReturnValue() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
-            fixture
-                    .registerAnnotatedCommandHandler(commandHandler)
+            fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand())
                     .expectReturnValue(null);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("<null return value> but got <void return type>"));
+            assertTrue(e.getMessage().contains("<null> but got <void>"));
         }
     }
 
@@ -183,17 +183,16 @@ public class FixtureTest {
     public void testFixture_WrongExceptionType() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
-            fixture
-                    .registerAnnotatedCommandHandler(commandHandler)
+            fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new StrangeCommand())
-                    .expectException(RuntimeException.class);
+                    .expectException(IOException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(
-                    "<exception of type [RuntimeException]> but got <exception of type [StrangeCommandReceivedException]>"));
+                    "<an instance of java.io.IOException> but got <exception of type [StrangeCommandReceivedException]>"));
         }
     }
 
@@ -201,7 +200,7 @@ public class FixtureTest {
     public void testFixture_WrongEventContents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -221,7 +220,7 @@ public class FixtureTest {
     public void testFixture_WrongEventContents_WithNullValues() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -233,7 +232,7 @@ public class FixtureTest {
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(
                     "In an event of type [MyEvent], the property [someValue] was not as expected."));
-            assertTrue(e.getMessage().contains("Expected <null> but got <4>"));
+            assertTrue(e.getMessage().contains("Expected <<null>> but got <4>"));
         }
     }
 
@@ -241,7 +240,7 @@ public class FixtureTest {
     public void testFixture_ExpectedPublishedSameAsStored() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                                                               fixture.getEventBus());
+                fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)

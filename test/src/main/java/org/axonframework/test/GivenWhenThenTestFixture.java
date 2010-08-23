@@ -17,8 +17,6 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
@@ -26,7 +24,6 @@ import org.axonframework.commandhandling.interceptors.SimpleUnitOfWorkIntercepto
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
-import org.axonframework.domain.EventBase;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -41,7 +38,6 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,7 +48,7 @@ import java.util.UUID;
  * @author Allard Buijze
  * @since 0.6
  */
-class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration, TestExecutor {
+class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
 
     private EventSourcingRepository<?> repository;
     private SimpleCommandBus commandBus;
@@ -61,18 +57,12 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
     private EventStore eventStore;
 
     private List<DomainEvent> givenEvents;
+
     private List<DomainEvent> storedEvents;
     private List<Event> publishedEvents;
-    private Object actualReturnValue;
-    private Throwable actualException;
-
     private long sequenceNumber = 0;
 
-    private final Reporter reporter = new Reporter();
-
-    /**
-     * Initializes a new given-when-then style test fixture.
-     */
+    /** Initializes a new given-when-then style test fixture. */
     GivenWhenThenTestFixture() {
         JmxConfiguration.getInstance().disableMonitoring();
         aggregateIdentifier = UUID.randomUUID();
@@ -133,86 +123,9 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
 
     @Override
     public ResultValidator when(Object command) {
-        commandBus.dispatch(command, new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(Object result, CommandContext context) {
-                actualReturnValue = result;
-            }
-
-            @Override
-            public void onFailure(Throwable cause, CommandContext context) {
-                actualException = cause;
-            }
-        });
-        return this;
-    }
-
-    @Override
-    public ResultValidator expectEvents(DomainEvent... expectedEvents) {
-        if (publishedEvents.size() != storedEvents.size()) {
-            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents);
-        }
-
-        return expectPublishedEvents(expectedEvents);
-    }
-
-    @Override
-    public ResultValidator expectPublishedEvents(Event... expectedEvents) {
-        if (expectedEvents.length != publishedEvents.size()) {
-            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
-        }
-
-        Iterator<Event> iterator = publishedEvents.iterator();
-        for (Event expectedEvent : expectedEvents) {
-            Event actualEvent = iterator.next();
-            if (!verifyEventEquality(expectedEvent, actualEvent)) {
-                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
-            }
-        }
-        return this;
-    }
-
-    @Override
-    public ResultValidator expectStoredEvents(DomainEvent... expectedEvents) {
-        if (expectedEvents.length != storedEvents.size()) {
-            reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
-        }
-        Iterator<DomainEvent> iterator = storedEvents.iterator();
-        for (DomainEvent expectedEvent : expectedEvents) {
-            DomainEvent actualEvent = iterator.next();
-            if (!verifyEventEquality(expectedEvent, actualEvent)) {
-                reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
-            }
-        }
-        return this;
-    }
-
-    @Override
-    public ResultValidator expectVoidReturnType() {
-        return expectReturnValue(Void.TYPE);
-    }
-
-    @Override
-    public ResultValidator expectReturnValue(Object expectedReturnValue) {
-        if (actualException != null) {
-            reporter.reportUnexpectedException(actualException, expectedReturnValue);
-        }
-        if ((expectedReturnValue != null && !expectedReturnValue.equals(actualReturnValue)
-                || expectedReturnValue == null && actualReturnValue != null)) {
-            reporter.reportWrongResult(actualReturnValue, expectedReturnValue);
-        }
-        return this;
-    }
-
-    @Override
-    public ResultValidator expectException(Class<? extends Throwable> expectedException) {
-        if (actualReturnValue != null) {
-            reporter.reportUnexpectedReturnValue(actualReturnValue, expectedException);
-        }
-        if (!expectedException.equals(actualException.getClass())) {
-            reporter.reportWrongException(actualException, expectedException);
-        }
-        return this;
+        ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
+        commandBus.dispatch(command, resultValidator);
+        return resultValidator;
     }
 
     private void clearGivenWhenState() {
@@ -220,8 +133,6 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         publishedEvents = new ArrayList<Event>();
         givenEvents = new ArrayList<DomainEvent>();
         sequenceNumber = 0;
-        actualReturnValue = null;
-        actualException = null;
     }
 
     @Override
@@ -249,14 +160,6 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         return repository;
     }
 
-    private boolean verifyEventEquality(Event expectedEvent, Event actualEvent) {
-        if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
-            return false;
-        }
-        verifyEqualFields(expectedEvent.getClass(), expectedEvent, actualEvent);
-        return true;
-    }
-
     private void setByReflection(Class<?> eventClass, String fieldName, DomainEvent event, Serializable value) {
         try {
             Field field = eventClass.getDeclaredField(fieldName);
@@ -268,26 +171,6 @@ class GivenWhenThenTestFixture implements ResultValidator, FixtureConfiguration,
         }
     }
 
-    private void verifyEqualFields(Class<?> aClass, Event expectedEvent, Event actualEvent) {
-        for (Field field : aClass.getDeclaredFields()) {
-            field.setAccessible(true);
-            try {
-
-                Object expected = field.get(expectedEvent);
-                Object actual = field.get(actualEvent);
-                if ((expected != null && !expected.equals(actual)) || expected == null && actual != null) {
-                    reporter.reportDifferentEventContents(expectedEvent.getClass(), field, actual, expected);
-                }
-            } catch (IllegalAccessException e) {
-                throw new FixtureExecutionException("Could not confirm event equality due to an exception", e);
-            }
-        }
-        if (aClass.getSuperclass() != DomainEvent.class
-                && aClass.getSuperclass() != EventBase.class
-                && aClass.getSuperclass() != Object.class) {
-            verifyEqualFields(aClass.getSuperclass(), expectedEvent, actualEvent);
-        }
-    }
 
     private class RecordingEventStore implements EventStore {
 
