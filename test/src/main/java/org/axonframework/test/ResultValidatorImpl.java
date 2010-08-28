@@ -67,6 +67,15 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Ob
     }
 
     @Override
+    public ResultValidator expectEvents(Matcher<List<? extends Event>> matcher) {
+        if (publishedEvents.size() != storedEvents.size()) {
+            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents);
+        }
+
+        return expectPublishedEvents(matcher);
+    }
+
+    @Override
     public ResultValidator expectPublishedEvents(Event... expectedEvents) {
         if (expectedEvents.length != publishedEvents.size()) {
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
@@ -83,6 +92,20 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Ob
     }
 
     @Override
+    public ResultValidator expectPublishedEvents(Matcher<List<? extends Event>> matcher) {
+        if (!matcher.matches(publishedEvents)) {
+            reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
+        }
+        return this;
+    }
+
+    private StringDescription descriptionOf(Matcher<?> matcher) {
+        StringDescription description = new StringDescription();
+        matcher.describeTo(description);
+        return description;
+    }
+
+    @Override
     public ResultValidator expectStoredEvents(DomainEvent... expectedEvents) {
         if (expectedEvents.length != storedEvents.size()) {
             reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
@@ -93,6 +116,14 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Ob
             if (!verifyEventEquality(expectedEvent, actualEvent)) {
                 reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
             }
+        }
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectStoredEvents(Matcher<List<? extends DomainEvent>> matcher) {
+        if (!matcher.matches(storedEvents)) {
+            reporter.reportWrongEvent(storedEvents, descriptionOf(matcher), actualException);
         }
         return this;
     }

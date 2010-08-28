@@ -16,26 +16,22 @@
 
 package org.axonframework.test;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.repository.Repository;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/** @author Allard Buijze */
-public class FixtureTest {
+/**
+ * @author Allard Buijze
+ * @since 0.7
+ */
+public class FixtureTest_RegularParams {
 
     private FixtureConfiguration fixture;
 
@@ -49,7 +45,7 @@ public class FixtureTest {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                 fixture.getEventBus()))
                 .given(new MyEvent(1))
-                .when(new TestCommand())
+                .when(new TestCommand(fixture.getAggregateIdentifier()))
                 .expectReturnValue(Void.TYPE)
                 .expectEvents(new MyEvent(2));
     }
@@ -60,7 +56,7 @@ public class FixtureTest {
         commandHandler.setRepository(fixture.createGenericRepository(MyAggregate.class));
         fixture.registerAnnotatedCommandHandler(commandHandler)
                 .given(new MyEvent(1), new MyEvent(2))
-                .when(new TestCommand())
+                .when(new TestCommand(fixture.getAggregateIdentifier()))
                 .expectReturnValue(Void.TYPE)
                 .expectEvents(new MyEvent(3));
     }
@@ -72,7 +68,7 @@ public class FixtureTest {
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                         fixture.getEventBus()))
                 .given(givenEvents)
-                .when(new TestCommand())
+                .when(new TestCommand(fixture.getAggregateIdentifier()))
                 .expectEvents(new MyEvent(4))
                 .expectVoidReturnType();
     }
@@ -85,7 +81,7 @@ public class FixtureTest {
         fixture
                 .registerAnnotatedCommandHandler(commandHandler)
                 .given(givenEvents)
-                .when(new StrangeCommand())
+                .when(new StrangeCommand(fixture.getAggregateIdentifier()))
                 .expectStoredEvents(new MyEvent(4))
                 .expectPublishedEvents(new MyEvent(4), new MyApplicationEvent(commandHandler))
                 .expectException(StrangeCommandReceivedException.class);
@@ -100,11 +96,11 @@ public class FixtureTest {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new TestCommand())
+                    .when(new TestCommand(fixture.getAggregateIdentifier()))
                     .expectEvents(new MyEvent(4), new MyEvent(5));
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("org.axonframework.test.FixtureTest$MyEvent <|> "));
+            assertTrue(e.getMessage().contains("org.axonframework.test.MyEvent <|> "));
         }
 
     }
@@ -118,12 +114,12 @@ public class FixtureTest {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new TestCommand())
+                    .when(new TestCommand(fixture.getAggregateIdentifier()))
                     .expectEvents(new MyOtherEvent());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("org.axonframework.test.FixtureTest$MyOtherEvent <|>"
-                    + " org.axonframework.test.FixtureTest$MyEvent"));
+            assertTrue(e.getMessage().contains("org.axonframework.test.MyOtherEvent <|>"
+                    + " org.axonframework.test.MyEvent"));
         }
     }
 
@@ -136,7 +132,7 @@ public class FixtureTest {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new StrangeCommand())
+                    .when(new StrangeCommand(fixture.getAggregateIdentifier()))
                     .expectVoidReturnType();
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
@@ -153,7 +149,7 @@ public class FixtureTest {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new TestCommand())
+                    .when(new TestCommand(fixture.getAggregateIdentifier()))
                     .expectException(RuntimeException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
@@ -171,7 +167,7 @@ public class FixtureTest {
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new TestCommand())
+                    .when(new TestCommand(fixture.getAggregateIdentifier()))
                     .expectReturnValue(null);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
@@ -187,7 +183,7 @@ public class FixtureTest {
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new StrangeCommand())
+                    .when(new StrangeCommand(fixture.getAggregateIdentifier()))
                     .expectException(IOException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
@@ -205,7 +201,7 @@ public class FixtureTest {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new TestCommand())
+                    .when(new TestCommand(fixture.getAggregateIdentifier()))
                     .expectEvents(new MyEvent(5)) // should be 4
                     .expectVoidReturnType();
             fail("Expected an AxonAssertionError");
@@ -225,7 +221,7 @@ public class FixtureTest {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new TestCommand())
+                    .when(new TestCommand(fixture.getAggregateIdentifier()))
                     .expectEvents(new MyEvent(null)) // should be 4
                     .expectVoidReturnType();
             fail("Expected an AxonAssertionError");
@@ -245,115 +241,14 @@ public class FixtureTest {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
-                    .when(new StrangeCommand())
+                    .when(new StrangeCommand(fixture.getAggregateIdentifier()))
                     .expectEvents(new MyEvent(4)) // should be 4
                     .expectException(StrangeCommandReceivedException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("The stored events do not match the published events."));
-            assertTrue(e.getMessage().contains(" <|> org.axonframework.test.FixtureTest$MyApplicationEvent"));
+            assertTrue(e.getMessage().contains(" <|> org.axonframework.test.MyApplicationEvent"));
         }
     }
 
-    public static class MyAggregate extends AbstractAnnotatedAggregateRoot {
-
-        private int lastNumber;
-
-        public MyAggregate(UUID aggregateIdentifier) {
-            super(aggregateIdentifier);
-        }
-
-        @EventHandler
-        public void handleMyEvent(MyEvent event) {
-            lastNumber = event.someValue;
-        }
-
-        @EventHandler
-        public void handleAll(DomainEvent event) {
-            // we don't care about events
-        }
-
-        public void doSomething() {
-            apply(new MyEvent(lastNumber + 1));
-        }
-    }
-
-    private class MyCommandHandler {
-
-        private Repository<MyAggregate> repository;
-        private EventBus eventBus;
-
-        private MyCommandHandler(Repository<MyAggregate> repository, EventBus eventBus) {
-            this.repository = repository;
-            this.eventBus = eventBus;
-        }
-
-        private MyCommandHandler() {
-        }
-
-        @CommandHandler
-        public void handleTestCommand(TestCommand testCommand) {
-            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier(), null);
-            aggregate.doSomething();
-            repository.save(aggregate);
-        }
-
-        @CommandHandler
-        public void handleStrangeCommand(StrangeCommand testCommand) {
-            MyAggregate aggregate = repository.load(fixture.getAggregateIdentifier(), null);
-            aggregate.doSomething();
-            repository.save(aggregate);
-            eventBus.publish(new MyApplicationEvent(this));
-            throw new StrangeCommandReceivedException("Strange command received");
-        }
-
-        public void setRepository(Repository<MyAggregate> repository) {
-            this.repository = repository;
-        }
-    }
-
-    private class TestCommand {
-
-    }
-
-    private class StrangeCommand {
-
-    }
-
-    public static class MyEvent extends DomainEvent {
-
-        private static final long serialVersionUID = -8646752013150772644L;
-        private Integer someValue;
-
-        public MyEvent(Integer someValue) {
-            this.someValue = someValue;
-        }
-
-    }
-
-    private class MyApplicationEvent extends ApplicationEvent {
-
-        private static final long serialVersionUID = 8291016745540119918L;
-
-        public MyApplicationEvent(Object source) {
-            super(source);
-        }
-    }
-
-    private static class StrangeCommandReceivedException extends RuntimeException {
-
-        private static final long serialVersionUID = -486498386422064414L;
-
-        private StrangeCommandReceivedException(String message) {
-            super(message);
-        }
-    }
-
-    private class MyOtherEvent extends DomainEvent {
-
-        private static final long serialVersionUID = 7157370425417821865L;
-
-        private MyOtherEvent() {
-        }
-    }
 }

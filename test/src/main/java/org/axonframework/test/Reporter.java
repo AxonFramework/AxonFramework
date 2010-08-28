@@ -19,6 +19,7 @@ package org.axonframework.test;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.hamcrest.Description;
+import org.hamcrest.StringDescription;
 
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
@@ -62,16 +63,31 @@ class Reporter {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events");
         appendEventOverview(sb, expectedEvents, actualEvents, "Expected", "Actual");
-        if (probableCause != null) {
-            sb.append(NEWLINE);
-            sb.append("A probable cause for the wrong chain of events is an "
-                    + "exception that occurred while handling the command");
-            CharArrayWriter charArrayWriter = new CharArrayWriter();
-            probableCause.printStackTrace(new PrintWriter(charArrayWriter));
-            sb.append(charArrayWriter.toCharArray());
-        }
+        appendProbableCause(probableCause, sb);
 
         throw new AxonAssertionError(sb.toString());
+    }
+
+    public void reportWrongEvent(List<? extends Event> actualEvents, StringDescription expectation, Throwable propbableCause) {
+        StringBuilder sb = new StringBuilder(
+                "The published events do not match the expected events.");
+        sb.append("Expected :");
+        sb.append(NEWLINE);
+        sb.append(expectation);
+        sb.append(NEWLINE);
+        sb.append("But got");
+        if (actualEvents.isEmpty()) {
+            sb.append(" none");
+        } else {
+            sb.append(":");
+        }
+        for (Event publishedEvent : actualEvents) {
+            sb.append(NEWLINE);
+            sb.append(publishedEvent.getClass().getSimpleName());
+            sb.append(": ");
+            sb.append(publishedEvent.toString());
+        }
+        appendProbableCause(propbableCause, sb);
     }
 
     /**
@@ -188,6 +204,17 @@ class Reporter {
                 .append(">")
                 .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
+    }
+
+    private void appendProbableCause(Throwable probableCause, StringBuilder sb) {
+        if (probableCause != null) {
+            sb.append(NEWLINE);
+            sb.append("A probable cause for the wrong chain of events is an "
+                    + "exception that occurred while handling the command");
+            CharArrayWriter charArrayWriter = new CharArrayWriter();
+            probableCause.printStackTrace(new PrintWriter(charArrayWriter));
+            sb.append(charArrayWriter.toCharArray());
+        }
     }
 
     private void writeStackTrace(Throwable actualException, StringBuilder sb) {
