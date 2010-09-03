@@ -27,9 +27,7 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -50,6 +48,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
 
     private volatile EventStore eventStore;
     private ConflictResolver conflictResolver;
+    private LinkedList<EventStreamDecorator> decorators = new LinkedList<EventStreamDecorator>();
 
     /**
      * Initializes a repository with the default locking strategy.
@@ -75,7 +74,12 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      */
     @Override
     protected void doSave(T aggregate) {
-        eventStore.appendEvents(getTypeIdentifier(), aggregate.getUncommittedEvents());
+        DomainEventStream eventStream = aggregate.getUncommittedEvents();
+        Iterator<EventStreamDecorator> iterator = decorators.descendingIterator();
+        while (iterator.hasNext()) {
+            eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), eventStream);
+        }
+        eventStore.appendEvents(getTypeIdentifier(), eventStream);
     }
 
     /**
@@ -84,7 +88,6 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the loaded aggregate
      * @return the fully initialized aggregate
-     *
      * @throws AggregateDeletedException in case an aggregate existed in the past, but has been deleted
      * @throws org.axonframework.repository.AggregateNotFoundException
      *                                   when an aggregate with the given identifier does not exist
@@ -97,6 +100,10 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         } catch (EventStreamNotFoundException e) {
             throw new AggregateNotFoundException("The aggregate was not found", e);
         }
+        for (EventStreamDecorator decorator : decorators) {
+            events = decorator.decorateForAppend(getTypeIdentifier(), events);
+        }
+
         final T aggregate = createAggregate(aggregateIdentifier, events.peek());
         List<DomainEvent> unseenEvents = new ArrayList<DomainEvent>();
         aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
@@ -170,6 +177,19 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     @Resource
     public void setEventStore(EventStore eventStore) {
         this.eventStore = eventStore;
+    }
+
+    /**
+     * Sets the decorators that will decorate the DomainEventStream when events are either read from the event store,
+     * or appended to it.
+     * <p/>
+     * When appending events to the event store, the decorators are invoked in the reverse order, causing the first decorater
+     * in this list to receive each event first. When reading from events, the decorators are invoked in the order given.
+     *
+     * @param decorators The decorators to that will decorate the DomainEventStream
+     */
+    public void setEventStreamDecorators(List<? extends EventStreamDecorator> decorators) {
+        this.decorators.addAll(decorators);
     }
 
     /**

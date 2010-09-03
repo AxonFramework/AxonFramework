@@ -85,17 +85,12 @@
           class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
         <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
         <property name="eventBus" ref="eventBus"/>
-        <property name="eventStore" ref="triggeringEventStore"/>
-    </bean>
-
-    <bean id="triggeringEventStore"
-          class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
         <property name="eventStore" ref="eventStore"/>
-        <property name="snapshotter" ref="snapshotter"/>
-        <property name="triggerConfiguration">
-            <props>
-                <prop key="Contact">2</prop>
-            </props>
+        <property name="eventStreamDecorators">
+            <bean class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
+                <property name="snapshotter" ref="snapshotter"/>
+                <property name="trigger" value="5"/>
+            </bean>
         </property>
     </bean>
 

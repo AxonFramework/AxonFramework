@@ -16,21 +16,18 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.Event;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubAggregateDeletedEvent;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.*;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.AggregateDeletedException;
-import org.axonframework.eventsourcing.AggregateSnapshot;
-import org.axonframework.eventsourcing.ConflictResolver;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.*;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.junit.*;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,9 +37,7 @@ import java.util.UUID;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-/**
- * @author Allard Buijze
- */
+/** @author Allard Buijze */
 public class EventSourcingRepositoryTest {
 
     private SnapshotEventStore mockEventStore;
@@ -112,9 +107,9 @@ public class EventSourcingRepositoryTest {
         AggregateSnapshot<AbstractEventSourcedAggregateRoot> snapshotEvent =
                 new AggregateSnapshot<AbstractEventSourcedAggregateRoot>(simpleAggregate);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(snapshotEvent,
-                                                                                                   new StubDomainEvent(
-                                                                                                           identifier,
-                                                                                                           1)));
+                new StubDomainEvent(
+                        identifier,
+                        1)));
         EventSourcedAggregateRoot actual = testSubject.load(identifier, null);
 
         assertSame(simpleAggregate, actual);
@@ -129,8 +124,8 @@ public class EventSourcingRepositoryTest {
         DomainEvent event3 = new StubDomainEvent(identifier, 3);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
-                                            event2,
-                                            event3));
+                        event2,
+                        event3));
         testSubject.setConflictResolver(conflictResolver);
         TestAggregate actual = testSubject.load(identifier, 1L);
         verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
@@ -148,8 +143,8 @@ public class EventSourcingRepositoryTest {
         DomainEvent event3 = new StubDomainEvent(identifier, 3);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
-                                            event2,
-                                            event3));
+                        event2,
+                        event3));
 
         testSubject.load(identifier, 1L);
     }
@@ -160,14 +155,75 @@ public class EventSourcingRepositoryTest {
         UUID identifier = UUID.randomUUID();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
-                                            new StubDomainEvent(identifier, 2),
-                                            new StubDomainEvent(identifier, 3)));
+                        new StubDomainEvent(identifier, 2),
+                        new StubDomainEvent(identifier, 3)));
         testSubject.setConflictResolver(conflictResolver);
         TestAggregate actual = testSubject.load(identifier, 3L);
         verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
         actual.apply(new StubDomainEvent());
         testSubject.save(actual);
         verify(conflictResolver, never()).resolveConflicts(anyList(), anyList());
+    }
+
+    @Test
+    public void testLoadEventsWithDecorators() {
+        UUID identifier = UUID.randomUUID();
+        SpyEventStreamDecorator decorator1 = new SpyEventStreamDecorator();
+        SpyEventStreamDecorator decorator2 = new SpyEventStreamDecorator();
+        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(
+                new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
+                        new StubDomainEvent(identifier, 2),
+                        new StubDomainEvent(identifier, 3)));
+        TestAggregate aggregate = testSubject.load(identifier);
+        // loading them in...
+        InOrder inOrder = Mockito.inOrder(decorator1.lastSpy, decorator2.lastSpy);
+        inOrder.verify(decorator2.lastSpy).next();
+        inOrder.verify(decorator1.lastSpy).next();
+
+        inOrder.verify(decorator2.lastSpy).next();
+        inOrder.verify(decorator1.lastSpy).next();
+
+        inOrder.verify(decorator2.lastSpy).next();
+        inOrder.verify(decorator1.lastSpy).next();
+        aggregate.apply(new StubDomainEvent());
+        aggregate.apply(new StubDomainEvent());
+    }
+
+    @Test
+    public void testSaveEventsWithDecorators() {
+        SpyEventStreamDecorator decorator1 = new SpyEventStreamDecorator();
+        SpyEventStreamDecorator decorator2 = new SpyEventStreamDecorator();
+        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
+        testSubject.setEventStore(new EventStore() {
+            @Override
+            public void appendEvents(String type, DomainEventStream events) {
+                while (events.hasNext()) {
+                    events.next();
+                }
+            }
+
+            @Override
+            public DomainEventStream readEvents(String type, UUID identifier) {
+                return mockEventStore.readEvents(type, identifier);
+            }
+        });
+        UUID identifier = UUID.randomUUID();
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(
+                new SimpleDomainEventStream(new StubDomainEvent(identifier, 3)));
+        TestAggregate aggregate = testSubject.load(identifier);
+        aggregate.apply(new StubDomainEvent());
+        aggregate.apply(new StubDomainEvent());
+
+        CurrentUnitOfWork.commit();
+
+        InOrder inOrder = Mockito.inOrder(decorator1.lastSpy, decorator2.lastSpy);
+        inOrder.verify(decorator1.lastSpy).next();
+        inOrder.verify(decorator2.lastSpy).next();
+
+        inOrder.verify(decorator1.lastSpy).next();
+        inOrder.verify(decorator2.lastSpy).next();
+
     }
 
     private static class EventSourcingRepositoryImpl extends EventSourcingRepository<TestAggregate> {
@@ -203,6 +259,45 @@ public class EventSourcingRepositoryTest {
 
         public List<Event> getHandledEvents() {
             return handledEvents;
+        }
+    }
+
+    public static class SpyEventStreamDecorator implements EventStreamDecorator {
+
+        private DomainEventStream lastSpy;
+
+        @Override
+        public DomainEventStream decorateForRead(final String aggregateType, final DomainEventStream eventStream) {
+            createSpy(eventStream);
+            return lastSpy;
+        }
+
+        @Override
+        public DomainEventStream decorateForAppend(final String aggregateType, DomainEventStream eventStream) {
+            createSpy(eventStream);
+            return lastSpy;
+        }
+
+        private void createSpy(final DomainEventStream eventStream) {
+            lastSpy = mock(DomainEventStream.class);
+            when(lastSpy.next()).thenAnswer(new Answer<Object>() {
+                @Override
+                public Object answer(InvocationOnMock invocation) throws Throwable {
+                    return eventStream.next();
+                }
+            });
+            when(lastSpy.hasNext()).thenAnswer(new Answer<Object>() {
+                @Override
+                public Object answer(InvocationOnMock invocation) throws Throwable {
+                    return eventStream.hasNext();
+                }
+            });
+            when(lastSpy.peek()).thenAnswer(new Answer<Object>() {
+                @Override
+                public Object answer(InvocationOnMock invocation) throws Throwable {
+                    return eventStream.peek();
+                }
+            });
         }
     }
 }

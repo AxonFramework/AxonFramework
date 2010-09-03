@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.axonframework.contextsupport.spring;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.UUID;
 
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -35,141 +31,134 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"classpath:contexts/axon-namespace-support-context.xml"})
+@ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
 public class RepositoryBeanDefinitionParserTest {
-	
-	/**
-	 * Mock {@link EventSourcedAggregateRoot} instance for the test.
-	 * @author Ben Z. Tels
-	 *
-	 */
-	public static class EventSourcedAggregateRootMock implements EventSourcedAggregateRoot {
 
-		/**
-		 * 
-		 */
-		public EventSourcedAggregateRootMock(final UUID uuid) {
-			throw new UnsupportedOperationException("Not implemented yet");
-		}
-		
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public UUID getIdentifier() {
-			throw new UnsupportedOperationException("Not implemented yet");
-		}
+    /**
+     * Mock {@link EventSourcedAggregateRoot} instance for the test.
+     *
+     * @author Ben Z. Tels
+     */
+    public static class EventSourcedAggregateRootMock implements EventSourcedAggregateRoot {
 
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public void commitEvents() {
-			throw new UnsupportedOperationException("Not implemented yet");
-		}
+        /**
+         *
+         */
+        public EventSourcedAggregateRootMock(final UUID uuid) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
 
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public int getUncommittedEventCount() {
-			throw new UnsupportedOperationException("Not implemented yet");
-		}
+        /** {@inheritDoc} */
+        @Override
+        public UUID getIdentifier() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
 
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public DomainEventStream getUncommittedEvents() {
-			throw new UnsupportedOperationException("Not implemented yet");
-		}
+        /** {@inheritDoc} */
+        @Override
+        public void commitEvents() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
 
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public Long getVersion() {
-			throw new UnsupportedOperationException("Not implemented yet");
-		}
+        /** {@inheritDoc} */
+        @Override
+        public int getUncommittedEventCount() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
 
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public void initializeState(DomainEventStream domainEventStream) {
-			throw new UnsupportedOperationException("Not implemented yet");
-		}
-		
-	}
+        /** {@inheritDoc} */
+        @Override
+        public DomainEventStream getUncommittedEvents() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
 
-	@Autowired
-	private DefaultListableBeanFactory beanFactory;
-	
-	@Test
-	public void testRepository() {
-		BeanDefinition beanDefinition = beanFactory.getBeanDefinition("testRepository");
-		assertNotNull("BeanDefinition not created", beanDefinition);
-		
-		assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-		ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
-		assertNotNull("First argument is wrong", firstArgument);
-		assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
-		ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, LockingStrategy.class);
-		assertNotNull("Second argument is wrong", secondArgument);
-		assertEquals("Second argument is wrong", LockingStrategy.PESSIMISTIC, secondArgument.getValue());
-		
-		PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
-		assertNotNull("Property missing", eventBusPropertyValue);
-		RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
-		assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
-		
-		PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
-		assertNotNull("Property missing", eventStorePropertyValue);
-		RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
-		assertEquals("Wrong reference", "triggeringEventStore", eventStoreReference.getBeanName());
-		
-		PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("conflictResolver");
-		assertNotNull("Property missing", conflictResolverPropertyValue);
-		RuntimeBeanReference conflictResolverReference = (RuntimeBeanReference) conflictResolverPropertyValue.getValue();
-		assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
-		
-		@SuppressWarnings("unchecked")
-		GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository = beanFactory.getBean("testRepository", GenericEventSourcingRepository.class);
-		assertNotNull(repository);
-	}
+        /** {@inheritDoc} */
+        @Override
+        public Long getVersion() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
 
-	@Test
-	public void defaultStrategyRepository() {
-		BeanDefinition beanDefinition = beanFactory.getBeanDefinition("defaultStrategyRepository");
-		assertNotNull("BeanDefinition not created", beanDefinition);
-		
-		assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-		ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
-		assertNotNull("First argument is wrong", firstArgument);
-		assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
-		ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, LockingStrategy.class);
-		assertNotNull("Second argument is wrong", secondArgument);
-		assertEquals("Second argument is wrong", LockingStrategy.OPTIMISTIC, secondArgument.getValue());
-		
-		PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
-		assertNotNull("Property missing", eventBusPropertyValue);
-		RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
-		assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
-		
-		PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
-		assertNotNull("Property missing", eventStorePropertyValue);
-		RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
-		assertEquals("Wrong reference", "triggeringEventStore", eventStoreReference.getBeanName());
-		
-		PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("conflictResolver");
-		assertNotNull("Property missing", conflictResolverPropertyValue);
-		RuntimeBeanReference conflictResolverReference = (RuntimeBeanReference) conflictResolverPropertyValue.getValue();
-		assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
-		
-		@SuppressWarnings("unchecked")
-		GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository = beanFactory.getBean("defaultStrategyRepository", GenericEventSourcingRepository.class);
-		assertNotNull(repository);
+        /** {@inheritDoc} */
+        @Override
+        public void initializeState(DomainEventStream domainEventStream) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+    }
+
+    @Autowired
+    private DefaultListableBeanFactory beanFactory;
+
+    @Test
+    public void testRepository() {
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("testRepository");
+        assertNotNull("BeanDefinition not created", beanDefinition);
+
+        assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
+        assertNotNull("First argument is wrong", firstArgument);
+        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
+        ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, LockingStrategy.class);
+        assertNotNull("Second argument is wrong", secondArgument);
+        assertEquals("Second argument is wrong", LockingStrategy.PESSIMISTIC, secondArgument.getValue());
+
+        PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
+        assertNotNull("Property missing", eventBusPropertyValue);
+        RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
+        assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
+
+        PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
+        assertNotNull("Property missing", eventStorePropertyValue);
+        RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
+        assertEquals("Wrong reference", "eventStore", eventStoreReference.getBeanName());
+
+        PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("conflictResolver");
+        assertNotNull("Property missing", conflictResolverPropertyValue);
+        RuntimeBeanReference conflictResolverReference = (RuntimeBeanReference) conflictResolverPropertyValue.getValue();
+        assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
+
+        @SuppressWarnings("unchecked")
+        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository = beanFactory.getBean("testRepository", GenericEventSourcingRepository.class);
+        assertNotNull(repository);
+    }
+
+    @Test
+    public void defaultStrategyRepository() {
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("defaultStrategyRepository");
+        assertNotNull("BeanDefinition not created", beanDefinition);
+
+        assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
+        assertNotNull("First argument is wrong", firstArgument);
+        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
+        ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, LockingStrategy.class);
+        assertNotNull("Second argument is wrong", secondArgument);
+        assertEquals("Second argument is wrong", LockingStrategy.OPTIMISTIC, secondArgument.getValue());
+
+        PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
+        assertNotNull("Property missing", eventBusPropertyValue);
+        RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
+        assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
+
+        PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
+        assertNotNull("Property missing", eventStorePropertyValue);
+        RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
+        assertEquals("Wrong reference", "eventStore", eventStoreReference.getBeanName());
+
+        PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("conflictResolver");
+        assertNotNull("Property missing", conflictResolverPropertyValue);
+        RuntimeBeanReference conflictResolverReference = (RuntimeBeanReference) conflictResolverPropertyValue.getValue();
+        assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
+
+        @SuppressWarnings("unchecked")
+        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository = beanFactory.getBean("defaultStrategyRepository", GenericEventSourcingRepository.class);
+        assertNotNull(repository);
 	}
 	
 }

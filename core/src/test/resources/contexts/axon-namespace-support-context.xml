@@ -1,87 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ~ Copyright (c) 2010. Axon Framework ~ ~ Licensed under the Apache License, 
-	Version 2.0 (the "License"); ~ you may not use this file except in compliance 
-	with the License. ~ You may obtain a copy of the License at ~ ~ http://www.apache.org/licenses/LICENSE-2.0 
-	~ ~ Unless required by applicable law or agreed to in writing, software ~ 
-	distributed under the License is distributed on an "AS IS" BASIS, ~ WITHOUT 
-	WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. ~ See the 
-	License for the specific language governing permissions and ~ limitations 
-	under the License. -->
+<!--
+  ~ Copyright (c) 2010. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:axon="http://www.axonframework.org/schema/axon-framework-1.0"
-	xsi:schemaLocation="http://www.axonframework.org/schema/axon-framework-1.0 http://www.axonframework.org/schema/axon-framework-1.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:axon="http://www.axonframework.org/schema/axon-framework-1.0"
+       xsi:schemaLocation="http://www.axonframework.org/schema/axon-framework-1.0 http://www.axonframework.org/schema/axon-framework-1.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<axon:annotation-configuration
-		commandBus="commandBus-embedded-ref" executor="taskExecutor" />
+    <axon:annotation-configuration
+            commandBus="commandBus-embedded-ref" executor="taskExecutor"/>
 
-	<axon:commandBus id="commandBus-embedded-ref">
-		<axon:interceptors>
-			<ref local="commandbus-interceptor" />
-		</axon:interceptors>
-	</axon:commandBus>
+    <axon:commandBus id="commandBus-embedded-ref">
+        <axon:interceptors>
+            <ref local="commandbus-interceptor"/>
+        </axon:interceptors>
+    </axon:commandBus>
 
-	<axon:commandBus id="commandBus-embedded-interceptor-bean">
-		<axon:interceptors>
-			<bean
-				class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
-			</bean>
-		</axon:interceptors>
-	</axon:commandBus>
+    <axon:commandBus id="commandBus-embedded-interceptor-bean">
+        <axon:interceptors>
+            <bean
+                    class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+            </bean>
+        </axon:interceptors>
+    </axon:commandBus>
 
-	<axon:commandBus id="commandBus-interceptor-attribute"
-		interceptor="commandbus-interceptor" />
+    <axon:commandBus id="commandBus-interceptor-attribute"
+                     interceptor="commandbus-interceptor"/>
 
-	<axon:eventBus id="eventBus" />
+    <axon:eventBus id="eventBus"/>
 
-	<axon:eventStore id="eventStore" type="JPA"
-		eventSerializer="eventSerializer" entityManager="entityManager" />
+    <axon:eventStore id="eventStore" type="JPA"
+                     eventSerializer="eventSerializer" entityManager="entityManager"/>
 
-	<axon:eventStore id="fileEventStore" type="FILE"
-		baseDir="/tmp" eventSerializer="eventSerializer" />
+    <axon:eventStore id="fileEventStore" type="FILE"
+                     baseDir="/tmp" eventSerializer="eventSerializer"/>
 
-	<bean id="eventSerializer" class="org.axonframework.eventstore.XStreamEventSerializer" />
+    <bean id="eventSerializer" class="org.axonframework.eventstore.XStreamEventSerializer"/>
 
-	<bean id="commandbus-interceptor"
-		class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
-	</bean>
+    <bean id="commandbus-interceptor"
+          class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+    </bean>
 
-	<axon:repository id="testRepository" lockingStrategy="PESSIMISTIC"
-		aggregateRootType="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
-		eventBus="eventBus" eventStore="triggeringEventStore" conflictResolver="conflictResolver"/>
+    <axon:repository id="testRepository" lockingStrategy="PESSIMISTIC"
+                     aggregateRootType="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
+                     eventBus="eventBus" eventStore="eventStore" conflictResolver="conflictResolver"/>
+    <!--
+        TODO: These repositories should have EventStreamDecorators included to trigger the snapshots.
+    -->
 
-	<axon:repository id="defaultStrategyRepository"
-		aggregateRootType="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
-		eventBus="eventBus" eventStore="triggeringEventStore" conflictResolver="conflictResolver"/>
+    <axon:repository id="defaultStrategyRepository"
+                     aggregateRootType="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
+                     eventBus="eventBus" eventStore="eventStore" conflictResolver="conflictResolver"/>
 
-	<bean id="taskExecutor"
-		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
-		<property name="corePoolSize" value="2" />
-		<property name="maxPoolSize" value="5" />
-		<property name="waitForTasksToCompleteOnShutdown" value="true" />
-	</bean>
+    <bean id="taskExecutor"
+          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="2"/>
+        <property name="maxPoolSize" value="5"/>
+        <property name="waitForTasksToCompleteOnShutdown" value="true"/>
+    </bean>
 
-	<bean id="conflictResolver" class="org.axonframework.eventsourcing.conflictresolvers.AcceptAllConflictResolver"/>
+    <bean id="conflictResolver" class="org.axonframework.eventsourcing.conflictresolvers.AcceptAllConflictResolver"/>
 
-	<bean id="triggeringEventStore"
-		class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
-		<property name="eventStore" ref="eventStore" />
-		<property name="snapshotter" ref="snapshotter" />
-		<property name="triggerConfiguration">
-			<props>
-				<prop key="Contact">2</prop>
-			</props>
-		</property>
-	</bean>
+    <bean id="snapshotter"
+          class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
+        <property name="eventStore" ref="eventStore"/>
+        <property name="executor" ref="taskExecutor"/>
+    </bean>
 
-	<bean id="snapshotter"
-		class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
-		<property name="eventStore" ref="eventStore" />
-		<property name="executor" ref="taskExecutor" />
-	</bean>
-
-	<bean id="entityManager"
-		class="org.axonframework.contextsupport.spring.EntityManagerMock" />
+    <bean id="entityManager"
+          class="org.axonframework.contextsupport.spring.EntityManagerMock"/>
 
 </beans>

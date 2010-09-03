@@ -21,26 +21,19 @@ import net.sf.jsr107cache.CacheListener;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.eventstore.EventStore;
-import org.junit.*;
-import org.mockito.internal.matchers.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.matchers.CapturingMatcher;
 
 import java.util.Arrays;
 import java.util.UUID;
 
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
 
-/**
- * @author Allard Buijze
- */
+/** @author Allard Buijze */
 public class EventCountSnapshotterTriggerTest {
 
     private EventCountSnapshotterTrigger testSubject;
-    private EventStore mockEventStore;
     private Snapshotter mockSnapshotter;
     private UUID aggregateIdentifier;
     private Cache mockCache;
@@ -48,119 +41,96 @@ public class EventCountSnapshotterTriggerTest {
 
     @Before
     public void setUp() throws Exception {
-        mockEventStore = mock(EventStore.class);
         mockSnapshotter = mock(Snapshotter.class);
         testSubject = new EventCountSnapshotterTrigger();
-        testSubject.setEventStore(mockEventStore);
-        testSubject.setDefaultTrigger(3);
+        testSubject.setTrigger(3);
         testSubject.setSnapshotter(mockSnapshotter);
-        testSubject.registerTrigger("test", 5);
-        doAnswer(new EventStreamReader())
-                .when(mockEventStore).appendEvents(isA(String.class), isA(DomainEventStream.class));
         mockCache = mock(Cache.class);
         listener = new CapturingMatcher<CacheListener>();
         doNothing().when(mockCache).addListener(argThat(listener));
     }
 
     @Test
-    public void testSnapshotterTriggered_DefaultSetting() {
+    public void testSnapshotterTriggered() {
         aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("some", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent()));
 
-        readAllFrom(testSubject.readEvents("some", aggregateIdentifier));
-        testSubject.appendEvents("some", new SimpleDomainEventStream(newEvent(), newEvent()));
+        readAllFrom(testSubject.decorateForRead("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 0),
+                new StubDomainEvent(aggregateIdentifier, 1),
+                new StubDomainEvent(aggregateIdentifier, 2)
+        )));
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 3)
+        )));
 
         verify(mockSnapshotter).scheduleSnapshot("some", aggregateIdentifier);
     }
 
     @Test
-    public void testSnapshotterNotTriggered_DefaultSetting() {
+    public void testSnapshotterNotTriggeredOnRead() {
         aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("some", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent()));
 
-        readAllFrom(testSubject.readEvents("some", aggregateIdentifier));
-        testSubject.appendEvents("some", new SimpleDomainEventStream(newEvent()));
+        readAllFrom(testSubject.decorateForRead("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 0),
+                new StubDomainEvent(aggregateIdentifier, 1),
+                new StubDomainEvent(aggregateIdentifier, 2),
+                new StubDomainEvent(aggregateIdentifier, 3)
+        )));
 
         verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
     }
 
     @Test
-    public void testSnapshotterNotTriggered_DefaultSetting_CounterIsCleared() {
+    public void testSnapshotterNotTriggeredOnSave() {
         aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("some", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent()));
 
-        readAllFrom(testSubject.readEvents("some", aggregateIdentifier));
-        testSubject.appendEvents("some", new SimpleDomainEventStream(newEvent()));
-        testSubject.appendEvents("some", new SimpleDomainEventStream(newEvent()));
+        readAllFrom(testSubject.decorateForRead("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 0),
+                new StubDomainEvent(aggregateIdentifier, 1)
+        )));
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 2)
+        )));
 
         verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
-    }
-
-    @Test
-    public void testSnapshotterTriggered_SpecialSetting() {
-        aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("test", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent(), newEvent(), newEvent()));
-
-        readAllFrom(testSubject.readEvents("test", aggregateIdentifier));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent(), newEvent()));
-
-        verify(mockSnapshotter).scheduleSnapshot("test", aggregateIdentifier);
-    }
-
-    @Test
-    public void testSnapshotterNotTriggered_SpecialSetting() {
-        aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("test", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent(), newEvent(), newEvent()));
-
-        readAllFrom(testSubject.readEvents("test", aggregateIdentifier));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
-
-        verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
-    }
-
-    @Test
-    public void testSnapshotterNotTriggered_SpecialSetting_CounterIsCleared() {
-        aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("test", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent(), newEvent(), newEvent()));
-
-        readAllFrom(testSubject.readEvents("test", aggregateIdentifier));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
-
-        verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
 
     @Test
     public void testCounterDoesNotResetWhenUsingCache() {
         testSubject.setAggregateCache(mockCache);
         aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("test", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent(), newEvent(), newEvent()));
+        readAllFrom(testSubject.decorateForRead("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 0),
+                new StubDomainEvent(aggregateIdentifier, 1)
+        )));
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 2)
+        )));
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 3)
+        )));
 
-        readAllFrom(testSubject.readEvents("test", aggregateIdentifier));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
-
-        verify(mockSnapshotter).scheduleSnapshot("test", aggregateIdentifier);
+        verify(mockSnapshotter).scheduleSnapshot("some", aggregateIdentifier);
     }
 
     @Test
     public void testCounterResetWhenCacheEvictsEntry() {
         testSubject.setAggregateCaches(Arrays.asList(mockCache));
         aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("test", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent(), newEvent(), newEvent()));
 
-        readAllFrom(testSubject.readEvents("test", aggregateIdentifier));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
+        readAllFrom(testSubject.decorateForRead("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 0),
+                new StubDomainEvent(aggregateIdentifier, 1)
+        )));
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 2)
+        )));
+
         listener.getLastValue().onEvict(aggregateIdentifier);
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
+
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 3)
+        )));
 
         verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
@@ -169,13 +139,19 @@ public class EventCountSnapshotterTriggerTest {
     public void testCounterResetWhenCacheRemovesEntry() {
         testSubject.setAggregateCaches(Arrays.asList(mockCache));
         aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("test", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent(), newEvent(), newEvent()));
+        readAllFrom(testSubject.decorateForRead("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 0),
+                new StubDomainEvent(aggregateIdentifier, 1)
+        )));
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 2)
+        )));
 
-        readAllFrom(testSubject.readEvents("test", aggregateIdentifier));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
         listener.getLastValue().onRemove(aggregateIdentifier);
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
+
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 3)
+        )));
 
         verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
@@ -184,13 +160,20 @@ public class EventCountSnapshotterTriggerTest {
     public void testCounterResetWhenCacheCleared() {
         testSubject.setAggregateCaches(Arrays.asList(mockCache));
         aggregateIdentifier = UUID.randomUUID();
-        when(mockEventStore.readEvents("test", aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(newEvent(), newEvent(), newEvent(), newEvent()));
 
-        readAllFrom(testSubject.readEvents("test", aggregateIdentifier));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
+        readAllFrom(testSubject.decorateForRead("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 0),
+                new StubDomainEvent(aggregateIdentifier, 1)
+        )));
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 2)
+        )));
+
         listener.getLastValue().onClear();
-        testSubject.appendEvents("test", new SimpleDomainEventStream(newEvent()));
+
+        readAllFrom(testSubject.decorateForAppend("some", new SimpleDomainEventStream(
+                new StubDomainEvent(aggregateIdentifier, 3)
+        )));
 
         verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
@@ -202,16 +185,6 @@ public class EventCountSnapshotterTriggerTest {
     private void readAllFrom(DomainEventStream events) {
         while (events.hasNext()) {
             events.next();
-        }
-    }
-
-    private class EventStreamReader implements Answer<Object> {
-
-        @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
-            DomainEventStream events = (DomainEventStream) invocation.getArguments()[1];
-            readAllFrom(events);
-            return null;
         }
     }
 }
