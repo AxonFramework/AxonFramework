@@ -44,5 +44,5 @@ public abstract class VoidCallback<C> implements CommandCallback<C, Void> {
      *
      * @param context The context of command execution.
      */
-    abstract void onSuccess(CommandContext<C> context);
+    protected abstract void onSuccess(CommandContext<C> context);
 }
