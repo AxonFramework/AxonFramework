@@ -26,7 +26,7 @@ import org.axonframework.commandhandling.CommandContext;
  * @param <C> The type of command sent
  * @since 0.6
  */
-public abstract class VoidCallback<C> implements CommandCallback<C, Void> {
+public abstract class VoidCallback<C> implements CommandCallback<C, Class<Void>> {
 
     /**
      * {@inheritDoc}
@@ -34,7 +34,7 @@ public abstract class VoidCallback<C> implements CommandCallback<C, Void> {
      * This implementation merely invokes {@link #onSuccess(CommandContext)}.
      */
     @Override
-    public void onSuccess(Void result, CommandContext<C> context) {
+    public void onSuccess(Class<Void> result, CommandContext<C> context) {
         onSuccess(context);
     }
 
