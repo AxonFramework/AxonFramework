@@ -16,12 +16,12 @@
 
 package org.axonframework.examples.addressbook.web.dto;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.sample.app.Address;
 import org.axonframework.sample.app.AddressType;
 import org.axonframework.sample.app.query.AddressEntry;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * @author Jettro Coenradie
@@ -46,14 +46,15 @@ public class AddressDTO implements Serializable {
         newAddress.setContactName(addressEntry.getName());
         newAddress.setStreet(addressEntry.getStreetAndNumber());
         newAddress.setZipCode(addressEntry.getZipCode());
-        newAddress.setContactUUID(addressEntry.getIdentifier().toString());
+        newAddress.setContactUUID(addressEntry.getIdentifier().asString());
 
         return newAddress;
     }
 
-    public static AddressDTO createFrom(Address address, UUID contactIdentifier, AddressType addressType) {
+    public static AddressDTO createFrom(Address address, AggregateIdentifier contactIdentifier,
+                                        AddressType addressType) {
         AddressDTO newAddress = new AddressDTO();
-        newAddress.setContactUUID(contactIdentifier.toString());
+        newAddress.setContactUUID(contactIdentifier.asString());
         newAddress.setStreet(address.getStreetAndNumber());
         newAddress.setZipCode(address.getZipCode());
         newAddress.setCity(address.getCity());

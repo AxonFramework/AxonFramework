@@ -16,14 +16,14 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.util.SynchronousTaskExecutor;
 
-import javax.annotation.Resource;
-import java.util.UUID;
 import java.util.concurrent.Executor;
+import javax.annotation.Resource;
 
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.Snapshotter} that uses a task executor to
@@ -41,7 +41,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private Executor executor = SynchronousTaskExecutor.INSTANCE;
 
     @Override
-    public void scheduleSnapshot(String typeIdentifier, UUID aggregateIdentifier) {
+    public void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
         executor.execute(createSnapshotterTask(typeIdentifier, aggregateIdentifier));
     }
 
@@ -52,7 +52,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @return the task containing snapshot creation logic
      */
-    protected Runnable createSnapshotterTask(String typeIdentifier, UUID aggregateIdentifier) {
+    protected Runnable createSnapshotterTask(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
         return new CreateSnapshotTask(typeIdentifier, aggregateIdentifier);
     }
 
@@ -70,9 +70,9 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final class CreateSnapshotTask implements Runnable {
 
         private final String typeIdentifier;
-        private final UUID aggregateIdentifier;
+        private final AggregateIdentifier aggregateIdentifier;
 
-        private CreateSnapshotTask(String typeIdentifier, UUID aggregateIdentifier) {
+        private CreateSnapshotTask(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
             this.typeIdentifier = typeIdentifier;
             this.aggregateIdentifier = aggregateIdentifier;
         }

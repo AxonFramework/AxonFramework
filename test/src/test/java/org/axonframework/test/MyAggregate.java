@@ -16,18 +16,19 @@
 
 package org.axonframework.test;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
-import java.util.UUID;
-
-/** @author Allard Buijze */
+/**
+ * @author Allard Buijze
+ */
 class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
     private int lastNumber;
 
-    public MyAggregate(UUID aggregateIdentifier) {
+    public MyAggregate(AggregateIdentifier aggregateIdentifier) {
         super(aggregateIdentifier);
     }
 

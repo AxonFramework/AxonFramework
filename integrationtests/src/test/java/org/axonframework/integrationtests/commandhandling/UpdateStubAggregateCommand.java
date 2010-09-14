@@ -16,26 +16,26 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import java.util.UUID;
+import org.axonframework.domain.AggregateIdentifier;
 
 /**
  * @author Allard Buijze
  */
 public class UpdateStubAggregateCommand {
 
-    private UUID aggregateId;
+    private AggregateIdentifier aggregateId;
     private Long aggregateVersion;
 
-    public UpdateStubAggregateCommand(UUID aggregateId, Long aggregateVersion) {
+    public UpdateStubAggregateCommand(AggregateIdentifier aggregateId, Long aggregateVersion) {
         this.aggregateId = aggregateId;
         this.aggregateVersion = aggregateVersion;
     }
 
-    public UpdateStubAggregateCommand(UUID aggregateId) {
+    public UpdateStubAggregateCommand(AggregateIdentifier aggregateId) {
         this.aggregateId = aggregateId;
     }
 
-    public UUID getAggregateId() {
+    public AggregateIdentifier getAggregateId() {
         return aggregateId;
     }
 

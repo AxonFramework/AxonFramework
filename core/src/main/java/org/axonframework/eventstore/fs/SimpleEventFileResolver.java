@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
 import org.springframework.core.io.Resource;
 
@@ -25,7 +26,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.UUID;
 
 /**
  * Very straightforward implementation of the EventFileResolver that stores files in a directory structure underneath a
@@ -61,37 +61,39 @@ public class SimpleEventFileResolver implements EventFileResolver {
     }
 
     @Override
-    public OutputStream openEventFileForWriting(String type, UUID aggregateIdentifier) throws IOException {
+    public OutputStream openEventFileForWriting(String type, AggregateIdentifier aggregateIdentifier)
+            throws IOException {
         File eventFile = getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_EVENTS).getFile();
         return new BufferedOutputStream(new FileOutputStream(eventFile, true));
     }
 
     @Override
-    public OutputStream openSnapshotFileForWriting(String type, UUID aggregateIdentifier) throws IOException {
+    public OutputStream openSnapshotFileForWriting(String type, AggregateIdentifier aggregateIdentifier)
+            throws IOException {
         return new FileOutputStream(getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_SNAPSHOTS).getFile(), true);
     }
 
     @Override
-    public InputStream openEventFileForReading(String type, UUID identifier) throws IOException {
+    public InputStream openEventFileForReading(String type, AggregateIdentifier identifier) throws IOException {
         return getEventsFile(type, identifier, FILE_EXTENSION_EVENTS).getInputStream();
     }
 
     @Override
-    public InputStream openSnapshotFileForReading(String type, UUID identifier) throws IOException {
+    public InputStream openSnapshotFileForReading(String type, AggregateIdentifier identifier) throws IOException {
         return getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS).getInputStream();
     }
 
     @Override
-    public boolean eventFileExists(String type, UUID identifier) throws IOException {
+    public boolean eventFileExists(String type, AggregateIdentifier identifier) throws IOException {
         return getEventsFile(type, identifier, FILE_EXTENSION_EVENTS).exists();
     }
 
     @Override
-    public boolean snapshotFileExists(String type, UUID identifier) throws IOException {
+    public boolean snapshotFileExists(String type, AggregateIdentifier identifier) throws IOException {
         return getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS).exists();
     }
 
-    private Resource getEventsFile(String type, UUID identifier, String extension) throws IOException {
+    private Resource getEventsFile(String type, AggregateIdentifier identifier, String extension) throws IOException {
         return getBaseDirForType(type).createRelative(identifier + "." + extension);
     }
 

@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -56,8 +55,8 @@ public class DomainEventTest {
     @Test(expected = IllegalStateException.class)
     public void testCannotSetAggregateIdentifierTwice() {
         DomainEvent event = new StubDomainEvent();
-        event.setAggregateIdentifier(UUID.randomUUID());
-        event.setAggregateIdentifier(UUID.randomUUID());
+        event.setAggregateIdentifier(AggregateIdentifierFactory.randomIdentifier());
+        event.setAggregateIdentifier(AggregateIdentifierFactory.randomIdentifier());
     }
 
     @Test
@@ -68,7 +67,7 @@ public class DomainEventTest {
 
         assertFalse(eventWithoutAggrIdOrIdentifier.equals(anotherEventWithoutAggrIdOrIdentifier));
 
-        UUID aggregateIdentifier = UUID.randomUUID();
+        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         Event fullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
         Event anotherFullyInitializedEvent = new StubDomainEvent(aggregateIdentifier, 1);
 
@@ -86,14 +85,15 @@ public class DomainEventTest {
 
         assertFalse(fullyInitializedEvent.equals(eventWithoutAggregateIdentifier));
         assertFalse(eventWithoutAggregateIdentifier.equals(fullyInitializedEvent));
-        assertFalse(new StubDomainEvent(UUID.randomUUID()).equals(new StubDomainEvent(UUID.randomUUID())));
+        assertFalse(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier()).equals(new StubDomainEvent(
+                AggregateIdentifierFactory.randomIdentifier())));
 
         assertFalse(new StubDomainEvent(aggregateIdentifier, 1).equals(new StubDomainEvent(aggregateIdentifier, 2)));
     }
 
     @Test
     public void testDomainEventEquality_WithClones() throws ClassNotFoundException, IOException {
-        UUID aggregateIdentifier = UUID.randomUUID();
+        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         StubDomainEvent someEvent = new StubDomainEvent();
         StubDomainEvent eventClone = copy(someEvent);
         assertTrue(someEvent.equals(eventClone));
@@ -127,7 +127,7 @@ public class DomainEventTest {
         DomainEvent event = new StubDomainEvent();
         int hashCode1 = event.hashCode();
 
-        event.setAggregateIdentifier(UUID.randomUUID());
+        event.setAggregateIdentifier(AggregateIdentifierFactory.randomIdentifier());
         assertEquals(hashCode1, event.hashCode());
 
         event.setSequenceNumber(1);

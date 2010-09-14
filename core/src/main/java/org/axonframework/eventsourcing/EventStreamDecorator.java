@@ -29,9 +29,9 @@ public interface EventStreamDecorator {
     /**
      * Called when an event stream is read from the event store.
      * <p/>
-     * Note that a stream is read-once, similar to InputStream. If you read from the stream, make sure to store the
-     * read events and pass them to the chain. Usually, it is best to decorate the given <code>eventStream</code> and
-     * pass that to the chain.
+     * Note that a stream is read-once, similar to InputStream. If you read from the stream, make sure to store the read
+     * events and pass them to the chain. Usually, it is best to decorate the given <code>eventStream</code> and pass
+     * that to the chain.
      *
      * @param aggregateType The type of aggregate events are being read for
      * @param eventStream   The eventStream containing the events to append to the event store
@@ -42,9 +42,9 @@ public interface EventStreamDecorator {
     /**
      * Called when an event stream is appended to the event store.
      * <p/>
-     * Note that a stream is read-once, similar to InputStream. If you read from the stream, make sure to store the
-     * read events and pass them to the chain. Usually, it is best to decorate the given <code>eventStream</code> and
-     * pass that to the chain.
+     * Note that a stream is read-once, similar to InputStream. If you read from the stream, make sure to store the read
+     * events and pass them to the chain. Usually, it is best to decorate the given <code>eventStream</code> and pass
+     * that to the chain.
      *
      * @param aggregateType The type of aggregate events are being appended for
      * @param eventStream   The eventStream containing the events to append to the event store

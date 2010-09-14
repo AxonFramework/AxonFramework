@@ -16,18 +16,18 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StubAggregate;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
 public class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
 
-    private Map<UUID, StubAggregate> store = new HashMap<UUID, StubAggregate>();
+    private Map<AggregateIdentifier, StubAggregate> store = new HashMap<AggregateIdentifier, StubAggregate>();
     private int saveCount;
 
     public InMemoryLockingRepository(LockingStrategy strategy) {
@@ -45,7 +45,7 @@ public class InMemoryLockingRepository extends LockingRepository<StubAggregate> 
     }
 
     @Override
-    protected StubAggregate doLoad(UUID aggregateIdentifier, Long expectedVersion) {
+    protected StubAggregate doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
         return store.get(aggregateIdentifier);
     }
 

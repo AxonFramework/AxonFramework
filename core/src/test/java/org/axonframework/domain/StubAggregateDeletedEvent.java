@@ -16,12 +16,12 @@
 
 package org.axonframework.domain;
 
-import java.util.UUID;
-
 /**
  * @author Allard Buijze
  */
 public class StubAggregateDeletedEvent extends DomainEvent implements AggregateDeletedEvent {
+
+    private static final long serialVersionUID = 7929309346853522331L;
 
     public StubAggregateDeletedEvent() {
     }
@@ -30,11 +30,11 @@ public class StubAggregateDeletedEvent extends DomainEvent implements AggregateD
         setSequenceNumber(sequenceNumber);
     }
 
-    public StubAggregateDeletedEvent(UUID aggregateIdentifier) {
+    public StubAggregateDeletedEvent(AggregateIdentifier aggregateIdentifier) {
         setAggregateIdentifier(aggregateIdentifier);
     }
 
-    public StubAggregateDeletedEvent(UUID aggregateIdentifier, int sequenceNumber) {
+    public StubAggregateDeletedEvent(AggregateIdentifier aggregateIdentifier, int sequenceNumber) {
         setAggregateIdentifier(aggregateIdentifier);
         setSequenceNumber(sequenceNumber);
     }

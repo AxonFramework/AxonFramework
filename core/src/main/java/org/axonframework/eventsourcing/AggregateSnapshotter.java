@@ -16,14 +16,14 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Resource;
 
 /**
  * Implementation of a snapshotter that uses the actual aggregate and its state to create a snapshot event. The
@@ -42,7 +42,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
 
         DomainEvent firstEvent = eventStream.peek();
-        UUID aggregateIdentifier = firstEvent.getAggregateIdentifier();
+        AggregateIdentifier aggregateIdentifier = firstEvent.getAggregateIdentifier();
 
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(eventStream);

@@ -16,9 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-
-import java.util.UUID;
 
 /**
  * The repository provides an abstraction of the storage of aggregates.
@@ -48,7 +47,7 @@ public interface Repository<T extends AggregateRoot> {
      *                                    version
      * @see org.axonframework.unitofwork.UnitOfWork
      */
-    T load(UUID aggregateIdentifier, Long expectedVersion);
+    T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
 
     /**
      * Load the aggregate with the given unique identifier. No version checks are done when loading an aggregate,
@@ -59,7 +58,7 @@ public interface Repository<T extends AggregateRoot> {
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
-    T load(UUID aggregateIdentifier);
+    T load(AggregateIdentifier aggregateIdentifier);
 
     /**
      * Adds the given <code>aggregate</code> to the repository. The version of this aggregate must be <code>null</code>,

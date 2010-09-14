@@ -16,6 +16,7 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
@@ -26,8 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
-
-import java.util.UUID;
 
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
@@ -51,7 +50,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     /**
      * Saves the given aggregate and publishes all uncommitted events to the UnitOfWork to be published to the EventBus.
      * The given <code>version</code> indicates which version was expected to be loaded. Typically, you would use the
-     * save value as used when calling {@link #load(java.util.UUID, Long)}.
+     * save value as used when calling {@link #load(org.axonframework.domain.AggregateIdentifier, Long)}.
      * <p/>
      * Note: You are recommended to use a {@link org.axonframework.unitofwork.UnitOfWork UnitOfWork} instead of calling
      * <code>save()</code> explicitly.
@@ -79,7 +78,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
-    public T load(UUID aggregateIdentifier, Long expectedVersion) {
+    public T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
         T aggregate = doLoad(aggregateIdentifier, expectedVersion);
         validateOnLoad(aggregate, expectedVersion);
         CurrentUnitOfWork.get().registerAggregate(aggregate, expectedVersion, saveAggregateCallback);
@@ -90,7 +89,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * {@inheritDoc}
      */
     @Override
-    public T load(UUID aggregateIdentifier) {
+    public T load(AggregateIdentifier aggregateIdentifier) {
         return load(aggregateIdentifier, null);
     }
 
@@ -135,7 +134,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
-    protected abstract T doLoad(UUID aggregateIdentifier, Long expectedVersion);
+    protected abstract T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
 
     /**
      * Sets the event bus to which newly stored events should be published. Optional. By default, the repository tries

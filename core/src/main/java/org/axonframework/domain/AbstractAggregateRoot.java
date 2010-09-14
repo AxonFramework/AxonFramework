@@ -16,8 +16,6 @@
 
 package org.axonframework.domain;
 
-import java.util.UUID;
-
 /**
  * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
  * events and maintains a version number based on the number of events generated.
@@ -28,14 +26,14 @@ import java.util.UUID;
 public abstract class AbstractAggregateRoot implements AggregateRoot {
 
     private final EventContainer uncommittedEvents;
-    private final UUID identifier;
+    private final AggregateIdentifier identifier;
     private volatile Long lastCommitted;
 
     /**
      * Initializes the aggregate root using a random aggregate identifier.
      */
     protected AbstractAggregateRoot() {
-        this(UUID.randomUUID());
+        this(AggregateIdentifierFactory.randomIdentifier());
     }
 
     /**
@@ -43,7 +41,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot {
      *
      * @param identifier the identifier of this aggregate
      */
-    protected AbstractAggregateRoot(UUID identifier) {
+    protected AbstractAggregateRoot(AggregateIdentifier identifier) {
         if (identifier == null) {
             throw new IllegalArgumentException("Aggregate identifier may not be null.");
         }
@@ -72,7 +70,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot {
      * {@inheritDoc}
      */
     @Override
-    public UUID getIdentifier() {
+    public AggregateIdentifier getIdentifier() {
         return identifier;
     }
 

@@ -16,9 +16,8 @@
 
 package org.axonframework.sample.app;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
-
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -35,7 +34,7 @@ public class AddressRemovedEvent extends DomainEvent {
         return type;
     }
 
-    public UUID getContactIdentifier() {
+    public AggregateIdentifier getContactIdentifier() {
         return getAggregateIdentifier();
     }
 

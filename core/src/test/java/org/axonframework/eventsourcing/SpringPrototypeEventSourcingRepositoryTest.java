@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
@@ -28,8 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -64,7 +64,7 @@ public class SpringPrototypeEventSourcingRepositoryTest {
 
     @Test
     public void testCreateInstances() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        final AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         when(mockEventStore.readEvents(repository.getTypeIdentifier(), aggregateIdentifier))
                 .thenAnswer(new Answer<Object>() {
                     @Override

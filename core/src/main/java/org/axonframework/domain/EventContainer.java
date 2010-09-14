@@ -21,7 +21,6 @@ import org.axonframework.util.Assert;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Container for events related to a single aggregate. All events added to this container will automatically be assigned
@@ -37,7 +36,7 @@ class EventContainer implements Serializable {
     private static final long serialVersionUID = -3981639335939587822L;
 
     private final List<DomainEvent> events = new LinkedList<DomainEvent>();
-    private final UUID aggregateIdentifier;
+    private final AggregateIdentifier aggregateIdentifier;
     private Long lastSequenceNumber;
     private long firstSequenceNumber = 0;
 
@@ -47,7 +46,7 @@ class EventContainer implements Serializable {
      *
      * @param aggregateIdentifier the aggregate identifier to assign to this container
      */
-    public EventContainer(UUID aggregateIdentifier) {
+    public EventContainer(AggregateIdentifier aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
     }
 
@@ -97,7 +96,7 @@ class EventContainer implements Serializable {
      *
      * @return the aggregate identifier assigned to this container
      */
-    public UUID getAggregateIdentifier() {
+    public AggregateIdentifier getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
@@ -113,7 +112,7 @@ class EventContainer implements Serializable {
     }
 
     /**
-     * Returns the sequence number of the event last added to this container
+     * Returns the sequence number of the event last added to this container.
      *
      * @return the sequence number of the last event
      */
@@ -129,7 +128,7 @@ class EventContainer implements Serializable {
     }
 
     /**
-     * Returns the number of events currently inside this container
+     * Returns the number of events currently inside this container.
      *
      * @return the number of events in this container
      */

@@ -16,10 +16,9 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -28,13 +27,13 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
 
     private int changeCounter;
 
-    static StubAggregate create(UUID identifier) {
+    static StubAggregate create(AggregateIdentifier identifier) {
         StubAggregate aggregate = new StubAggregate(identifier);
         aggregate.apply(new StubAggregateCreatedEvent());
         return aggregate;
     }
 
-    StubAggregate(UUID identifier) {
+    StubAggregate(AggregateIdentifier identifier) {
         super(identifier);
     }
 

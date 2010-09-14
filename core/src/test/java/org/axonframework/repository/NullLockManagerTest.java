@@ -16,9 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.junit.*;
-
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -31,7 +30,7 @@ public class NullLockManagerTest {
     public void testInvocationHasNoEffect() {
         NullLockManager manager = new NullLockManager();
         assertTrue(manager.validateLock(null));
-        manager.obtainLock(UUID.randomUUID());
-        manager.releaseLock(UUID.randomUUID());
+        manager.obtainLock(AggregateIdentifierFactory.randomIdentifier());
+        manager.releaseLock(AggregateIdentifierFactory.randomIdentifier());
     }
 }

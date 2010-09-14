@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -25,8 +27,6 @@ import org.axonframework.util.SynchronousTaskExecutor;
 import org.hamcrest.Matcher;
 import org.junit.*;
 import org.mockito.*;
-
-import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
@@ -44,7 +44,7 @@ public class AbstractSnapshotterTest {
         testSubject = new AbstractSnapshotter() {
             @Override
             protected DomainEvent createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
-                UUID aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
+                AggregateIdentifier aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
                 long lastIdentifier = getLastIdentifierFrom(eventStream);
                 if (lastIdentifier <= 0) {
                     return null;
@@ -59,7 +59,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot() {
-        UUID aggregateIdentifier = UUID.randomUUID();
+        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new StubDomainEvent(aggregateIdentifier, 0),
@@ -70,7 +70,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot_SnapshotIsNull() {
-        UUID aggregateIdentifier = UUID.randomUUID();
+        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new StubDomainEvent(aggregateIdentifier, 0)));
@@ -78,7 +78,7 @@ public class AbstractSnapshotterTest {
         verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEvent.class));
     }
 
-    private Matcher<DomainEvent> event(final UUID aggregateIdentifier, final long i) {
+    private Matcher<DomainEvent> event(final AggregateIdentifier aggregateIdentifier, final long i) {
         return new ArgumentMatcher<DomainEvent>() {
             @Override
             public boolean matches(Object argument) {

@@ -16,12 +16,13 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.StubAggregate;
 import org.junit.*;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -33,7 +34,7 @@ public class OptimisticLockManagerTest {
     @Test
     public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
         OptimisticLockManager manager = new OptimisticLockManager();
-        UUID identifier = UUID.randomUUID();
+        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
         manager.obtainLock(identifier);
         manager.releaseLock(identifier);
 
@@ -45,7 +46,7 @@ public class OptimisticLockManagerTest {
 
     @Test
     public void testLockFailsOnConcurrentModification() {
-        UUID identifier = UUID.randomUUID();
+        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
         StubAggregate aggregate1 = new StubAggregate(identifier);
         StubAggregate aggregate2 = new StubAggregate(identifier);
         OptimisticLockManager manager = new OptimisticLockManager();

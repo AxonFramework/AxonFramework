@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
@@ -24,7 +26,6 @@ import org.springframework.util.StopWatch;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -56,7 +57,7 @@ public class AsynchronousEventHandlerWrapperTest {
     public void testEventsAreExecutedInOrder() throws InterruptedException {
         StopWatch sw = new StopWatch();
         sw.start("Generate events");
-        UUID[] groupIds = new UUID[100];
+        AggregateIdentifier[] groupIds = new AggregateIdentifier[100];
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch finish = new CountDownLatch(groupIds.length);
         int eventsPerGroup = 100;
@@ -80,7 +81,7 @@ public class AsynchronousEventHandlerWrapperTest {
         BlockingQueue<Event> actualEventOrder = mockEventListener.events;
         assertEquals("Expected all events to be dispatched", eventsPerGroup * groupIds.length, actualEventOrder.size());
 
-        for (UUID groupId : groupIds) {
+        for (AggregateIdentifier groupId : groupIds) {
             long lastFromGroup = -1;
             for (Event event : actualEventOrder) {
                 DomainEvent domainEvent = (DomainEvent) event;
@@ -93,12 +94,12 @@ public class AsynchronousEventHandlerWrapperTest {
         }
     }
 
-    private UUID startEventDispatcher(final CountDownLatch waitToStart, final CountDownLatch waitToEnd,
-                                      int eventCount) {
-        UUID uuid = UUID.randomUUID();
+    private AggregateIdentifier startEventDispatcher(final CountDownLatch waitToStart, final CountDownLatch waitToEnd,
+                                                     int eventCount) {
+        AggregateIdentifier id = AggregateIdentifierFactory.randomIdentifier();
         final List<Event> events = new LinkedList<Event>();
         for (int t = 0; t < eventCount; t++) {
-            events.add(new StubDomainEvent(uuid, t));
+            events.add(new StubDomainEvent(id, t));
         }
         new Thread(new Runnable() {
             @Override
@@ -114,7 +115,7 @@ public class AsynchronousEventHandlerWrapperTest {
                 waitToEnd.countDown();
             }
         }).start();
-        return uuid;
+        return id;
     }
 
     private static class StubEventListener implements EventListener {

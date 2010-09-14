@@ -21,6 +21,8 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.interceptors.SimpleUnitOfWorkInterceptor;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
@@ -39,7 +41,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
@@ -53,7 +54,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private EventSourcingRepository<?> repository;
     private SimpleCommandBus commandBus;
     private EventBus eventBus;
-    private UUID aggregateIdentifier;
+    private AggregateIdentifier aggregateIdentifier;
     private EventStore eventStore;
 
     private List<DomainEvent> givenEvents;
@@ -62,10 +63,12 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private List<Event> publishedEvents;
     private long sequenceNumber = 0;
 
-    /** Initializes a new given-when-then style test fixture. */
+    /**
+     * Initializes a new given-when-then style test fixture.
+     */
     GivenWhenThenTestFixture() {
         JmxConfiguration.getInstance().disableMonitoring();
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         commandBus.setInterceptors(Arrays.asList(new SimpleUnitOfWorkInterceptor()));
@@ -136,7 +139,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     @Override
-    public UUID getAggregateIdentifier() {
+    public AggregateIdentifier getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
@@ -171,7 +174,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         }
     }
 
-
     private class RecordingEventStore implements EventStore {
 
         @Override
@@ -183,7 +185,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, UUID identifier) {
+        public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
             if (!aggregateIdentifier.equals(identifier)) {
                 throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
                         + "to get the aggregate identifier to use");

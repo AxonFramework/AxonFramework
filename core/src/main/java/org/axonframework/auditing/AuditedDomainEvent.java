@@ -16,6 +16,7 @@
 
 package org.axonframework.auditing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 
 import java.util.UUID;
@@ -49,7 +50,7 @@ public abstract class AuditedDomainEvent extends DomainEvent implements Audited 
      * @param sequenceNumber      The sequence number to assign to this event
      * @param aggregateIdentifier The identifier of the aggregate this event applies to
      */
-    public AuditedDomainEvent(long sequenceNumber, UUID aggregateIdentifier) {
+    public AuditedDomainEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
         super(sequenceNumber, aggregateIdentifier);
         correlationId = extractCorrelationId();
         principalName = extractPrincipalName();

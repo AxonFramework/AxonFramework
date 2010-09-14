@@ -16,9 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
-
-import java.util.UUID;
 
 /**
  * Interface describing objects capable of creating instances of aggregate to be initialized with an event stream.
@@ -41,7 +40,7 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
      *                            creation of the aggregate, or a snapshot event
      * @return an aggregate ready for initialization using a DomainEventStream.
      */
-    T createAggregate(UUID aggregateIdentifier, DomainEvent firstEvent);
+    T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent);
 
     /**
      * Returns the type identifier for this aggregate factory. The type identifier is used by the EventStore to organize

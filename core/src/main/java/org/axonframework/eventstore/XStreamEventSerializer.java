@@ -18,7 +18,7 @@ package org.axonframework.eventstore;
 
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.util.GenericXStreamSerializer;
+import org.axonframework.serializer.GenericXStreamSerializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -88,7 +88,7 @@ public class XStreamEventSerializer implements EventSerializer {
     }
 
     /**
-     * Adds an alias to use instead of the fully qualified class name
+     * Adds an alias to use instead of the fully qualified class name.
      *
      * @param name The alias to use
      * @param type The Class to use the alias for

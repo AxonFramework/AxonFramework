@@ -16,8 +16,6 @@
 
 package org.axonframework.domain;
 
-import java.util.UUID;
-
 /**
  * Base class for all Domain Events. This class contains the basic behavior expected from any event to be processed by
  * event sourcing engines and aggregates.
@@ -28,7 +26,7 @@ import java.util.UUID;
 public abstract class DomainEvent extends EventBase {
 
     private volatile Long sequenceNumber;
-    private volatile UUID aggregateIdentifier;
+    private volatile AggregateIdentifier aggregateIdentifier;
 
     /**
      * Initialize the domain event. Will set the current time stamp and generate a random event identifier. Use this
@@ -38,7 +36,7 @@ public abstract class DomainEvent extends EventBase {
      * <p/>
      * If you do not use the {@link org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#apply(DomainEvent)}
      * method, but need the <code>sequenceNumber</code> and <code>aggregateIdentifier</code> to be set to specific
-     * values, use the {@link DomainEvent#DomainEvent(long, java.util.UUID)} constructor.
+     * values, use the {@link DomainEvent#DomainEvent(long, AggregateIdentifier)} constructor.
      */
     protected DomainEvent() {
         super();
@@ -52,13 +50,13 @@ public abstract class DomainEvent extends EventBase {
      * Two use cases for this constructor are<ul><li>the generation of events when <em>not</em> using event sourcing
      * </li><li>the generation of snapshot events.</li></ul>
      * <p/>
-     * When creating a DomainEvent using this constructor, all calls to {@link #setAggregateIdentifier(java.util.UUID)}
+     * When creating a DomainEvent using this constructor, all calls to {@link #setAggregateIdentifier(AggregateIdentifier)}
      * and {@link #setSequenceNumber(long)} will result in an exception.
      *
      * @param sequenceNumber      The sequence number to assign to this event
      * @param aggregateIdentifier The identifier of the aggregate this event applies to
      */
-    protected DomainEvent(long sequenceNumber, UUID aggregateIdentifier) {
+    protected DomainEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
         super();
         this.sequenceNumber = sequenceNumber;
         this.aggregateIdentifier = aggregateIdentifier;
@@ -75,11 +73,11 @@ public abstract class DomainEvent extends EventBase {
     }
 
     /**
-     * Returns the identifier of the aggregate that reported this event
+     * Returns the identifier of the aggregate that reported this event.
      *
      * @return the identifier of the aggregate that reported this event
      */
-    public UUID getAggregateIdentifier() {
+    public AggregateIdentifier getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
@@ -102,7 +100,7 @@ public abstract class DomainEvent extends EventBase {
      * @param aggregateIdentifier the aggregate identifier
      * @throws IllegalStateException if an aggregate identifier was already assigned
      */
-    void setAggregateIdentifier(UUID aggregateIdentifier) {
+    void setAggregateIdentifier(AggregateIdentifier aggregateIdentifier) {
         if (this.aggregateIdentifier != null) {
             throw new IllegalStateException("An aggregateIdentifier can not be applied more than once.");
         }

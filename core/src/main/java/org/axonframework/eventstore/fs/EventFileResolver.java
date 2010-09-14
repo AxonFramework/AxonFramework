@@ -16,10 +16,11 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.domain.AggregateIdentifier;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.UUID;
 
 /**
  * Interface that allows basic access to InputStreams and appending OutputStreams to event logs for aggregates.
@@ -44,7 +45,7 @@ public interface EventFileResolver {
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    OutputStream openEventFileForWriting(String type, UUID aggregateIdentifier) throws IOException;
+    OutputStream openEventFileForWriting(String type, AggregateIdentifier aggregateIdentifier) throws IOException;
 
     /**
      * Provides an output stream to the snapshot events file for the aggregate with the given
@@ -59,7 +60,7 @@ public interface EventFileResolver {
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    OutputStream openSnapshotFileForWriting(String type, UUID aggregateIdentifier) throws IOException;
+    OutputStream openSnapshotFileForWriting(String type, AggregateIdentifier aggregateIdentifier) throws IOException;
 
     /**
      * Provides an input stream to the (regular) events file for the aggregate with the given
@@ -73,7 +74,7 @@ public interface EventFileResolver {
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    InputStream openEventFileForReading(String type, UUID aggregateIdentifier) throws IOException;
+    InputStream openEventFileForReading(String type, AggregateIdentifier aggregateIdentifier) throws IOException;
 
     /**
      * Provides an input stream to the snapshot events file for the aggregate with the given
@@ -87,7 +88,7 @@ public interface EventFileResolver {
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    InputStream openSnapshotFileForReading(String type, UUID aggregateIdentifier) throws IOException;
+    InputStream openSnapshotFileForReading(String type, AggregateIdentifier aggregateIdentifier) throws IOException;
 
     /**
      * Indicates whether there is a file containing (regular) events for the given <code>aggregateIdentifier</code> of
@@ -100,7 +101,7 @@ public interface EventFileResolver {
      * @throws IOException when an error occurs while reading from the FileSystem. The existence of the event file is
      *                     undetermined.
      */
-    boolean eventFileExists(String type, UUID aggregateIdentifier) throws IOException;
+    boolean eventFileExists(String type, AggregateIdentifier aggregateIdentifier) throws IOException;
 
     /**
      * Indicates whether there is a file containing snapshot events for the given <code>aggregateIdentifier</code> of
@@ -113,5 +114,5 @@ public interface EventFileResolver {
      * @throws IOException when an error occurs while reading from the FileSystem. The existence of the event file is
      *                     undetermined.
      */
-    boolean snapshotFileExists(String type, UUID aggregateIdentifier) throws IOException;
+    boolean snapshotFileExists(String type, AggregateIdentifier aggregateIdentifier) throws IOException;
 }

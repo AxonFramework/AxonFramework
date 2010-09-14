@@ -16,9 +16,8 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
-
-import java.util.UUID;
 
 /**
  * Abstraction of the event storage mechanism. Domain Events are stored and read as {@link
@@ -49,5 +48,5 @@ public interface EventStore {
      *
      * @throws EventStoreException if an error occurs while reading the events in the event stream
      */
-    DomainEventStream readEvents(String type, UUID identifier);
+    DomainEventStream readEvents(String type, AggregateIdentifier identifier);
 }

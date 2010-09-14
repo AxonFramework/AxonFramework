@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
@@ -26,8 +27,12 @@ import org.axonframework.repository.LockingStrategy;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import javax.annotation.Resource;
-import java.util.*;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -48,7 +53,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
 
     private volatile EventStore eventStore;
     private ConflictResolver conflictResolver;
-    private LinkedList<EventStreamDecorator> decorators = new LinkedList<EventStreamDecorator>();
+    private Deque<EventStreamDecorator> decorators = new LinkedList<EventStreamDecorator>();
 
     /**
      * Initializes a repository with the default locking strategy.
@@ -88,12 +93,13 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the loaded aggregate
      * @return the fully initialized aggregate
+     *
      * @throws AggregateDeletedException in case an aggregate existed in the past, but has been deleted
      * @throws org.axonframework.repository.AggregateNotFoundException
      *                                   when an aggregate with the given identifier does not exist
      */
     @Override
-    protected T doLoad(UUID aggregateIdentifier, final Long expectedVersion) {
+    protected T doLoad(AggregateIdentifier aggregateIdentifier, final Long expectedVersion) {
         DomainEventStream events;
         try {
             events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
@@ -124,11 +130,12 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * <p/>
      * This implementation is aware of the AggregateSnapshot type events. When <code>firstEvent</code> is an instance of
      * {@link AggregateSnapshot}, the aggregate is extracted from the event. Otherwise, aggregate creation is delegated
-     * to the abstract {@link #instantiateAggregate(java.util.UUID, org.axonframework.domain.DomainEvent)} method.
+     * to the abstract {@link #instantiateAggregate(org.axonframework.domain.AggregateIdentifier,
+     * org.axonframework.domain.DomainEvent)} method.
      */
     @Override
     @SuppressWarnings({"unchecked"})
-    public T createAggregate(UUID aggregateIdentifier, DomainEvent firstEvent) {
+    public T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
         T aggregate;
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
@@ -154,7 +161,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      *                            creation of the aggregate, or a snapshot event
      * @return an aggregate ready for initialization using a DomainEventStream.
      */
-    protected abstract T instantiateAggregate(UUID aggregateIdentifier, DomainEvent firstEvent);
+    protected abstract T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent);
 
     /**
      * {@inheritDoc}
@@ -180,16 +187,17 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     }
 
     /**
-     * Sets the decorators that will decorate the DomainEventStream when events are either read from the event store,
-     * or appended to it.
+     * Sets the decorators that will decorate the DomainEventStream when events are either read from the event store, or
+     * appended to it.
      * <p/>
-     * When appending events to the event store, the decorators are invoked in the reverse order, causing the first decorater
-     * in this list to receive each event first. When reading from events, the decorators are invoked in the order given.
+     * When appending events to the event store, the decorators are invoked in the reverse order, causing the first
+     * decorater in this list to receive each event first. When reading from events, the decorators are invoked in the
+     * order given.
      *
-     * @param decorators The decorators to that will decorate the DomainEventStream
+     * @param eventStreamDecorators The decorators to that will decorate the DomainEventStream
      */
-    public void setEventStreamDecorators(List<? extends EventStreamDecorator> decorators) {
-        this.decorators.addAll(decorators);
+    public void setEventStreamDecorators(List<? extends EventStreamDecorator> eventStreamDecorators) {
+        this.decorators.addAll(eventStreamDecorators);
     }
 
     /**

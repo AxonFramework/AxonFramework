@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
@@ -37,7 +38,6 @@ import org.mockito.stubbing.*;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
@@ -51,8 +51,8 @@ public class SimpleUnitOfWorkInterceptorTest {
 
     private SimpleCommandBus commandBus;
     private InMemoryLockingRepository repository;
-    private UUID aggregateIdentifier1;
-    private UUID aggregateIdentifier2;
+    private AggregateIdentifier aggregateIdentifier1;
+    private AggregateIdentifier aggregateIdentifier2;
     private EventBus eventBus;
 
     @Before
@@ -75,7 +75,7 @@ public class SimpleUnitOfWorkInterceptorTest {
         }
     }
 
-    private UUID createAggregate() {
+    private AggregateIdentifier createAggregate() {
         StubAggregate aggregate = new StubAggregate();
         repository.save(aggregate);
         return aggregate.getIdentifier();
@@ -218,7 +218,7 @@ public class SimpleUnitOfWorkInterceptorTest {
 
         @Override
         public Object handle(SimpleCommand command, CommandContext<SimpleCommand> context) {
-            for (UUID aggregateIdentifier : command.getAggregatesToActOn()) {
+            for (AggregateIdentifier aggregateIdentifier : command.getAggregatesToActOn()) {
                 StubAggregate aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.doSomething();
                 if (command.isIncludeSave()) {
@@ -235,15 +235,15 @@ public class SimpleUnitOfWorkInterceptorTest {
 
     private static class SimpleCommand {
 
-        private List<UUID> aggregatesToActOn;
+        private List<AggregateIdentifier> aggregatesToActOn;
         private boolean includeSave;
         private RuntimeException failure;
 
-        private SimpleCommand(boolean includeSave, UUID... aggregatesToActOn) {
+        private SimpleCommand(boolean includeSave, AggregateIdentifier... aggregatesToActOn) {
             this(includeSave, null, aggregatesToActOn);
         }
 
-        private SimpleCommand(boolean includeSave, RuntimeException failure, UUID... aggregatesToActOn) {
+        private SimpleCommand(boolean includeSave, RuntimeException failure, AggregateIdentifier... aggregatesToActOn) {
             this.includeSave = includeSave;
             this.failure = failure;
             this.aggregatesToActOn = asList(aggregatesToActOn);
@@ -253,7 +253,7 @@ public class SimpleUnitOfWorkInterceptorTest {
             return includeSave;
         }
 
-        public List<UUID> getAggregatesToActOn() {
+        public List<AggregateIdentifier> getAggregatesToActOn() {
             return aggregatesToActOn;
         }
 

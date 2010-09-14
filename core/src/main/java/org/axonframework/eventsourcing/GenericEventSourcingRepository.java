@@ -16,20 +16,20 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.repository.LockingStrategy;
 import org.axonframework.util.Assert;
 
 import java.lang.reflect.Constructor;
-import java.util.UUID;
 
 /**
  * The GenericEventSourcingRepository is a special EventSourcingRepository implementation that can act as a repository
  * for any type of {@link EventSourcedAggregateRoot}.
  * <p/>
  * There is however, a convention that these EventSourcedAggregateRoot classes must adhere to. The type must declare an
- * accessible constructor accepting a {@link UUID} as single parameter. This constructor may not perform any
- * initialization on the aggregate, other than setting the identifier.
+ * accessible constructor accepting a {@link org.axonframework.domain.AggregateIdentifier} as single parameter. This
+ * constructor may not perform any initialization on the aggregate, other than setting the identifier.
  * <p/>
  * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
  * GenericEventSourcingRepository will try to make it accessible.
@@ -78,7 +78,7 @@ public class GenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
                       "The given aggregateType must be a subtype of EventSourceAggregateRoot");
         this.aggregateType = aggregateType.getSimpleName();
         try {
-            this.constructor = aggregateType.getDeclaredConstructor(UUID.class);
+            this.constructor = aggregateType.getDeclaredConstructor(AggregateIdentifier.class);
             if (!constructor.isAccessible()) {
                 constructor.setAccessible(true);
             }
@@ -108,7 +108,7 @@ public class GenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
      *                                        constructor.
      */
     @Override
-    public T instantiateAggregate(UUID aggregateIdentifier, DomainEvent firstEvent) {
+    public T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
         try {
             return constructor.newInstance(aggregateIdentifier);
         } catch (Exception e) {

@@ -18,7 +18,9 @@ package org.axonframework.test;
 
 import org.axonframework.domain.DomainEvent;
 
-/** @author Allard Buijze */
+/**
+ * @author Allard Buijze
+ */
 class MyEvent extends DomainEvent {
 
     private static final long serialVersionUID = -8646752013150772644L;

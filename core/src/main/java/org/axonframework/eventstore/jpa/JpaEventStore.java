@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -28,11 +29,10 @@ import org.axonframework.eventstore.XStreamEventSerializer;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 /**
  * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as a
@@ -85,7 +85,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * {@inheritDoc}
      */
     @Override
-    public DomainEventStream readEvents(String type, UUID identifier) {
+    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
         long snapshotSequenceNumber = -1;
         SnapshotEventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
         if (lastSnapshotEvent != null) {
@@ -120,17 +120,18 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * @param firstSequenceNumber The sequence number of the first event to return
      * @return a DomainEventStream containing a segment of past events of an aggregate
      */
-    public DomainEventStream readEventSegment(String type, UUID identifier, long firstSequenceNumber) {
+    public DomainEventStream readEventSegment(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
         return new SimpleDomainEventStream(readEventSegmentInternal(type, identifier, firstSequenceNumber));
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEvent> readEventSegmentInternal(String type, UUID identifier, long firstSequenceNumber) {
+    private List<DomainEvent> readEventSegmentInternal(String type, AggregateIdentifier identifier,
+                                                       long firstSequenceNumber) {
         List<DomainEventEntry> entries = (List<DomainEventEntry>) entityManager.createQuery(
                 "SELECT e FROM DomainEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
                         + "ORDER BY e.sequenceNumber ASC")
-                .setParameter("id", identifier.toString())
+                .setParameter("id", identifier.asString())
                 .setParameter("type", type)
                 .setParameter("seq", firstSequenceNumber)
                 .getResultList();
@@ -142,12 +143,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     }
 
     @SuppressWarnings({"unchecked"})
-    private SnapshotEventEntry loadLastSnapshotEvent(String type, UUID identifier) {
+    private SnapshotEventEntry loadLastSnapshotEvent(String type, AggregateIdentifier identifier) {
         List<SnapshotEventEntry> entries = entityManager.createQuery(
                 "SELECT e FROM SnapshotEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
                         + "ORDER BY e.sequenceNumber DESC")
-                .setParameter("id", identifier.toString())
+                .setParameter("id", identifier.asString())
                 .setParameter("type", type)
                 .setMaxResults(1)
                 .setFirstResult(0)

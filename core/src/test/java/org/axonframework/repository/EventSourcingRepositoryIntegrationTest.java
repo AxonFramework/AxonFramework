@@ -16,6 +16,7 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
@@ -31,7 +32,6 @@ import org.springframework.core.io.FileSystemResource;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +48,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     public TemporaryFolder folder = new TemporaryFolder();
 
     private EventSourcingRepository<SimpleAggregateRoot> repository;
-    private UUID aggregateIdentifier;
+    private AggregateIdentifier aggregateIdentifier;
     private EventBus mockEventBus;
     private FileSystemEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new Vector<Throwable>();
@@ -142,7 +142,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private Thread prepareAggregateModifier(final CountDownLatch awaitFor, final CountDownLatch reportDone,
                                             final EventSourcingRepository<SimpleAggregateRoot> repository,
-                                            final UUID aggregateIdentifier) {
+                                            final AggregateIdentifier aggregateIdentifier) {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -176,7 +176,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
             apply(new StubDomainEvent());
         }
 
-        private SimpleAggregateRoot(UUID identifier) {
+        private SimpleAggregateRoot(AggregateIdentifier identifier) {
             super(identifier);
         }
 
@@ -196,7 +196,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        public SimpleAggregateRoot instantiateAggregate(UUID aggregateIdentifier, DomainEvent event) {
+        public SimpleAggregateRoot instantiateAggregate(AggregateIdentifier aggregateIdentifier,
+                                                        DomainEvent event) {
             return new SimpleAggregateRoot(aggregateIdentifier);
         }
 

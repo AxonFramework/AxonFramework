@@ -16,6 +16,8 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.eventstore.EventSerializer;
 import org.joda.time.LocalDateTime;
@@ -25,7 +27,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
-import java.util.UUID;
 
 /**
  * Data needed by different types of event logs.
@@ -97,8 +98,8 @@ abstract class AbstractEventEntry {
      *
      * @return the Aggregate Identifier of the associated event.
      */
-    public UUID getAggregateIdentifier() {
-        return UUID.fromString(aggregateIdentifier);
+    public AggregateIdentifier getAggregateIdentifier() {
+        return AggregateIdentifierFactory.fromString(aggregateIdentifier);
     }
 
     /**

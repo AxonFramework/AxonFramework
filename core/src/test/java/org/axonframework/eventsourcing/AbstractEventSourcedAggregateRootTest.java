@@ -16,12 +16,12 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.junit.*;
-
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +34,7 @@ public class AbstractEventSourcedAggregateRootTest {
 
     @Test
     public void testInitializeWithEvents() {
-        UUID identifier = UUID.randomUUID();
+        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
         testSubject = new SimpleAggregateRoot(identifier);
         testSubject.initializeState(new SimpleDomainEventStream(new StubDomainEvent(identifier, 243)));
 
@@ -71,7 +71,7 @@ public class AbstractEventSourcedAggregateRootTest {
             super();
         }
 
-        private SimpleAggregateRoot(UUID identifier) {
+        private SimpleAggregateRoot(AggregateIdentifier identifier) {
             super(identifier);
         }
 

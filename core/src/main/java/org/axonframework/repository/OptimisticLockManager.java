@@ -16,10 +16,10 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,14 +37,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class OptimisticLockManager implements LockManager {
 
-    private final ConcurrentHashMap<UUID, OptimisticLock> locks = new ConcurrentHashMap<UUID, OptimisticLock>();
+    private final ConcurrentHashMap<String, OptimisticLock> locks = new ConcurrentHashMap<String, OptimisticLock>();
 
     /**
      * {@inheritDoc}
      */
     @Override
     public boolean validateLock(AggregateRoot aggregate) {
-        OptimisticLock lock = locks.get(aggregate.getIdentifier());
+        OptimisticLock lock = locks.get(aggregate.getIdentifier().asString());
         return lock != null && lock.validate(aggregate);
     }
 
@@ -52,14 +52,14 @@ class OptimisticLockManager implements LockManager {
      * {@inheritDoc}
      */
     @Override
-    public void obtainLock(UUID aggregateIdentifier) {
+    public void obtainLock(AggregateIdentifier aggregateIdentifier) {
         boolean obtained = false;
         while (!obtained) {
-            locks.putIfAbsent(aggregateIdentifier, new OptimisticLock());
-            OptimisticLock lock = locks.get(aggregateIdentifier);
+            locks.putIfAbsent(aggregateIdentifier.asString(), new OptimisticLock());
+            OptimisticLock lock = locks.get(aggregateIdentifier.asString());
             obtained = lock != null && lock.lock();
             if (!obtained) {
-                locks.remove(aggregateIdentifier, lock);
+                locks.remove(aggregateIdentifier.asString(), lock);
             }
         }
     }
@@ -68,8 +68,8 @@ class OptimisticLockManager implements LockManager {
      * {@inheritDoc}
      */
     @Override
-    public void releaseLock(UUID aggregateIdentifier) {
-        OptimisticLock lock = locks.get(aggregateIdentifier);
+    public void releaseLock(AggregateIdentifier aggregateIdentifier) {
+        OptimisticLock lock = locks.get(aggregateIdentifier.asString());
         if (lock != null) {
             lock.unlock(aggregateIdentifier);
         }
@@ -106,7 +106,7 @@ class OptimisticLockManager implements LockManager {
             return true;
         }
 
-        private synchronized void unlock(UUID aggregateIdentifier) {
+        private synchronized void unlock(AggregateIdentifier aggregateIdentifier) {
             Integer lockCount = threadsHoldingLock.get(Thread.currentThread());
             if (lockCount == null || lockCount == 1) {
                 threadsHoldingLock.remove(Thread.currentThread());
@@ -115,7 +115,7 @@ class OptimisticLockManager implements LockManager {
             }
             if (threadsHoldingLock.isEmpty()) {
                 closed = true;
-                locks.remove(aggregateIdentifier, this);
+                locks.remove(aggregateIdentifier.asString(), this);
             }
         }
 

@@ -18,8 +18,6 @@ package org.axonframework.domain;
 
 import org.junit.*;
 
-import java.util.UUID;
-
 import static org.junit.Assert.*;
 
 /**
@@ -29,7 +27,7 @@ public class EventContainerTest {
 
     @Test
     public void testAddEvent_IdAndSequenceNumberInitialized() {
-        UUID identifier = UUID.randomUUID();
+        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
         StubDomainEvent domainEvent = new StubDomainEvent();
 
         EventContainer eventContainer = new EventContainer(identifier);
@@ -53,10 +51,10 @@ public class EventContainerTest {
 
     @Test
     public void testAddEventWithId_IdConflictsWithContainerId() {
-        UUID identifier = UUID.randomUUID();
+        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
         StubDomainEvent domainEvent = new StubDomainEvent(identifier);
 
-        EventContainer eventContainer = new EventContainer(UUID.randomUUID());
+        EventContainer eventContainer = new EventContainer(AggregateIdentifierFactory.randomIdentifier());
         eventContainer.initializeSequenceNumber(11L);
 
         try {
@@ -71,7 +69,7 @@ public class EventContainerTest {
 
     @Test
     public void testAddEvent_SequenceNumberInitialized() {
-        UUID identifier = UUID.randomUUID();
+        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
         StubDomainEvent domainEvent = new StubDomainEvent(identifier);
         StubDomainEvent domainEvent2 = new StubDomainEvent(identifier);
         domainEvent.setSequenceNumber(123);

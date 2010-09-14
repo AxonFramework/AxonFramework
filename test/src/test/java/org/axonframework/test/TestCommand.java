@@ -16,17 +16,20 @@
 
 package org.axonframework.test;
 
-import java.util.UUID;
+import org.axonframework.domain.AggregateIdentifier;
 
-/** @author Allard Buijze */
+/**
+ * @author Allard Buijze
+ */
 class TestCommand {
-    private UUID aggregateIdentifier;
 
-    TestCommand(UUID aggregateIdentifier) {
+    private AggregateIdentifier aggregateIdentifier;
+
+    TestCommand(AggregateIdentifier aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
     }
 
-    public UUID getAggregateIdentifier() {
+    public AggregateIdentifier getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 }

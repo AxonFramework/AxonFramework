@@ -18,6 +18,7 @@ package org.axonframework.eventstore.fs;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CountingInputStream;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventSerializer;
@@ -38,7 +39,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
-import java.util.UUID;
 
 import static org.axonframework.eventstore.fs.EventSerializationUtils.*;
 
@@ -117,7 +117,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      * {@inheritDoc}
      */
     @Override
-    public DomainEventStream readEvents(String type, UUID identifier) {
+    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
         try {
             if (!eventFileResolver.eventFileExists(type, identifier)) {
                 throw new EventStreamNotFoundException(
@@ -144,7 +144,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      */
     @Override
     public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
-        UUID aggregateIdentifier = snapshotEvent.getAggregateIdentifier();
+        AggregateIdentifier aggregateIdentifier = snapshotEvent.getAggregateIdentifier();
         OutputStream fileOutputStream = null;
         try {
 
@@ -168,7 +168,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         }
     }
 
-    private long calculateOffset(String type, UUID aggregateIdentifier, long sequenceNumber) throws IOException {
+    private long calculateOffset(String type, AggregateIdentifier aggregateIdentifier, long sequenceNumber)
+            throws IOException {
         CountingInputStream countingInputStream = null;
         try {
             InputStream eventInputStream = eventFileResolver.openEventFileForReading(type, aggregateIdentifier);
@@ -185,7 +186,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         }
     }
 
-    private DomainEventStream readEvents(String type, UUID identifier, InputStream eventFileInputStream)
+    private DomainEventStream readEvents(String type, AggregateIdentifier identifier, InputStream eventFileInputStream)
             throws IOException {
         SnapshotEventEntry snapshotEntry = readSnapshotEvent(type, identifier, eventFileInputStream);
         InputStream is = eventFileInputStream;
@@ -199,7 +200,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         return new BufferedReaderDomainEventStream(is, eventSerializer);
     }
 
-    private SnapshotEventEntry readSnapshotEvent(String type, UUID identifier, InputStream eventFileInputStream)
+    private SnapshotEventEntry readSnapshotEvent(String type, AggregateIdentifier identifier,
+                                                 InputStream eventFileInputStream)
             throws IOException {
         SnapshotEventEntry snapshotEvent = null;
         if (eventFileResolver.snapshotFileExists(type, identifier)) {

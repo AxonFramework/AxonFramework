@@ -16,13 +16,12 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 /**
  * Implementation of the Repository interface that takes provides a locking mechanism to prevent concurrent
@@ -100,7 +99,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T load(UUID aggregateIdentifier, Long expectedVersion) {
+    public T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
         lockManager.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
@@ -144,7 +143,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     @Override
-    protected abstract T doLoad(UUID aggregateIdentifier, Long expectedVersion);
+    protected abstract T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
 
     private class LockManagingListener extends UnitOfWorkListenerAdapter {
 

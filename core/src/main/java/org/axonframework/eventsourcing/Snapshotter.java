@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import java.util.UUID;
+import org.axonframework.domain.AggregateIdentifier;
 
 /**
  * Interface describing a instances that are capable of creating snapshot events for aggregates. Although snapshotting
@@ -35,6 +35,6 @@ public interface Snapshotter {
      * @param typeIdentifier      the type of the aggregate to take the snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
-    void scheduleSnapshot(String typeIdentifier, UUID aggregateIdentifier);
+    void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier);
 
 }

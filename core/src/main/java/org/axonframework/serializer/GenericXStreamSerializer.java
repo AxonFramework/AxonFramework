@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.util;
+package org.axonframework.serializer;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -24,6 +24,8 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.XppDriver;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.util.SerializationException;
 import org.joda.time.LocalDateTime;
 
 import java.io.InputStream;
@@ -68,6 +70,9 @@ public class GenericXStreamSerializer {
         xStream = new XStream(new XppDriver());
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
+        xStream.registerConverter(new AggregateIdentifierConverter());
+        xStream.addImmutableType(AggregateIdentifier.class);
+        xStream.aliasType("aggregateIdentifier", AggregateIdentifier.class);
     }
 
     /**

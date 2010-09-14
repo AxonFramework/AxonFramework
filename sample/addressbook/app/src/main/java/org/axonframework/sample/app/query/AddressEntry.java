@@ -16,8 +16,9 @@
 
 package org.axonframework.sample.app.query;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.sample.app.AddressType;
-import org.hibernate.annotations.Type;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -26,7 +27,6 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -40,8 +40,7 @@ public class AddressEntry {
 
     @Basic
     @Column(length = 36)
-    @Type(type = "org.axonframework.sample.app.query.UUIDUserType")
-    private UUID identifier;
+    private String identifier;
 
     @Basic
     private String name;
@@ -59,12 +58,12 @@ public class AddressEntry {
     @Basic
     private String city;
 
-    public UUID getIdentifier() {
-        return identifier;
+    public AggregateIdentifier getIdentifier() {
+        return AggregateIdentifierFactory.fromString(identifier);
     }
 
-    void setIdentifier(UUID identifier) {
-        this.identifier = identifier;
+    void setIdentifier(AggregateIdentifier identifier) {
+        this.identifier = identifier.asString();
     }
 
     public String getName() {

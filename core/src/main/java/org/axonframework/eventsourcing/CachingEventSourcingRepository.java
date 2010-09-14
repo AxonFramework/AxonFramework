@@ -17,11 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.repository.LockingStrategy;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
-
-import java.util.UUID;
 
 /**
  * Implementation of the event sourcing repository that uses a cache to improve loading performance. The cache removes
@@ -83,7 +82,7 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T doLoad(UUID aggregateIdentifier, Long expectedVersion) {
+    public T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
         T aggregate = (T) cache.get(aggregateIdentifier);
         if (aggregate == null) {
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
@@ -103,9 +102,9 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
 
     private class CacheClearingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
 
-        private UUID identifier;
+        private AggregateIdentifier identifier;
 
-        public CacheClearingUnitOfWorkListener(UUID identifier) {
+        public CacheClearingUnitOfWorkListener(AggregateIdentifier identifier) {
             this.identifier = identifier;
         }
 

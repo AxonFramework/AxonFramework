@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+
+
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.util.Assert;
 
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,14 +34,14 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 class PessimisticLockManager implements LockManager {
 
-    private final ConcurrentHashMap<UUID, DisposableLock> locks = new ConcurrentHashMap<UUID, DisposableLock>();
+    private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<String, DisposableLock>();
 
     /**
      * {@inheritDoc}
      */
     @Override
     public boolean validateLock(AggregateRoot aggregate) {
-        UUID aggregateIdentifier = aggregate.getIdentifier();
+        AggregateIdentifier aggregateIdentifier = aggregate.getIdentifier();
 
         return isLockAvailableFor(aggregateIdentifier)
                 && lockFor(aggregateIdentifier).isHeldByCurrentThread();
@@ -51,7 +53,7 @@ class PessimisticLockManager implements LockManager {
      * @param aggregateIdentifier the identifier of the aggregate to obtains a lock for.
      */
     @Override
-    public void obtainLock(UUID aggregateIdentifier) {
+    public void obtainLock(AggregateIdentifier aggregateIdentifier) {
         boolean lockObtained = false;
         while (!lockObtained) {
             createLockIfAbsent(aggregateIdentifier);
@@ -71,24 +73,24 @@ class PessimisticLockManager implements LockManager {
      * @throws IllegalMonitorStateException if a lock was obtained, but is not currently held by the current thread
      */
     @Override
-    public void releaseLock(UUID aggregateIdentifier) {
-        Assert.state(locks.containsKey(aggregateIdentifier), "No lock for this aggregate was ever obtained");
+    public void releaseLock(AggregateIdentifier aggregateIdentifier) {
+        Assert.state(locks.containsKey(aggregateIdentifier.asString()), "No lock for this aggregate was ever obtained");
         DisposableLock lock = lockFor(aggregateIdentifier);
         lock.unlock(aggregateIdentifier);
     }
 
-    private void createLockIfAbsent(UUID aggregateIdentifier) {
+    private void createLockIfAbsent(AggregateIdentifier aggregateIdentifier) {
         if (!locks.contains(aggregateIdentifier)) {
-            locks.putIfAbsent(aggregateIdentifier, new DisposableLock());
+            locks.putIfAbsent(aggregateIdentifier.asString(), new DisposableLock());
         }
     }
 
-    private boolean isLockAvailableFor(UUID aggregateIdentifier) {
-        return locks.containsKey(aggregateIdentifier);
+    private boolean isLockAvailableFor(AggregateIdentifier aggregateIdentifier) {
+        return locks.containsKey(aggregateIdentifier.asString());
     }
 
-    private DisposableLock lockFor(UUID aggregateIdentifier) {
-        return locks.get(aggregateIdentifier);
+    private DisposableLock lockFor(AggregateIdentifier aggregateIdentifier) {
+        return locks.get(aggregateIdentifier.asString());
     }
 
     private final class DisposableLock {
@@ -105,7 +107,7 @@ class PessimisticLockManager implements LockManager {
             return lock.isHeldByCurrentThread();
         }
 
-        private void unlock(UUID aggregateIdentifier) {
+        private void unlock(AggregateIdentifier aggregateIdentifier) {
             lock.unlock();
             disposeIfUnused(aggregateIdentifier);
         }
@@ -118,11 +120,11 @@ class PessimisticLockManager implements LockManager {
             return true;
         }
 
-        private synchronized void disposeIfUnused(UUID aggregateIdentifier) {
+        private synchronized void disposeIfUnused(AggregateIdentifier aggregateIdentifier) {
             if (lock.tryLock()) {
                 // we now have a lock. We can shut it down.
                 isClosed = true;
-                locks.remove(aggregateIdentifier, this);
+                locks.remove(aggregateIdentifier.asString(), this);
                 lock.unlock();
             }
         }

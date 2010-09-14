@@ -16,6 +16,7 @@
 
 package org.axonframework.auditing;
 
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.junit.*;
 
 import java.security.Principal;
@@ -59,7 +60,7 @@ public class AuditedDomainEventTest {
     public void testCreateEvent_NoPrincipalInContext() {
         UUID correlationId = UUID.randomUUID();
         AuditingContextHolder.setContext(new AuditingContext(null, correlationId, "Command"));
-        AuditedDomainEvent domainEvent = new AuditedDomainEvent(1, UUID.randomUUID()) {
+        AuditedDomainEvent domainEvent = new AuditedDomainEvent(1, AggregateIdentifierFactory.randomIdentifier()) {
         };
 
         assertEquals(null, domainEvent.getPrincipalName());

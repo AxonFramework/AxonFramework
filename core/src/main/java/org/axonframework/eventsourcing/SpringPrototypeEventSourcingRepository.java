@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
@@ -23,8 +24,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-
-import java.util.UUID;
 
 import static java.lang.String.format;
 
@@ -50,7 +49,7 @@ public class SpringPrototypeEventSourcingRepository<T extends EventSourcedAggreg
 
     @SuppressWarnings({"unchecked"})
     @Override
-    protected T instantiateAggregate(UUID aggregateIdentifier, DomainEvent firstEvent) {
+    protected T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
         return (T) applicationContext.getBean(prototypeBeanName, aggregateIdentifier);
     }
 

@@ -16,9 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-
-import java.util.UUID;
 
 /**
  * LockManager implementation that does nothing. Can be useful in cases where a repository extending from the {@link
@@ -46,7 +45,7 @@ class NullLockManager implements LockManager {
      * This implementation does nothing.
      */
     @Override
-    public void obtainLock(UUID aggregateIdentifier) {
+    public void obtainLock(AggregateIdentifier aggregateIdentifier) {
     }
 
     /**
@@ -55,6 +54,6 @@ class NullLockManager implements LockManager {
      * This implementation does nothing.
      */
     @Override
-    public void releaseLock(UUID aggregateIdentifier) {
+    public void releaseLock(AggregateIdentifier aggregateIdentifier) {
     }
 }

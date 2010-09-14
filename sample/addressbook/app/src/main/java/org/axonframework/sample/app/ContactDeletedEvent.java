@@ -17,16 +17,15 @@
 package org.axonframework.sample.app;
 
 import org.axonframework.domain.AggregateDeletedEvent;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
-
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
 public class ContactDeletedEvent extends DomainEvent implements AggregateDeletedEvent {
 
-    public UUID getContactIdentifier() {
+    public AggregateIdentifier getContactIdentifier() {
         return getAggregateIdentifier();
     }
 }

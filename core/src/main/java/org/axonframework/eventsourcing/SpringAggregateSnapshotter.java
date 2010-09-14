@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -28,7 +29,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Implementation of the {@link org.axonframework.eventsourcing.AggregateSnapshotter} that eases the configuration when
@@ -51,7 +51,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
     @Override
-    protected Runnable createSnapshotterTask(String typeIdentifier, UUID aggregateIdentifier) {
+    protected Runnable createSnapshotterTask(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
         Runnable command = super.createSnapshotterTask(typeIdentifier, aggregateIdentifier);
         if (transactionManager != null) {
             return new TransactionalRunnableWrapper(command);

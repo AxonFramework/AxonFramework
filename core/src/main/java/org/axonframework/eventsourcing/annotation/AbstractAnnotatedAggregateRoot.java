@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
@@ -49,9 +51,20 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
      *
      * @param identifier the identifier of this aggregate
      */
-    protected AbstractAnnotatedAggregateRoot(UUID identifier) {
+    protected AbstractAnnotatedAggregateRoot(AggregateIdentifier identifier) {
         super(identifier);
         eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
+    }
+
+    /**
+     * Initializes the aggregate root using the provided aggregate identifier.
+     *
+     * @param identifier the identifier of this aggregate
+     * @deprecated Use {@link #AbstractEventSourcedAggregateRoot(org.axonframework.domain.AggregateIdentifier)}
+     */
+    @Deprecated
+    protected AbstractAnnotatedAggregateRoot(UUID identifier) {
+        this(AggregateIdentifierFactory.fromUUID(identifier));
     }
 
     /**

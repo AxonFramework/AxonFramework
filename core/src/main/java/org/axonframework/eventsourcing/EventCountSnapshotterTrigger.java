@@ -17,11 +17,11 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,27 +39,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class EventCountSnapshotterTrigger implements EventStreamDecorator {
 
     private Snapshotter snapshotter;
-    private final ConcurrentMap<UUID, AtomicInteger> counters = new ConcurrentHashMap<UUID, AtomicInteger>();
+    private final ConcurrentMap<AggregateIdentifier, AtomicInteger> counters = new ConcurrentHashMap<AggregateIdentifier, AtomicInteger>();
     private volatile boolean clearCountersAfterAppend = true;
     private int trigger = 50;
 
     @Override
     public DomainEventStream decorateForRead(String aggregateType, DomainEventStream eventStream) {
         AtomicInteger counter = new AtomicInteger(0);
-        UUID identifier = eventStream.peek().getAggregateIdentifier();
+        AggregateIdentifier identifier = eventStream.peek().getAggregateIdentifier();
         counters.put(identifier, counter);
         return new CountingEventStream(eventStream, counter);
     }
 
     @Override
     public DomainEventStream decorateForAppend(String aggregateType, DomainEventStream eventStream) {
-        UUID aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
+        AggregateIdentifier aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
         counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
         AtomicInteger counter = counters.get(aggregateIdentifier);
         return new TriggeringEventStream(aggregateType, eventStream, counter);
     }
 
-    private void triggerSnapshotIfRequired(String type, UUID aggregateIdentifier, AtomicInteger eventCount) {
+    private void triggerSnapshotIfRequired(String type, AggregateIdentifier aggregateIdentifier,
+                                           AtomicInteger eventCount) {
         if (eventCount.get() > trigger) {
             snapshotter.scheduleSnapshot(type, aggregateIdentifier);
             eventCount.set(1);
@@ -135,7 +136,7 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
     private class CountingEventStream implements DomainEventStream {
 
         private final DomainEventStream delegate;
-        final AtomicInteger counter;
+        private final AtomicInteger counter;
 
         public CountingEventStream(DomainEventStream delegate, AtomicInteger counter) {
             this.delegate = delegate;
@@ -158,11 +159,21 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
         public DomainEvent peek() {
             return delegate.peek();
         }
+
+        /**
+         * Returns the counter containing the number of bytes read.
+         *
+         * @return the counter containing the number of bytes read
+         */
+        protected AtomicInteger getCounter() {
+            return counter;
+        }
     }
 
-    private class TriggeringEventStream extends CountingEventStream {
+    private final class TriggeringEventStream extends CountingEventStream {
+
         private final String aggregateType;
-        private UUID aggregateIdentifier;
+        private AggregateIdentifier aggregateIdentifier;
 
         private TriggeringEventStream(String aggregateType, DomainEventStream delegate, AtomicInteger counter) {
             super(delegate, counter);
@@ -174,16 +185,16 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
         public boolean hasNext() {
             boolean hasNext = super.hasNext();
             if (!hasNext) {
-                triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, counter);
+                triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, getCounter());
                 if (clearCountersAfterAppend) {
-                    counters.remove(aggregateIdentifier, counter);
+                    counters.remove(aggregateIdentifier, getCounter());
                 }
             }
             return hasNext;
         }
     }
 
-    private class CacheListener implements net.sf.jsr107cache.CacheListener {
+    private final class CacheListener implements net.sf.jsr107cache.CacheListener {
 
         @Override
         public void onLoad(Object key) {

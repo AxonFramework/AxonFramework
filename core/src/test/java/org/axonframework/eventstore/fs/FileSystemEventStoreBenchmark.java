@@ -16,6 +16,8 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
@@ -35,7 +37,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -121,7 +122,8 @@ public class FileSystemEventStoreBenchmark {
                 (THREAD_COUNT * TRANSACTION_COUNT * TRANSACTION_SIZE) / ((end - start) / 1000)));
     }
 
-    private int saveAndLoadLargeNumberOfEvents(UUID aggregateId, EventStore eventStore, int eventSequence) {
+    private int saveAndLoadLargeNumberOfEvents(AggregateIdentifier aggregateId, EventStore eventStore,
+                                               int eventSequence) {
         List<DomainEvent> events = new ArrayList<DomainEvent>();
         for (int t = 0; t < TRANSACTION_SIZE; t++) {
             events.add(new StubDomainEvent(aggregateId, eventSequence++));
@@ -134,7 +136,7 @@ public class FileSystemEventStoreBenchmark {
 
         @Override
         public void run() {
-            final UUID aggregateId = UUID.randomUUID();
+            final AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
             int eventSequence = 0;
             for (int t = 0; t < TRANSACTION_COUNT; t++) {
                 eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, fileSystemEventStore, eventSequence) + 1;
@@ -147,7 +149,7 @@ public class FileSystemEventStoreBenchmark {
         @Override
         public void run() {
             TransactionTemplate template = new TransactionTemplate(transactionManager);
-            final UUID aggregateId = UUID.randomUUID();
+            final AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
             final AtomicInteger eventSequence = new AtomicInteger(0);
             for (int t = 0; t < TRANSACTION_COUNT; t++) {
                 template.execute(new TransactionCallbackWithoutResult() {
@@ -160,7 +162,6 @@ public class FileSystemEventStoreBenchmark {
                     }
                 });
             }
-
         }
     }
 }

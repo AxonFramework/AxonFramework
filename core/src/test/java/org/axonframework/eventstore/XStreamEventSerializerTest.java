@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubDomainEvent;
 import org.joda.time.DateMidnight;
@@ -25,7 +26,6 @@ import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -60,7 +60,8 @@ public class XStreamEventSerializerTest {
         testSubject.addPackageAlias("axondomain", "org.axonframework.domain");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(UUID.randomUUID(), 1));
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier(),
+                                                                      1));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("axondomain"));
@@ -72,7 +73,8 @@ public class XStreamEventSerializerTest {
     public void testAlias() throws UnsupportedEncodingException {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(UUID.randomUUID(), 1));
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier(),
+                                                                      1));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("<stub>"));
@@ -84,7 +86,8 @@ public class XStreamEventSerializerTest {
     public void testFieldAlias() throws UnsupportedEncodingException {
         testSubject.addFieldAlias("aggId", DomainEvent.class, "aggregateIdentifier");
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(UUID.randomUUID(), 1));
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier(),
+                                                                      1));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("aggregateIdentifier"));
         assertTrue(asString.contains("<aggId>"));
@@ -94,6 +97,7 @@ public class XStreamEventSerializerTest {
 
     public static class TestEvent extends DomainEvent {
 
+        private static final long serialVersionUID = 1657550542124835062L;
         private String name;
         private DateMidnight date;
         private DateTime dateTime;

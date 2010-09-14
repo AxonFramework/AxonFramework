@@ -16,13 +16,13 @@
 
 package org.axonframework.sample.app.query;
 
-import org.hibernate.annotations.Type;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -35,18 +35,17 @@ public class ContactEntry {
     private Long db_identifier;
 
     @Basic
-    @Type(type = "org.axonframework.sample.app.query.UUIDUserType")
-    private UUID identifier;
+    private String identifier;
 
     @Basic
     private String name;
 
-    public UUID getIdentifier() {
-        return identifier;
+    public AggregateIdentifier getIdentifier() {
+        return AggregateIdentifierFactory.fromString(identifier);
     }
 
-    void setIdentifier(UUID identifier) {
-        this.identifier = identifier;
+    void setIdentifier(AggregateIdentifier identifier) {
+        this.identifier = identifier.asString();
     }
 
     public String getName() {

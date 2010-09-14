@@ -16,11 +16,11 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubAggregate;
 import org.junit.*;
-
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -35,7 +35,8 @@ public class GenericEventSourcingRepositoryTest {
                 new GenericEventSourcingRepository<StubAggregate>(StubAggregate.class);
 
         assertEquals("StubAggregate", repository.getTypeIdentifier());
-        StubAggregate actualAggregate = repository.instantiateAggregate(UUID.randomUUID(), null);
+        StubAggregate actualAggregate = repository.instantiateAggregate(AggregateIdentifierFactory.randomIdentifier(),
+                                                                        null);
         assertNotNull(actualAggregate);
     }
 
@@ -49,7 +50,7 @@ public class GenericEventSourcingRepositoryTest {
         GenericEventSourcingRepository<ExceptionThrowingAggregate> repository =
                 new GenericEventSourcingRepository<ExceptionThrowingAggregate>(ExceptionThrowingAggregate.class);
         try {
-            repository.instantiateAggregate(UUID.randomUUID(), null);
+            repository.instantiateAggregate(AggregateIdentifierFactory.randomIdentifier(), null);
             fail("Expected IncompatibleAggregateException");
         }
         catch (IncompatibleAggregateException e) {
@@ -64,9 +65,10 @@ public class GenericEventSourcingRepositoryTest {
         }
     }
 
-    private static class ExceptionThrowingAggregate extends AbstractEventSourcedAggregateRoot {
+    private static class ExceptionThrowingAggregate
+            extends AbstractEventSourcedAggregateRoot {
 
-        private ExceptionThrowingAggregate(UUID uuid) {
+        private ExceptionThrowingAggregate(AggregateIdentifier uuid) {
             throw new RuntimeException("Mock");
         }
 

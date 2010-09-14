@@ -17,12 +17,13 @@
 package org.axonframework.domain;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
 public class StubDomainEvent extends DomainEvent implements Serializable {
+
+    private static final long serialVersionUID = 834667054977749990L;
 
     public StubDomainEvent() {
     }
@@ -31,11 +32,11 @@ public class StubDomainEvent extends DomainEvent implements Serializable {
         setSequenceNumber(sequenceNumber);
     }
 
-    public StubDomainEvent(UUID aggregateIdentifier) {
+    public StubDomainEvent(AggregateIdentifier aggregateIdentifier) {
         setAggregateIdentifier(aggregateIdentifier);
     }
 
-    public StubDomainEvent(UUID aggregateIdentifier, long sequenceNumber) {
+    public StubDomainEvent(AggregateIdentifier aggregateIdentifier, long sequenceNumber) {
         setAggregateIdentifier(aggregateIdentifier);
         setSequenceNumber(sequenceNumber);
     }

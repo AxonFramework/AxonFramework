@@ -18,6 +18,7 @@ package org.axonframework.repository;
 
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -97,7 +97,8 @@ public class CachingEventSourcingRepositoryTest {
     private static class StubCachingEventSourcingRepository extends CachingEventSourcingRepository<StubAggregate> {
 
         @Override
-        public StubAggregate instantiateAggregate(UUID aggregateIdentifier, DomainEvent event) {
+        public StubAggregate instantiateAggregate(AggregateIdentifier aggregateIdentifier,
+                                                  DomainEvent event) {
             return new StubAggregate(aggregateIdentifier);
         }
 
@@ -109,7 +110,7 @@ public class CachingEventSourcingRepositoryTest {
 
     private class InMemoryEventStore implements EventStore {
 
-        private Map<UUID, List<DomainEvent>> store = new HashMap<UUID, List<DomainEvent>>();
+        private Map<AggregateIdentifier, List<DomainEvent>> store = new HashMap<AggregateIdentifier, List<DomainEvent>>();
 
         @Override
         public void appendEvents(String identifier, DomainEventStream events) {
@@ -124,7 +125,7 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, UUID identifier) {
+        public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
             return new SimpleDomainEventStream(store.get(identifier));
         }
     }

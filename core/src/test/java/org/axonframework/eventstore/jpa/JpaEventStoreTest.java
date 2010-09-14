@@ -16,10 +16,11 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -31,11 +32,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -148,7 +148,7 @@ public class JpaEventStoreTest {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        testSubject.readEvents("test", UUID.randomUUID());
+        testSubject.readEvents("test", AggregateIdentifierFactory.randomIdentifier());
     }
 
     @Test
@@ -161,11 +161,11 @@ public class JpaEventStoreTest {
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEvent.class));
     }
 
-    private List<? extends DomainEvent> createDomainEvents(int numberOfEvents) {
-        List<StubDomainEvent> events = new ArrayList<StubDomainEvent>();
-        UUID aggregateIdentifier = UUID.randomUUID();
+    private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {
+        List<StubStateChangedEvent> events = new ArrayList<StubStateChangedEvent>();
+        final AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         for (int t = 0; t < numberOfEvents; t++) {
-            events.add(new StubDomainEvent(aggregateIdentifier, t));
+            events.add(new StubStateChangedEvent(t, aggregateIdentifier));
         }
         return events;
     }
@@ -192,7 +192,7 @@ public class JpaEventStoreTest {
         private StubStateChangedEvent() {
         }
 
-        private StubStateChangedEvent(long sequenceNumber, UUID aggregateIdentifier) {
+        private StubStateChangedEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
             super(sequenceNumber, aggregateIdentifier);
         }
     }

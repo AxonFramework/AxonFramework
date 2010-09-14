@@ -16,6 +16,8 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -29,10 +31,8 @@ import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -45,14 +45,14 @@ import static org.mockito.Mockito.*;
 public class FileSystemEventStoreTest {
 
     private FileSystemEventStore eventStore;
-    private UUID aggregateIdentifier;
+    private AggregateIdentifier aggregateIdentifier;
 
     @Before
     public void setUp() {
         eventStore = new FileSystemEventStore(new XStreamEventSerializer());
         eventStore.setBaseDir(new FileSystemResource("target/"));
 
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
     }
 
     @Test
@@ -76,7 +76,7 @@ public class FileSystemEventStoreTest {
     @Test
     // Issue #25: XStreamFileSystemEventStore fails when event data contains newline character
     public void testSaveStreamAndReadBackIn_NewLineInEvent() {
-        UUID aggregateId = UUID.randomUUID();
+        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
         String description = "This is a description with a \n newline character and weird chars éçè\u6324.";
         StringBuilder stringBuilder = new StringBuilder(description);
         for (int i = 0; i < 100; i++) {
@@ -103,7 +103,6 @@ public class FileSystemEventStoreTest {
     @Test
     public void testRead_FileNotReadable() throws IOException {
         Resource mockResource = mock(Resource.class);
-        InputStream mockInputStream = mock(InputStream.class);
         when(mockResource.exists()).thenReturn(true);
         when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
         IOException exception = new IOException("Mock exception");
@@ -111,7 +110,7 @@ public class FileSystemEventStoreTest {
         eventStore.setBaseDir(mockResource);
 
         try {
-            eventStore.readEvents("test", UUID.randomUUID());
+            eventStore.readEvents("test", AggregateIdentifierFactory.randomIdentifier());
             fail("Expected an exception");
         }
         catch (EventStoreException e) {
@@ -121,7 +120,7 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testRead_FileDoesNotExist() throws IOException {
-        UUID aggregateId = UUID.randomUUID();
+        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
         Resource mockResource = mock(Resource.class);
         when(mockResource.exists()).thenReturn(true, false); // true for dir, false for file
         when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
@@ -138,7 +137,7 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testWrite_FileDoesNotExist() throws IOException {
-        UUID aggregateId = UUID.randomUUID();
+        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
         Resource mockResource = mock(Resource.class);
         when(mockResource.exists()).thenReturn(true, false); // true for dir, false for file
         when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
@@ -162,7 +161,7 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testWrite_DirectoryCannotBeCreated() throws IOException {
-        UUID aggregateId = UUID.randomUUID();
+        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
         Resource mockResource = mock(Resource.class);
         File mockFile = mock(File.class);
         when(mockResource.exists()).thenReturn(false);
@@ -217,9 +216,11 @@ public class FileSystemEventStoreTest {
 
     public static class MyStubDomainEvent extends StubDomainEvent {
 
+        private static final long serialVersionUID = -7959231436742664073L;
         private final String description;
 
-        public MyStubDomainEvent(UUID aggregateId, int sequenceNumber, String description) {
+        public MyStubDomainEvent(AggregateIdentifier aggregateId, int sequenceNumber,
+                                 String description) {
             super(aggregateId, sequenceNumber);
             this.description = description;
         }

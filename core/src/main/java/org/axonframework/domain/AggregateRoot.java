@@ -16,8 +16,6 @@
 
 package org.axonframework.domain;
 
-import java.util.UUID;
-
 /**
  * Interface defining a contract for entities that represent the aggregate root.
  *
@@ -32,7 +30,7 @@ public interface AggregateRoot {
      *
      * @return the identifier of this aggregate
      */
-    UUID getIdentifier();
+    AggregateIdentifier getIdentifier();
 
     /**
      * Clears the events currently marked as "uncommitted".

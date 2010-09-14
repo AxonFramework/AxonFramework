@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -23,7 +25,6 @@ import org.axonframework.util.SynchronousTaskExecutor;
 import org.junit.*;
 
 import java.util.Arrays;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.*;
 public class AggregateSnapshotterTest {
 
     private AggregateSnapshotter testSubject;
-    private AggregateFactory<EventSourcedAggregateRoot> mockAggregateFactory;
+    private AggregateFactory mockAggregateFactory;
 
     @SuppressWarnings({"unchecked"})
     @Before
@@ -50,7 +51,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     public void testCreateSnapshot() {
-        UUID aggregateIdentifier = UUID.randomUUID();
+        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
         StubDomainEvent firstEvent = new StubDomainEvent(aggregateIdentifier, 0);
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
         EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);

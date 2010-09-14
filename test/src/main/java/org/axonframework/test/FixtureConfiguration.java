@@ -18,6 +18,7 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -25,7 +26,6 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Interface describing the operations available on a test fixture in the configuration stage. This stage allows a test
@@ -143,7 +143,7 @@ public interface FixtureConfiguration {
      *
      * @return the identifier of the aggregate prepared in this fixture
      */
-    UUID getAggregateIdentifier();
+    AggregateIdentifier getAggregateIdentifier();
 
     /**
      * Returns the command bus used by this fixture. The command bus is provided for wiring purposes only, for example

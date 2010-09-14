@@ -16,20 +16,20 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import java.util.UUID;
+import org.axonframework.domain.AggregateIdentifier;
 
 /**
  * @author Allard Buijze
  */
 public class CreateStubAggregateCommand {
 
-    private UUID aggregateId;
+    private AggregateIdentifier aggregateId;
 
-    public CreateStubAggregateCommand(UUID aggregateId) {
+    public CreateStubAggregateCommand(AggregateIdentifier aggregateId) {
         this.aggregateId = aggregateId;
     }
 
-    public UUID getAggregateId() {
+    public AggregateIdentifier getAggregateId() {
         return aggregateId;
     }
 }

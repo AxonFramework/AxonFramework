@@ -18,6 +18,8 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AbstractAggregateRoot;
 import org.axonframework.domain.AggregateDeletedEvent;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.util.Assert;
@@ -47,8 +49,19 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      *
      * @param identifier the identifier of this aggregate
      */
-    protected AbstractEventSourcedAggregateRoot(UUID identifier) {
+    protected AbstractEventSourcedAggregateRoot(AggregateIdentifier identifier) {
         super(identifier);
+    }
+
+    /**
+     * Initializes the aggregate root using the provided aggregate identifier.
+     *
+     * @param identifier the identifier of this aggregate
+     * @deprecated Use {@link #AbstractEventSourcedAggregateRoot(org.axonframework.domain.AggregateIdentifier)}
+     */
+    @Deprecated
+    protected AbstractEventSourcedAggregateRoot(UUID identifier) {
+        super(AggregateIdentifierFactory.fromUUID(identifier));
     }
 
     /**

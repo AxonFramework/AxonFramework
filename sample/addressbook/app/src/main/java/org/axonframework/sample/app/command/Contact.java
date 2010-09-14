@@ -16,6 +16,7 @@
 
 package org.axonframework.sample.app.command;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.sample.app.Address;
@@ -30,7 +31,6 @@ import org.axonframework.sample.app.ContactNameChangedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * <p>The Aggregate root component of the sample application. This component handles all contact as well as address
@@ -42,12 +42,12 @@ class Contact extends AbstractAnnotatedAggregateRoot {
 
     private Map<AddressType, Address> addresses = new HashMap<AddressType, Address>();
 
-    public Contact(UUID identifier, String name) {
+    public Contact(AggregateIdentifier identifier, String name) {
         super(identifier);
         apply(new ContactCreatedEvent(name));
     }
 
-    public Contact(UUID identifier) {
+    public Contact(AggregateIdentifier identifier) {
         super(identifier);
     }
 

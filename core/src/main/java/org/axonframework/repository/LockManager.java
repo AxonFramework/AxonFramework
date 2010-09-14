@@ -16,9 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-
-import java.util.UUID;
 
 /**
  * Interface to the lock manager. A lock manager will maintain and validate locks on aggregates of a single type
@@ -42,14 +41,14 @@ interface LockManager {
      *
      * @param aggregateIdentifier the identifier of the aggregate to obtains a lock for.
      */
-    void obtainLock(UUID aggregateIdentifier);
+    void obtainLock(AggregateIdentifier aggregateIdentifier);
 
     /**
      * Release the lock held for an aggregate with the given <code>aggregateIdentifier</code>. The caller of this method
-     * must ensure a valid lock was requested using {@link #obtainLock(java.util.UUID)}. If no lock was successfully
-     * obtained, the behavior of this method is undefined.
+     * must ensure a valid lock was requested using {@link #obtainLock(org.axonframework.domain.AggregateIdentifier)}.
+     * If no lock was successfully obtained, the behavior of this method is undefined.
      *
      * @param aggregateIdentifier the identifier of the aggregate to release the lock for.
      */
-    void releaseLock(UUID aggregateIdentifier);
+    void releaseLock(AggregateIdentifier aggregateIdentifier);
 }
