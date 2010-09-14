@@ -30,6 +30,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
+ * The reporter generates extensive human readable reports of what the expected outcome of a test was, and what the
+ * actual results were.
+ *
  * @author Allard Buijze
  * @since 0.6
  */
@@ -68,7 +71,16 @@ class Reporter {
         throw new AxonAssertionError(sb.toString());
     }
 
-    public void reportWrongEvent(List<? extends Event> actualEvents, StringDescription expectation, Throwable propbableCause) {
+    /**
+     * Report an error in the ordering or count of events. This is typically a difference that can be shown to the user
+     * by enumerating the expected and actual events
+     *
+     * @param actualEvents  The events that were found
+     * @param expectation   A Description of what was expected
+     * @param probableCause An optional exception that might be the reason for wrong events
+     */
+    public void reportWrongEvent(List<? extends Event> actualEvents, StringDescription expectation,
+                                 Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events.");
         sb.append("Expected :");
@@ -87,7 +99,7 @@ class Reporter {
             sb.append(": ");
             sb.append(publishedEvent.toString());
         }
-        appendProbableCause(propbableCause, sb);
+        appendProbableCause(probableCause, sb);
     }
 
     /**
