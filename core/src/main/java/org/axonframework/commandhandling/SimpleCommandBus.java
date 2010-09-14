@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.jmx.JmxConfiguration;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,17 +78,19 @@ public class SimpleCommandBus implements CommandBus {
             throw new NoHandlerForCommandException(String.format("No handler was subscribed to commands of type [%s]",
                                                                  command.getClass().getSimpleName()));
         }
-        boolean success = true;
-        Object result = null;
         CommandContextImpl context = new CommandContextImpl(command, handler);
+        boolean alreadyInUnitOfWork = CurrentUnitOfWork.isStarted();
         try {
-            result = interceptorChain.proceed(context);
-        } catch (Throwable throwable) {
-            success = false;
-            callback.onFailure(throwable, context);
-        }
-        if (success) {
+            Object result = interceptorChain.proceed(context);
+            if (!alreadyInUnitOfWork && CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.commit();
+            }
             callback.onSuccess((R) result, context);
+        } catch (Throwable throwable) {
+            if (!alreadyInUnitOfWork && CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.get().rollback();
+            }
+            callback.onFailure(throwable, context);
         }
     }
 

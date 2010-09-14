@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
@@ -38,6 +40,13 @@ public class SimpleCommandBusTest {
         this.testSubject = new SimpleCommandBus();
     }
 
+    @After
+    public void tearDown() {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.clear();
+        }
+    }
+
     @Test
     public void testDispatchCommand_HandlerSubscribed() {
         testSubject.subscribe(String.class, new MyStringCommandHandler());
@@ -52,6 +61,54 @@ public class SimpleCommandBusTest {
                 fail("Did not expect exception");
             }
         });
+    }
+
+    @Test
+    public void testDispatchCommand_ImplicitUnitOfWorkIsCommitted() {
+        final UnitOfWork work = mock(UnitOfWork.class);
+        testSubject.subscribe(String.class, new CommandHandler<String>() {
+            @Override
+            public Object handle(String command, CommandContext<String> stringCommandContext) throws Throwable {
+                CurrentUnitOfWork.set(work);
+                return command;
+            }
+        });
+        testSubject.dispatch("Say hi!", new CommandCallback<String, Object>() {
+            @Override
+            public void onSuccess(Object result, CommandContext context) {
+                assertEquals("Say hi!", result);
+            }
+
+            @Override
+            public void onFailure(Throwable cause, CommandContext context) {
+                fail("Did not expect exception");
+            }
+        });
+        verify(work).commit();
+    }
+
+    @Test
+    public void testDispatchCommand_ImplicitUnitOfWorkIsRolledBack() {
+        final UnitOfWork work = mock(UnitOfWork.class);
+        testSubject.subscribe(String.class, new CommandHandler<String>() {
+            @Override
+            public Object handle(String command, CommandContext<String> stringCommandContext) throws Throwable {
+                CurrentUnitOfWork.set(work);
+                throw new RuntimeException();
+            }
+        });
+        testSubject.dispatch("Say hi!", new CommandCallback<String, Object>() {
+            @Override
+            public void onSuccess(Object result, CommandContext context) {
+                fail("Expected exception");
+            }
+
+            @Override
+            public void onFailure(Throwable cause, CommandContext context) {
+                assertEquals(RuntimeException.class, cause.getClass());
+            }
+        });
+        verify(work).rollback();
     }
 
     @Test(expected = NoHandlerForCommandException.class)

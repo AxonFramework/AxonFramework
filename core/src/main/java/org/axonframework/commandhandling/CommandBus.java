@@ -43,6 +43,9 @@ public interface CommandBus {
      * When the method returns, the only guarantee provided by the CommandBus implementation, is that the command has
      * been successfully received. Implementations are highly recommended to perform basic validation of the command
      * before returning from this method call.
+     * <p/>
+     * Implementations must start a UnitOfWork when before dispatching the command, and either commit or rollback after
+     * a successful or failed execution, respectively.
      *
      * @param command  The Command to dispatch
      * @param callback The callback to invoke when command processing is complete
