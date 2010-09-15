@@ -71,9 +71,9 @@
 
 				<programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:axon="http://www.axonframework.org/schema/axon-framework-1.0"
+	xmlns:axon="http://www.axonframework.org/schema/core"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-	http://www.axonframework.org/schema/axon-framework-1.0 http://www.axonframework.org/schema/axon-framework-1.0.xsd">
+	http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-1.0.xsd">
 				</programlisting>
                        
 				<calloutlist>
@@ -241,15 +241,14 @@
     		<para>
 	The previous two sections explained how you wire bean post processors to activate annotation support for your command
 	handlers and event listeners. Using support from the Axon namespace you can accomplish the same in one go, using the
-	<code>annotation-configuration</code>
-	element:
+	<code>annotation-config</code> element:
 	
-				<programlisting>&lt;axon:annotation-configuration /></programlisting></para>
+				<programlisting>&lt;axon:annotation-config /></programlisting></para>
 				
-			<para>The <code>annotation-configuration</code> element has the following attributes that allow you to configure annotation support further:</para>
+			<para>The <code>annotation-config</code> element has the following attributes that allow you to configure annotation support further:</para>
 			
 			<table frame="all">
-				<title>Attributes for annotation-configuration</title>
+				<title>Attributes for annotation-config</title>
 				<tgroup cols="4" colsep="1" rowsep="1" align="center">
 					<thead style="bgcolor:black;color:white">
 						<row>
