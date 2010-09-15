@@ -1,1 +1,1 @@
-http\://www.axonframework.org/schema/axon-framework-1.0=org.axonframework.contextsupport.spring.AxonNamespaceHandler
+http\://www.axonframework.org/schema/core=org.axonframework.contextsupport.spring.AxonNamespaceHandler

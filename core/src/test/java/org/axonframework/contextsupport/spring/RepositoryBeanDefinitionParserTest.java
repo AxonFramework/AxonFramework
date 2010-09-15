@@ -32,6 +32,8 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -136,9 +138,14 @@ public class RepositoryBeanDefinitionParserTest {
                 .getValue();
         assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
 
+        PropertyValue decoratorsProperty = beanDefinition.getPropertyValues().getPropertyValue("eventStreamDecorators");
+        assertNotNull("Property missing", decoratorsProperty);
+        List decorators = (List) decoratorsProperty.getValue();
+        assertEquals("Wrong number of decorators", 1, decorators.size());
+
         @SuppressWarnings("unchecked")
-        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository = beanFactory.getBean("testRepository",
-                                                                                                       GenericEventSourcingRepository.class);
+        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository =
+                beanFactory.getBean("testRepository", GenericEventSourcingRepository.class);
         assertNotNull(repository);
     }
 

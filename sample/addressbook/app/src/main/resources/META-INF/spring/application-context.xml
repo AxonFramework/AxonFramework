@@ -18,12 +18,14 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:axon="http://www.axonframework.org/schema/axon-framework-1.0"
-       xsi:schemaLocation="http://www.axonframework.org/schema/axon-framework-1.0 http://www.axonframework.org/schema/axon-framework-1.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+       xmlns:axon="http://www.axonframework.org/schema/core"
+       xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-1.0.xsd 
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:annotation-config/>
 
-    <axon:annotation-configuration commandBus="commandBus" executor="taskExecutor"/>
+    <axon:annotation-config command-bus="commandBus" executor="taskExecutor"/>
 
     <!--
      <bean
@@ -59,9 +61,9 @@
     <!-- ================================================ -->
     <!-- Example with a single interceptor ref            -->
     <!-- ================================================ -->
-    <axon:commandBus id="commandBus" interceptor="commandbus-interceptor"/>
+    <axon:command-bus id="commandBus" interceptor="commandBusInterceptor"/>
 
-    <bean id="commandbus-interceptor"
+    <bean id="commandBusInterceptor"
           class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
         <property name="transactionManager" ref="transactionManager"/>
     </bean>
@@ -72,7 +74,7 @@
          </bean> -->
 
     <!--	<bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus" />-->
-    <axon:eventBus id="eventBus"/>
+    <axon:event-bus id="eventBus"/>
 
     <bean id="taskExecutor"
           class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
@@ -101,7 +103,7 @@
     </bean>
 
     <!--	<bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore" />-->
-    <axon:eventStore id="eventStore" type="JPA"/>
+    <axon:event-store id="eventStore" type="JPA"/>
 
     <bean id="contactCommandHandler"
           class="org.axonframework.sample.app.command.ContactCommandHandler">
