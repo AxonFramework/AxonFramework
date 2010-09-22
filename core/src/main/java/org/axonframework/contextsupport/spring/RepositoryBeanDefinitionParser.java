@@ -137,7 +137,7 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
             builder.getConstructorArgumentValues().addGenericArgumentValue(aggregateRootType);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(
-                    "No class of name " + aggregateRootTypeString + " was found on the classpath");
+                    "No class of name " + aggregateRootTypeString + " was found on the classpath", e);
         }
     }
 
