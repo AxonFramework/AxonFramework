@@ -82,7 +82,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         DomainEventStream eventStream = aggregate.getUncommittedEvents();
         Iterator<EventStreamDecorator> iterator = decorators.descendingIterator();
         while (iterator.hasNext()) {
-            eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), eventStream);
+            eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), aggregate, eventStream);
         }
         eventStore.appendEvents(getTypeIdentifier(), eventStream);
     }
@@ -107,7 +107,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
             throw new AggregateNotFoundException("The aggregate was not found", e);
         }
         for (EventStreamDecorator decorator : decorators) {
-            events = decorator.decorateForAppend(getTypeIdentifier(), events);
+            events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
         }
 
         final T aggregate = createAggregate(aggregateIdentifier, events.peek());

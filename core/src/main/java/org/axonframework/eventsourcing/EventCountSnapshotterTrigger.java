@@ -44,19 +44,20 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
     private int trigger = 50;
 
     @Override
-    public DomainEventStream decorateForRead(String aggregateType, DomainEventStream eventStream) {
+    public DomainEventStream decorateForRead(String aggregateType, AggregateIdentifier aggregateIdentifier,
+                                             DomainEventStream eventStream) {
         AtomicInteger counter = new AtomicInteger(0);
-        AggregateIdentifier identifier = eventStream.peek().getAggregateIdentifier();
-        counters.put(identifier, counter);
+        counters.put(aggregateIdentifier, counter);
         return new CountingEventStream(eventStream, counter);
     }
 
     @Override
-    public DomainEventStream decorateForAppend(String aggregateType, DomainEventStream eventStream) {
-        AggregateIdentifier aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
+    public DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
+                                               DomainEventStream eventStream) {
+        AggregateIdentifier aggregateIdentifier = aggregate.getIdentifier();
         counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
         AtomicInteger counter = counters.get(aggregateIdentifier);
-        return new TriggeringEventStream(aggregateType, eventStream, counter);
+        return new TriggeringEventStream(aggregateType, aggregateIdentifier, eventStream, counter);
     }
 
     private void triggerSnapshotIfRequired(String type, AggregateIdentifier aggregateIdentifier,
@@ -175,10 +176,11 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
         private final String aggregateType;
         private AggregateIdentifier aggregateIdentifier;
 
-        private TriggeringEventStream(String aggregateType, DomainEventStream delegate, AtomicInteger counter) {
+        private TriggeringEventStream(String aggregateType, AggregateIdentifier aggregateIdentifier,
+                                      DomainEventStream delegate, AtomicInteger counter) {
             super(delegate, counter);
             this.aggregateType = aggregateType;
-            aggregateIdentifier = delegate.peek().getAggregateIdentifier();
+            this.aggregateIdentifier = aggregateIdentifier;
         }
 
         @Override

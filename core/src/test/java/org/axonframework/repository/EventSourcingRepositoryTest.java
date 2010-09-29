@@ -279,13 +279,15 @@ public class EventSourcingRepositoryTest {
         private DomainEventStream lastSpy;
 
         @Override
-        public DomainEventStream decorateForRead(final String aggregateType, final DomainEventStream eventStream) {
+        public DomainEventStream decorateForRead(final String aggregateType, AggregateIdentifier aggregateIdentifier,
+                                                 final DomainEventStream eventStream) {
             createSpy(eventStream);
             return lastSpy;
         }
 
         @Override
-        public DomainEventStream decorateForAppend(final String aggregateType, DomainEventStream eventStream) {
+        public DomainEventStream decorateForAppend(final String aggregateType, EventSourcedAggregateRoot aggregate,
+                                                   DomainEventStream eventStream) {
             createSpy(eventStream);
             return lastSpy;
         }

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 
 /**
@@ -33,11 +34,13 @@ public interface EventStreamDecorator {
      * events and pass them to the chain. Usually, it is best to decorate the given <code>eventStream</code> and pass
      * that to the chain.
      *
-     * @param aggregateType The type of aggregate events are being read for
-     * @param eventStream   The eventStream containing the events to append to the event store
-     * @return The decorated event stream
+     * @param aggregateType       The type of aggregate events are being read for
+     * @param aggregateIdentifier
+     * @param eventStream         The eventStream containing the events to append to the event store  @return The
+     *                            decorated event stream
      */
-    DomainEventStream decorateForRead(String aggregateType, DomainEventStream eventStream);
+    DomainEventStream decorateForRead(String aggregateType, AggregateIdentifier aggregateIdentifier,
+                                      DomainEventStream eventStream);
 
     /**
      * Called when an event stream is appended to the event store.
@@ -47,9 +50,11 @@ public interface EventStreamDecorator {
      * that to the chain.
      *
      * @param aggregateType The type of aggregate events are being appended for
-     * @param eventStream   The eventStream containing the events to append to the event store
-     * @return The decorated event stream
+     * @param aggregate
+     * @param eventStream   The eventStream containing the events to append to the event store  @return The decorated
+     *                      event stream
      */
-    DomainEventStream decorateForAppend(String aggregateType, DomainEventStream eventStream);
+    DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
+                                        DomainEventStream eventStream);
 
 }
