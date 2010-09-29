@@ -195,6 +195,14 @@ public class EventCountSnapshotterTriggerTest {
         verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
 
+    @Test
+    public void testStoringAggregateWithoutChanges() {
+        SimpleDomainEventStream emptyEventStream = new SimpleDomainEventStream();
+        testSubject.appendEvents("test", emptyEventStream);
+
+        verify(mockEventStore).appendEvents("test", emptyEventStream);
+    }
+
     private StubDomainEvent newEvent() {
         return new StubDomainEvent(aggregateIdentifier);
     }

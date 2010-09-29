@@ -52,13 +52,18 @@ public class EventCountSnapshotterTrigger implements EventStore {
 
     @Override
     public void appendEvents(String type, DomainEventStream events) {
-        UUID aggregateIdentifier = events.peek().getAggregateIdentifier();
-        counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
-        AtomicInteger counter = counters.get(aggregateIdentifier);
-        delegate.appendEvents(type, new CountingEventStream(events, counter));
-        triggerSnapshotIfRequired(type, aggregateIdentifier, counter);
-        if (clearCountersAfterAppend) {
-            counters.remove(aggregateIdentifier, counter);
+        if (events.hasNext()) {
+            UUID aggregateIdentifier = events.peek().getAggregateIdentifier();
+            counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
+            AtomicInteger counter = counters.get(aggregateIdentifier);
+            delegate.appendEvents(type, new CountingEventStream(events, counter));
+            triggerSnapshotIfRequired(type, aggregateIdentifier, counter);
+            if (clearCountersAfterAppend) {
+                counters.remove(aggregateIdentifier, counter);
+            }
+        } else {
+            // this might leave a counter in memory. Will be solved in 0.7 version
+            delegate.appendEvents(type, events);
         }
     }
 
