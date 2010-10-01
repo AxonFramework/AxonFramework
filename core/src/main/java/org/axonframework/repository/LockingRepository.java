@@ -103,7 +103,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
         lockManager.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
-            CurrentUnitOfWork.get().registerListener(aggregate, new LockManagingListener(aggregate));
+            CurrentUnitOfWork.get().registerListener(new LockManagingListener(aggregate));
             return aggregate;
         } catch (RuntimeException ex) {
             logger.warn("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
@@ -112,8 +112,14 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
         }
     }
 
+    /**
+     * Verifies whether all locks are valid and delegates to {@link #doSaveWithLock(org.axonframework.domain.AggregateRoot)}
+     * to perform actual storage.
+     *
+     * @param aggregate the aggregate to store
+     */
     @Override
-    public void save(T aggregate) {
+    protected final void doSave(T aggregate) {
         if (aggregate.getVersion() != null && !lockManager.validateLock(aggregate)) {
             throw new ConcurrencyException(String.format(
                     "The aggregate of type [%s] with identifier [%s] could not be "
@@ -122,7 +128,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
                     aggregate.getClass().getSimpleName(),
                     aggregate.getIdentifier()));
         }
-        super.save(aggregate);
+        doSaveWithLock(aggregate);
     }
 
     /**
@@ -130,8 +136,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      *
      * @param aggregate the aggregate to store
      */
-    @Override
-    protected abstract void doSave(T aggregate);
+    protected abstract void doSaveWithLock(T aggregate);
 
     /**
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.

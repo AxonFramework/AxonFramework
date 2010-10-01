@@ -20,13 +20,12 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 /**
  * Implementation of the UnitOfWork that buffers all published events until it is committed. Aggregates that have not
@@ -37,11 +36,11 @@ import java.util.Queue;
  * @author Allard Buijze
  * @since 0.6
  */
-public class DefaultUnitOfWork implements UnitOfWork {
+public class DefaultUnitOfWork extends UnitOfWork {
 
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
     private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
-    private final Map<AggregateRoot, List<UnitOfWorkListener>> listeners = new HashMap<AggregateRoot, List<UnitOfWorkListener>>();
+    private final Set<UnitOfWorkListener> listeners = new HashSet<UnitOfWorkListener>();
     private Status dispatcherStatus = Status.READY;
 
     private static enum Status {
@@ -50,7 +49,7 @@ public class DefaultUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public void rollback() {
+    protected void doRollback() {
         registeredAggregates.clear();
         eventsToPublish.clear();
         notifyListenersRollback();
@@ -58,48 +57,22 @@ public class DefaultUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public void commitAggregate(AggregateRoot aggregate) {
-        if (!isRegistered(aggregate)) {
-            throw new IllegalStateException("Cannot commit an aggregate that has not been registered.");
-        }
-        try {
-            performPartialCommit(aggregate);
-        }
-        catch (RuntimeException ex) {
-            for (UnitOfWorkListener listener : listenersFor(aggregate)) {
-                listener.onRollback();
-            }
-            throw ex;
-        }
+    protected void doCommit() {
+        notifyListenersPrepareCommit();
+        saveAggregates();
+        publishEvents();
+        notifyListenersAfterCommit();
     }
 
     @Override
-    public boolean isRegistered(AggregateRoot aggregate) {
-        return registeredAggregates.containsKey(aggregate);
-    }
-
-    @Override
-    public void commit() {
-        try {
-            notifyListenersPrepareCommit();
-            saveAggregates();
-            publishEvents();
-            notifyListenersAfterCommit();
-        } catch (RuntimeException e) {
-            rollback();
-            throw e;
-        }
-    }
-
-    @Override
-    public <T extends AggregateRoot> void registerAggregate(T aggregate, Long expectedVersion,
+    public <T extends AggregateRoot> void registerAggregate(T aggregate,
                                                             SaveAggregateCallback<T> callback) {
         registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, callback));
     }
 
     @Override
-    public void registerListener(AggregateRoot aggregate, UnitOfWorkListener listener) {
-        listenersFor(aggregate).add(listener);
+    public void registerListener(UnitOfWorkListener listener) {
+        listeners.add(listener);
     }
 
     @Override
@@ -107,22 +80,11 @@ public class DefaultUnitOfWork implements UnitOfWork {
         eventsToPublish.add(new EventEntry(event, eventBus));
     }
 
-    private void performPartialCommit(AggregateRoot aggregateRoot) {
-        for (UnitOfWorkListener listener : listenersFor(aggregateRoot)) {
-            listener.onPrepareCommit();
-        }
-        registeredAggregates.remove(aggregateRoot).saveAggregate();
-        publishEvents();
-        for (UnitOfWorkListener listener : listenersFor(aggregateRoot)) {
-            listener.afterCommit();
-        }
-    }
-
     /**
      * Send a {@link UnitOfWorkListener#onRollback()} notification to all registered listeners.
      */
     protected void notifyListenersRollback() {
-        for (UnitOfWorkListener listener : allListeners()) {
+        for (UnitOfWorkListener listener : listeners) {
             listener.onRollback();
         }
     }
@@ -131,7 +93,7 @@ public class DefaultUnitOfWork implements UnitOfWork {
      * Send a {@link UnitOfWorkListener#afterCommit()} notification to all registered listeners.
      */
     protected void notifyListenersAfterCommit() {
-        for (UnitOfWorkListener listener : allListeners()) {
+        for (UnitOfWorkListener listener : listeners) {
             listener.afterCommit();
         }
     }
@@ -165,24 +127,9 @@ public class DefaultUnitOfWork implements UnitOfWork {
      * Send a {@link UnitOfWorkListener#onPrepareCommit()} notification to all registered listeners.
      */
     protected void notifyListenersPrepareCommit() {
-        for (UnitOfWorkListener listener : allListeners()) {
+        for (UnitOfWorkListener listener : listeners) {
             listener.onPrepareCommit();
         }
-    }
-
-    private List<UnitOfWorkListener> listenersFor(AggregateRoot aggregate) {
-        if (!listeners.containsKey(aggregate)) {
-            listeners.put(aggregate, new ArrayList<UnitOfWorkListener>());
-        }
-        return listeners.get(aggregate);
-    }
-
-    private List<UnitOfWorkListener> allListeners() {
-        List<UnitOfWorkListener> allListeners = new ArrayList<UnitOfWorkListener>();
-        for (List<UnitOfWorkListener> listenerList : listeners.values()) {
-            allListeners.addAll(listenerList);
-        }
-        return allListeners;
     }
 
     private static class EventEntry {

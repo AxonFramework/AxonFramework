@@ -25,6 +25,7 @@ import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
 import org.junit.rules.*;
 import org.springframework.core.io.FileSystemResource;
@@ -93,7 +94,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         repository.setEventBus(mockEventBus);
 
         SimpleAggregateRoot aggregate = new SimpleAggregateRoot();
-        repository.save(aggregate);
+        repository.add(aggregate);
+        CurrentUnitOfWork.commit();
+
         reset(mockEventBus);
         aggregateIdentifier = aggregate.getIdentifier();
     }
@@ -151,7 +154,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
                     SimpleAggregateRoot aggregate = repository.load(aggregateIdentifier, null);
                     aggregate.doOperation();
                     aggregate.doOperation();
-                    repository.save(aggregate);
+                    CurrentUnitOfWork.commit();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 } finally {

@@ -39,7 +39,7 @@ public class InMemoryLockingRepository extends LockingRepository<StubAggregate> 
     }
 
     @Override
-    protected void doSave(StubAggregate aggregate) {
+    protected void doSaveWithLock(StubAggregate aggregate) {
         store.put(aggregate.getIdentifier(), aggregate);
         saveCount++;
     }

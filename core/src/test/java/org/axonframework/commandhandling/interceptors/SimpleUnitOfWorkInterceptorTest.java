@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.Event;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
@@ -71,55 +70,20 @@ public class SimpleUnitOfWorkInterceptorTest {
     @After
     public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.clear();
+            CurrentUnitOfWork.get().rollback();
         }
     }
 
     private AggregateIdentifier createAggregate() {
         StubAggregate aggregate = new StubAggregate();
-        repository.save(aggregate);
+        repository.add(aggregate);
+        CurrentUnitOfWork.commit();
         return aggregate.getIdentifier();
     }
 
     @Test
-    public void testLoadAndSaveSingleAggregate() throws Exception {
-        commandBus.dispatch(new SimpleCommand(true, aggregateIdentifier1));
-        assertEquals(1, repository.getSaveCount());
-        verify(eventBus).publish(isA(StubDomainEvent.class));
-    }
-
-    @Test
-    public void testLoadAndSaveSingleAggregate_RevertTransaction() throws Exception {
-        RuntimeException failure = new RuntimeException();
-        dispatchCommand(new SimpleCommand(true, failure, aggregateIdentifier1), failure);
-
-        assertEquals(1, repository.getSaveCount());
-        // an explicit save will always result in the events being thrown
-        verify(eventBus).publish(isA(StubDomainEvent.class));
-        verifyNoLocksRemain();
-    }
-
-    @Test
-    public void testLoadAndSaveTwoAggregates() throws Exception {
-        commandBus.dispatch(new SimpleCommand(true, aggregateIdentifier1, aggregateIdentifier2));
-        assertEquals(2, repository.getSaveCount());
-        verify(eventBus, times(2)).publish(isA(StubDomainEvent.class));
-    }
-
-    @Test
-    public void testLoadAndSaveTwoAggregates_RevertTransaction() throws Exception {
-        RuntimeException failure = new RuntimeException();
-        dispatchCommand(new SimpleCommand(true, failure, aggregateIdentifier1, aggregateIdentifier2), failure);
-
-        // an explicit save will always result in the events being thrown
-        assertEquals(2, repository.getSaveCount());
-        verify(eventBus, times(2)).publish(isA(StubDomainEvent.class));
-        verifyNoLocksRemain();
-    }
-
-    @Test
     public void testLoadSingleAggregate() throws Exception {
-        commandBus.dispatch(new SimpleCommand(false, aggregateIdentifier1));
+        commandBus.dispatch(new SimpleCommand(aggregateIdentifier1));
         assertEquals(1, repository.getSaveCount());
         verify(eventBus).publish(isA(StubDomainEvent.class));
         verifyNoLocksRemain();
@@ -128,7 +92,7 @@ public class SimpleUnitOfWorkInterceptorTest {
     @Test
     public void testLoadSingleAggregate_RevertTransaction() throws Exception {
         RuntimeException failure = new RuntimeException();
-        dispatchCommand(new SimpleCommand(false, failure, aggregateIdentifier1), failure);
+        dispatchCommand(new SimpleCommand(failure, aggregateIdentifier1), failure);
 
         assertEquals(0, repository.getSaveCount());
         verify(eventBus, never()).publish(isA(StubDomainEvent.class));
@@ -137,7 +101,7 @@ public class SimpleUnitOfWorkInterceptorTest {
 
     @Test
     public void testLoadTwoAggregates() throws Exception {
-        commandBus.dispatch(new SimpleCommand(false, aggregateIdentifier1, aggregateIdentifier2));
+        commandBus.dispatch(new SimpleCommand(aggregateIdentifier1, aggregateIdentifier2));
         assertEquals(2, repository.getSaveCount());
         verify(eventBus, times(2)).publish(isA(StubDomainEvent.class));
         verifyNoLocksRemain();
@@ -146,7 +110,7 @@ public class SimpleUnitOfWorkInterceptorTest {
     @Test
     public void testLoadTwoAggregates_RevertTransaction() throws Exception {
         RuntimeException failure = new RuntimeException();
-        dispatchCommand(new SimpleCommand(false, failure, aggregateIdentifier1, aggregateIdentifier2), failure);
+        dispatchCommand(new SimpleCommand(failure, aggregateIdentifier1, aggregateIdentifier2), failure);
 
         assertEquals(0, repository.getSaveCount());
         verify(eventBus, never()).publish(isA(StubDomainEvent.class));
@@ -154,28 +118,10 @@ public class SimpleUnitOfWorkInterceptorTest {
     }
 
     @Test
-    public void testNesting_NoNestingAllowed() throws Throwable {
-        SimpleUnitOfWorkInterceptor interceptor = new SimpleUnitOfWorkInterceptor();
-        final DefaultUnitOfWork unitOfWork = new DefaultUnitOfWork();
-        CurrentUnitOfWork.set(unitOfWork);
-        InterceptorChain chain = mock(InterceptorChain.class);
-        when(chain.proceed(isA(CommandContext.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                assertSame(unitOfWork, CurrentUnitOfWork.get());
-                return null;
-            }
-        });
-        interceptor.handle(mock(CommandContext.class), chain);
-        CurrentUnitOfWork.clear();
-    }
-
-    @Test
     public void testNesting_NestingAllowed() throws Throwable {
         SimpleUnitOfWorkInterceptor interceptor = new SimpleUnitOfWorkInterceptor();
-        interceptor.setAllowNesting(true);
         final DefaultUnitOfWork unitOfWork = new DefaultUnitOfWork();
-        CurrentUnitOfWork.set(unitOfWork);
+        unitOfWork.start();
         InterceptorChain chain = mock(InterceptorChain.class);
         when(chain.proceed(isA(CommandContext.class))).thenAnswer(new Answer<Object>() {
             @Override
@@ -185,7 +131,7 @@ public class SimpleUnitOfWorkInterceptorTest {
             }
         });
         interceptor.handle(mock(CommandContext.class), chain);
-        CurrentUnitOfWork.clear();
+        unitOfWork.commit();
     }
 
     private void dispatchCommand(SimpleCommand command, final RuntimeException failure) {
@@ -221,12 +167,6 @@ public class SimpleUnitOfWorkInterceptorTest {
             for (AggregateIdentifier aggregateIdentifier : command.getAggregatesToActOn()) {
                 StubAggregate aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.doSomething();
-                if (command.isIncludeSave()) {
-                    repository.save(aggregate);
-                }
-            }
-            if (command.isIncludeSave()) {
-                verify(eventBus, times(command.getAggregatesToActOn().size())).publish(isA(Event.class));
             }
             command.causeFailure();
             return Void.TYPE;
@@ -236,21 +176,15 @@ public class SimpleUnitOfWorkInterceptorTest {
     private static class SimpleCommand {
 
         private List<AggregateIdentifier> aggregatesToActOn;
-        private boolean includeSave;
         private RuntimeException failure;
 
-        private SimpleCommand(boolean includeSave, AggregateIdentifier... aggregatesToActOn) {
-            this(includeSave, null, aggregatesToActOn);
+        private SimpleCommand(AggregateIdentifier... aggregatesToActOn) {
+            this(null, aggregatesToActOn);
         }
 
-        private SimpleCommand(boolean includeSave, RuntimeException failure, AggregateIdentifier... aggregatesToActOn) {
-            this.includeSave = includeSave;
+        private SimpleCommand(RuntimeException failure, AggregateIdentifier... aggregatesToActOn) {
             this.failure = failure;
             this.aggregatesToActOn = asList(aggregatesToActOn);
-        }
-
-        public boolean isIncludeSave() {
-            return includeSave;
         }
 
         public List<AggregateIdentifier> getAggregatesToActOn() {

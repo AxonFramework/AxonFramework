@@ -27,12 +27,14 @@ public class LockingRepositoryTest_TransactionalSession extends LockingRepositor
 
     @Before
     public void startSession() {
-        CurrentUnitOfWork.set(new DefaultUnitOfWork());
+        new DefaultUnitOfWork().start();
     }
 
     @After
     public void tearDown() {
-        CurrentUnitOfWork.clear();
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
 }

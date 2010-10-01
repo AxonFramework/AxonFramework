@@ -49,20 +49,19 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
     }
 
     /**
-     * Saves the aggregate and stores is in the cache for fast retrieval. If an exception occurs while saving the
-     * aggregate, the related cache entry is invalidated immediately.
+     * Saves the aggregate and stores it in the cache (if configured) for fast retrieval. If an exception occurs while
+     * saving the aggregate, the related cache entry is invalidated immediately.
      * <p/>
      * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that
-     * aggregate. This is done to prevent the cache from returning aggregates that may not have fully persisted to
-     * disk.
+     * aggregate. This is done to prevent the cache from returning aggregates that may not have fully persisted.
      *
      * @param aggregate the aggregate to save
      */
     @Override
-    public void doSave(final T aggregate) {
+    public void doSaveWithLock(final T aggregate) {
         cache.put(aggregate.getIdentifier(), aggregate);
         try {
-            super.doSave(aggregate);
+            super.doSaveWithLock(aggregate);
         }
         catch (RuntimeException ex) {
             // when an exception occurs, the lock is release and cached state is compromised.
@@ -87,7 +86,7 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
         if (aggregate == null) {
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
         }
-        CurrentUnitOfWork.get().registerListener(aggregate, new CacheClearingUnitOfWorkListener(aggregateIdentifier));
+        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
         return aggregate;
     }
 

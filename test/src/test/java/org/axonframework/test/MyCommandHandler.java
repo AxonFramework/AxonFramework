@@ -19,8 +19,11 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.repository.Repository;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 
-/** @author Allard Buijze */
+/**
+ * @author Allard Buijze
+ */
 class MyCommandHandler {
 
     private Repository<MyAggregate> repository;
@@ -38,15 +41,14 @@ class MyCommandHandler {
     public void handleTestCommand(TestCommand testCommand) {
         MyAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
         aggregate.doSomething();
-        repository.save(aggregate);
     }
 
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
         MyAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
         aggregate.doSomething();
-        repository.save(aggregate);
         eventBus.publish(new MyApplicationEvent(this));
+        CurrentUnitOfWork.get().publishEvent(new MyApplicationEvent(this), eventBus);
         throw new StrangeCommandReceivedException("Strange command received");
     }
 

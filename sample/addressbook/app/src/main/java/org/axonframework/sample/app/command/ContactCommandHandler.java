@@ -37,7 +37,12 @@ public class ContactCommandHandler {
     private final static Logger logger = LoggerFactory.getLogger(ContactCommandHandler.class);
     private Repository<Contact> repository;
 
-    public void setRepository(Repository<Contact> repository) {
+    /**
+     * Sets the contact repository.
+     *
+     * @param repository the contact repository
+     */
+    public void setContactRepository(Repository<Contact> repository) {
         this.repository = repository;
     }
 
@@ -55,7 +60,7 @@ public class ContactCommandHandler {
             contactId = UUID.randomUUID();
         }
         Contact contact = new Contact(AggregateIdentifierFactory.fromUUID(contactId), command.getNewContactName());
-        repository.save(contact);
+        repository.add(contact);
     }
 
     /**
@@ -71,7 +76,6 @@ public class ContactCommandHandler {
         Assert.notNull(command.getContactNewName(), "Name may not be null");
         Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
         contact.changeName(command.getContactNewName());
-        repository.save(contact);
     }
 
     /**
@@ -84,7 +88,6 @@ public class ContactCommandHandler {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
         contact.delete();
-        repository.save(contact);
     }
 
     /**
@@ -101,8 +104,6 @@ public class ContactCommandHandler {
         Address address = new Address(command.getStreetAndNumber(), command.getZipCode(), command.getCity());
         Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
         contact.registerAddress(command.getAddressType(), address);
-        repository.save(contact);
-
     }
 
     /**
@@ -118,6 +119,5 @@ public class ContactCommandHandler {
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
         Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
         contact.removeAddress(command.getAddressType());
-        repository.save(contact);
     }
 }

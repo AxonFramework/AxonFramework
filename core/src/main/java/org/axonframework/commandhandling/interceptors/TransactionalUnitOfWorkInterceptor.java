@@ -34,9 +34,7 @@ public abstract class TransactionalUnitOfWorkInterceptor<T> extends SimpleUnitOf
 
     @Override
     protected UnitOfWork createUnitOfWork() {
-        TransactionalUnitOfWork unitOfWork = new TransactionalUnitOfWork();
-        unitOfWork.start();
-        return unitOfWork;
+        return new TransactionalUnitOfWork();
     }
 
     /**
@@ -70,7 +68,8 @@ public abstract class TransactionalUnitOfWorkInterceptor<T> extends SimpleUnitOf
 
         private T transaction;
 
-        protected void start() {
+        @Override
+        protected void doStart() {
             this.transaction = startTransaction(this);
         }
 

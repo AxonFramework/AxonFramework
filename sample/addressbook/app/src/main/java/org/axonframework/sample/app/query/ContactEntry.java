@@ -44,8 +44,8 @@ public class ContactEntry {
         return AggregateIdentifierFactory.fromString(identifier);
     }
 
-    void setIdentifier(AggregateIdentifier identifier) {
-        this.identifier = identifier.asString();
+    void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public String getName() {

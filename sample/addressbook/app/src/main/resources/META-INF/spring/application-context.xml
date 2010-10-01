@@ -107,7 +107,7 @@
 
     <bean id="contactCommandHandler"
           class="org.axonframework.sample.app.command.ContactCommandHandler">
-        <property name="repository" ref="contactRepository"/>
+        <property name="contactRepository" ref="contactRepository"/>
     </bean>
 
 </beans>

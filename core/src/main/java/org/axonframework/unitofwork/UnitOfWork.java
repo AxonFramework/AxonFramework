@@ -32,40 +32,98 @@ import org.axonframework.eventhandling.EventBus;
  * @see CurrentUnitOfWork
  * @since 0.6
  */
-public interface UnitOfWork {
+public abstract class UnitOfWork {
+
+    private boolean isStarted;
+    private UnitOfWork outerUnitOfWork;
+
+    /**
+     * Commits the UnitOfWork. All registered aggregates that have not been registered as stored are saved in their
+     * respective repositories, buffered events are sent to their respective event bus, and all registered
+     * UnitOfWorkListeners are notified.
+     * <p/>
+     * After the commit (successful or not), the UnitOfWork is unregistered from the CurrentUnitOfWork.
+     *
+     * @throws IllegalStateException if the UnitOfWork wasn't started
+     */
+    public void commit() {
+        assertStarted();
+        try {
+            if (outerUnitOfWork != null) {
+                outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
+            } else {
+                performCommit();
+            }
+        } finally {
+            clear();
+        }
+    }
+
+    /**
+     * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
+     * registered {@link UnitOfWorkListener}s are notified.
+     *
+     * @throws IllegalStateException if the UnitOfWork wasn't started
+     */
+    public void rollback() {
+        assertStarted();
+        try {
+            if (outerUnitOfWork != null) {
+                outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
+            } else {
+                doRollback();
+            }
+        } finally {
+            clear();
+        }
+    }
+
+    /**
+     * Starts the current unit of work, preparing it for aggregate registration. The UnitOfWork instance is registered
+     * with the CurrentUnitOfWork.
+     */
+    public void start() {
+        if (isStarted) {
+            throw new IllegalStateException("UnitOfWork is already started");
+        } else if (CurrentUnitOfWork.isStarted()) {
+            // we're nesting.
+            this.outerUnitOfWork = CurrentUnitOfWork.get();
+        }
+        CurrentUnitOfWork.set(this);
+        isStarted = true;
+        doStart();
+    }
+
+    /**
+     * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called, and
+     * if the UnitOfWork has not been committed or rolled back.
+     *
+     * @return <code>true</code> if this UnitOfWork is started, <code>false</code> otherwise.
+     */
+    public boolean isStarted() {
+        return isStarted;
+    }
+
+    /**
+     * Register a listener that listens to state changes in this UnitOfWork. This typically allows components to clean
+     * up resources, such as locks, when a UnitOfWork is committed or rolled back. If a UnitOfWork is partially
+     * committed, only the listeners bound to one of the committed aggregates is notified.
+     *
+     * @param listener The listener to notify when the UnitOfWork's state changes.
+     */
+    public abstract void registerListener(UnitOfWorkListener listener);
 
     /**
      * Register an aggregate with this UnitOfWork. These aggregates will be saved (at the latest) when the UnitOfWork is
-     * committed. The given <code>expectedVersion</code> will be returned in the callback, allowing repositories to make
-     * decisions about concurrent modifications.
+     * committed.
      *
      * @param aggregateRoot         The aggregate root to register in the UnitOfWork
-     * @param expectedVersion       The expected version of the aggregate.
      * @param saveAggregateCallback The callback that is invoked when the UnitOfWork wants to store the registered
      *                              aggregate
      * @param <T>                   the type of aggregate to register
      */
-    <T extends AggregateRoot> void registerAggregate(T aggregateRoot, Long expectedVersion,
-                                                     SaveAggregateCallback<T> saveAggregateCallback);
-
-    /**
-     * Reports the fact that a repository has stored an aggregate. This could either be as part of committing the
-     * UnitOfWork, or by an explicit call by the command handling code.
-     *
-     * @param aggregateRoot The aggregate root that has been saved.
-     * @throws IllegalStateException if the given <code>aggregateRoot</code> has not been registered first.
-     */
-    void commitAggregate(AggregateRoot aggregateRoot);
-
-    /**
-     * Indicates whether the given <code>aggregate</code> has been registered with this unit of work. Will return
-     * <code>true</code> if the aggregate has been registered, and has not yet been committed or rolled back. Otherwise,
-     * this method returns <code>false</code>.
-     *
-     * @param aggregate The aggregate to look for
-     * @return <code>true</code> if the aggregate is registered with this UnitOfWork, otherwise <code>false</code>.
-     */
-    boolean isRegistered(AggregateRoot aggregate);
+    public abstract <T extends AggregateRoot> void registerAggregate(T aggregateRoot,
+                                                                     SaveAggregateCallback<T> saveAggregateCallback);
 
     /**
      * Request to publish the given <code>event</code> on the given <code>eventBus</code>. The UnitOfWork may either
@@ -74,28 +132,72 @@ public interface UnitOfWork {
      * @param event    The event to be published on the event bus
      * @param eventBus The event bus on which to publish the event
      */
-    void publishEvent(Event event, EventBus eventBus);
+    public abstract void publishEvent(Event event, EventBus eventBus);
 
     /**
-     * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
-     * registered {@link UnitOfWorkListener}s are notified.
+     * Performs logic required when starting this UnitOfWork instance.
+     * <p/>
+     * This implementation does nothing and may be freely overridden.
      */
-    void rollback();
+    protected void doStart() {
+    }
 
     /**
-     * Commits the UnitOfWork. All registered aggregates that have not been registered as stored are saved in their
-     * respective repositories, buffered events are sent to their respective event bus, and all registered
-     * UnitOfWorkListeners are notified.
+     * Executes the logic required to commit this unit of work.
      */
-    void commit();
+    protected abstract void doCommit();
 
     /**
-     * Register a listener that listens to state changes in this UnitOfWork. This typically allows components to clean
-     * up resources, such as locks, when a UnitOfWork is committed or rolled back. If a UnitOfWork is partially
-     * committed, only the listeners bound to one of the committed aggregates is notified.
-     *
-     * @param aggregate The aggregate to bind the listener to.
-     * @param listener  The listener to notify when the UnitOfWork's state changes.
+     * Executes the logic required to commit this unit of work.
      */
-    void registerListener(AggregateRoot aggregate, UnitOfWorkListener listener);
+    protected abstract void doRollback();
+
+    private void performCommit() {
+        try {
+            doCommit();
+        } catch (RuntimeException t) {
+            doRollback();
+            throw t;
+        }
+    }
+
+    private void assertStarted() {
+        if (!isStarted) {
+            throw new IllegalStateException("UnitOfWork is not started");
+        }
+    }
+
+    private void clear() {
+        CurrentUnitOfWork.clear(this);
+        isStarted = false;
+    }
+
+    private class CommitOnOuterCommitTask implements UnitOfWorkListener {
+
+        @Override
+        public void afterCommit() {
+            CurrentUnitOfWork.set(UnitOfWork.this);
+            try {
+                performCommit();
+            } finally {
+                CurrentUnitOfWork.clear(UnitOfWork.this);
+            }
+        }
+
+        @Override
+        public void onRollback() {
+            CurrentUnitOfWork.set(UnitOfWork.this);
+            try {
+                doRollback();
+            } finally {
+                CurrentUnitOfWork.clear(UnitOfWork.this);
+            }
+        }
+
+        @Override
+        public void onPrepareCommit() {
+        }
+
+    }
+
 }

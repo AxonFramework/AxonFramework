@@ -45,6 +45,9 @@ public class DefaultUnitOfWorkTest {
     @SuppressWarnings({"unchecked", "deprecation"})
     @Before
     public void setUp() {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
         testSubject = new DefaultUnitOfWork();
         mockEventBus = mock(EventBus.class);
         mockAggregateRoot = mock(AggregateRoot.class);
@@ -66,35 +69,32 @@ public class DefaultUnitOfWorkTest {
     @After
     public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.clear();
+            CurrentUnitOfWork.get().rollback();
         }
     }
 
     @SuppressWarnings({"unchecked"})
     @Test
     public void testSagaEventsDoNotOvertakeRegularEvents() {
+        testSubject.start();
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                testSubject.registerAggregate(mockAggregateRoot, null, callback);
-                testSubject.commitAggregate(mockAggregateRoot);
+                DefaultUnitOfWork uow = new DefaultUnitOfWork();
+                uow.start();
+                uow.registerAggregate(mockAggregateRoot, callback);
+                uow.commit();
                 return null;
             }
         }).when(listener1).handle(event1);
-        testSubject.registerAggregate(mockAggregateRoot, null, callback);
-        testSubject.commitAggregate(mockAggregateRoot);
+        testSubject.registerAggregate(mockAggregateRoot, callback);
+        testSubject.commit();
 
         InOrder inOrder = inOrder(listener1, listener2, callback);
-        inOrder.verify(listener1).handle(event1);
-        inOrder.verify(listener2).handle(event1);
-        inOrder.verify(listener1).handle(event2);
-        inOrder.verify(listener2).handle(event2);
-    }
-
-    @Test
-    public void testSagaEventsDoNotOvertakeRegularEvents_ImplicitUnitOfWork() {
-        testSubject = new ImplicitUnitOfWork();
-        testSagaEventsDoNotOvertakeRegularEvents();
+        inOrder.verify(listener1, times(1)).handle(event1);
+        inOrder.verify(listener2, times(1)).handle(event1);
+        inOrder.verify(listener1, times(1)).handle(event2);
+        inOrder.verify(listener2, times(1)).handle(event2);
     }
 
     private class PublishEvent implements Answer {
@@ -107,7 +107,7 @@ public class DefaultUnitOfWorkTest {
 
         @Override
         public Object answer(InvocationOnMock invocation) throws Throwable {
-            testSubject.publishEvent(event, mockEventBus);
+            CurrentUnitOfWork.get().publishEvent(event, mockEventBus);
             return null;
         }
     }

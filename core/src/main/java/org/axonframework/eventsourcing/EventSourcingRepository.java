@@ -78,7 +78,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * @param aggregate the aggregate to store
      */
     @Override
-    protected void doSave(T aggregate) {
+    protected void doSaveWithLock(T aggregate) {
         DomainEventStream eventStream = aggregate.getUncommittedEvents();
         Iterator<EventStreamDecorator> iterator = decorators.descendingIterator();
         while (iterator.hasNext()) {
@@ -113,7 +113,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         final T aggregate = createAggregate(aggregateIdentifier, events.peek());
         List<DomainEvent> unseenEvents = new ArrayList<DomainEvent>();
         aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
-        CurrentUnitOfWork.get().registerListener(aggregate, new ConflictResolvingListener(aggregate, unseenEvents));
+        CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
         return aggregate;
     }
 

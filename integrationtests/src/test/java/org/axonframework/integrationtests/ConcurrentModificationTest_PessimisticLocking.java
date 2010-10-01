@@ -61,7 +61,7 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
     public void clearUnitsOfWork() {
         // somewhere, a process is not properly clearing the UnitOfWork
         while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.clear();
+            CurrentUnitOfWork.get().rollback();
         }
     }
 

@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.*;
@@ -43,7 +44,7 @@ public class SimpleCommandBusTest {
     @After
     public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.clear();
+            CurrentUnitOfWork.get().rollback();
         }
     }
 
@@ -65,11 +66,11 @@ public class SimpleCommandBusTest {
 
     @Test
     public void testDispatchCommand_ImplicitUnitOfWorkIsCommitted() {
-        final UnitOfWork work = mock(UnitOfWork.class);
+        final UnitOfWork work = spy(new DefaultUnitOfWork());
         testSubject.subscribe(String.class, new CommandHandler<String>() {
             @Override
             public Object handle(String command, CommandContext<String> stringCommandContext) throws Throwable {
-                CurrentUnitOfWork.set(work);
+                work.start();
                 return command;
             }
         });
@@ -89,11 +90,11 @@ public class SimpleCommandBusTest {
 
     @Test
     public void testDispatchCommand_ImplicitUnitOfWorkIsRolledBack() {
-        final UnitOfWork work = mock(UnitOfWork.class);
+        final UnitOfWork work = spy(new DefaultUnitOfWork());
         testSubject.subscribe(String.class, new CommandHandler<String>() {
             @Override
             public Object handle(String command, CommandContext<String> stringCommandContext) throws Throwable {
-                CurrentUnitOfWork.set(work);
+                work.start();
                 throw new RuntimeException();
             }
         });

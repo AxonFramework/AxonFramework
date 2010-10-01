@@ -17,15 +17,13 @@
 package org.axonframework.test;
 
 import org.axonframework.domain.DomainEvent;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -43,7 +41,7 @@ public class FixtureTest_RegularParams {
     @Test
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus()))
+                                                                     fixture.getEventBus()))
                 .given(new MyEvent(1))
                 .when(new TestCommand(fixture.getAggregateIdentifier()))
                 .expectReturnValue(Void.TYPE)
@@ -66,7 +64,7 @@ public class FixtureTest_RegularParams {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         fixture
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                        fixture.getEventBus()))
+                                                                      fixture.getEventBus()))
                 .given(givenEvents)
                 .when(new TestCommand(fixture.getAggregateIdentifier()))
                 .expectEvents(new MyEvent(4))
@@ -77,13 +75,15 @@ public class FixtureTest_RegularParams {
     public void testFixture_CommandHandlerDispatchesNonDomainEvents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
+        // the domain events are part of the transaction, but the command handler directly dispatches an application
+        // event to the event bus. This event dispatched anyway. The
         fixture
                 .registerAnnotatedCommandHandler(commandHandler)
                 .given(givenEvents)
                 .when(new StrangeCommand(fixture.getAggregateIdentifier()))
-                .expectStoredEvents(new MyEvent(4))
-                .expectPublishedEvents(new MyEvent(4), new MyApplicationEvent(commandHandler))
+                .expectStoredEvents()
+                .expectPublishedEvents(new MyApplicationEvent(commandHandler))
                 .expectException(StrangeCommandReceivedException.class);
     }
 
@@ -91,7 +91,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_ReportWrongNumberOfEvents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -109,7 +109,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_ReportWrongEvents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -127,7 +127,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_UnexpectedException() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -144,7 +144,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_UnexpectedReturnValue() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -163,7 +163,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_WrongReturnValue() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
@@ -179,7 +179,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_WrongExceptionType() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
@@ -196,7 +196,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_WrongEventContents() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -216,7 +216,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_WrongEventContents_WithNullValues() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)
@@ -236,7 +236,7 @@ public class FixtureTest_RegularParams {
     public void testFixture_ExpectedPublishedSameAsStored() {
         List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
-                fixture.getEventBus());
+                                                               fixture.getEventBus());
         try {
             fixture
                     .registerAnnotatedCommandHandler(commandHandler)

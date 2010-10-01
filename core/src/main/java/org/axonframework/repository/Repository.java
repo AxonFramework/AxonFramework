@@ -64,24 +64,14 @@ public interface Repository<T extends AggregateRoot> {
      * Adds the given <code>aggregate</code> to the repository. The version of this aggregate must be <code>null</code>,
      * indicating that it has not been previously persisted.
      * <p/>
-     * This method will not force the repository to save the aggregate. Instead, it is registered with the current
-     * UnitOfWork. To force the aggregate from being saved, use either {@link #save(org.axonframework.domain.AggregateRoot)},
-     * or commit the UnitOfWork.
+     * This method will not force the repository to save the aggregate immediately. Instead, it is registered with the
+     * current UnitOfWork. To force storage of an aggregate, commit the current unit of work
+     * (<code>CurrentUnitOfWork.commit()</code>)
      *
      * @param aggregate The aggregate to add to the repository.
+     * @throws IllegalArgumentException if the given aggregate is not newly created. This means {@link
+     *                                  org.axonframework.domain.AggregateRoot#getVersion()} must return
+     *                                  <code>null</code>.
      */
     void add(T aggregate);
-
-    /**
-     * Store the given aggregate. If an aggregate with the same unique identifier already exists, it is updated
-     * instead.
-     * <p/>
-     * New aggregates will automatically be added to the repository, if that has not been done explicitly using {@link
-     * #add(org.axonframework.domain.AggregateRoot)}
-     * <p/>
-     * Note: It is recommended to use a UnitOfWork instead. See {@link org.axonframework.commandhandling.interceptors.SimpleUnitOfWorkInterceptor}.
-     *
-     * @param aggregate The aggregate root of the aggregate to store.
-     */
-    void save(T aggregate);
 }

@@ -28,12 +28,14 @@ public class CurrentUnitOfWorkTest {
 
     @Before
     public void setUp() {
-        CurrentUnitOfWork.clear();
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
     @Test
     public void testGetSession_DefaultsToImplicitSession() {
-        assertEquals(ImplicitUnitOfWork.class, CurrentUnitOfWork.get().getClass());
+        assertEquals(DefaultUnitOfWork.class, CurrentUnitOfWork.get().getClass());
     }
 
     @Test
@@ -42,8 +44,20 @@ public class CurrentUnitOfWorkTest {
         CurrentUnitOfWork.set(mockUnitOfWork);
         assertSame(mockUnitOfWork, CurrentUnitOfWork.get());
 
-        CurrentUnitOfWork.clear();
+        CurrentUnitOfWork.clear(mockUnitOfWork);
         assertNotSame(mockUnitOfWork, CurrentUnitOfWork.get());
+    }
+
+    @Test
+    public void testNotCurrentUnitOfWorkCommitted() {
+        DefaultUnitOfWork outerUoW = new DefaultUnitOfWork();
+        outerUoW.start();
+        new DefaultUnitOfWork().start();
+        try {
+            outerUoW.commit();
+        } catch (IllegalStateException e) {
+            assertTrue("Wrong type of message: " + e.getMessage(), e.getMessage().contains("not the active"));
+        }
     }
 
 }

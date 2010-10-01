@@ -49,15 +49,17 @@ public abstract class CurrentUnitOfWork {
     }
 
     /**
-     * Gets the UnitOfWork bound to the current thread. If no UnitOfWork has been registered with {@link
-     * #set(UnitOfWork)}, an {@link ImplicitUnitOfWork} is returned.
+     * Gets the UnitOfWork bound to the current thread. If no UnitOfWork has been started, a new {@link
+     * org.axonframework.unitofwork.DefaultUnitOfWork} is started and returned.
+     * <p/>
+     * To verify whether a UnitOfWork is already active, use {@link #isStarted()}.
      *
      * @return The UnitOfWork bound to the current thread.
      */
     public static UnitOfWork get() {
         Deque<UnitOfWork> currentUnitOfWork = CURRENT.get();
         if (currentUnitOfWork.isEmpty()) {
-            set(new ImplicitUnitOfWork());
+            new DefaultUnitOfWork().start();
         }
         return currentUnitOfWork.peek();
     }
@@ -79,18 +81,8 @@ public abstract class CurrentUnitOfWork {
      *
      * @param unitOfWork The UnitOfWork to bind to the current thread.
      */
-    public static void set(UnitOfWork unitOfWork) {
+    static void set(UnitOfWork unitOfWork) {
         CURRENT.get().push(unitOfWork);
-    }
-
-    /**
-     * Clears the UnitOfWork currently bound to the current thread. The previously bound UnitOfWork, if any, is
-     * restored.
-     */
-    public static void clear() {
-        if (isStarted()) {
-            CURRENT.get().pop();
-        }
     }
 
     /**
@@ -98,11 +90,14 @@ public abstract class CurrentUnitOfWork {
      * <code>unitOfWork</code>. Otherwise, nothing happens.
      *
      * @param unitOfWork The UnitOfWork expected to be bound to the current thread.
+     * @throws IllegalStateException when the given UnitOfWork was not the current active UnitOfWork. This exception
+     *                               indicates a potentially wrong nesting of Units Of Work.
      */
-    public static void clear(UnitOfWork unitOfWork) {
+    static void clear(UnitOfWork unitOfWork) {
         if (isStarted() && CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
+        } else {
+            throw new IllegalStateException("Could not clear this UnitOfWork. It is not the active one.");
         }
-
     }
 }

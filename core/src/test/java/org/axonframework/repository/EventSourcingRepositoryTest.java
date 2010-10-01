@@ -84,7 +84,7 @@ public class EventSourcingRepositoryTest {
 
         aggregate.apply(event3);
 
-        testSubject.save(aggregate);
+        CurrentUnitOfWork.commit();
 
         verify(mockEventBus).publish(event3);
         verify(mockEventBus, never()).publish(event1);
@@ -143,7 +143,9 @@ public class EventSourcingRepositoryTest {
         verify(conflictResolver, never()).resolveConflicts(anyListOf(DomainEvent.class), anyListOf(DomainEvent.class));
         DomainEvent appliedEvent = new StubDomainEvent();
         actual.apply(appliedEvent);
-        testSubject.save(actual);
+
+        CurrentUnitOfWork.commit();
+
         verify(conflictResolver).resolveConflicts(Arrays.asList(appliedEvent), Arrays.asList(event2, event3));
     }
 
@@ -172,7 +174,9 @@ public class EventSourcingRepositoryTest {
         TestAggregate actual = testSubject.load(identifier, 3L);
         verify(conflictResolver, never()).resolveConflicts(anyListOf(DomainEvent.class), anyListOf(DomainEvent.class));
         actual.apply(new StubDomainEvent());
-        testSubject.save(actual);
+
+        CurrentUnitOfWork.commit();
+
         verify(conflictResolver, never()).resolveConflicts(anyListOf(DomainEvent.class), anyListOf(DomainEvent.class));
     }
 

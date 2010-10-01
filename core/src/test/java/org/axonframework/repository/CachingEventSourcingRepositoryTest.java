@@ -50,7 +50,9 @@ public class CachingEventSourcingRepositoryTest {
 
     @Before
     public void setUp() {
-        CurrentUnitOfWork.clear();
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
         testSubject = new StubCachingEventSourcingRepository();
         mockEventBus = mock(EventBus.class);
         testSubject.setEventBus(mockEventBus);
@@ -64,19 +66,22 @@ public class CachingEventSourcingRepositoryTest {
 
     @After
     public void tearDown() {
-        CurrentUnitOfWork.clear();
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
     @Test
     public void testAggregatesRetrievedFromCache() {
         StubAggregate aggregate1 = new StubAggregate();
-        testSubject.save(aggregate1);
+        testSubject.add(aggregate1);
+        CurrentUnitOfWork.commit();
 
         StubAggregate reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
         assertSame(aggregate1, reloadedAggregate1);
         aggregate1.doSomething();
         aggregate1.doSomething();
-        testSubject.save(aggregate1);
+        CurrentUnitOfWork.commit();
 
         DomainEventStream events = mockEventStore.readEvents("mock", aggregate1.getIdentifier());
         List<Event> eventList = new ArrayList<Event>();

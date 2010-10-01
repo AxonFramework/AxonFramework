@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.interceptors;
 import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -38,38 +37,29 @@ import org.slf4j.LoggerFactory;
 public class SimpleUnitOfWorkInterceptor implements CommandHandlerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleUnitOfWorkInterceptor.class);
-    private boolean allowNesting = false;
 
     @Override
     public Object handle(CommandContext context, InterceptorChain chain) throws Throwable {
-        if (!allowNesting && CurrentUnitOfWork.isStarted()) {
-            return chain.proceed(context);
-        }
-        return startNewUnitOfWorkAndProceed(context, chain);
-    }
-
-    private Object startNewUnitOfWorkAndProceed(CommandContext context, InterceptorChain chain) throws Throwable {
         logger.debug("Incoming command. Creating new UnitOfWork instance");
         UnitOfWork unitOfWork = createUnitOfWork();
-        logger.debug("Registering new UnitOfWork instance with CurrentUnitOfWork");
-        CurrentUnitOfWork.set(unitOfWork);
+        if (!unitOfWork.isStarted()) {
+            unitOfWork.start();
+        }
 
+        Object returnValue;
         try {
             logger.debug("Proceeding interceptor chain");
-            Object returnValue = chain.proceed(context);
-            logger.debug("Committing UnitOfWork after successful command execution");
-            unitOfWork.commit();
-            logger.debug("UnitOfWork successfully committed");
-            return returnValue;
+            returnValue = chain.proceed(context);
         } catch (Throwable t) {
             logger.debug("Rolling back UnitOfWork after execution error");
             unitOfWork.rollback();
             logger.debug("UnitOfWork rolled back");
             throw t;
-        } finally {
-            logger.debug("Clearing UnitOfWork from CurrentUnitOfWork");
-            CurrentUnitOfWork.clear();
         }
+        logger.debug("Committing UnitOfWork after successful command execution");
+        unitOfWork.commit();
+        logger.debug("UnitOfWork successfully committed");
+        return returnValue;
     }
 
     /**
@@ -83,17 +73,4 @@ public class SimpleUnitOfWorkInterceptor implements CommandHandlerInterceptor {
         return new DefaultUnitOfWork();
     }
 
-    /**
-     * Indicates whether nesting of UnitOfWork is allowed. When UnitOfWorks are nested, a new UnitOfWork is started for
-     * each incoming command, even if triggered by the handling of another command, and committed.
-     * <p/>
-     * When nesting is off (false, default), all commands triggered by the handling of another command will run in a
-     * single UnitOfWork.
-     *
-     * @param allowNesting <code>true</code> to allow nesting. <code>false</code> to use an existing UnitOfWork if
-     *                     possible. Defaults to <code>false</code>.
-     */
-    public void setAllowNesting(boolean allowNesting) {
-        this.allowNesting = allowNesting;
-    }
 }

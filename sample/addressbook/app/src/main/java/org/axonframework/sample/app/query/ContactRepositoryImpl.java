@@ -19,10 +19,10 @@ package org.axonframework.sample.app.query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.List;
 import java.util.UUID;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 /**
  * @author Allard Buijze
@@ -46,7 +46,7 @@ public class ContactRepositoryImpl implements ContactRepository {
     @Override
     public List<AddressEntry> findAllAddressesForContact(UUID contactIdentifier) {
         return entityManager.createQuery("SELECT e FROM AddressEntry e WHERE e.identifier = :id")
-                .setParameter("id", contactIdentifier)
+                .setParameter("id", contactIdentifier.toString())
                 .setMaxResults(10)
                 .getResultList();
     }
@@ -65,7 +65,7 @@ public class ContactRepositoryImpl implements ContactRepository {
     @Override
     public ContactEntry loadContactDetails(UUID contactIdentifier) {
         return (ContactEntry) entityManager.createQuery("SELECT e FROM ContactEntry e WHERE e.identifier = :id")
-                .setParameter("id", contactIdentifier)
+                .setParameter("id", contactIdentifier.toString())
                 .getSingleResult();
     }
 }

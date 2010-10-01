@@ -48,27 +48,14 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
 
     /**
-     * Saves the given aggregate and publishes all uncommitted events to the UnitOfWork to be published to the EventBus.
-     * The given <code>version</code> indicates which version was expected to be loaded. Typically, you would use the
-     * save value as used when calling {@link #load(org.axonframework.domain.AggregateIdentifier, Long)}.
-     * <p/>
-     * Note: You are recommended to use a {@link org.axonframework.unitofwork.UnitOfWork UnitOfWork} instead of calling
-     * <code>save()</code> explicitly.
-     *
-     * @param aggregate The aggregate root of the aggregate to store.
-     * @see #setEventBus(org.axonframework.eventhandling.EventBus)
+     * {@inheritDoc}
      */
     @Override
-    public void save(T aggregate) {
-        if (!CurrentUnitOfWork.get().isRegistered(aggregate)) {
-            CurrentUnitOfWork.get().registerAggregate(aggregate, null, saveAggregateCallback);
-        }
-        CurrentUnitOfWork.get().commitAggregate(aggregate);
-    }
-
-    @Override
     public void add(T aggregate) {
-        CurrentUnitOfWork.get().registerAggregate(aggregate, null, saveAggregateCallback);
+        if (aggregate.getVersion() != null) {
+            throw new IllegalArgumentException("Only newly created (unpersisted) aggregates may be added.");
+        }
+        CurrentUnitOfWork.get().registerAggregate(aggregate, saveAggregateCallback);
     }
 
     /**
@@ -81,7 +68,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     public T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
         T aggregate = doLoad(aggregateIdentifier, expectedVersion);
         validateOnLoad(aggregate, expectedVersion);
-        CurrentUnitOfWork.get().registerAggregate(aggregate, expectedVersion, saveAggregateCallback);
+        CurrentUnitOfWork.get().registerAggregate(aggregate, saveAggregateCallback);
         return aggregate;
     }
 

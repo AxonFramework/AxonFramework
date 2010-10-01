@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
 import org.mockito.*;
@@ -49,7 +50,9 @@ public class LockingRepositoryTest {
     public void testStoreNewAggregate() {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
-        testSubject.save(aggregate);
+        testSubject.add(aggregate);
+        CurrentUnitOfWork.commit();
+
         verifyZeroInteractions(lockManager);
         verify(mockEventBus).publish(isA(DomainEvent.class));
     }
@@ -58,13 +61,14 @@ public class LockingRepositoryTest {
     public void testLoadAndStoreAggregate() {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
-        testSubject.save(aggregate);
+        testSubject.add(aggregate);
+        CurrentUnitOfWork.commit();
 
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
         loadedAggregate.doSomething();
-        testSubject.save(loadedAggregate);
+        CurrentUnitOfWork.commit();
 
         InOrder inOrder = inOrder(lockManager);
         inOrder.verify(lockManager, atLeastOnce()).validateLock(loadedAggregate);
@@ -77,19 +81,20 @@ public class LockingRepositoryTest {
     public void testLoadAndStoreAggregate_LockReleasedOnException() {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
-        testSubject.save(aggregate);
+        testSubject.add(aggregate);
+        CurrentUnitOfWork.commit();
 
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
-        CurrentUnitOfWork.get().registerListener(loadedAggregate, new UnitOfWorkListenerAdapter() {
+        CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
             @Override
             public void onPrepareCommit() {
                 throw new RuntimeException("Mock Exception");
             }
         });
         try {
-            testSubject.save(loadedAggregate);
+            CurrentUnitOfWork.commit();
             fail("Expected exception to be thrown");
         }
         catch (RuntimeException e) {
@@ -112,12 +117,13 @@ public class LockingRepositoryTest {
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
-        testSubject.save(aggregate);
+        testSubject.add(aggregate);
+        CurrentUnitOfWork.commit();
 
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
-        CurrentUnitOfWork.get().registerListener(loadedAggregate, new UnitOfWorkListenerAdapter() {
+        CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
             @Override
             public void onPrepareCommit() {
                 throw new RuntimeException("Mock Exception");
@@ -125,7 +131,7 @@ public class LockingRepositoryTest {
         });
 
         try {
-            testSubject.save(loadedAggregate);
+            CurrentUnitOfWork.commit();
             fail("Expected exception to be thrown");
         }
         catch (RuntimeException e) {
@@ -145,14 +151,23 @@ public class LockingRepositoryTest {
 
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
-        testSubject.save(aggregate);
+        testSubject.add(aggregate);
+        CurrentUnitOfWork.commit();
+
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         loadedAggregate.doSomething();
+        CurrentUnitOfWork.commit();
 
-        testSubject.save(aggregate);
+        // this tricks the UnitOfWork to save this aggregate, without loading it.
+        CurrentUnitOfWork.get().registerAggregate(loadedAggregate, new SaveAggregateCallback<StubAggregate>() {
+            @Override
+            public void save(StubAggregate aggregate) {
+                testSubject.doSave(aggregate);
+            }
+        });
         loadedAggregate.doSomething();
         try {
-            testSubject.save(loadedAggregate);
+            CurrentUnitOfWork.commit();
             fail("This should have failed due to lacking lock");
         } catch (ConcurrencyException e) {
             // that's ok
