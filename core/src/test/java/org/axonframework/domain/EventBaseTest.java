@@ -41,6 +41,14 @@ public class EventBaseTest {
     }
 
     @Test
+    public void testMetaData() {
+        SimpleEvent event1 = new SimpleEvent();
+        event1.addMetaData("key1", "value1");
+        assertEquals("value1", event1.getMetaData().get("key1"));
+
+    }
+
+    @Test
     public void testEquality() {
         Event event1 = new SimpleEvent();
         assertFalse(event1.equals(new Object()));

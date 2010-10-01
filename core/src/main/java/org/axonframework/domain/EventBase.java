@@ -18,6 +18,7 @@ package org.axonframework.domain;
 
 import org.joda.time.LocalDateTime;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
@@ -28,16 +29,14 @@ import java.util.UUID;
  */
 public abstract class EventBase implements Event {
 
-    private final LocalDateTime timestamp;
-    private final UUID eventIdentifier;
+    private final MutableEventMetaData metaData;
 
     /**
      * Initialize a new event. This constructor will set the event identifier to a random UUID and the timestamp to the
      * current date and time.
      */
     protected EventBase() {
-        timestamp = new LocalDateTime();
-        eventIdentifier = UUID.randomUUID();
+        metaData = new MutableEventMetaData(new LocalDateTime(), UUID.randomUUID());
     }
 
     /**
@@ -45,7 +44,23 @@ public abstract class EventBase implements Event {
      */
     @Override
     public UUID getEventIdentifier() {
-        return eventIdentifier;
+        return metaData.getEventIdentifier();
+    }
+
+    /**
+     * Insert a key-value pair into the meta data of this event. If a value already exists for the given key, it is
+     * overwritten with the <code>value</code> provided.
+     * <p/>
+     * Note: this method should <em>*never*</em> be called after an event has been dispatched or stored.
+     * <p/>
+     * Be careful when using key values with the underscore ( _ ) prefix. They might collide with internal Axon meta
+     * data.
+     *
+     * @param key   The key of the key-value pair
+     * @param value The value to store in the meta data
+     */
+    protected final void addMetaData(String key, Serializable value) {
+        metaData.put(key, value);
     }
 
     /**
@@ -53,7 +68,23 @@ public abstract class EventBase implements Event {
      */
     @Override
     public LocalDateTime getTimestamp() {
-        return timestamp;
+        return metaData.getTimestamp();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public EventMetaData getMetaData() {
+        return metaData;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Serializable getMetaDataValue(String key) {
+        return metaData.get(key);
     }
 
     /**
@@ -73,7 +104,7 @@ public abstract class EventBase implements Event {
 
         EventBase that = (EventBase) o;
 
-        return eventIdentifier.equals(that.eventIdentifier);
+        return metaData.getEventIdentifier().equals(that.metaData.getEventIdentifier());
 
     }
 
@@ -82,6 +113,6 @@ public abstract class EventBase implements Event {
      */
     @Override
     public int hashCode() {
-        return eventIdentifier.hashCode();
+        return metaData.getEventIdentifier().hashCode();
     }
 }

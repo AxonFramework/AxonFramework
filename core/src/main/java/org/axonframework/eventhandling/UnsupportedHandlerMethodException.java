@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.util.AxonConfigurationException;
 
 import java.lang.reflect.Method;
 
@@ -28,13 +28,13 @@ import java.lang.reflect.Method;
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
-public class UnsupportedHandlerMethodException extends AxonNonTransientException {
+public class UnsupportedHandlerMethodException extends AxonConfigurationException {
 
     private final Method violatingMethod;
     private static final long serialVersionUID = 7991150193173243668L;
 
     /**
-     * Initialize the exception with a <code>message</code> and the <code>violatingMethod</code>
+     * Initialize the exception with a <code>message</code> and the <code>violatingMethod</code>.
      *
      * @param message         a descriptive message of the violation
      * @param violatingMethod the method that violates the rules of annotated Event Handlers
@@ -45,7 +45,7 @@ public class UnsupportedHandlerMethodException extends AxonNonTransientException
     }
 
     /**
-     * A reference to the method that violated the event handler rules
+     * A reference to the method that violated the event handler rules.
      *
      * @return the method that violated the event handler rules
      *

@@ -19,10 +19,17 @@ package org.axonframework.eventstore;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.serializer.GenericXStreamSerializer;
+import org.axonframework.util.AxonConfigurationException;
+import org.axonframework.util.SerializationException;
+import org.dom4j.Document;
+import org.dom4j.io.XPP3Reader;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Implementation of the serializer that uses XStream as underlying serialization mechanism. Events are serialized to
@@ -35,6 +42,8 @@ public class XStreamEventSerializer implements EventSerializer {
 
     private GenericXStreamSerializer genericXStreamSerializer;
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
+    private List<EventUpcaster<Document>> upcasters = new ArrayList<EventUpcaster<Document>>();
+    private Charset charset;
 
     /**
      * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
@@ -62,13 +71,12 @@ public class XStreamEventSerializer implements EventSerializer {
      * @param charset The character set to use.
      */
     public XStreamEventSerializer(Charset charset) {
+        this.charset = charset;
         genericXStreamSerializer = new GenericXStreamSerializer(charset);
     }
 
     /**
      * {@inheritDoc}
-     *
-     * @throws EventStoreException if the configured encoding is not available in this JVM.
      */
     @Override
     public byte[] serialize(DomainEvent event) {
@@ -79,12 +87,25 @@ public class XStreamEventSerializer implements EventSerializer {
 
     /**
      * {@inheritDoc}
-     *
-     * @throws EventStoreException if the configured encoding is not available in this JVM.
      */
     @Override
     public DomainEvent deserialize(byte[] serializedEvent) {
-        return (DomainEvent) genericXStreamSerializer.deserialize(new ByteArrayInputStream(serializedEvent));
+        if (upcasters.isEmpty()) {
+            return (DomainEvent) genericXStreamSerializer.deserialize(new ByteArrayInputStream(serializedEvent));
+        } else {
+            XPP3Reader reader = new XPP3Reader();
+            Document document;
+            try {
+                document = reader.read(new InputStreamReader(new ByteArrayInputStream(serializedEvent), charset));
+            } catch (Exception e) {
+                throw new SerializationException("Exception while preprocessing events", e);
+            }
+            for (EventUpcaster<Document> upcaster : upcasters) {
+                document = upcaster.upcast(document);
+            }
+            return (DomainEvent) genericXStreamSerializer.deserialize(document);
+        }
+
     }
 
     /**
@@ -135,5 +156,26 @@ public class XStreamEventSerializer implements EventSerializer {
      */
     public XStream getXStream() {
         return genericXStreamSerializer.getXStream();
+    }
+
+    /**
+     * Sets the event upcasters the serializer may use. Note that this serializer only supports the dom4j Document
+     * representation of upcasters. This means they should all implement <code>EventUpcaster&lt;Document&gt;</code>.
+     *
+     * @param eventUpcasters The upcasters to assign to this serializer
+     */
+    public void setEventUpcasters(List<EventUpcaster<Document>> eventUpcasters) {
+        assertSupportDom4jDocument(eventUpcasters);
+        this.upcasters = eventUpcasters;
+    }
+
+    private void assertSupportDom4jDocument(List<EventUpcaster<Document>> eventUpcasters) {
+        for (EventUpcaster<Document> upcaster : eventUpcasters) {
+            if (!upcaster.getSupportedRepresentation().isAssignableFrom(Document.class)) {
+                throw new AxonConfigurationException(String.format(
+                        "The given upcaster [%s] does not support the dom4j Document representation",
+                        upcaster.getClass().getSimpleName()));
+            }
+        }
     }
 }

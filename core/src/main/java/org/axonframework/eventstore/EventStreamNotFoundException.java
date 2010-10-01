@@ -25,6 +25,8 @@ package org.axonframework.eventstore;
  */
 public class EventStreamNotFoundException extends EventStoreException {
 
+    private static final long serialVersionUID = -6251943760559274432L;
+
     /**
      * Initialize the exception with the given <code>message</code>.
      *
@@ -35,7 +37,7 @@ public class EventStreamNotFoundException extends EventStoreException {
     }
 
     /**
-     * Initialize the exception with the given <code>message</code> and <code>cause</code>
+     * Initialize the exception with the given <code>message</code> and <code>cause</code>.
      *
      * @param message a detailed message of the cause of the exception
      * @param cause   the original cause of this exception

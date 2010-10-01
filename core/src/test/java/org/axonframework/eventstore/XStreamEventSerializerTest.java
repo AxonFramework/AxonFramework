@@ -48,6 +48,7 @@ public class XStreamEventSerializerTest {
         assertTrue(actualResult instanceof TestEvent);
         TestEvent actualEvent = (TestEvent) actualResult;
         assertEquals("Henk", actualEvent.getName());
+        assertEquals("someValue", actualEvent.getMetaDataValue("someMetaData"));
     }
 
     @Test(expected = UnsupportedCharsetException.class)
@@ -104,10 +105,12 @@ public class XStreamEventSerializerTest {
         private Period period;
 
         public TestEvent(String name) {
+            super(0, AggregateIdentifierFactory.randomIdentifier());
             this.name = name;
             this.date = new DateMidnight();
             this.dateTime = new DateTime();
             this.period = new Period(100);
+            addMetaData("someMetaData", "someValue");
         }
 
         public String getName() {

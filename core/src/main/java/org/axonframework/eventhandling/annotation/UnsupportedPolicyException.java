@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.util.AxonConfigurationException;
 
 /**
  * Exception indicating that a given {@link org.axonframework.eventhandling.EventSequencingPolicy} could not be
@@ -25,7 +25,7 @@ import org.axonframework.util.AxonNonTransientException;
  * @author Allard Buijze
  * @since 0.3
  */
-public class UnsupportedPolicyException extends AxonNonTransientException {
+public class UnsupportedPolicyException extends AxonConfigurationException {
 
     private static final long serialVersionUID = 2687996947706338112L;
 

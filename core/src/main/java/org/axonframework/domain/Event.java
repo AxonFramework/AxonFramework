@@ -52,4 +52,21 @@ public interface Event extends Serializable {
      * @return the timestamp of this event.
      */
     LocalDateTime getTimestamp();
+
+    /**
+     * Returns the meta data for this event. This meta data is a collection of key-value pairs, where the key is a
+     * String, and the value is a serializable object.
+     *
+     * @return the meta data for this event
+     */
+    EventMetaData getMetaData();
+
+    /**
+     * Returns the value registered in the meta data under the given <code>key</code>. If no value is known for the
+     * given <code>key</code>, this method returns <code>null</code>.
+     *
+     * @param key The key of the meta data entry
+     * @return The value registered under the given key, or <code>null</code> if the key wasn't found
+     */
+    Serializable getMetaDataValue(String key);
 }
