@@ -28,7 +28,7 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>target/en-US/html_single</directory>
+            <directory>target/docbook/publish/en-US/html_single</directory>
             <includes>
                 <include>index.html</include>
                 <include>images/**</include>

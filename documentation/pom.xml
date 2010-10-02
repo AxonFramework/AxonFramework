@@ -228,9 +228,9 @@
                     </dependency>
                 </dependencies>
                 <configuration>
+                    <sourceDocumentName>reference-guide.xml</sourceDocumentName>
                     <sourceDirectory>${basedir}/src/main/docbook</sourceDirectory>
                     <masterTranslation>en-US</masterTranslation>
-                    <publishDirectory>${basedir}/target</publishDirectory>
                     <injections>
                         <injection>
                             <name>version</name>
