@@ -100,6 +100,8 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
 
         if (processorsElement != null) {
             processorsList.addAll(parserContext.getDelegate().parseListElement(processorsElement, beanDefinition));
+        }
+        if (!processorsList.isEmpty()) {
             beanDefinition.getPropertyValues().add(EVENT_PROCESSORS_PROPERTY, processorsList);
         }
     }

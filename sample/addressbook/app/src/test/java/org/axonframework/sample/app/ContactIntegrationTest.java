@@ -17,6 +17,7 @@
 package org.axonframework.sample.app;
 
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.repository.Repository;
 import org.axonframework.sample.app.command.ContactCommandHandler;
 import org.axonframework.sample.app.query.ContactRepository;
 import org.junit.*;
@@ -48,12 +49,16 @@ public class ContactIntegrationTest {
     @Autowired
     private ContactRepository contactRepository;
 
+    @Autowired
+    private Repository commandRepository;
+
     @Test(timeout = 10000)
     public void testApplicationContext() throws InterruptedException {
         assertNotNull(commandHandler);
         assertNotNull(eventStore);
         assertNotNull(taskExecutor);
         assertNotNull(contactRepository);
+        assertNotNull(commandRepository);
     }
 
 }
