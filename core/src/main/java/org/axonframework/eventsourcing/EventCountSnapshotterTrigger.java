@@ -20,6 +20,8 @@ import net.sf.jsr107cache.Cache;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +63,7 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
     }
 
     private void triggerSnapshotIfRequired(String type, AggregateIdentifier aggregateIdentifier,
-                                           AtomicInteger eventCount) {
+                                           final AtomicInteger eventCount) {
         if (eventCount.get() > trigger) {
             snapshotter.scheduleSnapshot(type, aggregateIdentifier);
             eventCount.set(1);
@@ -187,7 +189,9 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
         public boolean hasNext() {
             boolean hasNext = super.hasNext();
             if (!hasNext) {
-                triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, getCounter());
+                CurrentUnitOfWork.get().registerListener(new SnapshotTriggeringListener(aggregateType,
+                                                                                        aggregateIdentifier,
+                                                                                        getCounter()));
                 if (clearCountersAfterAppend) {
                     counters.remove(aggregateIdentifier, getCounter());
                 }
@@ -221,6 +225,25 @@ public class EventCountSnapshotterTrigger implements EventStreamDecorator {
         @Override
         public void onClear() {
             counters.clear();
+        }
+    }
+
+    private class SnapshotTriggeringListener extends UnitOfWorkListenerAdapter {
+
+        private final String aggregateType;
+        private final AggregateIdentifier aggregateIdentifier;
+        private final AtomicInteger counter;
+
+        public SnapshotTriggeringListener(String aggregateType,
+                                          AggregateIdentifier aggregateIdentifier, AtomicInteger counter) {
+            this.aggregateType = aggregateType;
+            this.aggregateIdentifier = aggregateIdentifier;
+            this.counter = counter;
+        }
+
+        @Override
+        public void afterCommit() {
+            triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, counter);
         }
     }
 }

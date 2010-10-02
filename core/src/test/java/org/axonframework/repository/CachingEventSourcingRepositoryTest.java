@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -50,9 +51,6 @@ public class CachingEventSourcingRepositoryTest {
 
     @Before
     public void setUp() {
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
-        }
         testSubject = new StubCachingEventSourcingRepository();
         mockEventBus = mock(EventBus.class);
         testSubject.setEventBus(mockEventBus);
@@ -73,16 +71,19 @@ public class CachingEventSourcingRepositoryTest {
 
     @Test
     public void testAggregatesRetrievedFromCache() {
+        DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate1 = new StubAggregate();
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
+        DefaultUnitOfWork.startAndGet();
         StubAggregate reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
         assertSame(aggregate1, reloadedAggregate1);
         aggregate1.doSomething();
         aggregate1.doSomething();
         CurrentUnitOfWork.commit();
 
+        DefaultUnitOfWork.startAndGet();
         DomainEventStream events = mockEventStore.readEvents("mock", aggregate1.getIdentifier());
         List<Event> eventList = new ArrayList<Event>();
         while (events.hasNext()) {

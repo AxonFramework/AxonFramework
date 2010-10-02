@@ -35,16 +35,19 @@ import static org.mockito.Mockito.*;
 public class SimpleCommandBusTest {
 
     private SimpleCommandBus testSubject;
+    private UnitOfWork unitOfWork;
 
     @Before
     public void setUp() {
         this.testSubject = new SimpleCommandBus();
+        unitOfWork = new DefaultUnitOfWork();
+        unitOfWork.start();
     }
 
     @After
     public void tearDown() {
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
+        if (unitOfWork.isStarted()) {
+            unitOfWork.rollback();
         }
     }
 
@@ -66,11 +69,12 @@ public class SimpleCommandBusTest {
 
     @Test
     public void testDispatchCommand_ImplicitUnitOfWorkIsCommitted() {
-        final UnitOfWork work = spy(new DefaultUnitOfWork());
+        unitOfWork.rollback();
         testSubject.subscribe(String.class, new CommandHandler<String>() {
             @Override
             public Object handle(String command, CommandContext<String> stringCommandContext) throws Throwable {
-                work.start();
+                assertTrue(CurrentUnitOfWork.isStarted());
+                assertNotNull(CurrentUnitOfWork.get());
                 return command;
             }
         });
@@ -85,16 +89,17 @@ public class SimpleCommandBusTest {
                 fail("Did not expect exception");
             }
         });
-        verify(work).commit();
+        assertFalse(CurrentUnitOfWork.isStarted());
     }
 
     @Test
     public void testDispatchCommand_ImplicitUnitOfWorkIsRolledBack() {
-        final UnitOfWork work = spy(new DefaultUnitOfWork());
+        unitOfWork.rollback();
         testSubject.subscribe(String.class, new CommandHandler<String>() {
             @Override
             public Object handle(String command, CommandContext<String> stringCommandContext) throws Throwable {
-                work.start();
+                assertTrue(CurrentUnitOfWork.isStarted());
+                assertNotNull(CurrentUnitOfWork.get());
                 throw new RuntimeException();
             }
         });
@@ -109,7 +114,7 @@ public class SimpleCommandBusTest {
                 assertEquals(RuntimeException.class, cause.getClass());
             }
         });
-        verify(work).rollback();
+        assertFalse(CurrentUnitOfWork.isStarted());
     }
 
     @Test(expected = NoHandlerForCommandException.class)

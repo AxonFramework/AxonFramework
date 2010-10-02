@@ -33,9 +33,9 @@ public class CurrentUnitOfWorkTest {
         }
     }
 
-    @Test
-    public void testGetSession_DefaultsToImplicitSession() {
-        assertEquals(DefaultUnitOfWork.class, CurrentUnitOfWork.get().getClass());
+    @Test(expected = IllegalStateException.class)
+    public void testGetSession_NoCurrentSession() {
+        CurrentUnitOfWork.get();
     }
 
     @Test
@@ -45,7 +45,7 @@ public class CurrentUnitOfWorkTest {
         assertSame(mockUnitOfWork, CurrentUnitOfWork.get());
 
         CurrentUnitOfWork.clear(mockUnitOfWork);
-        assertNotSame(mockUnitOfWork, CurrentUnitOfWork.get());
+        assertFalse(CurrentUnitOfWork.isStarted());
     }
 
     @Test

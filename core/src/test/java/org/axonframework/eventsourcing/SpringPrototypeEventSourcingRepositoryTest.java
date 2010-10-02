@@ -22,6 +22,8 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.invocation.*;
@@ -64,19 +66,27 @@ public class SpringPrototypeEventSourcingRepositoryTest {
 
     @Test
     public void testCreateInstances() {
-        final AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
-        when(mockEventStore.readEvents(repository.getTypeIdentifier(), aggregateIdentifier))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return new SimpleDomainEventStream(new StubDomainEvent(aggregateIdentifier, 0L));
-                    }
-                });
-        StubAggregate aggregate1 = repository.load(aggregateIdentifier, 0L);
-        StubAggregate aggregate2 = repository.load(aggregateIdentifier, 0L);
+        try {
+            new DefaultUnitOfWork().start();
+            final AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+            when(mockEventStore.readEvents(repository.getTypeIdentifier(), aggregateIdentifier))
+                    .thenAnswer(new Answer<Object>() {
+                        @Override
+                        public Object answer(InvocationOnMock invocation) throws Throwable {
+                            return new SimpleDomainEventStream(new StubDomainEvent(aggregateIdentifier, 0L));
+                        }
+                    });
+            StubAggregate aggregate1 = repository.load(aggregateIdentifier, 0L);
+            StubAggregate aggregate2 = repository.load(aggregateIdentifier, 0L);
 
-        assertNotSame(aggregate1, aggregate2);
-        assertEquals(Long.valueOf(0L), aggregate1.getVersion());
-        assertEquals(Long.valueOf(0L), aggregate2.getVersion());
+            assertNotSame(aggregate1, aggregate2);
+            assertEquals(Long.valueOf(0L), aggregate1.getVersion());
+            assertEquals(Long.valueOf(0L), aggregate2.getVersion());
+
+        } finally {
+            if (CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.get().rollback();
+            }
+        }
     }
 }

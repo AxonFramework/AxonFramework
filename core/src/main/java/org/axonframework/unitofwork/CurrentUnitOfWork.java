@@ -49,30 +49,34 @@ public abstract class CurrentUnitOfWork {
     }
 
     /**
-     * Gets the UnitOfWork bound to the current thread. If no UnitOfWork has been started, a new {@link
-     * org.axonframework.unitofwork.DefaultUnitOfWork} is started and returned.
+     * Gets the UnitOfWork bound to the current thread. If no UnitOfWork has been started, an {@link
+     * IllegalStateException} is thrown.
      * <p/>
      * To verify whether a UnitOfWork is already active, use {@link #isStarted()}.
      *
      * @return The UnitOfWork bound to the current thread.
+     *
+     * @throws IllegalStateException if no UnitOfWork is active
      */
     public static UnitOfWork get() {
         Deque<UnitOfWork> currentUnitOfWork = CURRENT.get();
         if (currentUnitOfWork.isEmpty()) {
-            new DefaultUnitOfWork().start();
+            throw new IllegalStateException("No UnitOfWork is currently started for this thread.");
         }
         return currentUnitOfWork.peek();
     }
 
     /**
-     * Commits the current UnitOfWork. If no UnitOfWork was started, this operation does nothing.
+     * Commits the current UnitOfWork. If no UnitOfWork was started, an {@link IllegalStateException} is thrown.
      *
+     * @throws IllegalStateException if no UnitOfWork is currently started.
      * @see org.axonframework.unitofwork.UnitOfWork#commit()
      */
     public static void commit() {
-        if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().commit();
+        if (!CurrentUnitOfWork.isStarted()) {
+            throw new IllegalStateException("No UnitOfWork is currenly started");
         }
+        CurrentUnitOfWork.get().commit();
     }
 
     /**

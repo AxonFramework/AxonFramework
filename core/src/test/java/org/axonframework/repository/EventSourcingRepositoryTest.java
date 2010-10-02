@@ -35,6 +35,8 @@ import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
@@ -55,6 +57,7 @@ public class EventSourcingRepositoryTest {
     private SnapshotEventStore mockEventStore;
     private EventBus mockEventBus;
     private EventSourcingRepository<TestAggregate> testSubject;
+    private UnitOfWork unitOfWork;
 
     @Before
     public void setUp() {
@@ -63,6 +66,14 @@ public class EventSourcingRepositoryTest {
         testSubject = new EventSourcingRepositoryImpl();
         testSubject.setEventBus(mockEventBus);
         testSubject.setEventStore(mockEventStore);
+        unitOfWork = DefaultUnitOfWork.startAndGet();
+    }
+
+    @After
+    public void tearDown() {
+        if (unitOfWork.isStarted()) {
+            unitOfWork.rollback();
+        }
     }
 
     @Test

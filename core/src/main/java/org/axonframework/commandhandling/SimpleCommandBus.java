@@ -18,6 +18,8 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,15 +82,20 @@ public class SimpleCommandBus implements CommandBus {
         }
         CommandContextImpl context = new CommandContextImpl(command, handler);
         boolean alreadyInUnitOfWork = CurrentUnitOfWork.isStarted();
+        UnitOfWork fallbackUnitOfWork = null;
+        if (!alreadyInUnitOfWork) {
+            fallbackUnitOfWork = new DefaultUnitOfWork();
+            fallbackUnitOfWork.start();
+        }
         try {
             Object result = interceptorChain.proceed(context);
-            if (!alreadyInUnitOfWork && CurrentUnitOfWork.isStarted()) {
-                CurrentUnitOfWork.commit();
+            if (fallbackUnitOfWork != null) {
+                fallbackUnitOfWork.commit();
             }
             callback.onSuccess((R) result, context);
         } catch (Throwable throwable) {
-            if (!alreadyInUnitOfWork && CurrentUnitOfWork.isStarted()) {
-                CurrentUnitOfWork.get().rollback();
+            if (fallbackUnitOfWork != null && fallbackUnitOfWork.isStarted()) {
+                fallbackUnitOfWork.rollback();
             }
             callback.onFailure(throwable, context);
         }

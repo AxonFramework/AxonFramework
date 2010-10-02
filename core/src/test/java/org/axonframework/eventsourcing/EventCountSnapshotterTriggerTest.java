@@ -24,6 +24,9 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.internal.matchers.*;
 
@@ -43,6 +46,8 @@ public class EventCountSnapshotterTriggerTest {
     private CapturingMatcher<CacheListener> listener;
     private EventSourcedAggregateRoot aggregate;
 
+    private UnitOfWork unitOfWork;
+
     @Before
     public void setUp() throws Exception {
         mockSnapshotter = mock(Snapshotter.class);
@@ -54,6 +59,16 @@ public class EventCountSnapshotterTriggerTest {
         mockCache = mock(Cache.class);
         listener = new CapturingMatcher<CacheListener>();
         doNothing().when(mockCache).addListener(argThat(listener));
+
+        unitOfWork = new DefaultUnitOfWork();
+        unitOfWork.start();
+    }
+
+    @After
+    public void tearDown() {
+        if (unitOfWork.isStarted()) {
+            unitOfWork.rollback();
+        }
     }
 
     @Test
@@ -67,6 +82,8 @@ public class EventCountSnapshotterTriggerTest {
                 new StubDomainEvent(aggregateIdentifier, 3)
         )));
 
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
         verify(mockSnapshotter).scheduleSnapshot("some", aggregateIdentifier);
     }
 
@@ -80,6 +97,8 @@ public class EventCountSnapshotterTriggerTest {
         )));
 
         verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
     }
 
     @Test
@@ -92,6 +111,8 @@ public class EventCountSnapshotterTriggerTest {
                 new StubDomainEvent(aggregateIdentifier, 2)
         )));
 
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
         verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
     }
 
@@ -109,6 +130,8 @@ public class EventCountSnapshotterTriggerTest {
                 new StubDomainEvent(aggregateIdentifier, 3)
         )));
 
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
         verify(mockSnapshotter).scheduleSnapshot("some", aggregateIdentifier);
     }
 
@@ -129,6 +152,8 @@ public class EventCountSnapshotterTriggerTest {
                 new StubDomainEvent(aggregateIdentifier, 3)
         )));
 
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
         verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
 
@@ -149,6 +174,8 @@ public class EventCountSnapshotterTriggerTest {
                 new StubDomainEvent(aggregateIdentifier, 3)
         )));
 
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
         verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
 
@@ -169,6 +196,8 @@ public class EventCountSnapshotterTriggerTest {
                 new StubDomainEvent(aggregateIdentifier, 3)
         )));
 
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
         verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
     }
 
@@ -176,6 +205,9 @@ public class EventCountSnapshotterTriggerTest {
     public void testStoringAggregateWithoutChanges() {
         SimpleDomainEventStream emptyEventStream = new SimpleDomainEventStream();
         testSubject.decorateForAppend("test", aggregate, emptyEventStream);
+
+        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        CurrentUnitOfWork.commit();
     }
 
     private void readAllFrom(DomainEventStream events) {

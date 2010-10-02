@@ -61,23 +61,21 @@ public class SimpleUnitOfWorkInterceptorTest {
         repository = new InMemoryLockingRepository(LockingStrategy.PESSIMISTIC);
         eventBus = mock(EventBus.class);
         repository.setEventBus(eventBus);
+        new DefaultUnitOfWork().start();
         aggregateIdentifier1 = createAggregate();
         aggregateIdentifier2 = createAggregate();
+        CurrentUnitOfWork.get().commit();
         commandBus.subscribe(SimpleCommand.class, new LoadAndSaveCommandHandler());
         repository.resetSaveCount();
     }
 
     @After
     public void tearDown() {
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
-        }
     }
 
     private AggregateIdentifier createAggregate() {
         StubAggregate aggregate = new StubAggregate();
         repository.add(aggregate);
-        CurrentUnitOfWork.commit();
         return aggregate.getIdentifier();
     }
 

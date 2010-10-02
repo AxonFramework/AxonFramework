@@ -48,6 +48,18 @@ public class DefaultUnitOfWork extends UnitOfWork {
         READY, DISPATCHING
     }
 
+    /**
+     * Starts a new DefaultUnitOfWork instance, registering it a CurrentUnitOfWork. This methods returns the started
+     * UnitOfWork instance.
+     *
+     * @return the started UnitOfWork instance
+     */
+    public static UnitOfWork startAndGet() {
+        DefaultUnitOfWork uow = new DefaultUnitOfWork();
+        uow.start();
+        return uow;
+    }
+
     @Override
     protected void doRollback() {
         registeredAggregates.clear();

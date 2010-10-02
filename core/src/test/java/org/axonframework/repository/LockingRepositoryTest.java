@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
@@ -44,10 +45,16 @@ public class LockingRepositoryTest {
         testSubject = new InMemoryLockingRepository(lockManager);
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
+
+        // some UoW is started somewhere, but not shutdown in the same test.
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
     @Test
     public void testStoreNewAggregate() {
+        DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
@@ -59,11 +66,13 @@ public class LockingRepositoryTest {
 
     @Test
     public void testLoadAndStoreAggregate() {
+        DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
         CurrentUnitOfWork.commit();
 
+        DefaultUnitOfWork.startAndGet();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
@@ -79,11 +88,13 @@ public class LockingRepositoryTest {
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testLoadAndStoreAggregate_LockReleasedOnException() {
+        DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
         CurrentUnitOfWork.commit();
 
+        DefaultUnitOfWork.startAndGet();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
@@ -115,11 +126,13 @@ public class LockingRepositoryTest {
         testSubject = spy(testSubject);
 
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
+        DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
         CurrentUnitOfWork.commit();
 
+        DefaultUnitOfWork.startAndGet();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
@@ -149,16 +162,19 @@ public class LockingRepositoryTest {
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
 
+        DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
         CurrentUnitOfWork.commit();
 
+        DefaultUnitOfWork.startAndGet();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
 
         // this tricks the UnitOfWork to save this aggregate, without loading it.
+        DefaultUnitOfWork.startAndGet();
         CurrentUnitOfWork.get().registerAggregate(loadedAggregate, new SaveAggregateCallback<StubAggregate>() {
             @Override
             public void save(StubAggregate aggregate) {
