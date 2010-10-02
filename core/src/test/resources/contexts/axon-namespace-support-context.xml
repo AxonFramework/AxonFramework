@@ -57,23 +57,23 @@
           class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
     </bean>
 
-    <axon:repository id="testRepository" locking-strategy="PESSIMISTIC"
-                     aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
-                     event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver">
+    <axon:event-sourcing-repository id="testRepository" locking-strategy="PESSIMISTIC"
+                                    aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
+                                    event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver">
         <axon:snapshot-trigger event-count-threshold="50" snapshotter-ref="snapshotter"/>
         <axon:event-processors>
             <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
                 <property name="mockType" value="org.axonframework.eventsourcing.EventProcessor"/>
             </bean>
         </axon:event-processors>
-    </axon:repository>
+    </axon:event-sourcing-repository>
     <!--
         TODO: These repositories should have EventStreamDecorators included to trigger the snapshots.
     -->
 
-    <axon:repository id="defaultStrategyRepository"
-                     aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
-                     event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver"/>
+    <axon:event-sourcing-repository id="defaultStrategyRepository"
+                                    aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
+                                    event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver"/>
 
     <bean id="taskExecutor"
           class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">

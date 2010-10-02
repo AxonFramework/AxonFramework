@@ -99,10 +99,10 @@
             </property>
         </bean>
     -->
-    <axon:repository id="contactRepository" aggregate-type="org.axonframework.sample.app.command.Contact"
-                     event-bus="eventBus" event-store="eventStore">
+    <axon:event-sourcing-repository id="contactRepository" aggregate-type="org.axonframework.sample.app.command.Contact"
+                                    event-bus="eventBus" event-store="eventStore">
         <axon:snapshot-trigger event-count-threshold="5" snapshotter-ref="snapshotter"/>
-    </axon:repository>
+    </axon:event-sourcing-repository>
 
     <bean id="snapshotter"
           class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">

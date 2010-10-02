@@ -38,7 +38,7 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("command-bus", new SimpleCommandBusBeanDefinitionParser());
         registerBeanDefinitionParser("event-bus", new EventBusBeanDefinitionParser());
         registerBeanDefinitionParser("event-store", new EventStoreBeanDefinitionParser());
-        registerBeanDefinitionParser("repository", new RepositoryBeanDefinitionParser());
+        registerBeanDefinitionParser("event-sourcing-repository", new RepositoryBeanDefinitionParser());
     }
 
 }

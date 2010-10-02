@@ -162,7 +162,7 @@
     <!-- == repository ==================== -->
     <!-- ================================== -->
 
-    <xsd:element name="repository">
+    <xsd:element name="event-sourcing-repository">
         <xsd:annotation>
             <xsd:documentation>Spring context schema extension for the definition of a Repository instance.
             </xsd:documentation>
