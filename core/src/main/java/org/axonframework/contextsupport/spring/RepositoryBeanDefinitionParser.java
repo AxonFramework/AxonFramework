@@ -71,7 +71,7 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     private static final String SNAPSHOT_TRIGGER_ELEMENT = "snapshot-trigger";
     private static final String EVENT_PROCESSORS_PROPERTY = "eventProcessors";
 
-    private static final SnapshotTriggerBeanDefinitionParser snapshotTriggerParser = new SnapshotTriggerBeanDefinitionParser();
+    private final SnapshotTriggerBeanDefinitionParser snapshotTriggerParser = new SnapshotTriggerBeanDefinitionParser();
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {

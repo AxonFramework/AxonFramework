@@ -23,7 +23,10 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 /**
+ * BeanDefinitionParser that parses &lt;snapshot-trigger&gt; elements.
+ *
  * @author Allard Buijze
+ * @since 0.7
  */
 public class SnapshotTriggerBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
