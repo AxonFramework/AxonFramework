@@ -138,10 +138,11 @@ public class RepositoryBeanDefinitionParserTest {
                 .getValue();
         assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
 
-        PropertyValue decoratorsProperty = beanDefinition.getPropertyValues().getPropertyValue("eventStreamDecorators");
-        assertNotNull("Property missing", decoratorsProperty);
-        List decorators = (List) decoratorsProperty.getValue();
-        assertEquals("Wrong number of decorators", 1, decorators.size());
+        PropertyValue eventProcessorsProperty = beanDefinition.getPropertyValues()
+                .getPropertyValue("eventProcessors");
+        assertNotNull("Property missing", eventProcessorsProperty);
+        List decorators = (List) eventProcessorsProperty.getValue();
+        assertEquals("Wrong number of decorators", 2, decorators.size());
 
         @SuppressWarnings("unchecked")
         GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository =

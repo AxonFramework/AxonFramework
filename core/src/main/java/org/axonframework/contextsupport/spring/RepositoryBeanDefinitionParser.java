@@ -25,6 +25,7 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -66,7 +67,11 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     /**
      * The aggregate root type attribute name.
      */
-    private static final String EVENT_STREAM_DECORATORS_ELEMENT = "event-stream-decorators";
+    private static final String EVENT_PROCESSORS_ELEMENT = "event-processors";
+    private static final String SNAPSHOT_TRIGGER_ELEMENT = "snapshot-trigger";
+    private static final String EVENT_PROCESSORS_PROPERTY = "eventProcessors";
+
+    private static final SnapshotTriggerBeanDefinitionParser snapshotTriggerParser = new SnapshotTriggerBeanDefinitionParser();
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -77,22 +82,26 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
         parseLockingStrategy(element, repositoryDefinition);
         parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues());
         parseReferenceAttribute(element, EVENT_STORE_ATTRIBUTE, "eventStore", repositoryDefinition.getPropertyValues());
-        parseReferenceAttribute(element,
-                                CONFLICT_RESOLVER_ATTRIBUTE,
-                                "conflictResolver",
+        parseReferenceAttribute(element, CONFLICT_RESOLVER_ATTRIBUTE, "conflictResolver",
                                 repositoryDefinition.getPropertyValues());
-        parseEventStreamDecorators(element, parserContext, repositoryDefinition);
+        parseProcessors(element, parserContext, repositoryDefinition);
         return repositoryDefinition;
     }
 
-    private void parseEventStreamDecorators(Element element, ParserContext parserContext,
-                                            GenericBeanDefinition beanDefinition) {
-        Element interceptorsElement = DomUtils.getChildElementByTagName(element, EVENT_STREAM_DECORATORS_ELEMENT);
-        if (interceptorsElement != null) {
-            List<?> decoratorList = parserContext.getDelegate().parseListElement(interceptorsElement, beanDefinition);
-            beanDefinition.getPropertyValues().add("eventStreamDecorators", decoratorList);
+    @SuppressWarnings({"unchecked"})
+    private void parseProcessors(Element element, ParserContext parserContext, GenericBeanDefinition beanDefinition) {
+        Element processorsElement = DomUtils.getChildElementByTagName(element, EVENT_PROCESSORS_ELEMENT);
+        List<Object> processorsList = new ManagedList<Object>();
+
+        Element snapshotTriggerElement = DomUtils.getChildElementByTagName(element, SNAPSHOT_TRIGGER_ELEMENT);
+        if (snapshotTriggerElement != null) {
+            processorsList.add(snapshotTriggerParser.parse(snapshotTriggerElement, parserContext));
         }
 
+        if (processorsElement != null) {
+            processorsList.addAll(parserContext.getDelegate().parseListElement(processorsElement, beanDefinition));
+            beanDefinition.getPropertyValues().add(EVENT_PROCESSORS_PROPERTY, processorsList);
+        }
     }
 
     /**

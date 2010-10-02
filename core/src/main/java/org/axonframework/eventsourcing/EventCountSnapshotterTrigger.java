@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Allard Buijze
  * @since 0.6
  */
-public class EventCountSnapshotterTrigger implements EventStreamDecorator {
+public class EventCountSnapshotterTrigger implements EventProcessor {
 
     private Snapshotter snapshotter;
     private final ConcurrentMap<AggregateIdentifier, AtomicInteger> counters = new ConcurrentHashMap<AggregateIdentifier, AtomicInteger>();

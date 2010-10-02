@@ -18,7 +18,6 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
@@ -85,10 +84,7 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
             List<?> interceptorsList = parserContext.getDelegate().parseListElement(interceptorsElement,
                                                                                     commandBusDefinition);
             commandBusDefinition.getPropertyValues().add("interceptors", interceptorsList);
-        } else if (element.hasAttribute("interceptor")) {
-            RuntimeBeanReference beanReference = new RuntimeBeanReference(element.getAttribute("interceptor"));
-            commandBusDefinition.getPropertyValues().add("interceptors", beanReference);
-		}
-	}
+        }
+    }
 
 }

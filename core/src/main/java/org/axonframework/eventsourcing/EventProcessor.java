@@ -25,7 +25,7 @@ import org.axonframework.domain.DomainEventStream;
  * @author Allard Buijze
  * @since 0.7
  */
-public interface EventStreamDecorator {
+public interface EventProcessor {
 
     /**
      * Called when an event stream is read from the event store.

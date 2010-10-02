@@ -29,9 +29,9 @@ import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.eventsourcing.AggregateSnapshot;
 import org.axonframework.eventsourcing.ConflictResolver;
+import org.axonframework.eventsourcing.EventProcessor;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -194,9 +194,9 @@ public class EventSourcingRepositoryTest {
     @Test
     public void testLoadEventsWithDecorators() {
         AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
-        SpyEventStreamDecorator decorator1 = new SpyEventStreamDecorator();
-        SpyEventStreamDecorator decorator2 = new SpyEventStreamDecorator();
-        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
+        SpyEventPreprocessor decorator1 = new SpyEventPreprocessor();
+        SpyEventPreprocessor decorator2 = new SpyEventPreprocessor();
+        testSubject.setEventProcessors(Arrays.asList(decorator1, decorator2));
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
                                             new StubDomainEvent(identifier, 2),
@@ -218,9 +218,9 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testSaveEventsWithDecorators() {
-        SpyEventStreamDecorator decorator1 = new SpyEventStreamDecorator();
-        SpyEventStreamDecorator decorator2 = new SpyEventStreamDecorator();
-        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
+        SpyEventPreprocessor decorator1 = new SpyEventPreprocessor();
+        SpyEventPreprocessor decorator2 = new SpyEventPreprocessor();
+        testSubject.setEventProcessors(Arrays.asList(decorator1, decorator2));
         testSubject.setEventStore(new EventStore() {
             @Override
             public void appendEvents(String type, DomainEventStream events) {
@@ -289,7 +289,7 @@ public class EventSourcingRepositoryTest {
         }
     }
 
-    public static class SpyEventStreamDecorator implements EventStreamDecorator {
+    public static class SpyEventPreprocessor implements EventProcessor {
 
         private DomainEventStream lastSpy;
 

@@ -70,14 +70,6 @@
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:sequence>
-                    <xsd:attribute name="interceptor" type="xsd:IDREF"
-                                   use="optional">
-                        <xsd:annotation>
-                            <xsd:documentation>A reference to the single interceptor to be
-                                registered with the command bus.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>
@@ -169,6 +161,7 @@
     <!-- ================================== -->
     <!-- == repository ==================== -->
     <!-- ================================== -->
+
     <xsd:element name="repository">
         <xsd:annotation>
             <xsd:documentation>Spring context schema extension for the definition of a Repository instance.
@@ -178,11 +171,21 @@
             <xsd:complexContent>
                 <xsd:extension base="beans:identifiedType">
                     <xsd:all>
-                        <xsd:element name="event-stream-decorators" type="beans:listOrSetType" minOccurs="0"
-                                     maxOccurs="1">
+                        <xsd:element name="snapshot-trigger" minOccurs="0" maxOccurs="1">
+                            <xsd:complexType>
+                                <xsd:complexContent>
+                                    <xsd:extension base="beans:identifiedType">
+                                        <xsd:attribute name="event-count-threshold" use="required"
+                                                       type="xsd:positiveInteger"/>
+                                        <xsd:attribute name="snapshotter-ref" use="required" type="xsd:IDREF"/>
+                                    </xsd:extension>
+                                </xsd:complexContent>
+                            </xsd:complexType>
+                        </xsd:element>
+                        <xsd:element name="event-processors" type="beans:listOrSetType" minOccurs="0" maxOccurs="1">
                             <xsd:annotation>
-                                <xsd:documentation>A list of event stream decorators to be registered with the
-                                    repository.
+                                <xsd:documentation>A list of processors that get access to raw event data as it read or
+                                    written to the event stream.
                                 </xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>

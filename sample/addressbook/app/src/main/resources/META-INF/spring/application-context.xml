@@ -61,17 +61,19 @@
     <!-- ================================================ -->
     <!-- Example with a single interceptor ref            -->
     <!-- ================================================ -->
-    <axon:command-bus id="commandBus" interceptor="commandBusInterceptor"/>
-
-    <bean id="commandBusInterceptor"
-          class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
-        <property name="transactionManager" ref="transactionManager"/>
-    </bean>
-
-    <!-- <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
+    <!--
+    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
          <property name="interceptors"> <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
          <property name="transactionManager" ref="transactionManager"/> </bean> </property>
-         </bean> -->
+    </bean>
+    -->
+    <axon:command-bus id="commandBus">
+        <axon:interceptors>
+            <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+                <property name="transactionManager" ref="transactionManager"/>
+            </bean>
+        </axon:interceptors>
+    </axon:command-bus>
 
     <!--	<bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus" />-->
     <axon:event-bus id="eventBus"/>
@@ -83,18 +85,24 @@
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 
-    <bean id="contactRepository"
-          class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
-        <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
-        <property name="eventBus" ref="eventBus"/>
-        <property name="eventStore" ref="eventStore"/>
-        <property name="eventStreamDecorators">
-            <bean class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
-                <property name="snapshotter" ref="snapshotter"/>
-                <property name="trigger" value="5"/>
-            </bean>
-        </property>
-    </bean>
+    <!--
+        <bean id="contactRepository"
+              class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
+            <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
+            <property name="eventBus" ref="eventBus"/>
+            <property name="eventStore" ref="eventStore"/>
+            <property name="eventProcessors">
+                <bean class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
+                    <property name="snapshotter" ref="snapshotter"/>
+                    <property name="trigger" value="5"/>
+                </bean>
+            </property>
+        </bean>
+    -->
+    <axon:repository id="contactRepository" aggregate-type="org.axonframework.sample.app.command.Contact"
+                     event-bus="eventBus" event-store="eventStore">
+        <axon:snapshot-trigger event-count-threshold="5" snapshotter-ref="snapshotter"/>
+    </axon:repository>
 
     <bean id="snapshotter"
           class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
