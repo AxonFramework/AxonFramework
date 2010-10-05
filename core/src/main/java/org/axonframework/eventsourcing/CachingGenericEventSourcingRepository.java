@@ -18,11 +18,11 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.repository.LockingStrategy;
 
 /**
- * The GenericEventSourcingRepository is a special EventSourcingRepository implementation that can act as a repository
- * for any type of {@link EventSourcedAggregateRoot}.
+ * The CachingGenericEventSourcingRepository is a special EventSourcingRepository implementation that can act as a
+ * repository for any type of {@link EventSourcedAggregateRoot}. In contrast to the GenericEventSourcingRepository, it
+ * also supports caching.
  * <p/>
  * There is however, a convention that these EventSourcedAggregateRoot classes must adhere to. The type must declare an
  * accessible constructor accepting a {@link org.axonframework.domain.AggregateIdentifier} as single parameter. This
@@ -33,9 +33,10 @@ import org.axonframework.repository.LockingStrategy;
  *
  * @author Allard Buijze
  * @param <T> The aggregate type this repository serves
- * @since 0.5
+ * @since 0.7
  */
-public class GenericEventSourcingRepository<T extends EventSourcedAggregateRoot> extends EventSourcingRepository<T> {
+public class CachingGenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
+        extends CachingEventSourcingRepository<T> {
 
     private final GenericAggregateFactory<T> aggregateFactory;
 
@@ -51,25 +52,7 @@ public class GenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * @throws IncompatibleAggregateException If there is no accessible constructor accepting a UUID as single
      *                                        parameter
      */
-    public GenericEventSourcingRepository(Class<T> aggregateType) {
-        this(aggregateType, LockingStrategy.OPTIMISTIC);
-    }
-
-    /**
-     * Creates a GenericEventSourcingRepository for aggregates of the given <code>aggregateType</code>, using the given
-     * <code>lockingStrategy</code>. The given aggregate type must at least provide an accessible constructor taking a
-     * UUID as single parameter.
-     * <p/>
-     * If the constructor is not accessible, the GenericEventSourcingRepository will attempt to make it so. If JVM
-     * security restrictions don't allow that, an exception is thrown.
-     *
-     * @param aggregateType   The type of aggregate this repository holds
-     * @param lockingStrategy The locking strategy to use for this repository
-     * @throws IncompatibleAggregateException If there is no accessible constructor accepting a UUID as single
-     *                                        parameter
-     */
-    public GenericEventSourcingRepository(Class<T> aggregateType, LockingStrategy lockingStrategy) {
-        super(lockingStrategy);
+    public CachingGenericEventSourcingRepository(Class<T> aggregateType) {
         aggregateFactory = new GenericAggregateFactory<T>(aggregateType);
     }
 

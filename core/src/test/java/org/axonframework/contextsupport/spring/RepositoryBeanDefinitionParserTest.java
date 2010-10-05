@@ -18,6 +18,7 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventsourcing.EventCountSnapshotterTrigger;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.repository.LockingStrategy;
@@ -151,6 +152,52 @@ public class RepositoryBeanDefinitionParserTest {
     }
 
     @Test
+    public void testCacheRepository() {
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("testCacheRepository");
+        assertNotNull("BeanDefinition not created", beanDefinition);
+
+        assertEquals("Wrong number of arguments", 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
+        assertNotNull("First argument is wrong", firstArgument);
+        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
+
+        PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
+        assertNotNull("Property missing", eventBusPropertyValue);
+        RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
+        assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
+
+        PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
+        assertNotNull("Property missing", eventStorePropertyValue);
+        RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
+        assertEquals("Wrong reference", "eventStore", eventStoreReference.getBeanName());
+
+        PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue(
+                "conflictResolver");
+        assertNotNull("Property missing", conflictResolverPropertyValue);
+        RuntimeBeanReference conflictResolverReference = (RuntimeBeanReference) conflictResolverPropertyValue
+                .getValue();
+        assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
+
+        PropertyValue cacheRefProperty = beanDefinition.getPropertyValues()
+                .getPropertyValue("cache");
+        assertNotNull("Property missing", cacheRefProperty);
+
+        PropertyValue eventProcessorsProperty = beanDefinition.getPropertyValues()
+                .getPropertyValue("eventProcessors");
+        assertNotNull("Property missing", eventProcessorsProperty);
+        List decorators = (List) eventProcessorsProperty.getValue();
+        assertEquals("Wrong number of decorators", 1, decorators.size());
+        BeanDefinition triggerDefinition = (BeanDefinition) decorators.get(0);
+        assertNotNull("Property 'aggregateCache' not set",
+                      triggerDefinition.getPropertyValues().getPropertyValue("aggregateCache"));
+
+        @SuppressWarnings("unchecked")
+        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository =
+                beanFactory.getBean("testRepository", GenericEventSourcingRepository.class);
+        assertNotNull(repository);
+    }
+
+    @Test
     public void defaultStrategyRepository() {
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition("defaultStrategyRepository");
         assertNotNull("BeanDefinition not created", beanDefinition);
@@ -186,6 +233,14 @@ public class RepositoryBeanDefinitionParserTest {
                 "defaultStrategyRepository",
                 GenericEventSourcingRepository.class);
         assertNotNull(repository);
+    }
+
+    @Test
+    public void testRepositoryCacheSetInSnapshotTrigger() {
+        EventCountSnapshotterTrigger snapshotTrigger = (EventCountSnapshotterTrigger) beanFactory.getBean(
+                "snapshotTrigger");
+        assertNotNull(snapshotTrigger);
+//        snapshotTrigger.
     }
 
 }

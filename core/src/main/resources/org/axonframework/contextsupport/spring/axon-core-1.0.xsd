@@ -226,6 +226,11 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="cache-ref" use="optional" type="xsd:IDREF">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the cache that stores aggregates.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

@@ -17,9 +17,13 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.eventsourcing.CachingGenericEventSourcingRepository;
 import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.repository.LockingStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -44,6 +48,8 @@ import java.util.List;
  */
 public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser implements BeanDefinitionParser {
 
+    private static final Logger logger = LoggerFactory.getLogger(RepositoryBeanDefinitionParser.class);
+
     /**
      * The conflict resolver attribute name.
      */
@@ -64,11 +70,11 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      * The aggregate root type attribute name.
      */
     private static final String AGGREGATE_ROOT_TYPE_ATTRIBUTE = "aggregate-type";
-    /**
-     * The aggregate root type attribute name.
-     */
+    private static final String CACHE_ATTRIBUTE = "cache-ref";
+
     private static final String EVENT_PROCESSORS_ELEMENT = "event-processors";
     private static final String SNAPSHOT_TRIGGER_ELEMENT = "snapshot-trigger";
+
     private static final String EVENT_PROCESSORS_PROPERTY = "eventProcessors";
 
     private final SnapshotTriggerBeanDefinitionParser snapshotTriggerParser = new SnapshotTriggerBeanDefinitionParser();
@@ -76,14 +82,19 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition repositoryDefinition = new GenericBeanDefinition();
-        repositoryDefinition.setBeanClass(GenericEventSourcingRepository.class);
+        if (element.hasAttribute(CACHE_ATTRIBUTE)) {
+            repositoryDefinition.setBeanClass(CachingGenericEventSourcingRepository.class);
+        } else {
+            repositoryDefinition.setBeanClass(GenericEventSourcingRepository.class);
+            parseLockingStrategy(element, repositoryDefinition);
+        }
 
         parseAggregateRootType(element, repositoryDefinition);
-        parseLockingStrategy(element, repositoryDefinition);
         parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues());
         parseReferenceAttribute(element, EVENT_STORE_ATTRIBUTE, "eventStore", repositoryDefinition.getPropertyValues());
         parseReferenceAttribute(element, CONFLICT_RESOLVER_ATTRIBUTE, "conflictResolver",
                                 repositoryDefinition.getPropertyValues());
+        parseReferenceAttribute(element, CACHE_ATTRIBUTE, "cache", repositoryDefinition.getPropertyValues());
         parseProcessors(element, parserContext, repositoryDefinition);
         return repositoryDefinition;
     }
@@ -95,7 +106,12 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
 
         Element snapshotTriggerElement = DomUtils.getChildElementByTagName(element, SNAPSHOT_TRIGGER_ELEMENT);
         if (snapshotTriggerElement != null) {
-            processorsList.add(snapshotTriggerParser.parse(snapshotTriggerElement, parserContext));
+            BeanDefinition triggerDefinition = snapshotTriggerParser.parse(snapshotTriggerElement, parserContext);
+            PropertyValue aggregateCache = beanDefinition.getPropertyValues().getPropertyValue("cache");
+            if (aggregateCache != null) {
+                triggerDefinition.getPropertyValues().add("aggregateCache", aggregateCache.getValue());
+            }
+            processorsList.add(triggerDefinition);
         }
 
         if (processorsElement != null) {
@@ -114,6 +130,7 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      * @param propertyName  The name of the property to set the references object to
      * @param properties    The properties of the bean definition
      */
+
     private void parseReferenceAttribute(Element element, String referenceName, String propertyName,
                                          MutablePropertyValues properties) {
         if (element.hasAttribute(referenceName)) {
@@ -124,8 +141,9 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     /**
      * Parse the {@link LockingStrategy} selection and make it a constructor argument.
      *
-     * @param element The {@link Element} being parsed.
-     * @param builder The {@link BeanDefinitionBuilder} being used to construct the {@link BeanDefinition}.
+     * @param element The {@link org.w3c.dom.Element} being parsed.
+     * @param builder The {@link org.springframework.beans.factory.support.BeanDefinitionBuilder} being used to
+     *                construct the {@link org.springframework.beans.factory.config.BeanDefinition}.
      */
     private void parseLockingStrategy(Element element, GenericBeanDefinition builder) {
         if (element.hasAttribute(LOCKING_STRATEGY_ATTRIBUTE)) {

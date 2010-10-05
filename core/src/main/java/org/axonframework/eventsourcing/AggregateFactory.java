@@ -20,7 +20,7 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 
 /**
- * Interface describing objects capable of creating instances of aggregate to be initialized with an event stream.
+ * Interface describing objects capable of creating instances of aggregates to be initialized with an event stream.
  *
  * @author Allard Buijze
  * @param <T> The type of aggregate this factory creates
