@@ -89,7 +89,7 @@
 
     <properties>
         <slf4j.version>1.5.8</slf4j.version>
-        <spring.version>3.0.2.RELEASE</spring.version>
+        <spring.version>3.0.3.RELEASE</spring.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
