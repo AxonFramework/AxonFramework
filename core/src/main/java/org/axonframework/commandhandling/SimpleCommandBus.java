@@ -56,31 +56,37 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void dispatch(Object command) {
-        statistics.recordReceivedCommand();
-        CommandHandler handler = subscriptions.get(command.getClass());
-        if (handler == null) {
-            throw new NoHandlerForCommandException(String.format("No handler was subscribed to commands of type [%s]",
-                                                                 command.getClass().getSimpleName()));
-        }
+        CommandContext context = createCommandContext(command);
         try {
-            interceptorChain.proceed(new CommandContextImpl(command, handler));
-        } catch (Error e) {
-            throw e;
+            doDispatch(context);
         } catch (Throwable throwable) {
-            logger.error("An error occurred while dispatching a command.", throwable);
+            // Nothing to do here
         }
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     public <C, R> void dispatch(C command, final CommandCallback<C, R> callback) {
-        statistics.recordReceivedCommand();
+        CommandContext context = createCommandContext(command);
+        try {
+            Object result = doDispatch(context);
+            callback.onSuccess((R) result, context);
+        } catch (Throwable throwable) {
+            callback.onFailure(throwable, context);
+        }
+    }
+
+    private <C> CommandContext createCommandContext(C command) {
         final CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
             throw new NoHandlerForCommandException(String.format("No handler was subscribed to commands of type [%s]",
                                                                  command.getClass().getSimpleName()));
         }
-        CommandContextImpl context = new CommandContextImpl(command, handler);
+        return new CommandContextImpl(command, handler);
+    }
+
+    private Object doDispatch(CommandContext context) throws Throwable {
+        statistics.recordReceivedCommand();
         boolean alreadyInUnitOfWork = CurrentUnitOfWork.isStarted();
         UnitOfWork fallbackUnitOfWork = null;
         if (!alreadyInUnitOfWork) {
@@ -88,16 +94,16 @@ public class SimpleCommandBus implements CommandBus {
             fallbackUnitOfWork.start();
         }
         try {
-            Object result = interceptorChain.proceed(context);
+            Object returnValue = interceptorChain.proceed(context);
             if (fallbackUnitOfWork != null) {
                 fallbackUnitOfWork.commit();
             }
-            callback.onSuccess((R) result, context);
+            return returnValue;
         } catch (Throwable throwable) {
             if (fallbackUnitOfWork != null && fallbackUnitOfWork.isStarted()) {
                 fallbackUnitOfWork.rollback();
             }
-            callback.onFailure(throwable, context);
+            throw throwable;
         }
     }
 
