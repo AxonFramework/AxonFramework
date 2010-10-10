@@ -6,6 +6,8 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.eventstore.EventSerializer;
 import org.joda.time.LocalDateTime;
 
+import java.nio.charset.Charset;
+
 /**
  * Data needed by different types of event logs.
  *
@@ -14,21 +16,22 @@ import org.joda.time.LocalDateTime;
  * @since 0.7
  */
 public class AbstractEventEntry {
+    protected static final Charset UTF8 = Charset.forName("UTF-8");
     private String aggregateIdentifier;
     private long sequenceNumber;
     private String timeStamp;
     private String type;
-    private byte[] serializedEvent;
+    private String serializedEvent;
 
     protected AbstractEventEntry(String type, DomainEvent event, EventSerializer eventSerializer) {
         this.type = type;
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
-        this.serializedEvent = eventSerializer.serialize(event);
+        this.serializedEvent = new String(eventSerializer.serialize(event),UTF8);
         this.timeStamp = event.getTimestamp().toString();
     }
 
-    protected AbstractEventEntry(String aggregateIdentifier, long sequenceNumber, byte[] serializedEvent, String timeStamp, String type) {
+    protected AbstractEventEntry(String aggregateIdentifier, long sequenceNumber, String serializedEvent, String timeStamp, String type) {
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
         this.serializedEvent = serializedEvent;
@@ -37,7 +40,7 @@ public class AbstractEventEntry {
     }
 
     public DomainEvent getDomainEvent(EventSerializer eventSerializer) {
-        return eventSerializer.deserialize(serializedEvent);
+        return eventSerializer.deserialize(serializedEvent.getBytes(UTF8));
     }
 
     public AggregateIdentifier getAggregateIdentifier() {
@@ -56,7 +59,7 @@ public class AbstractEventEntry {
         return new LocalDateTime(timeStamp);
     }
 
-    protected byte[] getSerializedEvent() {
+    protected String getSerializedEvent() {
         return serializedEvent;
     }
 }

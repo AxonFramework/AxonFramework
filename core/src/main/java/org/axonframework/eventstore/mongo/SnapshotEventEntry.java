@@ -12,7 +12,7 @@ class SnapshotEventEntry extends AbstractEventEntry {
         super(type, event, eventSerializer);
     }
 
-    public SnapshotEventEntry(String aggregateIdentifier, long sequenceNumber, byte[] serializedEvent, String timeStamp, String type) {
+    public SnapshotEventEntry(String aggregateIdentifier, long sequenceNumber, String serializedEvent, String timeStamp, String type) {
         super(aggregateIdentifier, sequenceNumber, serializedEvent, timeStamp, type);
     }
 }

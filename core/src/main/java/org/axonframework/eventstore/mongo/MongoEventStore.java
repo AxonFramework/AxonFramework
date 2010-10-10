@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.axonframework.eventstore.mongo.AbstractEventEntry.UTF8;
+
 /**
  * <p>This is an implementation of the <code>SnapshotEventStore</code> based on a MongoDB instance or set.</p>
  *
@@ -156,8 +158,8 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         DBCursor dbCursor = mongo.domainEvents().find(mongoEntry);
         List<DomainEvent> events = new ArrayList<DomainEvent>(dbCursor.size());
         while (dbCursor.hasNext()) {
-            byte[] nextItem = (byte[]) dbCursor.next().get(SERIALIZED_EVENT);
-            DomainEvent deserialize = eventSerializer.deserialize(nextItem);
+            String nextItem = (String) dbCursor.next().get(SERIALIZED_EVENT);
+            DomainEvent deserialize = eventSerializer.deserialize(nextItem.getBytes(UTF8));
             events.add(deserialize);
         }
         return events;
@@ -178,7 +180,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         return new SnapshotEventEntry(
                 (String) first.get(AGGREGATE_IDENTIFIER),
                 (Long) first.get(SEQUENCE_NUMBER),
-                (byte[]) first.get(SERIALIZED_EVENT),
+                (String) first.get(SERIALIZED_EVENT),
                 (String) first.get(TIME_STAMP),
                 (String) first.get(TYPE)
         );
@@ -203,7 +205,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         return new DomainEventEntry(
                 (String) dbObject.get(AGGREGATE_IDENTIFIER),
                 (Long) dbObject.get(SEQUENCE_NUMBER),
-                (byte[]) dbObject.get(SERIALIZED_EVENT),
+                (String) dbObject.get(SERIALIZED_EVENT),
                 (String) dbObject.get(TIME_STAMP),
                 (String) dbObject.get(TYPE)
         );

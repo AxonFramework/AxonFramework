@@ -135,7 +135,6 @@ public class FileSystemEventStoreBenchmark {
     @Test
     public void startBenchmarkTest_Mongo() throws InterruptedException {
         mongoHelper.database().dropDatabase();
-        System.out.println("Mongo write concern " + mongoHelper.database().getMongo().getWriteConcern().getW());
         long start = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
         for (int t = 0; t < THREAD_COUNT; t++) {

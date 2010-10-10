@@ -17,7 +17,7 @@ public class DomainEventEntry extends AbstractEventEntry {
         super(type, event, eventSerializer);
     }
 
-    public DomainEventEntry(String aggregateIdentifier, long sequenceNumber, byte[] serializedEvent, String timeStamp, String type) {
+    public DomainEventEntry(String aggregateIdentifier, long sequenceNumber, String serializedEvent, String timeStamp, String type) {
         super(aggregateIdentifier, sequenceNumber, serializedEvent, timeStamp, type);
     }
 }

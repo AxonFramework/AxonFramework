@@ -77,7 +77,7 @@
     </bean>
 
     <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
-        <property name="connectionsPerHost" value="100"/>
+        <property name="connectionsPerHost" value="120"/>
     </bean>
 
     <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore">
