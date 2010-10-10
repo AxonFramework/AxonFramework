@@ -24,6 +24,8 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.jpa.JpaEventStore;
+import org.axonframework.eventstore.mongo.MongoEventStore;
+import org.axonframework.eventstore.mongo.MongoHelper;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +62,13 @@ public class FileSystemEventStoreBenchmark {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Autowired
+    private MongoEventStore mongoEventStore;
+
+    @Autowired
+    private MongoHelper mongoHelper;
+
 
     @BeforeClass
     public static void prepareEventStore() {
@@ -122,6 +131,30 @@ public class FileSystemEventStoreBenchmark {
                 (THREAD_COUNT * TRANSACTION_COUNT * TRANSACTION_SIZE) / ((end - start) / 1000)));
     }
 
+    @Test
+    public void startBenchmarkTest_Mongo() throws InterruptedException {
+        mongoHelper.database().dropDatabase();
+
+        long start = System.currentTimeMillis();
+        List<Thread> threads = new ArrayList<Thread>();
+        for (int t = 0; t < THREAD_COUNT; t++) {
+            Thread thread = new Thread(new MongoBenchmark());
+            thread.start();
+            threads.add(thread);
+        }
+        for (Thread thread : threads) {
+            thread.join();
+        }
+        long end = System.currentTimeMillis();
+        System.out.println(String.format(
+                "Mongo: %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %s events per second",
+                THREAD_COUNT,
+                TRANSACTION_COUNT,
+                TRANSACTION_SIZE,
+                (end - start),
+                (THREAD_COUNT * TRANSACTION_COUNT * TRANSACTION_SIZE) / ((end - start) / 1000)));
+    }
+
     private int saveAndLoadLargeNumberOfEvents(AggregateIdentifier aggregateId, EventStore eventStore,
                                                int eventSequence) {
         List<DomainEvent> events = new ArrayList<DomainEvent>();
@@ -143,6 +176,21 @@ public class FileSystemEventStoreBenchmark {
             }
         }
     }
+
+    private class MongoBenchmark implements Runnable {
+
+        @Override
+        public void run() {
+            final AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+            final AtomicInteger eventSequence = new AtomicInteger(0);
+            for (int t = 0; t < TRANSACTION_COUNT; t++) {
+                eventSequence.set(saveAndLoadLargeNumberOfEvents(aggregateId,
+                        mongoEventStore,
+                        eventSequence.get()) + 1);
+            }
+        }
+    }
+
 
     private class TransactionalBenchmark implements Runnable {
 

@@ -61,4 +61,26 @@
         <property name="minPoolSize" value="50"/>
     </bean>
 
+    <!-- Mongo configuration -->
+    <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongoInstance"/>
+
+    <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory">
+        <property name="testContext" value="true"/>
+        <property name="mongoOptions">
+            <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory" factory-method="createMongoOptions"/>
+        </property>
+    </bean>
+
+    <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
+        <property name="connectionsPerHost" value="100"/>
+    </bean>
+
+    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore">
+        <constructor-arg index="0" ref="axonMongoHelper"/>
+    </bean>
+
+    <bean id="axonMongoHelper" class="org.axonframework.eventstore.mongo.MongoHelper">
+        <constructor-arg ref="mongoDb"/>
+    </bean>
+
 </beans>
