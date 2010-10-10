@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.lang.String.format;
+
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific type of
  * command. Interceptors may be configured to add processing to commands regardless of their type, for example logging,
@@ -59,8 +61,11 @@ public class SimpleCommandBus implements CommandBus {
         CommandContext context = createCommandContext(command);
         try {
             doDispatch(context);
+        } catch (Error e) {
+            throw e;
         } catch (Throwable throwable) {
-            // Nothing to do here
+            logger.error(format("Processing of a [%s] resulted in an exception: ", command.getClass().getSimpleName()),
+                         throwable);
         }
     }
 
@@ -79,8 +84,8 @@ public class SimpleCommandBus implements CommandBus {
     private <C> CommandContext createCommandContext(C command) {
         final CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
-            throw new NoHandlerForCommandException(String.format("No handler was subscribed to commands of type [%s]",
-                                                                 command.getClass().getSimpleName()));
+            throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
+                                                          command.getClass().getSimpleName()));
         }
         return new CommandContextImpl(command, handler);
     }
