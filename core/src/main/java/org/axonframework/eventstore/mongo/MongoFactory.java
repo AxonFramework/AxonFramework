@@ -118,8 +118,8 @@ public class MongoFactory {
                 throw new IllegalStateException("Please configure at least 1 instance of Mongo for production.");
             }
             mongo = new Mongo(mongoAddresses, mongoOptions);
-            mongo.setWriteConcern(writeConcern);
         }
+        mongo.setWriteConcern(writeConcern);
 
         return mongo;
     }

@@ -45,10 +45,11 @@ import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
+ * @author Jettro Coenradie
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/META-INF/spring/benchmark-context.xml"})
-@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
+//@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
 public class FileSystemEventStoreBenchmark {
 
     private static final int THREAD_COUNT = 100;
@@ -134,7 +135,7 @@ public class FileSystemEventStoreBenchmark {
     @Test
     public void startBenchmarkTest_Mongo() throws InterruptedException {
         mongoHelper.database().dropDatabase();
-
+        System.out.println("Mongo write concern " + mongoHelper.database().getMongo().getWriteConcern().getW());
         long start = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
         for (int t = 0; t < THREAD_COUNT; t++) {
