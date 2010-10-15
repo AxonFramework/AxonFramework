@@ -1,9 +1,6 @@
 package org.axonframework.eventstore.mongo;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
+import com.mongodb.*;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
@@ -12,6 +9,7 @@ import org.axonframework.eventstore.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -19,7 +17,8 @@ import java.util.List;
 import static org.axonframework.eventstore.mongo.AbstractEventEntry.UTF8;
 
 /**
- * <p>This is an implementation of the <code>SnapshotEventStore</code> based on a MongoDB instance or set.</p>
+ * <p>This is an implementation of the <code>SnapshotEventStore</code> based on a MongoDB instance or replica set.
+ * Sharding and pairing are not explicitly supported.</p>
  *
  * @author Jettro Coenradie
  * @since 0.7
@@ -34,28 +33,34 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     private static final String SERIALIZED_EVENT = "serializedEvent";
     private static final int EVENT_VISITOR_BATCH_SIZE = 50;
 
-    private final MongoHelper mongo;
+    private final AxonMongoWrapper axonMongo;
     private final EventSerializer eventSerializer;
 
     /**
-     * Constructor that accepts an EventSerializer, the MongoHelper and a string containing the testContext. The
+     * Constructor that accepts an EventSerializer, the AxonMongoWrapper and a string containing the testContext. The
      * TestContext can be Null. Provide true in case of the test context.
      *
      * @param eventSerializer Your own EventSerializer
-     * @param mongo           MongoHelper to obtain the database and the collections.
+     * @param mongo           Mongo instance to obtain the database and the collections.
      */
-    public MongoEventStore(EventSerializer eventSerializer, MongoHelper mongo) {
+    public MongoEventStore(EventSerializer eventSerializer, Mongo mongo) {
         this.eventSerializer = eventSerializer;
-        this.mongo = mongo;
+        this.axonMongo = new AxonMongoWrapper(mongo);
     }
 
     /**
      * Constructor that uses the default EventSerializer.
      *
-     * @param mongo       MongoHelper to obtain the database and the collections.
+     * @param mongo       Mongo instance to obtain the database and the collections.
      */
-    public MongoEventStore(MongoHelper mongo) {
+    public MongoEventStore(Mongo mongo) {
         this(new XStreamEventSerializer(), mongo);
+    }
+
+    @PostConstruct
+    public void initializeMongo() {
+        BasicDBObject indexObject = new BasicDBObject(AGGREGATE_IDENTIFIER, 1).append(SERIALIZED_EVENT,1);
+        axonMongo.domainEvents().ensureIndex(indexObject,"uniqueAggregateIndex",true);
     }
 
     @Override
@@ -67,7 +72,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
             DBObject mongoEntry = createMongoEventEntry(entry);
             entries.add(mongoEntry);
         }
-        mongo.domainEvents().insert(entries.toArray(new DBObject[entries.size()]));
+        axonMongo.domainEvents().insert(entries.toArray(new DBObject[entries.size()]));
 
         if (logger.isDebugEnabled()) {
             logger.debug("{} events of type {} appended", new Object[]{entries.size(), type});
@@ -119,7 +124,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                 .add(TIME_STAMP, snapshotEventEntry.getTimeStamp().toString())
                 .add(TYPE, snapshotEventEntry.getType())
                 .get();
-        mongo.snapshotEvents().insert(mongoSnapshotEntry);
+        axonMongo.snapshotEvents().insert(mongoSnapshotEntry);
     }
 
     @Override
@@ -155,7 +160,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                 .add(TYPE, type)
                 .get();
 
-        DBCursor dbCursor = mongo.domainEvents().find(mongoEntry);
+        DBCursor dbCursor = axonMongo.domainEvents().find(mongoEntry);
         List<DomainEvent> events = new ArrayList<DomainEvent>(dbCursor.size());
         while (dbCursor.hasNext()) {
             String nextItem = (String) dbCursor.next().get(SERIALIZED_EVENT);
@@ -171,7 +176,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                 .add(AGGREGATE_IDENTIFIER, identifier.asString())
                 .add(TYPE, type)
                 .get();
-        DBCursor dbCursor = mongo.snapshotEvents().find(mongoEntry).sort(new BasicDBObject(SEQUENCE_NUMBER, -1));
+        DBCursor dbCursor = axonMongo.snapshotEvents().find(mongoEntry).sort(new BasicDBObject(SEQUENCE_NUMBER, -1));
 
         if (!dbCursor.hasNext()) {
             return null;
@@ -191,7 +196,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                 .add(TIME_STAMP, -1)
                 .add(SEQUENCE_NUMBER, -1)
                 .get();
-        DBCursor batchDomainEvents = mongo.domainEvents().find().sort(sort).limit(batchSize).skip(startPosition);
+        DBCursor batchDomainEvents = axonMongo.domainEvents().find().sort(sort).limit(batchSize).skip(startPosition);
         List<DomainEventEntry> entries = new ArrayList<DomainEventEntry>();
         while (batchDomainEvents.hasNext()) {
             DBObject dbObject = batchDomainEvents.next();

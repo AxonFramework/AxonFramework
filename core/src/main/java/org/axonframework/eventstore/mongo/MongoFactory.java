@@ -12,28 +12,29 @@ import java.util.List;
 /**
  * <p>Factory bean for a Mongo instance class. This factory is required since we want to support the most basic setup as
  * well as a more advanced setup. The most basic setup makes use of only one instance of Mongo. This scenario is not
- * suitable for a production environment, but it does work for a test environment.</p>
+ * really suitable for a production environment, but it does work for a simple test environment.</p>
  * <p>The factory supports two environments:</p>
  * <ul>
- * <li>Test - configure this factory with setTestContext(true) or system parameter axon.mongo.test</li>
- * <li>Production - the list of provide <code>ServerAddress</code> instances becomes mandatory.</li>
+ * <li>Single instance - configure this factory with setSingleInstanceContext(true) or system parameter axon.mongo.singleinstance</li>
+ * <li>Replica Set - the list of provide <code>ServerAddress</code> instances becomes mandatory.</li>
  * </ul>
- * <p>For production usage we expect at least 1 server to be configured. If not, an <code>IllegalStateException</code>
+ * <p>For Replica Set usage we expect at least 1 server to be configured. If not, an <code>IllegalStateException</code>
  * is thrown. Be warned, it is better to provide multiple servers in case of a Replica Set.</p>
  * <p>To configure a Mongo that fits your purpose, you can use two other configuration options. You can provide a
- * WriteConcern and a MongoOptions. Especially the write concern is important for the type of environment. In a test
- * environment, the SAFE is by default used. For a production environment, by default the REPLICA_SAFE is used.</p>
- * <p>Configuring the Mongo instance can be done by providing a <code>MongoOptions</code>. To make this easier, a factory
- * is provided. The <code>MongoOptionsFactory</code> facilitates creating such an object. One good reason to provide
- * a MongoOptions object is to increase the number of connections to the actual mongo database</p>
+ * WriteConcern and a MongoOptions object.</p>
+ * <p>The write concern is important in relation to the environment. In a single instance context, the SAFE WriteConcern
+ * is by default used. For a replica set environment, by default the REPLICA_SAFE is used.</p>
+ * <p>Configuring the Mongo instance thread pool can be done by providing a <code>MongoOptions</code>. To make this
+ * easier, a factory is provided. The <code>MongoOptionsFactory</code> facilitates creating such an object. One good
+ * reason to provide a MongoOptions object is to increase the number of connections to the actual mongo database</p>
  *
  * @author Jettro Coenradie
  * @since 0.7
  */
 public class MongoFactory {
-    private static final String SYSTEMPROPERTY_TESTCONTEXT = "axon.mongo.test";
+    private static final String SYSTEMPROPERTY_SINGLEINSTANCECONTEXT = "axon.mongo.singleinstance";
 
-    private boolean testContext;
+    private boolean singleInstanceContext;
     private List<ServerAddress> mongoAddresses;
     private MongoOptions mongoOptions;
     private WriteConcern writeConcern;
@@ -43,7 +44,7 @@ public class MongoFactory {
      */
     public MongoFactory() {
         this(new ArrayList<ServerAddress>(), new MongoOptions(), WriteConcern.SAFE);
-        this.testContext = true;
+        this.singleInstanceContext = true;
     }
 
     /**
@@ -66,7 +67,7 @@ public class MongoFactory {
         this.mongoAddresses = mongoAddresses;
         this.mongoOptions = mongoOptions;
         this.writeConcern = writeConcern;
-        this.testContext = false;
+        this.singleInstanceContext = false;
     }
 
     /**
@@ -88,12 +89,12 @@ public class MongoFactory {
     }
 
     /**
-     * Sets the testContext, provide true if you want the test context and false if you want the production context
+     * Sets the singleInstanceContext, provide true if you want the test context and false if you want the production context
      *
      * @param testContext Boolean indicating the context, true for test and false for production.
      */
-    public void setTestContext(boolean testContext) {
-        this.testContext = testContext;
+    public void setSingleInstanceContext(boolean testContext) {
+        this.singleInstanceContext = testContext;
     }
 
     /**
@@ -107,7 +108,7 @@ public class MongoFactory {
 
     public Mongo createMongoInstance() {
         Mongo mongo;
-        if (isTestContext()) {
+        if (isSingleInstanceContext()) {
             try {
                 mongo = new Mongo(new ServerAddress(),mongoOptions);
             } catch (UnknownHostException e) {
@@ -119,19 +120,41 @@ public class MongoFactory {
             }
             mongo = new Mongo(mongoAddresses, mongoOptions);
         }
-        mongo.setWriteConcern(writeConcern);
+        mongo.setWriteConcern(determineWriteConcern());
 
         return mongo;
     }
 
-    boolean isTestContext() {
-        String systemTestContext = System.getProperty(SYSTEMPROPERTY_TESTCONTEXT);
+    boolean isSingleInstanceContext() {
+        String systemTestContext = System.getProperty(SYSTEMPROPERTY_SINGLEINSTANCECONTEXT);
         if(null != systemTestContext) {
             return Boolean.parseBoolean(systemTestContext);
         } else {
-            return testContext;
+            return singleInstanceContext;
         }
 
     }
 
+    private WriteConcern determineWriteConcern() {
+        WriteConcern toUseWriteConcern;
+        if (isSingleInstanceContext()) {
+            if (this.writeConcern != null) {
+                if (this.writeConcern.getW() > WriteConcern.SAFE.getW()) {
+                    throw new IllegalArgumentException(
+                            "Unvalid WriteConcern for a single instance Mongo context, can be maximum SAFE");
+                }
+                toUseWriteConcern = this.writeConcern;
+            } else {
+                toUseWriteConcern = WriteConcern.SAFE;
+            }
+        } else {
+            if (this.writeConcern != null) {
+                toUseWriteConcern = this.writeConcern;
+            } else {
+                toUseWriteConcern = WriteConcern.REPLICAS_SAFE;
+            }
+        }
+
+        return toUseWriteConcern;
+    }
 }

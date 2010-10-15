@@ -28,6 +28,11 @@
         </constructor-arg>
     </bean>
 
+    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore">
+        <constructor-arg ref="mongoDb"/>
+    </bean>
+
+
     <!-- Infrastructure configuration -->
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -65,27 +70,21 @@
     <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongoInstance"/>
 
     <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory">
-        <property name="testContext" value="true"/>
+        <property name="singleInstanceContext" value="true"/>
         <property name="mongoOptions">
-            <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory" factory-method="createMongoOptions"/>
+            <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
+                  factory-method="createMongoOptions"/>
         </property>
         <property name="writeConcern">
             <bean class="com.mongodb.WriteConcern">
-                <constructor-arg index="0" value="1"/> <!-- means WriteConcern.SAFE -->
+                <constructor-arg index="0" value="1"/>
+                <!-- means WriteConcern.SAFE -->
             </bean>
         </property>
     </bean>
 
     <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
         <property name="connectionsPerHost" value="120"/>
-    </bean>
-
-    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore">
-        <constructor-arg index="0" ref="axonMongoHelper"/>
-    </bean>
-
-    <bean id="axonMongoHelper" class="org.axonframework.eventstore.mongo.MongoHelper">
-        <constructor-arg ref="mongoDb"/>
     </bean>
 
 </beans>

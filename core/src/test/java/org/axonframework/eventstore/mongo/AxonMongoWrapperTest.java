@@ -12,8 +12,8 @@ import static org.mockito.Mockito.when;
 /**
  * @author Jettro Coenradie
  */
-public class MongoHelperTest {
-    private MongoHelper helper;
+public class AxonMongoWrapperTest {
+    private AxonMongoWrapper wrapperAxon;
     private Mongo mockMongo;
     private DB mockDb;
 
@@ -21,7 +21,7 @@ public class MongoHelperTest {
     public void createFixtures() {
         mockMongo = mock(Mongo.class);
         mockDb = mock(DB.class);
-        helper = new MongoHelper(mockMongo);
+        wrapperAxon = new AxonMongoWrapper(mockMongo);
     }
 
 
@@ -29,7 +29,7 @@ public class MongoHelperTest {
     public void testDomainEvents() throws Exception {
         when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
 
-        helper.domainEvents();
+        wrapperAxon.domainEvents();
 
         verify(mockMongo).getDB("axonframework");
         verify(mockDb).getCollection("domainevents");
@@ -41,7 +41,7 @@ public class MongoHelperTest {
     public void testSnapshotEvents() throws Exception {
         when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
 
-        helper.snapshotEvents();
+        wrapperAxon.snapshotEvents();
 
         verify(mockMongo).getDB("axonframework");
         verify(mockDb).getCollection("snapshotevents");
@@ -49,7 +49,7 @@ public class MongoHelperTest {
 
     @Test
     public void testDatabase() throws Exception {
-        helper.database();
+        wrapperAxon.database();
         verify(mockMongo).getDB("axonframework");
 
     }
@@ -58,8 +58,8 @@ public class MongoHelperTest {
     public void testDomainEvents_changedName() throws Exception {
         when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
 
-        helper.setDomainEventsCollectionName("customdomainevents");
-        helper.domainEvents();
+        wrapperAxon.setDomainEventsCollectionName("customdomainevents");
+        wrapperAxon.domainEvents();
 
         verify(mockMongo).getDB("axonframework");
         verify(mockDb).getCollection("customdomainevents");
@@ -71,8 +71,8 @@ public class MongoHelperTest {
     public void testSnapshotEvents_changedName() throws Exception {
         when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
 
-        helper.setSnapshotEventsCollectionName("customsnapshotname");
-        helper.snapshotEvents();
+        wrapperAxon.setSnapshotEventsCollectionName("customsnapshotname");
+        wrapperAxon.snapshotEvents();
 
         verify(mockMongo).getDB("axonframework");
         verify(mockDb).getCollection("customsnapshotname");
@@ -80,8 +80,8 @@ public class MongoHelperTest {
 
     @Test
     public void testDatabase_changedName() throws Exception {
-        helper.setDatabaseName("customdatabase");
-        helper.database();
+        wrapperAxon.setDatabaseName("customdatabase");
+        wrapperAxon.database();
         verify(mockMongo).getDB("customdatabase");
 
     }

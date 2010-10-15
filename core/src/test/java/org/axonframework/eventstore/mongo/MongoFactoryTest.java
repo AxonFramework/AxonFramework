@@ -19,17 +19,17 @@ public class MongoFactoryTest {
     @Test
     public void checkTestContext_WithSystemParam() {
         mongoFactory = new MongoFactory();
-        assertTrue(mongoFactory.isTestContext());
+        assertTrue(mongoFactory.isSingleInstanceContext());
 
-        System.setProperty("axon.mongo.test","false");
-        assertFalse(mongoFactory.isTestContext());
+        System.setProperty("axon.mongo.singleinstance","false");
+        assertFalse(mongoFactory.isSingleInstanceContext());
 
         mongoFactory = new MongoFactory(new ArrayList<ServerAddress>());
-        assertFalse(mongoFactory.isTestContext());
+        assertFalse(mongoFactory.isSingleInstanceContext());
 
-        System.setProperty("axon.mongo.test","true");
+        System.setProperty("axon.mongo.singleinstance","true");
         mongoFactory = new MongoFactory(new ArrayList<ServerAddress>());
-        assertTrue(mongoFactory.isTestContext());
+        assertTrue(mongoFactory.isSingleInstanceContext());
     }
 
     @Test

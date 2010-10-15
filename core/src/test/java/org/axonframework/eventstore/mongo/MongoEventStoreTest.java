@@ -1,5 +1,6 @@
 package org.axonframework.eventstore.mongo;
 
+import com.mongodb.Mongo;
 import org.axonframework.domain.*;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
@@ -36,7 +37,8 @@ public class MongoEventStoreTest {
     private MongoEventStore eventStore;
 
     @Autowired
-    private MongoHelper helper;
+    private Mongo mongo;
+    private AxonMongoWrapper wrapperAxon;
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
@@ -44,7 +46,8 @@ public class MongoEventStoreTest {
 
     @Before
     public void setUp() {
-        helper.database().dropDatabase();
+        wrapperAxon = new AxonMongoWrapper(mongo);
+        wrapperAxon.database().dropDatabase();
         aggregate1 = new StubAggregateRoot();
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
@@ -65,7 +68,7 @@ public class MongoEventStoreTest {
     public void testStoreAndLoadEvents() {
         assertNotNull(eventStore);
         eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), helper.domainEvents().count());
+        assertEquals((long) aggregate1.getUncommittedEventCount(), wrapperAxon.domainEvents().count());
 
         // we store some more events to make sure only correct events are retrieved
         eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
@@ -84,7 +87,7 @@ public class MongoEventStoreTest {
         assertNotNull(eventStore);
         // aggregate1 has 10 uncommitted events
         eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), helper.domainEvents().count());
+        assertEquals((long) aggregate1.getUncommittedEventCount(), wrapperAxon.domainEvents().count());
 
         DomainEventStream events = eventStore.readEventSegment("test", aggregate1.getIdentifier(), 4);
         while (events.hasNext()) {
@@ -98,7 +101,7 @@ public class MongoEventStoreTest {
         assertNotNull(eventStore);
         // aggregate1 has 10 uncommitted events
         eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), helper.domainEvents().count());
+        assertEquals((long) aggregate1.getUncommittedEventCount(), wrapperAxon.domainEvents().count());
 
         DomainEventStream events = eventStore.readEventSegment("test", aggregate1.getIdentifier(), 10);
         assertFalse(events.hasNext());

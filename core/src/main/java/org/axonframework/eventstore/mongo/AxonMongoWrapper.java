@@ -13,7 +13,7 @@ import com.mongodb.Mongo;
  * @author Jettro Coenradie
  * @since 0.7
  */
-public class MongoHelper {
+public class AxonMongoWrapper {
     private static final String DEFAULT_DOMAINEVENTS_COLLECTION = "domainevents";
     private static final String DEFAULT_SNAPSHOTEVENTS_COLLECTION = "snapshotevents";
     private static final String DEFAULT_AXONFRAMEWORK_DATABASE = "axonframework";
@@ -27,7 +27,7 @@ public class MongoHelper {
      * The helper requires an actual <code>Mongo</code> connection provided by the java driver
      * @param mongoDb The actual connection to a MongoDB instance
      */
-    public MongoHelper(Mongo mongoDb) {
+    public AxonMongoWrapper(Mongo mongoDb) {
         this.mongoDb = mongoDb;
     }
 

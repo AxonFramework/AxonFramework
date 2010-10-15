@@ -25,7 +25,7 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.eventstore.mongo.MongoEventStore;
-import org.axonframework.eventstore.mongo.MongoHelper;
+import org.axonframework.eventstore.mongo.AxonMongoWrapper;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +68,7 @@ public class FileSystemEventStoreBenchmark {
     private MongoEventStore mongoEventStore;
 
     @Autowired
-    private MongoHelper mongoHelper;
+    private AxonMongoWrapper axonMongoWrapper;
 
 
     @BeforeClass
@@ -134,7 +134,7 @@ public class FileSystemEventStoreBenchmark {
 
     @Test
     public void startBenchmarkTest_Mongo() throws InterruptedException {
-        mongoHelper.database().dropDatabase();
+        axonMongoWrapper.database().dropDatabase();
         long start = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
         for (int t = 0; t < THREAD_COUNT; t++) {
