@@ -30,6 +30,7 @@ import java.util.UUID;
 public abstract class EventBase implements Event {
 
     private final MutableEventMetaData metaData;
+    private long eventRevision;
 
     /**
      * Initialize a new event. This constructor will set the event identifier to a random UUID and the timestamp to the
@@ -105,7 +106,6 @@ public abstract class EventBase implements Event {
         EventBase that = (EventBase) o;
 
         return metaData.getEventIdentifier().equals(that.metaData.getEventIdentifier());
-
     }
 
     /**
@@ -114,5 +114,26 @@ public abstract class EventBase implements Event {
     @Override
     public int hashCode() {
         return metaData.getEventIdentifier().hashCode();
+    }
+
+    /**
+     * Sets the revision of the implementing event definition. Revision numbers are use by {@link
+     * org.axonframework.eventstore.EventUpcaster UpCasters} to decide which transformations to apply when deserializing
+     * an event. Revision numbers only need to be supplied if the structure has been changed in such a way that the
+     * event serializer cannot deserialize it without help from an UpCaster.
+     *
+     * @param eventRevision The revision of the event definition
+     */
+    protected void setEventRevision(long eventRevision) {
+        this.eventRevision = eventRevision;
+    }
+
+    /**
+     * Returns the revision number of this event definition.
+     *
+     * @return the revision number of this event definition
+     */
+    public long getEventRevision() {
+        return eventRevision;
     }
 }

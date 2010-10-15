@@ -43,7 +43,7 @@ public class LegacyAxonEventUpcaster implements EventUpcaster<Document> {
     @Override
     public Document upcast(Document event) {
         Element rootNode = event.getRootElement();
-        if (rootNode.attribute("revision") == null) {
+        if (rootNode.attribute("eventRevision") == null) {
             Element metaData = rootNode.addElement("metaData").addElement("values");
             Iterator<Element> children = rootNode.elementIterator();
             while (children.hasNext()) {

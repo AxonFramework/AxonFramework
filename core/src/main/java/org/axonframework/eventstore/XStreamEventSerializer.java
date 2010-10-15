@@ -18,6 +18,7 @@ package org.axonframework.eventstore;
 
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.EventBase;
 import org.axonframework.serializer.GenericXStreamSerializer;
 import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.SerializationException;
@@ -73,6 +74,7 @@ public class XStreamEventSerializer implements EventSerializer {
     public XStreamEventSerializer(Charset charset) {
         this.charset = charset;
         genericXStreamSerializer = new GenericXStreamSerializer(charset);
+        genericXStreamSerializer.getXStream().useAttributeFor(EventBase.class, "eventRevision");
     }
 
     /**

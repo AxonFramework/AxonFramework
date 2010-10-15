@@ -80,7 +80,7 @@ public class LegacyAxonEventUpcasterTest {
     @Test
     public void testDeserializeNewStyleEvent() throws Exception {
         byte[] oldskoolEvent = (
-                "<org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest_-TestEvent revision=\"0\">"
+                "<org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest_-TestEvent eventRevision=\"0\">"
                         + "<metaData><values>"
                         + "<entry><string>_timestamp</string><localDateTime>2010-09-15T21:43:01.000</localDateTime></entry>"
                         + "<entry><string>_eventIdentifier</string><uuid>36f20a77-cdba-4e63-8c02-825486aad301</uuid></entry>"
@@ -98,6 +98,14 @@ public class LegacyAxonEventUpcasterTest {
         assertEquals("62daf7f6-c3ab-4179-a212-6b1da2a6ec72", testEvent.getAggregateIdentifier().asString());
         assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
         assertEquals("someValue", testEvent.getMetaDataValue("someKey"));
+    }
+
+    @Test
+    public void testSerializeAndDeserialize() {
+
+        byte[] serializedEvent = serializer.serialize(new TestEvent("Testing123"));
+        TestEvent testEvent = (TestEvent) serializer.deserialize(serializedEvent);
+        Assert.assertEquals("Testing123", testEvent.getName());
     }
 
     public static class TestEvent extends DomainEvent {
