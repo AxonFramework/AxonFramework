@@ -36,6 +36,7 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
+@SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
 public class AuditingInterceptorTest {
 
     private AuditingInterceptor testSubject;
