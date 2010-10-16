@@ -27,7 +27,6 @@ import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * The SimpleCommandBusBeanDefinitionParser does the actual work of parsing the <code>commandBus</code> element from the
@@ -48,26 +47,8 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
         commandBusDefinition.setBeanClass(SimpleCommandBus.class);
 
         parseInterceptorConfiguration(element, parserContext, commandBusDefinition);
-        parseSubscribersConfiguration(element, parserContext, commandBusDefinition);
 
         return commandBusDefinition;
-    }
-
-    /**
-     * Handles any optional subscribers configuration.
-     *
-     * @param element              The {@link Element} being parsed.
-     * @param parserContext        The running {@link ParserContext}.
-     * @param commandBusDefinition The {@link BeanDefinition} being built.
-     */
-    private void parseSubscribersConfiguration(Element element, ParserContext parserContext,
-                                               GenericBeanDefinition commandBusDefinition) {
-        Element subscribersElement = DomUtils.getChildElementByTagName(element, "subscribers");
-        if (subscribersElement != null) {
-            Map<?, ?> subscribersMap = parserContext.getDelegate().parseMapElement(subscribersElement,
-                                                                                   commandBusDefinition);
-            commandBusDefinition.getPropertyValues().add("subscribers", subscribersMap);
-        }
     }
 
     /**

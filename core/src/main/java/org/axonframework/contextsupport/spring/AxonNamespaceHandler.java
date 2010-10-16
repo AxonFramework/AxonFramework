@@ -25,6 +25,7 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
  * >Appendix D</a> of the Spring Framework Reference Documentation for more information.
  *
  * @author Ben Z. Tels
+ * @author Allard Buijze
  * @since 0.7
  */
 public class AxonNamespaceHandler extends NamespaceHandlerSupport {
@@ -37,7 +38,8 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("annotation-config", new AnnotationConfigurationBeanDefinitionParser());
         registerBeanDefinitionParser("command-bus", new SimpleCommandBusBeanDefinitionParser());
         registerBeanDefinitionParser("event-bus", new EventBusBeanDefinitionParser());
-        registerBeanDefinitionParser("event-store", new EventStoreBeanDefinitionParser());
+        registerBeanDefinitionParser("jpa-event-store", new JpaEventStoreBeanDefinitionParser());
+        registerBeanDefinitionParser("filesystem-event-store", new FileSystemEventStoreBeanDefinitionParser());
         registerBeanDefinitionParser("event-sourcing-repository", new RepositoryBeanDefinitionParser());
     }
 

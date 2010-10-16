@@ -27,7 +27,7 @@
 
     <axon:command-bus id="commandBus-embedded-ref">
         <axon:interceptors>
-            <ref local="commandbus-interceptor"/>
+            <ref local="commandBusInterceptor"/>
         </axon:interceptors>
     </axon:command-bus>
 
@@ -39,21 +39,20 @@
 
     <axon:command-bus id="commandBus-interceptor-attribute">
         <axon:interceptors>
-            <ref bean="commandbus-interceptor"/>
+            <ref bean="commandBusInterceptor"/>
         </axon:interceptors>
     </axon:command-bus>
 
     <axon:event-bus id="eventBus"/>
 
-    <axon:event-store id="eventStore" type="JPA"
-                      event-serializer="eventSerializer" entity-manager="entityManager"/>
+    <axon:jpa-event-store id="eventStore"
+                          event-serializer="eventSerializer" entity-manager="entityManager"/>
 
-    <axon:event-store id="fileEventStore" type="FILE"
-                      base-dir="/tmp" event-serializer="eventSerializer"/>
+    <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer"/>
 
     <bean id="eventSerializer" class="org.axonframework.eventstore.XStreamEventSerializer"/>
 
-    <bean id="commandbus-interceptor"
+    <bean id="commandBusInterceptor"
           class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
     </bean>
 

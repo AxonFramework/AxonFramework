@@ -49,7 +49,7 @@ public class SimpleCommandBusBeanDefinitionParserTest {
         ManagedList<?> list = (ManagedList<?>) propertyValue.getValue();
         assertTrue(RuntimeBeanReference.class.isInstance(list.get(0)));
         RuntimeBeanReference beanReference = (RuntimeBeanReference) list.get(0);
-        assertEquals("commandbus-interceptor", beanReference.getBeanName());
+        assertEquals("commandBusInterceptor", beanReference.getBeanName());
 
         CommandBus commandBus = beanFactory.getBean("commandBus-embedded-ref", CommandBus.class);
         assertNotNull(commandBus);
@@ -64,7 +64,7 @@ public class SimpleCommandBusBeanDefinitionParserTest {
         assertNotNull("No definition for the interceptor", propertyValue);
         assertEquals(1, ((List) propertyValue.getValue()).size());
         List<RuntimeBeanReference> beanReferences = (List<RuntimeBeanReference>) propertyValue.getValue();
-        assertEquals("commandbus-interceptor", beanReferences.get(0).getBeanName());
+        assertEquals("commandBusInterceptor", beanReferences.get(0).getBeanName());
 
         CommandBus commandBus = beanFactory.getBean("commandBus-interceptor-attribute", CommandBus.class);
         assertNotNull(commandBus);

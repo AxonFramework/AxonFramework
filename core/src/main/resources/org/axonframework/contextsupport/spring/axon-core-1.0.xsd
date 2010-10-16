@@ -61,14 +61,6 @@
                                 </xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>
-                        <xsd:element name="subscriptions" type="beans:mapType"
-                                     minOccurs="0" maxOccurs="1">
-                            <xsd:annotation>
-                                <xsd:documentation>A map of subscriptions of handlers to command
-                                    types.
-                                </xsd:documentation>
-                            </xsd:annotation>
-                        </xsd:element>
                     </xsd:sequence>
                 </xsd:extension>
             </xsd:complexContent>
@@ -110,10 +102,24 @@
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:complexType name="eventStoreType">
+        <xsd:complexContent>
+            <xsd:extension base="beans:identifiedType">
+                <xsd:attribute name="event-serializer" use="optional" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>Reference to an event serializer to use with this event store. Defaults to
+                            an org.axonframework.eventstore.XStreamEventSerializer
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
     <!-- ================================== -->
-    <!-- == eventStore ==================== -->
+    <!-- ===== filesystem-event-store ===== -->
     <!-- ================================== -->
-    <xsd:element name="event-store">
+    <xsd:element name="filesystem-event-store">
         <xsd:annotation>
             <xsd:documentation>Spring context schema extension for the definition
                 of an EvenStore instance.
@@ -121,35 +127,33 @@
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
-                <xsd:extension base="beans:identifiedType">
-                    <xsd:attribute name="type" use="required">
+                <xsd:extension base="eventStoreType">
+                    <xsd:attribute name="base-dir" use="required" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>The type of event store to create (options: FILE or JPA)
-                            </xsd:documentation>
-                        </xsd:annotation>
-                        <xsd:simpleType>
-                            <xsd:restriction base="xsd:string">
-                                <xsd:enumeration value="FILE"/>
-                                <xsd:enumeration value="JPA"/>
-                            </xsd:restriction>
-                        </xsd:simpleType>
-                    </xsd:attribute>
-                    <xsd:attribute name="event-serializer" use="optional" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>Reference to an event serializer to use with this event store.
+                            <xsd:documentation>The base directory for this event store.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- ======== jpa-event-store ========= -->
+    <!-- ================================== -->
+    <xsd:element name="jpa-event-store">
+        <xsd:annotation>
+            <xsd:documentation>Spring context schema extension for the definition
+                of an EvenStore instance.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="eventStoreType">
                     <xsd:attribute name="entity-manager" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to an entity manager to use with this event store.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                    <xsd:attribute name="base-dir" use="optional" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>The base directory for this event store (mandatory for a FILE type event
-                                store).
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
