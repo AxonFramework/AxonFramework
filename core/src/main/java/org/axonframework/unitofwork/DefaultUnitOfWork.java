@@ -21,6 +21,7 @@ import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -142,18 +143,18 @@ public class DefaultUnitOfWork extends UnitOfWork {
      * listeners.
      */
     protected void notifyListenersPrepareCommit() {
-        List<Event> events = eventsFrom(eventsToPublish);
+        List<Event> events = eventsToPublish();
         for (UnitOfWorkListener listener : listeners) {
             listener.onPrepareCommit(registeredAggregates.keySet(), events);
         }
     }
 
-    private List<Event> eventsFrom(Queue<EventEntry> eventsToPublish) {
+    private List<Event> eventsToPublish() {
         List<Event> events = new ArrayList<Event>(eventsToPublish.size());
         for (EventEntry entry : eventsToPublish) {
             events.add(entry.event);
         }
-        return events;
+        return Collections.unmodifiableList(events);
     }
 
     private static class EventEntry {
