@@ -49,11 +49,10 @@ public interface CommandBus {
      *
      * @param command  The Command to dispatch
      * @param callback The callback to invoke when command processing is complete
-     * @param <C>      The type of command
      * @param <R>      The type of the expected result
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
      */
-    <C, R> void dispatch(C command, CommandCallback<C, R> callback);
+    <R> void dispatch(Object command, CommandCallback<R> callback);
 
     /**
      * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>.

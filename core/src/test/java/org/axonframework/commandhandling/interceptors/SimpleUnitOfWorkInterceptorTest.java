@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -121,28 +120,26 @@ public class SimpleUnitOfWorkInterceptorTest {
         final DefaultUnitOfWork unitOfWork = new DefaultUnitOfWork();
         unitOfWork.start();
         InterceptorChain chain = mock(InterceptorChain.class);
-        when(chain.proceed(isA(CommandContext.class))).thenAnswer(new Answer<Object>() {
+        when(chain.proceed(isA(Object.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 assertNotSame(unitOfWork, CurrentUnitOfWork.get());
                 return null;
             }
         });
-        interceptor.handle(mock(CommandContext.class), chain);
+        interceptor.handle(mock(Object.class), chain);
         unitOfWork.commit();
     }
 
     private void dispatchCommand(SimpleCommand command, final RuntimeException failure) {
-        commandBus.dispatch(command, new CommandCallback<SimpleCommand, Object>() {
+        commandBus.dispatch(command, new CommandCallback<Object>() {
             @Override
-            public void onSuccess(Object result,
-                                  CommandContext<SimpleCommand> simpleCommandCommandContext) {
+            public void onSuccess(Object result) {
                 fail("Expected exception to be propagated");
             }
 
             @Override
-            public void onFailure(Throwable actual,
-                                  CommandContext<SimpleCommand> simpleCommandCommandContext) {
+            public void onFailure(Throwable actual) {
                 assertSame(failure, actual);
             }
         });
@@ -161,7 +158,7 @@ public class SimpleUnitOfWorkInterceptorTest {
     private class LoadAndSaveCommandHandler implements CommandHandler<SimpleCommand> {
 
         @Override
-        public Object handle(SimpleCommand command, CommandContext<SimpleCommand> context) {
+        public Object handle(SimpleCommand command) {
             for (AggregateIdentifier aggregateIdentifier : command.getAggregatesToActOn()) {
                 StubAggregate aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.doSomething();

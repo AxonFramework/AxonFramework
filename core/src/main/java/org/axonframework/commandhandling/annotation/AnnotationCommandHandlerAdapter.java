@@ -17,18 +17,17 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.util.AbstractHandlerInvoker;
 import org.axonframework.util.AnnotatedHandlerAdapter;
 import org.springframework.util.ReflectionUtils;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link
@@ -62,7 +61,6 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      * Invokes the @CommandHandler annotated method that accepts the given <code>command</code>.
      *
      * @param command The command to handle
-     * @param context CommandContext for the invocation
      * @return the result of the command handling. Is {@link Void#TYPE} when the annotated handler has a
      *         <code>void</code> return value.
      *
@@ -70,9 +68,9 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      * @throws Throwable                    any exception occurring while handling the command
      */
     @Override
-    public Object handle(Object command, CommandContext<Object> context) throws Throwable {
+    public Object handle(Object command) throws Throwable {
         try {
-            return invokeHandlerMethod(command, context);
+            return invokeHandlerMethod(command);
         } catch (IllegalAccessException e) {
             throw new UnsupportedOperationException(String.format(
                     "An error occurred when handling a command of type [%s]",

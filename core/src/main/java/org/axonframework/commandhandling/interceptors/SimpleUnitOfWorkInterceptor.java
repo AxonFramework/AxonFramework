@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -39,7 +38,7 @@ public class SimpleUnitOfWorkInterceptor implements CommandHandlerInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(SimpleUnitOfWorkInterceptor.class);
 
     @Override
-    public Object handle(CommandContext context, InterceptorChain chain) throws Throwable {
+    public Object handle(Object command, InterceptorChain chain) throws Throwable {
         logger.debug("Incoming command. Creating new UnitOfWork instance");
         UnitOfWork unitOfWork = createUnitOfWork();
         if (!unitOfWork.isStarted()) {
@@ -49,7 +48,7 @@ public class SimpleUnitOfWorkInterceptor implements CommandHandlerInterceptor {
         Object returnValue;
         try {
             logger.debug("Proceeding interceptor chain");
-            returnValue = chain.proceed(context);
+            returnValue = chain.proceed();
         } catch (Throwable t) {
             logger.debug("Rolling back UnitOfWork after execution error");
             unitOfWork.rollback();

@@ -17,32 +17,27 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandContext;
 
 /**
  * Abstract callback that can be extended when no result is expected from the command handler execution.
  *
  * @author Allard Buijze
- * @param <C> The type of command sent
  * @since 0.6
  */
-public abstract class VoidCallback<C> implements CommandCallback<C, Class<Void>> {
+public abstract class VoidCallback implements CommandCallback<Class<Void>> {
 
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation merely invokes {@link #onSuccess(CommandContext)}.
+     * This implementation merely invokes {@link #onSuccess()}.
      */
     @Override
-    public void onSuccess(Class<Void> result, CommandContext<C> context) {
-        onSuccess(context);
+    public void onSuccess(Class<Void> result) {
+        onSuccess();
     }
 
     /**
-     * Invoked when command handling execution was successful.  The given <code>context</code> may contain values added
-     * by the interceptors acting on the incoming command.
-     *
-     * @param context The context of command execution.
+     * Invoked when command handling execution was successful.
      */
-    protected abstract void onSuccess(CommandContext<C> context);
+    protected abstract void onSuccess();
 }

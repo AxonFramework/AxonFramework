@@ -17,18 +17,33 @@
 package org.axonframework.commandhandling;
 
 /**
+ * The interceptor chain manages the flow of a command through a chain of interceptors and ultimately to the command
+ * handler. Interceptors may continue processing via this chain by calling the {@link #proceed()} or {@link
+ * #proceed(Object)} methods. Alternatively, they can block processing by returning without calling either of these
+ * methods.
+ *
  * @author Allard Buijze
+ * @since 0.5
  */
 public interface InterceptorChain {
 
     /**
-     * Process the given <code>context</code> and pass it on to the next item in the chain. If this instance is the last
-     * item in the chain, the command is passed to the <code>handler</code> for execution.
+     * Signals the Interceptor Chain to continue processing the incoming (original) command.
+     *
+     * @return The return value of the command execution, if any
+     *
+     * @throws Throwable any exceptions thrown by interceptors or the command handler
+     * @since 0.7
+     */
+    Object proceed() throws Throwable;
+
+    /**
+     * Signals the Interceptor Chain to continue processing the given command.
      *
      * @param command The command being executed
      * @return The return value of the command execution, if any
      *
      * @throws Throwable any exceptions thrown by interceptors or the command handler
      */
-    Object proceed(CommandContext command) throws Throwable;
+    Object proceed(Object command) throws Throwable;
 }

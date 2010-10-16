@@ -45,7 +45,7 @@ public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
-    private volatile DefaultInterceptorChain interceptorChain = new DefaultInterceptorChain(Collections.<CommandHandlerInterceptor>emptyList());
+    private volatile Iterable<? extends CommandHandlerInterceptor> interceptorChain = Collections.emptyList();
     private volatile SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
 
     /**
@@ -58,9 +58,9 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void dispatch(Object command) {
-        CommandContext context = createCommandContext(command);
+        CommandHandler commandHandler = createCommandContext(command);
         try {
-            doDispatch(context);
+            doDispatch(command, commandHandler);
         } catch (Error e) {
             throw e;
         } catch (Throwable throwable) {
@@ -71,26 +71,26 @@ public class SimpleCommandBus implements CommandBus {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public <C, R> void dispatch(C command, final CommandCallback<C, R> callback) {
-        CommandContext context = createCommandContext(command);
+    public <R> void dispatch(Object command, final CommandCallback<R> callback) {
+        CommandHandler handler = createCommandContext(command);
         try {
-            Object result = doDispatch(context);
-            callback.onSuccess((R) result, context);
+            Object result = doDispatch(command, handler);
+            callback.onSuccess((R) result);
         } catch (Throwable throwable) {
-            callback.onFailure(throwable, context);
+            callback.onFailure(throwable);
         }
     }
 
-    private <C> CommandContext createCommandContext(C command) {
+    private CommandHandler createCommandContext(Object command) {
         final CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
                                                           command.getClass().getSimpleName()));
         }
-        return new CommandContextImpl(command, handler);
+        return handler;
     }
 
-    private Object doDispatch(CommandContext context) throws Throwable {
+    private Object doDispatch(Object command, CommandHandler commandHandler) throws Throwable {
         statistics.recordReceivedCommand();
         boolean alreadyInUnitOfWork = CurrentUnitOfWork.isStarted();
         UnitOfWork fallbackUnitOfWork = null;
@@ -99,7 +99,7 @@ public class SimpleCommandBus implements CommandBus {
             fallbackUnitOfWork.start();
         }
         try {
-            Object returnValue = interceptorChain.proceed(context);
+            Object returnValue = new DefaultInterceptorChain(command, commandHandler, interceptorChain).proceed();
             if (fallbackUnitOfWork != null) {
                 fallbackUnitOfWork.commit();
             }
@@ -143,7 +143,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param interceptors The interceptors to invoke when commands are dispatched
      */
     public void setInterceptors(List<? extends CommandHandlerInterceptor> interceptors) {
-        this.interceptorChain = new DefaultInterceptorChain(interceptors);
+        this.interceptorChain = interceptors;
     }
 
     /**

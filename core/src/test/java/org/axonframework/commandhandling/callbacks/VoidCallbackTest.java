@@ -16,36 +16,41 @@
 
 package org.axonframework.commandhandling.callbacks;
 
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.junit.Test;
+import org.junit.*;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-/** @author Allard Buijze */
+/**
+ * @author Allard Buijze
+ */
 public class VoidCallbackTest {
 
-    /** This test should make sure the problem described in issue #91 does not occur anymore */
+    /**
+     * This test should make sure the problem described in issue #91 does not occur anymore
+     */
     @Test
     public void testCallbackCalled() {
         SimpleCommandBus scb = new SimpleCommandBus();
         new AnnotationCommandHandlerAdapter(this, scb).subscribe();
 
-        scb.dispatch("Hello", new VoidCallback<String>() {
+        scb.dispatch("Hello", new VoidCallback() {
             @Override
-            protected void onSuccess(CommandContext<String> stringCommandContext) {
+            protected void onSuccess() {
                 // what I expected
             }
 
             @Override
-            public void onFailure(Throwable cause, CommandContext<String> stringCommandContext) {
+            public void onFailure(Throwable cause) {
+                cause.printStackTrace();
                 fail("Did not expect a failure");
             }
         });
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     @CommandHandler
     public void handle(String someCommand) {
         // nothing to do

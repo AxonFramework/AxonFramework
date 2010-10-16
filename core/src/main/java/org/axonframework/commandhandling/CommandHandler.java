@@ -27,15 +27,13 @@ package org.axonframework.commandhandling;
 public interface CommandHandler<T> {
 
     /**
-     * Handles the given <code>command</code>. The <code>context</code> provides contextual information added by
-     * interceptors.
+     * Handles the given <code>command</code>.
      *
      * @param command The command to process.
-     * @param context The context instance containing meta-data provided by interceptors
      * @return The result of the command processing, if any.
      *
      * @throws Throwable any exception that occurs during command handling
      */
-    Object handle(T command, CommandContext<T> context) throws Throwable;
+    Object handle(T command) throws Throwable;
 
 }

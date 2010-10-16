@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandContext;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -30,25 +29,24 @@ import java.util.concurrent.TimeoutException;
  * mechanism. This callback allows the caller to synchronize calls when an asynchronous command bus is being used.
  *
  * @author Allard Buijze
- * @param <C> the type of the dispatched command
  * @param <R> the type of result of the command handling
  * @since 0.6
  */
-public class FutureCallback<C, R> implements CommandCallback<C, R>, Future<R> {
+public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
 
-    private R result;
-    private Throwable failure;
+    private volatile R result;
+    private volatile Throwable failure;
 
     private final CountDownLatch latch = new CountDownLatch(1);
 
     @Override
-    public void onSuccess(R executionResult, CommandContext<C> context) {
+    public void onSuccess(R executionResult) {
         this.result = executionResult;
         latch.countDown();
     }
 
     @Override
-    public void onFailure(Throwable cause, CommandContext<C> context) {
+    public void onFailure(Throwable cause) {
         this.failure = cause;
         latch.countDown();
     }

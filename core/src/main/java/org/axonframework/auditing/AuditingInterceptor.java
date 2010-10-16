@@ -16,7 +16,6 @@
 
 package org.axonframework.auditing;
 
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.Event;
@@ -38,20 +37,20 @@ public abstract class AuditingInterceptor implements CommandHandlerInterceptor {
     private final EventListener eventListener = new AuditingEventListener();
 
     @Override
-    public Object handle(CommandContext context, InterceptorChain chain) throws Throwable {
+    public Object handle(Object command, InterceptorChain chain) throws Throwable {
         AuditingContext existingAuditingContext = AuditingContextHolder.currentAuditingContext();
         AuditingContext auditingContext;
         if (existingAuditingContext != null) {
             auditingContext = new AuditingContext(getCurrentPrincipal(),
                                                   existingAuditingContext.getCorrelationId(),
-                                                  context.getCommand());
+                                                  command);
         } else {
-            auditingContext = new AuditingContext(getCurrentPrincipal(), context.getCommand());
+            auditingContext = new AuditingContext(getCurrentPrincipal(), command);
         }
         AuditingContextHolder.setContext(auditingContext);
 
         try {
-            Object returnValue = chain.proceed(context);
+            Object returnValue = chain.proceed();
             writeSuccessful(auditingContext);
             return returnValue;
         } catch (Throwable t) {

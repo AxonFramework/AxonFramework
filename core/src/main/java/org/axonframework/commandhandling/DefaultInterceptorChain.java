@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import java.util.List;
+import java.util.Iterator;
 
 /**
  * Mechanism that takes care of interceptor and event handler execution.
@@ -26,32 +26,29 @@ import java.util.List;
  */
 class DefaultInterceptorChain implements InterceptorChain {
 
-    private final InterceptorChain next;
-    private final CommandHandlerInterceptor current;
+    private final Object command;
+    private final CommandHandler handler;
+    private Iterator<? extends CommandHandlerInterceptor> chain;
 
-    /**
-     * Initialize an InterceptorChain for the given <code>interceptors</code>.
-     *
-     * @param interceptors The list of interceptors to create the chain for. May not be <code>null</code>
-     * @throws NullPointerException if the given list of <code>interceptors</code> is <code>null</code>
-     */
-    public DefaultInterceptorChain(List<? extends CommandHandlerInterceptor> interceptors) {
-        if (interceptors.size() > 0) {
-            current = interceptors.get(0);
-            next = new DefaultInterceptorChain(interceptors.subList(1, interceptors.size()));
-        } else {
-            current = null;
-            next = null;
-        }
+    public DefaultInterceptorChain(Object command, CommandHandler<?> handler,
+                                   Iterable<? extends CommandHandlerInterceptor> chain) {
+        this.command = command;
+        this.handler = handler;
+        this.chain = chain.iterator();
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public Object proceed(CommandContext commandContext) throws Throwable {
-        if (current != null) {
-            return current.handle(commandContext, next);
+    public Object proceed(Object command) throws Throwable {
+        if (chain.hasNext()) {
+            return chain.next().handle(command, this);
         } else {
-            return commandContext.getCommandHandler().handle(commandContext.getCommand(), commandContext);
+            return handler.handle(command);
         }
+    }
+
+    @Override
+    public Object proceed() throws Throwable {
+        return proceed(command);
     }
 }

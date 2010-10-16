@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.junit.*;
 
@@ -47,7 +46,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test
     public void testHandlerDispatching_VoidReturnType() throws Throwable {
-        Object actualReturnValue = testSubject.handle("", mock(CommandContext.class));
+        Object actualReturnValue = testSubject.handle("");
         assertEquals(void.class, actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -55,7 +54,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test
     public void testHandlerDispatching_WithReturnType() throws Throwable {
-        Object actualReturnValue = testSubject.handle(1L, mock(CommandContext.class));
+        Object actualReturnValue = testSubject.handle(1L);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(1, mockTarget.returningHandlerInvoked);
@@ -64,7 +63,7 @@ public class AnnotationCommandHandlerAdapterTest {
     @Test
     public void testHandlerDispatching_ThrowingException() throws Throwable {
         try {
-            testSubject.handle(new HashSet(), mock(CommandContext.class));
+            testSubject.handle(new HashSet());
             fail("Expected exception");
         }
         catch (Exception ex) {
@@ -91,7 +90,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test(expected = NoHandlerForCommandException.class)
     public void testHandle_NoHandlerForCommand() throws Throwable {
-        testSubject.handle(new LinkedList(), mock(CommandContext.class));
+        testSubject.handle(new LinkedList());
     }
 
     private static class MyCommandHandler {
@@ -99,22 +98,25 @@ public class AnnotationCommandHandlerAdapterTest {
         private int voidHandlerInvoked;
         private int returningHandlerInvoked;
 
+        @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
         public void myVoidHandler(String stringCommand) {
             voidHandlerInvoked++;
         }
 
         @CommandHandler
-        public Long myReturningHandler(Long longCommand, CommandContext<Long> context) {
+        public Long myReturningHandler(Long longCommand) {
             returningHandlerInvoked++;
             return longCommand;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
         public void exceptionThrowingHandler(HashSet o) throws Exception {
             throw new Exception("Some exception");
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
         public void exceptionThrowingHandler(ArrayList o) throws Exception {
             throw new RuntimeException("Some exception");

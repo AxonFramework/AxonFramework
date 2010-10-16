@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
@@ -58,6 +57,7 @@ public class SpringTransactionalInterceptorTest {
         commandBus.subscribe(Object.class, commandHandler);
     }
 
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testTransactionManagement_CommitFails() {
         doThrow(new RuntimeException()).when(mockTransactionManager).commit(mockTransactionStatus);
@@ -73,30 +73,30 @@ public class SpringTransactionalInterceptorTest {
         commandBus.dispatch(new Object());
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(commandHandler).handle(isA(Object.class), isA(CommandContext.class));
+        inOrder.verify(commandHandler).handle(isA(Object.class));
         inOrder.verify(mockTransactionManager).commit(mockTransactionStatus);
         verifyNoMoreInteractions(mockTransactionManager, commandHandler);
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
     @Test
     public void testTransactionManagement_RuntimeException() throws Throwable {
         final RuntimeException exception = new RuntimeException("Mock");
-        when(commandHandler.handle(isA(Object.class), isA(CommandContext.class))).thenThrow(exception);
-        commandBus.dispatch(new Object(), new CommandCallback<Object, Object>() {
+        when(commandHandler.handle(isA(Object.class))).thenThrow(exception);
+        commandBus.dispatch(new Object(), new CommandCallback<Object>() {
             @Override
-            public void onSuccess(Object result, CommandContext<Object> objectCommandContext) {
+            public void onSuccess(Object result) {
                 fail("Exception should be propagated");
             }
 
             @Override
-            public void onFailure(Throwable actual, CommandContext<Object> objectCommandContext) {
+            public void onFailure(Throwable actual) {
                 assertSame(exception, actual);
             }
         });
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(commandHandler).handle(isA(Object.class), isA(CommandContext.class));
+        inOrder.verify(commandHandler).handle(isA(Object.class));
         inOrder.verify(mockTransactionManager).rollback(mockTransactionStatus);
         verifyNoMoreInteractions(mockTransactionManager, commandHandler);
     }

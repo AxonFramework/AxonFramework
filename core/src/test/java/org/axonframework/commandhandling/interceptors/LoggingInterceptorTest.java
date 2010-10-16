@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.interceptors;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.junit.*;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,6 @@ import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
 
 /**
  * @author Allard Buijze
@@ -60,10 +58,9 @@ public class LoggingInterceptorTest {
     @Test
     public void testIncomingLogging_NullReturnValue() throws Throwable {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(interceptorChain.proceed(isA(CommandContext.class))).thenReturn(null);
+        when(interceptorChain.proceed()).thenReturn(null);
 
-        CommandContext context = createContext(new StubCommand());
-        testSubject.handle(context, interceptorChain);
+        testSubject.handle(new StubCommand(), interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
@@ -76,9 +73,9 @@ public class LoggingInterceptorTest {
     @Test
     public void testSuccessfulExecution_VoidReturnValue() throws Throwable {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(interceptorChain.proceed(isA(CommandContext.class))).thenReturn(Void.TYPE);
+        when(interceptorChain.proceed()).thenReturn(Void.TYPE);
 
-        testSubject.handle(createContext(new StubCommand()), interceptorChain);
+        testSubject.handle(new StubCommand(), interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
@@ -90,10 +87,10 @@ public class LoggingInterceptorTest {
 
     @Test
     public void testSuccessfulExecution_CustomReturnValue() throws Throwable {
-        when(interceptorChain.proceed(isA(CommandContext.class))).thenReturn(new StubResponse());
+        when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(createContext(new StubCommand()), interceptorChain);
+        testSubject.handle(new StubCommand(), interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger).log(any(String.class), eq(Level.INFO),
@@ -106,11 +103,11 @@ public class LoggingInterceptorTest {
     @Test
     public void testFailedExecution() throws Throwable {
         RuntimeException exception = new RuntimeException();
-        when(interceptorChain.proceed(isA(CommandContext.class))).thenThrow(exception);
+        when(interceptorChain.proceed()).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         try {
-            testSubject.handle(createContext(new StubCommand()), interceptorChain);
+            testSubject.handle(new StubCommand(), interceptorChain);
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             // expected
@@ -127,12 +124,6 @@ public class LoggingInterceptorTest {
         field.setAccessible(true);
         Log4jLoggerAdapter logger = (Log4jLoggerAdapter) field.get(testSubject);
         assertEquals("my.custom.logger", logger.getName());
-    }
-
-    private CommandContext createContext(StubCommand command) {
-        CommandContext context = mock(CommandContext.class);
-        when(context.getCommand()).thenReturn(command);
-        return context;
     }
 
     private static class StubCommand {

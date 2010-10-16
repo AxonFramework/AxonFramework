@@ -18,32 +18,28 @@ package org.axonframework.commandhandling;
 
 /**
  * Interface describing a callback that is invoked when command handler execution has finished. Depending of the outcome
- * of the execution, either the {@link #onSuccess(Object, CommandContext)} or the {@link #onSuccess(Object,
- * CommandContext)} is called.
+ * of the execution, either the {@link #onSuccess(Object)} or the {@link #onFailure(Throwable)} is called.
  *
  * @author Allard Buijze
- * @param <C> the type of command sent
  * @param <R> the type of result of the command handling
  * @since 0.6
  */
-public interface CommandCallback<C, R> {
+public interface CommandCallback<R> {
 
     /**
      * Invoked when command handling execution was successful. The given <code>context</code> may contain values added
      * by the interceptors acting on the incoming command.
      *
-     * @param result  The result of the command handling execution, if any.
-     * @param context The context of command handling
+     * @param result The result of the command handling execution, if any.
      */
-    void onSuccess(R result, CommandContext<C> context);
+    void onSuccess(R result);
 
     /**
      * Invoked when command handling execution resulted in an error.  The given <code>context</code> may contain values
      * added by the interceptors acting on the incoming command.
      *
-     * @param cause   The exception raised during command handling
-     * @param context The context of command handling
+     * @param cause The exception raised during command handling
      */
-    void onFailure(Throwable cause, CommandContext<C> context);
+    void onFailure(Throwable cause);
 
 }

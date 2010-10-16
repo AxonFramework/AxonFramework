@@ -17,7 +17,6 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandContext;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.EventBase;
@@ -36,7 +35,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 0.7
  */
-class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Object> {
+class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
 
     private final List<DomainEvent> storedEvents;
     private final List<Event> publishedEvents;
@@ -176,12 +175,12 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Ob
     }
 
     @Override
-    public void onSuccess(Object result, CommandContext context) {
+    public void onSuccess(Object result) {
         actualReturnValue = result;
     }
 
     @Override
-    public void onFailure(Throwable cause, CommandContext context) {
+    public void onFailure(Throwable cause) {
         actualException = cause;
     }
 
