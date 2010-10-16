@@ -23,11 +23,8 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
-import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.io.xml.XppDriver;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.util.SerializationException;
-import org.dom4j.Document;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 
@@ -74,8 +71,6 @@ public class GenericXStreamSerializer {
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.registerConverter(new AggregateIdentifierConverter());
-        xStream.addImmutableType(AggregateIdentifier.class);
-        xStream.aliasType("aggregateIdentifier", AggregateIdentifier.class);
         xStream.aliasType("localDateTime", LocalDateTime.class);
         xStream.aliasType("dateTime", DateTime.class);
         xStream.aliasType("uuid", UUID.class);
@@ -107,11 +102,11 @@ public class GenericXStreamSerializer {
      * Deserialize an object using the given dom4j Document. The document needs to describe the XML as it can be parsed
      * by XStream.
      *
-     * @param document The dom4j Document describing the event
+     * @param reader The hierarchical stream reader providing the data for the object to deserialize
      * @return the deserialized object
      */
-    public Object deserialize(Document document) {
-        return xStream.unmarshal(new Dom4JReader(document));
+    public Object deserialize(HierarchicalStreamReader reader) {
+        return xStream.unmarshal(reader);
     }
 
     /**

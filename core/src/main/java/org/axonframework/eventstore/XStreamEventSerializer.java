@@ -17,6 +17,8 @@
 package org.axonframework.eventstore;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.Dom4JReader;
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.EventBase;
 import org.axonframework.serializer.GenericXStreamSerializer;
@@ -74,7 +76,10 @@ public class XStreamEventSerializer implements EventSerializer {
     public XStreamEventSerializer(Charset charset) {
         this.charset = charset;
         genericXStreamSerializer = new GenericXStreamSerializer(charset);
-        genericXStreamSerializer.getXStream().useAttributeFor(EventBase.class, "eventRevision");
+        XStream xStream = genericXStreamSerializer.getXStream();
+        xStream.useAttributeFor(EventBase.class, "eventRevision");
+        xStream.addImmutableType(AggregateIdentifier.class);
+        xStream.aliasType("aggregateIdentifier", AggregateIdentifier.class);
     }
 
     /**
@@ -105,7 +110,7 @@ public class XStreamEventSerializer implements EventSerializer {
             for (EventUpcaster<Document> upcaster : upcasters) {
                 document = upcaster.upcast(document);
             }
-            return (DomainEvent) genericXStreamSerializer.deserialize(document);
+            return (DomainEvent) genericXStreamSerializer.deserialize(new Dom4JReader(document));
         }
 
     }
