@@ -39,8 +39,8 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
 
     private final AuditDataProvider auditDataProvider;
     private final AuditLogger auditLogger;
-    private Object command;
-    private List<Event> recordedEvents = new ArrayList<Event>();
+    private final Object command;
+    private final List<Event> recordedEvents = new ArrayList<Event>();
 
     /**
      * Initialize a listener for the given <code>command</code>. The <code>auditDataProvider</code> is called before the
@@ -69,18 +69,20 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     @Override
     public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
         Map<String, Serializable> auditData = auditDataProvider.provideAuditDataFor(command);
-        collectEvents(aggregateRoots);
-        events.addAll(events);
+        recordedEvents.addAll(collectEvents(aggregateRoots));
+        recordedEvents.addAll(events);
         injectAuditData(auditData);
     }
 
-    private void collectEvents(Set<AggregateRoot> aggregateRoots) {
+    private List<Event> collectEvents(Set<AggregateRoot> aggregateRoots) {
+        List<Event> events = new ArrayList<Event>();
         for (AggregateRoot aggregateRoot : aggregateRoots) {
             DomainEventStream domainEventStream = aggregateRoot.getUncommittedEvents();
             while (domainEventStream.hasNext()) {
-                recordedEvents.add(domainEventStream.next());
+                events.add(domainEventStream.next());
             }
         }
+        return events;
     }
 
     private void injectAuditData(Map<String, Serializable> auditData) {
