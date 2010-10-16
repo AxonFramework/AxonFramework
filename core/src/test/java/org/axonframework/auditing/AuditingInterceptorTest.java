@@ -16,165 +16,99 @@
 
 package org.axonframework.auditing;
 
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.StubAggregate;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.SaveAggregateCallback;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.util.AxonConfigurationException;
 import org.junit.*;
 
-import java.security.Principal;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
 public class AuditingInterceptorTest {
 
-    private SimpleCommandBus commandBus;
-    private Principal principal;
-    private StubAuditingInterceptor auditingInterceptor;
+    private AuditingInterceptor testSubject;
+    private AuditDataProvider mockAuditDataProvider;
+    private AuditLogger mockAuditLogger;
+    private InterceptorChain mockInterceptorChain;
 
     @Before
     public void setUp() {
-        AuditingContextHolder.clear();
-        auditingInterceptor = new StubAuditingInterceptor();
-        SimpleEventBus eventBus = new SimpleEventBus();
-        auditingInterceptor.setEventBus(eventBus);
-        StubCommandHandler stubCommandHandler = new StubCommandHandler(eventBus);
-        SimpleCommandBus commandBus = new SimpleCommandBus();
-        this.commandBus = commandBus;
-        this.commandBus.setInterceptors(Arrays.asList(auditingInterceptor));
-        commandBus.subscribe(String.class, stubCommandHandler);
+        testSubject = new AuditingInterceptor();
+        mockAuditDataProvider = mock(AuditDataProvider.class);
+        mockAuditLogger = mock(AuditLogger.class);
+        mockInterceptorChain = mock(InterceptorChain.class);
+
+        testSubject.setAuditDataProvider(mockAuditDataProvider);
+        testSubject.setAuditLogger(mockAuditLogger);
+
+        when(mockAuditDataProvider.provideAuditDataFor(any(Object.class)))
+                .thenReturn(Collections.singletonMap("key", (Serializable) "value"));
     }
 
     @After
     public void tearDown() {
-        AuditingContextHolder.clear();
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
     @Test
-    public void testInterceptCommand() {
-        principal = new Principal() {
-            @Override
-            public String getName() {
-                return "Axon";
-            }
-        };
-        commandBus.dispatch("Command", new CommandCallback<Object>() {
-            @Override
-            public void onSuccess(Object result) {
-                assertEquals(1, auditingInterceptor.getLoggedContexts().size());
-                AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
-                assertEquals(1, actual.getEvents().size());
-                assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
-                assertEquals("Axon", actual.getPrincipal().getName());
-                assertEquals("Command", actual.getCommand());
-                assertNull("AuditingContext should be cleared after command processing",
-                           AuditingContextHolder.currentAuditingContext());
-                assertEquals("ok", result);
-            }
+    public void testInterceptCommand_SuccessfulExecution() throws Throwable {
+        when(mockInterceptorChain.proceed())
+                .thenReturn("Return value");
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        StubAggregate aggregate = new StubAggregate();
+        aggregate.doSomething();
+        aggregate.doSomething();
+        uow.registerAggregate(aggregate, mock(SaveAggregateCallback.class));
+        Object result = testSubject.handle("Command!", mockInterceptorChain);
 
-            @Override
-            public void onFailure(Throwable cause) {
-                throw new RuntimeException("Got an unexpected exception", cause);
-            }
-        });
+        assertEquals("Return value", result);
+        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
+        uow.commit();
+
+        verify(mockAuditDataProvider, times(1)).provideAuditDataFor("Command!");
+        verify(mockAuditLogger, times(1)).append(eq("Command!"), any(List.class));
+        DomainEvent eventFromAggregate = aggregate.getUncommittedEvents().next();
+        assertEquals("value", eventFromAggregate.getMetaDataValue("key"));
     }
 
     @Test
-    public void testInterceptCommand_NoCurrentPrincipal() {
-        commandBus.dispatch("Command", new CommandCallback<Object>() {
-            @Override
-            public void onSuccess(Object result) {
-                assertEquals(1, auditingInterceptor.getLoggedContexts().size());
-                AuditingContext actual = auditingInterceptor.getLoggedContexts().get(0);
-                assertEquals(1, actual.getEvents().size());
-                assertEquals(StubDomainEvent.class, actual.getEvents().get(0).getClass());
-                assertNull(actual.getPrincipal());
-                assertEquals("ok", result);
-            }
+    public void testInterceptCommand_FailedExecution() throws Throwable {
+        RuntimeException mockException = new RuntimeException("Mock");
+        when(mockInterceptorChain.proceed())
+                .thenThrow(mockException);
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        StubAggregate aggregate = new StubAggregate();
+        aggregate.doSomething();
+        aggregate.doSomething();
+        uow.registerAggregate(aggregate, mock(SaveAggregateCallback.class));
+        try {
+            testSubject.handle("Command!", mockInterceptorChain);
+        } catch (RuntimeException e) {
+            assertSame(mockException, e);
+        }
 
-            @Override
-            public void onFailure(Throwable cause) {
-                fail("Did not expect exception");
-            }
-        });
+        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
+        uow.rollback();
+        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
+        verify(mockAuditLogger, never()).append(eq("Command!"), any(List.class));
     }
 
-    @Test
-    public void testInterceptCommand_PreviousContextIsRestored() throws Exception {
-        AuditingContext previousContext = new AuditingContext(null, "Previous");
-        AuditingContextHolder.setContext(previousContext);
-        commandBus.dispatch("Command");
-        assertSame(previousContext, AuditingContextHolder.currentAuditingContext());
-    }
-
-    @Test
-    public void testInterceptCommand_FailedCommandExecution() {
-        commandBus.dispatch("Fail", new CommandCallback<Object>() {
-            @Override
-            public void onSuccess(Object result) {
-                fail("Expected exception");
-            }
-
-            @Override
-            public void onFailure(Throwable cause) {
-                assertEquals(RuntimeException.class, cause.getClass());
-            }
-        });
-        assertEquals(0, auditingInterceptor.getLoggedContexts().size());
-        assertEquals(1, auditingInterceptor.getFailedContexts().size());
-    }
-
-    private class StubAuditingInterceptor extends AuditingInterceptor {
-
-        private List<AuditingContext> loggedContexts = new LinkedList<AuditingContext>();
-        private List<AuditingContext> failedContexts = new LinkedList<AuditingContext>();
-
-        @Override
-        protected Principal getCurrentPrincipal() {
-            return principal;
-        }
-
-        @Override
-        protected void writeSuccessful(AuditingContext context) {
-            loggedContexts.add(context);
-        }
-
-        @Override
-        protected void writeFailed(AuditingContext context, Throwable failureCause) {
-            this.failedContexts.add(context);
-        }
-
-        public List<AuditingContext> getLoggedContexts() {
-            return loggedContexts;
-        }
-
-        public List<AuditingContext> getFailedContexts() {
-            return failedContexts;
-        }
-    }
-
-    private static class StubCommandHandler implements CommandHandler<String> {
-
-        private SimpleEventBus eventBus;
-
-        public StubCommandHandler(SimpleEventBus eventBus) {
-            this.eventBus = eventBus;
-        }
-
-        @Override
-        public Object handle(String command) {
-            if ("Fail".equals(command)) {
-                throw new RuntimeException("Mock");
-            }
-            eventBus.publish(new StubDomainEvent());
-            return "ok";
-        }
+    @Test(expected = AxonConfigurationException.class)
+    public void testInterceptorRaisesExceptionOnConfigurationError() throws Throwable {
+        testSubject.handle(null, null);
     }
 }

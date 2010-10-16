@@ -45,7 +45,7 @@ public class MutableEventMetaData implements Serializable, EventMetaData {
      * @param timestamp       The timestamp of the creation of the event
      * @param eventIdentifier The identifier of the event
      */
-    MutableEventMetaData(LocalDateTime timestamp, UUID eventIdentifier) {
+    public MutableEventMetaData(LocalDateTime timestamp, UUID eventIdentifier) {
         values.put(IDENTIFIER_KEY, eventIdentifier);
         values.put(TIMESTAMP_KEY, timestamp);
     }
@@ -56,7 +56,7 @@ public class MutableEventMetaData implements Serializable, EventMetaData {
      * @param key   The key for which to insert a value
      * @param value The value to insert
      */
-    void put(String key, Serializable value) {
+    public void put(String key, Serializable value) {
         values.put(key, value);
     }
 

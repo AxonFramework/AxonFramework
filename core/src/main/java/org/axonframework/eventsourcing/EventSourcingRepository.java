@@ -20,6 +20,7 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.Event;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
@@ -223,7 +224,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         }
 
         @Override
-        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots) {
+        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
             if (hasPotentialConflicts()) {
                 conflictResolver.resolveConflicts(asList(aggregate.getUncommittedEvents()), unseenEvents);
             }

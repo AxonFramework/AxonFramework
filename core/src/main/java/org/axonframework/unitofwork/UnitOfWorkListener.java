@@ -17,7 +17,9 @@
 package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.domain.Event;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -48,8 +50,13 @@ public interface UnitOfWorkListener {
     /**
      * Invoked before aggregates are committed, and before any events are published. This phase can be used to do
      * validation or other activity that should be able to prevent event dispatching in certain circumstances.
+     * <p/>
+     * Note that the given <code>events</code> may not contain the uncommitted domain events of each of the
+     * <code>aggregateRoots</code>. To retrieve all events, collect all uncommitted events from the aggregate roots and
+     * combine them with the list of events.
      *
      * @param aggregateRoots the aggregate roots being committed
+     * @param events         Events that have been registered for dispatching with the UnitOfWork
      */
-    void onPrepareCommit(Set<AggregateRoot> aggregateRoots);
+    void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events);
 }

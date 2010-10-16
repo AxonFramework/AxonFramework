@@ -17,7 +17,9 @@
 package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.domain.Event;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -36,7 +38,7 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
      * This implementation does nothing.
      */
     @Override
-    public void onPrepareCommit(Set<AggregateRoot> aggregateRoots) {
+    public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
     }
 
     /**

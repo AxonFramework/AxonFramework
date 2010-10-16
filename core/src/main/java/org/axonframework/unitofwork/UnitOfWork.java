@@ -20,6 +20,7 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -197,7 +198,7 @@ public abstract class UnitOfWork {
         }
 
         @Override
-        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots) {
+        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
         }
 
     }

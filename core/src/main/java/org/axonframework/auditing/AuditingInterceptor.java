@@ -18,99 +18,57 @@ package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.domain.Event;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-
-import java.security.Principal;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.util.AxonConfigurationException;
 
 /**
  * Interceptor that keeps track of commands and the events that were dispatched as a result of handling that command.
- * For each incoming command, an {@link AuditingContext} is created and maintained. After command handling, the
- * implementation of this interceptor may log the information contained in the context.
+ * The AuditingInterceptor uses the current Unit Of Work to track all events being stored and published. The auditing
+ * information provided by the {@link org.axonframework.auditing.AuditDataProvider} is attached to each of these events
+ * just before the Unit Of Work is committed. After the Unit Of Work has been committed, an optional {@link
+ * org.axonframework.auditing.AuditLogger} may write an entry to the audit logs.
+ * <p/>
+ * Note that this class requires a Unit Of Work to be available. This means that you should always configure a Unit Of
+ * Work interceptor <em>before</em> the AuditingInterceptor. Failure to do so will result in an {@link
+ * org.axonframework.util.AxonConfigurationException}.
  *
  * @author Allard Buijze
- * @since 0.6
+ * @since 0.7
  */
-public abstract class AuditingInterceptor implements CommandHandlerInterceptor {
+public class AuditingInterceptor implements CommandHandlerInterceptor {
 
-    private final EventListener eventListener = new AuditingEventListener();
+    private AuditDataProvider auditDataProvider = EmptyDataProvider.INSTANCE;
+    private AuditLogger auditLogger = NullAuditLogger.INSTANCE;
 
     @Override
     public Object handle(Object command, InterceptorChain chain) throws Throwable {
-        AuditingContext existingAuditingContext = AuditingContextHolder.currentAuditingContext();
-        AuditingContext auditingContext;
-        if (existingAuditingContext != null) {
-            auditingContext = new AuditingContext(getCurrentPrincipal(),
-                                                  existingAuditingContext.getCorrelationId(),
-                                                  command);
-        } else {
-            auditingContext = new AuditingContext(getCurrentPrincipal(), command);
+        if (!CurrentUnitOfWork.isStarted()) {
+            throw new AxonConfigurationException(
+                    "Unable to attach auditing information to events because there is no active UnitOfWork. "
+                            + "Please make sure a UnitOfWork Interceptor is configured *before* the AuditingInterceptor");
         }
-        AuditingContextHolder.setContext(auditingContext);
-
-        try {
-            Object returnValue = chain.proceed();
-            writeSuccessful(auditingContext);
-            return returnValue;
-        } catch (Throwable t) {
-            writeFailed(auditingContext, t);
-            throw t;
-        } finally {
-            if (existingAuditingContext != null) {
-                AuditingContextHolder.setContext(existingAuditingContext);
-            } else {
-                AuditingContextHolder.clear();
-            }
-        }
-
+        CurrentUnitOfWork.get().registerListener(
+                new AuditingUnitOfWorkListener(command, auditDataProvider, auditLogger));
+        return chain.proceed();
     }
 
     /**
-     * Returns the {@link Principal} object of the principal running this thread, or <code>null</code> if none is
-     * available. Typically this Principal is provided by a security framework or ThreadLocal instance.
+     * Sets the AuditingDataProvider for this interceptor. Defaults to the {@link EmptyDataProvider}, which provides no
+     * correlation information.
      *
-     * @return the {@link Principal} object of the principal running this thread, or <code>null</code> if none is
-     *         available
+     * @param auditDataProvider the instance providing the auditing information to attach to the events.
      */
-    protected abstract Principal getCurrentPrincipal();
-
-    /**
-     * Called when the command handling executed successfully.
-     *
-     * @param context the auditing context containing the command, related events and current principal.
-     */
-    protected abstract void writeSuccessful(AuditingContext context);
-
-    /**
-     * Called when the command handling execution failed. Subclasses may add behavior by implementing this method. The
-     * default implementation does nothing.
-     *
-     * @param context      the auditing context containing the command, related events and current principal.
-     * @param failureCause The exception that was raised
-     */
-    protected void writeFailed(AuditingContext context, Throwable failureCause) {
-    }
-
-    private static class AuditingEventListener implements EventListener {
-
-        @Override
-        public void handle(Event event) {
-            AuditingContext auditingContext = AuditingContextHolder.currentAuditingContext();
-            if (auditingContext != null) {
-                auditingContext.registerEvent(event);
-            }
-        }
+    public void setAuditDataProvider(AuditDataProvider auditDataProvider) {
+        this.auditDataProvider = auditDataProvider;
     }
 
     /**
-     * Configures the event bus that the interceptor will check events on. These events are assigned to their respective
-     * auditing context.
+     * Sets the logger that writes events to the audit logs. Defaults to the {@link
+     * org.axonframework.auditing.NullAuditLogger}, which does nothing.
      *
-     * @param eventBus The event bus dispatching the events
+     * @param auditLogger the logger that writes events to the audit logs
      */
-    public void setEventBus(EventBus eventBus) {
-        eventBus.subscribe(eventListener);
+    public void setAuditLogger(AuditLogger auditLogger) {
+        this.auditLogger = auditLogger;
     }
-
 }

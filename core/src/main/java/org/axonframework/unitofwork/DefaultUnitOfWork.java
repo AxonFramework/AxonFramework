@@ -20,11 +20,12 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -39,7 +40,7 @@ import java.util.Set;
 public class DefaultUnitOfWork extends UnitOfWork {
 
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
-    private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
+    private final LinkedList<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
     private final Set<UnitOfWorkListener> listeners = new HashSet<UnitOfWorkListener>();
     private Status dispatcherStatus = Status.READY;
 
@@ -136,12 +137,22 @@ public class DefaultUnitOfWork extends UnitOfWork {
     }
 
     /**
-     * Send a {@link UnitOfWorkListener#onPrepareCommit(java.util.Set)} notification to all registered listeners.
+     * Send a {@link UnitOfWorkListener#onPrepareCommit(java.util.Set, java.util.List)} notification to all registered
+     * listeners.
      */
     protected void notifyListenersPrepareCommit() {
+        List<Event> events = eventsFrom(eventsToPublish);
         for (UnitOfWorkListener listener : listeners) {
-            listener.onPrepareCommit(registeredAggregates.keySet());
+            listener.onPrepareCommit(registeredAggregates.keySet(), events);
         }
+    }
+
+    private List<Event> eventsFrom(LinkedList<EventEntry> eventsToPublish) {
+        List<Event> events = new ArrayList<Event>(eventsToPublish.size());
+        for (EventEntry entry : eventsToPublish) {
+            events.add(entry.event);
+        }
+        return events;
     }
 
     private static class EventEntry {
