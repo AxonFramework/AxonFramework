@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -40,7 +41,7 @@ import java.util.Set;
 public class DefaultUnitOfWork extends UnitOfWork {
 
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
-    private final LinkedList<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
+    private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
     private final Set<UnitOfWorkListener> listeners = new HashSet<UnitOfWorkListener>();
     private Status dispatcherStatus = Status.READY;
 
@@ -147,7 +148,7 @@ public class DefaultUnitOfWork extends UnitOfWork {
         }
     }
 
-    private List<Event> eventsFrom(LinkedList<EventEntry> eventsToPublish) {
+    private List<Event> eventsFrom(Queue<EventEntry> eventsToPublish) {
         List<Event> events = new ArrayList<Event>(eventsToPublish.size());
         for (EventEntry entry : eventsToPublish) {
             events.add(entry.event);
