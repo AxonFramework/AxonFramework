@@ -30,6 +30,14 @@ class DefaultInterceptorChain implements InterceptorChain {
     private final CommandHandler handler;
     private Iterator<? extends CommandHandlerInterceptor> chain;
 
+    /**
+     * Initialize the default interceptor chain to dispatch the given <code>command</code>, through the
+     * <code>chain</code>, to the <code>handler</code>.
+     *
+     * @param command The command to dispatch through the interceptor chain
+     * @param handler The handler for the command
+     * @param chain   The interceptor composing the chain
+     */
     public DefaultInterceptorChain(Object command, CommandHandler<?> handler,
                                    Iterable<? extends CommandHandlerInterceptor> chain) {
         this.command = command;
@@ -37,13 +45,16 @@ class DefaultInterceptorChain implements InterceptorChain {
         this.chain = chain.iterator();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings({"unchecked"})
     @Override
-    public Object proceed(Object command) throws Throwable {
+    public Object proceed(Object commandProceedWith) throws Throwable {
         if (chain.hasNext()) {
-            return chain.next().handle(command, this);
+            return chain.next().handle(commandProceedWith, this);
         } else {
-            return handler.handle(command);
+            return handler.handle(commandProceedWith);
         }
     }
 
