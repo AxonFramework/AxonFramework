@@ -28,6 +28,7 @@ import java.lang.reflect.Constructor;
  * identifier for the aggregate is the simple name (class name without the package) of the aggregate type.
  *
  * @author Allard Buijze
+ * @param <T> The type of aggregate this factory creates
  * @since 0.7
  */
 public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implements AggregateFactory<T> {

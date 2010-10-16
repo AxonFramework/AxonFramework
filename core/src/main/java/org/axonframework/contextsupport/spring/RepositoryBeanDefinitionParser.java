@@ -20,8 +20,6 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventsourcing.CachingGenericEventSourcingRepository;
 import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.repository.LockingStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -47,8 +45,6 @@ import java.util.List;
  * @since 0.7
  */
 public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser implements BeanDefinitionParser {
-
-    private static final Logger logger = LoggerFactory.getLogger(RepositoryBeanDefinitionParser.class);
 
     /**
      * The conflict resolver attribute name.
