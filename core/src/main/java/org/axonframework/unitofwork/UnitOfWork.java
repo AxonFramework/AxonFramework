@@ -20,6 +20,8 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
+import java.util.Set;
+
 /**
  * This class represents a UnitOfWork in which modifications are made to aggregates. A typical UnitOfWork scope is the
  * execution of a command. A UnitOfWork may be used to prevent individual events from being published before a number of
@@ -195,7 +197,7 @@ public abstract class UnitOfWork {
         }
 
         @Override
-        public void onPrepareCommit() {
+        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots) {
         }
 
     }

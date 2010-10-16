@@ -136,11 +136,11 @@ public class DefaultUnitOfWork extends UnitOfWork {
     }
 
     /**
-     * Send a {@link UnitOfWorkListener#onPrepareCommit()} notification to all registered listeners.
+     * Send a {@link UnitOfWorkListener#onPrepareCommit(java.util.Set)} notification to all registered listeners.
      */
     protected void notifyListenersPrepareCommit() {
         for (UnitOfWorkListener listener : listeners) {
-            listener.onPrepareCommit();
+            listener.onPrepareCommit(registeredAggregates.keySet());
         }
     }
 

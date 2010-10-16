@@ -16,6 +16,10 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.domain.AggregateRoot;
+
+import java.util.Set;
+
 /**
  * Interface describing a listener that is notified of state changes in the UnitOfWork it has been registered with.
  *
@@ -26,7 +30,7 @@ public interface UnitOfWorkListener {
 
     /**
      * Invoked when the UnitOfWork is committed. The aggregate has been saved and the events have been scheduled for
-     * dispatching. In some cases, the events could already have been dispathed. When processing of this method causes
+     * dispatching. In some cases, the events could already have been dispatched. When processing of this method causes
      * an exception, a UnitOfWork may choose to call {@link #onRollback()} consecutively.
      *
      * @see UnitOfWork#commit()
@@ -44,6 +48,8 @@ public interface UnitOfWorkListener {
     /**
      * Invoked before aggregates are committed, and before any events are published. This phase can be used to do
      * validation or other activity that should be able to prevent event dispatching in certain circumstances.
+     *
+     * @param aggregateRoots the aggregate roots being committed
      */
-    void onPrepareCommit();
+    void onPrepareCommit(Set<AggregateRoot> aggregateRoots);
 }

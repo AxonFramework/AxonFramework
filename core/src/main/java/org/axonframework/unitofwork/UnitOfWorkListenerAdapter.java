@@ -16,6 +16,10 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.domain.AggregateRoot;
+
+import java.util.Set;
+
 /**
  * Abstract implementation of the {@link UnitOfWorkListener} that exposes an extra convenience method: {@link
  * #onCommitOrRollback()}. This implementation does nothing by itself, other than delegating {@link #afterCommit()} and
@@ -32,7 +36,7 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
      * This implementation does nothing.
      */
     @Override
-    public void onPrepareCommit() {
+    public void onPrepareCommit(Set<AggregateRoot> aggregateRoots) {
     }
 
     /**

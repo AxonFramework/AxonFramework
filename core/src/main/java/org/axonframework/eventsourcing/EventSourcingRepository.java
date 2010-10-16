@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
@@ -32,6 +33,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Resource;
 
 /**
@@ -221,7 +223,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         }
 
         @Override
-        public void onPrepareCommit() {
+        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots) {
             if (hasPotentialConflicts()) {
                 conflictResolver.resolveConflicts(asList(aggregate.getUncommittedEvents()), unseenEvents);
             }
