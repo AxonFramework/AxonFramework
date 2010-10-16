@@ -78,7 +78,7 @@ public class XStreamEventSerializerTest {
                                                                       1));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
-        assertTrue(asString.contains("<stub>"));
+        assertTrue(asString.contains("<stub eventRevision=\"0\">"));
         StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
         assertEquals(new Long(1), deserialized.getSequenceNumber());
     }

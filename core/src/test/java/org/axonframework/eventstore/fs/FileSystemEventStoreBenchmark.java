@@ -24,8 +24,8 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.jpa.JpaEventStore;
-import org.axonframework.eventstore.mongo.MongoEventStore;
 import org.axonframework.eventstore.mongo.AxonMongoWrapper;
+import org.axonframework.eventstore.mongo.MongoEventStore;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +49,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/META-INF/spring/benchmark-context.xml"})
-//@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
+@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
 public class FileSystemEventStoreBenchmark {
 
     private static final int THREAD_COUNT = 100;
@@ -70,11 +70,10 @@ public class FileSystemEventStoreBenchmark {
     @Autowired
     private AxonMongoWrapper axonMongoWrapper;
 
-
     @BeforeClass
     public static void prepareEventStore() {
         fileSystemEventStore = new FileSystemEventStore(new XStreamEventSerializer());
-        fileSystemEventStore.setBaseDir(new FileSystemResource("target/"));
+        fileSystemEventStore.setBaseDir(new FileSystemResource("/data/"));
     }
 
     // JPA (connection pool 50-150): 100 threads concurrently wrote 100 * 10 events each in 410937.0 milliseconds. That is an average of 243 events per second
@@ -185,12 +184,11 @@ public class FileSystemEventStoreBenchmark {
             final AtomicInteger eventSequence = new AtomicInteger(0);
             for (int t = 0; t < TRANSACTION_COUNT; t++) {
                 eventSequence.set(saveAndLoadLargeNumberOfEvents(aggregateId,
-                        mongoEventStore,
-                        eventSequence.get()) + 1);
+                                                                 mongoEventStore,
+                                                                 eventSequence.get()) + 1);
             }
         }
     }
-
 
     private class TransactionalBenchmark implements Runnable {
 
