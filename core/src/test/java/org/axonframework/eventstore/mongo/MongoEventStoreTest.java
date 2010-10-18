@@ -6,12 +6,13 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -23,29 +24,38 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
- * Beware with this test, it requires a running mongodb as specified in the configuration file
+ * <p>Beware with this test, it requires a running mongodb as specified in the configuration file,
+ * if no mongo instance is running, tests will be ignored.</p>
+ * <p/>
+ * <p>Autowired dependencies are left out on purpose, it does not work with the assume used to check if mongo is
+ * running.</p>
  *
  * @author Jettro Coenradie
  * @since 0.7
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
-@Ignore("Requires a running Mongo instance, therefore this test is disabled for now")
 public class MongoEventStoreTest {
 
-    @Autowired
     private MongoEventStore eventStore;
-
-    @Autowired
     private Mongo mongo;
     private AxonMongoWrapper wrapperAxon;
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
 
+    @Autowired
+    private ApplicationContext context;
 
     @Before
     public void setUp() {
+        try {
+            mongo = context.getBean(Mongo.class);
+            eventStore = context.getBean(MongoEventStore.class);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        Assume.assumeNotNull(mongo, eventStore);
         wrapperAxon = new AxonMongoWrapper(mongo);
         wrapperAxon.database().dropDatabase();
         aggregate1 = new StubAggregateRoot();
