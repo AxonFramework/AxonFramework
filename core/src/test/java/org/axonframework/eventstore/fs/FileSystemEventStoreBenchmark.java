@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
+import com.mongodb.Mongo;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
@@ -49,7 +50,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/META-INF/spring/benchmark-context.xml"})
-@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
+//@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
 public class FileSystemEventStoreBenchmark {
 
     private static final int THREAD_COUNT = 100;
@@ -68,7 +69,7 @@ public class FileSystemEventStoreBenchmark {
     private MongoEventStore mongoEventStore;
 
     @Autowired
-    private AxonMongoWrapper axonMongoWrapper;
+    private Mongo mongoDb;
 
     @BeforeClass
     public static void prepareEventStore() {
@@ -133,6 +134,7 @@ public class FileSystemEventStoreBenchmark {
 
     @Test
     public void startBenchmarkTest_Mongo() throws InterruptedException {
+        AxonMongoWrapper axonMongoWrapper = new AxonMongoWrapper(mongoDb);
         axonMongoWrapper.database().dropDatabase();
         long start = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
