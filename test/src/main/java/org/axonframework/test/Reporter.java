@@ -100,6 +100,8 @@ class Reporter {
             sb.append(publishedEvent.toString());
         }
         appendProbableCause(probableCause, sb);
+
+        throw new AxonAssertionError(sb.toString());
     }
 
     /**
