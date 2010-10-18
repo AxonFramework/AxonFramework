@@ -151,6 +151,10 @@ public class DefaultUnitOfWork extends UnitOfWork {
         }
     }
 
+    /**
+     * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onCleanup()} notification to all registered
+     * listeners.
+     */
     protected void notifyListenersCleanup() {
         for (UnitOfWorkListener listener : listeners) {
             listener.onCleanup();
