@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -73,7 +74,7 @@ public class SpringTransactionalInterceptorTest {
         commandBus.dispatch(new Object());
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(commandHandler).handle(isA(Object.class));
+        inOrder.verify(commandHandler).handle(isA(Object.class), isA(UnitOfWork.class));
         inOrder.verify(mockTransactionManager).commit(mockTransactionStatus);
         verifyNoMoreInteractions(mockTransactionManager, commandHandler);
     }
@@ -82,7 +83,7 @@ public class SpringTransactionalInterceptorTest {
     @Test
     public void testTransactionManagement_RuntimeException() throws Throwable {
         final RuntimeException exception = new RuntimeException("Mock");
-        when(commandHandler.handle(isA(Object.class))).thenThrow(exception);
+        when(commandHandler.handle(isA(Object.class), isA(UnitOfWork.class))).thenThrow(exception);
         commandBus.dispatch(new Object(), new CommandCallback<Object>() {
             @Override
             public void onSuccess(Object result) {
@@ -96,7 +97,7 @@ public class SpringTransactionalInterceptorTest {
         });
         InOrder inOrder = inOrder(mockTransactionManager, commandHandler);
         inOrder.verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(commandHandler).handle(isA(Object.class));
+        inOrder.verify(commandHandler).handle(isA(Object.class), isA(UnitOfWork.class));
         inOrder.verify(mockTransactionManager).rollback(mockTransactionStatus);
         verifyNoMoreInteractions(mockTransactionManager, commandHandler);
     }

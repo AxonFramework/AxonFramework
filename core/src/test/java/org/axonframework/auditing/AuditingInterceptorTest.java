@@ -23,7 +23,6 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.util.AxonConfigurationException;
 import org.junit.*;
 
 import java.io.Serializable;
@@ -74,7 +73,7 @@ public class AuditingInterceptorTest {
         aggregate.doSomething();
         aggregate.doSomething();
         uow.registerAggregate(aggregate, mock(SaveAggregateCallback.class));
-        Object result = testSubject.handle("Command!", mockInterceptorChain);
+        Object result = testSubject.handle("Command!", uow, mockInterceptorChain);
 
         assertEquals("Return value", result);
         verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
@@ -97,7 +96,7 @@ public class AuditingInterceptorTest {
         aggregate.doSomething();
         uow.registerAggregate(aggregate, mock(SaveAggregateCallback.class));
         try {
-            testSubject.handle("Command!", mockInterceptorChain);
+            testSubject.handle("Command!", uow, mockInterceptorChain);
         } catch (RuntimeException e) {
             assertSame(mockException, e);
         }
@@ -106,10 +105,5 @@ public class AuditingInterceptorTest {
         uow.rollback();
         verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
         verify(mockAuditLogger, never()).append(eq("Command!"), any(List.class));
-    }
-
-    @Test(expected = AxonConfigurationException.class)
-    public void testInterceptorRaisesExceptionOnConfigurationError() throws Throwable {
-        testSubject.handle(null, null);
     }
 }

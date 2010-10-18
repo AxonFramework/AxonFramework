@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.unitofwork.UnitOfWork;
+
 /**
  * Workflow interface that allows for customized command handler invocation chains. A CommandHandlerInterceptor can add
  * customized behavior to command handler invocations, both before and after the invocation.
@@ -42,11 +44,12 @@ public interface CommandHandlerInterceptor {
      * component might expect a result of a specific type.
      *
      * @param command          The command being dispatched
+     * @param unitOfWork       The UnitOfWork in which
      * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process
      * @return the result of the command handler. May have been modified by interceptors.
      *
      * @throws Throwable any exception that occurs while handling the command
      */
-    Object handle(Object command, InterceptorChain interceptorChain) throws Throwable;
+    Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain) throws Throwable;
 
 }

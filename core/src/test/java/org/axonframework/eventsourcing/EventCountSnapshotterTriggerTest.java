@@ -60,8 +60,7 @@ public class EventCountSnapshotterTriggerTest {
         listener = new CapturingMatcher<CacheListener>();
         doNothing().when(mockCache).addListener(argThat(listener));
 
-        unitOfWork = new DefaultUnitOfWork();
-        unitOfWork.start();
+        unitOfWork = DefaultUnitOfWork.startAndGet();
     }
 
     @After

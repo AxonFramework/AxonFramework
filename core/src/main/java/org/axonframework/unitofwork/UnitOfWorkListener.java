@@ -59,4 +59,12 @@ public interface UnitOfWorkListener {
      * @param events         Events that have been registered for dispatching with the UnitOfWork
      */
     void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events);
+
+    /**
+     * Notifies listeners that the UnitOfWork is being cleaned up. This gives listeners the opportunity to clean up
+     * resources that might have been used during commit or rollback, such as remaining locks, open files, etc.
+     * <p/>
+     * This method is always called after all listeners have been notified of a commit or rollback.
+     */
+    void onCleanup();
 }

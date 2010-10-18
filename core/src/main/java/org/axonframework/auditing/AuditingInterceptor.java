@@ -18,8 +18,7 @@ package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.util.AxonConfigurationException;
+import org.axonframework.unitofwork.UnitOfWork;
 
 /**
  * Interceptor that keeps track of commands and the events that were dispatched as a result of handling that command.
@@ -41,14 +40,8 @@ public class AuditingInterceptor implements CommandHandlerInterceptor {
     private AuditLogger auditLogger = NullAuditLogger.INSTANCE;
 
     @Override
-    public Object handle(Object command, InterceptorChain chain) throws Throwable {
-        if (!CurrentUnitOfWork.isStarted()) {
-            throw new AxonConfigurationException(
-                    "Unable to attach auditing information to events because there is no active UnitOfWork. "
-                            + "Please make sure a UnitOfWork Interceptor is configured *before* the AuditingInterceptor");
-        }
-        CurrentUnitOfWork.get().registerListener(
-                new AuditingUnitOfWorkListener(command, auditDataProvider, auditLogger));
+    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
+        unitOfWork.registerListener(new AuditingUnitOfWorkListener(command, auditDataProvider, auditLogger));
         return chain.proceed();
     }
 

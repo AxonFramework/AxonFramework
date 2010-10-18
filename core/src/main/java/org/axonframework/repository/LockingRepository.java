@@ -103,7 +103,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
         lockManager.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
-            CurrentUnitOfWork.get().registerListener(new LockManagingListener(aggregate));
+            CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
             return aggregate;
         } catch (RuntimeException ex) {
             logger.warn("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
@@ -150,16 +150,19 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
     @Override
     protected abstract T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
 
-    private class LockManagingListener extends UnitOfWorkListenerAdapter {
+    /**
+     * UnitOfWorkListeners that cleans up remaining locks after a UnitOfWork has been committed or rolled back.
+     */
+    private class LockCleaningListener extends UnitOfWorkListenerAdapter {
 
         private final T aggregate;
 
-        public LockManagingListener(T aggregate) {
+        public LockCleaningListener(T aggregate) {
             this.aggregate = aggregate;
         }
 
         @Override
-        public void onCommitOrRollback() {
+        public void onCleanup() {
             if (lockManager.validateLock(aggregate)) {
                 lockManager.releaseLock(aggregate.getIdentifier());
             }

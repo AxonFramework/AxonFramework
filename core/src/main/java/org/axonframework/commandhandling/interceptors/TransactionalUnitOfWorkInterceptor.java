@@ -16,8 +16,11 @@
 
 package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 /**
  * Abstract implementation of a {@link org.axonframework.commandhandling.CommandHandlerInterceptor} that starts a
@@ -30,59 +33,67 @@ import org.axonframework.unitofwork.UnitOfWork;
  * @param <T> The type of object representing the transaction
  * @since 0.6
  */
-public abstract class TransactionalUnitOfWorkInterceptor<T> extends SimpleUnitOfWorkInterceptor {
+public abstract class TransactionalUnitOfWorkInterceptor<T> implements CommandHandlerInterceptor {
 
     @Override
-    protected UnitOfWork createUnitOfWork() {
-        return new TransactionalUnitOfWork();
+    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain
+    ) throws Throwable {
+        T transaction = startTransaction();
+        CurrentUnitOfWork.get().registerListener(new TransactionalUnitOfWork(transaction));
+        return interceptorChain.proceed();
     }
 
     /**
      * Start a new transaction for a command execution described by the given <code>context</code>. The given
      * <code>unitOfWork</code> is the unitOfWork bound to the current thread.
      *
-     * @param unitOfWork The UnitOfWork bound to the current thread.
      * @return A reference to the current transaction
      */
-    protected abstract T startTransaction(UnitOfWork unitOfWork);
+    protected abstract T startTransaction();
 
     /**
      * Commits the transaction for the command execution described by the given <code>context</code>. The given
      * <code>unitOfWork</code> is the unitOfWork bound to the current thread.
      *
-     * @param unitOfWork  The unitOfWork bound to the current thread.
-     * @param transaction The transaction object returned during during {@link #startTransaction(org.axonframework.unitofwork.UnitOfWork)}
+     * @param transaction The transaction object returned during during {@link #startTransaction()}
      */
-    protected abstract void commitTransaction(UnitOfWork unitOfWork, T transaction);
+    protected abstract void commitTransaction(T transaction);
 
     /**
      * Rolls back a transaction for a command execution described by the given <code>context</code>. The given
      * <code>unitOfWork</code> is the unitOfWork bound to the current thread.
      *
-     * @param unitOfWork  The unitOfWork bound to the current thread.
-     * @param transaction The transaction object returned during during {@link #startTransaction(org.axonframework.unitofwork.UnitOfWork)}
+     * @param transaction The transaction object returned during during {@link #startTransaction()}
      */
-    protected abstract void rollbackTransaction(UnitOfWork unitOfWork, T transaction);
+    protected abstract void rollbackTransaction(T transaction);
 
-    private final class TransactionalUnitOfWork extends DefaultUnitOfWork {
+    private final class TransactionalUnitOfWork extends UnitOfWorkListenerAdapter {
 
-        private T transaction;
+        private final T transaction;
 
-        @Override
-        protected void doStart() {
-            this.transaction = startTransaction(this);
+        /**
+         * Creates an instance of the listener, tied to the given <code>transaction</code>.
+         *
+         * @param transaction the transaction assigned to the Unit Of Work.
+         */
+        private TransactionalUnitOfWork(T transaction) {
+            this.transaction = transaction;
         }
 
+        /**
+         * This method tries to roll back the transaction assigned to this Unit Of Work.
+         */
         @Override
-        protected void notifyListenersAfterCommit() {
-            commitTransaction(this, transaction);
-            super.notifyListenersAfterCommit();
+        public void onRollback() {
+            rollbackTransaction(transaction);
         }
 
+        /**
+         * This method commits the transaction assigned to this Unit Of Work.
+         */
         @Override
-        protected void notifyListenersRollback() {
-            rollbackTransaction(this, transaction);
-            super.notifyListenersRollback();
+        public void afterCommit() {
+            commitTransaction(transaction);
         }
     }
 }

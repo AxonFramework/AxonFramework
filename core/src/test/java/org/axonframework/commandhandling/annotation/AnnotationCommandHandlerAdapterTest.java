@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.lang.reflect.Method;
@@ -36,17 +37,20 @@ public class AnnotationCommandHandlerAdapterTest {
     private AnnotationCommandHandlerAdapter testSubject;
     private CommandBus mockBus;
     private MyCommandHandler mockTarget;
+    private UnitOfWork mockUnitOfWork;
 
     @Before
     public void setUp() {
         mockBus = mock(CommandBus.class);
         mockTarget = new MyCommandHandler();
         testSubject = new AnnotationCommandHandlerAdapter(mockTarget, mockBus);
+        mockUnitOfWork = mock(UnitOfWork.class);
+
     }
 
     @Test
     public void testHandlerDispatching_VoidReturnType() throws Throwable {
-        Object actualReturnValue = testSubject.handle("");
+        Object actualReturnValue = testSubject.handle("", mockUnitOfWork);
         assertEquals(void.class, actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -54,7 +58,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test
     public void testHandlerDispatching_WithReturnType() throws Throwable {
-        Object actualReturnValue = testSubject.handle(1L);
+        Object actualReturnValue = testSubject.handle(1L, mockUnitOfWork);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(1, mockTarget.returningHandlerInvoked);
@@ -63,7 +67,7 @@ public class AnnotationCommandHandlerAdapterTest {
     @Test
     public void testHandlerDispatching_ThrowingException() throws Throwable {
         try {
-            testSubject.handle(new HashSet());
+            testSubject.handle(new HashSet(), mockUnitOfWork);
             fail("Expected exception");
         }
         catch (Exception ex) {
@@ -90,7 +94,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test(expected = NoHandlerForCommandException.class)
     public void testHandle_NoHandlerForCommand() throws Throwable {
-        testSubject.handle(new LinkedList());
+        testSubject.handle(new LinkedList(), null);
     }
 
     private static class MyCommandHandler {
@@ -105,7 +109,8 @@ public class AnnotationCommandHandlerAdapterTest {
         }
 
         @CommandHandler
-        public Long myReturningHandler(Long longCommand) {
+        public Long myReturningHandler(Long longCommand, UnitOfWork unitOfWork) {
+            assertNotNull("The UnitOfWork was not passed to the command handler", unitOfWork);
             returningHandlerInvoked++;
             return longCommand;
         }

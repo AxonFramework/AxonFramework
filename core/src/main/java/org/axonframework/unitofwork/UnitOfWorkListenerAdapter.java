@@ -23,9 +23,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Abstract implementation of the {@link UnitOfWorkListener} that exposes an extra convenience method: {@link
- * #onCommitOrRollback()}. This implementation does nothing by itself, other than delegating {@link #afterCommit()} and
- * {@link #onRollback()} to {@link #onCommitOrRollback()}.
+ * Abstract implementation of the {@link UnitOfWorkListener} that provides empty implementation of all methods declared
+ * in {@link org.axonframework.unitofwork.UnitOfWorkListener}. This implementation does nothing.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -34,8 +33,6 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
      */
     @Override
     public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
@@ -43,27 +40,22 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * This implementation only calls the {@link #onCommitOrRollback()} method.
      */
     @Override
     public void afterCommit() {
-        onCommitOrRollback();
     }
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * This implementation only calls the {@link #onCommitOrRollback()} method.
      */
     @Override
     public void onRollback() {
-        onCommitOrRollback();
     }
 
     /**
-     * Called when the UnitOfWork this listener was registered to either committed or was rolled back.
+     * {@inheritDoc}
      */
-    public void onCommitOrRollback() {
+    @Override
+    public void onCleanup() {
     }
 }

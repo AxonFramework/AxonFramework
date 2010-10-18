@@ -20,6 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.Log4jLoggerAdapter;
@@ -43,6 +44,7 @@ public class LoggingInterceptorTest {
     private LoggingInterceptor testSubject;
     private org.apache.log4j.Logger mockLogger;
     private InterceptorChain interceptorChain;
+    private UnitOfWork unitOfWork;
 
     @Before
     public void setUp() throws Exception {
@@ -53,6 +55,7 @@ public class LoggingInterceptorTest {
         mockLogger = mock(Logger.class);
         loggerField.set(logger, mockLogger);
         interceptorChain = mock(InterceptorChain.class);
+        unitOfWork = mock(UnitOfWork.class);
     }
 
     @Test
@@ -60,7 +63,7 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
-        testSubject.handle(new StubCommand(), interceptorChain);
+        testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
@@ -75,7 +78,7 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(Void.TYPE);
 
-        testSubject.handle(new StubCommand(), interceptorChain);
+        testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
@@ -90,7 +93,7 @@ public class LoggingInterceptorTest {
         when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new StubCommand(), interceptorChain);
+        testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger).log(any(String.class), eq(Level.INFO),
@@ -107,7 +110,7 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         try {
-            testSubject.handle(new StubCommand(), interceptorChain);
+            testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             // expected

@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.unitofwork.UnitOfWork;
+
 import java.util.Iterator;
 
 /**
@@ -29,20 +31,23 @@ class DefaultInterceptorChain implements InterceptorChain {
     private final Object command;
     private final CommandHandler handler;
     private Iterator<? extends CommandHandlerInterceptor> chain;
+    private UnitOfWork unitOfWork;
 
     /**
      * Initialize the default interceptor chain to dispatch the given <code>command</code>, through the
      * <code>chain</code>, to the <code>handler</code>.
      *
-     * @param command The command to dispatch through the interceptor chain
-     * @param handler The handler for the command
-     * @param chain   The interceptor composing the chain
+     * @param command    The command to dispatch through the interceptor chain
+     * @param unitOfWork The UnitOfWork the command is executed in
+     * @param handler    The handler for the command
+     * @param chain      The interceptor composing the chain
      */
-    public DefaultInterceptorChain(Object command, CommandHandler<?> handler,
+    public DefaultInterceptorChain(Object command, UnitOfWork unitOfWork, CommandHandler<?> handler,
                                    Iterable<? extends CommandHandlerInterceptor> chain) {
         this.command = command;
         this.handler = handler;
         this.chain = chain.iterator();
+        this.unitOfWork = unitOfWork;
     }
 
     /**
@@ -52,9 +57,9 @@ class DefaultInterceptorChain implements InterceptorChain {
     @Override
     public Object proceed(Object commandProceedWith) throws Throwable {
         if (chain.hasNext()) {
-            return chain.next().handle(commandProceedWith, this);
+            return chain.next().handle(commandProceedWith, unitOfWork, this);
         } else {
-            return handler.handle(commandProceedWith);
+            return handler.handle(commandProceedWith, unitOfWork);
         }
     }
 

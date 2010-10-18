@@ -68,6 +68,7 @@ public class DefaultUnitOfWork extends UnitOfWork {
         registeredAggregates.clear();
         eventsToPublish.clear();
         notifyListenersRollback();
+        notifyListenersCleanup();
         listeners.clear();
     }
 
@@ -77,6 +78,7 @@ public class DefaultUnitOfWork extends UnitOfWork {
         saveAggregates();
         publishEvents();
         notifyListenersAfterCommit();
+        notifyListenersCleanup();
     }
 
     @Override
@@ -146,6 +148,12 @@ public class DefaultUnitOfWork extends UnitOfWork {
         List<Event> events = eventsToPublish();
         for (UnitOfWorkListener listener : listeners) {
             listener.onPrepareCommit(registeredAggregates.keySet(), events);
+        }
+    }
+
+    protected void notifyListenersCleanup() {
+        for (UnitOfWorkListener listener : listeners) {
+            listener.onCleanup();
         }
     }
 

@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.unitofwork.UnitOfWork;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
@@ -33,19 +33,20 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 public class SpringTransactionalInterceptor extends TransactionalUnitOfWorkInterceptor<TransactionStatus> {
 
     private PlatformTransactionManager transactionManager;
+    private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
     @Override
-    protected TransactionStatus startTransaction(UnitOfWork unitOfWork) {
-        return transactionManager.getTransaction(new DefaultTransactionDefinition());
+    protected TransactionStatus startTransaction() {
+        return transactionManager.getTransaction(transactionDefinition);
     }
 
     @Override
-    protected void commitTransaction(UnitOfWork unitOfWork, TransactionStatus transaction) {
+    protected void commitTransaction(TransactionStatus transaction) {
         transactionManager.commit(transaction);
     }
 
     @Override
-    protected void rollbackTransaction(UnitOfWork unitOfWork, TransactionStatus transaction) {
+    protected void rollbackTransaction(TransactionStatus transaction) {
         if (!transaction.isCompleted()) {
             transactionManager.rollback(transaction);
         }
@@ -58,5 +59,17 @@ public class SpringTransactionalInterceptor extends TransactionalUnitOfWorkInter
      */
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
+    }
+
+    /**
+     * Sets the definition of the transaction to use.
+     * <p/>
+     * Defaults to the {@link org.springframework.transaction.support.DefaultTransactionDefinition}, which uses
+     * propagation "REQUIRED" and the default isolation level of the underlying database.
+     *
+     * @param definition The transaction definition to use
+     */
+    public void setTransactionDefinition(TransactionDefinition definition) {
+        this.transactionDefinition = definition;
     }
 }

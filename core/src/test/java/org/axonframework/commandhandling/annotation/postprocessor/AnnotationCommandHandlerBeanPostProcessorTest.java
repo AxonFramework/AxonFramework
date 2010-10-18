@@ -82,7 +82,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         CommandHandler<MyCommand> commandHandler = (CommandHandler<MyCommand>) postProcessedBean;
         AnnotatedCommandHandler annotatedCommandHandler = (AnnotatedCommandHandler) postProcessedBean;
         MyCommand myCommand = new MyCommand();
-        commandHandler.handle(myCommand);
+        commandHandler.handle(myCommand, null);
 
         assertEquals(1, annotatedCommandHandler.getInvocationCount());
 

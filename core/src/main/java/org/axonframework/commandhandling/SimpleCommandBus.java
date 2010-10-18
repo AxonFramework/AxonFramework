@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.jmx.JmxConfiguration;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -44,9 +43,10 @@ import static java.lang.String.format;
 public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
+
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
-    private volatile Iterable<? extends CommandHandlerInterceptor> interceptorChain = Collections.emptyList();
-    private volatile SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
+    private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
+    private volatile Iterable<? extends CommandHandlerInterceptor> interceptors = Collections.emptyList();
 
     /**
      * Initializes the SimpleCommandBus.
@@ -58,7 +58,7 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void dispatch(Object command) {
-        CommandHandler commandHandler = createCommandContext(command);
+        CommandHandler commandHandler = findCommandHandlerFor(command);
         try {
             doDispatch(command, commandHandler);
         } catch (Error e) {
@@ -72,7 +72,7 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"unchecked"})
     @Override
     public <R> void dispatch(Object command, final CommandCallback<R> callback) {
-        CommandHandler handler = createCommandContext(command);
+        CommandHandler handler = findCommandHandlerFor(command);
         try {
             Object result = doDispatch(command, handler);
             callback.onSuccess((R) result);
@@ -81,7 +81,7 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
-    private CommandHandler createCommandContext(Object command) {
+    private CommandHandler findCommandHandlerFor(Object command) {
         final CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
@@ -92,22 +92,14 @@ public class SimpleCommandBus implements CommandBus {
 
     private Object doDispatch(Object command, CommandHandler commandHandler) throws Throwable {
         statistics.recordReceivedCommand();
-        boolean alreadyInUnitOfWork = CurrentUnitOfWork.isStarted();
-        UnitOfWork fallbackUnitOfWork = null;
-        if (!alreadyInUnitOfWork) {
-            fallbackUnitOfWork = new DefaultUnitOfWork();
-            fallbackUnitOfWork.start();
-        }
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet();
+        InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, interceptors);
         try {
-            Object returnValue = new DefaultInterceptorChain(command, commandHandler, interceptorChain).proceed();
-            if (fallbackUnitOfWork != null) {
-                fallbackUnitOfWork.commit();
-            }
+            Object returnValue = chain.proceed();
+            unitOfWork.commit();
             return returnValue;
         } catch (Throwable throwable) {
-            if (fallbackUnitOfWork != null && fallbackUnitOfWork.isStarted()) {
-                fallbackUnitOfWork.rollback();
-            }
+            unitOfWork.rollback();
             throw throwable;
         }
     }
@@ -143,7 +135,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param interceptors The interceptors to invoke when commands are dispatched
      */
     public void setInterceptors(List<? extends CommandHandlerInterceptor> interceptors) {
-        this.interceptorChain = interceptors;
+        this.interceptors = interceptors;
     }
 
     /**

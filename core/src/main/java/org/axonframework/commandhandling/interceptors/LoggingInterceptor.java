@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +60,7 @@ public class LoggingInterceptor implements CommandHandlerInterceptor {
     }
 
     @Override
-    public Object handle(Object command, InterceptorChain chain) throws Throwable {
+    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
         logger.info("Incoming command: [{}]", command.getClass().getSimpleName());
         try {
             Object returnValue = chain.proceed();

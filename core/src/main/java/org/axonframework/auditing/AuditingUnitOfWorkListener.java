@@ -19,8 +19,11 @@ package org.axonframework.auditing;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMetaData;
 import org.axonframework.domain.MutableEventMetaData;
 import org.axonframework.unitofwork.UnitOfWorkListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -36,6 +39,8 @@ import java.util.Set;
  * @since 0.7
  */
 public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuditingUnitOfWorkListener.class);
 
     private final AuditDataProvider auditDataProvider;
     private final AuditLogger auditLogger;
@@ -87,10 +92,22 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
 
     private void injectAuditData(Map<String, Serializable> auditData) {
         for (Event event : recordedEvents) {
-            MutableEventMetaData eventMetaData = ((MutableEventMetaData) event.getMetaData());
-            for (Map.Entry<String, Serializable> entry : auditData.entrySet()) {
-                eventMetaData.put(entry.getKey(), entry.getValue());
+            EventMetaData eventMetaData = event.getMetaData();
+            if (!MutableEventMetaData.class.isInstance(eventMetaData)) {
+                logger.warn("Unable to inject meta data into event of type [{}]. "
+                        + "The EventMetaData field does not contain a subclass of MutableEventMetaData.",
+                            event.getClass().getSimpleName());
+            } else {
+                MutableEventMetaData mutableMetaData = ((MutableEventMetaData) eventMetaData);
+                for (Map.Entry<String, Serializable> entry : auditData.entrySet()) {
+                    mutableMetaData.put(entry.getKey(), entry.getValue());
+                }
             }
         }
+    }
+
+    @Override
+    public void onCleanup() {
+        // no resources to clean up
     }
 }

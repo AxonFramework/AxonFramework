@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.unitofwork.UnitOfWork;
+
 /**
  * Marks an instance that is capable of handling commands. CommandHandlers need to be subscribed to a {@link CommandBus}
  * in order to receive command of the specified type <code>T</code>.
@@ -29,11 +31,12 @@ public interface CommandHandler<T> {
     /**
      * Handles the given <code>command</code>.
      *
-     * @param command The command to process.
+     * @param command    The command to process.
+     * @param unitOfWork The UnitOfWork the command is processed in
      * @return The result of the command processing, if any.
      *
      * @throws Throwable any exception that occurs during command handling
      */
-    Object handle(T command) throws Throwable;
+    Object handle(T command, UnitOfWork unitOfWork) throws Throwable;
 
 }

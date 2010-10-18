@@ -201,6 +201,9 @@ public abstract class UnitOfWork {
         public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
         }
 
+        @Override
+        public void onCleanup() {
+        }
     }
 
 }

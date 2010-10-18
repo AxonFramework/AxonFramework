@@ -242,7 +242,7 @@ public class EventCountSnapshotterTrigger implements EventProcessor {
         }
 
         @Override
-        public void afterCommit() {
+        public void onCleanup() {
             triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, counter);
         }
     }
