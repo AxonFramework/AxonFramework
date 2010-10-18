@@ -50,7 +50,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/META-INF/spring/benchmark-context.xml"})
-//@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
+@Ignore("Remove this before running the benchmark test. Some ides discover this class and run it as a normal test")
 public class FileSystemEventStoreBenchmark {
 
     private static final int THREAD_COUNT = 100;
