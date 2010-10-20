@@ -19,8 +19,8 @@ package org.axonframework.integrationtests.eventstore.benchmark.mongo;
 import com.mongodb.Mongo;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateIdentifierFactory;
-import org.axonframework.eventstore.mongo.AxonMongoWrapper;
 import org.axonframework.eventstore.mongo.MongoEventStore;
+import org.axonframework.eventstore.mongo.MongoTemplate;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 
 /**
@@ -49,8 +49,8 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
     @Override
     protected void prepareEventStore() {
-        AxonMongoWrapper axonMongoWrapper = new AxonMongoWrapper(mongoDb);
-        axonMongoWrapper.database().dropDatabase();
+        MongoTemplate mongoTemplate = new MongoTemplate(mongoDb);
+        mongoTemplate.database().dropDatabase();
     }
 
     private class MongoBenchmark implements Runnable {

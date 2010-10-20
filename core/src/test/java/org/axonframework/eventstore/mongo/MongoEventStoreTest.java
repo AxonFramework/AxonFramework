@@ -1,16 +1,35 @@
+/*
+ * Copyright (c) 2010. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.Mongo;
-import org.axonframework.domain.*;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateIdentifierFactory;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -24,11 +43,9 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
- * <p>Beware with this test, it requires a running mongodb as specified in the configuration file,
- * if no mongo instance is running, tests will be ignored.</p>
- * <p/>
- * <p>Autowired dependencies are left out on purpose, it does not work with the assume used to check if mongo is
- * running.</p>
+ * <p>Beware with this test, it requires a running mongodb as specified in the configuration file, if no mongo instance
+ * is running, tests will be ignored.</p> <p/> <p>Autowired dependencies are left out on purpose, it does not work with
+ * the assume used to check if mongo is running.</p>
  *
  * @author Jettro Coenradie
  * @since 0.7
@@ -37,9 +54,11 @@ import static org.mockito.Mockito.*;
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
 public class MongoEventStoreTest {
 
+    private static final Logger logger = LoggerFactory.getLogger(MongoEventStoreTest.class);
+
     private MongoEventStore eventStore;
     private Mongo mongo;
-    private AxonMongoWrapper wrapperAxon;
+    private MongoTemplate mongoTemplate;
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
@@ -53,11 +72,11 @@ public class MongoEventStoreTest {
             mongo = context.getBean(Mongo.class);
             eventStore = context.getBean(MongoEventStore.class);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.error("No Mongo instance found. Ignoring test.");
+            Assume.assumeNoException(e);
         }
-        Assume.assumeNotNull(mongo, eventStore);
-        wrapperAxon = new AxonMongoWrapper(mongo);
-        wrapperAxon.database().dropDatabase();
+        mongoTemplate = new MongoTemplate(mongo);
+        mongoTemplate.database().dropDatabase();
         aggregate1 = new StubAggregateRoot();
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
@@ -69,16 +88,11 @@ public class MongoEventStoreTest {
         aggregate2.changeState();
     }
 
-    @BeforeClass
-    public static void checkProductionMongoFactory() {
-        System.setProperty("test.context", "true");
-    }
-
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(eventStore);
         eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), wrapperAxon.domainEvents().count());
+        assertEquals((long) aggregate1.getUncommittedEventCount(), mongoTemplate.domainEventCollection().count());
 
         // we store some more events to make sure only correct events are retrieved
         eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
@@ -97,7 +111,7 @@ public class MongoEventStoreTest {
         assertNotNull(eventStore);
         // aggregate1 has 10 uncommitted events
         eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), wrapperAxon.domainEvents().count());
+        assertEquals((long) aggregate1.getUncommittedEventCount(), mongoTemplate.domainEventCollection().count());
 
         DomainEventStream events = eventStore.readEventSegment("test", aggregate1.getIdentifier(), 4);
         while (events.hasNext()) {
@@ -111,7 +125,7 @@ public class MongoEventStoreTest {
         assertNotNull(eventStore);
         // aggregate1 has 10 uncommitted events
         eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), wrapperAxon.domainEvents().count());
+        assertEquals((long) aggregate1.getUncommittedEventCount(), mongoTemplate.domainEventCollection().count());
 
         DomainEventStream events = eventStore.readEventSegment("test", aggregate1.getIdentifier(), 10);
         assertFalse(events.hasNext());
@@ -149,7 +163,6 @@ public class MongoEventStoreTest {
         eventStore.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEvent.class));
     }
-
 
     private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {
         List<StubStateChangedEvent> events = new ArrayList<StubStateChangedEvent>();

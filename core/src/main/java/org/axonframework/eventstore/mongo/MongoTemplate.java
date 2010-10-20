@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.DB;
@@ -5,15 +21,17 @@ import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
 
 /**
- * <p>Helper class for interacting with the MongoDB instance containing the axon event store data. You can use the
- * helper to get access to the mongodb database and obtain references to the collection required by axon.</p>
- * <p>By configuring this object, you can change the name of the database as well as the names of the collections that
- * are used</p>
+ * Helper class for interacting with the MongoDB instance containing the axon event store data. You can use the helper
+ * to get access to the MongoDB database and obtain references to the collection required by axon.
+ * <p/>
+ * By configuring this object, you can change the name of the database as well as the names of the collections that are
+ * used.
  *
  * @author Jettro Coenradie
  * @since 0.7
  */
-public class AxonMongoWrapper {
+public class MongoTemplate {
+
     private static final String DEFAULT_DOMAINEVENTS_COLLECTION = "domainevents";
     private static final String DEFAULT_SNAPSHOTEVENTS_COLLECTION = "snapshotevents";
     private static final String DEFAULT_AXONFRAMEWORK_DATABASE = "axonframework";
@@ -24,31 +42,35 @@ public class AxonMongoWrapper {
     private String snapshotEventsCollectionName = DEFAULT_SNAPSHOTEVENTS_COLLECTION;
 
     /**
-     * The helper requires an actual <code>Mongo</code> connection provided by the java driver
+     * The helper requires an actual <code>Mongo</code> connection provided by the java driver.
+     *
      * @param mongoDb The actual connection to a MongoDB instance
      */
-    public AxonMongoWrapper(Mongo mongoDb) {
+    public MongoTemplate(Mongo mongoDb) {
         this.mongoDb = mongoDb;
     }
 
     /**
-     * Returns a reference to the collection containing the domainevents
+     * Returns a reference to the collection containing the domain events.
+     *
      * @return DBCollection containing the domain events
      */
-    public DBCollection domainEvents() {
+    public DBCollection domainEventCollection() {
         return database().getCollection(domainEventsCollectionName);
     }
 
     /**
-     * Returtns a reference to the collection containing the snapshot events
-     * @return DBCOllection containing the snapshot events
+     * Returtns a reference to the collection containing the snapshot events.
+     *
+     * @return DBCollection containing the snapshot events
      */
-    public DBCollection snapshotEvents() {
+    public DBCollection snapshotEventCollection() {
         return database().getCollection(snapshotEventsCollectionName);
     }
 
     /**
-     * Returns the database for the axon event store
+     * Returns the database for the axon event store.
+     *
      * @return The axon event store database
      */
     public DB database() {
@@ -65,7 +87,7 @@ public class AxonMongoWrapper {
     }
 
     /**
-     * Changes the name of the collection to store the domain events
+     * Changes the name of the collection to store the domain events.
      *
      * @param domainEventsCollectionName String containing the name of the collection containing the domain events
      */
@@ -74,7 +96,7 @@ public class AxonMongoWrapper {
     }
 
     /**
-     * Changes the name of the collection to store the snapshot events in
+     * Changes the name of the collection to store the snapshot events in.
      *
      * @param snapshotEventsCollectionName String containing the name of the collection containing the snapshot events
      */

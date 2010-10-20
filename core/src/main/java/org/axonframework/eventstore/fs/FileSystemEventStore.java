@@ -120,11 +120,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
     public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
         try {
             if (!eventFileResolver.eventFileExists(type, identifier)) {
-                throw new EventStreamNotFoundException(
-                        String.format(
-                                "Aggregate of type [%s] with identifier [%s] cannot be found.",
-                                type,
-                                identifier.toString()));
+                throw new EventStreamNotFoundException(type, identifier);
             }
             InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(type, identifier);
             return readEvents(type, identifier, eventFileInputStream);

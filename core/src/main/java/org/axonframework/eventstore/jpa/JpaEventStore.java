@@ -97,10 +97,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
         if (events.isEmpty()) {
-            throw new EventStreamNotFoundException(
-                    String.format("Aggregate of type [%s] with identifier [%s] cannot be found.",
-                                  type,
-                                  identifier.toString()));
+            throw new EventStreamNotFoundException(type, identifier);
         }
         return new SimpleDomainEventStream(events);
     }
