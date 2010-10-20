@@ -20,8 +20,9 @@ import org.axonframework.domain.DomainEvent;
 
 /**
  * Interface describing an event store that is able to store snapshot events. Implementations must also take the stored
- * snapshots into account when loading events. That means that any call to {@link #readEvents(String, java.util.UUID)}
- * should return an event stream that starts with the latest suitable snapshot event available in the event store.
+ * snapshots into account when loading events. That means that any call to {@link #readEvents(String,
+ * org.axonframework.domain.AggregateIdentifier) readEvents(String, AggregateIdentifier)} should return an event stream
+ * that starts with the latest suitable snapshot event available in the event store.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -34,11 +35,11 @@ public interface SnapshotEventStore extends EventStore {
      * event that is included in the snapshot.
      * <p/>
      * Note that the aggregate identifier and sequence number must be set on the DomainEvent. See {@link
-     * org.axonframework.domain.DomainEvent#DomainEvent(long, java.util.UUID) DomainEvent(long, UUID)}.
+     * org.axonframework.domain.DomainEvent#DomainEvent(long, org.axonframework.domain.AggregateIdentifier)}.
      *
      * @param type          The type of aggregate the event belongs to
      * @param snapshotEvent The event summarizing one or more domain events for a specific aggregate.
-     * @see org.axonframework.domain.DomainEvent#DomainEvent(long, java.util.UUID) DomainEvent(long, UUID)
+     * @see org.axonframework.domain.DomainEvent#DomainEvent(long, org.axonframework.domain.AggregateIdentifier))
      */
     void appendSnapshotEvent(String type, DomainEvent snapshotEvent);
 }
