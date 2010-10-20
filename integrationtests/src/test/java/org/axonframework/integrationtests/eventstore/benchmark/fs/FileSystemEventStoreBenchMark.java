@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010. Gridshore
+ * Copyright (c) 2010. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +25,7 @@ import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStor
  * @author Jettro Coenradie
  */
 public class FileSystemEventStoreBenchMark extends AbstractEventStoreBenchmark {
+
     private FileSystemEventStore fileSystemEventStore;
 
     public FileSystemEventStoreBenchMark(FileSystemEventStore fileSystemEventStore) {
@@ -53,7 +55,6 @@ public class FileSystemEventStoreBenchMark extends AbstractEventStoreBenchmark {
             for (int t = 0; t < getTransactionCount(); t++) {
                 eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, fileSystemEventStore, eventSequence);
             }
-            System.out.println("Sequence : " + eventSequence);
         }
     }
 

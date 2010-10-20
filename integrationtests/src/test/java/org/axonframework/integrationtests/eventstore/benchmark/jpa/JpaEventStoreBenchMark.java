@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010. Gridshore
+ * Copyright (c) 2010. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,15 +26,21 @@ import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 /**
  * @author Jettro Coenradie
  */
 public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
+
     private JpaEventStore jpaEventStore;
     private PlatformTransactionManager transactionManager;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public static void main(String[] args) throws Exception {
         AbstractEventStoreBenchmark benchmark = prepareBenchMark("META-INF/spring/benchmark-jpa-context.xml");
@@ -47,6 +54,14 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
     @Override
     protected void prepareEventStore() {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                entityManager.createQuery("DELETE FROM DomainEventEntry s");
+                entityManager.createQuery("DELETE FROM SnapshotEventEntry s");
+            }
+        });
     }
 
     @Override
@@ -60,6 +75,7 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
         public void run() {
             TransactionTemplate template = new TransactionTemplate(transactionManager);
             final AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+            // the inner class forces us into a final variable, hence the AtomicInteger
             final AtomicInteger eventSequence = new AtomicInteger(0);
             for (int t = 0; t < getTransactionCount(); t++) {
                 template.execute(new TransactionCallbackWithoutResult() {
@@ -67,8 +83,8 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
                     protected void doInTransactionWithoutResult(TransactionStatus status) {
                         assertFalse(status.isRollbackOnly());
                         eventSequence.set(saveAndLoadLargeNumberOfEvents(aggregateId,
-                                jpaEventStore,
-                                eventSequence.get()) + 1);
+                                                                         jpaEventStore,
+                                                                         eventSequence.get()));
                     }
                 });
             }

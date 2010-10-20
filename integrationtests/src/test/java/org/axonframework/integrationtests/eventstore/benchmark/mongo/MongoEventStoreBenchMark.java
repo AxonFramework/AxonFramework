@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010. Gridshore
+ * Copyright (c) 2010. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -59,9 +60,8 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
             final AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
             int eventSequence = 0;
             for (int t = 0; t < getTransactionCount(); t++) {
-                eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, mongoEventStore, eventSequence + 1);
+                eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, mongoEventStore, eventSequence);
             }
-            System.out.println("Sequence : " + eventSequence);
         }
     }
 
