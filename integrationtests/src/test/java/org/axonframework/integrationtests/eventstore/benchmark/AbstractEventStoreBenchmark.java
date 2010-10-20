@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010. Gridshore
+ * Copyright (c) 2010. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,8 +19,8 @@ package org.axonframework.integrationtests.eventstore.benchmark;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.util.Assert;
@@ -33,6 +34,7 @@ import java.util.List;
  * @author Jettro Coenradie
  */
 public abstract class AbstractEventStoreBenchmark {
+
     private static final int THREAD_COUNT = 100;
     private static final int TRANSACTION_COUNT = 500;
     private static final int TRANSACTION_SIZE = 2;
@@ -72,7 +74,8 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected abstract Runnable getRunnableInstance();
 
-    protected int saveAndLoadLargeNumberOfEvents(AggregateIdentifier aggregateId, EventStore eventStore, int eventSequence) {
+    protected int saveAndLoadLargeNumberOfEvents(AggregateIdentifier aggregateId, EventStore eventStore,
+                                                 int eventSequence) {
         List<DomainEvent> events = new ArrayList<DomainEvent>();
         for (int t = 0; t < TRANSACTION_SIZE; t++) {
             events.add(new StubDomainEvent(aggregateId, eventSequence++));
