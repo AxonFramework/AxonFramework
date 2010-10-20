@@ -38,12 +38,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Allard Buijze
  * @since 0.6
  */
-public class EventCountSnapshotterTrigger implements EventProcessor {
+public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
+
+    private static final int DEFAULT_TRIGGER_VALUE = 50;
 
     private Snapshotter snapshotter;
     private final ConcurrentMap<AggregateIdentifier, AtomicInteger> counters = new ConcurrentHashMap<AggregateIdentifier, AtomicInteger>();
     private volatile boolean clearCountersAfterAppend = true;
-    private int trigger = 50;
+    private int trigger = DEFAULT_TRIGGER_VALUE;
 
     @Override
     public DomainEventStream decorateForRead(String aggregateType, AggregateIdentifier aggregateIdentifier,

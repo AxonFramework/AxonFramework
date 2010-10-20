@@ -56,7 +56,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
 
     private volatile EventStore eventStore;
     private ConflictResolver conflictResolver;
-    private Deque<EventProcessor> eventProcessors = new LinkedList<EventProcessor>();
+    private Deque<EventStreamDecorator> eventStreamDecorators = new LinkedList<EventStreamDecorator>();
 
     /**
      * Initializes a repository with the default locking strategy.
@@ -83,7 +83,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     @Override
     protected void doSaveWithLock(T aggregate) {
         DomainEventStream eventStream = aggregate.getUncommittedEvents();
-        Iterator<EventProcessor> iterator = eventProcessors.descendingIterator();
+        Iterator<EventStreamDecorator> iterator = eventStreamDecorators.descendingIterator();
         while (iterator.hasNext()) {
             eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), aggregate, eventStream);
         }
@@ -109,7 +109,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         } catch (EventStreamNotFoundException e) {
             throw new AggregateNotFoundException("The aggregate was not found", e);
         }
-        for (EventProcessor decorator : eventProcessors) {
+        for (EventStreamDecorator decorator : eventStreamDecorators) {
             events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
         }
 
@@ -190,17 +190,26 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     }
 
     /**
-     * Sets the Event Processors that will process the event in the DomainEventStream when read, or written to the event
-     * store.
+     * Sets the Event Stream Decorators that will process the event in the DomainEventStream when read, or written to
+     * the event store.
      * <p/>
      * When appending events to the event store, the processors are invoked in the reverse order, causing the first
-     * decorator in this list to receive each event first. When reading from events, the eventProcessors are invoked in
-     * the order given.
+     * decorator in this list to receive each event first. When reading from events, the decorators are invoked in the
+     * order given.
      *
      * @param eventProcessors The processors to that will process events in the DomainEventStream
      */
-    public void setEventProcessors(List<? extends EventProcessor> eventProcessors) {
-        this.eventProcessors.addAll(eventProcessors);
+    public void setEventStreamDecorators(List<? extends EventStreamDecorator> eventProcessors) {
+        this.eventStreamDecorators.addAll(eventProcessors);
+    }
+
+    /**
+     * Sets the snapshotter trigger for this repository.
+     *
+     * @param snapshotterTrigger the snapshotter trigger for this repository.
+     */
+    public void setSnapshotterTrigger(SnapshotterTrigger snapshotterTrigger) {
+        this.eventStreamDecorators.add(snapshotterTrigger);
     }
 
     /**

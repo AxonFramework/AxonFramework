@@ -27,7 +27,6 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -69,11 +68,12 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     private static final String CACHE_ATTRIBUTE = "cache-ref";
 
     private static final String EVENT_PROCESSORS_ELEMENT = "event-processors";
-    private static final String SNAPSHOT_TRIGGER_ELEMENT = "snapshot-trigger";
+    private static final String SNAPSHOT_TRIGGER_ELEMENT = "snapshotter-trigger";
 
-    private static final String EVENT_PROCESSORS_PROPERTY = "eventProcessors";
+    private static final String EVENT_STREAM_DECORATORS_PROPERTY = "eventStreamDecorators";
+    private static final String SNAPSHOTTER_TRIGGER_PROPERTY = "snapshotterTrigger";
 
-    private final SnapshotTriggerBeanDefinitionParser snapshotTriggerParser = new SnapshotTriggerBeanDefinitionParser();
+    private final SnapshotterTriggerBeanDefinitionParser snapshotterTriggerParser = new SnapshotterTriggerBeanDefinitionParser();
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -98,23 +98,23 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     @SuppressWarnings({"unchecked"})
     private void parseProcessors(Element element, ParserContext parserContext, GenericBeanDefinition beanDefinition) {
         Element processorsElement = DomUtils.getChildElementByTagName(element, EVENT_PROCESSORS_ELEMENT);
-        List<Object> processorsList = new ManagedList<Object>();
 
         Element snapshotTriggerElement = DomUtils.getChildElementByTagName(element, SNAPSHOT_TRIGGER_ELEMENT);
         if (snapshotTriggerElement != null) {
-            BeanDefinition triggerDefinition = snapshotTriggerParser.parse(snapshotTriggerElement, parserContext);
+            BeanDefinition triggerDefinition = snapshotterTriggerParser.parse(snapshotTriggerElement, parserContext);
             PropertyValue aggregateCache = beanDefinition.getPropertyValues().getPropertyValue("cache");
             if (aggregateCache != null) {
                 triggerDefinition.getPropertyValues().add("aggregateCache", aggregateCache.getValue());
             }
-            processorsList.add(triggerDefinition);
+            beanDefinition.getPropertyValues().add(SNAPSHOTTER_TRIGGER_PROPERTY, triggerDefinition);
         }
 
         if (processorsElement != null) {
-            processorsList.addAll(parserContext.getDelegate().parseListElement(processorsElement, beanDefinition));
-        }
-        if (!processorsList.isEmpty()) {
-            beanDefinition.getPropertyValues().add(EVENT_PROCESSORS_PROPERTY, processorsList);
+            List<Object> processorsList = parserContext.getDelegate().parseListElement(processorsElement,
+                                                                                       beanDefinition);
+            if (!processorsList.isEmpty()) {
+                beanDefinition.getPropertyValues().add(EVENT_STREAM_DECORATORS_PROPERTY, processorsList);
+            }
         }
     }
 

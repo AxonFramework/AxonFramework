@@ -91,7 +91,7 @@
             <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
             <property name="eventBus" ref="eventBus"/>
             <property name="eventStore" ref="eventStore"/>
-            <property name="eventProcessors">
+            <property name="snapshotterTrigger">
                 <bean class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
                     <property name="snapshotter" ref="snapshotter"/>
                     <property name="trigger" value="5"/>
@@ -101,7 +101,7 @@
     -->
     <axon:event-sourcing-repository id="contactRepository" aggregate-type="org.axonframework.sample.app.command.Contact"
                                     event-bus="eventBus" event-store="eventStore">
-        <axon:snapshot-trigger event-count-threshold="5" snapshotter-ref="snapshotter"/>
+        <axon:snapshotter-trigger event-count-threshold="5" snapshotter-ref="snapshotter"/>
     </axon:event-sourcing-repository>
 
     <bean id="snapshotter"

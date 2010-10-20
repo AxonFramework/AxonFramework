@@ -139,11 +139,14 @@ public class RepositoryBeanDefinitionParserTest {
                 .getValue();
         assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
 
-        PropertyValue eventProcessorsProperty = beanDefinition.getPropertyValues()
-                .getPropertyValue("eventProcessors");
-        assertNotNull("Property missing", eventProcessorsProperty);
-        List decorators = (List) eventProcessorsProperty.getValue();
-        assertEquals("Wrong number of decorators", 2, decorators.size());
+        PropertyValue eventStreamDecoratorsProperty = beanDefinition.getPropertyValues()
+                .getPropertyValue("eventStreamDecorators");
+        assertNotNull("Property missing", eventStreamDecoratorsProperty);
+        List decorators = (List) eventStreamDecoratorsProperty.getValue();
+        assertEquals("Wrong number of decorators", 1, decorators.size());
+        PropertyValue snapshotterTrigger = beanDefinition.getPropertyValues()
+                .getPropertyValue("snapshotterTrigger");
+        assertNotNull("Property missing", snapshotterTrigger);
 
         @SuppressWarnings("unchecked")
         GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository =
@@ -182,14 +185,14 @@ public class RepositoryBeanDefinitionParserTest {
                 .getPropertyValue("cache");
         assertNotNull("Property missing", cacheRefProperty);
 
-        PropertyValue eventProcessorsProperty = beanDefinition.getPropertyValues()
-                .getPropertyValue("eventProcessors");
-        assertNotNull("Property missing", eventProcessorsProperty);
-        List decorators = (List) eventProcessorsProperty.getValue();
-        assertEquals("Wrong number of decorators", 1, decorators.size());
-        BeanDefinition triggerDefinition = (BeanDefinition) decorators.get(0);
+        PropertyValue snapshotterTrigger = beanDefinition.getPropertyValues()
+                .getPropertyValue("snapshotterTrigger");
+        assertNotNull("Property missing", snapshotterTrigger);
+        BeanDefinition decorators = (BeanDefinition) snapshotterTrigger.getValue();
+//        assertNEquals("Wrong number of decorators", 1, decorators.size());
+//        BeanDefinition triggerDefinition = (BeanDefinition) decorators.get(0);
         assertNotNull("Property 'aggregateCache' not set",
-                      triggerDefinition.getPropertyValues().getPropertyValue("aggregateCache"));
+                      decorators.getPropertyValues().getPropertyValue("aggregateCache"));
 
         @SuppressWarnings("unchecked")
         GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository =
@@ -238,7 +241,7 @@ public class RepositoryBeanDefinitionParserTest {
     @Test
     public void testRepositoryCacheSetInSnapshotTrigger() {
         EventCountSnapshotterTrigger snapshotTrigger = (EventCountSnapshotterTrigger) beanFactory.getBean(
-                "snapshotTrigger");
+                "snapshotterTrigger");
         assertNotNull(snapshotTrigger);
 //        snapshotTrigger.
     }
