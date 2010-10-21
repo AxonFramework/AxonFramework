@@ -85,15 +85,14 @@ public class FutureCallbackTest {
             @Override
             public void run() {
                 try {
-                    resultFromParallelThread = testSubject.get(10, TimeUnit.NANOSECONDS);
+                    resultFromParallelThread = testSubject.get(1, TimeUnit.NANOSECONDS);
                 } catch (Exception e) {
                     resultFromParallelThread = e;
                 }
             }
         });
         t.start();
-        Thread.sleep(10);
-        assertFalse(t.isAlive());
+        t.join(1000);
         testSubject.onSuccess("Hello world");
         assertTrue(resultFromParallelThread instanceof TimeoutException);
     }
