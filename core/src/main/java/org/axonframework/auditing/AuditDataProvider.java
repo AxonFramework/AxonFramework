@@ -20,7 +20,8 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Interface describing the instance that provides the relevant information for auditing purposes.
+ * Interface describing the instance that provides the relevant information for auditing purposes. The data provided by
+ * this class is attached to all events processed by the {@link AuditingInterceptor}.
  *
  * @author Allard Buijze
  * @since 0.7

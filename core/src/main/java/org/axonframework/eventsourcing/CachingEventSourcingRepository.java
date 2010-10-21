@@ -108,7 +108,7 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
         }
 
         @Override
-        public void onRollback() {
+        public void onRollback(Throwable failureCause) {
             cache.remove(identifier);
         }
     }

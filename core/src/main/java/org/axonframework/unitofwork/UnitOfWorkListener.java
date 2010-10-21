@@ -33,7 +33,7 @@ public interface UnitOfWorkListener {
     /**
      * Invoked when the UnitOfWork is committed. The aggregate has been saved and the events have been scheduled for
      * dispatching. In some cases, the events could already have been dispatched. When processing of this method causes
-     * an exception, a UnitOfWork may choose to call {@link #onRollback()} consecutively.
+     * an exception, a UnitOfWork may choose to call {@link #onRollback(Throwable)} consecutively.
      *
      * @see UnitOfWork#commit()
      */
@@ -43,9 +43,10 @@ public interface UnitOfWorkListener {
      * Invoked when the UnitOfWork is rolled back. The UnitOfWork may choose to invoke this method when committing the
      * UnitOfWork failed, too.
      *
-     * @see UnitOfWork#rollback()
+     * @param failureCause The exception (or error) causing the roll back
+     * @see UnitOfWork#rollback(Throwable)
      */
-    void onRollback();
+    void onRollback(Throwable failureCause);
 
     /**
      * Invoked before aggregates are committed, and before any events are published. This phase can be used to do

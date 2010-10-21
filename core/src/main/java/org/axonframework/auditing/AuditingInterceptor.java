@@ -41,8 +41,13 @@ public class AuditingInterceptor implements CommandHandlerInterceptor {
 
     @Override
     public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
-        unitOfWork.registerListener(new AuditingUnitOfWorkListener(command, auditDataProvider, auditLogger));
-        return chain.proceed();
+        AuditingUnitOfWorkListener auditListener = new AuditingUnitOfWorkListener(command,
+                                                                                  auditDataProvider,
+                                                                                  auditLogger);
+        unitOfWork.registerListener(auditListener);
+        Object returnValue = chain.proceed();
+        auditListener.setReturnValue(returnValue);
+        return returnValue;
     }
 
     /**

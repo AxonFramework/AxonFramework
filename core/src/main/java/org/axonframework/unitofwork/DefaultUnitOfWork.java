@@ -64,10 +64,10 @@ public class DefaultUnitOfWork extends UnitOfWork {
     }
 
     @Override
-    protected void doRollback() {
+    protected void doRollback(Throwable cause) {
         registeredAggregates.clear();
         eventsToPublish.clear();
-        notifyListenersRollback();
+        notifyListenersRollback(cause);
         notifyListenersCleanup();
         listeners.clear();
     }
@@ -98,11 +98,13 @@ public class DefaultUnitOfWork extends UnitOfWork {
     }
 
     /**
-     * Send a {@link UnitOfWorkListener#onRollback()} notification to all registered listeners.
+     * Send a {@link UnitOfWorkListener#onRollback(Throwable)} notification to all registered listeners.
+     *
+     * @param cause The cause of the rollback
      */
-    protected void notifyListenersRollback() {
+    protected void notifyListenersRollback(Throwable cause) {
         for (UnitOfWorkListener listener : listeners) {
-            listener.onRollback();
+            listener.onRollback(cause);
         }
     }
 

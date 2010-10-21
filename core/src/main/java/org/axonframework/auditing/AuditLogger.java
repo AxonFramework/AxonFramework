@@ -29,13 +29,28 @@ import java.util.List;
 public interface AuditLogger {
 
     /**
-     * Appends the given <code>command</code> and <code>events</code> to the logs.
+     * Writes a success entry to the audit logs.
      * <p/>
      * This method may be invoked in the thread dispatching the command. Therefore, considering writing asynchronously
      * when the underlying mechanism is slow.
      *
-     * @param command The command that has been handled
-     * @param events  The events that were generated during command handling
+     * @param command     The command that has been handled
+     * @param returnValue The return value of the command handler
+     * @param events      The events that were generated during command handling
      */
-    void append(Object command, List<Event> events);
+    void logSuccessful(Object command, Object returnValue, List<Event> events);
+
+    /**
+     * Writes a failure entry to the audit logs. The given list of events may contain events. In that case, these event
+     * may have been stored in the events store and/or published to the event bus.
+     * <p/>
+     * This method may be invoked in the thread dispatching the command. Therefore, considering writing asynchronously
+     * when the underlying mechanism is slow.
+     *
+     * @param command      The command being executed
+     * @param failureCause The cause of the rollback. May be <code>null</code> if the rollback was not caused by an
+     *                     exception
+     * @param events       any events staged for storage or publishing
+     */
+    void logFailed(Object command, Throwable failureCause, List<Event> events);
 }

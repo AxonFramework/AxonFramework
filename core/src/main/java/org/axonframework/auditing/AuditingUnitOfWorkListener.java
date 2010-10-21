@@ -46,6 +46,7 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     private final AuditLogger auditLogger;
     private final Object command;
     private final List<Event> recordedEvents = new ArrayList<Event>();
+    private volatile Object returnValue;
 
     /**
      * Initialize a listener for the given <code>command</code>. The <code>auditDataProvider</code> is called before the
@@ -64,11 +65,12 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
 
     @Override
     public void afterCommit() {
-        auditLogger.append(command, recordedEvents);
+        auditLogger.logSuccessful(command, returnValue, recordedEvents);
     }
 
     @Override
-    public void onRollback() {
+    public void onRollback(Throwable failureCause) {
+        auditLogger.logFailed(command, failureCause, recordedEvents);
     }
 
     @Override
@@ -109,5 +111,15 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     @Override
     public void onCleanup() {
         // no resources to clean up
+    }
+
+    /**
+     * Registers the return value of the command handler with the auditing context.
+     *
+     * @param returnValue The return value of the command handler, if any. May be <code>null</code> or {@link Void#TYPE
+     *                    void}.
+     */
+    void setReturnValue(Object returnValue) {
+        this.returnValue = returnValue;
     }
 }

@@ -47,9 +47,11 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
 
     /**
      * {@inheritDoc}
+     *
+     * @param failureCause
      */
     @Override
-    public void onRollback() {
+    public void onRollback(Throwable failureCause) {
     }
 
     /**

@@ -65,16 +65,25 @@ public abstract class UnitOfWork {
     /**
      * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
      * registered {@link UnitOfWorkListener}s are notified.
-     *
-     * @throws IllegalStateException if the UnitOfWork wasn't started
      */
     public void rollback() {
+        rollback(null);
+    }
+
+    /**
+     * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
+     * registered {@link UnitOfWorkListener}s are notified.
+     *
+     * @param cause The cause of the rollback. May be <code>null</code>.
+     * @throws IllegalStateException if the UnitOfWork wasn't started
+     */
+    public void rollback(Throwable cause) {
         assertStarted();
         try {
             if (outerUnitOfWork != null) {
                 outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
             } else {
-                doRollback();
+                doRollback(cause);
             }
         } finally {
             clear();
@@ -152,14 +161,16 @@ public abstract class UnitOfWork {
 
     /**
      * Executes the logic required to commit this unit of work.
+     *
+     * @param cause the cause of the rollback
      */
-    protected abstract void doRollback();
+    protected abstract void doRollback(Throwable cause);
 
     private void performCommit() {
         try {
             doCommit();
         } catch (RuntimeException t) {
-            doRollback();
+            doRollback(t);
             throw t;
         }
     }
@@ -188,10 +199,10 @@ public abstract class UnitOfWork {
         }
 
         @Override
-        public void onRollback() {
+        public void onRollback(Throwable failureCause) {
             CurrentUnitOfWork.set(UnitOfWork.this);
             try {
-                doRollback();
+                doRollback(failureCause);
             } finally {
                 CurrentUnitOfWork.clear(UnitOfWork.this);
             }

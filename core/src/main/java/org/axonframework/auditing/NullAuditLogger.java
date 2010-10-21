@@ -39,6 +39,15 @@ public class NullAuditLogger implements AuditLogger {
      * This implementation does nothing.
      */
     @Override
-    public void append(Object command, List<Event> events) {
+    public void logSuccessful(Object command, Object returnValue, List<Event> events) {
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation does nothing.
+     */
+    @Override
+    public void logFailed(Object command, Throwable failureCause, List<Event> events) {
     }
 }

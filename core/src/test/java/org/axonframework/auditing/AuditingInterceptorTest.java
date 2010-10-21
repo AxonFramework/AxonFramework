@@ -60,7 +60,7 @@ public class AuditingInterceptorTest {
     @After
     public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
+            CurrentUnitOfWork.get().rollback(null);
         }
     }
 
@@ -80,11 +80,12 @@ public class AuditingInterceptorTest {
         uow.commit();
 
         verify(mockAuditDataProvider, times(1)).provideAuditDataFor("Command!");
-        verify(mockAuditLogger, times(1)).append(eq("Command!"), any(List.class));
+        verify(mockAuditLogger, times(1)).logSuccessful(eq("Command!"), any(Object.class), any(List.class));
         DomainEvent eventFromAggregate = aggregate.getUncommittedEvents().next();
         assertEquals("value", eventFromAggregate.getMetaDataValue("key"));
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Test
     public void testInterceptCommand_FailedExecution() throws Throwable {
         RuntimeException mockException = new RuntimeException("Mock");
@@ -102,8 +103,10 @@ public class AuditingInterceptorTest {
         }
 
         verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
-        uow.rollback();
+        RuntimeException mockFailure = new RuntimeException("mock");
+        uow.rollback(mockFailure);
         verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
-        verify(mockAuditLogger, never()).append(eq("Command!"), any(List.class));
+        verify(mockAuditLogger, never()).logSuccessful(eq("Command!"), any(Object.class), any(List.class));
+        verify(mockAuditLogger).logFailed(eq("Command!"), eq(mockFailure), any(List.class));
     }
 }

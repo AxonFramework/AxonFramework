@@ -82,9 +82,11 @@ public abstract class TransactionalUnitOfWorkInterceptor<T> implements CommandHa
 
         /**
          * This method tries to roll back the transaction assigned to this Unit Of Work.
+         *
+         * @param failureCause The cause of the rollback
          */
         @Override
-        public void onRollback() {
+        public void onRollback(Throwable failureCause) {
             rollbackTransaction(transaction);
         }
 

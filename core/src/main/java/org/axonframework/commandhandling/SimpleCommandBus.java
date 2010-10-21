@@ -99,7 +99,7 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.commit();
             return returnValue;
         } catch (Throwable throwable) {
-            unitOfWork.rollback();
+            unitOfWork.rollback(throwable);
             throw throwable;
         }
     }
