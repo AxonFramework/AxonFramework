@@ -17,10 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -68,7 +68,7 @@ public class SpringPrototypeEventSourcingRepositoryTest {
     public void testCreateInstances() {
         try {
             new DefaultUnitOfWork().start();
-            final AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+            final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
             when(mockEventStore.readEvents(repository.getTypeIdentifier(), aggregateIdentifier))
                     .thenAnswer(new Answer<Object>() {
                         @Override

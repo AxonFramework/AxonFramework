@@ -17,8 +17,8 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.EventSerializer;
 import org.joda.time.LocalDateTime;
 
@@ -99,7 +99,7 @@ abstract class AbstractEventEntry {
      * @return the Aggregate Identifier of the associated event.
      */
     public AggregateIdentifier getAggregateIdentifier() {
-        return AggregateIdentifierFactory.fromString(aggregateIdentifier);
+        return new StringAggregateIdentifier(aggregateIdentifier);
     }
 
     /**

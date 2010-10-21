@@ -17,8 +17,8 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventSerializer;
 import org.joda.time.LocalDateTime;
 import org.junit.*;
@@ -47,7 +47,7 @@ public class DomainEventEntryTest {
 
     @Test
     public void testDomainEventEntry_WrapEventsCorrectly() {
-        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         LocalDateTime timestamp = new LocalDateTime();
         UUID eventIdentifier = UUID.randomUUID();
 

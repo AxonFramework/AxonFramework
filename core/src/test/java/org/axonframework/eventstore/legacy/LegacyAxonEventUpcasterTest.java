@@ -16,8 +16,8 @@
 
 package org.axonframework.eventstore.legacy;
 
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventUpcaster;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.dom4j.Document;
@@ -117,7 +117,7 @@ public class LegacyAxonEventUpcasterTest {
         private Period period;
 
         public TestEvent(String name) {
-            super(0, AggregateIdentifierFactory.randomIdentifier());
+            super(0, new UUIDAggregateIdentifier());
             this.name = name;
             this.date = new DateMidnight();
             this.dateTime = new DateTime();

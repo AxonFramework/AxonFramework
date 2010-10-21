@@ -20,8 +20,8 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.EventSerializer;
 
 import java.nio.charset.Charset;
@@ -77,7 +77,7 @@ class EventEntry {
     }
 
     public AggregateIdentifier getAggregateIdentifier() {
-        return AggregateIdentifierFactory.fromString(aggregateIdentifier);
+        return new StringAggregateIdentifier(aggregateIdentifier);
     }
 
     public DBObject asDBObject() {

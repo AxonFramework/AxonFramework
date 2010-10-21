@@ -17,11 +17,11 @@
 package org.axonframework.eventstore.fs;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.XStreamEventSerializer;
@@ -52,7 +52,7 @@ public class FileSystemEventStoreTest {
         eventStore = new FileSystemEventStore(new XStreamEventSerializer());
         eventStore.setBaseDir(new FileSystemResource("target/"));
 
-        aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+        aggregateIdentifier = new UUIDAggregateIdentifier();
     }
 
     @Test
@@ -76,7 +76,7 @@ public class FileSystemEventStoreTest {
     @Test
     // Issue #25: XStreamFileSystemEventStore fails when event data contains newline character
     public void testSaveStreamAndReadBackIn_NewLineInEvent() {
-        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         String description = "This is a description with a \n newline character and weird chars éçè\u6324.";
         StringBuilder stringBuilder = new StringBuilder(description);
         for (int i = 0; i < 100; i++) {
@@ -110,7 +110,7 @@ public class FileSystemEventStoreTest {
         eventStore.setBaseDir(mockResource);
 
         try {
-            eventStore.readEvents("test", AggregateIdentifierFactory.randomIdentifier());
+            eventStore.readEvents("test", new UUIDAggregateIdentifier());
             fail("Expected an exception");
         }
         catch (EventStoreException e) {
@@ -120,7 +120,7 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testRead_FileDoesNotExist() throws IOException {
-        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         Resource mockResource = mock(Resource.class);
         when(mockResource.exists()).thenReturn(true, false); // true for dir, false for file
         when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
@@ -137,7 +137,7 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testWrite_FileDoesNotExist() throws IOException {
-        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         Resource mockResource = mock(Resource.class);
         when(mockResource.exists()).thenReturn(true, false); // true for dir, false for file
         when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
@@ -161,7 +161,7 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testWrite_DirectoryCannotBeCreated() throws IOException {
-        AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         Resource mockResource = mock(Resource.class);
         File mockFile = mock(File.class);
         when(mockResource.exists()).thenReturn(false);

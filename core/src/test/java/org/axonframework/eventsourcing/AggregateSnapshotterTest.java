@@ -17,9 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.util.SynchronousTaskExecutor;
 import org.junit.*;
@@ -51,7 +51,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     public void testCreateSnapshot() {
-        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         StubDomainEvent firstEvent = new StubDomainEvent(aggregateIdentifier, 0);
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
         EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);

@@ -17,7 +17,8 @@
 package org.axonframework.sample.app.command;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.AggregateIdentifierFactory;
+import org.axonframework.domain.StringAggregateIdentifier;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.repository.Repository;
 import org.axonframework.sample.app.Address;
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ public class ContactCommandHandler {
         if (contactId == null) {
             contactId = UUID.randomUUID();
         }
-        Contact contact = new Contact(AggregateIdentifierFactory.fromUUID(contactId), command.getNewContactName());
+        Contact contact = new Contact(new UUIDAggregateIdentifier(contactId), command.getNewContactName());
         repository.add(contact);
     }
 
@@ -74,7 +75,7 @@ public class ContactCommandHandler {
     public void handle(ChangeContactNameCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getContactNewName(), "Name may not be null");
-        Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
+        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
         contact.changeName(command.getContactNewName());
     }
 
@@ -86,7 +87,7 @@ public class ContactCommandHandler {
     @CommandHandler
     public void handle(RemoveContactCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
-        Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
+        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
         contact.delete();
     }
 
@@ -102,7 +103,7 @@ public class ContactCommandHandler {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
         Address address = new Address(command.getStreetAndNumber(), command.getZipCode(), command.getCity());
-        Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
+        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
         contact.registerAddress(command.getAddressType(), address);
     }
 
@@ -117,7 +118,7 @@ public class ContactCommandHandler {
     public void handle(RemoveAddressCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
-        Contact contact = repository.load(AggregateIdentifierFactory.fromString(command.getContactId()), null);
+        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
         contact.removeAddress(command.getAddressType());
     }
 }

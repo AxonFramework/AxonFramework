@@ -17,7 +17,7 @@
 package org.axonframework.sample.app.query;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
+import org.axonframework.domain.StringAggregateIdentifier;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
@@ -41,7 +41,7 @@ public class ContactEntry {
     private String name;
 
     public AggregateIdentifier getIdentifier() {
-        return AggregateIdentifierFactory.fromString(identifier);
+        return new StringAggregateIdentifier(identifier);
     }
 
     void setIdentifier(String identifier) {

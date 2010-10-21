@@ -19,9 +19,9 @@ package org.axonframework.eventsourcing;
 import org.axonframework.domain.AbstractAggregateRoot;
 import org.axonframework.domain.AggregateDeletedEvent;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.util.Assert;
 
 import java.util.UUID;
@@ -61,7 +61,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      */
     @Deprecated
     protected AbstractEventSourcedAggregateRoot(UUID identifier) {
-        super(AggregateIdentifierFactory.fromUUID(identifier));
+        super(new UUIDAggregateIdentifier(identifier));
     }
 
     /**

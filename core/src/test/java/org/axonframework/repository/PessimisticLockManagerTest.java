@@ -17,7 +17,7 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
 import java.lang.reflect.Field;
@@ -33,7 +33,7 @@ public class PessimisticLockManagerTest {
     @Test
     public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
         PessimisticLockManager manager = new PessimisticLockManager();
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         manager.obtainLock(identifier);
         manager.releaseLock(identifier);
 

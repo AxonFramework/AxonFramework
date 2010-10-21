@@ -17,10 +17,10 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 import org.springframework.util.StopWatch;
 
@@ -96,7 +96,7 @@ public class AsynchronousEventHandlerWrapperTest {
 
     private AggregateIdentifier startEventDispatcher(final CountDownLatch waitToStart, final CountDownLatch waitToEnd,
                                                      int eventCount) {
-        AggregateIdentifier id = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier id = new UUIDAggregateIdentifier();
         final List<Event> events = new LinkedList<Event>();
         for (int t = 0; t < eventCount; t++) {
             events.add(new StubDomainEvent(id, t));

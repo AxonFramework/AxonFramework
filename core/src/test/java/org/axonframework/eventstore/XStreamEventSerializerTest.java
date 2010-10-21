@@ -16,9 +16,9 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -61,7 +61,7 @@ public class XStreamEventSerializerTest {
         testSubject.addPackageAlias("axondomain", "org.axonframework.domain");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier(),
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(new UUIDAggregateIdentifier(),
                                                                       1));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
@@ -74,7 +74,7 @@ public class XStreamEventSerializerTest {
     public void testAlias() throws UnsupportedEncodingException {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier(),
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(new UUIDAggregateIdentifier(),
                                                                       1));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
@@ -87,7 +87,7 @@ public class XStreamEventSerializerTest {
     public void testFieldAlias() throws UnsupportedEncodingException {
         testSubject.addFieldAlias("aggId", DomainEvent.class, "aggregateIdentifier");
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier(),
+        byte[] serialized = testSubject.serialize(new StubDomainEvent(new UUIDAggregateIdentifier(),
                                                                       1));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("aggregateIdentifier"));
@@ -105,7 +105,7 @@ public class XStreamEventSerializerTest {
         private Period period;
 
         public TestEvent(String name) {
-            super(0, AggregateIdentifierFactory.randomIdentifier());
+            super(0, new UUIDAggregateIdentifier());
             this.name = name;
             this.date = new DateMidnight();
             this.dateTime = new DateTime();

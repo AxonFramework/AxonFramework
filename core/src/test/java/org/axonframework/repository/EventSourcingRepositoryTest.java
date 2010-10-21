@@ -17,13 +17,13 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregateDeletedEvent;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AggregateDeletedException;
@@ -78,7 +78,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadAndSaveAggregate() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         StubDomainEvent event1 = new StubDomainEvent(identifier, 1);
         StubDomainEvent event2 = new StubDomainEvent(identifier, 2);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(event1, event2));
@@ -106,7 +106,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadDeletedAggregate() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         StubDomainEvent event1 = new StubDomainEvent(identifier, 1);
         StubDomainEvent event2 = new StubDomainEvent(identifier, 2);
         StubAggregateDeletedEvent event3 = new StubAggregateDeletedEvent(identifier, 3);
@@ -123,7 +123,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadWithAggregateSnapshot() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         TestAggregate simpleAggregate = new TestAggregate(identifier);
         simpleAggregate.apply(new StubDomainEvent(identifier, 0));
         simpleAggregate.commitEvents();
@@ -142,7 +142,7 @@ public class EventSourcingRepositoryTest {
     @Test
     public void testLoadAndSaveWithConflictingChanges() {
         ConflictResolver conflictResolver = mock(ConflictResolver.class);
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         DomainEvent event2 = new StubDomainEvent(identifier, 2);
         DomainEvent event3 = new StubDomainEvent(identifier, 3);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
@@ -162,7 +162,7 @@ public class EventSourcingRepositoryTest {
 
     @Test(expected = ConflictingAggregateVersionException.class)
     public void testLoadWithConflictingChanges_NoConflictResolverSet() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         DomainEvent event2 = new StubDomainEvent(identifier, 2);
         DomainEvent event3 = new StubDomainEvent(identifier, 3);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
@@ -176,7 +176,7 @@ public class EventSourcingRepositoryTest {
     @Test
     public void testLoadAndSaveWithoutConflictingChanges() {
         ConflictResolver conflictResolver = mock(ConflictResolver.class);
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new StubDomainEvent(identifier, 1),
                                             new StubDomainEvent(identifier, 2),
@@ -193,7 +193,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadEventsWithDecorators() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         SpyEventPreprocessor decorator1 = new SpyEventPreprocessor();
         SpyEventPreprocessor decorator2 = new SpyEventPreprocessor();
         testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
@@ -234,7 +234,7 @@ public class EventSourcingRepositoryTest {
                 return mockEventStore.readEvents(type, identifier);
             }
         });
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new StubDomainEvent(identifier, 3)));
         TestAggregate aggregate = testSubject.load(identifier);

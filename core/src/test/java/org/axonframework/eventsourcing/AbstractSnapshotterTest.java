@@ -17,11 +17,11 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.util.SynchronousTaskExecutor;
 import org.hamcrest.Matcher;
@@ -59,7 +59,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot() {
-        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new StubDomainEvent(aggregateIdentifier, 0),
@@ -70,7 +70,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot_SnapshotIsNull() {
-        AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new StubDomainEvent(aggregateIdentifier, 0)));

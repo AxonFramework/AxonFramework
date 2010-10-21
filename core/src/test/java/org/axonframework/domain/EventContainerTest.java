@@ -27,7 +27,7 @@ public class EventContainerTest {
 
     @Test
     public void testAddEvent_IdAndSequenceNumberInitialized() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         StubDomainEvent domainEvent = new StubDomainEvent();
 
         EventContainer eventContainer = new EventContainer(identifier);
@@ -51,10 +51,10 @@ public class EventContainerTest {
 
     @Test
     public void testAddEventWithId_IdConflictsWithContainerId() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         StubDomainEvent domainEvent = new StubDomainEvent(identifier);
 
-        EventContainer eventContainer = new EventContainer(AggregateIdentifierFactory.randomIdentifier());
+        EventContainer eventContainer = new EventContainer(new UUIDAggregateIdentifier());
         eventContainer.initializeSequenceNumber(11L);
 
         try {
@@ -69,7 +69,7 @@ public class EventContainerTest {
 
     @Test
     public void testAddEvent_SequenceNumberInitialized() {
-        AggregateIdentifier identifier = AggregateIdentifierFactory.randomIdentifier();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         StubDomainEvent domainEvent = new StubDomainEvent(identifier);
         StubDomainEvent domainEvent2 = new StubDomainEvent(identifier);
         domainEvent.setSequenceNumber(123);

@@ -19,7 +19,7 @@ package org.axonframework.integrationtests;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.integrationtests.eventhandling.RegisteringEventHandler;
@@ -75,7 +75,7 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
     @Test
     public void testConcurrentModifications() throws Exception {
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
-        final AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+        final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
         final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);
         for (int t = 0; t < THREAD_COUNT; t++) {

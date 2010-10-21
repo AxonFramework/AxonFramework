@@ -21,11 +21,11 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -67,7 +67,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
      */
     GivenWhenThenTestFixture() {
         JmxConfiguration.getInstance().disableMonitoring();
-        aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+        aggregateIdentifier = new UUIDAggregateIdentifier();
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();

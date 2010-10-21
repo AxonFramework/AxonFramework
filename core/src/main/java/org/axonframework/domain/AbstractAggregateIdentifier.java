@@ -17,40 +17,46 @@
 package org.axonframework.domain;
 
 /**
- * Aggregate identifier implementation that requires a String as the actual backing identifier value.
+ * Abstract implementation of the aggregate identifier providing basic functionality as defined by {@link
+ * AggregateIdentifier}.
+ * <p/>
+ * This implementation contains an implementation of the {@link #compareTo(AggregateIdentifier)}, {@link
+ * #equals(Object)}, {@link #hashCode()} and {@link #toString()} methods.
+ * <p/>
+ * The {@link #compareTo(AggregateIdentifier)} methods returns the result of the comparison of both identifier's string
+ * representations. For numerical values, this may not be a suitable comparison. For example, 3 would be evaluated as
+ * being larger than 10, when compared as Strings.
  *
  * @author Allard Buijze
  * @since 0.7
  */
-class DefaultAggregateIdentifier implements AggregateIdentifier, Comparable<AggregateIdentifier> {
-
-    private static final long serialVersionUID = -8548636320012752762L;
-    private final String identifier;
+public abstract class AbstractAggregateIdentifier implements AggregateIdentifier, Comparable<AggregateIdentifier> {
 
     /**
-     * Creates a DefaultAggregateIdentifier instance backed with the given <code>identifier</code>.
-     *
-     * @param identifier The backing identifier
+     * {@inheritDoc}
+     * <p/>
+     * This implementation returns the result of {@link #asString()}.
      */
-    DefaultAggregateIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
-
-    @Override
-    public String asString() {
-        return identifier;
-    }
-
     @Override
     public String toString() {
         return asString();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation returns the hashCode of the string representation of the identifier.
+     */
     @Override
     public int hashCode() {
-        return identifier.hashCode();
+        return asString().hashCode();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation compared the string representations of both identifiers.
+     */
     @Override
     public int compareTo(AggregateIdentifier other) {
         return asString().compareTo(other.asString());
@@ -68,4 +74,3 @@ class DefaultAggregateIdentifier implements AggregateIdentifier, Comparable<Aggr
         return asString().equals(that.asString());
     }
 }
-

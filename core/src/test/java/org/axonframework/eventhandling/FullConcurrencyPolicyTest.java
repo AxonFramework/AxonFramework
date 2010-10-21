@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -31,8 +31,8 @@ public class FullConcurrencyPolicyTest {
     public void testSequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
-        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier())));
-        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier())));
-        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier())));
+        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier())));
+        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier())));
+        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier())));
     }
 }

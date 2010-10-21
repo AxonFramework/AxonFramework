@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 
@@ -64,7 +64,7 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
      */
     @Deprecated
     protected AbstractAnnotatedAggregateRoot(UUID identifier) {
-        this(AggregateIdentifierFactory.fromUUID(identifier));
+        this(new UUIDAggregateIdentifier(identifier));
     }
 
     /**

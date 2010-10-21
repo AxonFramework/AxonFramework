@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.eventstore.benchmark.mongo;
 
 import com.mongodb.Mongo;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.mongo.MongoEventStore;
 import org.axonframework.eventstore.mongo.MongoTemplate;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
@@ -57,7 +57,7 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
         @Override
         public void run() {
-            final AggregateIdentifier aggregateId = AggregateIdentifierFactory.randomIdentifier();
+            final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
             int eventSequence = 0;
             for (int t = 0; t < getTransactionCount(); t++) {
                 eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, mongoEventStore, eventSequence);

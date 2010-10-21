@@ -33,7 +33,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot {
      * Initializes the aggregate root using a random aggregate identifier.
      */
     protected AbstractAggregateRoot() {
-        this(AggregateIdentifierFactory.randomIdentifier());
+        this(new UUIDAggregateIdentifier());
     }
 
     /**

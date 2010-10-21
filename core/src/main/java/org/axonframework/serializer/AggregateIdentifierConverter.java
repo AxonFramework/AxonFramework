@@ -22,13 +22,13 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
+import org.axonframework.domain.StringAggregateIdentifier;
 
 /**
  * XStream converter to minimize the amount of output used when serializing aggregate identifiers. Only the backing
  * identifier value is serialized.
  * <p/>
- * Deserialized instances will always have a {@link org.axonframework.domain.DefaultAggregateIdentifier} instance as
+ * Deserialized instances will always have a {@link org.axonframework.domain.StringAggregateIdentifier} instance as
  * AggregateIdentifier.
  *
  * @author Allard Buijze
@@ -48,6 +48,6 @@ public class AggregateIdentifierConverter implements Converter {
 
     @Override
     public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-        return AggregateIdentifierFactory.fromString(reader.getValue());
+        return new StringAggregateIdentifier(reader.getValue());
     }
 }

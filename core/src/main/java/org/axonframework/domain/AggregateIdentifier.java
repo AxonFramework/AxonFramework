@@ -26,8 +26,7 @@ import java.io.Serializable;
  * <p/>
  * <em>Implementation guidelines:</em><br/>Each identifier should have a String representation. Implementations are
  * REQUIRED to return this representation in the asString() method. They MAY also return this representation in the
- * toString() method.<br/>When two identifiers are compared they are equal if their String representation is equal and
- * the type of aggregate they represent is equal.
+ * toString() method.<br/>When two identifiers are compared they are equal if their String representation is equal.
  *
  * @author Allard Buijze
  * @since 0.7
@@ -40,4 +39,9 @@ public interface AggregateIdentifier extends Serializable {
      * @return the String representation of this aggregate identifier.
      */
     String asString();
+
+    /**
+     * {@inheritDoc}
+     */
+    boolean equals(Object o);
 }

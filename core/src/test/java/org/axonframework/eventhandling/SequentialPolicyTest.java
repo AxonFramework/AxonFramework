@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -32,11 +32,11 @@ public class SequentialPolicyTest {
         // ok, pretty useless, but everything should be tested
         SequentialPolicy testSubject = new SequentialPolicy();
         Object id1 = testSubject
-                .getSequenceIdentifierFor(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier()));
+                .getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier()));
         Object id2 = testSubject
-                .getSequenceIdentifierFor(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier()));
+                .getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier()));
         Object id3 = testSubject
-                .getSequenceIdentifierFor(new StubDomainEvent(AggregateIdentifierFactory.randomIdentifier()));
+                .getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier()));
 
         assertEquals(id1, id2);
         assertEquals(id2, id3);

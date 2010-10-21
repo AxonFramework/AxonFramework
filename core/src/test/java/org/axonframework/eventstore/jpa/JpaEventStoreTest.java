@@ -17,10 +17,10 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -148,7 +148,7 @@ public class JpaEventStoreTest {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        testSubject.readEvents("test", AggregateIdentifierFactory.randomIdentifier());
+        testSubject.readEvents("test", new UUIDAggregateIdentifier());
     }
 
     @Test
@@ -163,7 +163,7 @@ public class JpaEventStoreTest {
 
     private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {
         List<StubStateChangedEvent> events = new ArrayList<StubStateChangedEvent>();
-        final AggregateIdentifier aggregateIdentifier = AggregateIdentifierFactory.randomIdentifier();
+        final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new StubStateChangedEvent(t, aggregateIdentifier));
         }

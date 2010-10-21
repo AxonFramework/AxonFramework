@@ -17,9 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifierFactory;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -39,7 +39,7 @@ public class GenericAggregateFactoryTest {
         GenericAggregateFactory<ExceptionThrowingAggregate> repository =
                 new GenericAggregateFactory<ExceptionThrowingAggregate>(ExceptionThrowingAggregate.class);
         try {
-            repository.createAggregate(AggregateIdentifierFactory.randomIdentifier(), null);
+            repository.createAggregate(new UUIDAggregateIdentifier(), null);
             fail("Expected IncompatibleAggregateException");
         }
         catch (IncompatibleAggregateException e) {
