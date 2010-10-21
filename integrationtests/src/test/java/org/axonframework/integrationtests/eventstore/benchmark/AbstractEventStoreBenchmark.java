@@ -52,7 +52,7 @@ public abstract class AbstractEventStoreBenchmark {
 
         long start = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<Thread>();
-        for (int t = 0; t < THREAD_COUNT; t++) {
+        for (int t = 0; t < getThreadCount(); t++) {
             Thread thread = new Thread(getRunnableInstance());
             thread.start();
             threads.add(thread);
@@ -64,11 +64,11 @@ public abstract class AbstractEventStoreBenchmark {
 
         System.out.println(String.format(
                 "Result: %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %s events per second",
-                THREAD_COUNT,
-                TRANSACTION_COUNT,
-                TRANSACTION_SIZE,
+                getThreadCount(),
+                getTransactionCount(),
+                getTransactionSize(),
                 (end - start),
-                (THREAD_COUNT * TRANSACTION_COUNT * TRANSACTION_SIZE) / ((end - start) / 1000)));
+                (getThreadCount() * getTransactionCount() * getTransactionSize()) / ((end - start) / 1000)));
 
     }
 
@@ -77,7 +77,7 @@ public abstract class AbstractEventStoreBenchmark {
     protected int saveAndLoadLargeNumberOfEvents(AggregateIdentifier aggregateId, EventStore eventStore,
                                                  int eventSequence) {
         List<DomainEvent> events = new ArrayList<DomainEvent>();
-        for (int t = 0; t < TRANSACTION_SIZE; t++) {
+        for (int t = 0; t < getTransactionSize(); t++) {
             events.add(new StubDomainEvent(aggregateId, eventSequence++));
         }
         eventStore.appendEvents("benchmark", new SimpleDomainEventStream(events));
