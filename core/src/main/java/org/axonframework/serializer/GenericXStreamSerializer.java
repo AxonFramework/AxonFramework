@@ -33,7 +33,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
@@ -41,7 +40,7 @@ import java.util.UUID;
  * Serializer that uses XStream to serialize and deserialize arbitrary objects.
  * <p/>
  * When running on a Sun JVM, XStream does not pose any restrictions on classes to serialize. On other JVM's, however,
- * you need to either implement Serializable, or provide a default constructor (accesible under the JVM's security
+ * you need to either implement Serializable, or provide a default constructor (accessible under the JVM's security
  * policy). That means that for portability, you should do either of these two.
  *
  * @author Allard Buijze
@@ -182,21 +181,11 @@ public class GenericXStreamSerializer {
             try {
                 Constructor constructor = context.getRequiredType().getConstructor(Object.class);
                 return constructor.newInstance(reader.getValue());
-            } catch (InvocationTargetException e) {
-                throw new SerializationException(buildExceptionMessage(context), e);
-            } catch (NoSuchMethodException e) {
-                throw new SerializationException(buildExceptionMessage(context), e);
-            } catch (InstantiationException e) {
-                throw new SerializationException(buildExceptionMessage(context), e);
-            } catch (IllegalAccessException e) {
-                throw new SerializationException(buildExceptionMessage(context), e);
+            } catch (Exception e) {
+                throw new SerializationException(String.format(
+                        "An exception occurred while deserializing a Joda Time object: %s",
+                        context.getRequiredType().getSimpleName()), e);
             }
-        }
-
-        private String buildExceptionMessage(UnmarshallingContext context) {
-            return String.format(
-                    "An exception occurred while deserializing a Joda Time object: %s",
-                    context.getRequiredType().getSimpleName());
         }
     }
 }
