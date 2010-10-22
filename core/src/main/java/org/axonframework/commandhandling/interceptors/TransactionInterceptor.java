@@ -33,7 +33,7 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  * @param <T> The type of object representing the transaction
  * @since 0.6
  */
-public abstract class TransactionalUnitOfWorkInterceptor<T> implements CommandHandlerInterceptor {
+public abstract class TransactionInterceptor<T> implements CommandHandlerInterceptor {
 
     @Override
     public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain

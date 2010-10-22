@@ -30,6 +30,10 @@ import org.axonframework.unitofwork.UnitOfWork;
  * Note that this class requires a Unit Of Work to be available. This means that you should always configure a Unit Of
  * Work interceptor <em>before</em> the AuditingInterceptor. Failure to do so will result in an {@link
  * org.axonframework.util.AxonConfigurationException}.
+ * <p/>
+ * The auditing interceptor can only attach meta data to event whose {@link org.axonframework.domain.Event#getMetaData()}
+ * methods returns an instance of {@link org.axonframework.domain.MutableEventMetaData}, which is the default behavior
+ * for any event implementation provided by Axon.
  *
  * @author Allard Buijze
  * @since 0.7

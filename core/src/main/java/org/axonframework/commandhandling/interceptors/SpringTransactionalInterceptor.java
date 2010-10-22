@@ -30,7 +30,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * @see org.springframework.transaction.PlatformTransactionManager
  * @since 0.5
  */
-public class SpringTransactionalInterceptor extends TransactionalUnitOfWorkInterceptor<TransactionStatus> {
+public class SpringTransactionalInterceptor extends TransactionInterceptor<TransactionStatus> {
 
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
