@@ -32,14 +32,14 @@ import java.util.Set;
 
 /**
  * Implementation of the UnitOfWork that buffers all published events until it is committed. Aggregates that have not
- * been explicitly save in their aggregates will be saved when the UnitOfWork committs.
+ * been explicitly save in their aggregates will be saved when the UnitOfWork commits.
  * <p/>
  * This implementation requires a mechanism that explicitly commits or rolls back.
  *
  * @author Allard Buijze
  * @since 0.6
  */
-public class DefaultUnitOfWork extends UnitOfWork {
+public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
     private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();

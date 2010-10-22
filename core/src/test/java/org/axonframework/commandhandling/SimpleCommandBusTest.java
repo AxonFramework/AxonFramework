@@ -17,7 +17,9 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
@@ -69,6 +71,8 @@ public class SimpleCommandBusTest {
 
     @Test
     public void testDispatchCommand_ImplicitUnitOfWorkIsCommittedOnReturnValue() {
+        UnitOfWorkFactory spyUnitOfWorkFactory = spy(new DefaultUnitOfWorkFactory());
+        testSubject.setUnitOfWorkFactory(spyUnitOfWorkFactory);
         testSubject.subscribe(String.class, new CommandHandler<String>() {
             @Override
             public Object handle(String command, UnitOfWork unitOfWork) throws Throwable {
@@ -91,6 +95,7 @@ public class SimpleCommandBusTest {
                 fail("Did not expect exception");
             }
         });
+        verify(spyUnitOfWorkFactory).createUnitOfWork();
         assertFalse(CurrentUnitOfWork.isStarted());
     }
 

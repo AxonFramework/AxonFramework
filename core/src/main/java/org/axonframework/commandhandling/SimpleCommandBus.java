@@ -17,8 +17,9 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.jmx.JmxConfiguration;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,7 @@ public class SimpleCommandBus implements CommandBus {
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
     private volatile Iterable<? extends CommandHandlerInterceptor> interceptors = Collections.emptyList();
+    private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
 
     /**
      * Initializes the SimpleCommandBus.
@@ -92,7 +94,7 @@ public class SimpleCommandBus implements CommandBus {
 
     private Object doDispatch(Object command, CommandHandler commandHandler) throws Throwable {
         statistics.recordReceivedCommand();
-        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet();
+        UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, interceptors);
         try {
             Object returnValue = chain.proceed();
@@ -150,5 +152,15 @@ public class SimpleCommandBus implements CommandBus {
         for (Map.Entry<?, ?> entry : handlers.entrySet()) {
             subscribe((Class<?>) entry.getKey(), (CommandHandler) entry.getValue());
         }
+    }
+
+    /**
+     * Sets the UnitOfWorkFactory that provides the UnitOfWork instances for handling incoming commands. Defaults to a
+     * {@link DefaultUnitOfWorkFactory}.
+     *
+     * @param unitOfWorkFactory The UnitOfWorkFactory providing UoW instances for this Command Bus.
+     */
+    public void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
+        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 }

@@ -20,9 +20,6 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
-import java.util.List;
-import java.util.Set;
-
 /**
  * This class represents a UnitOfWork in which modifications are made to aggregates. A typical UnitOfWork scope is the
  * execution of a command. A UnitOfWork may be used to prevent individual events from being published before a number of
@@ -32,13 +29,9 @@ import java.util.Set;
  * The current UnitOfWork can be obtained using {@link CurrentUnitOfWork#get()}.
  *
  * @author Allard Buijze
- * @see CurrentUnitOfWork
  * @since 0.6
  */
-public abstract class UnitOfWork {
-
-    private boolean isStarted;
-    private UnitOfWork outerUnitOfWork;
+public interface UnitOfWork {
 
     /**
      * Commits the UnitOfWork. All registered aggregates that have not been registered as stored are saved in their
@@ -49,62 +42,30 @@ public abstract class UnitOfWork {
      *
      * @throws IllegalStateException if the UnitOfWork wasn't started
      */
-    public void commit() {
-        assertStarted();
-        try {
-            if (outerUnitOfWork != null) {
-                outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
-            } else {
-                performCommit();
-            }
-        } finally {
-            clear();
-        }
-    }
+    void commit();
 
     /**
      * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
-     * registered {@link UnitOfWorkListener}s are notified.
+     * registered {@link org.axonframework.unitofwork.UnitOfWorkListener}s are notified.
+     * <p/>
+     * If the rollback is a result of an exception, consider using {@link #rollback(Throwable)} instead.
      */
-    public void rollback() {
-        rollback(null);
-    }
+    void rollback();
 
     /**
      * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
-     * registered {@link UnitOfWorkListener}s are notified.
+     * registered {@link org.axonframework.unitofwork.UnitOfWorkListener}s are notified.
      *
      * @param cause The cause of the rollback. May be <code>null</code>.
      * @throws IllegalStateException if the UnitOfWork wasn't started
      */
-    public void rollback(Throwable cause) {
-        assertStarted();
-        try {
-            if (outerUnitOfWork != null) {
-                outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
-            } else {
-                doRollback(cause);
-            }
-        } finally {
-            clear();
-        }
-    }
+    void rollback(Throwable cause);
 
     /**
      * Starts the current unit of work, preparing it for aggregate registration. The UnitOfWork instance is registered
      * with the CurrentUnitOfWork.
      */
-    public void start() {
-        if (isStarted) {
-            throw new IllegalStateException("UnitOfWork is already started");
-        } else if (CurrentUnitOfWork.isStarted()) {
-            // we're nesting.
-            this.outerUnitOfWork = CurrentUnitOfWork.get();
-        }
-        CurrentUnitOfWork.set(this);
-        isStarted = true;
-        doStart();
-    }
+    void start();
 
     /**
      * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called, and
@@ -112,9 +73,7 @@ public abstract class UnitOfWork {
      *
      * @return <code>true</code> if this UnitOfWork is started, <code>false</code> otherwise.
      */
-    public boolean isStarted() {
-        return isStarted;
-    }
+    boolean isStarted();
 
     /**
      * Register a listener that listens to state changes in this UnitOfWork. This typically allows components to clean
@@ -123,7 +82,7 @@ public abstract class UnitOfWork {
      *
      * @param listener The listener to notify when the UnitOfWork's state changes.
      */
-    public abstract void registerListener(UnitOfWorkListener listener);
+    void registerListener(UnitOfWorkListener listener);
 
     /**
      * Register an aggregate with this UnitOfWork. These aggregates will be saved (at the latest) when the UnitOfWork is
@@ -134,8 +93,8 @@ public abstract class UnitOfWork {
      *                              aggregate
      * @param <T>                   the type of aggregate to register
      */
-    public abstract <T extends AggregateRoot> void registerAggregate(T aggregateRoot,
-                                                                     SaveAggregateCallback<T> saveAggregateCallback);
+    <T extends AggregateRoot> void registerAggregate(T aggregateRoot,
+                                                     SaveAggregateCallback<T> saveAggregateCallback);
 
     /**
      * Request to publish the given <code>event</code> on the given <code>eventBus</code>. The UnitOfWork may either
@@ -144,77 +103,5 @@ public abstract class UnitOfWork {
      * @param event    The event to be published on the event bus
      * @param eventBus The event bus on which to publish the event
      */
-    public abstract void publishEvent(Event event, EventBus eventBus);
-
-    /**
-     * Performs logic required when starting this UnitOfWork instance.
-     * <p/>
-     * This implementation does nothing and may be freely overridden.
-     */
-    protected void doStart() {
-    }
-
-    /**
-     * Executes the logic required to commit this unit of work.
-     */
-    protected abstract void doCommit();
-
-    /**
-     * Executes the logic required to commit this unit of work.
-     *
-     * @param cause the cause of the rollback
-     */
-    protected abstract void doRollback(Throwable cause);
-
-    private void performCommit() {
-        try {
-            doCommit();
-        } catch (RuntimeException t) {
-            doRollback(t);
-            throw t;
-        }
-    }
-
-    private void assertStarted() {
-        if (!isStarted) {
-            throw new IllegalStateException("UnitOfWork is not started");
-        }
-    }
-
-    private void clear() {
-        CurrentUnitOfWork.clear(this);
-        isStarted = false;
-    }
-
-    private class CommitOnOuterCommitTask implements UnitOfWorkListener {
-
-        @Override
-        public void afterCommit() {
-            CurrentUnitOfWork.set(UnitOfWork.this);
-            try {
-                performCommit();
-            } finally {
-                CurrentUnitOfWork.clear(UnitOfWork.this);
-            }
-        }
-
-        @Override
-        public void onRollback(Throwable failureCause) {
-            CurrentUnitOfWork.set(UnitOfWork.this);
-            try {
-                doRollback(failureCause);
-            } finally {
-                CurrentUnitOfWork.clear(UnitOfWork.this);
-            }
-        }
-
-        @Override
-        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
-        }
-
-        @Override
-        public void onCleanup() {
-        }
-    }
-
+    void publishEvent(Event event, EventBus eventBus);
 }
