@@ -41,7 +41,7 @@ class EventEntry {
     public static final String AGGREGATE_TYPE_PROPERTY = "type";
     public static final String SERIALIZED_EVENT_PROPERTY = "serializedEvent";
 
-    public static BasicDBObject INDEX = new BasicDBObject(AGGREGATE_IDENTIFIER_PROPERTY, 1)
+    public static final BasicDBObject INDEX = new BasicDBObject(AGGREGATE_IDENTIFIER_PROPERTY, 1)
             .append(SERIALIZED_EVENT_PROPERTY, 1);
 
     protected static final Charset UTF8 = Charset.forName("UTF-8");
