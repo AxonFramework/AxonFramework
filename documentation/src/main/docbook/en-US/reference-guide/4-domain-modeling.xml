@@ -27,10 +27,19 @@
         <title>Events</title>
         <para>The Axon Framework makes a distinction between three types of events, each with a
             clear use and type of origin. Regardless of their type, all events must implement the
-            <code>Event</code>
-            interface or one of the more specific sub-types, Domain Events,
-            Application Events and System Events, each described in the sections below.
-        </para>
+                <code>Event</code> interface or one of the more specific sub-types, Domain Events,
+            Application Events and System Events, each described in the sections below.</para>
+        <para>All events may carry data and meta-data. Typically, the data is added to each event as
+            fields in the event implementation. Meta-data, on the other hand is stored separately.
+            The Auditing interceptor uses this mechanism to attach meta-data to events for auditing
+            purposes. All Axon's implementations of Events allow the subclasses to attach arbirary
+            information as meta-data.</para>
+        <note>
+            <para>In general, you should not base business decisions on information in the meta-data
+                of events. If that is the case, you might have information attached that should
+                really be part of the event's regular data instead. Meta-data is typically used for
+                auditing and tracing.</para>
+        </note>
         <sect2 xml:id="domain-events">
             <title>Domain Events</title>
             <para>The most important type of event in any CQRS application is the domain event. It
@@ -75,33 +84,24 @@
             </note>
             <para>There is a special type of <code>Event</code>, which has a special meaning: the
                     <code>AggregateDeletedEvent</code>. This is a marker interface that indicates a
-                migration to a "deleted" state of the aggregate. Repositories must consider
-                aggregates that have applied such an event as deleted. Hence, loading an aggregate
-                that has an <code>AggregateDeletedEvent</code> results in an exception.</para>
+                migration to a "deleted" state of the aggregate. Repositories must treat aggregates
+                that have applied such an event as deleted. Hence, loading an aggregate that has an
+                    <code>AggregateDeletedEvent</code> results in an exception.</para>
             <para>Snapshot events are instances of <code>DomainEvent</code> with a special intent.
                 They are typically not dispatched via the event bus, but are used to summarize an
                 arbitrary number of events from the past into a single entry. This can drastically
                 improve performance when initializing an aggregate's state from a series of events.
                 See <xref linkend="using-snapshot-events"/> for more information about snapshot
                 events and their use.</para>
-            <simplesect>
-                <title>Correlating and auditing</title>
-                <para>If you wish to attach correlation identifiers and principal name (i.e. the
-                    username of the user executing the current thread) to your domain events,
-                    consider extending the <code>AuditedDomainEvent</code>. It will use the current
-                    auditing context (see <xref linkend="auditing-interceptor"/>) to obtain this
-                    information.</para>
-            </simplesect>
         </sect2>
         <sect2>
             <title>Application Events</title>
             <para>Application events are events that cannot be categorized as domain events, but do
                 have a significant importance for the application. When using application events,
-                check if the event is actually a domain event that you over looked. Examples of
+                check if the event is actually a domain event that you overlooked. Examples of
                 application events are the expiry of a user session, or the notification of an email
-                being successfully send. The usefulness of these events depend on the type of
-                application you are creating.
-            </para>
+                being successfully sent. The usefulness of these events depend on the type of
+                application you are creating.</para>
             <para>In the Axon Framework, you can extend the abtract <code>ApplicationEvent</code>
                 class for application events. This class will generate a unique identifier and a
                 time stamp for the current event. Optionally, you can attach an object that acts as
@@ -109,7 +109,7 @@
                 garbage collector cleans up the source, or when the event is serialized and
                 deserialized, the original source class is not available anymore. Instead, you will
                 have access to the type of source and the value of it's <code>toString()</code>
-                method. </para>
+                method.</para>
         </sect2>
         <sect2>
             <title>System Events</title>
@@ -188,7 +188,7 @@
             </simplesect>
         </sect2>
         <sect2>
-            <title>Event sourcing aggregates</title>
+            <title>Event sourced aggregates</title>
             <para>Axon framework provides a few repository implementations that can use event
                 sourcing as storage method for aggregates. These repositories require that
                 aggregates implement the <code>EventSourcedAggregateRoot</code> interface. As with
@@ -260,7 +260,7 @@
                     will invoke the right method for
                     you.
                 </para>
-                <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
+                <programlisting language="java">public class MyAggregateRoot extends AbstractAnnotatedAggregateRoot {
     private String someProperty;
 
     public MyAggregateRoot() {
@@ -298,33 +298,15 @@
                         </para>
                     </listitem>
                     <listitem>
-                        <para>When the level of the
-                            <code>AbstractAnnotatedAggregateRoot</code>
-                            is
-                            reached, and no suitable event handler is found, an
-                            <code>UnhandledEventException</code>
-                            is thrown.
-                        </para>
+                        <para>When the level of the <code>AbstractAnnotatedAggregateRoot</code> is
+                            reached, and no suitable event handler is found, the event is ignored. </para>
                     </listitem>
                 </orderedlist>
                 <para>Event handler methods may be private, as long as the security settings of the
                     JVM allow the Axon Framework to change the accessibility of the method. This
                     allows you to clearly separate the public API of your aggregate, which exposes
                     the methods that generate events, from the internal logic, which processes the
-                    events.
-                </para>
-                <tip>
-                    <para>An Aggregate will only contain fields of properties it uses for validation
-                        or business logic decisions. That means you will likely have some events
-                        that have no direct effect on any fields in the aggregate. In that case you
-                        can choose to create a
-                        <code>handleOtherEvents(DomainEvent event)</code>
-                        method with an empty body. This handler will be called for any event for
-                        which there is no specific handler, preventing any exception being thrown.
-                        Do consider, however, that doing so may result in unexpected behavior if an
-                        event handler for a specific type of event is forgotten.
-                    </para>
-                </tip>
+                    events.</para>
             </simplesect>
         </sect2>
     </sect1>

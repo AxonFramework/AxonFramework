@@ -22,7 +22,9 @@
         This means that tests expressed in terms of Events and Commands don't only have a functional
         meaning, it also means that they hardly depend on any implementation choices.</para>
     <para>The features described in this chapter require the <code>axon-test</code> module, which
-        can be obtained by configuration a maven dependency or from the full package download. </para>
+        can be obtained by configuration a maven dependency (use
+            <code>&lt;artifactId>axon-text&lt;/artifactId></code>) or from the full package
+        download. </para>
     <sect1>
         <title>Behavior Driven Testing</title>
         <para>The command handling component is typically the component in any CQRS based
@@ -30,9 +32,9 @@
             also means that there are extra test related requirements for this component. Simply
             put: the more complex a component, the better it must be tested.</para>
         <para>Although being more complex, the API of a command handling component is fairly easy.
-            It has command coming in, and events coming out. In some cases, there might be a query
-            as part of command execution. Other than that, commands and events are the only part of
-            the API. This means that it is possible to completely define a test scenario in terms of
+            It has command coming in, and events going out. In some cases, there might be a query as
+            part of command execution. Other than that, commands and events are the only part of the
+            API. This means that it is possible to completely define a test scenario in terms of
             events and commands. Typically, in the shape of:<itemizedlist>
                 <listitem>
                     <para>given certain events in the past,</para>
@@ -155,9 +157,9 @@
             <para>The last phase is the validation phase, and allows you to check on the activities
                 of the command handling component. This is done purely in terms of return values and
                 events (both stored and dispatched).</para>
-            <para>The test fixture allows you to validate return values of you command handlers. You
-                can explicitly define an expected void return value or any arbitrary value. You may
-                also express the expectancy of an exception.</para>
+            <para>The test fixture allows you to validate return values of your command handlers.
+                You can explicitly define an expected void return value or any arbitrary value. You
+                may also express the expectancy of an exception.</para>
             <para>The other component is validation of stored and dispatched events. In most cases,
                 the stored and dispatched are equal. In some cases however, you may dispatch events
                 (e.g. <code>ApplicationEvent</code>) that are not stored in the event store. In the
@@ -165,6 +167,19 @@
                 the latter case, you may use the <code>expectPublishedEvents</code> and
                     <code>expectStoredEvents</code> methods to validate published and stored events,
                 respectively.</para>
+            <para>There are two ways of matching expected events. </para>
+            <para>The first is to pass in Event instances that need to be literally compared with
+                the actual events. All properties of the expected Events are compared (using
+                    <code>equals()</code>) with their counterparts in the actual Events. If one of
+                the properties is not equal, the test fails and an extensive error report is
+                generated.</para>
+            <para>The other way of expressing expectancies is using Matchers (provided by the
+                Hamcrest library). <code>Matcher</code> is an interface prescribing two methods:
+                    <code>matches(Object)</code> and <code>describeTo(Description)</code>. The first
+                returns a boolean to indicate whether the matcher matches or not. The second allows
+                you to express your expectation. For example, a "GreaterThanTwoMatcher" could append
+                "any event with value greater than two" to the description. Descriptions allow
+                expressive error messages to be created about why a test case fails.</para>
         </simplesect>
     </sect1>
 </chapter>

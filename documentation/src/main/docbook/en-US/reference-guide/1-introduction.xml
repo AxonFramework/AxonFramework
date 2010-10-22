@@ -18,32 +18,30 @@
     <title>Introduction</title>
     <para>Axon is a lightweight framework that helps developers build scalable and extensible
         applications by addressing these concerns directly in the architecture. This reference guide
-        explains what Axon is, how it can help you and how you can use it. Next to this reference
-        guide, the sources and javadoc, we also have a sample application that shows how you can
-        leverage the provided features to quickly build a dynamic and extensible application.</para>
+        explains what Axon is, how it can help you and how you can use it.</para>
     <para>If you want to know more about Axon and its background, continue reading in <xref
             linkend="about-axon"/>. If you're eager to get started building your own application
-        using Axon, go quickly to <xref linkend="getting-started"/>. All help is welcome. If you're
-        interested in helping out building the Axon Framework, <xref linkend="contributing"/> will
-        contain the information you require. Finally, this chapter covers some legal concerns in
-            <xref linkend="license"/>. </para>
+        using Axon, go quickly to <xref linkend="getting-started"/>. If you're interested in helping
+        out building the Axon Framework, <xref linkend="contributing"/> will contain the information
+        you require. All help is welcome. Finally, this chapter covers some legal concerns in <xref
+            linkend="license"/>. </para>
     <sect1 id="about-axon">
         <title>Axon Framework Background</title>
         <sect2>
             <title>A brief history</title>
-            <para>The demands on software projects increase rapidly, as time progresses. Companies
-                no longer accept a brochure-like homepage to promote their business; they want their
+            <para>The demands on software projects increase rapidly as time progresses. Companies no
+                longer accept a brochure-like homepage to promote their business; they want their
                 (web)applications to evolve together with their business. That means that not only
                 projects and code bases become more complex, it also means that functionality is
                 constantly added, changed and (unfortunately not enough) removed. It can be
                 frustrating to find out that a seemingly easy-to-implement feature can require
                 development teams to take apart an entire application. Furthermore, today's
                 webapplications target an audience of potentially billions of people, making
-                scalability a bare necessity. </para>
+                scalability an indisputable requirement. </para>
             <para>Although there are many applications and frameworks around that deal with
                 scalability issues, such as GigaSpaces and Terracotta, they share one fundamental
                 flaw. These stacks try to solve the scalability issues while letting developers
-                develop application using the layered architecture they are used to. In some cases,
+                develop applications using the layered architecture they are used to. In some cases,
                 they even prevent or severely limit the use of a real domain model, forcing all
                 domain logic into services. Although that is faster to start building an
                 application, eventually this approach will cause complexity to increase and
@@ -51,14 +49,14 @@
             <para>Greg Young, initiator of the Command Query Responsiblity Segregation (CQRS)
                 pattern addressed these issues by drastically changing the way applications are
                 architected. Instead of separating logic into separate layers, logic is separated
-                based on whether it is changing an applition's state or querying it. That means that
-                executing commands (actions that potentially change an application's state) are
-                executed by completely different components than those that query for the
-                application's state. The most important reason for this separation is the fact that
-                there are different technical and non-technical requirements for each of them. When
-                commands are executed, the query components are (a)synchronously updated using
-                events. This mechanism of updates through events, is what makes this architecture is
-                extensible, scalable and ultimately more maintainable.<note>
+                based on whether it is changing an application's state or querying it. That means
+                that executing commands (actions that potentially change an application's state) are
+                executed by different components than those that query for the application's state.
+                The most important reason for this separation is the fact that there are different
+                technical and non-technical requirements for each of them. When commands are
+                executed, the query components are (a)synchronously updated using events. This
+                mechanism of updates through events, is what makes this architecture is extensible,
+                scalable and ultimately more maintainable.<note>
                     <para>A full explanation of CQRS is not within the scope of this document. If
                         you would like to have more background information about CQRS, visit the
                         Axon Framework website:<link xmlns:ns1="http://www.w3.org/1999/xlink"
@@ -76,14 +74,13 @@
         <sect2>
             <title>What is Axon?</title>
             <para>Axon Framework helps build scalable, extensible and maintainable applications by
-                supporting developers apply the Command Query Responsiblity Segregation (CQRS)
-                architectural pattern. It does so by providing implementations, sometimes complete,
-                sometimes abstract, of the most important building blocks, such as aggregates,
-                repositories and event busses (the dispatching mechanism for events). Furthermore,
-                Axon provides annotation support, which allows you to build aggregates and event
-                listeners withouth tying your code to Axon specific logic. This allows you to focus
-                on your business logic, instead of the plumbing, and helps you makes your code
-                easier to test in isolation. </para>
+                supporting developers apply the Command Query Responsibility Segregation (CQRS)
+                architectural pattern. It does so by providing implementations of the most important
+                building blocks, such as aggregates, repositories and event busses (the dispatching
+                mechanism for events). Furthermore, Axon provides annotation support, which allows
+                you to build aggregates and event listeners withouth tying your code to Axon
+                specific logic. This allows you to focus on your business logic, instead of the
+                plumbing, and helps you to make your code easier to test in isolation. </para>
             <para>Axon does not, in any way, try to hide the CQRS architecture or any of its
                 components from developers. Therefore, depending on team size, it is still advisable
                 to have one or more developers with a thorough understanding of CQRS on each team.
@@ -93,13 +90,13 @@
                 bugs and sometimes complete application failure. When you have a tight deadline, you
                 probably don't even want to care about these concerns. Axon's code is thoroughly
                 tested to prevent these types of bugs. </para>
-            <para>Most of the concerns Axon addresses are located inside the JVM. However, for an
-                application to be scalable, a single JVM is not enough. Therefore, Axon provides the
-                    <code>axon-intregration</code> module, which allows events to be sent to a
+            <para>Most of the concerns Axon addresses are located within a single JVM. However, for
+                an application to be scalable, a single JVM is not enough. Therefore, Axon provides
+                the <code>axon-intregration</code> module, which allows events to be sent to a
                 Spring Integration channel. From there, you can use Spring Integration to dispatch
                 events to application components on different machines. In the near future, Axon
-                will provide more ways to dispatch events between JVM's and physical machines.
-            </para>
+                will provide more ways to dispatch commands and events between JVM's and physical
+                machines. </para>
         </sect2>
         <sect2>
             <title>When to use Axon?</title>
@@ -143,9 +140,9 @@
                         <para>When an application has clearly separated components with different
                             audiences, it can benefit from Axon, too. An example of such application
                             is the online store. Employees will update product information and
-                            availability on the website, while customer place orders and query for
+                            availability on the website, while customers place orders and query for
                             their order status. With Axon, these components can be deployed on
-                            separate machines and scaled completely differently. They are kept
+                            separate machines and scaled using different policies. They are kept
                             up-to-date using the events, which Axon will dispatch to all subscribed
                             components, regardles of the machine they are deployed on. </para>
                     </listitem>
@@ -161,9 +158,8 @@
     <sect1 xml:id="getting-started">
         <title>Getting started</title>
         <para>This section will explain how you can obtain the binaries for Axon to get started.
-            There are currently two ways: either download the binaries from our website, or (if you
-            use maven) configure you pom.xml file to include the Axon binaries in your build.
-        </para>
+            There are currently two ways: either download the binaries from our website or configure
+            a repository for your build system (Maven, Gradle, etc). </para>
         <sect2>
             <title>Download Axon</title>
             <para>You can download the Axon Framework from our downloads page: <link
@@ -192,33 +188,23 @@
             <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-core</artifactId>
-    <version>0.6</version>
+    <version>0.7</version>
 </dependency>]]></programlisting>
             <para>Most of the features provided by the Axon Framework are optional and require
                 additional dependencies. We have chosen not to add these dependencies by default, as
                 they would potentially clutter your project with artifacts you don't need. This
                 section discusses these dependecies and describes in what scenarios you need them. </para>
             <simplesect>
-                <title>Event Sourcing</title>
-                <para>The event sourcing repository that is provided in Axon
-                        (<code>XStreamFileSystemEventStore</code>) uses XStream by default. You need
-                    to add the following maven dependency to your project to use this repository
-                    implementation if you would like to use these defaults. If you provide your own
-                    serialization strategy based on another library, then you do not have to include
-                    this dependency. </para>
-                <programlisting language="xml"><![CDATA[<dependency>
-    <groupId>com.thoughtworks.xstream</groupId>
-    <artifactId>xstream</artifactId
-    <version>1.3.1</version>
-</dependency>]]></programlisting>
-            </simplesect>
-            <simplesect>
                 <title>Spring Integration</title>
                 <para>The Axon Framework provides connectors that allow you to publish events on a
                     Spring Integration channel. These connectors require Spring Integration on the
-                    classpath. You need the following maven dependency to use these connectors.
-                </para>
+                    classpath. You need the following maven dependencies to use these connectors. </para>
                 <programlisting language="xml"><![CDATA[<dependency>
+    <groupId>org.axonframework</groupId>
+    <artifactId>axon-integration</artifactId>
+    <version>0.7</version>
+</dependency>
+<dependency>
     <groupId>org.springframework.integration</groupId>
     <artifactId>spring-integration-core</artifactId>
     <version>1.0.4.RELEASE</version>
@@ -250,8 +236,11 @@
                         helps us to understand what is going on. </para>
                 </listitem>
                 <listitem>
-                    <para>If you know of any other way you think you can help us, please do not
-                        hesitate to contact us. </para>
+                    <para>If you know of any other way you think you can help us, do not hesitate to
+                        send a message to the Axon Framework mailinglist: <link
+                            xmlns:ns1="http://www.w3.org/1999/xlink"
+                            ns1:href="mailto:axonframework@googlegroups.com"
+                            >axonframework@googlegroups.com</link>.</para>
                 </listitem>
             </itemizedlist></para>
     </sect1>
