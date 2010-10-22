@@ -66,6 +66,9 @@ class EventEntry {
     public static final BasicDBObject INDEX = new BasicDBObject(AGGREGATE_IDENTIFIER_PROPERTY, 1)
             .append(SERIALIZED_EVENT_PROPERTY, 1);
 
+    /**
+     * Charset used for the serialization is usually UTF-8, which is presented by this constant
+     */
     protected static final Charset UTF8 = Charset.forName("UTF-8");
 
     private final String aggregateIdentifier;
