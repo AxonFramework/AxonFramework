@@ -147,8 +147,25 @@
         <para>For example, a "Contact" aggregate will contain two entities: contact and address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
             be done via the contact entity. In this case, the Contact entity is the appointed
-            aggregate root.
-        </para>
+            aggregate root.</para>
+        <para>In Axon, aggregates are identified by an <code>AggregateIdentifier</code>. There are
+            two basic implementations of these identifiers: <code>UUIDAggregateIdentifier</code>,
+            which used java's <code>UUID</code> to generate random identifiers, and the
+                <code>StringAggregateIdentifier</code>, which allows you to choose a
+                <code>String</code> which should be used as identifier. You can choose any
+            identifier type you like, and even create your own, as long as they have a valid String
+            representation.</para>
+        <note>
+            <para>It is considered a good practice to use randomly generated identifiers, as opposed
+                to sequenced ones. Using a sequence drastically reduces scalability of your
+                application, since machines need to keep eachother up-to-date of the last used
+                sequence numbers. The chance of collisions with a UUID is very slim (a chance of
+                    10<superscript>−15</superscript>, if you generate 8.2 ×
+                    10<superscript>11</superscript> UUID's).</para>
+            <para>Furthermore, be careful when using functional identifiers for aggregates. They
+                have a tendency to change, making it very hard to adapt your application
+                accordingly.</para>
+        </note>
         <sect2>
             <title>Basic aggregate implementations</title>
             <simplesect>
