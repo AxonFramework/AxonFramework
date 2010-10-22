@@ -129,10 +129,6 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         return simpleDomainEventStream;
     }
 
-    public DomainEventStream readEventSegment(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
-        return new SimpleDomainEventStream(readEventSegmentInternal(type, identifier, firstSequenceNumber));
-    }
-
     @Override
     public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
         EventEntry snapshotEventEntry = new EventEntry(type, snapshotEvent, eventSerializer);

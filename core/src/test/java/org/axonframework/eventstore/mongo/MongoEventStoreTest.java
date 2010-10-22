@@ -17,17 +17,15 @@
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.Mongo;
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.axonframework.domain.*;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +36,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
@@ -104,31 +103,6 @@ public class MongoEventStoreTest {
             actualEvents.add(event);
         }
         assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
-    }
-
-    @Test
-    public void testLoadSegment() {
-        assertNotNull(eventStore);
-        // aggregate1 has 10 uncommitted events
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), mongoTemplate.domainEventCollection().count());
-
-        DomainEventStream events = eventStore.readEventSegment("test", aggregate1.getIdentifier(), 4);
-        while (events.hasNext()) {
-            DomainEvent event = events.next();
-            assertTrue(event.getSequenceNumber() >= 4);
-        }
-    }
-
-    @Test
-    public void testLoadSegment_NoCandidates() {
-        assertNotNull(eventStore);
-        // aggregate1 has 10 uncommitted events
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), mongoTemplate.domainEventCollection().count());
-
-        DomainEventStream events = eventStore.readEventSegment("test", aggregate1.getIdentifier(), 10);
-        assertFalse(events.hasNext());
     }
 
     @Test
