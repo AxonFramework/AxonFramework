@@ -60,8 +60,8 @@ public class MongoFactory {
      * Constructor that accepts addresses, options and the default write concern. Used to create a production context
      *
      * @param mongoAddresses List of server addresses to configure the Mongo instance with.
-     * @param mongoOptions MongoOptions instance to configure the Mongo instance with
-     * @param writeConcern WriteConcern to configure for the connection to the Mongo instance
+     * @param mongoOptions   MongoOptions instance to configure the Mongo instance with
+     * @param writeConcern   WriteConcern to configure for the connection to the Mongo instance
      */
     public MongoFactory(List<ServerAddress> mongoAddresses, MongoOptions mongoOptions, WriteConcern writeConcern) {
         this.mongoAddresses = mongoAddresses;
@@ -106,11 +106,17 @@ public class MongoFactory {
         this.writeConcern = writeConcern;
     }
 
+    /**
+     * Creates a mongo instance based on the provided configuration. Read javadoc of the class to learn about the
+     * configuration options. A new Mongo instance is created each time this method is called.
+     *
+     * @return a new Mongo instance each time this method is called.
+     */
     public Mongo createMongoInstance() {
         Mongo mongo;
         if (isSingleInstanceContext()) {
             try {
-                mongo = new Mongo(new ServerAddress(),mongoOptions);
+                mongo = new Mongo(new ServerAddress(), mongoOptions);
             } catch (UnknownHostException e) {
                 throw new MongoInitializationException("Could not create the default Mongo instance", e);
             }
@@ -125,9 +131,14 @@ public class MongoFactory {
         return mongo;
     }
 
+    /**
+     * Returns whether the factory is used to connect to a single Mongo instance Mongo or to a replica set
+     *
+     * @return true if we connect to a single instance Mongo, false for a replica set
+     */
     boolean isSingleInstanceContext() {
         String systemTestContext = System.getProperty(SYSTEMPROPERTY_SINGLEINSTANCECONTEXT);
-        if(null != systemTestContext) {
+        if (null != systemTestContext) {
             return Boolean.parseBoolean(systemTestContext);
         } else {
             return singleInstanceContext;

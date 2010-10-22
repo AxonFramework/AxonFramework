@@ -35,12 +35,34 @@ import java.nio.charset.Charset;
  */
 class EventEntry {
 
+    /**
+     * Property name in mongo for the Aggregate Identifier
+     */
     public static final String AGGREGATE_IDENTIFIER_PROPERTY = "aggregateIdentifier";
+
+    /**
+     * Property name in mongo for the Sequence Number
+     */
     public static final String SEQUENCE_NUMBER_PROPERTY = "sequenceNumber";
+
+    /**
+     * Property name in mongo for the Time Stamp
+     */
     public static final String TIME_STAMP_PROPERTY = "timeStamp";
+
+    /**
+     * Property name in mongo for the Type
+     */
     public static final String AGGREGATE_TYPE_PROPERTY = "type";
+
+    /**
+     * Property name in mongo for Serialized Type
+     */
     public static final String SERIALIZED_EVENT_PROPERTY = "serializedEvent";
 
+    /**
+     * Mongo object representing the index Events in Mongo
+     */
     public static final BasicDBObject INDEX = new BasicDBObject(AGGREGATE_IDENTIFIER_PROPERTY, 1)
             .append(SERIALIZED_EVENT_PROPERTY, 1);
 
@@ -52,6 +74,13 @@ class EventEntry {
     private final String aggregateType;
     private final String serializedEvent;
 
+    /**
+     * Constructor used to create a new event entry to store in Mongo
+     *
+     * @param aggregateType   String containing the aggregate type of the event
+     * @param event           The actual DomainEvent to store
+     * @param eventSerializer Serializer to use for the event to store
+     */
     EventEntry(String aggregateType, DomainEvent event, EventSerializer eventSerializer) {
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
@@ -60,6 +89,11 @@ class EventEntry {
         this.timeStamp = event.getTimestamp().toString();
     }
 
+    /**
+     * Creates a new EventEntry based onm data provided by Mongo
+     *
+     * @param dbObject Mongo object that contains data to represent an EventEntry
+     */
     EventEntry(DBObject dbObject) {
         this.aggregateIdentifier = (String) dbObject.get(AGGREGATE_IDENTIFIER_PROPERTY);
         this.sequenceNumber = (Long) dbObject.get(SEQUENCE_NUMBER_PROPERTY);
@@ -68,18 +102,39 @@ class EventEntry {
         this.aggregateType = (String) dbObject.get(AGGREGATE_TYPE_PROPERTY);
     }
 
+    /**
+     * Returns the actual DomainEvent from the EventEntry using the provided EventSerializer
+     *
+     * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
+     * @return The actual DomainEvent
+     */
     public DomainEvent getDomainEvent(EventSerializer eventSerializer) {
         return eventSerializer.deserialize(serializedEvent.getBytes(UTF8));
     }
 
+    /**
+     * getter for the sequence number of the event
+     *
+     * @return long representing the sequence number of the event
+     */
     public long getSequenceNumber() {
         return sequenceNumber;
     }
 
+    /**
+     * getter for the aggregate identifier
+     *
+     * @return AggregateIdentifier for this EventEntry
+     */
     public AggregateIdentifier getAggregateIdentifier() {
         return new StringAggregateIdentifier(aggregateIdentifier);
     }
 
+    /**
+     * Returns the current EventEntry as a mongo DBObject
+     *
+     * @return DBObject representing the EventEntry
+     */
     public DBObject asDBObject() {
         return BasicDBObjectBuilder.start()
                 .add(AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
@@ -90,6 +145,14 @@ class EventEntry {
                 .get();
     }
 
+    /**
+     * Returns the mongo DBObject used to query mongo for events for specified aggregate identifier and type
+     *
+     * @param type                The type of the aggregate to create the mongo DBObject for
+     * @param aggregateIdentifier Identifier of the aggregate to obtain the mongo DBObject for
+     * @param firstSequenceNumber number representing the first event to obtain
+     * @return Created DBObject based on the provided parameters to be used for a query
+     */
     public static DBObject forAggregate(String type, String aggregateIdentifier, long firstSequenceNumber) {
         return BasicDBObjectBuilder.start()
                 .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)

@@ -16,29 +16,20 @@
 
 package org.axonframework.eventstore.mongo;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.Mongo;
+import com.mongodb.*;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventstore.EventSerializer;
-import org.axonframework.eventstore.EventStoreManagement;
-import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.eventstore.EventVisitor;
-import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.eventstore.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.annotation.PostConstruct;
 
 import static org.axonframework.eventstore.mongo.EventEntry.UTF8;
 
@@ -83,6 +74,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         this(new XStreamEventSerializer(), mongo);
     }
 
+    /**
+     * Make sure an index is created on the collection that stores domain events
+     */
     @PostConstruct
     public void ensureIndexes() {
         if (indexesAssured.compareAndSet(false, true)) {
