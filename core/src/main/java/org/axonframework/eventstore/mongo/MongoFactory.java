@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.Mongo;
@@ -10,28 +26,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>Factory bean for a Mongo instance class. This factory is required since we want to support the most basic setup as
+ * Factory bean for a Mongo instance class. This factory is required since we want to support the most basic setup as
  * well as a more advanced setup. The most basic setup makes use of only one instance of Mongo. This scenario is not
- * really suitable for a production environment, but it does work for a simple test environment.</p>
- * <p>The factory supports two environments:</p>
- * <ul>
- * <li>Single instance - configure this factory with setSingleInstanceContext(true) or system parameter axon.mongo.singleinstance</li>
- * <li>Replica Set - the list of provide <code>ServerAddress</code> instances becomes mandatory.</li>
- * </ul>
- * <p>For Replica Set usage we expect at least 1 server to be configured. If not, an <code>IllegalStateException</code>
- * is thrown. Be warned, it is better to provide multiple servers in case of a Replica Set.</p>
- * <p>To configure a Mongo that fits your purpose, you can use two other configuration options. You can provide a
- * WriteConcern and a MongoOptions object.</p>
- * <p>The write concern is important in relation to the environment. In a single instance context, the SAFE WriteConcern
- * is by default used. For a replica set environment, by default the REPLICA_SAFE is used.</p>
- * <p>Configuring the Mongo instance thread pool can be done by providing a <code>MongoOptions</code>. To make this
- * easier, a factory is provided. The <code>MongoOptionsFactory</code> facilitates creating such an object. One good
- * reason to provide a MongoOptions object is to increase the number of connections to the actual mongo database</p>
+ * really suitable for a production environment, but it does work for a simple test environment.
+ * <p/>
+ * The factory supports two environments: <ul> <li>Single instance - configure this factory with
+ * setSingleInstanceContext(true) or system parameter axon.mongo.singleinstance</li> <li>Replica Set - the list of
+ * provide <code>ServerAddress</code> instances becomes mandatory.</li> </ul>
+ * <p/>
+ * For Replica Set usage we expect at least 1 server to be configured. If not, an <code>IllegalStateException</code> is
+ * thrown. Be warned, it is better to provide multiple servers in case of a Replica Set.
+ * <p/>
+ * To configure a Mongo that fits your purpose, you can use two other configuration options. You can provide a
+ * WriteConcern and a MongoOptions object.
+ * <p/>
+ * The write concern is important in relation to the environment. In a single instance context, the SAFE WriteConcern is
+ * by default used. For a replica set environment, by default the REPLICA_SAFE is used.
+ * <p/>
+ * Configuring the Mongo instance thread pool can be done by providing a <code>MongoOptions</code>. To make this easier,
+ * a factory is provided. The <code>MongoOptionsFactory</code> facilitates creating such an object. One good reason to
+ * provide a MongoOptions object is to increase the number of connections to the actual mongo databasel
  *
  * @author Jettro Coenradie
  * @since 0.7
  */
 public class MongoFactory {
+
     private static final String SYSTEMPROPERTY_SINGLEINSTANCECONTEXT = "axon.mongo.singleinstance";
 
     private boolean singleInstanceContext;
@@ -71,7 +91,7 @@ public class MongoFactory {
     }
 
     /**
-     * Provide a list of ServerAddress objects to use for locating the Mongo replica set
+     * Provide a list of ServerAddress objects to use for locating the Mongo replica set.
      *
      * @param mongoAddresses List of ServerAddress instances
      */
@@ -80,7 +100,7 @@ public class MongoFactory {
     }
 
     /**
-     * Provide an instance of MongoOptions to be used for the connections
+     * Provide an instance of MongoOptions to be used for the connections.
      *
      * @param mongoOptions MongoOptions to overrule the default
      */
@@ -89,7 +109,8 @@ public class MongoFactory {
     }
 
     /**
-     * Sets the singleInstanceContext, provide true if you want the test context and false if you want the production context
+     * Sets the singleInstanceContext, provide true if you want the test context and false if you want the production
+     * context.
      *
      * @param testContext Boolean indicating the context, true for test and false for production.
      */
@@ -98,7 +119,7 @@ public class MongoFactory {
     }
 
     /**
-     * Provided a write concern to be used by the mongo instance
+     * Provided a write concern to be used by the mongo instance.
      *
      * @param writeConcern WriteConcern to use for the connections
      */
@@ -132,7 +153,7 @@ public class MongoFactory {
     }
 
     /**
-     * Returns whether the factory is used to connect to a single Mongo instance Mongo or to a replica set
+     * Returns whether the factory is used to connect to a single Mongo instance Mongo or to a replica set.
      *
      * @return true if we connect to a single instance Mongo, false for a replica set
      */
@@ -152,7 +173,7 @@ public class MongoFactory {
             if (this.writeConcern != null) {
                 if (this.writeConcern.getW() > WriteConcern.SAFE.getW()) {
                     throw new IllegalArgumentException(
-                            "Unvalid WriteConcern for a single instance Mongo context, can be maximum SAFE");
+                            "Invalid WriteConcern for a single instance Mongo context, can be maximum SAFE");
                 }
                 toUseWriteConcern = this.writeConcern;
             } else {
