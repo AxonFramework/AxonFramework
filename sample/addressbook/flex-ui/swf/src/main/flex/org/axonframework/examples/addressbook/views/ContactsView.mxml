@@ -22,7 +22,6 @@
         >
 
     <mx:Script><![CDATA[
-
         import mx.containers.TitleWindow;
         import mx.controls.Alert;
         import mx.core.IFlexDisplayObject;
@@ -96,6 +95,11 @@
         }
 
         public function addContactPopupAction():void {
+            contactModel.selectedContact = null;
+            createPopup(new AddContactPopup());
+        }
+
+        public function changeContactPopupAction():void {
             createPopup(new AddContactPopup());
         }
 
@@ -108,7 +112,8 @@
             context.viewManager.addViewRoot(win);
             PopUpManager.addPopUp(win, this, true);
             PopUpManager.centerPopUp(win as IFlexDisplayObject);
-        }]]></mx:Script>
+        }
+        ]]></mx:Script>
 
     <sf:Configure/>
 
@@ -132,7 +137,7 @@
         <mx:VBox id="contactControls" visible="false">
             <mx:HBox>
                 <mx:Button id="editContact" icon="@Embed(source='/assets/images/address_book_edit.png')"
-                           label="Edit Contact"/>
+                           label="Edit Contact" click="changeContactPopupAction()"/>
                 <mx:Button id="deleteContact" icon="@Embed(source='/assets/images/address_book_delete.png')"
                            label="Delete Contact" click="removeContactPopupAction()"/>
             </mx:HBox>

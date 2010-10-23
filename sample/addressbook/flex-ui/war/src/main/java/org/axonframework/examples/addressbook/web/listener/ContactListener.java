@@ -21,6 +21,7 @@ import org.axonframework.examples.addressbook.web.dto.ContactDTO;
 import org.axonframework.examples.addressbook.web.dto.RemovedDTO;
 import org.axonframework.sample.app.ContactCreatedEvent;
 import org.axonframework.sample.app.ContactDeletedEvent;
+import org.axonframework.sample.app.ContactNameChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,15 @@ public class ContactListener {
     public void handleContactRemovedEvent(ContactDeletedEvent event) {
         RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(event.getContactIdentifier().toString());
         producer.sendRemovedUpdate(removedDTO);
+    }
+
+    @EventHandler
+    public void handleContactNameChangedEvent(ContactNameChangedEvent event) {
+        logger.debug("Received and event with new name {} and identifier {}", event.getNewName(), event.getEventIdentifier());
+        ContactDTO contactDTO = new ContactDTO();
+        contactDTO.setName(event.getNewName());
+        contactDTO.setUuid(event.getAggregateIdentifier().toString());
+        producer.sendContactUpdate(contactDTO);
     }
 
     @Autowired

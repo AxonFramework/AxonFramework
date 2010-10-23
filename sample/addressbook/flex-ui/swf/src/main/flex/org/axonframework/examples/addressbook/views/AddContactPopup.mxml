@@ -18,20 +18,32 @@
 <mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
                 xmlns:sf="http://www.spicefactory.org/parsley/flex"
                 layout="vertical" width="500" height="300" showCloseButton="true" close="closeMe()"
-                title="Add new contact">
+                title="Store contact">
     <mx:Script><![CDATA[
         import mx.managers.PopUpManager;
 
+        import org.axonframework.examples.addressbook.messages.command.ChangeContactNameCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.NewContactCommandMessage;
         import org.axonframework.examples.addressbook.model.Contact;
+        import org.axonframework.examples.addressbook.model.ContactModel;
 
         [MessageDispatcher]
         public var dispatcher:Function;
 
+        [Bindable]
+        [Inject]
+        public var contactModel:ContactModel;
+
         public function addContactAction():void {
             var contact:Contact = new Contact();
-            contact.name = contactNameInput.text;
-            dispatcher(new NewContactCommandMessage(contact));
+            if (contactModel.selectedContact == null) {
+                contact.name = contactNameInput.text;
+                dispatcher(new NewContactCommandMessage(contact));
+            } else {
+                contact.name = contactNameInput.text;
+                contact.uuid = contactModel.selectedContact.uuid;
+                dispatcher(new ChangeContactNameCommandMessage(contact));
+            }
             contactNameInput.text = "";
             closeMe();
         }
@@ -45,11 +57,12 @@
 
     <mx:Form defaultButton="{newContactButton}">
         <mx:FormItem label="Name">
-            <mx:TextInput id="contactNameInput"/>
+            <mx:TextInput id="contactNameInput"
+                          text="{(contactModel.selectedContact != null)?contactModel.selectedContact.name:''}"/>
         </mx:FormItem>
         <mx:HBox>
             <mx:Button id="newContactButton" icon="@Embed(source='/assets/images/address_book.png')"
-                       click="addContactAction()" label="Create Contact"/>
+                       click="addContactAction()" label="Store Contact"/>
             <mx:Button id="cancelNewContactButton" icon="@Embed(source='/assets/images/address_book.png')"
                        click="closeMe()" label="Cancel"/>
         </mx:HBox>

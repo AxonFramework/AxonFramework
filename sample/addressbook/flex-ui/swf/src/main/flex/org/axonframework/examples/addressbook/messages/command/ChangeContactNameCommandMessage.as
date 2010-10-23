@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.commands {
-[Bindable]
-[RemoteClass(alias="org.axonframework.sample.app.command.ChangeContactNameCommand")]
-public class ChangeContactNameCommand {
-    public var contactId:String;
-    public var contactNewName:String;
+package org.axonframework.examples.addressbook.messages.command {
+import org.axonframework.examples.addressbook.model.Contact;
 
-    public function ChangeContactNameCommand() {
+public class ChangeContactNameCommandMessage {
+    public var contact:Contact;
+
+    public function ChangeContactNameCommandMessage(contact:Contact) {
+        this.contact = contact;
     }
 }
 }

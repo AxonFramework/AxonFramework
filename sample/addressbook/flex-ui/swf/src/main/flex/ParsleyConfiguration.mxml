@@ -38,11 +38,13 @@
 
     <sf:DynamicCommand type="{NewAddressController}" messageType="{NewAddressCommandMessage}"/>
     <sf:DynamicCommand type="{NewContactController}" messageType="{NewContactCommandMessage}"/>
+    <sf:DynamicCommand type="{ChangeContactController}" messageType="{ChangeContactNameCommandMessage}"/>
     <sf:DynamicCommand type="{SearchAddressController}" messageType="{SearchForAddressesCommandMessage}"/>
     <sf:DynamicCommand type="{SelectContactController}" messageType="{SelectContactCommandMessage}"/>
     <sf:DynamicCommand type="{ShowContactsController}" messageType="{ShowContactsCommandMessage}"/>
     <sf:DynamicCommand type="{UpdatedContactController}" messageType="{UpdatedContactNotificationMessage}"/>
-    <sf:DynamicCommand type="{UpdatedContactAddressController}" messageType="{UpdatedContactAddressNotificationMessage}"/>
+    <sf:DynamicCommand type="{UpdatedContactAddressController}"
+                       messageType="{UpdatedContactAddressNotificationMessage}"/>
     <sf:DynamicCommand type="{RemoveAddressController}" messageType="{RemoveAddressCommandMessage}"/>
     <sf:DynamicCommand type="{RemovedItemController}" messageType="{RemovedItemNotificationMessage}"/>
     <sf:DynamicCommand type="{RemoveContactController}" messageType="{RemoveContactCommandMessage}"/>
@@ -52,6 +54,7 @@
 
     <mx:Script><![CDATA[
         import org.axonframework.examples.addressbook.controllers.*;
+        import org.axonframework.examples.addressbook.messages.command.ChangeContactNameCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.NewAddressCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.NewContactCommandMessage;
         import org.axonframework.examples.addressbook.messages.command.RemoveAddressCommandMessage;
