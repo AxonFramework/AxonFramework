@@ -17,7 +17,7 @@
 package org.axonframework.examples.addressbook.commands {
 
 [Bindable]
-[RemoteClass(alias="org.axonframework.sample.app.command.RemoveAddressCommand")]
+[RemoteClass(alias="org.axonframework.sample.app.api.RemoveAddressCommand")]
 public class RemoveAddressCommand {
     public var contactId:String;
     public var addressType:String;

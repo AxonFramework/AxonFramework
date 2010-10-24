@@ -14,22 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app;
-
-import org.axonframework.domain.DomainEvent;
+package org.axonframework.sample.app.api;
 
 /**
  * @author Allard Buijze
  */
-public class ContactNameChangedEvent extends DomainEvent {
+public class AddressChangedEvent extends AddressRegisteredEvent {
 
-    private final String newName;
-
-    public ContactNameChangedEvent(String newName) {
-        this.newName = newName;
-    }
-
-    public String getNewName() {
-        return newName;
+    public AddressChangedEvent(AddressType type, Address address) {
+        super(type, address);
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app;
+package org.axonframework.sample.app.api;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
@@ -22,25 +22,20 @@ import org.axonframework.domain.DomainEvent;
 /**
  * @author Allard Buijze
  */
-public abstract class AddressRegisteredEvent extends DomainEvent {
+public class AddressRemovedEvent extends DomainEvent {
 
     private final AddressType type;
-    private final Address address;
 
-    protected AddressRegisteredEvent(AddressType type, Address address) {
+    public AddressRemovedEvent(AddressType type) {
         this.type = type;
-        this.address = address;
-    }
-
-    public AggregateIdentifier getContactIdentifier() {
-        return getAggregateIdentifier();
     }
 
     public AddressType getType() {
         return type;
     }
 
-    public Address getAddress() {
-        return address;
+    public AggregateIdentifier getContactIdentifier() {
+        return getAggregateIdentifier();
     }
+
 }

@@ -17,7 +17,7 @@
 package org.axonframework.examples.addressbook.commands {
 
 [Bindable]
-[RemoteClass(alias="org.axonframework.sample.app.command.RegisterAddressCommand")]
+[RemoteClass(alias="org.axonframework.sample.app.api.RegisterAddressCommand")]
 public class RegisterAddressCommand {
     public var contactId:String;
     public var addressType:String;

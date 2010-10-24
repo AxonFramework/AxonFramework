@@ -14,15 +14,32 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app;
+package org.axonframework.sample.app.api;
 
 /**
  * @author Allard Buijze
  */
-public enum AddressType {
+public class Address {
 
-    WORK,
-    PRIVATE,
-    VACATION
+    private String streetAndNumber;
+    private String zipCode;
+    private String city;
 
+    public Address(String streetAndNumber, String zipCode, String city) {
+        this.streetAndNumber = streetAndNumber;
+        this.zipCode = zipCode;
+        this.city = city;
+    }
+
+    public String getStreetAndNumber() {
+        return streetAndNumber;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public String getCity() {
+        return city;
+    }
 }

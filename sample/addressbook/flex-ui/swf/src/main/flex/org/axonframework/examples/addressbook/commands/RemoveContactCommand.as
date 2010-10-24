@@ -17,10 +17,10 @@
 package org.axonframework.examples.addressbook.commands {
 
 [Bindable]
-[RemoteClass(alias="org.axonframework.sample.app.command.RemoveContactCommand")]
+[RemoteClass(alias="org.axonframework.sample.app.api.RemoveContactCommand")]
 public class RemoveContactCommand {
     public var contactId:String;
-    
+
     public function RemoveContactCommand() {
     }
 }

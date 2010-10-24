@@ -19,15 +19,7 @@ package org.axonframework.sample.app.command;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.sample.app.Address;
-import org.axonframework.sample.app.AddressAddedEvent;
-import org.axonframework.sample.app.AddressChangedEvent;
-import org.axonframework.sample.app.AddressRegisteredEvent;
-import org.axonframework.sample.app.AddressRemovedEvent;
-import org.axonframework.sample.app.AddressType;
-import org.axonframework.sample.app.ContactCreatedEvent;
-import org.axonframework.sample.app.ContactDeletedEvent;
-import org.axonframework.sample.app.ContactNameChangedEvent;
+import org.axonframework.sample.app.api.*;
 
 import java.util.HashMap;
 import java.util.Map;

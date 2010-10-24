@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app.command;
-
-import org.axonframework.sample.app.AddressType;
+package org.axonframework.sample.app.api;
 
 /**
  * @author Jettro Coenradie
  */
-public class RemoveAddressCommand {
+public class ChangeContactNameCommand {
     private String contactId;
-    private AddressType addressType;
-
-    public AddressType getAddressType() {
-        return addressType;
-    }
-
-    public void setAddressType(AddressType addressType) {
-        this.addressType = addressType;
-    }
+    private String contactNewName;
 
     public String getContactId() {
         return contactId;
@@ -39,5 +29,13 @@ public class RemoveAddressCommand {
 
     public void setContactId(String contactId) {
         this.contactId = contactId;
+    }
+
+    public String getContactNewName() {
+        return contactNewName;
+    }
+
+    public void setContactNewName(String contactNewName) {
+        this.contactNewName = contactNewName;
     }
 }

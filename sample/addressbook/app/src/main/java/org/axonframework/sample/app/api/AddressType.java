@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app;
+package org.axonframework.sample.app.api;
 
 /**
  * @author Allard Buijze
  */
-public class AddressAddedEvent extends AddressRegisteredEvent {
+public enum AddressType {
 
-    public AddressAddedEvent(AddressType type, Address address) {
-        super(type, address);
-    }
+    WORK,
+    PRIVATE,
+    VACATION
+
 }

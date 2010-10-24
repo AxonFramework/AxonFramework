@@ -18,15 +18,9 @@ package org.axonframework.sample.app.query;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.sample.app.AddressType;
+import org.axonframework.sample.app.api.AddressType;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * @author Allard Buijze

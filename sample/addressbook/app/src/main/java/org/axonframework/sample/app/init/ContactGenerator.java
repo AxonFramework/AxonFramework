@@ -17,9 +17,9 @@
 package org.axonframework.sample.app.init;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.sample.app.AddressType;
-import org.axonframework.sample.app.command.CreateContactCommand;
-import org.axonframework.sample.app.command.RegisterAddressCommand;
+import org.axonframework.sample.app.api.AddressType;
+import org.axonframework.sample.app.api.CreateContactCommand;
+import org.axonframework.sample.app.api.RegisterAddressCommand;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;

@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app;
+package org.axonframework.sample.app.api;
 
 import org.axonframework.domain.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public class ContactCreatedEvent extends DomainEvent {
+public class ContactNameChangedEvent extends DomainEvent {
 
-    private final String name;
+    private final String newName;
 
-    public ContactCreatedEvent(String name) {
-        this.name = name;
+    public ContactNameChangedEvent(String newName) {
+        this.newName = newName;
     }
 
-    public String getName() {
-        return name;
+    public String getNewName() {
+        return newName;
     }
 }

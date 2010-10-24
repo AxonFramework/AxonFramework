@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app;
+package org.axonframework.sample.app.api;
 
-import org.axonframework.domain.AggregateDeletedEvent;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public class ContactDeletedEvent extends DomainEvent implements AggregateDeletedEvent {
+public class ContactCreatedEvent extends DomainEvent {
 
-    public AggregateIdentifier getContactIdentifier() {
-        return getAggregateIdentifier();
+    private final String name;
+
+    public ContactCreatedEvent(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 }

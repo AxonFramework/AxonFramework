@@ -14,19 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app.command;
+package org.axonframework.sample.app.api;
+
+import java.util.UUID;
 
 /**
  * @author Jettro Coenradie
  */
-public class RemoveContactCommand {
-    private String contactId;
+public class CreateContactCommand {
 
-    public String getContactId() {
-        return contactId;
+    private String newContactName;
+    private UUID identifier;
+
+    public void setNewContactName(String newContactName) {
+        this.newContactName = newContactName;
     }
 
-    public void setContactId(String contactId) {
-        this.contactId = contactId;
+    public String getNewContactName() {
+        return newContactName;
+    }
+
+    public void setIdentifier(UUID uuid) {
+        this.identifier = uuid;
+    }
+
+    public UUID getIdentifier() {
+        return identifier;
     }
 }

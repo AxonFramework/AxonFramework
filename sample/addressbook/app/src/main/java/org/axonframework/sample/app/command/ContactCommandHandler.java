@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.repository.Repository;
-import org.axonframework.sample.app.Address;
+import org.axonframework.sample.app.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;

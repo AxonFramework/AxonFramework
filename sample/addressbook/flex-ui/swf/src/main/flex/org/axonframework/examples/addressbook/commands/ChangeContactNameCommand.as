@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.addressbook.commands {
 [Bindable]
-[RemoteClass(alias="org.axonframework.sample.app.command.ChangeContactNameCommand")]
+[RemoteClass(alias="org.axonframework.sample.app.api.ChangeContactNameCommand")]
 public class ChangeContactNameCommand {
     public var contactId:String;
     public var contactNewName:String;

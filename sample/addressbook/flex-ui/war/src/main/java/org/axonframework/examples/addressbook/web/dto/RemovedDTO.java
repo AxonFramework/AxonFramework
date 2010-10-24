@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.addressbook.web.dto;
 
-import org.axonframework.sample.app.AddressType;
+import org.axonframework.sample.app.api.AddressType;
 
 import java.io.Serializable;
 

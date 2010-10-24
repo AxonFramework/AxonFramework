@@ -21,8 +21,8 @@ import org.axonframework.eventhandling.annotation.AsynchronousEventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.examples.addressbook.web.dto.AddressDTO;
 import org.axonframework.examples.addressbook.web.dto.RemovedDTO;
-import org.axonframework.sample.app.AddressRegisteredEvent;
-import org.axonframework.sample.app.AddressRemovedEvent;
+import org.axonframework.sample.app.api.AddressRegisteredEvent;
+import org.axonframework.sample.app.api.AddressRemovedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +42,7 @@ public class AddressListener {
     @EventHandler
     public void handleAddressCreatedEvent(AddressRegisteredEvent event) {
         logger.debug("Received an event with name {} and identifier {}",
-                     event.getAggregateIdentifier(), event.getEventIdentifier());
+                event.getAggregateIdentifier(), event.getEventIdentifier());
         AddressDTO addressDTO = AddressDTO.createFrom(
                 event.getAddress(), event.getContactIdentifier(), event.getType());
         producer.sendAddressUpdate(addressDTO);

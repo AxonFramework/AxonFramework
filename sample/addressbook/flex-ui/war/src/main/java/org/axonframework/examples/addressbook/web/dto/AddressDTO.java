@@ -17,8 +17,8 @@
 package org.axonframework.examples.addressbook.web.dto;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.sample.app.Address;
-import org.axonframework.sample.app.AddressType;
+import org.axonframework.sample.app.api.Address;
+import org.axonframework.sample.app.api.AddressType;
 import org.axonframework.sample.app.query.AddressEntry;
 
 import java.io.Serializable;

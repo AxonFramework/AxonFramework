@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.sample.app.command;
-
-import org.axonframework.sample.app.AddressType;
+package org.axonframework.sample.app.api;
 
 /**
  * @author Jettro Coenradie

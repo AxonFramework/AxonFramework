@@ -17,12 +17,7 @@
 package org.axonframework.sample.app.query;
 
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.sample.app.AddressAddedEvent;
-import org.axonframework.sample.app.AddressChangedEvent;
-import org.axonframework.sample.app.AddressRemovedEvent;
-import org.axonframework.sample.app.ContactCreatedEvent;
-import org.axonframework.sample.app.ContactDeletedEvent;
-import org.axonframework.sample.app.ContactNameChangedEvent;
+import org.axonframework.sample.app.api.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;

@@ -18,8 +18,8 @@ package org.axonframework.sample.consoleui;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.sample.app.api.CreateContactCommand;
 import org.axonframework.sample.app.command.ContactCommandHandler;
-import org.axonframework.sample.app.command.CreateContactCommand;
 import org.axonframework.sample.app.query.ContactEntry;
 import org.axonframework.sample.app.query.ContactRepository;
 import org.springframework.beans.factory.annotation.Autowired;
