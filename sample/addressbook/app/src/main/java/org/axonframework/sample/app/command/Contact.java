@@ -64,7 +64,7 @@ class Contact extends AbstractAnnotatedAggregateRoot {
      * @param type AddressType of the address that needs to be removed
      */
     public void removeAddress(AddressType type) {
-        if (addresses.remove(type) != null) {
+        if (addresses.containsKey(type)) {
             apply(new AddressRemovedEvent(type));
         }
     }
