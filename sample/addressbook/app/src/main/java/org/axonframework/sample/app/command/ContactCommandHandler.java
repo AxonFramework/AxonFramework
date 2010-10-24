@@ -21,6 +21,7 @@ import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.repository.Repository;
 import org.axonframework.sample.app.api.*;
+import org.axonframework.sample.app.query.ContactNameRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
@@ -37,6 +38,7 @@ public class ContactCommandHandler {
 
     private final static Logger logger = LoggerFactory.getLogger(ContactCommandHandler.class);
     private Repository<Contact> repository;
+    private ContactNameRepository contactNameRepository;
 
     /**
      * Sets the contact repository.
@@ -45,6 +47,10 @@ public class ContactCommandHandler {
      */
     public void setContactRepository(Repository<Contact> repository) {
         this.repository = repository;
+    }
+
+    public void setContactNameRepository(ContactNameRepository contactNameRepository) {
+        this.contactNameRepository = contactNameRepository;
     }
 
     /**
@@ -56,12 +62,17 @@ public class ContactCommandHandler {
     public void handle(CreateContactCommand command) {
         logger.debug("Received a command for a new contact with name : {}", command.getNewContactName());
         Assert.notNull(command.getNewContactName(), "Name may not be null");
-        UUID contactId = command.getIdentifier();
-        if (contactId == null) {
-            contactId = UUID.randomUUID();
+
+        if (contactNameRepository.claimContactName(command.getNewContactName())) {
+            UUID contactId = command.getIdentifier();
+            if (contactId == null) {
+                contactId = UUID.randomUUID();
+            }
+            Contact contact = new Contact(new UUIDAggregateIdentifier(contactId), command.getNewContactName());
+            repository.add(contact);
+        } else {
+            throw new ContactNameAlreadyTakenException(command.getNewContactName());
         }
-        Contact contact = new Contact(new UUIDAggregateIdentifier(contactId), command.getNewContactName());
-        repository.add(contact);
     }
 
     /**
