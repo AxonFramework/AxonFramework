@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.repository.ConcurrencyException;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,6 +161,22 @@ public class JpaEventStoreTest {
         testSubject.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEvent.class));
     }
+
+    @Test(expected = ConcurrencyException.class)
+    public void testStoreDuplicateKeyTranslation() {
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        DomainEventStream events = aggregate1.getUncommittedEvents();
+        while (events.hasNext()) {
+            domainEvents.add(events.next());
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        aggregate1.commitEvents();
+        entityManager.flush();
+        entityManager.clear();
+
+        testSubject.appendEvents("test",  new SimpleDomainEventStream(domainEvents));
+    }
+
 
     private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {
         List<StubStateChangedEvent> events = new ArrayList<StubStateChangedEvent>();

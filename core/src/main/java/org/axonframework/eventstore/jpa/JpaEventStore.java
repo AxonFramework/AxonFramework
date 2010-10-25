@@ -26,13 +26,17 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.repository.ConcurrencyException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
+import javax.sql.DataSource;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as a
@@ -50,6 +54,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     private final EventSerializer eventSerializer;
     private static final int EVENT_VISITOR_BATCH_SIZE = 50;
+
+    private PersistenceExceptionResolver persistenceExceptionResolver;
+
 
     /**
      * Initialize a JpaEventStore using an {@link org.axonframework.eventstore.XStreamEventSerializer}, which serializes
@@ -74,10 +81,19 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void appendEvents(String type, DomainEventStream events) {
-        while (events.hasNext()) {
-            DomainEvent event = events.next();
-            DomainEventEntry entry = new DomainEventEntry(type, event, eventSerializer);
-            entityManager.persist(entry);
+
+        DomainEvent event = null;
+        try {
+            while (events.hasNext()) {
+                event = events.next();
+                DomainEventEntry entry = new DomainEventEntry(type, event, eventSerializer);
+                entityManager.persist(entry);
+            }
+        } catch (PersistenceException persistenceException) {
+            if (persistenceExceptionResolver.isDuplicateKey(persistenceException)) {
+                throw new ConcurrencyException("Concurrent modification detected for Aggregate identifier:" + event.getAggregateIdentifier() + " sequence: " + event.getSequenceNumber().toString());
+            }
+            throw persistenceException;
         }
     }
 
@@ -194,5 +210,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     @PersistenceContext
     public void setEntityManager(EntityManager entityManager) {
         this.entityManager = entityManager;
+    }
+
+
+    public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+        this.persistenceExceptionResolver = persistenceExceptionResolver;
     }
 }
