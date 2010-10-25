@@ -17,7 +17,6 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -28,13 +27,12 @@ import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
-import java.util.concurrent.Executor;
-
 /**
  * The AnnotationConfigurationBeanDefinitionParser is responsible for parsing the annotation-config element from the
- * Axon namespace. The parser registers {@link BeanDefinition}s for an {@link AnnotationCommandHandlerBeanPostProcessor}
- * and an {@link AnnotationEventListenerBeanPostProcessor}, with optional configuration for an explicit {@link
- * org.axonframework.commandhandling.CommandBus}, {@link EventBus} and {@link Executor} instance.
+ * Axon namespace. The parser registers {@link org.springframework.beans.factory.config.BeanDefinition}s for an {@link
+ * AnnotationCommandHandlerBeanPostProcessor} and an {@link org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor},
+ * with optional configuration for an explicit {@link org.axonframework.commandhandling.CommandBus}, {@link
+ * org.axonframework.eventhandling.EventBus} and {@link java.util.concurrent.Executor} instance.
  *
  * @author Ben Z. Tels
  * @since 0.7

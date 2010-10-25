@@ -16,9 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.jpa.JpaEventStore;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
@@ -27,8 +25,9 @@ import org.w3c.dom.Element;
 
 /**
  * The JpaEventStoreBeanDefinitionParser is responsible for parsing the <code>eventStore</code> element form the Axon
- * namespace. It creates a {@link BeanDefinition} based either on a {@link JpaEventStore} or on a {@link
- * FileSystemEventStore}, depending on the selected configuration.
+ * namespace. It creates a {@link org.springframework.beans.factory.config.BeanDefinition} based either on a {@link
+ * org.axonframework.eventstore.jpa.JpaEventStore} or on a {@link org.axonframework.eventstore.fs.FileSystemEventStore},
+ * depending on the selected configuration.
  *
  * @author Ben Z. Tels
  * @author Allard Buijze

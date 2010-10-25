@@ -17,14 +17,14 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.xml.AbstractSimpleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.w3c.dom.Element;
 
 /**
  * The EventBusBeanDefinitionParser is responsible for parsing the <code>eventBus</code> element from the Axon
- * namespace. The paser will create a {@link BeanDefinition} based on a {@link SimpleEventBus}.
+ * namespace. The parser will create a {@link org.springframework.beans.factory.config.BeanDefinition} based on a {@link
+ * org.axonframework.eventhandling.SimpleEventBus}.
  *
  * @author Ben Z. Tels
  * @since 0.7

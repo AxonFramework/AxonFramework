@@ -30,8 +30,8 @@ import java.util.List;
 
 /**
  * The SimpleCommandBusBeanDefinitionParser does the actual work of parsing the <code>commandBus</code> element from the
- * Axon namespace. This DefinitionParser creates a {@link SimpleCommandBus} {@link BeanDefinition}, with optional
- * interceptors and subscribers.
+ * Axon namespace. This DefinitionParser creates a {@link org.axonframework.commandhandling.SimpleCommandBus} {@link
+ * org.springframework.beans.factory.config.BeanDefinition}, with optional interceptors and subscribers.
  *
  * @author Ben Z. Tels
  * @since 0.7

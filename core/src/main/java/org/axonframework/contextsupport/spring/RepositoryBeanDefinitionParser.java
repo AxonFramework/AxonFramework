@@ -37,7 +37,8 @@ import java.util.List;
 
 /**
  * The RepositoryBeanDefinitionParser is responsible for parsing the <code>repository</code> element from the Axon
- * namespace. It creates a {@link BeanDefinition} based on the {@link GenericEventSourcingRepository}.
+ * namespace. It creates a {@link org.springframework.beans.factory.config.BeanDefinition} based on the {@link
+ * org.axonframework.eventsourcing.GenericEventSourcingRepository}.
  *
  * @author Ben Z. Tels
  * @author Allard Buijze
