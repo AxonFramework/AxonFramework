@@ -19,7 +19,6 @@ import java.util.UUID;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -50,7 +49,7 @@ public class ContactCommandHandlerTest {
     @Test
     public void testHandleCreateContactCommand_doubleName() throws Exception {
         CreateContactCommand command = new CreateContactCommand();
-        command.setIdentifier(UUID.randomUUID());
+        command.setContactId(UUID.randomUUID().toString());
         command.setNewContactName("Double name");
 
         when(mockContactNameRepository.claimContactName("Double name")).thenReturn(false);
@@ -68,7 +67,7 @@ public class ContactCommandHandlerTest {
     @Test
     public void testHandleCreateContactCommand_otherProblemWithTransaction() throws Exception {
         CreateContactCommand command = new CreateContactCommand();
-        command.setIdentifier(UUID.randomUUID());
+        command.setContactId(UUID.randomUUID().toString());
         command.setNewContactName("Good name");
 
         when(mockContactNameRepository.claimContactName("Good name")).thenReturn(true);
@@ -116,9 +115,9 @@ public class ContactCommandHandlerTest {
 
         when(mockContactNameRepository.claimContactName("Good New Name"))
                 .thenReturn(true);
-        when(mockRepository.load(isA(AggregateIdentifier.class), (Long) isNull()))
+        when(mockRepository.load(isA(AggregateIdentifier.class)))
                 .thenReturn(mockContact);
-        when(mockContactRepository.loadContactDetails(UUID.fromString(command.getContactId())))
+        when(mockContactRepository.loadContactDetails(command.getContactId()))
                 .thenReturn(mockContactEntry);
         when(mockContactEntry.getName()).thenReturn("Good Old Name");
 
@@ -144,7 +143,7 @@ public class ContactCommandHandlerTest {
         command.setContactNewName("Good New Name");
 
         when(mockContactNameRepository.claimContactName("Good New Name")).thenReturn(true);
-        when(mockRepository.load(isA(AggregateIdentifier.class), (Long) isNull())).thenReturn(mockContact);
+        when(mockRepository.load(isA(AggregateIdentifier.class))).thenReturn(mockContact);
 
         contactCommandHandler.handle(command, mockUnitOfWork);
 

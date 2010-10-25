@@ -18,7 +18,6 @@ package org.axonframework.sample.app.command;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.repository.Repository;
 import org.axonframework.sample.app.api.*;
 import org.axonframework.sample.app.query.ContactEntry;
@@ -81,11 +80,11 @@ public class ContactCommandHandler {
 
         if (contactNameRepository.claimContactName(command.getNewContactName())) {
             registerUnitOfWorkListenerToCancelClaimingName(command.getNewContactName(), unitOfWork);
-            UUID contactId = command.getIdentifier();
+            String contactId = command.getContactId();
             if (contactId == null) {
-                contactId = UUID.randomUUID();
+                contactId = UUID.randomUUID().toString();
             }
-            Contact contact = new Contact(new UUIDAggregateIdentifier(contactId), command.getNewContactName());
+            Contact contact = new Contact(new StringAggregateIdentifier(contactId), command.getNewContactName());
             repository.add(contact);
         } else {
             throw new ContactNameAlreadyTakenException(command.getNewContactName());
@@ -106,10 +105,10 @@ public class ContactCommandHandler {
         Assert.notNull(command.getContactNewName(), "Name may not be null");
         if (contactNameRepository.claimContactName(command.getContactNewName())) {
             registerUnitOfWorkListenerToCancelClaimingName(command.getContactNewName(), unitOfWork);
-            Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
+            Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()));
             contact.changeName(command.getContactNewName());
 
-            cancelClaimedContactName(UUID.fromString(command.getContactId()), unitOfWork);
+            cancelClaimedContactName(command.getContactId(), unitOfWork);
         } else {
             throw new ContactNameAlreadyTakenException(command.getContactNewName());
         }
@@ -124,10 +123,10 @@ public class ContactCommandHandler {
     @CommandHandler
     public void handle(RemoveContactCommand command, UnitOfWork unitOfWork) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
-        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
+        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()));
         contact.delete();
 
-        cancelClaimedContactName(UUID.fromString(command.getContactId()), unitOfWork);
+        cancelClaimedContactName(command.getContactId(), unitOfWork);
     }
 
     /**
@@ -142,7 +141,7 @@ public class ContactCommandHandler {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
         Address address = new Address(command.getStreetAndNumber(), command.getZipCode(), command.getCity());
-        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
+        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()));
         contact.registerAddress(command.getAddressType(), address);
     }
 
@@ -157,11 +156,11 @@ public class ContactCommandHandler {
     public void handle(RemoveAddressCommand command) {
         Assert.notNull(command.getContactId(), "ContactIdentifier may not be null");
         Assert.notNull(command.getAddressType(), "AddressType may not be null");
-        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()), null);
+        Contact contact = repository.load(new StringAggregateIdentifier(command.getContactId()));
         contact.removeAddress(command.getAddressType());
     }
 
-    private void cancelClaimedContactName(UUID contactIdentifier, UnitOfWork unitOfWork) {
+    private void cancelClaimedContactName(String contactIdentifier, UnitOfWork unitOfWork) {
         final ContactEntry contactEntry = contactRepository.loadContactDetails(contactIdentifier);
         unitOfWork.registerListener(new UnitOfWorkListenerAdapter() {
             @Override

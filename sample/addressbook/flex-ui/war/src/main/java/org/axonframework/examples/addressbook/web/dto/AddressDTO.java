@@ -16,7 +16,6 @@
 
 package org.axonframework.examples.addressbook.web.dto;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.sample.app.api.Address;
 import org.axonframework.sample.app.api.AddressType;
 import org.axonframework.sample.app.query.AddressEntry;
@@ -46,15 +45,15 @@ public class AddressDTO implements Serializable {
         newAddress.setContactName(addressEntry.getName());
         newAddress.setStreet(addressEntry.getStreetAndNumber());
         newAddress.setZipCode(addressEntry.getZipCode());
-        newAddress.setContactUUID(addressEntry.getIdentifier().asString());
+        newAddress.setContactUUID(addressEntry.getIdentifier());
 
         return newAddress;
     }
 
-    public static AddressDTO createFrom(Address address, AggregateIdentifier contactIdentifier,
+    public static AddressDTO createFrom(Address address, String contactIdentifier,
                                         AddressType addressType) {
         AddressDTO newAddress = new AddressDTO();
-        newAddress.setContactUUID(contactIdentifier.asString());
+        newAddress.setContactUUID(contactIdentifier);
         newAddress.setStreet(address.getStreetAndNumber());
         newAddress.setZipCode(address.getZipCode());
         newAddress.setCity(address.getCity());

@@ -17,7 +17,6 @@
 package org.axonframework.sample.app.query;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.sample.app.api.AddressType;
 
 import javax.persistence.*;
@@ -52,8 +51,8 @@ public class AddressEntry {
     @Basic
     private String city;
 
-    public AggregateIdentifier getIdentifier() {
-        return new StringAggregateIdentifier(identifier);
+    public String getIdentifier() {
+        return identifier;
     }
 
     void setIdentifier(AggregateIdentifier identifier) {

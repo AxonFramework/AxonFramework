@@ -17,15 +17,9 @@
 package org.axonframework.sample.app.api;
 
 import org.axonframework.domain.AggregateDeletedEvent;
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public class ContactDeletedEvent extends DomainEvent implements AggregateDeletedEvent {
-
-    public AggregateIdentifier getContactIdentifier() {
-        return getAggregateIdentifier();
-    }
+public class ContactDeletedEvent extends AbstractContactDomainEvent implements AggregateDeletedEvent {
 }

@@ -19,7 +19,7 @@ package org.axonframework.sample.app.api;
 /**
  * @author Jettro Coenradie
  */
-public class RemoveContactCommand {
+public class RemoveContactCommand extends AbstractOrderCommand {
     private String contactId;
 
     public String getContactId() {

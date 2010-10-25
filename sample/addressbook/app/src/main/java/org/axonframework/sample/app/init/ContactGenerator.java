@@ -49,20 +49,20 @@ public class ContactGenerator implements ApplicationListener {
         if (initialized.compareAndSet(false, true)) {
             CreateContactCommand commandAllard = new CreateContactCommand();
             commandAllard.setNewContactName("Allard");
-            UUID uuidAllard = UUID.randomUUID();
-            commandAllard.setIdentifier(uuidAllard);
+            String uuidAllard = UUID.randomUUID().toString();
+            commandAllard.setContactId(uuidAllard);
             commandBus.dispatch(commandAllard);
 
             CreateContactCommand commandJettro = new CreateContactCommand();
             commandJettro.setNewContactName("Jettro");
-            UUID uuidJettro = UUID.randomUUID();
-            commandJettro.setIdentifier(uuidJettro);
+            String uuidJettro = UUID.randomUUID().toString();
+            commandJettro.setContactId(uuidJettro);
             commandBus.dispatch(commandJettro);
 
             RegisterAddressCommand registerPrivateAddressCommand = new RegisterAddressCommand();
             registerPrivateAddressCommand.setAddressType(AddressType.PRIVATE);
             registerPrivateAddressCommand.setCity("The Hague");
-            registerPrivateAddressCommand.setContactId(uuidAllard.toString());
+            registerPrivateAddressCommand.setContactId(uuidAllard);
             registerPrivateAddressCommand.setStreetAndNumber("AxonBoulevard 1");
             registerPrivateAddressCommand.setZipCode("1234AB");
             commandBus.dispatch(registerPrivateAddressCommand);
@@ -70,7 +70,7 @@ public class ContactGenerator implements ApplicationListener {
             RegisterAddressCommand registerWorkAddressCommand = new RegisterAddressCommand();
             registerWorkAddressCommand.setAddressType(AddressType.WORK);
             registerWorkAddressCommand.setCity("Amsterdam");
-            registerWorkAddressCommand.setContactId(uuidAllard.toString());
+            registerWorkAddressCommand.setContactId(uuidAllard);
             registerWorkAddressCommand.setStreetAndNumber("JTeam avenue");
             registerWorkAddressCommand.setZipCode("1234AB");
             commandBus.dispatch(registerWorkAddressCommand);
@@ -78,7 +78,7 @@ public class ContactGenerator implements ApplicationListener {
             RegisterAddressCommand registerJettroAddressCommand = new RegisterAddressCommand();
             registerJettroAddressCommand.setAddressType(AddressType.PRIVATE);
             registerJettroAddressCommand.setCity("Rotterdam");
-            registerJettroAddressCommand.setContactId(uuidJettro.toString());
+            registerJettroAddressCommand.setContactId(uuidJettro);
             registerJettroAddressCommand.setStreetAndNumber("Feyenoordlaan 010");
             registerJettroAddressCommand.setZipCode("3000AA");
             commandBus.dispatch(registerJettroAddressCommand);

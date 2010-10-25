@@ -19,8 +19,7 @@ package org.axonframework.sample.app.api;
 /**
  * @author Jettro Coenradie
  */
-public class RemoveAddressCommand {
-    private String contactId;
+public class RemoveAddressCommand extends AbstractOrderCommand {
     private AddressType addressType;
 
     public AddressType getAddressType() {
@@ -29,13 +28,5 @@ public class RemoveAddressCommand {
 
     public void setAddressType(AddressType addressType) {
         this.addressType = addressType;
-    }
-
-    public String getContactId() {
-        return contactId;
-    }
-
-    public void setContactId(String contactId) {
-        this.contactId = contactId;
     }
 }

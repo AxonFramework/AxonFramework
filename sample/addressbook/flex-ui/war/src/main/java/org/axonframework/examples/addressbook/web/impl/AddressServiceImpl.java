@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * @author Jettro Coenradie
@@ -74,7 +73,7 @@ public class AddressServiceImpl implements AddressService {
         List<AddressDTO> foundAddresses = new ArrayList<AddressDTO>();
 
         List<AddressEntry> addressesForContact =
-                repository.findAllAddressesForContact(UUID.fromString(contactIdentifier));
+                repository.findAllAddressesForContact(contactIdentifier);
         for (AddressEntry entry : addressesForContact) {
             foundAddresses.add(AddressDTO.createFrom(entry));
         }

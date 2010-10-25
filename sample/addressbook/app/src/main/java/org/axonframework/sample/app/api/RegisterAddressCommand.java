@@ -19,8 +19,7 @@ package org.axonframework.sample.app.api;
 /**
  * @author Jettro Coenradie
  */
-public class RegisterAddressCommand {
-    private String contactId;
+public class RegisterAddressCommand extends AbstractOrderCommand {
     private AddressType addressType;
     private String streetAndNumber;
     private String zipCode;
@@ -40,14 +39,6 @@ public class RegisterAddressCommand {
 
     public void setCity(String city) {
         this.city = city;
-    }
-
-    public String getContactId() {
-        return contactId;
-    }
-
-    public void setContactId(String contactId) {
-        this.contactId = contactId;
     }
 
     public String getStreetAndNumber() {

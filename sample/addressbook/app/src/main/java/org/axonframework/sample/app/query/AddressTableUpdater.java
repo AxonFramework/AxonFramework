@@ -33,7 +33,7 @@ public class AddressTableUpdater {
     @EventHandler
     public void handleContactCreatedEvent(ContactCreatedEvent event) {
         ContactEntry entry = new ContactEntry();
-        entry.setIdentifier(event.getAggregateIdentifier().asString());
+        entry.setIdentifier(event.getContactIdentifier());
         entry.setName(event.getName());
         entityManager.persist(entry);
     }
@@ -42,18 +42,18 @@ public class AddressTableUpdater {
     public void handleContactNameChangedEvent(ContactNameChangedEvent event) {
         entityManager.createQuery("UPDATE ContactEntry e SET e.name = :newName WHERE e.identifier = :id")
                 .setParameter("newName", event.getNewName())
-                .setParameter("id", event.getAggregateIdentifier().asString())
+                .setParameter("id", event.getContactIdentifier())
                 .executeUpdate();
         entityManager.createQuery("UPDATE AddressEntry e SET e.name = :newName WHERE e.identifier = :id")
                 .setParameter("newName", event.getNewName())
-                .setParameter("id", event.getAggregateIdentifier().asString())
+                .setParameter("id", event.getContactIdentifier())
                 .executeUpdate();
     }
 
     @EventHandler
     public void handleContactDeletedEvent(ContactDeletedEvent event) {
         entityManager.createQuery("DELETE FROM AddressEntry e WHERE e.identifier = :id")
-                .setParameter("id", event.getAggregateIdentifier().asString())
+                .setParameter("id", event.getContactIdentifier())
                 .executeUpdate();
 
         entityManager.createQuery("DELETE FROM ContactEntry e WHERE e.identifier = :id")
@@ -64,7 +64,7 @@ public class AddressTableUpdater {
     @EventHandler
     public void handleAddressDeletedEvent(AddressRemovedEvent event) {
         entityManager.createQuery("DELETE FROM AddressEntry e WHERE e.identifier = :id and e.addressType = :type")
-                .setParameter("id", event.getAggregateIdentifier().asString())
+                .setParameter("id", event.getContactIdentifier())
                 .setParameter("type", event.getType())
                 .executeUpdate();
     }
@@ -73,7 +73,7 @@ public class AddressTableUpdater {
     public void handleAddressChangedEvent(AddressChangedEvent event) {
         AddressEntry entry = (AddressEntry) entityManager.createQuery(
                 "SELECT e from AddressEntry e WHERE e.identifier = :id and e.addressType = :type")
-                .setParameter("id", event.getAggregateIdentifier().asString())
+                .setParameter("id", event.getContactIdentifier())
                 .setParameter("type", event.getType())
                 .getSingleResult();
 
@@ -87,7 +87,7 @@ public class AddressTableUpdater {
     public void handleAddressAddedEvent(AddressAddedEvent event) {
         ContactEntry contact = (ContactEntry)
                 entityManager.createQuery("SELECT e from ContactEntry e WHERE e.identifier = :id")
-                        .setParameter("id", event.getAggregateIdentifier().asString())
+                        .setParameter("id", event.getContactIdentifier())
                         .getSingleResult();
         AddressEntry entry = new AddressEntry();
         entry.setIdentifier(event.getAggregateIdentifier());

@@ -16,15 +16,11 @@
 
 package org.axonframework.sample.app.api;
 
-import java.util.UUID;
-
 /**
  * @author Jettro Coenradie
  */
-public class CreateContactCommand {
-
+public class CreateContactCommand extends AbstractOrderCommand {
     private String newContactName;
-    private UUID identifier;
 
     public void setNewContactName(String newContactName) {
         this.newContactName = newContactName;
@@ -34,11 +30,4 @@ public class CreateContactCommand {
         return newContactName;
     }
 
-    public void setIdentifier(UUID uuid) {
-        this.identifier = uuid;
-    }
-
-    public UUID getIdentifier() {
-        return identifier;
-    }
 }

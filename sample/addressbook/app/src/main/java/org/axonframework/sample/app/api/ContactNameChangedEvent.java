@@ -16,12 +16,10 @@
 
 package org.axonframework.sample.app.api;
 
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class ContactNameChangedEvent extends DomainEvent {
+public class ContactNameChangedEvent extends AbstractContactDomainEvent {
 
     private final String newName;
 

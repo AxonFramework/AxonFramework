@@ -16,13 +16,10 @@
 
 package org.axonframework.sample.app.api;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public abstract class AddressRegisteredEvent extends DomainEvent {
+public abstract class AddressRegisteredEvent extends AbstractAddressDomainEvent {
 
     private final AddressType type;
     private final Address address;
@@ -30,10 +27,6 @@ public abstract class AddressRegisteredEvent extends DomainEvent {
     protected AddressRegisteredEvent(AddressType type, Address address) {
         this.type = type;
         this.address = address;
-    }
-
-    public AggregateIdentifier getContactIdentifier() {
-        return getAggregateIdentifier();
     }
 
     public AddressType getType() {

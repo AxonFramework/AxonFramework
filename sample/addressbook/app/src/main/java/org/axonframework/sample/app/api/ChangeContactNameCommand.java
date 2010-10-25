@@ -19,17 +19,8 @@ package org.axonframework.sample.app.api;
 /**
  * @author Jettro Coenradie
  */
-public class ChangeContactNameCommand {
-    private String contactId;
+public class ChangeContactNameCommand extends AbstractOrderCommand {
     private String contactNewName;
-
-    public String getContactId() {
-        return contactId;
-    }
-
-    public void setContactId(String contactId) {
-        this.contactId = contactId;
-    }
 
     public String getContactNewName() {
         return contactNewName;
