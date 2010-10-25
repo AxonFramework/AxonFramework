@@ -1,4 +1,4 @@
-package org.axonframework.sample.app.query;
+package org.axonframework.sample.app.command;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +13,7 @@ import javax.persistence.PersistenceContext;
  * @author Jettro Coenradie
  */
 @Repository
-@Transactional(propagation = Propagation.REQUIRED)
+@Transactional(propagation = Propagation.REQUIRES_NEW)
 public class JpaContactNameRepository implements ContactNameRepository {
     private static final Logger logger = LoggerFactory.getLogger(JpaContactNameRepository.class);
 
@@ -24,6 +24,7 @@ public class JpaContactNameRepository implements ContactNameRepository {
     public boolean claimContactName(String contactName) {
         try {
             entityManager.persist(new ClaimedContactName(contactName));
+            entityManager.flush();
             return true;
         } catch (RuntimeException e) {
             logger.warn("Unable to claim contact name.", e);

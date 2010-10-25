@@ -22,7 +22,7 @@
 
     <bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
 
-    <bean class="org.axonframework.sample.app.query.ContactRepositoryImpl"/>
+    <bean id="queryContactRepository" class="org.axonframework.sample.app.query.ContactRepositoryImpl"/>
 
     <!-- Infrastructure configuration -->
 

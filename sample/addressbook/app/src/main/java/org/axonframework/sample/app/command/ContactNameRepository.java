@@ -1,4 +1,4 @@
-package org.axonframework.sample.app.query;
+package org.axonframework.sample.app.command;
 
 /**
  * @author Jettro Coenradie

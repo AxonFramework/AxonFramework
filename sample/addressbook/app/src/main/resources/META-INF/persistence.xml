@@ -20,7 +20,7 @@
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <class>org.axonframework.sample.app.query.AddressEntry</class>
         <class>org.axonframework.sample.app.query.ContactEntry</class>
-        <class>org.axonframework.sample.app.query.ClaimedContactName</class>
+        <class>org.axonframework.sample.app.command.ClaimedContactName</class>
 
         <class>org.axonframework.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventstore.jpa.SnapshotEventEntry</class>

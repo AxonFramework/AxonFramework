@@ -1,4 +1,4 @@
-package org.axonframework.sample.app.query;
+package org.axonframework.sample.app.command;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;

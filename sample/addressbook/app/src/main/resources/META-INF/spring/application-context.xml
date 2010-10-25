@@ -115,9 +115,10 @@
 
     <bean id="contactCommandHandler"
           class="org.axonframework.sample.app.command.ContactCommandHandler">
-        <property name="contactRepository" ref="contactRepository"/>
+        <property name="repository" ref="contactRepository"/>
+        <property name="contactRepository" ref="queryContactRepository"/>
         <property name="contactNameRepository" ref="contactNameRepository"/>
     </bean>
 
-    <bean id="contactNameRepository" class="org.axonframework.sample.app.query.JpaContactNameRepository"/>
+    <bean id="contactNameRepository" class="org.axonframework.sample.app.command.JpaContactNameRepository"/>
 </beans>
