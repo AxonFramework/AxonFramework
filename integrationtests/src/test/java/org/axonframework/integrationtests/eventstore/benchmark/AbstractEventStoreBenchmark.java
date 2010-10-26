@@ -63,12 +63,13 @@ public abstract class AbstractEventStoreBenchmark {
         long end = System.currentTimeMillis();
 
         System.out.println(String.format(
-                "Result: %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %s events per second",
+                "Result: %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %.0f events per second",
                 getThreadCount(),
                 getTransactionCount(),
                 getTransactionSize(),
                 (end - start),
-                (getThreadCount() * getTransactionCount() * getTransactionSize()) / ((end - start) / 1000)));
+                (((float) getThreadCount() * getTransactionCount() * getTransactionSize()) / ((float) (end - start)
+                        / 1000))));
 
     }
 
