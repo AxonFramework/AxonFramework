@@ -17,18 +17,21 @@
 package org.axonframework.util;
 
 /**
+ * Interface describing components that are able to subscribe themselves to a component that can be subscribed to, such
+ * as the CommandBus and EventBus.
+ *
  * @author Allard Buijze
  * @since 0.5
  */
-public interface AnnotatedHandlerAdapter {
+public interface Subscribable {
 
     /**
-     * Unsubscribe the annotated handlers from the bus assigned during the initialization.
+     * Unsubscribe this instance from its subscribed component.
      */
     void unsubscribe();
 
     /**
-     * Subscribe the annotated handlers to the bus assigned during the initialization.
+     * Subscribe this instance with its configured component.
      */
     void subscribe();
 }

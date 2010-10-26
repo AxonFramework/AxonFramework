@@ -25,17 +25,17 @@ import org.axonframework.eventhandling.EventSequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.TransactionStatus;
-import org.axonframework.util.AnnotatedHandlerAdapter;
 import org.axonframework.util.FieldAccessibilityCallback;
+import org.axonframework.util.Subscribable;
 import org.springframework.util.ReflectionUtils;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import static java.security.AccessController.doPrivileged;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
@@ -52,7 +52,7 @@ import static org.springframework.core.annotation.AnnotationUtils.findAnnotation
  * @see org.axonframework.eventhandling.AsynchronousEventHandlerWrapper
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter implements AnnotatedHandlerAdapter, EventListenerProxy, TransactionManager {
+public class AnnotationEventListenerAdapter implements Subscribable, EventListenerProxy, TransactionManager {
 
     private final EventListener targetEventListener;
     private final Executor executor;

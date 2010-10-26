@@ -43,7 +43,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractAnnotationHandlerBeanPostProcessor.class);
 
-    private final Map<String, AnnotatedHandlerAdapter> managedAdapters = new HashMap<String, AnnotatedHandlerAdapter>();
+    private final Map<String, Subscribable> managedAdapters = new HashMap<String, Subscribable>();
     private ApplicationContext applicationContext;
 
     /**
@@ -61,7 +61,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
         Class<?> targetClass = bean.getClass();
         if (isPostProcessingCandidate(targetClass)) {
-            AnnotatedHandlerAdapter adapter = initializeAdapterFor(bean);
+            Subscribable adapter = initializeAdapterFor(bean);
             managedAdapters.put(beanName, adapter);
             return createAdapterProxy(targetClass, bean, adapter, getAdapterInterface());
         }
@@ -111,7 +111,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
      * @param bean The bean that the EventListenerAdapter has to adapt
      * @return an event handler adapter for the given {@code bean}
      */
-    protected abstract AnnotatedHandlerAdapter initializeAdapterFor(Object bean);
+    protected abstract Subscribable initializeAdapterFor(Object bean);
 
     private Object createAdapterProxy(Class targetClass, Object annotatedHandler, Object adapter,
                                       Class<?> adapterInterface) {

@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.util.AbstractHandlerInvoker;
-import org.axonframework.util.AnnotatedHandlerAdapter;
+import org.axonframework.util.Subscribable;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -40,7 +40,7 @@ import javax.annotation.PreDestroy;
  * @since 0.5
  */
 public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
-        implements org.axonframework.commandhandling.CommandHandler<Object>, AnnotatedHandlerAdapter {
+        implements org.axonframework.commandhandling.CommandHandler<Object>, Subscribable {
 
     private final CommandBus commandBus;
 
