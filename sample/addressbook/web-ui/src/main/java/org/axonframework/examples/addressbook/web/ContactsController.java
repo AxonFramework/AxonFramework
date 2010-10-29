@@ -1,8 +1,6 @@
 package org.axonframework.examples.addressbook.web;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.sample.app.api.ChangeContactNameCommand;
 import org.axonframework.sample.app.api.CreateContactCommand;
 import org.axonframework.sample.app.query.AddressEntry;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -41,7 +38,7 @@ public class ContactsController {
     @RequestMapping(value = "{identifier}", method = RequestMethod.GET)
     public String details(@PathVariable String identifier, Model model) {
         List<AddressEntry> addressesForContact = repository.findAllAddressesForContact(identifier);
-        String name = "";
+        String name;
         if (addressesForContact.size() > 0) {
             name = addressesForContact.get(0).getName();
         } else {
@@ -56,7 +53,7 @@ public class ContactsController {
     @RequestMapping(value = "{identifier}/edit", method = RequestMethod.GET)
     public String formEdit(@PathVariable String identifier, Model model) {
         ContactEntry contactEntry = repository.loadContactDetails(identifier);
-        model.addAttribute("contact",contactEntry);
+        model.addAttribute("contact", contactEntry);
         return "contacts/edit";
     }
 
@@ -77,7 +74,7 @@ public class ContactsController {
 
     @RequestMapping(value = "new", method = RequestMethod.GET)
     public String formNew(Model model) {
-        model.addAttribute("contact",new ContactEntry());
+        model.addAttribute("contact", new ContactEntry());
         return "contacts/edit";
     }
 
