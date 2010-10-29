@@ -16,6 +16,16 @@
     <name>Axon Address Book Sample - Web ui</name>
     <packaging>war</packaging>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>maven-jetty-plugin</artifactId>
+                <version>6.1.17</version>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <!-- Internal dependencies -->
         <dependency>
@@ -62,6 +72,5 @@
             <artifactId>sitemesh</artifactId>
             <version>2.4.2</version>
         </dependency>
-
     </dependencies>
 </project>
