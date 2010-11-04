@@ -16,6 +16,8 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.util.Assert;
+
 /**
  * Aggregate identifier implementation that requires a String as the actual backing identifier value.
  *
@@ -30,9 +32,10 @@ public class StringAggregateIdentifier extends AbstractAggregateIdentifier {
     /**
      * Creates a String based AggregateIdentifier instance backed with the given <code>identifier</code>.
      *
-     * @param identifier The String representation of the identifier
+     * @param identifier The String representation of the identifier. May not be <code>null</code>.
      */
     public StringAggregateIdentifier(String identifier) {
+        Assert.isTrue(identifier != null, "Backing identifier may not be null");
         this.identifier = identifier;
     }
 

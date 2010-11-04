@@ -43,6 +43,7 @@ public class UUIDAggregateIdentifier extends StringAggregateIdentifier {
      * Creates a new instance using the given UUID as identifier value.
      *
      * @param identifier the UUID representation of the identifier
+     * @throws NullPointerException if the given identifier is <code>null</code>.
      */
     public UUIDAggregateIdentifier(UUID identifier) {
         super(identifier.toString());

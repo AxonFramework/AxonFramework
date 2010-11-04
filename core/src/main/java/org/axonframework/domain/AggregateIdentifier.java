@@ -24,8 +24,8 @@ import java.io.Serializable;
  * Two identifiers are considered equals when their internal (backing) values are equal, regardles of the actual
  * implementation type.
  * <p/>
- * <em>Implementation guidelines:</em><br/>Each identifier should have a String representation. Implementations are
- * REQUIRED to return this representation in the asString() method. They MAY also return this representation in the
+ * <em>Implementation guidelines:</em><br/>Each identifier should have a non-null String representation. Implementations
+ * are REQUIRED to return this representation in the asString() method. They MAY also return this representation in the
  * toString() method.<br/>When two identifiers are compared they are equal if their String representation is equal.
  *
  * @author Allard Buijze
@@ -34,9 +34,9 @@ import java.io.Serializable;
 public interface AggregateIdentifier extends Serializable {
 
     /**
-     * Returns the String representation of this aggregate identifier.
+     * Returns the String representation of this aggregate identifier. May never return <code>null</code>.
      *
-     * @return the String representation of this aggregate identifier.
+     * @return the non-<code>null</code> String representation of this aggregate identifier.
      */
     String asString();
 
