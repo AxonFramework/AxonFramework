@@ -77,19 +77,32 @@ public abstract class AbstractJpaAggregateRoot implements AggregateRoot {
             throw new IllegalArgumentException("Aggregate identifier may not be null.");
         }
         this.aggregateId = identifier.asString();
-        initialize();
+        initializeEventContainer();
     }
 
+    /**
+     * Initializes the EventContainer, which keeps track of uncommitted events in this aggregate.
+     * <p/>
+     * This method is annotated with @PostLoad and is expected to be invoked by the persistence framework after it has
+     * been loaded.
+     */
     @PostLoad
-    private void initialize() {
+    protected void initializeEventContainer() {
         identifier = new StringAggregateIdentifier(aggregateId);
         uncommittedEvents = new EventContainer(identifier);
         uncommittedEvents.initializeSequenceNumber(lastEventSequenceNumber);
     }
 
+    /**
+     * Updates the last event sequence number (see {@link #getLastEventSequenceNumber()} to the sequence number of the
+     * last uncommitted event.
+     * <p/>
+     * This method is annotated with @PreUpdate and @PrePersist and is expected to be called by the persistence
+     * framework prior to Update or Persist.
+     */
     @PreUpdate
     @PrePersist
-    private void prePersist() {
+    protected void updateLastEventSequenceNumber() {
         lastEventSequenceNumber = uncommittedEvents.getLastSequenceNumber();
     }
 

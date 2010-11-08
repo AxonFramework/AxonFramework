@@ -34,13 +34,14 @@ import javax.persistence.PersistenceContext;
  * enforce checking of database constraints and optimistic locks.
  *
  * @author Allard Buijze
+ * @param <T> The type of aggregate the repository provides access to
  * @since 0.7
  */
 public class GenericJpaRepository<T extends AbstractJpaAggregateRoot> extends LockingRepository<T> {
 
     private EntityManager entityManager;
     private final Class<T> aggregateType;
-    private boolean forceFlush = true;
+    private boolean forceFlushOnSave = true;
 
     /**
      * Initialize a repository for storing aggregates of the given <code>aggregateType</code>. No additional locking
@@ -67,7 +68,7 @@ public class GenericJpaRepository<T extends AbstractJpaAggregateRoot> extends Lo
     @Override
     protected void doSaveWithLock(T aggregate) {
         entityManager.persist(aggregate);
-        if (forceFlush) {
+        if (forceFlushOnSave) {
             entityManager.flush();
         }
     }
@@ -94,10 +95,11 @@ public class GenericJpaRepository<T extends AbstractJpaAggregateRoot> extends Lo
      * Flushing the EntityManager will force JPA to send state changes to the database. Any key violations and failing
      * optimistic locks will be identified in an early stage.
      *
-     * @param forceFlush whether or not to flush the EntityManager after each save. Defaults to <code>true</code>.
+     * @param forceFlushOnSave whether or not to flush the EntityManager after each save. Defaults to
+     *                         <code>true</code>.
      * @see javax.persistence.EntityManager#flush()
      */
-    public void setForceFlushOnSave(boolean forceFlush) {
-        this.forceFlush = forceFlush;
+    public void setForceFlushOnSave(boolean forceFlushOnSave) {
+        this.forceFlushOnSave = forceFlushOnSave;
     }
 }
