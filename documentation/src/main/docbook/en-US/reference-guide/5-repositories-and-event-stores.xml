@@ -47,33 +47,40 @@
             your repository implementation.</para>
             <simplesect>
                 <title><code>AbstractRepository</code></title>
-            </simplesect>
             <para>The most basic implementation of the repository is AbstractRepository. It takes
-            care of the event publishing when an aggregate is saved. The actual persistence
-            mechanism must still be implemented. This implementation doesn't provide any locking
-            mechanism and expects the underlying data storage mechanism to provide it. </para>
+                care of the event publishing when an aggregate is saved. The actual persistence
+                mechanism must still be implemented. This implementation doesn't provide any locking
+                mechanism and expects the underlying data storage mechanism to provide it. </para>
+            </simplesect>
             <simplesect xml:id="locking-repository">
                 <title><code>LockingRepository</code></title>
-            </simplesect>
             <para>If the underlying data store does not provide any locking mechanism to prevent
                 concurrent modifications of aggregates, consider using the abstract
-                <code>LockingRepository</code>
-                implementation. Besides providing event
+                    <code>LockingRepository</code> implementation. Besides providing event
                 dispatching logic, it will also ensure that aggregates are not concurrently
-                modified.
-            </para>
+                modified. </para>
             <para>You can configure the <code>LockingRepository</code> to use an optimistic locking
-            strategy, or a pessimistic one. When the optimistic lock detects concurrent access, the
-            second thread saving an aggregate will receive a <code>ConcurrencyException</code>. The
-            pessimistic lock will prevent concurrent access to the aggregate alltogether.<note>
-                <para>Note that there is a clear distinction between a
-                        <code>ConcurrencyException</code> and a
-                        <code>ConflictingModificationException</code>. The first is used to indicate
-                    a repository cannot save an aggregate, because the changes it contains were not
-                    applied to the latest available version. The latter indicates that the loaded
-                    aggregate contains changes that might not have been seen by the end-user. See
-                        <xref linkend="conflict-resolution"/> for more information.</para>
-            </note></para>
+                strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
+                the second thread saving an aggregate will receive a
+                    <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
+                access to the aggregate alltogether.<note>
+                    <para>Note that there is a clear distinction between a
+                            <code>ConcurrencyException</code> and a
+                            <code>ConflictingModificationException</code>. The first is used to
+                        indicate a repository cannot save an aggregate, because the changes it
+                        contains were not applied to the latest available version. The latter
+                        indicates that the loaded aggregate contains changes that might not have
+                        been seen by the end-user. See <xref linkend="conflict-resolution"/> for
+                        more information.</para>
+                </note></para>
+            </simplesect>
+        <simplesect>
+            <title><code>GenericJpaRepository</code></title>
+            <para>This is a repository implementation that can store JPA compatible Aggregates, such
+                as <code>AbstractJpaAggregateRoot</code> subclasses. It is configured with an
+                    <code>EntityManager</code> to manage the actual persistence, and a class
+                specifiying the actual type of Aggregate stored in the Repository.</para>
+        </simplesect>
         </sect1>
         <sect1 xml:id="event-sourcing-repositories">
             <title>Event Sourcing repositories</title>
