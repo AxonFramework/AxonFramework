@@ -14,36 +14,33 @@
  * limitations under the License.
  */
 
-package org.axonframework.util;
+package org.axonframework.util.reflection;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.security.PrivilegedAction;
 
 /**
- * PrivilegedAction that makes the given method accessible for reflection
+ * PrivilegedAction that makes the given field accessible for reflection.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class MethodAccessibilityCallback implements PrivilegedAction<Object> {
+public class FieldAccessibilityCallback implements PrivilegedAction<Object> {
 
-    private final Method method;
+    private final Field field;
 
     /**
-     * Initialize the callback to make the given <code>method</code> accessible for reflection
+     * Initialize the callback to make the given <code>field</code> accessible for reflection.
      *
-     * @param method The method to make accessible
+     * @param field The field to make accessible
      */
-    public MethodAccessibilityCallback(Method method) {
-        this.method = method;
+    public FieldAccessibilityCallback(Field field) {
+        this.field = field;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object run() {
-        method.setAccessible(true);
-        return Void.class;
+        field.setAccessible(true);
+        return Void.TYPE;
     }
 }

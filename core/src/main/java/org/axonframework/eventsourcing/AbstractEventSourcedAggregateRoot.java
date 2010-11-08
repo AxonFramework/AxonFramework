@@ -23,7 +23,9 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.util.Assert;
+import org.axonframework.util.reflection.ReflectionUtils;
 
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -57,7 +59,8 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * Initializes the aggregate root using the provided aggregate identifier.
      *
      * @param identifier the identifier of this aggregate
-     * @deprecated Use {@link #AbstractEventSourcedAggregateRoot(org.axonframework.domain.AggregateIdentifier)}
+     * @deprecated Use {@link #AbstractEventSourcedAggregateRoot(org.axonframework.domain.AggregateIdentifier)}. Will be
+     *             removed in next release.
      */
     @Deprecated
     protected AbstractEventSourcedAggregateRoot(UUID identifier) {
@@ -104,12 +107,37 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
      * the {@link #handle(DomainEvent)} event handler method} for processing.
+     * <p/>
+     * The event is applied on all entities part of this aggregate.
      *
      * @param event The event to apply
      */
     protected void apply(DomainEvent event) {
         registerEvent(event);
+        handleRecursively(event);
+    }
+
+    private void handleRecursively(DomainEvent event) {
         handle(event);
+        for (AbstractEventSourcedEntity entity : getChildEntities()) {
+            entity.registerAggregateRoot(this);
+            entity.handleRecursively(event);
+        }
+    }
+
+    /**
+     * Returns a list of event sourced entities directly referenced by the aggregate root.
+     * <p/>
+     * The default implementation uses reflection to find references to {@link AbstractEventSourcedEntity}
+     * implementations.
+     * <p/>
+     * It will look for entities: <ul><li> directly referenced in a field;<li> inside fields containing an {@link
+     * Iterable};<li>inside both they keys and the values of fields containing a {@link java.util.Map}</ul>
+     *
+     * @return a list of event sourced entities contained in this aggregate
+     */
+    protected Collection<AbstractEventSourcedEntity> getChildEntities() {
+        return ReflectionUtils.findFieldValuesOfType(this, AbstractEventSourcedEntity.class);
     }
 
     /**

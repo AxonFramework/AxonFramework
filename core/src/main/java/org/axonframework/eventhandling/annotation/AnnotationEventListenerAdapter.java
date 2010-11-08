@@ -25,8 +25,8 @@ import org.axonframework.eventhandling.EventSequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.TransactionStatus;
-import org.axonframework.util.FieldAccessibilityCallback;
 import org.axonframework.util.Subscribable;
+import org.axonframework.util.reflection.FieldAccessibilityCallback;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;

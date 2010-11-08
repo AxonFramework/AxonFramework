@@ -104,7 +104,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
         @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
-        public void myVoidHandler(String stringCommand) {
+        public void myVoidHandler(String stringCommand, UnitOfWork unitOfWork) {
             voidHandlerInvoked++;
         }
 

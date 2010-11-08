@@ -37,10 +37,13 @@ public class AbstractAnnotatedAggregateRootTest {
 
         assertNotNull(testSubject.getIdentifier());
         assertEquals(1, testSubject.getUncommittedEventCount());
+        // this proves that a newly added entity is also notified of an event
+        assertEquals(1, testSubject.getEntity().invocationCount);
 
-        testSubject.handle(new StubDomainEvent());
+        testSubject.doSomething();
 
         assertEquals(2, testSubject.invocationCount);
+        assertEquals(2, testSubject.getEntity().invocationCount);
     }
 
     @Test
@@ -52,6 +55,7 @@ public class AbstractAnnotatedAggregateRootTest {
     private static class SimpleAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
         private int invocationCount;
+        private volatile SimpleEntity entity;
 
         private SimpleAggregateRoot() {
             apply(new StubDomainEvent());
@@ -64,6 +68,28 @@ public class AbstractAnnotatedAggregateRootTest {
         @EventHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             this.invocationCount++;
+            if (entity == null) {
+                entity = new SimpleEntity();
+            }
         }
+
+        public SimpleEntity getEntity() {
+            return entity;
+        }
+
+        public void doSomething() {
+            apply(new StubDomainEvent());
+        }
+    }
+
+    private static class SimpleEntity extends AbstractAnnotatedEntity {
+
+        private int invocationCount;
+
+        @EventHandler
+        public void myEventHandlerMethod(StubDomainEvent event) {
+            this.invocationCount++;
+        }
+
     }
 }

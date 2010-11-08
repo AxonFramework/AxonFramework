@@ -19,13 +19,13 @@ package org.axonframework.monitoring.jmx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.ManagementFactory;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
 
 /**
  * Utility class that allows Axon-related components to be configured with an MBeanServer. By default all MBeans are
@@ -67,16 +67,12 @@ public final class JmxConfiguration {
     public void registerMBean(Object mBean, Class<?> monitoredType) {
         if (enabled) {
             try {
-
                 mBeanServer.registerMBean(mBean, objectNameFor(monitoredType));
-            } catch (InstanceAlreadyExistsException
-                    e) {
+            } catch (InstanceAlreadyExistsException e) {
                 logger.warn("Object {} has already been registered as an MBean", mBean);
-            } catch (MBeanRegistrationException
-                    e) {
+            } catch (MBeanRegistrationException e) {
                 logger.error("An error occurred registering an MBean", e);
-            } catch (NotCompliantMBeanException
-                    e) {
+            } catch (NotCompliantMBeanException e) {
                 logger.error("Non-compliant MBean registered.", e);
             }
         }

@@ -56,6 +56,7 @@ public abstract class AbstractJpaAggregateRoot implements AggregateRoot {
     @Basic(optional = true)
     private volatile Long lastEventSequenceNumber;
 
+    @SuppressWarnings({"UnusedDeclaration"})
     @Version
     private volatile Long version;
 

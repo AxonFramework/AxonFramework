@@ -16,6 +16,7 @@
 
 package org.axonframework.util;
 
+import org.axonframework.util.reflection.MethodAccessibilityCallback;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
@@ -25,7 +26,10 @@ import java.lang.reflect.Method;
 import static java.security.AccessController.doPrivileged;
 
 /**
+ * Abstract class to support implementations that need to invoke methods based on an annotation.
+ *
  * @author Allard Buijze
+ * @since 0.6
  */
 public abstract class AbstractHandlerInvoker {
 
@@ -79,16 +83,17 @@ public abstract class AbstractHandlerInvoker {
         if (!m.isAccessible()) {
             doPrivileged(new MethodAccessibilityCallback(m));
         }
+        Object retVal;
         if (m.getParameterTypes().length == 1) {
-            Object retVal = m.invoke(target, parameter);
-            // let's make a clear distinction between null return value and void methods
-            if (Void.TYPE.equals(m.getReturnType())) {
-                return Void.TYPE;
-            }
-            return retVal;
+            retVal = m.invoke(target, parameter);
         } else {
-            return m.invoke(target, parameter, secondHandlerParameter);
+            retVal = m.invoke(target, parameter, secondHandlerParameter);
         }
+        // let's make a clear distinction between null return value and void methods
+        if (Void.TYPE.equals(m.getReturnType())) {
+            return Void.TYPE;
+        }
+        return retVal;
     }
 
     /**
@@ -116,7 +121,7 @@ public abstract class AbstractHandlerInvoker {
     }
 
     /**
-     * Returns the target on which handler methods are invoked
+     * Returns the target on which handler methods are invoked.
      *
      * @return the target on which handler methods are invoked
      */
