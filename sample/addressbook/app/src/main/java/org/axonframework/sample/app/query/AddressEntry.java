@@ -16,7 +16,6 @@
 
 package org.axonframework.sample.app.query;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.sample.app.api.AddressType;
 
 import javax.persistence.*;
@@ -55,15 +54,15 @@ public class AddressEntry {
         return identifier;
     }
 
-    void setIdentifier(AggregateIdentifier identifier) {
-        this.identifier = identifier.asString();
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public String getName() {
         return name;
     }
 
-    void setName(String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -71,7 +70,7 @@ public class AddressEntry {
         return addressType;
     }
 
-    void setAddressType(AddressType addressType) {
+    public void setAddressType(AddressType addressType) {
         this.addressType = addressType;
     }
 
@@ -79,7 +78,7 @@ public class AddressEntry {
         return streetAndNumber;
     }
 
-    void setStreetAndNumber(String streetAndNumber) {
+    public void setStreetAndNumber(String streetAndNumber) {
         this.streetAndNumber = streetAndNumber;
     }
 
@@ -87,7 +86,7 @@ public class AddressEntry {
         return zipCode;
     }
 
-    void setZipCode(String zipCode) {
+    public void setZipCode(String zipCode) {
         this.zipCode = zipCode;
     }
 
@@ -95,7 +94,7 @@ public class AddressEntry {
         return city;
     }
 
-    void setCity(String city) {
+    public void setCity(String city) {
         this.city = city;
     }
 }

@@ -90,7 +90,7 @@ public class AddressTableUpdater {
                         .setParameter("id", event.getContactIdentifier())
                         .getSingleResult();
         AddressEntry entry = new AddressEntry();
-        entry.setIdentifier(event.getAggregateIdentifier());
+        entry.setIdentifier(event.getAggregateIdentifier().asString());
         entry.setName(contact.getName());
         entry.setAddressType(event.getType());
         entry.setStreetAndNumber(event.getAddress().getStreetAndNumber());

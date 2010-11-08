@@ -1,8 +1,7 @@
 package org.axonframework.examples.addressbook.web;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.sample.app.api.ChangeContactNameCommand;
-import org.axonframework.sample.app.api.CreateContactCommand;
+import org.axonframework.sample.app.api.*;
 import org.axonframework.sample.app.query.AddressEntry;
 import org.axonframework.sample.app.query.ContactEntry;
 import org.axonframework.sample.app.query.ContactRepository;
@@ -92,4 +91,74 @@ public class ContactsController {
 
     }
 
+    @RequestMapping(value = "{identifier}/delete", method = RequestMethod.GET)
+    public String formDelete(@PathVariable String identifier, Model model) {
+        ContactEntry contactEntry = repository.loadContactDetails(identifier);
+        model.addAttribute("contact", contactEntry);
+        return "contacts/delete";
+    }
+
+    @RequestMapping(value = "{identifier}/delete", method = RequestMethod.POST)
+    public String formDelete(@ModelAttribute("contact") ContactEntry contact, BindingResult bindingResult) {
+        if (!bindingResult.hasErrors()) {
+            RemoveContactCommand command = new RemoveContactCommand();
+            command.setContactId(contact.getIdentifier());
+            commandBus.dispatch(command);
+
+            return "redirect:/contacts";
+        }
+        return "contacts/" + contact.getIdentifier() + "/delete";
+
+    }
+
+    @RequestMapping(value = "{identifier}/address/new", method = RequestMethod.GET)
+    public String formNewAddress(@PathVariable String identifier, Model model) {
+        ContactEntry contactEntry = repository.loadContactDetails(identifier);
+        AddressEntry addressEntry = new AddressEntry();
+        addressEntry.setIdentifier(contactEntry.getIdentifier());
+        addressEntry.setName(contactEntry.getName());
+        model.addAttribute("address", addressEntry);
+        return "contacts/address";
+    }
+
+    @RequestMapping(value = "{identifier}/address/new", method = RequestMethod.POST)
+    public String formNewAddressSubmit(@ModelAttribute("address") AddressEntry address, BindingResult bindingResult) {
+        if (!bindingResult.hasErrors()) {
+            RegisterAddressCommand command = new RegisterAddressCommand();
+            command.setAddressType(address.getAddressType());
+            command.setCity(address.getCity());
+            command.setContactId(address.getIdentifier());
+            command.setStreetAndNumber(address.getStreetAndNumber());
+            command.setZipCode(address.getZipCode());
+            commandBus.dispatch(command);
+
+            return "redirect:/contacts/" + address.getIdentifier();
+        }
+        return "contacts/address" + address.getIdentifier() + "/edit";
+    }
+
+
+    @RequestMapping(value = "{identifier}/address/delete/{addressType}", method = RequestMethod.GET)
+    public String formDeleteAddress(@PathVariable String identifier, @PathVariable AddressType addressType, Model model) {
+        ContactEntry contactEntry = repository.loadContactDetails(identifier);
+        AddressEntry addressEntry = new AddressEntry();
+        addressEntry.setIdentifier(contactEntry.getIdentifier());
+        addressEntry.setName(contactEntry.getName());
+        addressEntry.setAddressType(addressType);
+        model.addAttribute("address", addressEntry);
+        return "contacts/removeAddress";
+    }
+
+    @RequestMapping(value = "{identifier}/address/delete", method = RequestMethod.POST)
+    public String formDeleteAddressSubmit(@ModelAttribute("address") AddressEntry address, BindingResult bindingResult) {
+        if (!bindingResult.hasErrors()) {
+            RemoveAddressCommand command = new RemoveAddressCommand();
+            command.setContactId(address.getIdentifier());
+            command.setAddressType(address.getAddressType());
+            commandBus.dispatch(command);
+
+            return "redirect:/contacts/" + address.getIdentifier();
+        }
+        return "contacts/removeAddress" + address.getIdentifier() + "/edit";
+    }
 }
