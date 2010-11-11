@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,8 @@ import java.util.UUID;
 
 /**
  * <p>Command handler that can be used to create and update Contacts. It can also be used to register and remove
- * addresses.</p> <p>The provided repository is used to store the changes.</p>
+ * addresses.</p>
+ * <p>The provided repository is used to store the changes.</p>
  *
  * @author Allard Buijze
  */
@@ -44,7 +45,7 @@ public class ContactCommandHandler {
     private ContactRepository contactRepository;
 
     /**
-     * Sets the contact repository.
+     * Sets the contact domain event repository.
      *
      * @param repository the contact repository
      */
@@ -52,10 +53,20 @@ public class ContactCommandHandler {
         this.repository = repository;
     }
 
+    /**
+     * Sets the contact name repository used to maintain unique contact names
+     *
+     * @param contactNameRepository the contact name repository
+     */
     public void setContactNameRepository(ContactNameRepository contactNameRepository) {
         this.contactNameRepository = contactNameRepository;
     }
 
+    /**
+     * Sets the query repository for contacts
+     *
+     * @param contactRepository for the query database
+     */
     public void setContactRepository(ContactRepository contactRepository) {
         this.contactRepository = contactRepository;
     }
@@ -94,7 +105,7 @@ public class ContactCommandHandler {
     /**
      * Changes the provided data for the contact found based on the provided identifier
      * <p/>
-     * An {@code AggregateNotFoundException} is thrown if the UUID does not represent a valid contact.
+     * An {@code AggregateNotFoundException} is thrown if the identifier does not represent a valid contact.
      *
      * @param command    ChangeContactNameCommand that contains the identifier and the data to be updated
      * @param unitOfWork Unit of work for the current running thread
@@ -130,9 +141,9 @@ public class ContactCommandHandler {
     }
 
     /**
-     * Registers an address for the contact with the provided UUID. If the contact already has an address with the
-     * provided type, this address will be updated. An {@code AggregateNotFoundException} is thrown if the provided UUID
-     * does not exist.
+     * Registers an address for the contact with the provided identifier. If the contact already has an address with the
+     * provided type, this address will be updated. An {@code AggregateNotFoundException} is thrown if the provided
+     * identifier does not exist.
      *
      * @param command RegisterAddressCommand that contains all required data
      */
@@ -146,9 +157,9 @@ public class ContactCommandHandler {
     }
 
     /**
-     * Removes the address with the specified type from the contact with the provided UUID. If the UUID does not exist,
-     * an {@code AggregateNotFoundException} is thrown. If the contact does not have an address with specified type
-     * nothing happens.
+     * Removes the address with the specified type from the contact with the provided identifier. If the identifier
+     * does not exist, an {@code AggregateNotFoundException} is thrown. If the contact does not have an address with
+     * specified type nothing happens.
      *
      * @param command RemoveAddressCommand that contains all required data to remove an address from a contact
      */
