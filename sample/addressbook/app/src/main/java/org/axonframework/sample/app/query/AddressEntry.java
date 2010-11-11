@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,8 @@ package org.axonframework.sample.app.query;
 import org.axonframework.sample.app.api.AddressType;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 /**
  * @author Allard Buijze
@@ -37,16 +39,23 @@ public class AddressEntry {
     @Basic
     private String name;
 
+    @NotNull
     @Basic
     @Enumerated(EnumType.STRING)
     private AddressType addressType;
 
+    @NotNull
+    @Size(min = 5)
     @Basic
     private String streetAndNumber;
 
+    @NotNull
+    @Size(min = 4)
     @Basic
     private String zipCode;
 
+    @NotNull
+    @Size(min = 2)
     @Basic
     private String city;
 
