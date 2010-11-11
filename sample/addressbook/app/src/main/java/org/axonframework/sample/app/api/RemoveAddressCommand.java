@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,11 @@
 
 package org.axonframework.sample.app.api;
 
+import org.springframework.util.Assert;
+
 /**
+ * <p>Removes the address with the provided type from the contacts address list</p>
+ *
  * @author Jettro Coenradie
  */
 public class RemoveAddressCommand extends AbstractOrderCommand {
@@ -27,6 +31,7 @@ public class RemoveAddressCommand extends AbstractOrderCommand {
     }
 
     public void setAddressType(AddressType addressType) {
+        Assert.notNull(addressType, "The address type cannot be null");
         this.addressType = addressType;
     }
 }
