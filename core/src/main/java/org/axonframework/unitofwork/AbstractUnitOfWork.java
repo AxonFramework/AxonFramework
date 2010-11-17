@@ -18,6 +18,8 @@ package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +36,8 @@ import java.util.Set;
  */
 public abstract class AbstractUnitOfWork implements UnitOfWork {
 
+    private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
+
     private boolean isStarted;
     private UnitOfWork outerUnitOfWork;
     private List<AbstractUnitOfWork> innerUnitsOfWork = new ArrayList<AbstractUnitOfWork>();
@@ -41,8 +45,12 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     @Override
     public void commit() {
         assertStarted();
-        if (outerUnitOfWork == null) {
-            performCommit();
+        try {
+            if (outerUnitOfWork == null) {
+                performCommit();
+            }
+        } finally {
+            clear();
         }
     }
 
@@ -53,11 +61,17 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     @Override
     public void rollback(Throwable cause) {
-        assertStarted();
+        if (cause != null && logger.isInfoEnabled()) {
+            logger.info("Rolling back UnitOfWork due to exception. ", cause);
+        }
+
         try {
-            doRollback(cause);
+            if (isStarted()) {
+                doRollback(cause);
+            }
         } finally {
             clear();
+            stop();
         }
     }
 
@@ -82,6 +96,10 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     @Override
     public boolean isStarted() {
         return isStarted;
+    }
+
+    private void stop() {
+        isStarted = false;
     }
 
     /**
@@ -111,7 +129,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             doRollback(t);
             throw t;
         } finally {
-            clear();
+            stop();
         }
     }
 
@@ -123,7 +141,6 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     private void clear() {
         CurrentUnitOfWork.clear(this);
-        isStarted = false;
     }
 
     /**

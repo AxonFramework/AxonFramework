@@ -82,6 +82,7 @@ public class DefaultUnitOfWorkTest {
         CurrentUnitOfWork.set(parentUoW);
         UnitOfWork innerUow = DefaultUnitOfWork.startAndGet();
         innerUow.rollback();
+        parentUoW.rollback();
         CurrentUnitOfWork.clear(parentUoW);
         verify(parentUoW).registerListener(isA(UnitOfWorkListener.class));
     }
