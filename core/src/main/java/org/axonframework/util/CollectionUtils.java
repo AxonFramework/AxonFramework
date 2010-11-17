@@ -37,6 +37,8 @@ public abstract class CollectionUtils {
      * <p/>
      * The order of the items in the list is the same as the order they were provided by the collection. The given
      * <code>collection</code> remains unchanged by this method.
+     * <p/>
+     * If the given collection is null, en empty list is returned.
      *
      * @param collection   An iterable (e.g. Collection) containing the unfiltered items.
      * @param expectedType The type items in the returned List must be assignable to.
@@ -46,9 +48,11 @@ public abstract class CollectionUtils {
 
     public static <T> List<T> filterByType(Iterable<?> collection, Class<T> expectedType) {
         List<T> filtered = new LinkedList<T>();
-        for (Object item : collection) {
-            if (item != null && expectedType.isInstance(item)) {
-                filtered.add(expectedType.cast(item));
+        if (collection != null) {
+            for (Object item : collection) {
+                if (item != null && expectedType.isInstance(item)) {
+                    filtered.add(expectedType.cast(item));
+                }
             }
         }
         return filtered;
