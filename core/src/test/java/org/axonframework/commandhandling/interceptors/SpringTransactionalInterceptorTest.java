@@ -50,6 +50,7 @@ public class SpringTransactionalInterceptorTest {
         mockTransactionStatus = mock(TransactionStatus.class);
         mockTransactionManager = mock(PlatformTransactionManager.class);
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class))).thenReturn(mockTransactionStatus);
+        when(mockTransactionStatus.isNewTransaction()).thenReturn(true);
         SpringTransactionalInterceptor testSubject = new SpringTransactionalInterceptor();
         testSubject.setTransactionManager(mockTransactionManager);
         commandBus = new SimpleCommandBus();

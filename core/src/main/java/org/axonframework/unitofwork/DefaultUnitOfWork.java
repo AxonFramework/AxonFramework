@@ -77,6 +77,9 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         notifyListenersPrepareCommit();
         saveAggregates();
         publishEvents();
+
+        commitInnerUnitOfWork();
+
         notifyListenersAfterCommit();
         notifyListenersCleanup();
     }

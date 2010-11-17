@@ -101,7 +101,9 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.commit();
             return returnValue;
         } catch (Throwable throwable) {
-            unitOfWork.rollback(throwable);
+            if (unitOfWork.isStarted()) {
+                unitOfWork.rollback(throwable);
+            }
             throw throwable;
         }
     }

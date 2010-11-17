@@ -42,12 +42,14 @@ public class SpringTransactionalInterceptor extends TransactionInterceptor<Trans
 
     @Override
     protected void commitTransaction(TransactionStatus transaction) {
-        transactionManager.commit(transaction);
+        if (transaction.isNewTransaction()) {
+            transactionManager.commit(transaction);
+        }
     }
 
     @Override
     protected void rollbackTransaction(TransactionStatus transaction) {
-        if (!transaction.isCompleted()) {
+        if (transaction.isNewTransaction() && !transaction.isCompleted()) {
             transactionManager.rollback(transaction);
         }
     }

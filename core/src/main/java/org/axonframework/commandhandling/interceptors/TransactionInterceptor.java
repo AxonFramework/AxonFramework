@@ -36,8 +36,7 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 public abstract class TransactionInterceptor<T> implements CommandHandlerInterceptor {
 
     @Override
-    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain
-    ) throws Throwable {
+    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain) throws Throwable {
         T transaction = startTransaction();
         CurrentUnitOfWork.get().registerListener(new TransactionalUnitOfWork(transaction));
         return interceptorChain.proceed();

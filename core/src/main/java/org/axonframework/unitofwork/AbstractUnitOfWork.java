@@ -19,6 +19,7 @@ package org.axonframework.unitofwork;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -35,18 +36,13 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     private boolean isStarted;
     private UnitOfWork outerUnitOfWork;
+    private List<AbstractUnitOfWork> innerUnitsOfWork = new ArrayList<AbstractUnitOfWork>();
 
     @Override
     public void commit() {
         assertStarted();
-        try {
-            if (outerUnitOfWork != null) {
-                outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
-            } else {
-                performCommit();
-            }
-        } finally {
-            clear();
+        if (outerUnitOfWork == null) {
+            performCommit();
         }
     }
 
@@ -59,11 +55,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     public void rollback(Throwable cause) {
         assertStarted();
         try {
-            if (outerUnitOfWork != null) {
-                outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
-            } else {
-                doRollback(cause);
-            }
+            doRollback(cause);
         } finally {
             clear();
         }
@@ -76,6 +68,11 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         } else if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
             this.outerUnitOfWork = CurrentUnitOfWork.get();
+            if (outerUnitOfWork instanceof AbstractUnitOfWork) {
+                ((AbstractUnitOfWork) outerUnitOfWork).registerInnerUnitOfWork(this);
+            } else {
+                outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
+            }
         }
         CurrentUnitOfWork.set(this);
         isStarted = true;
@@ -113,6 +110,8 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         } catch (RuntimeException t) {
             doRollback(t);
             throw t;
+        } finally {
+            clear();
         }
     }
 
@@ -125,6 +124,27 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private void clear() {
         CurrentUnitOfWork.clear(this);
         isStarted = false;
+    }
+
+    /**
+     * Commit all registered inner units of work. This should be invoked after events have been dispatched and before
+     * any listeners are notified of the commit.
+     */
+    protected void commitInnerUnitOfWork() {
+        for (AbstractUnitOfWork unitOfWork : innerUnitsOfWork) {
+            if (unitOfWork.isStarted()) {
+                CurrentUnitOfWork.set(unitOfWork);
+                try {
+                    unitOfWork.performCommit();
+                } finally {
+                    CurrentUnitOfWork.clear(unitOfWork);
+                }
+            }
+        }
+    }
+
+    private void registerInnerUnitOfWork(AbstractUnitOfWork unitOfWork) {
+        innerUnitsOfWork.add(unitOfWork);
     }
 
     private class CommitOnOuterCommitTask implements UnitOfWorkListener {

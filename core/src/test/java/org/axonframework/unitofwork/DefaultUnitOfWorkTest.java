@@ -26,6 +26,9 @@ import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -71,6 +74,51 @@ public class DefaultUnitOfWorkTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
+    }
+
+    @Test
+    public void testUnitOfWorkRegistersListenerWithParent() {
+        UnitOfWork parentUoW = mock(UnitOfWork.class);
+        CurrentUnitOfWork.set(parentUoW);
+        UnitOfWork innerUow = DefaultUnitOfWork.startAndGet();
+        innerUow.rollback();
+        CurrentUnitOfWork.clear(parentUoW);
+        verify(parentUoW).registerListener(isA(UnitOfWorkListener.class));
+    }
+
+    @Test
+    public void testInnerUnitOfWorkRolledBackWithOuter() {
+        final AtomicBoolean isRolledBack = new AtomicBoolean(false);
+        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
+        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
+        inner.registerListener(new UnitOfWorkListenerAdapter() {
+            @Override
+            public void onRollback(Throwable failureCause) {
+                isRolledBack.set(true);
+            }
+        });
+        inner.rollback();
+        outer.rollback();
+        assertTrue("The inner UoW wasn't properly rolled back", isRolledBack.get());
+        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+    }
+
+    @Test
+    public void testInnerUnitOfWorkCommittedBackWithOuter() {
+        final AtomicBoolean isCommitted = new AtomicBoolean(false);
+        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
+        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
+        inner.registerListener(new UnitOfWorkListenerAdapter() {
+            @Override
+            public void afterCommit() {
+                isCommitted.set(true);
+            }
+        });
+        inner.commit();
+        assertFalse("The inner UoW was committed prematurely", isCommitted.get());
+        outer.commit();
+        assertTrue("The inner UoW wasn't properly committed", isCommitted.get());
+        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
     }
 
     @SuppressWarnings({"unchecked"})
