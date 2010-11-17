@@ -190,7 +190,7 @@
         <snapshotRepository>
             <id>sonatype</id>
             <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-            <uniqueVersion>true</uniqueVersion>
+            <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
         <repository>
             <id>sonatype</id>
