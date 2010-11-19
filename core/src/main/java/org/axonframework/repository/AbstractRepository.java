@@ -25,8 +25,8 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
+
+import javax.annotation.Resource;
 
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
@@ -129,8 +129,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      *
      * @param eventBus the event bus to publish events to
      */
-    @Autowired
-    @Required
+    @Resource
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
     }
