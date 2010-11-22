@@ -44,7 +44,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private volatile boolean isActive = true;
 
     /**
-     * Initialize the saga with a random identifier. The identifier used is a randomly generated UUID.
+     * Initialize the saga with a random identifier. The identifier used is a randomly generated {@link UUID}.
      */
     protected AbstractAnnotatedSaga() {
         this(UUID.randomUUID().toString());
@@ -107,6 +107,8 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     protected void removeLookupProperty(SagaLookupProperty property) {
         lookupProperties.remove(property);
     }
+
+    // Java Serialization methods
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
