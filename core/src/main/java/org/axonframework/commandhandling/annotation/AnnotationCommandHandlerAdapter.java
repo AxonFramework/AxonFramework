@@ -127,7 +127,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      * @return the command handler method for the given command
      */
     public Method findCommandHandlerMethodFor(Object command) {
-        return super.findHandlerMethod(command.getClass());
+        return super.findHandlerMethod(getTarget().getClass(), command.getClass());
     }
 
     private static class CommandHandlerResolverCallback<T> implements ReflectionUtils.MethodCallback {

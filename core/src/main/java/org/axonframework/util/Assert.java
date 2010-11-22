@@ -42,14 +42,25 @@ public abstract class Assert {
     }
 
     /**
-     * Asserts that the value of <code>state</code> is true. If not, an IllegalArgumentException is thrown.
+     * Asserts that the given <code>expression</code> is true. If not, an IllegalArgumentException is thrown.
      *
      * @param expression the state validation expression
-     * @param message    The message that the excetion contains if state evaluates to false
+     * @param message    The message that the exception contains if state evaluates to false
      */
     public static void isTrue(boolean expression, String message) {
         if (!expression) {
             throw new IllegalArgumentException(message);
         }
+    }
+
+    /**
+     * Assert that the given <code>value</code> is not <code>null</code>. If not, an IllegalArgumentException is
+     * thrown.
+     *
+     * @param value   the value not to be <code>null</code>
+     * @param message The message to add to the exception when the assertion fails
+     */
+    public static void notNull(Object value, String message) {
+        isTrue(value != null, message);
     }
 }
