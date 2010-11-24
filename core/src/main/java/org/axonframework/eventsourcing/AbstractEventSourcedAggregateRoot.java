@@ -98,7 +98,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
             }
             lastSequenceNumber = event.getSequenceNumber();
             if (!(event instanceof AggregateSnapshot)) {
-                handle(event);
+                handleRecursively(event);
             }
         }
         initializeEventStream(lastSequenceNumber);

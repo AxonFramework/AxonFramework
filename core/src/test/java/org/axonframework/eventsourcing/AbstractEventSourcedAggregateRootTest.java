@@ -46,6 +46,7 @@ public class AbstractEventSourcedAggregateRootTest {
         assertEquals(identifier, testSubject.getIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());
         assertEquals(1, testSubject.getInvocationCount());
+        assertEquals(1, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(new Long(243), testSubject.getVersion());
     }
 
