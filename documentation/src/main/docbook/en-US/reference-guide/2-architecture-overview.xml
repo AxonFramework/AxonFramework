@@ -50,7 +50,7 @@
         the command. In some cases, however, you would also want to execute logic regardless of the
         actual type of command, such as validation, logging or authorization.</para>
     <para>Axon provides building blocks to help you implement a command handling infrastructure with
-        these features. These buidling blocks are thorougly described in <xref
+        these features. These building blocks are thoroughly described in <xref
             linkend="command-handling"/>.</para>
     
     <para><emphasis role="bold">Domain Modeling</emphasis></para>

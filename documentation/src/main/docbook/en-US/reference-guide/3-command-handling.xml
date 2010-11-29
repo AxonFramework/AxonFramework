@@ -39,7 +39,7 @@
             predefined type that needs to be implemented. The Command Handler, however, must
             implement the <code>CommandHandler</code> interface. This interface declares only a
             single method: <code>Object handle(T command, UnitOfWork uow)</code>, where T is the
-            type of Command this Handler can process. The concept of the UnitOfWork ir explained in
+            type of Command this Handler can process. The concept of the UnitOfWork is explained in
                 <xref linkend="unit-of-work"/>. It is not recommended to use return values, but they
             are allowed. Always consider using a "fire and forget" style of command handlers, where
             a client does not have to wait for a response. As return value in such a case, you are
@@ -127,7 +127,7 @@
             repositories a lot easier, since you do not have to explicitly save your changes.
             Secondly, it is an important hook-point for interceptors to find out what a command
             handler has done.</para>
-        <para>In most cases, you are unlikely too need access to the Unit of Work. It is mainly used
+        <para>In most cases, you are unlikely to need access to the Unit of Work. It is mainly used
             by the building blocks that Axon provides. If you do need access to it, for whatever
             reason, there are a few ways to obtain it. The Command Handler receives the Unit Of Work
             through a parameter in the handle method. If you use annotation support, you may add the

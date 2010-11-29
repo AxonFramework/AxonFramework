@@ -32,7 +32,7 @@
         <para>All events may carry data and meta-data. Typically, the data is added to each event as
             fields in the event implementation. Meta-data, on the other hand is stored separately.
             The Auditing interceptor uses this mechanism to attach meta-data to events for auditing
-            purposes. All Axon's implementations of Events allow the subclasses to attach arbirary
+            purposes. All Axon's implementations of Events allow the subclasses to attach arbitrary
             information as meta-data.</para>
         <note>
             <para>In general, you should not base business decisions on information in the meta-data
@@ -102,7 +102,7 @@
                 application events are the expiry of a user session, or the notification of an email
                 being successfully sent. The usefulness of these events depend on the type of
                 application you are creating.</para>
-            <para>In the Axon Framework, you can extend the abtract <code>ApplicationEvent</code>
+            <para>In the Axon Framework, you can extend the abstract <code>ApplicationEvent</code>
                 class for application events. This class will generate a unique identifier and a
                 time stamp for the current event. Optionally, you can attach an object that acts as
                 the source of the event. This source is loosely referenced, which means that if the
@@ -288,6 +288,14 @@
                     will invoke the right method for
                     you.
                 </para>
+                <note>
+                    <para>Note that <code>@EventHandler</code> annotated methods on an
+                            <code>AbstractAnnotatedAggregateRoot</code> are only called when events
+                        are applied directly to the aggregate locally. This should not be confused
+                        with annotating event handler methods on <code>EventListener</code> classes,
+                        in which case event handler methods handle events dispatched by the
+                            <code>EventBus</code>. See <xref linkend="event-listeners"/>. </para>
+                </note>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractAnnotatedAggregateRoot {
     private String someProperty;
 
