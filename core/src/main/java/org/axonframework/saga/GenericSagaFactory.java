@@ -19,15 +19,22 @@ package org.axonframework.saga;
 import java.lang.reflect.InvocationTargetException;
 
 /**
+ * SagaFactory implementation that uses the default (no-arg) constructor on the saga to initialize. After instantiation,
+ * its resources are injected using an optional {@link #setResourceInjector(SagaResourceInjector) resource injector}.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
 public class GenericSagaFactory implements SagaFactory {
 
+    private SagaResourceInjector resourceInjector = NullResourceInjector.INSTANCE;
+
     @Override
     public <T extends Saga> T createSaga(Class<T> sagaType) {
         try {
-            return sagaType.getConstructor().newInstance();
+            T instance = sagaType.getConstructor().newInstance();
+            resourceInjector.injectResources(instance);
+            return instance;
         } catch (InstantiationException e) {
             throw new IllegalArgumentException(String.format("[%s] is not a suitable type for the GenericSagaFactory. "
                     + "It needs an accessible default constructor.", sagaType.getSimpleName()), e);
@@ -40,6 +47,27 @@ public class GenericSagaFactory implements SagaFactory {
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(String.format("[%s] is not a suitable type for the GenericSagaFactory. "
                     + "There must be an accessible default (no-arg) constructor.", sagaType.getSimpleName()), e);
+        }
+    }
+
+    /**
+     * Sets the resource injector that provides the resources needed by the Sagas created by this factory.
+     *
+     * @param resourceInjector The resource injector providing the necessary resources
+     */
+    public void setResourceInjector(SagaResourceInjector resourceInjector) {
+        this.resourceInjector = resourceInjector;
+    }
+
+    private static class NullResourceInjector implements SagaResourceInjector {
+
+        public static final NullResourceInjector INSTANCE = new NullResourceInjector();
+
+        private NullResourceInjector() {
+        }
+
+        @Override
+        public void injectResources(Saga saga) {
         }
     }
 }

@@ -39,14 +39,12 @@ public class AnnotatedSagaTest {
 
     private SagaRepository sagaRepository;
     private SagaManager manager;
-    private SimpleEventBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         sagaRepository = new InMemorySagaRepository();
-        eventBus = new SimpleEventBus();
         manager = new AnnotatedSagaManager(Arrays.<Class<? extends AbstractAnnotatedSaga>>asList(MyTestSaga.class),
-                                           sagaRepository, eventBus);
+                                           sagaRepository, new SimpleEventBus());
     }
 
     @Test
@@ -70,10 +68,10 @@ public class AnnotatedSagaTest {
         Set<MyTestSaga> sagas = repositoryContents("123");
         assertEquals(2, sagas.size());
         for (MyTestSaga saga : sagas) {
-            if (saga.capturedEvents.contains(startingEvent)) {
-                assertEquals(2, saga.capturedEvents.size());
+            if (saga.getCapturedEvents().contains(startingEvent)) {
+                assertEquals(2, saga.getCapturedEvents().size());
             }
-            assertTrue(saga.capturedEvents.size() >= 1);
+            assertTrue(saga.getCapturedEvents().size() >= 1);
         }
     }
 
@@ -104,7 +102,7 @@ public class AnnotatedSagaTest {
         manager.handle(new StartingEvent("12"));
         manager.handle(new StubDomainEvent());
         assertEquals(1, repositoryContents("12").size());
-        assertEquals(1, repositoryContents("12").iterator().next().capturedEvents.size());
+        assertEquals(1, repositoryContents("12").iterator().next().getCapturedEvents().size());
     }
 
     @Test
@@ -145,6 +143,9 @@ public class AnnotatedSagaTest {
             capturedEvents.add(event);
         }
 
+        public List<Event> getCapturedEvents() {
+            return capturedEvents;
+        }
     }
 
     public static abstract class MyIdentifierEvent extends StubDomainEvent {
