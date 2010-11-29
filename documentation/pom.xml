@@ -236,7 +236,7 @@
                     <injections>
                         <injection>
                             <name>version</name>
-                            <value>${parent.version}</value>
+                            <value>${project.parent.version}</value>
                         </injection>
                     </injections>
                 </configuration>
