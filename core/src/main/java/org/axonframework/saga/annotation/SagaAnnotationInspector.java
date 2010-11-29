@@ -17,7 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.domain.Event;
-import org.axonframework.saga.SagaLookupProperty;
+import org.axonframework.saga.AssociationValue;
 import org.axonframework.util.AbstractHandlerInspector;
 import org.axonframework.util.AxonConfigurationException;
 
@@ -41,11 +41,15 @@ class SagaAnnotationInspector extends AbstractHandlerInspector {
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
         StartSaga startAnnotation = handlerMethod.getAnnotation(StartSaga.class);
         EndSaga endAnnotation = handlerMethod.getAnnotation(EndSaga.class);
-        String lookupProperty = handlerAnnotation.lookupProperty();
-        String lookupPropertyKey = handlerAnnotation.keyName().isEmpty() ? lookupProperty : handlerAnnotation.keyName();
-        Object lookupPropertyValue = getPropertyValue(event, lookupProperty);
-        SagaLookupProperty lookup = new SagaLookupProperty(lookupPropertyKey, lookupPropertyValue);
-        return new HandlerConfiguration(creationPolicy(startAnnotation), handlerMethod, endAnnotation != null, lookup);
+        String associationProperty = handlerAnnotation.associationProperty();
+        String associationKey = handlerAnnotation.keyName().isEmpty() ? associationProperty : handlerAnnotation
+                .keyName();
+        Object associationValue = getPropertyValue(event, associationProperty);
+        AssociationValue association = new AssociationValue(associationKey, associationValue);
+        return new HandlerConfiguration(creationPolicy(startAnnotation),
+                                        handlerMethod,
+                                        endAnnotation != null,
+                                        association);
     }
 
     private SagaCreationPolicy creationPolicy(StartSaga startSaga) {
@@ -58,9 +62,9 @@ class SagaAnnotationInspector extends AbstractHandlerInspector {
         }
     }
 
-    private Object getPropertyValue(Event event, String lookupProperty) {
+    private Object getPropertyValue(Event event, String property) {
         try {
-            Method m = event.getClass().getMethod("get" + capitalize(lookupProperty));
+            Method m = event.getClass().getMethod("get" + capitalize(property));
             return m.invoke(event);
         } catch (NoSuchMethodException e) {
             throw new AxonConfigurationException("", e);
@@ -71,8 +75,8 @@ class SagaAnnotationInspector extends AbstractHandlerInspector {
         }
     }
 
-    private String capitalize(String lookupProperty) {
-        return lookupProperty.substring(0, 1).toUpperCase() + lookupProperty.substring(1);
+    private String capitalize(String s) {
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
 }

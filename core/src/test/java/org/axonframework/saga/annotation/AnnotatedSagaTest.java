@@ -19,8 +19,8 @@ package org.axonframework.saga.annotation;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.InMemorySagaRepository;
-import org.axonframework.saga.SagaLookupProperty;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
 import org.junit.*;
@@ -114,7 +114,7 @@ public class AnnotatedSagaTest {
     }
 
     private Set<MyTestSaga> repositoryContents(String lookupValue) {
-        return sagaRepository.find(MyTestSaga.class, new SagaLookupProperty("myIdentifier", lookupValue));
+        return sagaRepository.find(MyTestSaga.class, new AssociationValue("myIdentifier", lookupValue));
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
@@ -123,24 +123,24 @@ public class AnnotatedSagaTest {
         private static final long serialVersionUID = -1562911263884220240L;
 
         @StartSaga
-        @SagaEventHandler(lookupProperty = "myIdentifier")
+        @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleSomeEvent(StartingEvent event) {
             capturedEvents.add(event);
         }
 
         @StartSaga(forceNew = true)
-        @SagaEventHandler(lookupProperty = "myIdentifier")
+        @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleSomeEvent(ForcingStartEvent event) {
             capturedEvents.add(event);
         }
 
         @EndSaga
-        @SagaEventHandler(lookupProperty = "myIdentifier")
+        @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleSomeEvent(EndingEvent event) {
             capturedEvents.add(event);
         }
 
-        @SagaEventHandler(lookupProperty = "myIdentifier")
+        @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleMiddleEvent(MiddleEvent event) {
             capturedEvents.add(event);
         }

@@ -16,7 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.saga.SagaLookupProperty;
+import org.axonframework.saga.AssociationValue;
 
 import java.lang.reflect.Method;
 
@@ -42,29 +42,29 @@ class HandlerConfiguration {
     private final SagaCreationPolicy creationPolicy;
     private final Method handlerMethod;
     private final boolean endSaga;
-    private final SagaLookupProperty lookupProperty;
+    private final AssociationValue associationValue;
 
     private HandlerConfiguration() {
         handlerMethod = null;
         endSaga = false;
         creationPolicy = SagaCreationPolicy.NONE;
-        lookupProperty = null;
+        associationValue = null;
     }
 
     /**
      * Creates a HandlerConfiguration.
      *
-     * @param creationPolicy The creation policy for the handlerMethod
-     * @param handlerMethod  The method handling the event
-     * @param endSaga        Whether or not this handler ends the saga
-     * @param lookupProperty The property to find the saga instance with
+     * @param creationPolicy   The creation policy for the handlerMethod
+     * @param handlerMethod    The method handling the event
+     * @param endSaga          Whether or not this handler ends the saga
+     * @param associationValue The property to find the saga instance with
      */
     public HandlerConfiguration(SagaCreationPolicy creationPolicy, Method handlerMethod, boolean endSaga,
-                                SagaLookupProperty lookupProperty) {
+                                AssociationValue associationValue) {
         this.creationPolicy = creationPolicy;
         this.handlerMethod = handlerMethod;
         this.endSaga = endSaga;
-        this.lookupProperty = lookupProperty;
+        this.associationValue = associationValue;
     }
 
     /**
@@ -77,12 +77,12 @@ class HandlerConfiguration {
     }
 
     /**
-     * The LookupProperty to find the saga instance with.
+     * The AssociationValue to find the saga instance with.
      *
-     * @return the LookupProperty to find the saga instance with
+     * @return the AssociationValue to find the saga instance with
      */
-    public SagaLookupProperty getLookupProperty() {
-        return lookupProperty;
+    public AssociationValue getAssociationValue() {
+        return associationValue;
     }
 
     /**

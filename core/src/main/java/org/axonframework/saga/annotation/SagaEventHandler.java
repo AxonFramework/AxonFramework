@@ -52,13 +52,13 @@ public @interface SagaEventHandler {
      *
      * @return The property in the event that will provide the value to find the Saga instance
      */
-    String lookupProperty();
+    String associationProperty();
 
     /**
-     * The key in the LookupProperty to use. Optional. Should only be configured if that property is different than the
-     * value given by {@link #lookupProperty()}.
+     * The key in the AssociationValue to use. Optional. Should only be configured if that property is different than
+     * the value given by {@link #associationProperty()}.
      *
-     * @return The key in the LookupProperty to use
+     * @return The key in the AssociationValue to use
      */
     String keyName() default "";
 

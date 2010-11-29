@@ -19,17 +19,17 @@ package org.axonframework.saga;
 import java.io.Serializable;
 
 /**
- * A combination of key and value by which a Saga can be found. Two lookup properties are considered equal when both
- * their key and value are equal.
+ * A combination of key and value by which a Saga can be found. Sagas are triggered by events that have a property that
+ * the saga is associated with. A single Association Value can lead to multiple Sagas, and a single Saga can be
+ * associated with multiple Association Values.
  * <p/>
- * For example, a Saga managing Orders could have a LookupProperty with key &quot;orderId&quot; and the order identifier
- * as value. A single lookup property can lead to multiple Saga's, and a single Saga can have multiple lookup properties
- * pointed to it.
+ * Two association values are considered equal when both their key and value are equal. For example, a Saga managing
+ * Orders could have a AssociationValue with key &quot;orderId&quot; and the order identifier as value.
  *
  * @author Allard Buijze
  * @since 0.7
  */
-public class SagaLookupProperty implements Serializable {
+public class AssociationValue implements Serializable {
 
     private static final long serialVersionUID = 3573690125021875389L;
 
@@ -37,32 +37,32 @@ public class SagaLookupProperty implements Serializable {
     private final Object propertyValue;
 
     /**
-     * Creates a Lookup Property instance with the given <code>key</code> and <code>value</code>.
+     * Creates a Association Value instance with the given <code>key</code> and <code>value</code>.
      *
-     * @param key   The key of the lookup property. Usually indicates where the value comes from.
-     * @param value The value corresponding to the key of the lookup. It is highly recommended to only use serializable
-     *              values.
+     * @param key   The key of the Association Value. Usually indicates where the value comes from.
+     * @param value The value corresponding to the key of the association. It is highly recommended to only use
+     *              serializable values.
      */
-    public SagaLookupProperty(String key, Object value) {
+    public AssociationValue(String key, Object value) {
         this.propertyKey = key;
         this.propertyValue = value;
     }
 
     /**
-     * Returns the key of this lookup property. The key usually indicates where the properties' value comes from.
+     * Returns the key of this association value. The key usually indicates where the property's value comes from.
      *
-     * @return the key of this lookup property
+     * @return the key of this association value
      */
-    public String getPropertyKey() {
+    public String getKey() {
         return propertyKey;
     }
 
     /**
-     * Returns the value of this lookup property.
+     * Returns the value of this association.
      *
-     * @return the value of this lookup property.
+     * @return the value of this association.
      */
-    public Object getPropertyValue() {
+    public Object getValue() {
         return propertyValue;
     }
 
@@ -76,7 +76,7 @@ public class SagaLookupProperty implements Serializable {
             return false;
         }
 
-        SagaLookupProperty that = (SagaLookupProperty) o;
+        AssociationValue that = (AssociationValue) o;
 
         if (!propertyKey.equals(that.propertyKey)) {
             return false;

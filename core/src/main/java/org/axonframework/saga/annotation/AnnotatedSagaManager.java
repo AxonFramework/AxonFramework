@@ -69,13 +69,13 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
         if (!configuration.isHandlerAvailable()) {
             return Collections.emptySet();
         }
-        Set<T> sagasFound = sagaRepository.find(sagaType, configuration.getLookupProperty());
+        Set<T> sagasFound = sagaRepository.find(sagaType, configuration.getAssociationValue());
         if ((sagasFound.isEmpty()
                 && configuration.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)
                 || configuration.getCreationPolicy() == SagaCreationPolicy.ALWAYS) {
             T saga = sagaFactory.createSaga(sagaType);
             sagasFound.add(saga);
-            saga.registerLookupProperty(configuration.getLookupProperty());
+            saga.associateWith(configuration.getAssociationValue());
         }
         if (configuration.isDestructorHandler()) {
             for (AbstractAnnotatedSaga saga : sagasFound) {

@@ -22,8 +22,8 @@ import org.axonframework.domain.Event;
  * @author Allard Buijze
  * @since 0.7
  */
-public interface SagaLookupPropertyResolver {
+public interface SagaAssociationValueResolver {
 
-    SagaLookupProperty extractLookupProperty(Event event);
+    AssociationValue extractAssociationValue(Event event);
 
 }

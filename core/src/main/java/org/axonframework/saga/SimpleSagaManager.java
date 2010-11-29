@@ -32,7 +32,7 @@ import java.util.Set;
 public class SimpleSagaManager extends AbstractSagaManager {
 
     private final SagaRepository sagaRepository;
-    private final SagaLookupPropertyResolver sagaLookupPropertyResolver;
+    private final SagaAssociationValueResolver sagaAssociationValueResolver;
     private final SagaFactory sagaFactory;
 
     private List<Class<? extends Event>> eventsToAlwaysCreateNewSagasFor = Collections.emptyList();
@@ -40,20 +40,20 @@ public class SimpleSagaManager extends AbstractSagaManager {
     private Class<? extends Saga> sagaType;
 
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
-                             SagaLookupPropertyResolver sagaLookupPropertyResolver,
+                             SagaAssociationValueResolver sagaAssociationValueResolver,
                              SagaFactory sagaFactory, EventBus eventBus) {
         super(eventBus, sagaRepository);
         this.sagaType = sagaType;
         this.sagaRepository = sagaRepository;
-        this.sagaLookupPropertyResolver = sagaLookupPropertyResolver;
+        this.sagaAssociationValueResolver = sagaAssociationValueResolver;
         this.sagaFactory = sagaFactory;
     }
 
     @Override
     protected Set<Saga> findSagas(Event event) {
-        SagaLookupProperty lookupProperty = sagaLookupPropertyResolver.extractLookupProperty(event);
+        AssociationValue associationValue = sagaAssociationValueResolver.extractAssociationValue(event);
         Set<Saga> sagas = new HashSet<Saga>();
-        sagas.addAll(sagaRepository.find(sagaType, lookupProperty));
+        sagas.addAll(sagaRepository.find(sagaType, associationValue));
         if (sagas.isEmpty() && isAssignableClassIn(event.getClass(), eventsToOptionallyCreateNewSagasFor)) {
             sagas.add(sagaFactory.createSaga(sagaType));
         } else if (isAssignableClassIn(event.getClass(), eventsToAlwaysCreateNewSagasFor)) {

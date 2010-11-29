@@ -17,8 +17,8 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.domain.Event;
+import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaLookupProperty;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -38,7 +38,7 @@ import java.util.UUID;
  */
 public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
-    private final Set<SagaLookupProperty> lookupProperties;
+    private final Set<AssociationValue> associationValues;
     private final String identifier;
     private transient volatile SagaEventHandlerInvoker eventHandlerInvoker;
     private volatile boolean isActive = true;
@@ -57,7 +57,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      */
     protected AbstractAnnotatedSaga(String identifier) {
         this.identifier = identifier;
-        lookupProperties = new HashSet<SagaLookupProperty>();
+        associationValues = new HashSet<AssociationValue>();
         eventHandlerInvoker = new SagaEventHandlerInvoker(this);
     }
 
@@ -67,8 +67,8 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     }
 
     @Override
-    public Set<SagaLookupProperty> getLookupProperties() {
-        return Collections.unmodifiableSet(lookupProperties);
+    public Set<AssociationValue> getAssociationValues() {
+        return Collections.unmodifiableSet(associationValues);
     }
 
     @Override
@@ -89,23 +89,45 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     }
 
     /**
-     * Registers a SagaLookupProperty with the given saga. When the saga is committed, it can be found using the
+     * Registers a AssociationValue with the given saga. When the saga is committed, it can be found using the
      * registered property.
      *
-     * @param property The lookup property to assign to this saga.
+     * @param property The value to associate this saga with.
      */
-    protected void registerLookupProperty(SagaLookupProperty property) {
-        lookupProperties.add(property);
+    protected void associateWith(AssociationValue property) {
+        associationValues.add(property);
     }
 
     /**
-     * Removes the given SagaLookup property from this Saga. When the saga is committed, it can no longer be found using
-     * the given property. If the given property wasn't registered with the saga, nothing happens.
+     * Registers a AssociationValue with the given saga. When the saga is committed, it can be found using the
+     * registered property.
      *
-     * @param property the lookup property to remove from the saga.
+     * @param key   The key of the association value to associate this saga with.
+     * @param value The value of the association value to associate this saga with.
      */
-    protected void removeLookupProperty(SagaLookupProperty property) {
-        lookupProperties.remove(property);
+    protected void associateWith(String key, Object value) {
+        associationValues.add(new AssociationValue(key, value));
+    }
+
+    /**
+     * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
+     * given association. If the given property wasn't registered with the saga, nothing happens.
+     *
+     * @param property the association value to remove from the saga.
+     */
+    protected void removeAssociationWith(AssociationValue property) {
+        associationValues.remove(property);
+    }
+
+    /**
+     * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
+     * given association value. If the given saga wasn't associated with given values, nothing happens.
+     *
+     * @param key   The key of the association value to remove from this saga.
+     * @param value The value of the association value to remove from this saga.
+     */
+    protected void removeAssociationWith(String key, Object value) {
+        associationValues.remove(new AssociationValue(key, value));
     }
 
     // Java Serialization methods

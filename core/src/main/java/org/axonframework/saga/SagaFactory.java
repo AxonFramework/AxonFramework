@@ -22,5 +22,13 @@ package org.axonframework.saga;
  */
 public interface SagaFactory {
 
+    /**
+     * Create a new instance of a Saga of given type. The Saga must be fully initialized and resources it depends on
+     * must have been provided (injected or otherwise).
+     *
+     * @param sagaType The type of saga to create an instance for
+     * @param <T>      The type of saga to create an instance for
+     * @return A fully initialized instance of a saga of given type
+     */
     <T extends Saga> T createSaga(Class<T> sagaType);
 }

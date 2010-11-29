@@ -24,7 +24,7 @@ import java.util.Set;
  */
 public interface SagaRepository {
 
-    <T extends Saga> Set<T> find(Class<T> type, SagaLookupProperty sagaLookupProperty);
+    <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue);
 
     void commit(Saga saga);
 

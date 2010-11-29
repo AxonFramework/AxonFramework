@@ -28,7 +28,7 @@ public interface Saga {
 
     String getSagaIdentifier();
 
-    Set<SagaLookupProperty> getLookupProperties();
+    Set<AssociationValue> getAssociationValues();
 
     void handle(Event event);
 

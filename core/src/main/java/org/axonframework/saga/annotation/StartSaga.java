@@ -26,13 +26,13 @@ import java.lang.annotation.Target;
  * Indicates that the annotated {@link org.axonframework.saga.annotation.SagaEventHandler} method can trigger the
  * creation of a new Saga instance.
  * <p/>
- * When a Saga is started due to an invocation on a StartSaga annotated method, the lookupProperty of the annotated
- * method and the actual properties' value are used to define a LookupProperty for the created saga. Thus, a method with
- * this definition:
+ * When a Saga is started due to an invocation on a StartSaga annotated method, the association of the annotated method
+ * and the actual property's value are used to define a AssociationValue for the created saga. Thus, a method with this
+ * definition:
  * <p/>
- * <code>@StartSaga(forceNew=true)<br/>@SageEventHandler(lookupProperty=&quot;orderId&quot;)<br/>public void
+ * <code>@StartSaga(forceNew=true)<br/>@SageEventHandler(associationProperty=&quot;orderId&quot;)<br/>public void
  * handleOrderCreated(OrderCreatedEvent event) </code><br/> will always trigger the creation of a saga that can be found
- * with a LookupProperty with key "orderId" and as value the value returned by <code>event.getOrderId()</code>.
+ * with an AssociationValue with key "orderId" and as value the value returned by <code>event.getOrderId()</code>.
  * <p/>
  * This annotation can only appear on methods that have been annotated with {@link
  * org.axonframework.saga.annotation.SagaEventHandler @SagaEventHandler}.

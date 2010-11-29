@@ -56,7 +56,7 @@ public class AbstractAnnotatedSagaTest {
 
         private int invocationCount = 0;
 
-        @SagaEventHandler(lookupProperty = "aggregateIdentifier")
+        @SagaEventHandler(associationProperty = "aggregateIdentifier")
         public void handleStubDomainEvent(StubDomainEvent event) {
             invocationCount++;
         }

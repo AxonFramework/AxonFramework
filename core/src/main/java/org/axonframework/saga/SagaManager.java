@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.EventListener;
 public interface SagaManager extends EventListener {
 
     /**
-     * Handles the event
+     * Handles the event by passing it to all saga that have an Association Value found in the given event.
      *
      * @param event the event to handle
      */

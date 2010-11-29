@@ -33,11 +33,11 @@ public class InMemorySagaRepository implements SagaRepository {
     private final Set<Saga> managedSagas = new ConcurrentSkipListSet<Saga>(new SagaIdentifierComparator());
 
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, SagaLookupProperty lookupProperty) {
+    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
         Set<T> result = new HashSet<T>();
         List<T> sagasOfType = CollectionUtils.filterByType(managedSagas, type);
         for (T saga : sagasOfType) {
-            if (saga.getLookupProperties().contains(lookupProperty)) {
+            if (saga.getAssociationValues().contains(associationValue)) {
                 result.add(saga);
             }
         }
