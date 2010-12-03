@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.timer;
 
-import org.axonframework.domain.Event;
+import java.io.Serializable;
 
 /**
  * @author Allard Buijze
- * @since 0.7
  */
-public interface Saga {
+public interface TimerReference extends Serializable {
+
+    String getIdentifier();
 
     String getSagaIdentifier();
-
-    AssociationValues getAssociationValues();
-
-    void handle(Event event);
-
-    boolean isActive();
 }

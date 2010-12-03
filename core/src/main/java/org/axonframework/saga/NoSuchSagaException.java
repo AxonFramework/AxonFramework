@@ -16,19 +16,17 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.util.AxonNonTransientException;
 
 /**
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga {
+public class NoSuchSagaException extends AxonNonTransientException {
 
-    String getSagaIdentifier();
+    private static final long serialVersionUID = 5249424801725991356L;
 
-    AssociationValues getAssociationValues();
-
-    void handle(Event event);
-
-    boolean isActive();
+    public NoSuchSagaException(Class<?> type, String sagaIdentifier) {
+        super(String.format("Saga of type %s and identifier %s not found", type, sagaIdentifier));
+    }
 }

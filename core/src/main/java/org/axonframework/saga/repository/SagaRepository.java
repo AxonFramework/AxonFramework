@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.repository;
 
-import org.axonframework.domain.Event;
+import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.Saga;
+
+import java.util.Set;
 
 /**
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga {
+public interface SagaRepository {
 
-    String getSagaIdentifier();
+    <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue);
 
-    AssociationValues getAssociationValues();
+    <T extends Saga> T load(Class<T> type, String sagaIdentifier);
 
-    void handle(Event event);
+    void commit(Saga saga);
 
-    boolean isActive();
+    void add(Saga saga);
+
 }

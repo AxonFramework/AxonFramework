@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.timer;
 
-import org.axonframework.domain.Event;
+import org.axonframework.util.AxonTransientException;
 
 /**
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga {
+public class TimerException extends AxonTransientException {
 
-    String getSagaIdentifier();
+    private static final long serialVersionUID = -3633716643792480973L;
 
-    AssociationValues getAssociationValues();
+    public TimerException(String message) {
+        super(message);
+    }
 
-    void handle(Event event);
+    public TimerException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    boolean isActive();
 }

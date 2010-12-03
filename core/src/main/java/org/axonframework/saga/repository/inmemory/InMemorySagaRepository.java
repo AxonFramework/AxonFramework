@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.repository.inmemory;
 
+import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.NoSuchSagaException;
+import org.axonframework.saga.Saga;
+import org.axonframework.saga.repository.SagaRepository;
 import org.axonframework.util.CollectionUtils;
 
 import java.util.Comparator;
@@ -45,12 +49,28 @@ public class InMemorySagaRepository implements SagaRepository {
     }
 
     @Override
+    public <T extends Saga> T load(Class<T> type, String sagaIdentifier) {
+        List<T> sagasOfType = CollectionUtils.filterByType(managedSagas, type);
+        for (T saga : sagasOfType) {
+            if (saga.getSagaIdentifier().equals(sagaIdentifier)) {
+                return saga;
+            }
+        }
+        throw new NoSuchSagaException(type, sagaIdentifier);
+    }
+
+    @Override
     public void commit(Saga saga) {
         if (!saga.isActive()) {
             managedSagas.remove(saga);
         } else {
             managedSagas.add(saga);
         }
+    }
+
+    @Override
+    public void add(Saga saga) {
+        commit(saga);
     }
 
     private static class SagaIdentifierComparator implements Comparator<Saga> {

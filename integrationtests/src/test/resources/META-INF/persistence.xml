@@ -20,6 +20,8 @@
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <class>org.axonframework.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.saga.repository.jpa.AssociationEntry</class>
+        <class>org.axonframework.saga.repository.jpa.SagaEntry</class>
         <properties>
             <property name="hibernate.archive.autodetection" value="class"/>
         </properties>

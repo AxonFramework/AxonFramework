@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.saga.repository.SagaRepository;
 import org.junit.*;
 
 import java.util.Arrays;

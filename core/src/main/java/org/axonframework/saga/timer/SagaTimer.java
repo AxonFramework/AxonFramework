@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.timer;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.ApplicationEvent;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga {
+public interface SagaTimer {
 
-    String getSagaIdentifier();
+    TimerReference createTimer(DateTime triggerDateTime, ApplicationEvent event);
 
-    AssociationValues getAssociationValues();
+    TimerReference createTimer(Duration triggerDuration, ApplicationEvent event);
 
-    void handle(Event event);
+    TimerReference createTimer(ScheduledEvent event);
 
-    boolean isActive();
+    void cancelTimer(TimerReference timerReference);
+
 }

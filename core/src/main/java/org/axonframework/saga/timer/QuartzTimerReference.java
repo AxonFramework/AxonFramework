@@ -14,21 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
-
-import org.axonframework.domain.Event;
+package org.axonframework.saga.timer;
 
 /**
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga {
+class QuartzTimerReference implements TimerReference {
 
-    String getSagaIdentifier();
+    private static final long serialVersionUID = 7798276124742118925L;
 
-    AssociationValues getAssociationValues();
+    private final String taskIdentifier;
+    private final String sagaIdentifier;
 
-    void handle(Event event);
+    public QuartzTimerReference(String taskIdentifier, String sagaIdentifier) {
+        this.taskIdentifier = taskIdentifier;
+        this.sagaIdentifier = sagaIdentifier;
+    }
 
-    boolean isActive();
+    @Override
+    public String getIdentifier() {
+        return taskIdentifier;
+    }
+
+    @Override
+    public String getSagaIdentifier() {
+        return sagaIdentifier;
+    }
 }

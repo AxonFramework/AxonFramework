@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.repository;
 
-import org.axonframework.domain.Event;
+import org.axonframework.util.AxonTransientException;
 
 /**
  * @author Allard Buijze
- * @since 0.7
  */
-public interface Saga {
+public class SagaStorageException extends AxonTransientException {
 
-    String getSagaIdentifier();
+    public SagaStorageException(String message) {
+        super(message);
+    }
 
-    AssociationValues getAssociationValues();
-
-    void handle(Event event);
-
-    boolean isActive();
+    public SagaStorageException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

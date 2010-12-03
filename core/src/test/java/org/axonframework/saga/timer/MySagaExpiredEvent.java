@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.timer;
 
-import org.axonframework.domain.Event;
+import org.axonframework.saga.Saga;
+import org.joda.time.Duration;
 
 /**
  * @author Allard Buijze
- * @since 0.7
  */
-public interface Saga {
+public class MySagaExpiredEvent extends ScheduledEvent {
 
-    String getSagaIdentifier();
+    private final String association;
 
-    AssociationValues getAssociationValues();
+    public MySagaExpiredEvent(Saga source, int scheduleDuration, String association) {
+        super(source, new Duration(scheduleDuration));
+        this.association = association;
+    }
 
-    void handle(Event event);
-
-    boolean isActive();
+    public String getAssociation() {
+        return association;
+    }
 }

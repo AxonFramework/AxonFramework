@@ -14,18 +14,29 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.saga.timer;
 
-import java.util.Set;
+import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.saga.Saga;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
  * @author Allard Buijze
  * @since 0.7
  */
-public interface SagaRepository {
+public abstract class ScheduledEvent extends ApplicationEvent {
 
-    <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue);
+    public ScheduledEvent(Saga source, Duration schedule) {
+        this(source, new DateTime().plus(schedule));
+    }
 
-    void commit(Saga saga);
+    public ScheduledEvent(Saga source, DateTime schedule) {
+        super(source);
+        addMetaData("scheduledTime", schedule);
+    }
 
+    public DateTime getScheduledTime() {
+        return (DateTime) getMetaDataValue("scheduledTime");
+    }
 }

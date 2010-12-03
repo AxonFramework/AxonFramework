@@ -20,12 +20,11 @@ import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.InMemorySagaRepository;
 import org.axonframework.saga.SagaManager;
-import org.axonframework.saga.SagaRepository;
+import org.axonframework.saga.repository.SagaRepository;
+import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -43,8 +42,7 @@ public class AnnotatedSagaTest {
     @Before
     public void setUp() throws Exception {
         sagaRepository = new InMemorySagaRepository();
-        manager = new AnnotatedSagaManager(Arrays.<Class<? extends AbstractAnnotatedSaga>>asList(MyTestSaga.class),
-                                           sagaRepository, new SimpleEventBus());
+        manager = new AnnotatedSagaManager(sagaRepository, new SimpleEventBus(), MyTestSaga.class);
     }
 
     @Test

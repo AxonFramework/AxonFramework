@@ -22,9 +22,8 @@ import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaFactory;
-import org.axonframework.saga.SagaRepository;
+import org.axonframework.saga.repository.SagaRepository;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -40,13 +39,14 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     private SagaRepository sagaRepository;
     private SagaFactory sagaFactory;
 
-    public AnnotatedSagaManager(Collection<Class<? extends AbstractAnnotatedSaga>> sagaClasses,
-                                SagaRepository sagaRepository, EventBus eventBus) {
-        this(sagaClasses, sagaRepository, new GenericSagaFactory(), eventBus);
+    public AnnotatedSagaManager(SagaRepository sagaRepository,
+                                EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
+        this(sagaRepository, new GenericSagaFactory(), eventBus, sagaClasses);
     }
 
-    public AnnotatedSagaManager(Collection<Class<? extends AbstractAnnotatedSaga>> sagaClasses,
-                                SagaRepository sagaRepository, SagaFactory sagaFactory, EventBus eventBus) {
+    public AnnotatedSagaManager(SagaRepository sagaRepository,
+                                SagaFactory sagaFactory, EventBus eventBus,
+                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(eventBus, sagaRepository);
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;
@@ -76,6 +76,7 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
             T saga = sagaFactory.createSaga(sagaType);
             sagasFound.add(saga);
             saga.associateWith(configuration.getAssociationValue());
+            sagaRepository.add(saga);
         }
         if (configuration.isDestructorHandler()) {
             for (AbstractAnnotatedSaga saga : sagasFound) {

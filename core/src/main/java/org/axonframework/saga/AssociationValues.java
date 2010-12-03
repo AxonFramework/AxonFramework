@@ -16,19 +16,21 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import java.util.Set;
 
 /**
  * @author Allard Buijze
- * @since 0.7
  */
-public interface Saga {
+public interface AssociationValues extends Set<AssociationValue> {
 
-    String getSagaIdentifier();
+    void addChangeListener(ChangeListener changeListener);
 
-    AssociationValues getAssociationValues();
+    void removeChangeListener(ChangeListener changeListener);
 
-    void handle(Event event);
+    public static interface ChangeListener {
 
-    boolean isActive();
+        void onAssociationValueAdded(AssociationValue newAssociationValue);
+
+        void onAssociationValueRemoved(AssociationValue associationValue);
+    }
 }

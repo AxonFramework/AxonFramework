@@ -18,15 +18,13 @@ package org.axonframework.saga.annotation;
 
 import org.axonframework.domain.Event;
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -38,7 +36,7 @@ import java.util.UUID;
  */
 public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
-    private final Set<AssociationValue> associationValues;
+    private final AssociationValues associationValues;
     private final String identifier;
     private transient volatile SagaEventHandlerInvoker eventHandlerInvoker;
     private volatile boolean isActive = true;
@@ -57,7 +55,8 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      */
     protected AbstractAnnotatedSaga(String identifier) {
         this.identifier = identifier;
-        associationValues = new HashSet<AssociationValue>();
+        associationValues = new AssociationValuesImpl();
+        associationValues.add(new AssociationValue("sagaIdentifier", identifier));
         eventHandlerInvoker = new SagaEventHandlerInvoker(this);
     }
 
@@ -67,8 +66,8 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     }
 
     @Override
-    public Set<AssociationValue> getAssociationValues() {
-        return Collections.unmodifiableSet(associationValues);
+    public AssociationValues getAssociationValues() {
+        return associationValues;
     }
 
     @Override
@@ -105,7 +104,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      * @param key   The key of the association value to associate this saga with.
      * @param value The value of the association value to associate this saga with.
      */
-    protected void associateWith(String key, Object value) {
+    protected void associateWith(String key, String value) {
         associationValues.add(new AssociationValue(key, value));
     }
 
@@ -126,7 +125,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      * @param key   The key of the association value to remove from this saga.
      * @param value The value of the association value to remove from this saga.
      */
-    protected void removeAssociationWith(String key, Object value) {
+    protected void removeAssociationWith(String key, String value) {
         associationValues.remove(new AssociationValue(key, value));
     }
 

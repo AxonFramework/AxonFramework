@@ -18,6 +18,7 @@ package org.axonframework.saga;
 
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.saga.repository.SagaRepository;
 import org.axonframework.util.Subscribable;
 
 import java.util.Set;

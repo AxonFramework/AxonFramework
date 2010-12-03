@@ -18,6 +18,7 @@ package org.axonframework.saga;
 
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.saga.repository.SagaRepository;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,10 +55,11 @@ public class SimpleSagaManager extends AbstractSagaManager {
         AssociationValue associationValue = sagaAssociationValueResolver.extractAssociationValue(event);
         Set<Saga> sagas = new HashSet<Saga>();
         sagas.addAll(sagaRepository.find(sagaType, associationValue));
-        if (sagas.isEmpty() && isAssignableClassIn(event.getClass(), eventsToOptionallyCreateNewSagasFor)) {
-            sagas.add(sagaFactory.createSaga(sagaType));
-        } else if (isAssignableClassIn(event.getClass(), eventsToAlwaysCreateNewSagasFor)) {
-            sagas.add(sagaFactory.createSaga(sagaType));
+        if (sagas.isEmpty() && isAssignableClassIn(event.getClass(), eventsToOptionallyCreateNewSagasFor)
+                || isAssignableClassIn(event.getClass(), eventsToAlwaysCreateNewSagasFor)) {
+            Saga saga = sagaFactory.createSaga(sagaType);
+            sagas.add(saga);
+            sagaRepository.add(saga);
         }
         return sagas;
     }
