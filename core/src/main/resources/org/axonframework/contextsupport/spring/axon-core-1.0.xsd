@@ -240,4 +240,59 @@
         </xsd:complexType>
     </xsd:element>
 
+    <!-- ================================== -->
+    <!-- == repository ==================== -->
+    <!-- ================================== -->
+
+    <xsd:element name="saga-manager">
+        <xsd:annotation>
+            <xsd:documentation>Definition of the saga manager</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:all>
+                        <xsd:element name="types" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>A comma separated list of fully qualified class names of the sagas
+                                    this manager should manage.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:all>
+                    <xsd:attribute name="factory" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the saga factory to use. Defaults to the GenericSagaFactory,
+                                which requires a default (no-arg) constructor.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the resource injector to inject required resources in saga
+                                instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
+                                the Spring Application Context.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="event-bus" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the resource injector to inject required resources in saga
+                                instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
+                                the Spring Application Context.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="saga-repository" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the saga repository to use. Defaults to an in-memory saga
+                                repository. Note that sagas will not survive an application restart when using these
+                                defaults.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
 </xsd:schema>

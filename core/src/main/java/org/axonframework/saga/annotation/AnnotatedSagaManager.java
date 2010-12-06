@@ -24,6 +24,7 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.repository.SagaRepository;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -50,9 +51,7 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
         super(eventBus, sagaRepository);
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;
-        for (Class<? extends AbstractAnnotatedSaga> saga : sagaClasses) {
-            managedSagaTypes.add(saga);
-        }
+        managedSagaTypes.addAll(Arrays.asList(sagaClasses));
     }
 
     @Override

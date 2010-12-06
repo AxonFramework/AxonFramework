@@ -41,6 +41,7 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("jpa-event-store", new JpaEventStoreBeanDefinitionParser());
         registerBeanDefinitionParser("filesystem-event-store", new FileSystemEventStoreBeanDefinitionParser());
         registerBeanDefinitionParser("event-sourcing-repository", new RepositoryBeanDefinitionParser());
+        registerBeanDefinitionParser("saga-manager", new SagaManagerBeanDefinitionParser());
     }
 
 }
