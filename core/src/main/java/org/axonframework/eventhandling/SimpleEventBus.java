@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,10 +41,21 @@ public class SimpleEventBus implements EventBus {
     private volatile SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
 
     /**
-     * Initializes the SimpleEventBus.
+     * Initializes the SimpleEventBus and registers the mbeans for management information.
      */
     public SimpleEventBus() {
-        JmxConfiguration.getInstance().registerMBean(statistics, getClass());
+        this(true);
+    }
+
+    /**
+     * Initiates the SimpleEventBus and makes the registration of mbeans for management information optional.
+     *
+     * @param registerMBeans true to register the mbeans, false for not registering them.
+     */
+    public SimpleEventBus(boolean registerMBeans) {
+        if (registerMBeans) {
+            JmxConfiguration.getInstance().registerMBean(statistics, getClass());
+        }
     }
 
     /**
@@ -58,7 +69,7 @@ public class SimpleEventBus implements EventBus {
             logger.debug("EventListener {} unsubscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener {} not removed. It was already unsubscribed",
-                        eventListener.getClass().getSimpleName());
+                    eventListener.getClass().getSimpleName());
         }
     }
 
@@ -73,7 +84,7 @@ public class SimpleEventBus implements EventBus {
             logger.debug("EventListener [{}] subscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener [{}] not added. It was already subscribed",
-                        eventListener.getClass().getSimpleName());
+                    eventListener.getClass().getSimpleName());
         }
     }
 
@@ -94,8 +105,8 @@ public class SimpleEventBus implements EventBus {
 
         for (EventListener listener : listeners) {
             logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                         event.getClass().getSimpleName(),
-                         listener.getClass().getSimpleName());
+                    event.getClass().getSimpleName(),
+                    listener.getClass().getSimpleName());
             listener.handle(event);
         }
     }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -51,10 +51,21 @@ public class SimpleCommandBus implements CommandBus {
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
 
     /**
-     * Initializes the SimpleCommandBus.
+     * Initializes the SimpleCommandBus and registers the mbeans for management information.
      */
     public SimpleCommandBus() {
-        JmxConfiguration.getInstance().registerMBean(statistics, getClass());
+        this(true);
+    }
+
+    /**
+     * Initiates the SimpleCommandBus and makes the registration of mbeans for management information optional.
+     *
+     * @param registerMBeans true to register the mbeans, false for not registering them.
+     */
+    public SimpleCommandBus(boolean registerMBeans) {
+        if (registerMBeans) {
+            JmxConfiguration.getInstance().registerMBean(statistics, getClass());
+        }
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
@@ -67,7 +78,7 @@ public class SimpleCommandBus implements CommandBus {
             throw e;
         } catch (Throwable throwable) {
             logger.error(format("Processing of a [%s] resulted in an exception: ", command.getClass().getSimpleName()),
-                         throwable);
+                    throwable);
         }
     }
 
@@ -87,7 +98,7 @@ public class SimpleCommandBus implements CommandBus {
         final CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
-                                                          command.getClass().getSimpleName()));
+                    command.getClass().getSimpleName()));
         }
         return handler;
     }

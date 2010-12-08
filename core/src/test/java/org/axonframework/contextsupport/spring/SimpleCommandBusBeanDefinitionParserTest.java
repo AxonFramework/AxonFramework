@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,9 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -82,4 +83,33 @@ public class SimpleCommandBusBeanDefinitionParserTest {
         CommandBus commandBus = beanFactory.getBean("commandBus-embedded-interceptor-bean", CommandBus.class);
         assertNotNull(commandBus);
     }
+
+    @Test
+    public void commandBusElementTrueMBeans() {
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("commandBus-mbeans-true");
+        assertNotNull("Bean definition not created", beanDefinition);
+        assertEquals("Wrong bean class", SimpleCommandBus.class.getName(), beanDefinition.getBeanClassName());
+        assertEquals("wrong amount of constructor arguments"
+                , 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        Object constructorValue =
+                beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Boolean.class).getValue();
+        assertTrue("constructor value is wrong", Boolean.parseBoolean((String) constructorValue));
+        SimpleCommandBus commandBus = beanFactory.getBean("commandBus-mbeans-true", SimpleCommandBus.class);
+        assertNotNull(commandBus);
+    }
+
+    @Test
+    public void commandBusElementFalseMBeans() {
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("commandBus-mbeans-false");
+        assertNotNull("Bean definition not created", beanDefinition);
+        assertEquals("Wrong bean class", SimpleCommandBus.class.getName(), beanDefinition.getBeanClassName());
+        assertEquals("wrong amount of constructor arguments"
+                , 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        Object constructorValue =
+                beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Boolean.class).getValue();
+        assertFalse("constructor value is wrong", Boolean.parseBoolean((String) constructorValue));
+        SimpleCommandBus commandBus = beanFactory.getBean("commandBus-mbeans-false", SimpleCommandBus.class);
+        assertNotNull(commandBus);
+    }
+
 }

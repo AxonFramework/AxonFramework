@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,11 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.springframework.beans.factory.xml.AbstractSimpleBeanDefinitionParser;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
+import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 /**
@@ -29,14 +32,19 @@ import org.w3c.dom.Element;
  * @author Ben Z. Tels
  * @since 0.7
  */
-public class EventBusBeanDefinitionParser extends AbstractSimpleBeanDefinitionParser implements BeanDefinitionParser {
+public class EventBusBeanDefinitionParser extends AbstractBeanDefinitionParser implements BeanDefinitionParser {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected Class<?> getBeanClass(Element element) {
-        return SimpleEventBus.class;
-    }
+    protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
+        GenericBeanDefinition eventBusDefinition = new GenericBeanDefinition();
+        eventBusDefinition.setBeanClass(SimpleEventBus.class);
 
+        String attribute = element.getAttribute("register-mbeans");
+
+        if (!"".equals(attribute)) {
+            eventBusDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, attribute);
+        }
+
+        return eventBusDefinition;
+    }
 }
