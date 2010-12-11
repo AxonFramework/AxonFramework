@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -142,6 +142,11 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     @Override
+    public void setAggregateIdentifier(AggregateIdentifier aggregateIdentifier) {
+        this.aggregateIdentifier = aggregateIdentifier;
+    }
+
+    @Override
     public CommandBus getCommandBus() {
         return commandBus;
     }
@@ -166,8 +171,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
             Field field = eventClass.getDeclaredField(fieldName);
             field.setAccessible(true);
             field.set(event, value);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new FixtureExecutionException("This test fixture needs to be able to set fields by reflection", e);
         }
     }
@@ -186,7 +190,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
             if (!aggregateIdentifier.equals(identifier)) {
                 throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
-                        + "to get the aggregate identifier to use");
+                                                      + "to get the aggregate identifier to use");
             }
             return new SimpleDomainEventStream(givenEvents);
         }

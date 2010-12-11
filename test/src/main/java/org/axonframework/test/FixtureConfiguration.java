@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -176,4 +176,12 @@ public interface FixtureConfiguration {
      * @return the repository used by this fixture
      */
     EventSourcingRepository<?> getRepository();
+
+    /**
+     * Sets the aggregate identifier of the fixture to the given <code>aggregateIdentifier</code>. This allows for the
+     * use of aggregate identifiers that have a meaning inside the aggregate.
+     *
+     * @param aggregateIdentifier The aggregate identifier the fixture should use.s
+     */
+    void setAggregateIdentifier(AggregateIdentifier aggregateIdentifier);
 }
