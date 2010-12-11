@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.eventhandling.scheduling.ScheduledEvent;
 import org.axonframework.saga.Saga;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
  * @author Allard Buijze
- * @since 0.7
  */
-public abstract class ScheduledEvent extends ApplicationEvent {
+public class MySagaExpiredEvent extends ScheduledEvent {
 
-    public ScheduledEvent(Saga source, Duration schedule) {
-        this(source, new DateTime().plus(schedule));
+    private final String association;
+
+    public MySagaExpiredEvent(Saga source, int scheduleDuration, String association) {
+        super(source, new Duration(scheduleDuration));
+        this.association = association;
     }
 
-    public ScheduledEvent(Saga source, DateTime schedule) {
-        super(source);
-        addMetaData("scheduledTime", schedule);
-    }
-
-    public DateTime getScheduledTime() {
-        return (DateTime) getMetaDataValue("scheduledTime");
+    public String getAssociation() {
+        return association;
     }
 }

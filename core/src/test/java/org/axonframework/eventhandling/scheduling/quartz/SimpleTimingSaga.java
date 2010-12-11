@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.eventhandling.scheduling.quartz;
 
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
@@ -34,7 +35,7 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
 
     private static final long serialVersionUID = -3190758648834280201L;
 
-    private transient SagaTimer timer;
+    private transient EventScheduler timer;
     private volatile boolean triggered = false;
     private transient CountDownLatch latch = new CountDownLatch(1);
     private static final int SCHEDULE_DURATION = 1000;
@@ -42,7 +43,7 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
     @StartSaga
     @SagaEventHandler(associationProperty = "association")
     public void handle(StartingEvent event) {
-        timer.createTimer(new MySagaExpiredEvent(this, SCHEDULE_DURATION, event.getAssociation()));
+        timer.schedule(new MySagaExpiredEvent(this, SCHEDULE_DURATION, event.getAssociation()));
     }
 
     @SagaEventHandler(associationProperty = "association")
@@ -56,7 +57,7 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
     }
 
     @Autowired
-    public void setTimer(SagaTimer timer) {
+    public void setTimer(EventScheduler timer) {
         this.timer = timer;
     }
 

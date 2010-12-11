@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.BeansException;
@@ -76,8 +76,7 @@ public class QuartzTableMaker implements ApplicationContextAware {
                     this.entityManager.createNativeQuery(statement).executeUpdate();
                 }
             }
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new DataAccessResourceFailureException("Failed to open SQL script '" + sqlResource + "'", ex);
         }
     }
@@ -97,8 +96,7 @@ public class QuartzTableMaker implements ApplicationContextAware {
             for (String statement : statements) {
                 this.entityManager.createNativeQuery(statement).executeUpdate();
             }
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new DataAccessResourceFailureException("Failed to open SQL script '" + sqlResourcePath + "'", ex);
         }
     }

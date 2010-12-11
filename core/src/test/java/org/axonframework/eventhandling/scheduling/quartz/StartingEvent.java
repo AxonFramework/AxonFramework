@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.saga.Saga;
-import org.joda.time.Duration;
+import org.axonframework.domain.ApplicationEvent;
 
 /**
  * @author Allard Buijze
  */
-public class MySagaExpiredEvent extends ScheduledEvent {
+public class StartingEvent extends ApplicationEvent {
 
     private final String association;
 
-    public MySagaExpiredEvent(Saga source, int scheduleDuration, String association) {
-        super(source, new Duration(scheduleDuration));
+    /**
+     * Initialize an application event with the given <code>source</code>. Source may be null. In that case, the source
+     * type and source description will be set to <code>Object.class</code> and <code>[unknown source]</code>
+     * respectively.
+     *
+     * @param source the instance that reported this event. If any.
+     */
+    protected StartingEvent(Object source, String association) {
+        super(source);
         this.association = association;
     }
 

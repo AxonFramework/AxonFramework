@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.repository;
+package org.axonframework.eventhandling.scheduling;
 
-import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.Saga;
-
-import java.util.Set;
+import java.io.Serializable;
 
 /**
+ * Token that identifies a single scheduled Event. This token can be used to refer to a specific scheduled event to
+ * cancel that timer.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
-public interface SagaRepository {
-
-    <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue);
-
-    <T extends Saga> T load(Class<T> type, String sagaIdentifier);
-
-    void commit(Saga saga);
-
-    void add(Saga saga);
+public interface ScheduleToken extends Serializable {
 
 }

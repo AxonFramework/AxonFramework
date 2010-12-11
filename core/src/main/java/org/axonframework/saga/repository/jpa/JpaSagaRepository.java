@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +19,8 @@ package org.axonframework.saga.repository.jpa;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
+import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.SagaResourceInjector;
-import org.axonframework.saga.repository.SagaRepository;
 
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +34,7 @@ import javax.persistence.PersistenceContext;
 
 /**
  * @author Allard Buijze
+ * @since 0.7
  */
 public class JpaSagaRepository implements SagaRepository {
 
@@ -107,6 +108,7 @@ public class JpaSagaRepository implements SagaRepository {
         return entry.getSaga();
     }
 
+    @SuppressWarnings({"unchecked"})
     @PostConstruct
     public void initialize() {
         List<AssociationEntry> entries =

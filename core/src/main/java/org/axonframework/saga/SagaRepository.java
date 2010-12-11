@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.saga;
 
-import java.io.Serializable;
+import java.util.Set;
 
 /**
  * @author Allard Buijze
+ * @since 0.7
  */
-public interface TimerReference extends Serializable {
+public interface SagaRepository {
 
-    String getIdentifier();
+    <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue);
 
-    String getSagaIdentifier();
+    <T extends Saga> T load(Class<T> type, String sagaIdentifier);
+
+    void commit(Saga saga);
+
+    void add(Saga saga);
+
 }

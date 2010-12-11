@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.saga;
 
-import org.axonframework.domain.ApplicationEvent;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import org.axonframework.util.AxonTransientException;
 
 /**
  * @author Allard Buijze
- * @since 0.7
  */
-public interface SagaTimer {
+public class SagaStorageException extends AxonTransientException {
 
-    TimerReference createTimer(DateTime triggerDateTime, ApplicationEvent event);
+    public SagaStorageException(String message) {
+        super(message);
+    }
 
-    TimerReference createTimer(Duration triggerDuration, ApplicationEvent event);
-
-    TimerReference createTimer(ScheduledEvent event);
-
-    void cancelTimer(TimerReference timerReference);
-
+    public SagaStorageException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

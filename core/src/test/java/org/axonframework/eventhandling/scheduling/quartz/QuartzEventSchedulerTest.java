@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.Event;
@@ -39,9 +39,9 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class QuartzSagaTimerTest {
+public class QuartzEventSchedulerTest {
 
-    private QuartzSagaTimer testSubject;
+    private QuartzEventScheduler testSubject;
     private EventBus eventBus;
     private Scheduler scheduler;
 
@@ -49,7 +49,7 @@ public class QuartzSagaTimerTest {
     public void setUp() throws SchedulerException {
         eventBus = mock(EventBus.class);
         SchedulerFactory schedFact = new org.quartz.impl.StdSchedulerFactory();
-        testSubject = new QuartzSagaTimer();
+        testSubject = new QuartzEventScheduler();
         scheduler = schedFact.getScheduler();
         scheduler.getContext().put(EventBus.class.getName(), eventBus);
         scheduler.start();
@@ -75,7 +75,7 @@ public class QuartzSagaTimerTest {
         }).when(eventBus).publish(isA(Event.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        testSubject.createTimer(new Duration(30), new StubEvent(mockSaga));
+        testSubject.schedule(new Duration(30), new StubEvent(mockSaga));
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus).publish(isA(StubEvent.class));
     }

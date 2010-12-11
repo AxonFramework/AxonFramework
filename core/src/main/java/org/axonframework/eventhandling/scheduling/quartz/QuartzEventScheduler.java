@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.timer;
+package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.saga.Saga;
+import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.eventhandling.scheduling.ScheduledEvent;
+import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.util.Assert;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -34,70 +36,61 @@ import javax.annotation.Resource;
  * @author Allard Buijze
  * @since 0.7
  */
-public class QuartzSagaTimer implements SagaTimer {
+public class QuartzEventScheduler implements org.axonframework.eventhandling.scheduling.EventScheduler {
 
     private Scheduler scheduler;
     private static final String JOB_NAME_PREFIX = "event-";
-    private static final String GROUP_NAME_PREFIX = "saga-";
+    private static final String DEFAULT_GROUP_NAME = "AxonFramework-Events";
     private EventBus eventBus;
+    private String groupIdentifier = DEFAULT_GROUP_NAME;
 
     @Override
-    public TimerReference createTimer(DateTime triggerDateTime, ApplicationEvent event) {
-        Saga owner = extractOwnerFrom(event);
-        QuartzTimerReference tr = new QuartzTimerReference(event.getEventIdentifier().toString(),
-                                                           owner.getSagaIdentifier());
+    public ScheduleToken schedule(DateTime triggerDateTime, ApplicationEvent event) {
+        Object owner = event.getSource();
+        String jobIdentifier = JOB_NAME_PREFIX + event.getEventIdentifier().toString();
+        QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
-            JobDetail jobDetail = new JobDetail(JOB_NAME_PREFIX + event.getEventIdentifier().toString(),
-                                                GROUP_NAME_PREFIX + owner.getSagaIdentifier(),
-                                                FireEventJob.class);
+            JobDetail jobDetail = new JobDetail(jobIdentifier, groupIdentifier, FireEventJob.class);
             jobDetail.setVolatility(false);
             jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, event);
-            jobDetail.setDescription(String.format("Timer scheduled by %s [%s]: %s",
-                                                   owner.getClass().getName(),
-                                                   owner.getSagaIdentifier(),
-                                                   event.getClass().getName()));
+            jobDetail.setDescription(String.format("%s, scheduled by %s.",
+                                                   event.getClass().getName(),
+                                                   owner.toString()));
             scheduler.scheduleJob(jobDetail, new SimpleTrigger(event.getEventIdentifier().toString(),
                                                                triggerDateTime.toDate()));
         } catch (SchedulerException e) {
-            throw new TimerException("An error occurred while setting a timer for a saga", e);
+            throw new SchedulingException("An error occurred while setting a timer for a saga", e);
         }
         return tr;
     }
 
     @Override
-    public TimerReference createTimer(Duration triggerDuration, ApplicationEvent event) {
-        return createTimer(new DateTime().plus(triggerDuration), event);
+    public ScheduleToken schedule(Duration triggerDuration, ApplicationEvent event) {
+        return schedule(new DateTime().plus(triggerDuration), event);
     }
 
     @Override
-    public TimerReference createTimer(ScheduledEvent event) {
-        return createTimer(event.getScheduledTime(), event);
+    public ScheduleToken schedule(ScheduledEvent event) {
+        return schedule(event.getScheduledTime(), event);
     }
 
     @Override
-    public void cancelTimer(TimerReference timerReference) {
+    public void cancelSchedule(ScheduleToken scheduleToken) {
+        if (!QuartzScheduleToken.class.isInstance(scheduleToken)) {
+            throw new IllegalArgumentException("The given ScheduleToken was not provided by this scheduler.");
+        }
+
+        QuartzScheduleToken reference = (QuartzScheduleToken) scheduleToken;
         try {
-            scheduler.deleteJob(JOB_NAME_PREFIX + timerReference.getIdentifier(),
-                                GROUP_NAME_PREFIX + timerReference.getSagaIdentifier());
+            scheduler.deleteJob(JOB_NAME_PREFIX + reference.getJobIdentifier(),
+                                reference.getTaskIdentifier());
         } catch (SchedulerException e) {
-            throw new TimerException("An error occurred while cancelling a timer for a saga", e);
+            throw new SchedulingException("An error occurred while cancelling a timer for a saga", e);
         }
-    }
-
-    private Saga extractOwnerFrom(ApplicationEvent event) {
-        Object source = event.getSource();
-        if (source == null) {
-            throw new IllegalArgumentException("The event's source may not be null. "
-                    + "Make sure the event's source has been set and the event has not been serialized.");
-        }
-        if (!Saga.class.isInstance(source)) {
-            throw new IllegalArgumentException("The event's source must be a Saga instance");
-        }
-        return Saga.class.cast(source);
     }
 
     /**
-     * Initializes the SagaTimer. Will make the configured Event Bus available to the Quartz Scheduler
+     * Initializes the QuartzEventScheduler. Will make the configured Event Bus available to the Quartz Scheduler
      *
      * @throws SchedulerException if an error occurs preparing the Quartz Scheduler for use.
      */
@@ -126,5 +119,14 @@ public class QuartzSagaTimer implements SagaTimer {
     @Resource
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
+    }
+
+    /**
+     * Sets the group identifier to use when scheduling jobs with Quartz. Defaults to "AxonFramework-Events".
+     *
+     * @param groupIdentifier the group identifier to use when scheduling jobs with Quartz
+     */
+    public void setGroupIdentifier(String groupIdentifier) {
+        this.groupIdentifier = groupIdentifier;
     }
 }

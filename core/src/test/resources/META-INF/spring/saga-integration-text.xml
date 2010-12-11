@@ -5,7 +5,7 @@
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~ http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,18 +38,18 @@
             <constructor-arg ref="sagaRepository"/>
             <constructor-arg ref="sagaFactory"/>
             <constructor-arg ref="eventBus"/>
-            <constructor-arg value="org.axonframework.saga.timer.SimpleTimingSaga"/>
+            <constructor-arg value="org.axonframework.eventhandling.scheduling.quartz.SimpleTimingSaga"/>
         </bean>
     -->
     <axon:saga-manager id="sagaManager" event-bus="eventBus">
         <axon:types>
-            org.axonframework.saga.timer.SimpleTimingSaga
+            org.axonframework.eventhandling.scheduling.quartz.SimpleTimingSaga
         </axon:types>
     </axon:saga-manager>
 
     <!--<bean class="org.axonframework.saga.spring.SpringSagaResourceInjector"/>-->
 
-    <bean class="org.axonframework.saga.timer.QuartzTableMaker">
+    <bean class="org.axonframework.eventhandling.scheduling.quartz.QuartzTableMaker">
         <property name="sqlResource" value="classpath:/tables_hsqldb.sql"/>
     </bean>
 
@@ -61,7 +61,7 @@
         </bean>
     -->
 
-    <bean class="org.axonframework.saga.timer.QuartzSagaTimer">
+    <bean class="org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler">
         <property name="scheduler" ref="scheduler"/>
         <property name="eventBus" ref="eventBus"/>
     </bean>
