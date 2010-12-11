@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.util.reflection.ReflectionUtils;
+import org.axonframework.util.ReflectionUtils;
 
 import java.util.Collection;
 
@@ -61,7 +61,7 @@ public abstract class AbstractEventSourcedEntity {
     protected void registerAggregateRoot(AbstractEventSourcedAggregateRoot aggregateRootToRegister) {
         if (this.aggregateRoot != null && this.aggregateRoot != aggregateRootToRegister) {
             throw new IllegalStateException("Cannot register new aggregate. "
-                    + "This entity is already part of another aggregate");
+                                                    + "This entity is already part of another aggregate");
         }
         this.aggregateRoot = aggregateRootToRegister;
     }

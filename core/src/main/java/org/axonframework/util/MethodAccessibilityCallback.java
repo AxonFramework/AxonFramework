@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,33 +14,36 @@
  * limitations under the License.
  */
 
-package org.axonframework.util.reflection;
+package org.axonframework.util;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.security.PrivilegedAction;
 
 /**
- * PrivilegedAction that makes the given field accessible for reflection.
+ * PrivilegedAction that makes the given method accessible for reflection.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class FieldAccessibilityCallback implements PrivilegedAction<Object> {
+public class MethodAccessibilityCallback implements PrivilegedAction<Object> {
 
-    private final Field field;
+    private final Method method;
 
     /**
-     * Initialize the callback to make the given <code>field</code> accessible for reflection.
+     * Initialize the callback to make the given <code>method</code> accessible for reflection.
      *
-     * @param field The field to make accessible
+     * @param method The method to make accessible
      */
-    public FieldAccessibilityCallback(Field field) {
-        this.field = field;
+    public MethodAccessibilityCallback(Method method) {
+        this.method = method;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object run() {
-        field.setAccessible(true);
-        return Void.TYPE;
+        method.setAccessible(true);
+        return Void.class;
     }
 }
