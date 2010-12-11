@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,12 +43,15 @@ public class DomainEventTest {
         assertNotNull(event.getEventIdentifier());
         assertNull(event.getAggregateIdentifier());
         assertNull(event.getSequenceNumber());
+        assertNull(event.getAggregateVersion());
     }
 
     @Test(expected = IllegalStateException.class)
     public void testCannotAddSequenceNumberTwice() {
         DomainEvent event = new StubDomainEvent();
         event.setSequenceNumber(1);
+        assertEquals(Long.valueOf(1), event.getSequenceNumber());
+        assertEquals(Long.valueOf(1), event.getAggregateVersion());
         event.setSequenceNumber(1);
     }
 
