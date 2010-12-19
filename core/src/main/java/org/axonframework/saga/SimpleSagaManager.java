@@ -32,7 +32,7 @@ import java.util.Set;
 public class SimpleSagaManager extends AbstractSagaManager {
 
     private final SagaRepository sagaRepository;
-    private final SagaAssociationValueResolver sagaAssociationValueResolver;
+    private final AssociationValueResolver associationValueResolver;
     private final SagaFactory sagaFactory;
 
     private List<Class<? extends Event>> eventsToAlwaysCreateNewSagasFor = Collections.emptyList();
@@ -40,18 +40,18 @@ public class SimpleSagaManager extends AbstractSagaManager {
     private Class<? extends Saga> sagaType;
 
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
-                             SagaAssociationValueResolver sagaAssociationValueResolver,
+                             AssociationValueResolver associationValueResolver,
                              SagaFactory sagaFactory, EventBus eventBus) {
         super(eventBus, sagaRepository);
         this.sagaType = sagaType;
         this.sagaRepository = sagaRepository;
-        this.sagaAssociationValueResolver = sagaAssociationValueResolver;
+        this.associationValueResolver = associationValueResolver;
         this.sagaFactory = sagaFactory;
     }
 
     @Override
     protected Set<Saga> findSagas(Event event) {
-        AssociationValue associationValue = sagaAssociationValueResolver.extractAssociationValue(event);
+        Set<AssociationValue> associationValue = associationValueResolver.extractAssociationValue(event);
         Set<Saga> sagas = new HashSet<Saga>();
         sagas.addAll(sagaRepository.find(sagaType, associationValue));
         if (sagas.isEmpty() && isAssignableClassIn(event.getClass(), eventsToOptionallyCreateNewSagasFor)

@@ -19,10 +19,14 @@ package org.axonframework.saga;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.util.Subscribable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
+import static java.lang.String.format;
 
 /**
  * @author Allard Buijze
@@ -30,8 +34,11 @@ import javax.annotation.PreDestroy;
  */
 public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
+
     protected EventBus eventBus;
     private SagaRepository sagaRepository;
+    private boolean suppressExceptions = true;
 
     public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository) {
         this.eventBus = eventBus;
@@ -43,7 +50,18 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         Set<Saga> sagas = findSagas(event);
         try {
             for (Saga saga : sagas) {
-                saga.handle(event);
+                try {
+                    saga.handle(event);
+                } catch (RuntimeException e) {
+                    if (suppressExceptions) {
+                        logger.error(format("An exception occurred while a saga [%s] was handling an event [%s]:",
+                                            saga.getClass().getSimpleName(),
+                                            event.getClass().getSimpleName()),
+                                     e);
+                    } else {
+                        throw e;
+                    }
+                }
             }
         } finally {
             commit(sagas);
@@ -76,4 +94,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         eventBus.subscribe(this);
     }
 
+    public void setSuppressExceptions(boolean suppressExceptions) {
+        this.suppressExceptions = suppressExceptions;
+    }
 }

@@ -19,6 +19,7 @@ package org.axonframework.saga.annotation;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.AbstractSagaManager;
+import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaFactory;
@@ -68,7 +69,9 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
         if (!configuration.isHandlerAvailable()) {
             return Collections.emptySet();
         }
-        Set<T> sagasFound = sagaRepository.find(sagaType, configuration.getAssociationValue());
+        Set<AssociationValue> associationValues = new HashSet<AssociationValue>();
+        associationValues.add(configuration.getAssociationValue());
+        Set<T> sagasFound = sagaRepository.find(sagaType, associationValues);
         if ((sagasFound.isEmpty()
                 && configuration.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)
                 || configuration.getCreationPolicy() == SagaCreationPolicy.ALWAYS) {

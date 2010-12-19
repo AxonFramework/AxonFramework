@@ -37,13 +37,10 @@ public class InMemorySagaRepository implements SagaRepository {
     private final Set<Saga> managedSagas = new ConcurrentSkipListSet<Saga>(new SagaIdentifierComparator());
 
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
+    public <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValues) {
         Set<T> result = new HashSet<T>();
-        List<T> sagasOfType = CollectionUtils.filterByType(managedSagas, type);
-        for (T saga : sagasOfType) {
-            if (saga.getAssociationValues().contains(associationValue)) {
-                result.add(saga);
-            }
+        for (AssociationValue associationValue : associationValues) {
+            result.addAll(find(type, associationValue));
         }
         return result;
     }
@@ -71,6 +68,17 @@ public class InMemorySagaRepository implements SagaRepository {
     @Override
     public void add(Saga saga) {
         commit(saga);
+    }
+
+    private <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
+        Set<T> result = new HashSet<T>();
+        List<T> sagasOfType = CollectionUtils.filterByType(managedSagas, type);
+        for (T saga : sagasOfType) {
+            if (saga.getAssociationValues().contains(associationValue)) {
+                result.add(saga);
+            }
+        }
+        return result;
     }
 
     private static class SagaIdentifierComparator implements Comparator<Saga> {

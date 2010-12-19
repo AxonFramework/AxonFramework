@@ -31,7 +31,10 @@ import javax.persistence.Id;
 import javax.persistence.Lob;
 
 /**
+ * Java Persistence Entity allowing sagas to be stored in a relational database.
+ *
  * @author Allard Buijze
+ * @since 0.7
  */
 @Entity
 public class SagaEntry {
@@ -42,6 +45,47 @@ public class SagaEntry {
     @Lob
     private byte[] serializedSaga;
 
+    private SagaEntry(String sagaId, byte[] serializedSaga) {
+        this.sagaId = sagaId;
+        this.serializedSaga = serializedSaga;
+    }
+
+    /**
+     * Returns the identifier of the saga stored in this entry.
+     *
+     * @return the identifier of the saga stored in this entry
+     */
+    public String getSagaId() {
+        return sagaId;
+    }
+
+    /**
+     * Returns the Saga instance stored in this entry.
+     *
+     * @return the Saga instance stored in this entry
+     */
+    public Saga getSaga() {
+        return deserialize(serializedSaga);
+    }
+
+    /**
+     * Updates the saga instance in this entry. The given saga must be serializable.
+     *
+     * @param saga the saga to update
+     */
+    public void updateSaga(Saga saga) {
+        Assert.isTrue(sagaId.equals(saga.getSagaIdentifier()),
+                      "Cannot update an entry with another saga. Make sure Identifiers have not been altered.");
+        this.serializedSaga = serialize(saga);
+    }
+
+    /**
+     * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
+     * saga is not modified by this operation.
+     *
+     * @param saga The saga to create
+     * @return the saga entry representing the JPA-entity for the given saga
+     */
     public static SagaEntry forSaga(Saga saga) {
         byte[] serializedSaga = serialize(saga);
         return new SagaEntry(saga.getSagaIdentifier(), serializedSaga);
@@ -52,7 +96,7 @@ public class SagaEntry {
             throw new SagaStorageException("This repository can only store Serializable sagas");
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = null;
+        ObjectOutputStream oos;
         try {
             oos = new ObjectOutputStream(baos);
             try {
@@ -67,7 +111,7 @@ public class SagaEntry {
     }
 
     private static Saga deserialize(byte[] serializedSaga) {
-        ObjectInputStream ois = null;
+        ObjectInputStream ois;
         try {
             ois = new ObjectInputStream(new ByteArrayInputStream(serializedSaga));
             return (Saga) ois.readObject();
@@ -78,25 +122,11 @@ public class SagaEntry {
         }
     }
 
-    public SagaEntry(String sagaId, byte[] serializedSaga) {
-        this.sagaId = sagaId;
-        this.serializedSaga = serializedSaga;
-    }
-
-    public String getSagaId() {
-        return sagaId;
-    }
-
-    public Saga getSaga() {
-        return deserialize(serializedSaga);
-    }
-
-    public void updateSaga(Saga saga) {
-        Assert.isTrue(sagaId.equals(saga.getSagaIdentifier()),
-                      "Cannot update an entry with another saga. Make sure Identifiers have not been altered.");
-        this.serializedSaga = serialize(saga);
-    }
-
+    /**
+     * Constructor required by JPA. Do not use.
+     *
+     * @see #forSaga(org.axonframework.saga.Saga)
+     */
     protected SagaEntry() {
         // required by JPA
     }

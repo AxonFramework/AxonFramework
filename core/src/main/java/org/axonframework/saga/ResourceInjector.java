@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,19 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
-
 /**
+ * Interface describing a mechanism to inject resources into Saga instances.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
-public interface SagaAssociationValueResolver {
+public interface ResourceInjector {
 
-    AssociationValue extractAssociationValue(Event event);
+    /**
+     * Inject required resources into the given <code>saga</code>.
+     *
+     * @param saga The saga to inject resources into
+     */
+    void injectResources(Saga saga);
 
 }

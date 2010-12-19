@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ package org.axonframework.saga.spring;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.saga.SagaResourceInjector;
+import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.junit.*;
 import org.springframework.beans.factory.BeanCreationException;
@@ -33,13 +33,13 @@ import static org.junit.Assert.*;
  */
 public class SpringSagaResourceInjectorTest {
 
-    private static SagaResourceInjector testSubject;
+    private static ResourceInjector testSubject;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         ApplicationContext appCtx = new ClassPathXmlApplicationContext("META-INF/spring/commandbus-context.xml",
                                                                        "META-INF/spring/saga-injector-context.xml");
-        testSubject = appCtx.getBean(SagaResourceInjector.class);
+        testSubject = appCtx.getBean(ResourceInjector.class);
     }
 
     @Test

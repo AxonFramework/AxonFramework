@@ -45,7 +45,7 @@ public class SimpleSagaManagerTest {
     @Before
     public void setUp() throws Exception {
         repository = mock(SagaRepository.class);
-        SagaAssociationValueResolver associationValueResolver = mock(SagaAssociationValueResolver.class);
+        AssociationValueResolver associationValueResolver = mock(AssociationValueResolver.class);
         SagaFactory sagaFactory = mock(SagaFactory.class);
         eventBus = mock(EventBus.class);
         testSubject = new SimpleSagaManager(Saga.class, repository, associationValueResolver, sagaFactory, eventBus);
@@ -53,10 +53,16 @@ public class SimpleSagaManagerTest {
 
         saga1 = mock(Saga.class);
         sagasFromRepository.add(saga1);
-        when(associationValueResolver.extractAssociationValue(event)).thenReturn(new AssociationValue("key", "val"));
-        when(repository.find(eq(Saga.class), eq(new AssociationValue("key", "val")))).thenReturn(sagasFromRepository);
+        when(associationValueResolver.extractAssociationValue(event))
+                .thenReturn(setWith(new AssociationValue("key", "val")));
+        when(repository.find(eq(Saga.class), eq(setWith(new AssociationValue("key", "val")))))
+                .thenReturn(sagasFromRepository);
         sagaFromFactory = mock(Saga.class);
         when(sagaFactory.createSaga(Saga.class)).thenReturn(sagaFromFactory);
+    }
+
+    private <T> Set<T> setWith(T... associationValues) {
+        return new HashSet<T>(Arrays.asList(associationValues));
     }
 
     @Test

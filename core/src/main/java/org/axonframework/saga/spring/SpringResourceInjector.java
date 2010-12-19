@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,8 @@
 
 package org.axonframework.saga.spring;
 
+import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaResourceInjector;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 /**
- * SagaResourceInjector implementation that injects Saga instances with resources available from the Spring Application
+ * ResourceInjector implementation that injects Saga instances with resources available from the Spring Application
  * context the injector is registered in.
  * <p/>
  * Resources need to be annotated with a Spring-compatible auto-wiring annotation, such as {@link
@@ -37,7 +37,7 @@ import org.springframework.context.ApplicationContextAware;
  * @author Allard Buijze
  * @since 0.7
  */
-public class SpringSagaResourceInjector implements SagaResourceInjector, ApplicationContextAware, InitializingBean {
+public class SpringResourceInjector implements ResourceInjector, ApplicationContextAware, InitializingBean {
 
     private AutowireCapableBeanFactory autowireCapableBeanFactory;
 
@@ -54,7 +54,7 @@ public class SpringSagaResourceInjector implements SagaResourceInjector, Applica
     @Override
     public void afterPropertiesSet() throws Exception {
         if (autowireCapableBeanFactory == null) {
-            throw new IllegalStateException("The SpringSagaResourceInjector must have an ApplicationContext set");
+            throw new IllegalStateException("The SpringResourceInjector must have an ApplicationContext set");
         }
     }
 }

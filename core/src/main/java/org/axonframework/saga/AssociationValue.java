@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.saga;
+
+import org.axonframework.util.Assert;
 
 import java.io.Serializable;
 
@@ -44,6 +46,7 @@ public class AssociationValue implements Serializable {
      *              serializable values.
      */
     public AssociationValue(String key, Object value) {
+        Assert.notNull(value, "Cannot associate a Saga with a null value");
         this.propertyKey = key;
         this.propertyValue = value;
     }
@@ -60,7 +63,7 @@ public class AssociationValue implements Serializable {
     /**
      * Returns the value of this association.
      *
-     * @return the value of this association.
+     * @return the value of this association. Never <code>null</code>.
      */
     public Object getValue() {
         return propertyValue;

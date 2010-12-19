@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static org.axonframework.util.TestUtils.setOf;
 import static org.junit.Assert.*;
 
 /**
@@ -110,7 +111,7 @@ public class AnnotatedSagaTest {
     }
 
     private Set<MyTestSaga> repositoryContents(String lookupValue) {
-        return sagaRepository.find(MyTestSaga.class, new AssociationValue("myIdentifier", lookupValue));
+        return sagaRepository.find(MyTestSaga.class, setOf(new AssociationValue("myIdentifier", lookupValue)));
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {

@@ -16,20 +16,26 @@
 
 package org.axonframework.saga;
 
+import org.axonframework.domain.Event;
+
 import java.util.Set;
 
 /**
+ * Interface describing the mechanism that resolves Association Values from events. The Association Values are used to
+ * find Saga's potentially interested in this Event.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
-public interface SagaRepository {
+public interface AssociationValueResolver {
 
-    <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValue);
-
-    <T extends Saga> T load(Class<T> type, String sagaIdentifier);
-
-    void commit(Saga saga);
-
-    void add(Saga saga);
+    /**
+     * Extracts the Association Values from the given <code>event</code>. A single Event may result in 0 or more
+     * Association Values. Will never return <code>null</code>.
+     *
+     * @param event The event to extract Association Values from
+     * @return The Association Values extracted from the Event. Never <code>null</code>.
+     */
+    Set<AssociationValue> extractAssociationValue(Event event);
 
 }

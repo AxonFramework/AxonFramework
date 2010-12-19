@@ -27,10 +27,13 @@ import javax.persistence.Id;
 import javax.persistence.Lob;
 
 /**
+ * JPA wrapper around an Association Value. This entity is used to store relevant Association Values for Sagas.
+ *
  * @author Allard Buijze
+ * @since 0.7
  */
 @Entity
-public class AssociationEntry {
+public class AssociationValueEntry {
 
     @Id
     @GeneratedValue
@@ -45,7 +48,14 @@ public class AssociationEntry {
     @Lob
     private Serializable associationValue;
 
-    public AssociationEntry(String sagaIdentifier, AssociationValue associationValue) {
+    /**
+     * Initialize a new AssociationValueEntry for a saga with given <code>sagaIdentifier</code> and
+     * <code>associationValue</code>.
+     *
+     * @param sagaIdentifier   The identifier of the saga
+     * @param associationValue The association value for the saga
+     */
+    public AssociationValueEntry(String sagaIdentifier, AssociationValue associationValue) {
         if (!Serializable.class.isInstance(associationValue.getValue())) {
             throw new SagaStorageException("Could not persist a saga association, since the value is not serializable");
         }
@@ -54,13 +64,26 @@ public class AssociationEntry {
         this.associationValue = (Serializable) associationValue.getValue();
     }
 
-    protected AssociationEntry() {
+    /**
+     * Constructor required by JPA. Do not use directly.
+     */
+    protected AssociationValueEntry() {
     }
 
+    /**
+     * Returns the association value contained in this entry.
+     *
+     * @return the association value contained in this entry
+     */
     public AssociationValue getAssociationValue() {
         return new AssociationValue(associationKey, associationValue);
     }
 
+    /**
+     * Returns the Saga Identifier contained in this entry.
+     *
+     * @return the Saga Identifier contained in this entry
+     */
     public String getSagaIdentifier() {
         return sagaId;
     }

@@ -33,6 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.axonframework.util.TestUtils.setOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "/META-INF/spring/saga-integration-text.xml")
+@ContextConfiguration(locations = "/META-INF/spring/saga-integration-test.xml")
 public class QuartzSagaTimerIntegrationTest {
 
     @Autowired
@@ -53,7 +54,7 @@ public class QuartzSagaTimerIntegrationTest {
     private PlatformTransactionManager transactionManager;
 
     @Test
-    public void testApplicationContext_Startup() throws InterruptedException {
+    public void testJobExecutesInTime() throws InterruptedException {
         assertNotNull(eventBus);
         final String randomAssociationValue = UUID.randomUUID().toString();
         EventListener listener = mock(EventListener.class);
@@ -65,8 +66,9 @@ public class QuartzSagaTimerIntegrationTest {
                     public SimpleTimingSaga doInTransaction(TransactionStatus status) {
                         eventBus.publish(new StartingEvent(this, randomAssociationValue));
                         Set<SimpleTimingSaga> actualResult =
-                                repository.find(SimpleTimingSaga.class, new AssociationValue("association",
-                                                                                             randomAssociationValue));
+                                repository.find(SimpleTimingSaga.class,
+                                                setOf(new AssociationValue("association",
+                                                                           randomAssociationValue)));
                         assertEquals(1, actualResult.size());
                         return actualResult.iterator().next();
                     }
@@ -75,5 +77,4 @@ public class QuartzSagaTimerIntegrationTest {
         saga.waitForEventProcessing(10000);
         assertTrue("Expected saga to be triggered", saga.isTriggered());
     }
-
 }

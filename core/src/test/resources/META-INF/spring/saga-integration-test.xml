@@ -17,11 +17,9 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:util="http://www.springframework.org/schema/util"
        xmlns:tx="http://www.springframework.org/schema/tx" xmlns:axon="http://www.axonframework.org/schema/core"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
     <context:annotation-config/>
@@ -32,34 +30,19 @@
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-    <!--<bean id="sagaRepository" class="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>-->
+    <bean id="sagaRepository" class="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>
 
-    <!-- <bean class="org.axonframework.saga.annotation.AnnotatedSagaManager">
-            <constructor-arg ref="sagaRepository"/>
-            <constructor-arg ref="sagaFactory"/>
-            <constructor-arg ref="eventBus"/>
-            <constructor-arg value="org.axonframework.eventhandling.scheduling.quartz.SimpleTimingSaga"/>
-        </bean>
-    -->
-    <axon:saga-manager id="sagaManager" event-bus="eventBus">
+    <axon:saga-manager saga-repository="sagaRepository" id="sagaManager" event-bus="eventBus">
         <axon:types>
             org.axonframework.eventhandling.scheduling.quartz.SimpleTimingSaga
         </axon:types>
     </axon:saga-manager>
 
-    <!--<bean class="org.axonframework.saga.spring.SpringSagaResourceInjector"/>-->
-
     <bean class="org.axonframework.eventhandling.scheduling.quartz.QuartzTableMaker">
         <property name="sqlResource" value="classpath:/tables_hsqldb.sql"/>
     </bean>
 
-    <!--
-        <bean id="sagaFactory" class="org.axonframework.saga.GenericSagaFactory">
-            <property name="resourceInjector">
-                <bean class="org.axonframework.saga.spring.SpringSagaResourceInjector"/>
-            </property>
-        </bean>
-    -->
+    <bean class="org.axonframework.saga.spring.SpringResourceInjector"/>
 
     <bean class="org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler">
         <property name="scheduler" ref="scheduler"/>
