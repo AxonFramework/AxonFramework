@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.annotation.EventHandlerInvocationExceptio
 import org.axonframework.util.AbstractHandlerInvoker;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * @author Allard Buijze
@@ -35,6 +36,19 @@ class SagaEventHandlerInvoker extends AbstractHandlerInvoker {
      */
     public SagaEventHandlerInvoker(Object target) {
         super(target, SagaEventHandler.class);
+    }
+
+    /**
+     * Indicates whether the handler of the target event indicates an ending event handler (i.e. is annotated with
+     * {@link EndSaga}).
+     *
+     * @param event The event to investigate the handler for
+     * @return <code>true</code> if handling the given <code>event</code> should end the lifecycle of the Saga,
+     *         <code>false</code> otherwise.
+     */
+    public boolean isEndingEvent(Object event) {
+        Method method = super.findHandlerMethod(getTarget().getClass(), event.getClass());
+        return method != null && method.isAnnotationPresent(EndSaga.class);
     }
 
     public void invokeSagaEventHandlerMethod(Object event) {

@@ -38,6 +38,7 @@ public class SagaManagerTest {
     private SagaRepository mockSagaRepository;
     private Saga mockSaga1;
     private Saga mockSaga2;
+    private Saga mockSaga3;
 
     @Before
     public void setUp() throws Exception {
@@ -45,10 +46,14 @@ public class SagaManagerTest {
         mockSagaRepository = mock(SagaRepository.class);
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
+        mockSaga3 = mock(Saga.class);
+        when(mockSaga1.isActive()).thenReturn(true);
+        when(mockSaga2.isActive()).thenReturn(true);
+        when(mockSaga3.isActive()).thenReturn(false);
         testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository) {
             @Override
             protected Set<Saga> findSagas(Event event) {
-                return setOf(mockSaga1, mockSaga2);
+                return setOf(mockSaga1, mockSaga2, mockSaga3);
             }
         };
     }
@@ -67,8 +72,10 @@ public class SagaManagerTest {
         testSubject.handle(event);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
+        verify(mockSaga3, never()).handle(isA(Event.class));
         verify(mockSagaRepository).commit(mockSaga1);
         verify(mockSagaRepository).commit(mockSaga2);
+        verify(mockSagaRepository, never()).commit(mockSaga3);
     }
 
     @Test
@@ -85,7 +92,7 @@ public class SagaManagerTest {
         verify(mockSaga1).handle(event);
         verify(mockSaga2, never()).handle(event);
         verify(mockSagaRepository).commit(mockSaga1);
-        verify(mockSagaRepository).commit(mockSaga2);
+        verify(mockSagaRepository, never()).commit(mockSaga2);
     }
 
     @Test
@@ -105,5 +112,4 @@ public class SagaManagerTest {
     private <T> Set<T> setOf(T... items) {
         return ListOrderedSet.decorate(Arrays.asList(items));
     }
-
 }

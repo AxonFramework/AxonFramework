@@ -89,7 +89,7 @@
     </profiles>
 
     <properties>
-        <slf4j.version>1.5.8</slf4j.version>
+        <slf4j.version>1.6.1</slf4j.version>
         <spring.version>3.0.5.RELEASE</spring.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>

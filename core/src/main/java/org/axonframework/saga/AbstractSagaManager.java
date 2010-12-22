@@ -48,32 +48,36 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     @Override
     public void handle(Event event) {
         Set<Saga> sagas = findSagas(event);
-        try {
-            for (Saga saga : sagas) {
-                try {
-                    saga.handle(event);
-                } catch (RuntimeException e) {
-                    if (suppressExceptions) {
-                        logger.error(format("An exception occurred while a saga [%s] was handling an event [%s]:",
-                                            saga.getClass().getSimpleName(),
-                                            event.getClass().getSimpleName()),
-                                     e);
-                    } else {
-                        throw e;
-                    }
+        for (Saga saga : sagas) {
+            synchronized (saga) {
+                if (saga.isActive()) {
+                    invokeSagaHandler(event, saga);
                 }
             }
+        }
+    }
+
+    private void invokeSagaHandler(Event event, Saga saga) {
+        try {
+            saga.handle(event);
+        } catch (RuntimeException e) {
+            if (suppressExceptions) {
+                logger.error(format("An exception occurred while a saga [%s] was handling an event [%s]:",
+                                    saga.getClass().getSimpleName(),
+                                    event.getClass().getSimpleName()),
+                             e);
+            } else {
+                throw e;
+            }
         } finally {
-            commit(sagas);
+            commit(saga);
         }
     }
 
     protected abstract Set<Saga> findSagas(Event event);
 
-    protected void commit(Set<Saga> sagas) {
-        for (Saga saga : sagas) {
-            sagaRepository.commit(saga);
-        }
+    protected void commit(Saga saga) {
+        sagaRepository.commit(saga);
     }
 
     /**

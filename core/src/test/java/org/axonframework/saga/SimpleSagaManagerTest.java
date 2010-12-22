@@ -95,7 +95,7 @@ public class SimpleSagaManagerTest {
 
     @Test
     public void testCommit() {
-        testSubject.commit(sagasFromRepository);
+        testSubject.commit(saga1);
 
         verify(repository).commit(saga1);
     }
@@ -106,6 +106,8 @@ public class SimpleSagaManagerTest {
         Set<Saga> sagas = new HashSet<Saga>();
         final Saga saga1 = mock(Saga.class);
         final Saga saga2 = mock(Saga.class);
+        when(saga1.isActive()).thenReturn(true);
+        when(saga2.isActive()).thenReturn(true);
         sagas.add(saga1);
         sagas.add(saga2);
         when(testSubject.findSagas(event)).thenReturn(sagas);
@@ -123,5 +125,4 @@ public class SimpleSagaManagerTest {
         testSubject.unsubscribe();
         verify(eventBus).unsubscribe(testSubject);
     }
-
 }

@@ -80,11 +80,6 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
             saga.associateWith(configuration.getAssociationValue());
             sagaRepository.add(saga);
         }
-        if (configuration.isDestructorHandler()) {
-            for (AbstractAnnotatedSaga saga : sagasFound) {
-                saga.end();
-            }
-        }
 
         return sagasFound;
     }
