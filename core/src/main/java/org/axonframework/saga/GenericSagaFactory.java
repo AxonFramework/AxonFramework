@@ -16,6 +16,7 @@
 
 package org.axonframework.saga;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -52,6 +53,22 @@ public class GenericSagaFactory implements SagaFactory {
                                                                      + "There must be an accessible default (no-arg) constructor.",
                                                              sagaType.getSimpleName()), e);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation returns true for all types that have an accessible no-args constructor.
+     */
+    @Override
+    public boolean supports(Class<? extends Saga> sagaType) {
+        Constructor<?>[] constructors = sagaType.getConstructors();
+        for (Constructor constructor : constructors) {
+            if (constructor.getParameterTypes().length == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
