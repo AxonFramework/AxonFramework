@@ -99,13 +99,13 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
     }
 
     private void awaitThreadTermination(List<Thread> threads) throws Throwable {
-        long maxTime = System.currentTimeMillis() + 30000; //15 seconds
+//        long maxTime = System.currentTimeMillis() + 30000; //15 seconds
         for (Thread thread : threads) {
-            long timeLeft = maxTime - System.currentTimeMillis();
-            if (timeLeft < 0) {
-                fail("Threads didn't finish in time (30 seconds)");
-            }
-            thread.join(timeLeft);
+//            long timeLeft = maxTime - System.currentTimeMillis();
+//            if (timeLeft < 0) {
+//                fail("Threads didn't finish in time (30 seconds)");
+//            }
+            thread.join();
         }
         if (!exceptions.isEmpty()) {
             throw exceptions.get(0);
