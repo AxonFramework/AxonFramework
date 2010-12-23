@@ -54,7 +54,7 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
         sagaManager.subscribe();
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testConcurrentAccessToSaga() throws Throwable {
         final CyclicBarrier startCdl = new CyclicBarrier(SAGA_COUNT);
         final BlockingQueue<Event> eventsToPublish = new ArrayBlockingQueue<Event>(UPDATE_EVENT_COUNT * SAGA_COUNT);
