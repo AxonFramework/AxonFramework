@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.scheduling.quartz;
+package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.Event;
@@ -25,12 +25,12 @@ import org.joda.time.Duration;
 import org.junit.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
-import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SchedulerFactory;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -39,31 +39,23 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class QuartzEventSchedulerTest {
+public class SimpleEventSchedulerTest {
 
-    private static final String GROUP_ID = "TestGroup";
-    private QuartzEventScheduler testSubject;
+    private SimpleEventScheduler testSubject;
     private EventBus eventBus;
-    private Scheduler scheduler;
+    private ScheduledExecutorService executorService;
 
     @Before
     public void setUp() throws SchedulerException {
         eventBus = mock(EventBus.class);
-        SchedulerFactory schedFact = new org.quartz.impl.StdSchedulerFactory();
-        testSubject = new QuartzEventScheduler();
-        scheduler = schedFact.getScheduler();
-        scheduler.getContext().put(EventBus.class.getName(), eventBus);
-        scheduler.start();
-        testSubject.setScheduler(scheduler);
-        testSubject.setEventBus(eventBus);
-        testSubject.setGroupIdentifier(GROUP_ID);
-        testSubject.initialize();
+        executorService = Executors.newSingleThreadScheduledExecutor();
+        testSubject = new SimpleEventScheduler(executorService, eventBus);
     }
 
     @After
     public void tearDown() throws SchedulerException {
-        if (scheduler != null) {
-            scheduler.shutdown(true);
+        if (executorService != null) {
+            executorService.shutdownNow();
         }
     }
 
@@ -79,23 +71,34 @@ public class QuartzEventSchedulerTest {
         }).when(eventBus).publish(isA(Event.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent(mockSaga));
-        assertTrue(token.toString().contains("Quartz"));
-        assertTrue(token.toString().contains(GROUP_ID));
+        testSubject.schedule(new Duration(30), new StubEvent(mockSaga));
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus).publish(isA(StubEvent.class));
     }
 
     @Test
     public void testCancelJob() throws SchedulerException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                latch.countDown();
+                return null;
+            }
+        }).when(eventBus).publish(isA(Event.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(1000), new StubEvent(mockSaga));
-        assertEquals(1, scheduler.getJobNames(GROUP_ID).length);
-        testSubject.cancelSchedule(token);
-        assertEquals(0, scheduler.getJobNames(GROUP_ID).length);
-        scheduler.shutdown(true);
-        verify(eventBus, never()).publish(isA(Event.class));
+        StubEvent event1 = new StubEvent(mockSaga);
+        StubEvent event2 = new StubEvent(mockSaga);
+        ScheduleToken token1 = testSubject.schedule(new Duration(100), event1);
+        testSubject.schedule(new Duration(120), event2);
+        testSubject.cancelSchedule(token1);
+        latch.await(1, TimeUnit.SECONDS);
+        verify(eventBus, never()).publish(event1);
+        verify(eventBus).publish(event2);
+        executorService.shutdown();
+        assertTrue("Executor refused to shutdown within a second", executorService.awaitTermination(1,
+                                                                                                    TimeUnit.SECONDS));
     }
 
     private class StubEvent extends ApplicationEvent {

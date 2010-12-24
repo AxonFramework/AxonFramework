@@ -40,6 +40,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private final String identifier;
     private transient volatile SagaEventHandlerInvoker eventHandlerInvoker;
     private volatile boolean isActive = true;
+    private transient volatile Object lock = new Object();
 
     /**
      * Initialize the saga with a random identifier. The identifier used is a randomly generated {@link UUID}.
@@ -72,9 +73,25 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     @Override
     public final void handle(Event event) {
-        eventHandlerInvoker.invokeSagaEventHandlerMethod(event);
-        if (eventHandlerInvoker.isEndingEvent(event)) {
-            end();
+        if (isThreadSafe()) {
+            doHandle(event);
+        } else {
+            synchronized (lock) {
+                doHandle(event);
+            }
+        }
+    }
+
+    protected boolean isThreadSafe() {
+        return false;
+    }
+
+    private void doHandle(Event event) {
+        if (isActive) {
+            eventHandlerInvoker.invokeSagaEventHandlerMethod(event);
+            if (eventHandlerInvoker.isEndingEvent(event)) {
+                end();
+            }
         }
     }
 
@@ -141,5 +158,6 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         eventHandlerInvoker = new SagaEventHandlerInvoker(this);
+        lock = new Object();
     }
 }

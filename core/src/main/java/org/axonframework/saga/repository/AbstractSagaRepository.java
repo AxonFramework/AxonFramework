@@ -61,7 +61,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
     public <T extends Saga> T load(Class<T> type, String sagaIdentifier) {
         Saga cachedSaga = sagaCache.get(sagaIdentifier);
         if (cachedSaga == null) {
-            final Saga storedSaga = loadSaga(sagaIdentifier);
+            final Saga storedSaga = loadSaga(type, sagaIdentifier);
             if (storedSaga == null) {
                 return null;
             }
@@ -77,30 +77,24 @@ public abstract class AbstractSagaRepository implements SagaRepository {
         return (T) cachedSaga;
     }
 
-    @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter"})
     @Override
     public void add(Saga saga) {
-        synchronized (saga) {
-            Saga cachedSaga = sagaCache.put(saga);
-            if (cachedSaga == saga) {
-                for (AssociationValue av : saga.getAssociationValues()) {
-                    associationValueMap.add(av, saga.getSagaIdentifier());
-                    storeAssociationValue(av, saga.getSagaIdentifier());
-                }
-                storeSaga(saga);
+        Saga cachedSaga = sagaCache.put(saga);
+        if (cachedSaga == saga) {
+            for (AssociationValue av : saga.getAssociationValues()) {
+                associationValueMap.add(av, saga.getSagaIdentifier());
+                storeAssociationValue(av, saga.getSagaIdentifier());
             }
+            storeSaga(saga);
         }
     }
 
-    @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter"})
     @Override
     public void commit(Saga saga) {
-        synchronized (saga) {
-            updateSaga(saga);
-        }
+        updateSaga(saga);
     }
 
-    protected abstract Saga loadSaga(String sagaIdentifier);
+    protected abstract <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier);
 
     protected abstract void updateSaga(Saga saga);
 

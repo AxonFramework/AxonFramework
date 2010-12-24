@@ -49,11 +49,11 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     public void handle(Event event) {
         Set<Saga> sagas = findSagas(event);
         for (Saga saga : sagas) {
-            synchronized (saga) {
-                if (saga.isActive()) {
-                    invokeSagaHandler(event, saga);
-                }
+//            synchronized (saga) {
+            if (saga.isActive()) {
+                invokeSagaHandler(event, saga);
             }
+//            }
         }
     }
 

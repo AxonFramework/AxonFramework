@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Quartz Job that publishes an event on an event bus. The event is retrieved from the JobExecutionContext. The Event
+ * Quartz Job that publishes an event on an Event Bus. The event is retrieved from the JobExecutionContext. The Event
  * Bus is fetched from the scheduler context.
  *
  * @author Allard Buijze

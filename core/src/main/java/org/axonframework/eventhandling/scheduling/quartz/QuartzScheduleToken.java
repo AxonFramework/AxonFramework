@@ -31,7 +31,7 @@ class QuartzScheduleToken implements ScheduleToken {
     private static final long serialVersionUID = 7798276124742118925L;
 
     private final String jobIdentifier;
-    private final String taskIdentifier;
+    private final String groupIdentifier;
 
     /**
      * Initialize a token for the given <code>jobIdentifier</code> and <code>groupIdentifier</code>.
@@ -41,19 +41,19 @@ class QuartzScheduleToken implements ScheduleToken {
      */
     public QuartzScheduleToken(String jobIdentifier, String groupIdentifier) {
         this.jobIdentifier = jobIdentifier;
-        this.taskIdentifier = groupIdentifier;
+        this.groupIdentifier = groupIdentifier;
     }
 
     public String getJobIdentifier() {
         return jobIdentifier;
     }
 
-    public String getTaskIdentifier() {
-        return taskIdentifier;
+    public String getGroupIdentifier() {
+        return groupIdentifier;
     }
 
     @Override
     public String toString() {
-        return format("Quartz Schedule token for job [%s] in group [%s]", jobIdentifier, taskIdentifier);
+        return format("Quartz Schedule token for job [%s] in group [%s]", jobIdentifier, groupIdentifier);
     }
 }

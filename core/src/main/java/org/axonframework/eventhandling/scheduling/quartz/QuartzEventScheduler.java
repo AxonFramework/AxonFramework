@@ -28,6 +28,8 @@ import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -38,20 +40,22 @@ import javax.annotation.Resource;
  */
 public class QuartzEventScheduler implements org.axonframework.eventhandling.scheduling.EventScheduler {
 
-    private Scheduler scheduler;
+    private static final Logger logger = LoggerFactory.getLogger(QuartzEventScheduler.class);
     private static final String JOB_NAME_PREFIX = "event-";
     private static final String DEFAULT_GROUP_NAME = "AxonFramework-Events";
+    private Scheduler scheduler;
     private EventBus eventBus;
     private String groupIdentifier = DEFAULT_GROUP_NAME;
+    private volatile boolean initialized;
 
     @Override
     public ScheduleToken schedule(DateTime triggerDateTime, ApplicationEvent event) {
+        Assert.state(initialized, "Scheduler is not yet initialized");
         Object owner = event.getSource();
         String jobIdentifier = JOB_NAME_PREFIX + event.getEventIdentifier().toString();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
             JobDetail jobDetail = new JobDetail(jobIdentifier, groupIdentifier, FireEventJob.class);
-            jobDetail.setVolatility(false);
             jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, event);
             jobDetail.setDescription(String.format("%s, scheduled by %s.",
                                                    event.getClass().getName(),
@@ -79,11 +83,13 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         if (!QuartzScheduleToken.class.isInstance(scheduleToken)) {
             throw new IllegalArgumentException("The given ScheduleToken was not provided by this scheduler.");
         }
+        Assert.state(initialized, "Scheduler is not yet initialized");
 
         QuartzScheduleToken reference = (QuartzScheduleToken) scheduleToken;
         try {
-            scheduler.deleteJob(JOB_NAME_PREFIX + reference.getJobIdentifier(),
-                                reference.getTaskIdentifier());
+            if (!scheduler.deleteJob(reference.getJobIdentifier(), reference.getGroupIdentifier())) {
+                logger.warn("The job belonging to this token could not be deleted.");
+            }
         } catch (SchedulerException e) {
             throw new SchedulingException("An error occurred while cancelling a timer for a saga", e);
         }
@@ -96,9 +102,10 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      */
     @PostConstruct
     public void initialize() throws SchedulerException {
-        Assert.notNull(scheduler, "A scheduler must be provided.");
-        Assert.notNull(eventBus, "An event bus must be provided.");
+        Assert.notNull(scheduler, "A Scheduler must be provided.");
+        Assert.notNull(eventBus, "An EventBus must be provided.");
         scheduler.getContext().put(FireEventJob.EVENT_BUS_KEY, eventBus);
+        initialized = true;
     }
 
     /**

@@ -62,6 +62,7 @@ public interface EventScheduler {
      * Cancel the publication of a scheduled event. If the events has already been published, this method does nothing.
      *
      * @param scheduleToken the token returned when the event was scheduled
+     * @throws IllegalArgumentException if the token belongs to another scheduler
      */
     void cancelSchedule(ScheduleToken scheduleToken);
 

@@ -17,6 +17,7 @@
 package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
@@ -70,12 +71,12 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
-    protected Saga loadSaga(String sagaId) {
+    protected <T extends Saga> T loadSaga(Class<T> type, String sagaId) {
         SagaEntry entry = entityManager.find(SagaEntry.class, sagaId);
         if (entry == null) {
-            return null;
+            throw new NoSuchSagaException(type, sagaId);
         }
-        Saga storedSaga = entry.getSaga();
+        T storedSaga = type.cast(entry.getSaga());
         injector.injectResources(storedSaga);
         return storedSaga;
     }

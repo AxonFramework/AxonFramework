@@ -39,8 +39,8 @@ public class VirtualSagaRepository extends AbstractSagaRepository {
     private List<Saga> deletedSagas = new CopyOnWriteArrayList<Saga>();
 
     @Override
-    protected Saga loadSaga(String sagaIdentifier) {
-        return deserialize(storage.get(sagaIdentifier));
+    protected <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier) {
+        return type.cast(deserialize(storage.get(sagaIdentifier)));
     }
 
     @Override
