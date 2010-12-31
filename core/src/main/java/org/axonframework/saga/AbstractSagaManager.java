@@ -36,10 +36,17 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
 
-    protected EventBus eventBus;
-    private SagaRepository sagaRepository;
-    private boolean suppressExceptions = true;
+    private final EventBus eventBus;
+    private final SagaRepository sagaRepository;
+    private volatile boolean suppressExceptions = true;
+    private volatile boolean synchronizeSagaAccess = true;
 
+    /**
+     * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code>.
+     *
+     * @param eventBus       The event bus providing the events to route to sagas.
+     * @param sagaRepository The repository providing the saga instances.
+     */
     public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository) {
         this.eventBus = eventBus;
         this.sagaRepository = sagaRepository;
@@ -49,20 +56,27 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     public void handle(Event event) {
         Set<Saga> sagas = findSagas(event);
         for (Saga saga : sagas) {
-//            synchronized (saga) {
-            if (saga.isActive()) {
+            if (synchronizeSagaAccess) {
+                //Saga instance is unique (no two instances will exist inside a JVM with the same identifier)
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (saga) {
+                    invokeSagaHandler(event, saga);
+                }
+            } else {
                 invokeSagaHandler(event, saga);
             }
-//            }
         }
     }
 
     private void invokeSagaHandler(Event event, Saga saga) {
+        if (!saga.isActive()) {
+            return;
+        }
         try {
             saga.handle(event);
         } catch (RuntimeException e) {
             if (suppressExceptions) {
-                logger.error(format("An exception occurred while a saga [%s] was handling an event [%s]:",
+                logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
                                     saga.getClass().getSimpleName(),
                                     event.getClass().getSimpleName()),
                              e);
@@ -74,8 +88,20 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         }
     }
 
+    /**
+     * Finds the saga instances that the given <code>event</code> needs to be routed to. The event is sent to each of
+     * the returned instances.
+     *
+     * @param event The event to find relevant Sagas for
+     * @return The Set of relevant Sagas
+     */
     protected abstract Set<Saga> findSagas(Event event);
 
+    /**
+     * Commits the given <code>saga</code> to the registered repository.
+     *
+     * @param saga the Saga to commit.
+     */
     protected void commit(Saga saga) {
         sagaRepository.commit(saga);
     }
@@ -98,7 +124,41 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         eventBus.subscribe(this);
     }
 
+    /**
+     * Returns the EventBus that delivers the events to route to Sagas.
+     *
+     * @return the EventBus that delivers the events to route to Sagas
+     */
+    protected EventBus getEventBus() {
+        return eventBus;
+    }
+
+    /**
+     * Returns the repository that provides access to Saga instances.
+     *
+     * @return the repository that provides access to Saga instances
+     */
+    protected SagaRepository getSagaRepository() {
+        return sagaRepository;
+    }
+
+    /**
+     * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
+     * logged. Defaults to <code>true</code>.
+     *
+     * @param suppressExceptions whether or not to suppress exceptions from Sagas.
+     */
     public void setSuppressExceptions(boolean suppressExceptions) {
         this.suppressExceptions = suppressExceptions;
+    }
+
+    /**
+     * Sets whether of not access to Saga's Event Handler should by synchronized. Defaults to <code>true</code>. Sets to
+     * <code>false</code> only if the Saga managed by this manager are completely thread safe by themselves.
+     *
+     * @param synchronizeSagaAccess whether or not to synchronize access to Saga's event handlers.
+     */
+    public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
+        this.synchronizeSagaAccess = synchronizeSagaAccess;
     }
 }

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.repository;
+package org.axonframework.saga.repository.concurrent;
 
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
+import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.util.CollectionUtils;
 
 import java.io.ByteArrayInputStream;
@@ -68,8 +69,8 @@ public class VirtualSagaRepository extends AbstractSagaRepository {
         // we don't need this
     }
 
-    public List<ConcurrentSaga> getDeletedSagas() {
-        return CollectionUtils.filterByType(deletedSagas, ConcurrentSaga.class);
+    public <T extends Saga> List<T> getDeletedSagas(Class<T> type) {
+        return CollectionUtils.filterByType(deletedSagas, type);
     }
 
     private byte[] serialize(Saga saga) {

@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.repository;
+package org.axonframework.saga.repository.concurrent;
 
 import org.axonframework.domain.ApplicationEvent;
 
 /**
  * @author Allard Buijze
  */
-public class DeleteEvent extends ApplicationEvent {
+public class UpdateEvent extends ApplicationEvent {
 
     private static final long serialVersionUID = -7447679343923876237L;
     private final String id;
 
-    public DeleteEvent(String id, Object source) {
+    public UpdateEvent(String id, Object source) {
         super(source);
         this.id = id;
     }

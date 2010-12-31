@@ -17,15 +17,9 @@
 package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaStorageException;
+import org.axonframework.saga.repository.SagaSerializer;
 import org.axonframework.util.Assert;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
@@ -45,9 +39,16 @@ public class SagaEntry {
     @Lob
     private byte[] serializedSaga;
 
-    private SagaEntry(String sagaId, byte[] serializedSaga) {
-        this.sagaId = sagaId;
-        this.serializedSaga = serializedSaga;
+    /**
+     * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
+     * saga is not modified by this operation.
+     *
+     * @param saga       The saga to store
+     * @param serializer The serialization mechanism to convert the Saga to a byte stream
+     */
+    public SagaEntry(Saga saga, SagaSerializer serializer) {
+        this.sagaId = saga.getSagaIdentifier();
+        this.serializedSaga = serializer.serialize(saga);
     }
 
     /**
@@ -62,70 +63,29 @@ public class SagaEntry {
     /**
      * Returns the Saga instance stored in this entry.
      *
+     * @param serializer The serializer to decode the Saga
      * @return the Saga instance stored in this entry
      */
-    public Saga getSaga() {
-        return deserialize(serializedSaga);
+    public Saga getSaga(SagaSerializer serializer) {
+        return serializer.deserialize(serializedSaga);
     }
 
     /**
      * Updates the saga instance in this entry. The given saga must be serializable.
      *
-     * @param saga the saga to update
+     * @param saga       the saga to update
+     * @param serializer The serializer that can serialize the given Saga
      */
-    public void updateSaga(Saga saga) {
+    public void updateSaga(Saga saga, SagaSerializer serializer) {
         Assert.isTrue(sagaId.equals(saga.getSagaIdentifier()),
                       "Cannot update an entry with another saga. Make sure Identifiers have not been altered.");
-        this.serializedSaga = serialize(saga);
-    }
-
-    /**
-     * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
-     * saga is not modified by this operation.
-     *
-     * @param saga The saga to create
-     * @return the saga entry representing the JPA-entity for the given saga
-     */
-    public static SagaEntry forSaga(Saga saga) {
-        byte[] serializedSaga = serialize(saga);
-        return new SagaEntry(saga.getSagaIdentifier(), serializedSaga);
-    }
-
-    private static byte[] serialize(Saga saga) {
-        if (!Serializable.class.isInstance(saga)) {
-            throw new SagaStorageException("This repository can only store Serializable sagas");
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos;
-        try {
-            oos = new ObjectOutputStream(baos);
-            try {
-                oos.writeObject(saga);
-            } finally {
-                oos.close();
-            }
-        } catch (IOException e) {
-            throw new SagaStorageException("An exception occurred while trying to serialize a Saga for storage", e);
-        }
-        return baos.toByteArray();
-    }
-
-    private static Saga deserialize(byte[] serializedSaga) {
-        ObjectInputStream ois;
-        try {
-            ois = new ObjectInputStream(new ByteArrayInputStream(serializedSaga));
-            return (Saga) ois.readObject();
-        } catch (IOException e) {
-            throw new SagaStorageException("An exception occurred while trying to deserialize a stored Saga", e);
-        } catch (ClassNotFoundException e) {
-            throw new SagaStorageException("An exception occurred while trying to deserialize a stored Saga", e);
-        }
+        this.serializedSaga = serializer.serialize(saga);
     }
 
     /**
      * Constructor required by JPA. Do not use.
      *
-     * @see #forSaga(org.axonframework.saga.Saga)
+     * @see #SagaEntry(org.axonframework.saga.Saga, org.axonframework.saga.repository.SagaSerializer)
      */
     protected SagaEntry() {
         // required by JPA

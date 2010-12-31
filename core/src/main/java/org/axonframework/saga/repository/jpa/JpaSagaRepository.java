@@ -21,6 +21,8 @@ import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
+import org.axonframework.saga.repository.JavaSagaSerializer;
+import org.axonframework.saga.repository.SagaSerializer;
 
 import java.util.List;
 import javax.annotation.PostConstruct;
@@ -42,13 +44,19 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     private EntityManager entityManager;
     private ResourceInjector injector;
+    private SagaSerializer serializer;
     private volatile boolean useExplicitFlush = true;
+
+    public JpaSagaRepository() {
+        serializer = new JavaSagaSerializer();
+    }
 
     @SuppressWarnings({"unchecked"})
     @Override
     protected void removeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
         List<AssociationValueEntry> potentialCandidates = entityManager.createQuery(
-                "SELECT ae FROM AssociationValueEntry ae WHERE ae.associationKey = :associationKey AND ae.sagaId = :sagaId")
+                "SELECT ae FROM AssociationValueEntry ae "
+                        + "WHERE ae.associationKey = :associationKey AND ae.sagaId = :sagaId")
                 .setParameter("associationKey", associationValue.getKey())
                 .setParameter("sagaId", sagaIdentifier)
                 .getResultList();
@@ -76,14 +84,16 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         if (entry == null) {
             throw new NoSuchSagaException(type, sagaId);
         }
-        T storedSaga = type.cast(entry.getSaga());
-        injector.injectResources(storedSaga);
+        T storedSaga = type.cast(entry.getSaga(serializer));
+        if (injector != null) {
+            injector.injectResources(storedSaga);
+        }
         return storedSaga;
     }
 
     @Override
     protected void updateSaga(Saga saga) {
-        entityManager.merge(SagaEntry.forSaga(saga));
+        entityManager.merge(new SagaEntry(saga, serializer));
         if (useExplicitFlush) {
             entityManager.flush();
         }
@@ -91,7 +101,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void storeSaga(Saga saga) {
-        entityManager.persist(SagaEntry.forSaga(saga));
+        entityManager.persist(new SagaEntry(saga, serializer));
         if (useExplicitFlush) {
             entityManager.flush();
         }
@@ -108,14 +118,34 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         }
     }
 
+    /**
+     * Sets the ResourceInjector to use to inject Saga instances with any (temporary) resources they might need. These
+     * are typically the resources that could not be persisted with the Saga.
+     *
+     * @param injector The resource injector
+     */
     @Resource
-    public void setSagaResourceInjector(ResourceInjector injector) {
+    public void setResourceInjector(ResourceInjector injector) {
         this.injector = injector;
     }
 
+    /**
+     * Sets the EntityManager that takes care of the actual storage of the Saga entries.
+     *
+     * @param entityManager the EntityManager that takes care of the actual storage of the Saga entries
+     */
     @PersistenceContext
     public void setEntityManager(EntityManager entityManager) {
         this.entityManager = entityManager;
+    }
+
+    /**
+     * Sets the SagaSerializer instance to serialize Sagas with. Defaults to the JavaSagaSerializer.
+     *
+     * @param serializer the SagaSerializer instance to serialize Sagas with
+     */
+    public void setSerializer(SagaSerializer serializer) {
+        this.serializer = serializer;
     }
 
     /**

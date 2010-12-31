@@ -94,14 +94,49 @@ public abstract class AbstractSagaRepository implements SagaRepository {
         updateSaga(saga);
     }
 
+    /**
+     * Loads a known Saga instance by its unique identifier. Implementations are encouraged, but not required to return
+     * the same instance when two Sagas with equal identifiers are loaded.
+     *
+     * @param type           The expected type of Saga
+     * @param sagaIdentifier The unique identifier of the Saga to load
+     * @param <T>            The expected type of Saga
+     * @return The Saga instance
+     *
+     * @throws org.axonframework.saga.NoSuchSagaException
+     *          if no Saga with given identifier can be found
+     */
     protected abstract <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier);
 
+    /**
+     * Update a stored Saga, by replacing it with the given <code>saga</code> instance.
+     *
+     * @param saga The saga that has been modified and needs to be updated in the storage
+     */
     protected abstract void updateSaga(Saga saga);
 
+    /**
+     * Stores a newly created Saga instance.
+     *
+     * @param saga The newly created Saga instance to store.
+     */
     protected abstract void storeSaga(Saga saga);
 
-    protected abstract void storeAssociationValue(AssociationValue newAssociationValue, String sagaIdentifier);
+    /**
+     * Store the given <code>associationValue</code>, which has been associated with given <code>sagaIdentifier</code>.
+     *
+     * @param associationValue The association value to store
+     * @param sagaIdentifier   The saga related to the association value
+     */
+    protected abstract void storeAssociationValue(AssociationValue associationValue, String sagaIdentifier);
 
+    /**
+     * Removes the association value that has been associated with Saga, identified with the given
+     * <code>sagaIdentifier</code>.
+     *
+     * @param associationValue The value to remove as association value for the given saga
+     * @param sagaIdentifier   The identifier of the Saga to remove the association from
+     */
     protected abstract void removeAssociationValue(AssociationValue associationValue, String sagaIdentifier);
 
     /**

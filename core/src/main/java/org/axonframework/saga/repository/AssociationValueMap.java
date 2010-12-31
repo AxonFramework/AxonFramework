@@ -49,6 +49,12 @@ public class AssociationValueMap {
         mappings = new ConcurrentSkipListSet<SagaAssociationValue>(new AssociationValueComparator());
     }
 
+    /**
+     * Returns the identifiers of the Sagas that have been associated with the given <code>associationValue</code>.
+     *
+     * @param associationValue The associationValue to find Sagas for
+     * @return A set of Saga identifiers
+     */
     public Set<String> findSagas(AssociationValue associationValue) {
         Set<String> identifiers = new HashSet<String>();
         for (SagaAssociationValue item : mappings.tailSet(new SagaAssociationValue(associationValue, null))) {
@@ -63,14 +69,29 @@ public class AssociationValueMap {
         return identifiers;
     }
 
+    /**
+     * Adds an association between the given <code>associationValue</code> and <code>sagaIdentifier</code>.
+     *
+     * @param associationValue The association value associated with the Saga
+     * @param sagaIdentifier   The identifier of the associated Saga
+     */
     public void add(AssociationValue associationValue, String sagaIdentifier) {
         mappings.add(new SagaAssociationValue(associationValue, sagaIdentifier));
     }
 
+    /**
+     * Removes an association between the given <code>associationValue</code> and <code>sagaIdentifier</code>.
+     *
+     * @param associationValue The association value associated with the Saga
+     * @param sagaIdentifier   The identifier of the associated Saga
+     */
     public void remove(AssociationValue associationValue, String sagaIdentifier) {
         mappings.remove(new SagaAssociationValue(associationValue, sagaIdentifier));
     }
 
+    /**
+     * Clears all the associations.
+     */
     public void clear() {
         mappings.clear();
     }
@@ -105,7 +126,7 @@ public class AssociationValueMap {
     /**
      * Indicates whether any elements are contained within this map.
      *
-     * @return
+     * @return <code>true</code> if this Map is empty, <code>false</code> if it contains any associations.
      */
     public boolean isEmpty() {
         return mappings.isEmpty();

@@ -19,17 +19,55 @@ package org.axonframework.saga;
 import java.util.Set;
 
 /**
+ * Interface towards the storage mechanism of Saga instances. Saga Repositories can find sagas either through the values
+ * they have been associated with (see {@link AssociationValue}) or via their unique identifier.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
 public interface SagaRepository {
 
+    /**
+     * Find saga instances of the given <code>type</code> that have been associated with the given
+     * <code>associationValue</code>.
+     * <p/>
+     * Returned Sagas must be {@link #commit(Saga) committed} after processing.
+     *
+     * @param type             The type of Saga to return
+     * @param associationValue The value that the returned Sagas must be associated with
+     * @param <T>              The type of Saga to return
+     * @return A Set containing the found Saga instances. If none are found, an empty Set is returned. Will never return
+     *         <code>null</code>.
+     */
     <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValue);
 
-    <T extends Saga> T load(Class<T> type, String sagaIdentifier);
+    /**
+     * Loads a known Saga instance by its unique identifier. Returned Sagas must be {@link #commit(Saga) committed}
+     * after processing.
+     *
+     * @param type           The expected type of Saga
+     * @param sagaIdentifier The unique identifier of the Saga to load
+     * @param <T>            The expected type of Saga
+     * @return The Saga instance
+     *
+     * @throws NoSuchSagaException if no Saga with given identifier can be found
+     */
+    <T extends Saga> T load(Class<T> type, String sagaIdentifier) throws NoSuchSagaException;
 
+    /**
+     * Commits the changes made to the Saga instance. At this point, the repository may release any resources kept for
+     * this saga.
+     *
+     * @param saga The Saga instance to commit
+     */
     void commit(Saga saga);
 
+    /**
+     * Registers a newly created Saga with the Repository. Once a Saga instance has been added, it can be found using
+     * its association values or its unique identifier.
+     *
+     * @param saga The Saga instances to add.
+     */
     void add(Saga saga);
 
 }

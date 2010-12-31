@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.repository;
+package org.axonframework.saga.repository.concurrent;
 
 import org.axonframework.domain.Event;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.EndSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
@@ -28,7 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * @author Allard Buijze
  */
-public class ConcurrentSaga extends AbstractAnnotatedSaga {
+public class ConcurrentSaga extends AbstractTestSaga {
 
     private static final long serialVersionUID = 5329800443421589068L;
     private List<Event> events = new CopyOnWriteArrayList<Event>();
@@ -50,6 +49,7 @@ public class ConcurrentSaga extends AbstractAnnotatedSaga {
         this.events.add(event);
     }
 
+    @Override
     public List<Event> getEvents() {
         return events;
     }

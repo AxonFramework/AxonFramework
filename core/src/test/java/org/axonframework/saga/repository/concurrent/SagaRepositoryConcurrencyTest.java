@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.repository;
+package org.axonframework.saga.repository.concurrent;
 
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -45,17 +45,31 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
     private VirtualSagaRepository repository;
     private SimpleEventBus eventBus;
     private List<Throwable> exceptions = new ArrayList<Throwable>();
+    private AnnotatedSagaManager sagaManager;
 
     @Before
     public void setUp() throws Exception {
         repository = new VirtualSagaRepository();
         eventBus = new SimpleEventBus(false);
-        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(repository, eventBus, ConcurrentSaga.class);
-        sagaManager.subscribe();
     }
 
     @Test
-    public void testConcurrentAccessToSaga() throws Throwable {
+    public void testConcurrentAccessToSaga_NotSynchronized() throws Throwable {
+        sagaManager = new AnnotatedSagaManager(repository, eventBus, ConcurrentSaga.class);
+        sagaManager.setSynchronizeSagaAccess(false);
+        sagaManager.subscribe();
+        executeConcurrentAccessToSaga(ConcurrentSaga.class);
+    }
+
+    @Test
+    public void testConcurrentAccessToSaga_Synchronized() throws Throwable {
+        sagaManager = new AnnotatedSagaManager(repository, eventBus, NonConcurrentSaga.class);
+        sagaManager.setSynchronizeSagaAccess(true);
+        sagaManager.subscribe();
+        executeConcurrentAccessToSaga(NonConcurrentSaga.class);
+    }
+
+    public <T extends AbstractTestSaga> void executeConcurrentAccessToSaga(Class<T> type) throws Throwable {
         final CyclicBarrier startCdl = new CyclicBarrier(SAGA_COUNT);
         final BlockingQueue<Event> eventsToPublish = new ArrayBlockingQueue<Event>(UPDATE_EVENT_COUNT * SAGA_COUNT);
         eventsToPublish.addAll(generateEvents(UPDATE_EVENT_COUNT * SAGA_COUNT));
@@ -86,10 +100,10 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
         });
         awaitThreadTermination(threads);
         // now, all threads have ended
-        List<ConcurrentSaga> deletedSagas = repository.getDeletedSagas();
-        Set<ConcurrentSaga> uniqueInstances = new HashSet<ConcurrentSaga>(deletedSagas);
+        List<T> deletedSagas = repository.getDeletedSagas(type);
+        Set<T> uniqueInstances = new HashSet<T>(deletedSagas);
         assertEquals(SAGA_COUNT, uniqueInstances.size());
-        for (ConcurrentSaga deletedSaga : deletedSagas) {
+        for (T deletedSaga : deletedSagas) {
             List<Event> events = deletedSaga.getEvents();
             assertTrue("Wrong number of events", events.size() <= UPDATE_EVENT_COUNT + 2);
             assertTrue("The first event should always be the creation event. Another event might indicate"

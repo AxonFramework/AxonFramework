@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,20 +53,33 @@ public class GenericXStreamSerializer {
     private final Charset charset;
 
     /**
-     * Initialize a generic serializer using the UTF-8 character set.
+     * Initialize a generic serializer using the UTF-8 character set. A default XStream instance (with {@link
+     * XppDriver}) is used to perform the serialization.
      */
     public GenericXStreamSerializer() {
         this(Charset.forName("UTF-8"));
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code>.
+     * Initialize the serializer using the given <code>charset</code>. A default XStream instance (with {@link
+     * XppDriver}) is used to perform the serialization.
      *
      * @param charset The character set to use
      */
     public GenericXStreamSerializer(Charset charset) {
+        this(charset, new XStream(new XppDriver()));
+    }
+
+    /**
+     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
+     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     *
+     * @param charset The character set to use
+     * @param xStream The XStream instance to use
+     */
+    public GenericXStreamSerializer(Charset charset, XStream xStream) {
         this.charset = charset;
-        xStream = new XStream(new XppDriver());
+        this.xStream = xStream;
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.registerConverter(new AggregateIdentifierConverter());

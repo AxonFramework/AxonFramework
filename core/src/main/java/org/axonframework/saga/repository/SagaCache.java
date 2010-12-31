@@ -127,9 +127,6 @@ public class SagaCache {
         Saga value = reference.get();
         if (value == null) {
             backingCache.remove(sagaIdentifier, reference);
-        } else if (!value.isActive()) {
-            // but don't purge!
-            return null;
         }
         return value;
     }
