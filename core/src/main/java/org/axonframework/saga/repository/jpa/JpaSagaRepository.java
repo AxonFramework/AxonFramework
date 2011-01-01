@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,9 +57,10 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         List<AssociationValueEntry> potentialCandidates = entityManager.createQuery(
                 "SELECT ae FROM AssociationValueEntry ae "
                         + "WHERE ae.associationKey = :associationKey AND ae.sagaId = :sagaId")
-                .setParameter("associationKey", associationValue.getKey())
-                .setParameter("sagaId", sagaIdentifier)
-                .getResultList();
+                                                                       .setParameter("associationKey",
+                                                                                     associationValue.getKey())
+                                                                       .setParameter("sagaId", sagaIdentifier)
+                                                                       .getResultList();
         for (AssociationValueEntry entry : potentialCandidates) {
             if (associationValue.getValue().equals(entry.getAssociationValue().getValue())) {
                 entityManager.remove(entry);
@@ -112,6 +113,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     public void initialize() {
         List<AssociationValueEntry> entries =
                 entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae").getResultList();
+        getAssociationValueMap().clear();
         for (AssociationValueEntry entry : entries) {
             AssociationValue associationValue = entry.getAssociationValue();
             getAssociationValueMap().add(associationValue, entry.getSagaIdentifier());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
                 associationValueMap.add(av, saga.getSagaIdentifier());
                 storeAssociationValue(av, saga.getSagaIdentifier());
             }
+            saga.getAssociationValues().addChangeListener(new AssociationValueChangeListener(saga.getSagaIdentifier()));
             storeSaga(saga);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.SagaSerializer;
-import org.axonframework.util.Assert;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -33,6 +32,7 @@ import javax.persistence.Lob;
 @Entity
 public class SagaEntry {
 
+    @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
     @Id
     private String sagaId;
 
@@ -52,15 +52,6 @@ public class SagaEntry {
     }
 
     /**
-     * Returns the identifier of the saga stored in this entry.
-     *
-     * @return the identifier of the saga stored in this entry
-     */
-    public String getSagaId() {
-        return sagaId;
-    }
-
-    /**
      * Returns the Saga instance stored in this entry.
      *
      * @param serializer The serializer to decode the Saga
@@ -68,18 +59,6 @@ public class SagaEntry {
      */
     public Saga getSaga(SagaSerializer serializer) {
         return serializer.deserialize(serializedSaga);
-    }
-
-    /**
-     * Updates the saga instance in this entry. The given saga must be serializable.
-     *
-     * @param saga       the saga to update
-     * @param serializer The serializer that can serialize the given Saga
-     */
-    public void updateSaga(Saga saga, SagaSerializer serializer) {
-        Assert.isTrue(sagaId.equals(saga.getSagaIdentifier()),
-                      "Cannot update an entry with another saga. Make sure Identifiers have not been altered.");
-        this.serializedSaga = serializer.serialize(saga);
     }
 
     /**
