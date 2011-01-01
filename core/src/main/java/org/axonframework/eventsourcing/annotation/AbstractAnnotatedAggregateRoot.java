@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 
+import java.io.IOException;
 import java.util.UUID;
 
 /**
@@ -36,7 +37,8 @@ import java.util.UUID;
  */
 public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
-    private final AnnotationEventHandlerInvoker eventHandlerInvoker;
+    private static final long serialVersionUID = -1206026570158467937L;
+    private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
 
     /**
      * Initialize the aggregate root with a random identifier.
@@ -77,5 +79,10 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
     @Override
     protected void handle(DomainEvent event) {
         eventHandlerInvoker.invokeEventHandlerMethod(event);
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
     }
 }

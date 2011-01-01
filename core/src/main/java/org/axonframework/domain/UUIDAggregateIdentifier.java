@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,5 +47,15 @@ public class UUIDAggregateIdentifier extends StringAggregateIdentifier {
      */
     public UUIDAggregateIdentifier(UUID identifier) {
         super(identifier.toString());
+    }
+
+    /**
+     * Creates a new instance using the {@link java.util.UUID#toString() UUID-formatted} <code>identifier</code>.
+     *
+     * @param identifier The UUID-formatted identifier String
+     * @see UUID#fromString(String)
+     */
+    public UUIDAggregateIdentifier(String identifier) {
+        this(UUID.fromString(identifier));
     }
 }

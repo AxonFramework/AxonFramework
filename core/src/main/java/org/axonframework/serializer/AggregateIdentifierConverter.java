@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,9 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StringAggregateIdentifier;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * XStream converter to minimize the amount of output used when serializing aggregate identifiers. Only the backing
@@ -48,6 +51,18 @@ public class AggregateIdentifierConverter implements Converter {
 
     @Override
     public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-        return new StringAggregateIdentifier(reader.getValue());
+        String idValue = reader.getValue();
+        try {
+            Constructor constructor = context.getRequiredType().getConstructor(String.class);
+            return constructor.newInstance(idValue);
+        } catch (NoSuchMethodException e) {
+            return new StringAggregateIdentifier(idValue);
+        } catch (InvocationTargetException e) {
+            return new StringAggregateIdentifier(idValue);
+        } catch (InstantiationException e) {
+            return new StringAggregateIdentifier(idValue);
+        } catch (IllegalAccessException e) {
+            return new StringAggregateIdentifier(idValue);
+        }
     }
 }

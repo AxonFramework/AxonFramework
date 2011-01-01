@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.axonframework.domain;
 import org.axonframework.util.Assert;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -61,12 +62,12 @@ class EventContainer implements Serializable {
      */
     public void addEvent(DomainEvent event) {
         Assert.isTrue(event.getSequenceNumber() == null
-                || lastSequenceNumber == null
-                || event.getSequenceNumber().equals(lastSequenceNumber + 1),
+                              || lastSequenceNumber == null
+                              || event.getSequenceNumber().equals(lastSequenceNumber + 1),
                       "The given event's sequence number is discontinuous");
 
         Assert.isTrue(event.getAggregateIdentifier() == null
-                || aggregateIdentifier.equals(event.getAggregateIdentifier()),
+                              || aggregateIdentifier.equals(event.getAggregateIdentifier()),
                       "The Identifier of the event does not match the Identifier of the EventContainer");
 
         if (event.getAggregateIdentifier() == null) {
@@ -89,6 +90,15 @@ class EventContainer implements Serializable {
      */
     public DomainEventStream getEventStream() {
         return new SimpleDomainEventStream(events);
+    }
+
+    /**
+     * Returns a List of DomainEvents contained in this container instance.
+     *
+     * @return a List of DomainEvents contained in this container instance
+     */
+    public List<DomainEvent> getEvents() {
+        return new ArrayList<DomainEvent>(events);
     }
 
     /**

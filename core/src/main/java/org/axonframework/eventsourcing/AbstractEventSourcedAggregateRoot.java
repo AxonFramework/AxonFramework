@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import java.util.UUID;
  */
 public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregateRoot
         implements EventSourcedAggregateRoot {
+
+    private static final long serialVersionUID = 5868786029296883724L;
 
     /**
      * Initializes the aggregate root using a random aggregate identifier.
@@ -148,5 +150,4 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * @param event The event to handle
      */
     protected abstract void handle(DomainEvent event);
-
 }
