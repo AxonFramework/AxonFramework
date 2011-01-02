@@ -32,7 +32,7 @@
 
     <bean id="sagaRepository" class="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>
 
-    <axon:saga-manager saga-repository="sagaRepository" id="sagaManager" event-bus="eventBus">
+    <axon:saga-manager id="sagaManager" saga-repository="sagaRepository" event-bus="eventBus">
         <axon:types>
             org.axonframework.eventhandling.scheduling.quartz.SimpleTimingSaga
         </axon:types>

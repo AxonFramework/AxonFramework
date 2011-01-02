@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,6 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
 
     private Set<Class<? extends AbstractAnnotatedSaga>> managedSagaTypes = new HashSet<Class<? extends AbstractAnnotatedSaga>>();
     private SagaAnnotationInspector inspector = new SagaAnnotationInspector();
-    private SagaRepository sagaRepository;
-    private SagaFactory sagaFactory;
 
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
@@ -49,9 +47,7 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 SagaFactory sagaFactory, EventBus eventBus,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        super(eventBus, sagaRepository);
-        this.sagaRepository = sagaRepository;
-        this.sagaFactory = sagaFactory;
+        super(eventBus, sagaRepository, sagaFactory);
         managedSagaTypes.addAll(Arrays.asList(sagaClasses));
     }
 
@@ -71,14 +67,14 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
         }
         Set<AssociationValue> associationValues = new HashSet<AssociationValue>();
         associationValues.add(configuration.getAssociationValue());
-        Set<T> sagasFound = sagaRepository.find(sagaType, associationValues);
+        Set<T> sagasFound = getSagaRepository().find(sagaType, associationValues);
         if ((sagasFound.isEmpty()
                 && configuration.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)
                 || configuration.getCreationPolicy() == SagaCreationPolicy.ALWAYS) {
-            T saga = sagaFactory.createSaga(sagaType);
+            T saga = createSaga(sagaType);
             sagasFound.add(saga);
             saga.associateWith(configuration.getAssociationValue());
-            sagaRepository.add(saga);
+            getSagaRepository().add(saga);
         }
 
         return sagasFound;

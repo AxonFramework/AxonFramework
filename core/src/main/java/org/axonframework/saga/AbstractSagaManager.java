@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private final EventBus eventBus;
     private final SagaRepository sagaRepository;
+    private SagaFactory sagaFactory;
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
 
@@ -46,10 +47,12 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      *
      * @param eventBus       The event bus providing the events to route to sagas.
      * @param sagaRepository The repository providing the saga instances.
+     * @param sagaFactory    The factory providing new saga instances
      */
-    public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository) {
+    public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory) {
         this.eventBus = eventBus;
         this.sagaRepository = sagaRepository;
+        this.sagaFactory = sagaFactory;
     }
 
     @Override
@@ -66,6 +69,18 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
                 invokeSagaHandler(event, saga);
             }
         }
+    }
+
+    /**
+     * Create a new instance of a Saga of the given <code>sagaType</code>. Resources must have been injected into the
+     * Saga before returning it.
+     *
+     * @param sagaType The type of Saga to create an instance for
+     * @param <T>      The type of Saga to create an instance for
+     * @return A newly created Saga.
+     */
+    protected <T extends Saga> T createSaga(Class<T> sagaType) {
+        return sagaFactory.createSaga(sagaType);
     }
 
     private void invokeSagaHandler(Event event, Saga saga) {

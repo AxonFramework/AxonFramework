@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private final String identifier;
     private transient volatile SagaEventHandlerInvoker eventHandlerInvoker;
     private volatile boolean isActive = true;
-    private transient volatile Object lock = new Object();
 
     /**
      * Initialize the saga with a random identifier. The identifier used is a randomly generated {@link UUID}.
@@ -73,17 +72,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     @Override
     public final void handle(Event event) {
-        if (isThreadSafe()) {
-            doHandle(event);
-        } else {
-            synchronized (lock) {
-                doHandle(event);
-            }
-        }
-    }
-
-    protected boolean isThreadSafe() {
-        return false;
+        doHandle(event);
     }
 
     private void doHandle(Event event) {
@@ -124,7 +113,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      * @param key   The key of the association value to associate this saga with.
      * @param value The value of the association value to associate this saga with.
      */
-    protected void associateWith(String key, String value) {
+    protected void associateWith(String key, Object value) {
         associationValues.add(new AssociationValue(key, value));
     }
 
@@ -145,7 +134,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      * @param key   The key of the association value to remove from this saga.
      * @param value The value of the association value to remove from this saga.
      */
-    protected void removeAssociationWith(String key, String value) {
+    protected void removeAssociationWith(String key, Object value) {
         associationValues.remove(new AssociationValue(key, value));
     }
 
@@ -158,6 +147,5 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         eventHandlerInvoker = new SagaEventHandlerInvoker(this);
-        lock = new Object();
     }
 }

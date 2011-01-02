@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,7 @@ import java.util.Set;
  */
 public class SimpleSagaManager extends AbstractSagaManager {
 
-    private final SagaRepository sagaRepository;
     private final AssociationValueResolver associationValueResolver;
-    private final SagaFactory sagaFactory;
 
     private List<Class<? extends Event>> eventsToAlwaysCreateNewSagasFor = Collections.emptyList();
     private List<Class<? extends Event>> eventsToOptionallyCreateNewSagasFor = Collections.emptyList();
@@ -42,23 +40,21 @@ public class SimpleSagaManager extends AbstractSagaManager {
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
                              AssociationValueResolver associationValueResolver,
                              SagaFactory sagaFactory, EventBus eventBus) {
-        super(eventBus, sagaRepository);
+        super(eventBus, sagaRepository, sagaFactory);
         this.sagaType = sagaType;
-        this.sagaRepository = sagaRepository;
         this.associationValueResolver = associationValueResolver;
-        this.sagaFactory = sagaFactory;
     }
 
     @Override
     protected Set<Saga> findSagas(Event event) {
         Set<AssociationValue> associationValue = associationValueResolver.extractAssociationValue(event);
         Set<Saga> sagas = new HashSet<Saga>();
-        sagas.addAll(sagaRepository.find(sagaType, associationValue));
+        sagas.addAll(getSagaRepository().find(sagaType, associationValue));
         if (sagas.isEmpty() && isAssignableClassIn(event.getClass(), eventsToOptionallyCreateNewSagasFor)
                 || isAssignableClassIn(event.getClass(), eventsToAlwaysCreateNewSagasFor)) {
-            Saga saga = sagaFactory.createSaga(sagaType);
+            Saga saga = createSaga(sagaType);
             sagas.add(saga);
-            sagaRepository.add(saga);
+            getSagaRepository().add(saga);
         }
         return sagas;
     }
