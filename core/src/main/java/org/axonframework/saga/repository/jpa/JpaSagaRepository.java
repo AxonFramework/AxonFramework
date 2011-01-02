@@ -47,6 +47,9 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     private SagaSerializer serializer;
     private volatile boolean useExplicitFlush = true;
 
+    /**
+     * Initializes a Saga Repository with a <code>JavaSagaSerializer</code>.
+     */
     public JpaSagaRepository() {
         serializer = new JavaSagaSerializer();
     }
@@ -108,6 +111,10 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         }
     }
 
+    /**
+     * Initializes the repository by loading all AssociationValues in memory. Failure to initialize properly might
+     * result in Saga instance not being found based on their <code>AssociationValue</code>s.
+     */
     @SuppressWarnings({"unchecked"})
     @PostConstruct
     public void initialize() {
@@ -124,11 +131,11 @@ public class JpaSagaRepository extends AbstractSagaRepository {
      * Sets the ResourceInjector to use to inject Saga instances with any (temporary) resources they might need. These
      * are typically the resources that could not be persisted with the Saga.
      *
-     * @param injector The resource injector
+     * @param resourceInjector The resource injector
      */
     @Resource
-    public void setResourceInjector(ResourceInjector injector) {
-        this.injector = injector;
+    public void setResourceInjector(ResourceInjector resourceInjector) {
+        this.injector = resourceInjector;
     }
 
     /**

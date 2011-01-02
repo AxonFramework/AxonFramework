@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.saga.repository;
 
 import org.axonframework.saga.AssociationValue;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.NavigableSet;
@@ -96,7 +97,7 @@ public class AssociationValueMap {
         mappings.clear();
     }
 
-    private static class SagaAssociationValue {
+    private static final class SagaAssociationValue {
 
         private final AssociationValue associationValue;
         private final String sagaIdentifier;
@@ -145,7 +146,9 @@ public class AssociationValueMap {
         return mappings.size();
     }
 
-    private static class AssociationValueComparator implements Comparator<SagaAssociationValue> {
+    private static class AssociationValueComparator implements Comparator<SagaAssociationValue>, Serializable {
+
+        private static final long serialVersionUID = -8733800489211327001L;
 
         @SuppressWarnings({"unchecked"})
         @Override

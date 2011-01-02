@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,20 @@ class QuartzScheduleToken implements ScheduleToken {
         this.groupIdentifier = groupIdentifier;
     }
 
+    /**
+     * Returns the Quartz job identifier.
+     *
+     * @return the Quartz job identifier
+     */
     public String getJobIdentifier() {
         return jobIdentifier;
     }
 
+    /**
+     * Returns the Quartz group identifier.
+     *
+     * @return the Quartz group identifier
+     */
     public String getGroupIdentifier() {
         return groupIdentifier;
     }

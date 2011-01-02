@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.util.CollectionUtils;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
+ * SagaRepository implementation that stores all Saga instances in memory.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -81,7 +84,9 @@ public class InMemorySagaRepository implements SagaRepository {
         return result;
     }
 
-    private static class SagaIdentifierComparator implements Comparator<Saga> {
+    private static class SagaIdentifierComparator implements Comparator<Saga>, Serializable {
+
+        private static final long serialVersionUID = 2939897180067202510L;
 
         @Override
         public int compare(Saga o1, Saga o2) {

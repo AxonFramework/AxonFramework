@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,13 +30,11 @@ import org.axonframework.repository.ConcurrencyException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
-import javax.sql.DataSource;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as a
@@ -56,7 +54,6 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     private static final int EVENT_VISITOR_BATCH_SIZE = 50;
 
     private PersistenceExceptionResolver persistenceExceptionResolver;
-
 
     /**
      * Initialize a JpaEventStore using an {@link org.axonframework.eventstore.XStreamEventSerializer}, which serializes
@@ -91,7 +88,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             }
         } catch (PersistenceException persistenceException) {
             if (persistenceExceptionResolver.isDuplicateKey(persistenceException)) {
-                throw new ConcurrencyException("Concurrent modification detected for Aggregate identifier:" + event.getAggregateIdentifier() + " sequence: " + event.getSequenceNumber().toString());
+                throw new ConcurrencyException(
+                        "Concurrent modification detected for Aggregate identifier:" + event.getAggregateIdentifier()
+                                + " sequence: " + event.getSequenceNumber().toString());
             }
             throw persistenceException;
         }
@@ -144,10 +143,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                 "SELECT e FROM DomainEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
                         + "ORDER BY e.sequenceNumber ASC")
-                .setParameter("id", identifier.asString())
-                .setParameter("type", type)
-                .setParameter("seq", firstSequenceNumber)
-                .getResultList();
+                                                                               .setParameter("id",
+                                                                                             identifier.asString())
+                                                                               .setParameter("type", type)
+                                                                               .setParameter("seq", firstSequenceNumber)
+                                                                               .getResultList();
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
         for (DomainEventEntry entry : entries) {
             events.add(entry.getDomainEvent(eventSerializer));
@@ -161,11 +161,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                 "SELECT e FROM SnapshotEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
                         + "ORDER BY e.sequenceNumber DESC")
-                .setParameter("id", identifier.asString())
-                .setParameter("type", type)
-                .setMaxResults(1)
-                .setFirstResult(0)
-                .getResultList();
+                                                        .setParameter("id", identifier.asString())
+                                                        .setParameter("type", type)
+                                                        .setMaxResults(1)
+                                                        .setFirstResult(0)
+                                                        .getResultList();
         if (entries.size() < 1) {
             return null;
         }
@@ -196,9 +196,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     private List<DomainEventEntry> fetchBatch(int startPosition, int batchSize) {
         return entityManager.createQuery(
                 "SELECT e FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
-                .setFirstResult(startPosition)
-                .setMaxResults(batchSize)
-                .getResultList();
+                            .setFirstResult(startPosition)
+                            .setMaxResults(batchSize)
+                            .getResultList();
     }
 
     /**
@@ -212,7 +212,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         this.entityManager = entityManager;
     }
 
-
+    /**
+     * Sets the persistenceExceptionResolver that will help detect concurrency exceptions from the backing database.
+     *
+     * @param persistenceExceptionResolver the persistenceExceptionResolver that will help detect concurrency
+     *                                     exceptions
+     */
     public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
         this.persistenceExceptionResolver = persistenceExceptionResolver;
     }

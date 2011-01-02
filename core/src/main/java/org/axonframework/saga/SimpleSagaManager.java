@@ -26,6 +26,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Simple SagaManager implementation. This implementation requires the Event that should cause new Saga's to be created,
+ * to be registered using {@link #setEventsToAlwaysCreateNewSagasFor(java.util.List)} and {@link
+ * #setEventsToOptionallyCreateNewSagasFor(java.util.List)}.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -37,10 +41,35 @@ public class SimpleSagaManager extends AbstractSagaManager {
     private List<Class<? extends Event>> eventsToOptionallyCreateNewSagasFor = Collections.emptyList();
     private Class<? extends Saga> sagaType;
 
+    /**
+     * Initialize a SimpleSagaManager backed by the given resources.
+     *
+     * @param sagaType                 The type of Saga managed by this SagaManager
+     * @param sagaRepository           The repository providing access to Saga instances
+     * @param associationValueResolver The instance providing AssociationValues for incoming Events
+     * @param sagaFactory              The factory creating new Saga instances
+     * @param eventBus                 The event bus that the manager should register to
+     */
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
                              AssociationValueResolver associationValueResolver,
                              SagaFactory sagaFactory, EventBus eventBus) {
         super(eventBus, sagaRepository, sagaFactory);
+        this.sagaType = sagaType;
+        this.associationValueResolver = associationValueResolver;
+    }
+
+    /**
+     * Initialize a SimpleSagaManager backed by the given resources, using a GenericSagaFactory.
+     *
+     * @param sagaType                 The type of Saga managed by this SagaManager
+     * @param sagaRepository           The repository providing access to Saga instances
+     * @param associationValueResolver The instance providing AssociationValues for incoming Events
+     * @param eventBus                 The event bus that the manager should register to
+     */
+    public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
+                             AssociationValueResolver associationValueResolver,
+                             EventBus eventBus) {
+        super(eventBus, sagaRepository, new GenericSagaFactory());
         this.sagaType = sagaType;
         this.associationValueResolver = associationValueResolver;
     }
@@ -69,10 +98,22 @@ public class SimpleSagaManager extends AbstractSagaManager {
         return false;
     }
 
+    /**
+     * Sets the types of Events that should cause the creation of a new Saga instance, even if one already exists.
+     *
+     * @param events the types of Events that should cause the creation of a new Saga instance, even if one already
+     *               exists
+     */
     public void setEventsToAlwaysCreateNewSagasFor(List<Class<? extends Event>> events) {
         this.eventsToAlwaysCreateNewSagasFor = events;
     }
 
+    /**
+     * Sets the types of Events that should cause the creation of a new Saga instance if one does not already exist.
+     *
+     * @param events the types of Events that should cause the creation of a new Saga instance if one does not already
+     *               exist
+     */
     public void setEventsToOptionallyCreateNewSagasFor(List<Class<? extends Event>> events) {
         this.eventsToOptionallyCreateNewSagasFor = events;
     }

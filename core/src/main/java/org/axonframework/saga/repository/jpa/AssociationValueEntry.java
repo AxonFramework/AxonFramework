@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,5 +86,15 @@ public class AssociationValueEntry {
      */
     public String getSagaIdentifier() {
         return sagaId;
+    }
+
+
+    /**
+     * The unique identifier of this entry.
+     *
+     * @return the unique identifier of this entry
+     */
+    public Long getId() {
+        return id;
     }
 }

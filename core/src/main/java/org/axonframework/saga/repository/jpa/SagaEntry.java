@@ -62,6 +62,15 @@ public class SagaEntry {
     }
 
     /**
+     * Returns the Identifier of the Saga stored in this entry.
+     *
+     * @return the Identifier of the Saga stored in this entry
+     */
+    public String getSagaId() {
+        return sagaId;
+    }
+
+    /**
      * Constructor required by JPA. Do not use.
      *
      * @see #SagaEntry(org.axonframework.saga.Saga, org.axonframework.saga.repository.SagaSerializer)

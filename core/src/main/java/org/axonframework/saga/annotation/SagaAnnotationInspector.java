@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,14 +25,28 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
+ * Utility class that inspects annotation on a Saga instance and returns the relevant configuration for its Event
+ * Handlers.
+ *
  * @author Allard Buijze
+ * @since 0.7
  */
 class SagaAnnotationInspector extends AbstractHandlerInspector {
 
+    /**
+     * Initialize the inspector.
+     */
     public SagaAnnotationInspector() {
         super(SagaEventHandler.class);
     }
 
+    /**
+     * Find the configuration for the handler on the given <code>sagaType</code> for the given <code>event</code>.
+     *
+     * @param sagaType The type of saga to investigate
+     * @param event    The Event to investigate the handler for
+     * @return the configuration of the handler, as defined by the annotations.
+     */
     public HandlerConfiguration findHandlerConfiguration(Class<?> sagaType, Event event) {
         Method handlerMethod = findHandlerMethod(sagaType, event.getClass());
         if (handlerMethod == null) {
@@ -78,5 +92,4 @@ class SagaAnnotationInspector extends AbstractHandlerInspector {
     private String capitalize(String s) {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
-
 }

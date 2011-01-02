@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 /**
+ * Abstract utility class that inspects handler methods.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -29,6 +31,12 @@ public abstract class AbstractHandlerInspector {
 
     private final Class<? extends Annotation> annotationType;
 
+    /**
+     * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the Event
+     * Handler methods.
+     *
+     * @param annotationType The annotation used on the Event Handler methods.
+     */
     public AbstractHandlerInspector(Class<? extends Annotation> annotationType) {
         this.annotationType = annotationType;
     }
@@ -56,7 +64,7 @@ public abstract class AbstractHandlerInspector {
      * Example:<br/> <code>MostSuitableHandlerCallback callback = new MostSuitableHandlerCallback(eventType) <br/>
      * ReflectionUtils.doWithMethods(eventListenerClass, callback, callback);</code>
      */
-    private static class MostSuitableHandlerCallback
+    private static final class MostSuitableHandlerCallback
             implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
 
         private final Class<?> parameterType;
@@ -116,5 +124,4 @@ public abstract class AbstractHandlerInspector {
             return bestMethodSoFar;
         }
     }
-
 }

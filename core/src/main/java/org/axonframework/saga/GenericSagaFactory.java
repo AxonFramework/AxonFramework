@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class GenericSagaFactory implements SagaFactory {
         this.resourceInjector = resourceInjector;
     }
 
-    private static class NullResourceInjector implements ResourceInjector {
+    private static final class NullResourceInjector implements ResourceInjector {
 
         public static final NullResourceInjector INSTANCE = new NullResourceInjector();
 

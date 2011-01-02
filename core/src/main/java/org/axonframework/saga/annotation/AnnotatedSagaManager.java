@@ -31,6 +31,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike the
+ * SimpleSagaManager, this implementation can manage several types of Saga in a single AnnotatedSagaManager.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -39,11 +42,26 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     private Set<Class<? extends AbstractAnnotatedSaga>> managedSagaTypes = new HashSet<Class<? extends AbstractAnnotatedSaga>>();
     private SagaAnnotationInspector inspector = new SagaAnnotationInspector();
 
+    /**
+     * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
+     *
+     * @param sagaRepository The repository providing access to the Saga instances
+     * @param eventBus       The event bus publishing the events
+     * @param sagaClasses    The types of Saga that this instance should manage
+     */
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         this(sagaRepository, new GenericSagaFactory(), eventBus, sagaClasses);
     }
 
+    /**
+     * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
+     *
+     * @param sagaRepository The repository providing access to the Saga instances
+     * @param sagaFactory    The factory creating new instances of a Saga
+     * @param eventBus       The event bus publishing the events
+     * @param sagaClasses    The types of Saga that this instance should manage
+     */
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 SagaFactory sagaFactory, EventBus eventBus,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {

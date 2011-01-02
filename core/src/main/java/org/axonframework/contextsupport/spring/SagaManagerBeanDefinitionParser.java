@@ -32,6 +32,8 @@ import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 /**
+ * BeanDefinitionParser that parses saga-manager elements in the application context.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -51,7 +53,7 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
         parseResourceInjectorAttribute(element);
 
         parseSagaRepositoryAttribute(element, parserContext, sagaManagerDefinition.getConstructorArgumentValues());
-        parseSagaFactoryAttribute(element, parserContext, sagaManagerDefinition.getConstructorArgumentValues());
+        parseSagaFactoryAttribute(element, sagaManagerDefinition.getConstructorArgumentValues());
         parseEventBusAttribute(element, sagaManagerDefinition.getConstructorArgumentValues());
         parseTypesElement(element, sagaManagerDefinition);
 
@@ -77,8 +79,7 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
         }
     }
 
-    private void parseSagaFactoryAttribute(Element element, ParserContext parserContext,
-                                           ConstructorArgumentValues properties) {
+    private void parseSagaFactoryAttribute(Element element, ConstructorArgumentValues properties) {
         if (element.hasAttribute(SAGA_FACTORY_ATTRIBUTE)) {
             properties.addGenericArgumentValue(new RuntimeBeanReference(element.getAttribute(SAGA_FACTORY_ATTRIBUTE)));
         } else {

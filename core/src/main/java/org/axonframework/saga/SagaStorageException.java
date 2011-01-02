@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,30 @@ package org.axonframework.saga;
 import org.axonframework.util.AxonTransientException;
 
 /**
+ * Exception indicating that an error has occurred while storing a Saga.
+ *
  * @author Allard Buijze
+ * @since 0.7
  */
 public class SagaStorageException extends AxonTransientException {
 
+    private static final long serialVersionUID = -225936398184084287L;
+
+    /**
+     * Initialize a SagaStorageException with the given descriptive <code>message</code>.
+     *
+     * @param message The message describing the error.
+     */
     public SagaStorageException(String message) {
         super(message);
     }
 
+    /**
+     * Initialize a SagaStorageException with the given descriptive <code>message</code> and <code>cause</code>.
+     *
+     * @param message The message describing the error.
+     * @param cause   The cause of the error.
+     */
     public SagaStorageException(String message, Throwable cause) {
         super(message, cause);
     }

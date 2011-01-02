@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.annotation.EventHandlerInvocationException;
 import org.axonframework.util.AbstractHandlerInvoker;
 
@@ -23,6 +24,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
+ * Utility class that invokes annotated Event Handlers on Sagas.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -51,7 +54,12 @@ class SagaEventHandlerInvoker extends AbstractHandlerInvoker {
         return method != null && method.isAnnotationPresent(EndSaga.class);
     }
 
-    public void invokeSagaEventHandlerMethod(Object event) {
+    /**
+     * Invoke the annotated Event Handler method for the given <code>event</code> on the target Saga.
+     *
+     * @param event The event to invoke the Event Handler for
+     */
+    public void invokeSagaEventHandlerMethod(Event event) {
         try {
             invokeHandlerMethod(event);
         } catch (IllegalAccessException e) {

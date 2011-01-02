@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,7 +174,7 @@ public class GenericXStreamSerializer {
     /**
      * XStream Converter to serialize LocalDateTime classes as a String.
      */
-    private static class JodaTimeConverter implements Converter {
+    private static final class JodaTimeConverter implements Converter {
 
         /**
          * {@inheritDoc}
