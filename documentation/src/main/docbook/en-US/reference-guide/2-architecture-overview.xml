@@ -14,7 +14,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<chapter id="architecture-overview" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="architecture-overview" version="5.0" xmlns="http://docbook.org/ns/docbook">
     <title>Architecture Overview</title>
     <para>CQRS on itself is a very simple pattern. It only describes that the component of an
         application that processes commands should be separated from the component that processes
@@ -29,7 +29,6 @@
     <figure>
         <title>Architecture overview of a CQRS application</title>
         <mediaobject>
-            <info>Detailed architecture overview</info>
             <imageobject role="fo">
                 <imagedata align="center" format="png"
                     fileref="detailed-architecture-overview-hires.png" width="15cm"/>

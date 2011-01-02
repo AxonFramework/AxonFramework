@@ -14,7 +14,7 @@
     ~ See the License for the specific language governing permissions and
     ~ limitations under the License.
 -->
-<chapter id="command-handling" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="command-handling" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>Command Handling</title>
     <para>A state change within an application starts with a Command. A Command is a combination of
         expressed intent (which describes what you want done) as well as the information required to

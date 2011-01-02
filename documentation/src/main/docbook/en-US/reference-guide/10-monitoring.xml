@@ -14,7 +14,7 @@
     ~ See the License for the specific language governing permissions and
     ~ limitations under the License.
 -->
-<chapter id="monitoring" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="monitoring" version="5.0" xmlns="http://docbook.org/ns/docbook">
     <title>Monitoring</title>
     <para>During development of an application you have multiple mechanism to see what your
         application is doing. Often we use <code>System.out.println</code>, but more often the

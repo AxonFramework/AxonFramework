@@ -14,7 +14,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<chapter id="using-spring" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="using-spring" version="5.0" xmlns="http://docbook.org/ns/docbook">
     <title>Using Spring</title>
     <para>The AxonFramework has many integration points with the Spring Framework. All major
         building blocks in Axon are Spring configurable. Furthermore, there are some Bean Post
@@ -252,11 +252,11 @@
             <para>The annotation-config element has the following attributes that allow you to
                 configure annotation support further: </para>
             <para>
-                <table frame="all" border="1">
+                <table frame="all">
                     <title>Attributes for annotation-config</title>
                     
-                    <tgroup cols="4" colsep="2" rowsep="2" align="left">
-                        <thead style="bgcolor:black;color:white">
+                    <tgroup cols="4" colsep="1" rowsep="1" align="left">
+                        <thead>
                             <row>
                                 <entry>Attribute name</entry>
                                 <entry>Usage</entry>

@@ -14,7 +14,7 @@
     ~ See the License for the specific language governing permissions and
     ~ limitations under the License.
 -->
-<chapter id="repositories-and-event-stores" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="repositories-and-event-stores" version="5.0" xmlns="http://docbook.org/ns/docbook">
     <title>Repositories and Event Stores</title>
         <para>The repository is the mechanism that provides access to aggregates. The repository
         acts as a gateway to the actual storage mechanism used to persist the data. In CQRS, the
@@ -190,9 +190,9 @@
                     <code>org.axonframework.eventstore.jpa.SnapshotEventEntry</code>. </para>
                 <para>Below is an example configuration of a persistence context configuration: </para>
                 <programlistingco>
-                    <areaspec units="LineColumn">
-                        <area coords="2 40" id="persistence-unit-name-co"/>
-                        <area coords="3 62" id="domain-event-entry-co"/>
+                    <areaspec units="linecolumn">
+                        <area coords="2 40" xml:id="persistence-unit-name-co"/>
+                        <area coords="3 62" xml:id="domain-event-entry-co"/>
                     </areaspec>
                     <programlisting language="xml"><![CDATA[<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
@@ -446,7 +446,7 @@
                     <code>AggregateSnapshot</code> instances themselves.</para>
         </sect2>
     </sect1>
-    <sect1 linkend="" xml:id="conflict-resolution">
+    <sect1 xml:id="conflict-resolution">
         <title>Advanced conflict detection and resolution</title>
         <para>One of the major advantages of being explicit about the meaning of changes, is that
             you can detect conflicting changes with more precision. Typically, these conflicting

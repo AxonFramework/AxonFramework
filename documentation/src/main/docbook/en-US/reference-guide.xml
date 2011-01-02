@@ -29,14 +29,18 @@
                     <firstname>Allard</firstname>
                     <surname>Buijze</surname>
                 </personname>
-                <orgname>JTeam</orgname>
+                <affiliation>
+                    <orgname>JTeam</orgname>
+                </affiliation>
             </author>
             <othercredit>
                 <personname>
                     <firstname>Jettro</firstname>
                     <surname>Coenradie</surname>
                 </personname>
-                <orgname>JTeam</orgname>
+                <affiliation>
+                    <orgname>JTeam</orgname>
+                </affiliation>
             </othercredit>
         </authorgroup>
         <mediaobject>
@@ -57,6 +61,7 @@
     <xi:include href="reference-guide/4-domain-modeling.xml"/>
     <xi:include href="reference-guide/5-repositories-and-event-stores.xml"/>
     <xi:include href="reference-guide/6-event-listeners.xml"/>
+    <xi:include href="reference-guide/7-sagas.xml"/>
     <xi:include href="reference-guide/8-testing.xml"/>
     <xi:include href="reference-guide/9-using-spring.xml"/>
     <!--<xi:include href="reference-guide/10-monitoring.xml"/>-->

@@ -14,7 +14,7 @@
     ~ See the License for the specific language governing permissions and
     ~ limitations under the License.
 -->
-<chapter id="domain-modeling" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="domain-modeling" version="5.0" xmlns="http://docbook.org/ns/docbook">
     <title>Domain Modeling</title>
     <para>In a CQRS-based application, a Domain Model (as defined by Eric Evans and Martin Fowler)
         can be a very powerful mechanism to harness the complexity involved in the validation and
@@ -71,7 +71,6 @@
                 <figure>
                     <title>Adding intent to events</title>
                     <mediaobject>
-                        <info>Adding intent to events</info>
                         <imageobject role="fo">
                             <imagedata format="png" fileref="state-change-intent-hires.png"
                                 width="10cm"/>

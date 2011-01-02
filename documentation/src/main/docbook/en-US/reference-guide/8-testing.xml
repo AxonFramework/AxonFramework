@@ -14,7 +14,7 @@
     ~ See the License for the specific language governing permissions and
     ~ limitations under the License.
 -->
-<chapter id="testing" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="testing" version="5.0" xmlns="http://docbook.org/ns/docbook">
     <title>Testing</title>
     <para>One of the biggest benefits of CQRS, and especially that of event sourcing is that it is
         possible to express tests purely in terms of Events and Commands. Both being functional
