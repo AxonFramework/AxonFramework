@@ -1,18 +1,33 @@
+/*
+ * Copyright (c) 2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventstore.jpa;
 
 import org.junit.*;
 import org.mockito.*;
 
-import javax.sql.DataSource;
-import javax.persistence.PersistenceException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.PersistenceException;
+import javax.sql.DataSource;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Martin Tilma
@@ -23,9 +38,9 @@ public class SQLErrorCodesResolverTest {
     public void testIsDuplicateKey() throws Exception {
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver();
 
-        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKey(new PersistenceException("error",
-                                                                      new RuntimeException()));
-        
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        new RuntimeException()));
+
         assertFalse(isDuplicateKey);
     }
 
@@ -36,15 +51,14 @@ public class SQLErrorCodesResolverTest {
         List<Integer> errorCodes = new ArrayList<Integer>();
         errorCodes.add(-104);
         sqlErrorCodesResolver.setDuplicateKeyCodes(errorCodes);
-        
+
         SQLException sqlException = new SQLException("test", "error", errorCodes.get(0));
 
-        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKey(new PersistenceException("error",
-                                                                                               sqlException));
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
 
         assertTrue(isDuplicateKey);
     }
-
 
 
     @Test
@@ -57,7 +71,8 @@ public class SQLErrorCodesResolverTest {
 
         SQLException sqlException = new SQLException("test", "error", -104);
 
-        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKey(new PersistenceException("error",                                                                                      sqlException));
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
 
         assertTrue(isDuplicateKey);
     }
@@ -83,7 +98,8 @@ public class SQLErrorCodesResolverTest {
 
         SQLException sqlException = new SQLException("test", "error", -104);
 
-        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKey(new PersistenceException("error",                                                                                      sqlException));
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
 
         assertFalse(isDuplicateKey);
     }
