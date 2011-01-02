@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
         sagaManager = new AnnotatedSagaManager(repository, eventBus, ConcurrentSaga.class);
         sagaManager.setSynchronizeSagaAccess(false);
         sagaManager.subscribe();
-        executeConcurrentAccessToSaga(ConcurrentSaga.class);
+        executeConcurrentAccessToSaga(ConcurrentSaga.class, false);
     }
 
     @Test
@@ -66,10 +66,12 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
         sagaManager = new AnnotatedSagaManager(repository, eventBus, NonConcurrentSaga.class);
         sagaManager.setSynchronizeSagaAccess(true);
         sagaManager.subscribe();
-        executeConcurrentAccessToSaga(NonConcurrentSaga.class);
+        executeConcurrentAccessToSaga(NonConcurrentSaga.class, true);
     }
 
-    public <T extends AbstractTestSaga> void executeConcurrentAccessToSaga(Class<T> type) throws Throwable {
+    public <T extends AbstractTestSaga> void executeConcurrentAccessToSaga(Class<T> type,
+                                                                           boolean lastEventMustBeDeletion)
+            throws Throwable {
         final CyclicBarrier startCdl = new CyclicBarrier(SAGA_COUNT);
         final BlockingQueue<Event> eventsToPublish = new ArrayBlockingQueue<Event>(UPDATE_EVENT_COUNT * SAGA_COUNT);
         eventsToPublish.addAll(generateEvents(UPDATE_EVENT_COUNT * SAGA_COUNT));
@@ -108,7 +110,9 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
             assertTrue("Wrong number of events", events.size() <= UPDATE_EVENT_COUNT + 2);
             assertTrue("The first event should always be the creation event. Another event might indicate"
                                + "a lack of thread safety", CreateEvent.class.isInstance(events.get(0)));
-            assertTrue("Last should be deletion", DeleteEvent.class.isInstance(events.get(events.size() - 1)));
+            if (lastEventMustBeDeletion) {
+                assertTrue("Last should be deletion", DeleteEvent.class.isInstance(events.get(events.size() - 1)));
+            }
         }
     }
 
