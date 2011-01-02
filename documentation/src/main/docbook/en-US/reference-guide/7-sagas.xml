@@ -278,7 +278,14 @@
                     <code>AnnotatedSagaManager</code>, which provides the annotation support and the
                     <code>SimpleSagaManager</code>, which is less powerful, but doesn't force you
                 into using annotations.</para>
-            <para>Explain Locking</para>
+            <para>Sagas operate in a highly concurrent environment. Multiple Events may reach a Saga
+                at (nearly) the same time. This means that Sagas need to be thread safe. By default,
+                Axon's <code>SagaManager</code> implementations will synchronize access to a Saga
+                instance. This means that only one thread can access a Saga at a time, and all
+                changes by one thread are guaranteed to be visible to any successive threads (a.k.a
+                happens-before order in the Java Memory Model). Optionally, you may switch this
+                locking off, if you are sure that your Saga is completely thread safe on its own.
+                Just <code>setSynchronizeSagaAccess(false)</code>.</para>
             <simplesect>
                 <title>SimpleSagaManager</title>
                 <para>This is by far the least powerful of the two implementations, but it doesn't
