@@ -106,7 +106,7 @@
                 time stamp for the current event. Optionally, you can attach an object that acts as
                 the source of the event. This source is loosely referenced, which means that if the
                 garbage collector cleans up the source, or when the event is serialized and
-                deserialized, the original source class is not available anymore. Instead, you will
+                de-serialized, the original source class is not available anymore. Instead, you will
                 have access to the type of source and the value of it's <code>toString()</code>
                 method.</para>
         </sect2>
@@ -149,7 +149,7 @@
             aggregate root.</para>
         <para>In Axon, aggregates are identified by an <code>AggregateIdentifier</code>. There are
             two basic implementations of these identifiers: <code>UUIDAggregateIdentifier</code>,
-            which used java's <code>UUID</code> to generate random identifiers, and the
+            which used Java's <code>UUID</code> to generate random identifiers, and the
                 <code>StringAggregateIdentifier</code>, which allows you to choose a
                 <code>String</code> which should be used as identifier. You can choose any
             identifier type you like, and even create your own, as long as they have a valid String
@@ -157,10 +157,10 @@
         <note>
             <para>It is considered a good practice to use randomly generated identifiers, as opposed
                 to sequenced ones. Using a sequence drastically reduces scalability of your
-                application, since machines need to keep eachother up-to-date of the last used
+                application, since machines need to keep each other up-to-date of the last used
                 sequence numbers. The chance of collisions with a UUID is very slim (a chance of
                     10<superscript>−15</superscript>, if you generate 8.2 ×
-                    10<superscript>11</superscript> UUID's).</para>
+                    10<superscript>11</superscript> UUIDs).</para>
             <para>Furthermore, be careful when using functional identifiers for aggregates. They
                 have a tendency to change, making it very hard to adapt your application
                 accordingly.</para>
@@ -177,11 +177,10 @@
                     Framework provides a number of abstract implementations that help you writing
                     your own aggregates. </para>
                 <note>
-                    <para>Note that only the aggregate root needs to implement the AggregateRoot
-                        interface or implement one of the abstract classes mentioned below. The
-                        other entities that are part of the aggregate do not have to implement any
-                        interfaces.
-                    </para>
+                    <para>Note that only the aggregate root needs to implement the
+                            <code>AggregateRoot</code> interface or implement one of the abstract
+                        classes mentioned below. The other entities that are part of the aggregate
+                        do not have to implement any interfaces. </para>
                 </note>
             </simplesect>
             <simplesect>
@@ -343,6 +342,49 @@
                     the methods that generate events, from the internal logic, which processes the
                     events.</para>
             </simplesect>
+        </sect2>
+        <sect2>
+            <title>Complex Aggregate structures</title>
+            <para>Complex business logic often requires more than what an aggregate with only an
+                aggregate root can provide. In that case, it important that the complexity is spread
+                over a number of entities within the aggregate. When using event sourcing, not only
+                the aggregate root needs to use event to trigger state transitions, but so does each
+                of the entities within that aggregate.</para>
+            <para>Axon provides support for event sourcing in complex aggregate structures. All
+                entities other than the aggregate root need to extend from
+                    <code>AbstractEventSourcedEntity</code>. The
+                    <code>EventSourcedAggregateRoot</code> implementations provided by Axon
+                Framework are aware of these entities and will call their event handlers when
+                needed.</para>
+            <para>When an entity (including the aggregate root) applies an Event, it is registered
+                with the Aggregate Root. The aggregate root applies the event locally first. Next,
+                it will evaluate all its fields for any implementations of
+                    <code>AbstractEventSourcedEntity</code> and handle the event on them. Each
+                entity does the same thing to its fields.</para>
+            <para>To register an Event, the Entity must know about the Aggregate Root. Axon will
+                automatically register the Aggregate Root with an Entity before applying any Events
+                to it. This means that Entities (unlike usual in the Aggregate Root) should never
+                apply an Event in their constructor. Non-Aggregate Root Entities should be created
+                in an <code>@EventHandler</code> annotated method in their parent Entity. Axon will
+                ensure that the Aggregate Root is properly registered in time.</para>
+            <para>Axon will automatically detect most of the child entities in the fields of an
+                Entity (albeit aggregate root or not). The following Entities are found:<itemizedlist>
+                    <listitem>
+                        <para>directly referenced in a field; </para>
+                    </listitem>
+                    <listitem>
+                        <para>inside fields containing an <code>Iterable</code> (which includes all
+                            collections, such as <code>Set</code>, <code>List</code>, etc); </para>
+                    </listitem>
+                    <listitem>
+                        <para>inside both they keys and the values of fields containing a
+                                <code>java.util.Map</code></para>
+                    </listitem>
+                </itemizedlist>If you reference an Entity from any other location than the above
+                mentioned, you can override the <code>getChildEntities()</code> method. This method
+                should return a <code>Collection</code> of entities that should be notified of the
+                Event. Note that each entity is invoked once for each time it is located in the
+                returned <code>Collection</code>.</para>
         </sect2>
     </sect1>
        
