@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010. Axon Framework
+  ~ Copyright (c) 2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -276,7 +276,7 @@
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:all>
-                    <xsd:attribute name="factory" use="optional" type="xsd:string">
+                    <xsd:attribute name="saga-factory" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the saga factory to use. Defaults to the GenericSagaFactory,
                                 which requires a default (no-arg) constructor.

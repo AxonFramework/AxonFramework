@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.w3c.dom.Element;
 public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     private static final String EVENT_BUS_ATTRIBUTE = "event-bus";
-    private static final String SAGA_FACTORY_ATTRIBUTE = "factory";
+    private static final String SAGA_FACTORY_ATTRIBUTE = "saga-factory";
 
     private Object resourceInjector;
     private static final String RESOURCE_INJECTOR_ATTRIBUTE = "resource-injector";
