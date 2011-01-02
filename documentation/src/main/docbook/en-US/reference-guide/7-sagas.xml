@@ -285,7 +285,10 @@
                 changes by one thread are guaranteed to be visible to any successive threads (a.k.a
                 happens-before order in the Java Memory Model). Optionally, you may switch this
                 locking off, if you are sure that your Saga is completely thread safe on its own.
-                Just <code>setSynchronizeSagaAccess(false)</code>.</para>
+                Just <code>setSynchronizeSagaAccess(false)</code>. When disabling synchronization,
+                do take note of the fact that this will allow a Saga to be invoked while it is in
+                the process of being stored by a repository. The result may be that a Saga is stored
+                in an inconsistent state first, and overwritten by it's actual state later.</para>
             <simplesect>
                 <title>SimpleSagaManager</title>
                 <para>This is by far the least powerful of the two implementations, but it doesn't
