@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 /**
@@ -88,13 +87,15 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                 DomainEventEntry entry = new DomainEventEntry(type, event, eventSerializer);
                 entityManager.persist(entry);
             }
-        } catch (PersistenceException persistenceException) {
-            if (persistenceExceptionResolver.isDuplicateKeyViolation(persistenceException)) {
+        } catch (RuntimeException exception) {
+            if (persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
                 throw new ConcurrencyException(
-                        "Concurrent modification detected for Aggregate identifier:" + event.getAggregateIdentifier()
-                                + " sequence: " + event.getSequenceNumber().toString());
+                        String.format("Concurrent modification detected for Aggregate identifier [%s], sequence: [%s]",
+                                      event.getAggregateIdentifier(),
+                                      event.getSequenceNumber().toString()),
+                        exception);
             }
-            throw persistenceException;
+            throw exception;
         }
     }
 

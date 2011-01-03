@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import javax.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 /**
@@ -50,8 +49,8 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    public boolean isDuplicateKeyViolation(PersistenceException persistenceException) {
-        SQLException sqlException = findSQLException(persistenceException);
+    public boolean isDuplicateKeyViolation(Exception exception) {
+        SQLException sqlException = findSQLException(exception);
         boolean isDuplicateKey = false;
         if (sqlException != null) {
             isDuplicateKey = duplicateKeyCodes.contains(sqlException.getErrorCode());
@@ -59,9 +58,9 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
         return isDuplicateKey;
     }
 
-    private SQLException findSQLException(PersistenceException persistenceException) {
+    private SQLException findSQLException(Exception exception) {
         SQLException sqlException = null;
-        Throwable cause = persistenceException.getCause();
+        Throwable cause = exception.getCause();
         while (sqlException == null && cause != null) {
             if (cause instanceof SQLException) {
                 sqlException = (SQLException) cause;
