@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.util.SynchronousTaskExecutor;
+import org.axonframework.util.DirectExecutor;
 import org.hamcrest.Matcher;
 import org.junit.*;
 import org.mockito.*;
@@ -50,11 +50,10 @@ public class AbstractSnapshotterTest {
                     return null;
                 }
                 return new StubDomainEvent(aggregateIdentifier, lastIdentifier);
-
             }
         };
         testSubject.setEventStore(mockEventStore);
-        testSubject.setExecutor(SynchronousTaskExecutor.INSTANCE);
+        testSubject.setExecutor(DirectExecutor.INSTANCE);
     }
 
     @Test

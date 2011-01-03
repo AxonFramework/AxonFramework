@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,9 +20,8 @@ import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventSequencingPolicy;
 import org.axonframework.eventhandling.TransactionStatus;
+import org.axonframework.util.DirectExecutor;
 import org.junit.*;
-
-import java.util.concurrent.Executor;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -53,8 +52,7 @@ public class AnnotationEventListenerAdapterTest {
         try {
             new AnnotationEventListenerAdapter(handler, null);
             fail("Expected IllegalArgumentException");
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("annotatedEventListener"));
             assertTrue(e.getMessage().contains("executor"));
         }
@@ -64,7 +62,7 @@ public class AnnotationEventListenerAdapterTest {
     public void testAdaptAsyncEventHandler_WithExecutor() {
         AsyncAnnotatedEventHandler handler = mock(AsyncAnnotatedEventHandler.class);
         AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler,
-                                                                                    new DirectExecutor(),
+                                                                                    DirectExecutor.INSTANCE,
                                                                                     null);
 
         TransactionStatus transactionStatus = new TransactionStatus() {
@@ -100,10 +98,9 @@ public class AnnotationEventListenerAdapterTest {
     public void testAdaptClassWithIllegalPolicy() {
         AsyncAnnotatedEventHandler_IllegalPolicy handler = new AsyncAnnotatedEventHandler_IllegalPolicy();
         try {
-            new AnnotationEventListenerAdapter(handler, new DirectExecutor(), null);
+            new AnnotationEventListenerAdapter(handler, DirectExecutor.INSTANCE, null);
             fail("Expected UnsupportedPolicyException");
-        }
-        catch (UnsupportedPolicyException e) {
+        } catch (UnsupportedPolicyException e) {
             assertTrue(e.getMessage().contains("no-arg constructor"));
         }
     }
@@ -181,7 +178,6 @@ public class AnnotationEventListenerAdapterTest {
         @EventHandler
         public void handleEvent(Event event) {
         }
-
     }
 
     @AsynchronousEventListener
@@ -234,14 +230,6 @@ public class AnnotationEventListenerAdapterTest {
         @AfterTransaction
         public void afterTransaction(TransactionStatus status) {
 
-        }
-    }
-
-    private static class DirectExecutor implements Executor {
-
-        @Override
-        public void execute(Runnable command) {
-            command.run();
         }
     }
 

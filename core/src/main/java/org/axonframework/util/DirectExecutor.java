@@ -22,23 +22,15 @@ import java.util.concurrent.Executor;
  * Simple executor implementation that runs a given Runnable immediately in the calling thread.
  *
  * @author Allard Buijze
- * @since 0.6
- * @deprecated This class has been renamed to DirectExecutor to prevent confusion with the <code>synchronized</code>
- *             keyword. This class will be removed in the next release.
+ * @since 0.7
  */
-@Deprecated
-public final class SynchronousTaskExecutor implements Executor {
+public final class DirectExecutor implements Executor {
 
     /**
-     * Returns a singleton instance of the SynchronousTaskExecutor.
-     *
-     * @deprecated Use {@link DirectExecutor#INSTANCE} instead.
+     * Returns a singleton instance of the SynchronousTaskExecutor. Using this constant prevents the creation of
+     * unnecessary DirectExecutor instances.
      */
-    @Deprecated
-    public static final SynchronousTaskExecutor INSTANCE = new SynchronousTaskExecutor();
-
-    private SynchronousTaskExecutor() {
-    }
+    public static final DirectExecutor INSTANCE = new DirectExecutor();
 
     /**
      * Executes the given <code>command</code> immediately in the current thread.

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.util.SynchronousTaskExecutor;
+import org.axonframework.util.DirectExecutor;
 
 import java.util.concurrent.Executor;
 import javax.annotation.Resource;
@@ -29,8 +29,8 @@ import javax.annotation.Resource;
  * Abstract implementation of the {@link org.axonframework.eventsourcing.Snapshotter} that uses a task executor to
  * creates snapshots. Actual snapshot creation logic should be provided by a subclass.
  * <p/>
- * By default, this implementations uses a {@link org.axonframework.util.SynchronousTaskExecutor} to process snapshot
- * taking tasks. In production environments, it is recommended to use asynchronous executors instead.
+ * By default, this implementations uses a {@link org.axonframework.util.DirectExecutor} to process snapshot taking
+ * tasks. In production environments, it is recommended to use asynchronous executors instead.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -38,7 +38,7 @@ import javax.annotation.Resource;
 public abstract class AbstractSnapshotter implements Snapshotter {
 
     private SnapshotEventStore eventStore;
-    private Executor executor = SynchronousTaskExecutor.INSTANCE;
+    private Executor executor = DirectExecutor.INSTANCE;
 
     @Override
     public void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
