@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,6 +44,8 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
      * the event serializer attribute.
      */
     private static final String EVENT_SERIALIZER_ATTRIBUTE = "event-serializer";
+    private static final String DATA_SOURCE_ATTRIBUTE = "data-source";
+    private static final String PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE = "persistence-exception-resolver";
 
     /**
      * {@inheritDoc}
@@ -63,6 +65,13 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         }
         if (element.hasAttribute(ENTITY_MANAGER_ATTRIBUTE)) {
             builder.addPropertyReference("entityManager", element.getAttribute(ENTITY_MANAGER_ATTRIBUTE));
+        }
+        if (element.hasAttribute(DATA_SOURCE_ATTRIBUTE)) {
+            builder.addPropertyReference("dataSource", element.getAttribute(DATA_SOURCE_ATTRIBUTE));
+        }
+        if (element.hasAttribute(PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE)) {
+            builder.addPropertyReference("persistenceExceptionResolver", element.getAttribute(
+                    PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE));
         }
     }
 }

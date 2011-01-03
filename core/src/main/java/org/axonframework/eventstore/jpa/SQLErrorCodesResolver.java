@@ -17,6 +17,8 @@
 package org.axonframework.eventstore.jpa;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +41,7 @@ import javax.sql.DataSource;
  */
 public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
 
+    private static final Logger logger = LoggerFactory.getLogger(SQLErrorCodesResolver.class);
     private final static String SQL_ERROR_CODES_PROPERTIES = "SQLErrorCode.properties";
     private final static String PROPERTY_NAME_SUFFIX = ".duplicateKeyCodes";
     private static final String LIST_SEPARATOR = ",";
@@ -74,13 +77,14 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
      * Set the dataSource which is needed to get the database product name. The database product name is used to resolve
      * the database error codes. As an alternative you could set the property databaseDuplicateKeyCodes
      *
-     * @param dataSource The datasource providing the information about the backing database.
+     * @param dataSource The data source providing the information about the backing database.
+     * @throws java.io.IOException When an error occurs while reading from the data source
      */
-    public void setDataSource(DataSource dataSource) {
+    public void setDataSource(DataSource dataSource) throws IOException {
         loadDuplicateKeyCodes(dataSource);
     }
 
-    private void loadDuplicateKeyCodes(DataSource dataSource) {
+    private void loadDuplicateKeyCodes(DataSource dataSource) throws IOException {
         String databaseProductName = getDatabaseProductNameFromDataSource(dataSource);
         duplicateKeyCodes = loadFromPropertiesFile(databaseProductName);
     }
@@ -92,51 +96,45 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
             return connection.getMetaData().getDatabaseProductName();
         } catch (SQLException e) {
             throw new IllegalStateException(
-                    "Could not get the database product name because getting the connection gives an error: " + e
-                            .getMessage(),
+                    "Could not get the database product name. The connection threw an exception: " + e.getMessage(),
                     e);
         } finally {
-            closeQuietly(connection);
-        }
-    }
-
-    private void closeQuietly(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                // we did our best.
+                logger.warn("An error occurred while trying to close the database connection. Ignoring...", e);
             }
-        } catch (SQLException e) {
-            // we did our best.
         }
     }
 
-    private List<Integer> loadFromPropertiesFile(String databaseProductName) {
+    private List<Integer> loadFromPropertiesFile(String databaseProductName) throws IOException {
 
         Properties properties = loadPropertyFile();
 
         String key = databaseProductName.replaceAll(" ", "_") + PROPERTY_NAME_SUFFIX;
         String property = properties.getProperty(key);
 
-        List<Integer> duplicateKeyCodes = new ArrayList<Integer>();
+        List<Integer> keyCodes = new ArrayList<Integer>();
 
         if (property != null) {
             String[] codes = property.split(LIST_SEPARATOR);
             for (String code : codes) {
-                duplicateKeyCodes.add(Integer.valueOf(code));
+                keyCodes.add(Integer.valueOf(code));
             }
         }
 
-        return duplicateKeyCodes;
+        return keyCodes;
     }
 
-    private Properties loadPropertyFile() {
+    private Properties loadPropertyFile() throws IOException {
         Properties properties = new Properties();
         InputStream resources = null;
         try {
             resources = SQLErrorCodesResolver.class.getResourceAsStream(SQL_ERROR_CODES_PROPERTIES);
             properties.load(resources);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not load properties file " + SQL_ERROR_CODES_PROPERTIES, e);
         } finally {
             IOUtils.closeQuietly(resources);
         }

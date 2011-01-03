@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010. Axon Framework
+  ~ Copyright (c) 2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@
 
     <axon:event-bus id="eventBus"/>
 
-    <axon:jpa-event-store id="eventStore"
+    <axon:jpa-event-store id="eventStore" data-source="dataSource"
                           event-serializer="eventSerializer" entity-manager="entityManager"/>
 
     <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer"/>
@@ -103,4 +103,6 @@
     <bean id="entityManager"
           class="org.axonframework.contextsupport.spring.EntityManagerMock"/>
 
+    <bean id="dataSource"
+          class="org.axonframework.contextsupport.spring.DataSourceMock"/>
 </beans>

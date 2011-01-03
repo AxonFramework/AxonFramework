@@ -173,6 +173,21 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="data-source" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Data Source that provides access to the backing database. This data
+                                source is used to detect database type, and define which error codes represent
+                                concurrency related errors.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="persistence-exception-resolver" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Sets the persistence exception resolver to use to detect concurrency
+                                related errors in database generated exceptions.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

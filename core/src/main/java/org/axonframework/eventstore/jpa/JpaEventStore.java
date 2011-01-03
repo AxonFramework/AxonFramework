@@ -30,11 +30,13 @@ import org.axonframework.repository.ConcurrencyException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
+import javax.sql.DataSource;
 
 /**
  * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as a
@@ -210,6 +212,24 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     @PersistenceContext
     public void setEntityManager(EntityManager entityManager) {
         this.entityManager = entityManager;
+    }
+
+    /**
+     * Registers the data source that allows the EventStore to detect the database type and define the error codes that
+     * represent concurrent access failures.
+     * <p/>
+     * Should not be used in combination with {@link #setPersistenceExceptionResolver(PersistenceExceptionResolver)},
+     * but rather as a shorthand alternative for most common database types.
+     *
+     * @param dataSource A data source providing access to the backing database
+     * @throws IOException If an error occurs while accessing the dataSource
+     */
+    public void setDataSource(DataSource dataSource) throws IOException {
+        if (persistenceExceptionResolver == null) {
+            SQLErrorCodesResolver errorCodeResolver = new SQLErrorCodesResolver();
+            errorCodeResolver.setDataSource(dataSource);
+            persistenceExceptionResolver = errorCodeResolver;
+        }
     }
 
     /**
