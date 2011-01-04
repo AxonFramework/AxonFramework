@@ -213,6 +213,25 @@
                         </callout>
                     </calloutlist>
                 </programlistingco>
+            <note>
+                <title>Detecting duplicate key violations in the database</title>
+                <para>Axon uses Locking to prevent two threads from accessing the same Aggregate.
+                    However, if you have multiple JVMs on the same database, this won't help you. In
+                    that case, you'd have to rely on the database to detect conflicts. Concurrent
+                    access to the event store will result in a Key Constraint Violation, as the
+                    table only allows a single Event for an aggregate with any sequence number.
+                    Inserting a second event for an existing aggregate with an existing sequence
+                    number will result in an error.</para>
+                <para>The JPA EventStore can detect this error and translate it to a
+                    ConcurrencyException. However, each database system reports this violation
+                    differently. If you register your DataSource with the JpaEventStore, it will try
+                    to detect the type of database and figure out which error codes represent a Key
+                    Constraint Violation. Alternatively, you may provide a
+                    PersistenceExceptionTranslator instance, which can tell if a given exception
+                    represents a Key Constraint Violation.</para>
+                <para>If no DataSource or PersistenceExceptionTranslator is provided, exceptions
+                    from the Database driver are thrown as-is.</para>
+            </note>
             </simplesect>
             <simplesect>
             <title>Implementing your own event store</title>
