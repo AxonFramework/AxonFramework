@@ -15,12 +15,11 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>0.7-SNAPSHOT</version>
+    <version>0.7</version>
     <modules>
         <module>core</module>
         <module>integration</module>
@@ -199,9 +198,9 @@
         </repository>
     </distributionManagement>
     <scm>
-        <connection>scm:svn:http://axonframework.googlecode.com/svn/trunk</connection>
-        <developerConnection>scm:svn:https://axonframework.googlecode.com/svn/trunk</developerConnection>
-        <url>http://code.google.com/p/axonframework/source/browse/</url>
+        <connection>scm:svn:http://axonframework.googlecode.com/svn/tags/axon-0.7</connection>
+        <developerConnection>scm:svn:https://axonframework.googlecode.com/svn/tags/axon-0.7</developerConnection>
+        <url>http://code.google.com/p/axonframework/source/browse/tags/axon-0.7</url>
     </scm>
 
     <developers>
