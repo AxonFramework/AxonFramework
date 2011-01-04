@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.util.AxonConfigurationException;
 import org.junit.*;
 import org.mockito.*;
 
@@ -24,6 +25,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import javax.persistence.PersistenceException;
 import javax.sql.DataSource;
 
@@ -36,7 +38,7 @@ public class SQLErrorCodesResolverTest {
 
     @Test
     public void testIsDuplicateKey() throws Exception {
-        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver();
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(new ArrayList<Integer>());
 
         boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
                                                                                                         new RuntimeException()));
@@ -46,11 +48,9 @@ public class SQLErrorCodesResolverTest {
 
     @Test
     public void testIsDuplicateKey_isDuplicateKey_usingSetDuplicateKeyCodes() throws Exception {
-        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver();
-
         List<Integer> errorCodes = new ArrayList<Integer>();
         errorCodes.add(-104);
-        sqlErrorCodesResolver.setDuplicateKeyCodes(errorCodes);
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(errorCodes);
 
         SQLException sqlException = new SQLException("test", "error", errorCodes.get(0));
 
@@ -62,12 +62,11 @@ public class SQLErrorCodesResolverTest {
 
 
     @Test
-    public void testIsDuplicateKey_isDuplicateKey_usingSetDataSource() throws Exception {
+    public void testIsDuplicateKey_isDuplicateKey_usingDataSource() throws Exception {
         String databaseProductName = "HSQL Database Engine";
         DataSource dataSource = createMockDataSource(databaseProductName);
 
-        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver();
-        sqlErrorCodesResolver.setDataSource(dataSource);
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(dataSource);
 
         SQLException sqlException = new SQLException("test", "error", -104);
 
@@ -75,6 +74,45 @@ public class SQLErrorCodesResolverTest {
                                                                                                         sqlException));
 
         assertTrue(isDuplicateKey);
+    }
+
+    @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingProductName() throws Exception {
+        String databaseProductName = "HSQL Database Engine";
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(databaseProductName);
+
+        SQLException sqlException = new SQLException("test", "error", -104);
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
+
+        assertTrue(isDuplicateKey);
+    }
+
+    @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingCustomProperties() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
+
+        String databaseProductName = "MyCustom Database Engine";
+        DataSource dataSource = createMockDataSource(databaseProductName);
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(props, dataSource);
+
+        SQLException sqlException = new SQLException("test", "error", -104);
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
+
+        assertTrue(isDuplicateKey);
+    }
+
+    @Test(expected = AxonConfigurationException.class)
+    public void testInitialization_UnkownProductName() throws Exception {
+        DataSource dataSource = createMockDataSource("Some weird unknown DB type");
+
+        new SQLErrorCodesResolver(dataSource);
     }
 
     private DataSource createMockDataSource(String databaseProductName) throws SQLException {
@@ -86,21 +124,5 @@ public class SQLErrorCodesResolverTest {
         Mockito.when(connection.getMetaData()).thenReturn(databaseMetaData);
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
         return dataSource;
-    }
-
-    @Test
-    public void testIsDuplicateKey_isDuplicateKey_usingSetDataSource_unknownDatabaseProductName() throws Exception {
-        String databaseProductName = "OOPS_DOES_NOT_EXISTS";
-        DataSource dataSource = createMockDataSource(databaseProductName);
-
-        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver();
-        sqlErrorCodesResolver.setDataSource(dataSource);
-
-        SQLException sqlException = new SQLException("test", "error", -104);
-
-        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
-                                                                                                        sqlException));
-
-        assertFalse(isDuplicateKey);
     }
 }

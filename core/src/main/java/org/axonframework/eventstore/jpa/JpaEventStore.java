@@ -30,7 +30,7 @@ import org.axonframework.repository.ConcurrencyException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -224,13 +224,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * but rather as a shorthand alternative for most common database types.
      *
      * @param dataSource A data source providing access to the backing database
-     * @throws IOException If an error occurs while accessing the dataSource
+     * @throws SQLException If an error occurs while accessing the dataSource
      */
-    public void setDataSource(DataSource dataSource) throws IOException {
+    public void setDataSource(DataSource dataSource) throws SQLException {
         if (persistenceExceptionResolver == null) {
-            SQLErrorCodesResolver errorCodeResolver = new SQLErrorCodesResolver();
-            errorCodeResolver.setDataSource(dataSource);
-            persistenceExceptionResolver = errorCodeResolver;
+            persistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
         }
     }
 

@@ -17,6 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.apache.commons.io.IOUtils;
+import org.axonframework.util.AxonConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,10 @@ import javax.sql.DataSource;
 /**
  * SQLErrorCodesResolver is an implementation of PersistenceExceptionResolver used to resolve sql error codes to see if
  * it is an duplicate key constraint violation.
+ * <p/>
+ * SQL Code configuration is available for the following database engines, which may be identifier automatically via the
+ * data source: <ul> <li>HSQL DB</li> <li>MySQL</li> <li>Apache Derby</li> <li>DB2</li> <li>H2</li> <li>Informix Dynamic
+ * Server</li> <li>MS SQL Server</li> <li>Oracle</li> <li>PostgreSQL</li> <li>Sybase</li> </ul>
  *
  * @author Martin Tilma
  * @author Allard Buijze
@@ -47,6 +52,85 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
 
     private List<Integer> duplicateKeyCodes = Collections.emptyList();
 
+    /**
+     * Initializes the SQLErrorCodesResolver using the given list of SQL Codes representing Key Constraint Violations.
+     *
+     * @param duplicateKeyCodes A list of Integer containing SQL Codes representing Key Constraint Violations
+     */
+    public SQLErrorCodesResolver(List<Integer> duplicateKeyCodes) {
+        this.duplicateKeyCodes = duplicateKeyCodes;
+    }
+
+    /**
+     * Initialize a SQLErrorCodesResolver, automatically detecting the database name through the given dataSource. The
+     * database product name is used to resolve the database error codes.
+     *
+     * @param dataSource The data source providing the information about the backing database.
+     * @throws java.sql.SQLException      when retrieving the database product name fails
+     * @throws AxonConfigurationException is the dataSource returns an unknown database product name. Use {@link
+     *                                    #SQLErrorCodesResolver(java.util.Properties, javax.sql.DataSource)} instead.
+     */
+    public SQLErrorCodesResolver(DataSource dataSource) throws SQLException {
+        Properties properties = loadDefaultPropertyFile();
+        initialize(properties, getDatabaseProductNameFromDataSource(dataSource));
+    }
+
+    /**
+     * Initialize a SQLErrorCodesResolver, automatically detecting the database name through the given dataSource. The
+     * database product name is used to resolve the database error codes. As an alternative you could set the property
+     * databaseDuplicateKeyCodes
+     *
+     * @param databaseProductName The product name of the database
+     * @throws AxonConfigurationException is the dataSource returns an unknown database product name. Use {@link
+     *                                    #SQLErrorCodesResolver(java.util.Properties, String)} instead.
+     */
+    public SQLErrorCodesResolver(String databaseProductName) {
+        initialize(loadDefaultPropertyFile(), databaseProductName);
+    }
+
+    /**
+     * Initialize a SQLErrorCodesResolver, automatically detecting the database name through the given dataSource. The
+     * database product name is used to resolve the database error codes. As an alternative you could set the property
+     * databaseDuplicateKeyCodes
+     * <p/>
+     * The form of the properies is expected to be:<br/> <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
+     * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
+     * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
+     *
+     * @param properties          the properties defining SQL Error Codes for Duplicate Key violations for different
+     *                            databases
+     * @param databaseProductName The product name of the database
+     */
+    public SQLErrorCodesResolver(Properties properties, String databaseProductName) {
+        initialize(properties, databaseProductName);
+    }
+
+    /**
+     * Initialize the SQLErrorCodesResolver with the given <code>properties<code> and use the <code>dataSource</code> to
+     * automatically retrieve the database product name.
+     * <p/>
+     * The form of the properies is expected to be:<br/> <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
+     * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
+     * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
+     *
+     * @param properties the properties defining SQL Error Codes for Duplicate Key violations for different databases
+     * @param dataSource The data source providing the database product name
+     * @throws java.sql.SQLException when retrieving the database product name fails
+     */
+    public SQLErrorCodesResolver(Properties properties, DataSource dataSource) throws SQLException {
+        initialize(properties, getDatabaseProductNameFromDataSource(dataSource));
+    }
+
+    private void initialize(Properties properties, String databaseProductName) {
+        try {
+            duplicateKeyCodes = loadKeyViolationCodes(databaseProductName, properties);
+        } catch (IOException e) {
+            throw new AxonConfigurationException(
+                    "Unable to configure the SQL Codes for Unique Key Constraint Violations.",
+                    e);
+        }
+    }
+
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public boolean isDuplicateKeyViolation(Exception exception) {
@@ -58,45 +142,24 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
         return isDuplicateKey;
     }
 
-    private SQLException findSQLException(Exception exception) {
+    private SQLException findSQLException(Throwable exception) {
         SQLException sqlException = null;
-        Throwable cause = exception.getCause();
-        while (sqlException == null && cause != null) {
-            if (cause instanceof SQLException) {
-                sqlException = (SQLException) cause;
+        while (sqlException == null && exception != null) {
+            if (exception instanceof SQLException) {
+                sqlException = (SQLException) exception;
             } else {
-                cause = cause.getCause();
+                exception = exception.getCause();
             }
         }
 
         return sqlException;
     }
 
-    /**
-     * Set the dataSource which is needed to get the database product name. The database product name is used to resolve
-     * the database error codes. As an alternative you could set the property databaseDuplicateKeyCodes
-     *
-     * @param dataSource The data source providing the information about the backing database.
-     * @throws java.io.IOException When an error occurs while reading from the data source
-     */
-    public void setDataSource(DataSource dataSource) throws IOException {
-        loadDuplicateKeyCodes(dataSource);
-    }
-
-    private void loadDuplicateKeyCodes(DataSource dataSource) throws IOException {
-        String databaseProductName = getDatabaseProductNameFromDataSource(dataSource);
-        duplicateKeyCodes = loadFromPropertiesFile(databaseProductName);
-    }
-
-    private String getDatabaseProductNameFromDataSource(DataSource dataSource) {
+    private String getDatabaseProductNameFromDataSource(DataSource dataSource) throws SQLException {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             return connection.getMetaData().getDatabaseProductName();
-        } catch (SQLException e) {
-            throw new IllegalStateException(
-                    "Could not get the database product name. The connection threw an exception: " + e.getMessage(),
-                    e);
         } finally {
             try {
                 if (connection != null) {
@@ -109,44 +172,36 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
         }
     }
 
-    private List<Integer> loadFromPropertiesFile(String databaseProductName) throws IOException {
-
-        Properties properties = loadPropertyFile();
-
+    private List<Integer> loadKeyViolationCodes(String databaseProductName, Properties properties) throws IOException {
         String key = databaseProductName.replaceAll(" ", "_") + PROPERTY_NAME_SUFFIX;
         String property = properties.getProperty(key);
 
         List<Integer> keyCodes = new ArrayList<Integer>();
 
-        if (property != null) {
-            String[] codes = property.split(LIST_SEPARATOR);
-            for (String code : codes) {
-                keyCodes.add(Integer.valueOf(code));
-            }
+        if (property == null) {
+            throw new AxonConfigurationException(String.format(
+                    "The database product name '%s' is unknown. No SQLCode configuration is known for that database.",
+                    databaseProductName));
+        }
+        String[] codes = property.split(LIST_SEPARATOR);
+        for (String code : codes) {
+            keyCodes.add(Integer.valueOf(code));
         }
 
         return keyCodes;
     }
 
-    private Properties loadPropertyFile() throws IOException {
+    private Properties loadDefaultPropertyFile() {
         Properties properties = new Properties();
         InputStream resources = null;
         try {
             resources = SQLErrorCodesResolver.class.getResourceAsStream(SQL_ERROR_CODES_PROPERTIES);
             properties.load(resources);
+        } catch (IOException e) {
+            throw new AxonConfigurationException("Unable to read from a file that should be ", e);
         } finally {
             IOUtils.closeQuietly(resources);
         }
         return properties;
-    }
-
-    /**
-     * Set the duplicate key codes, use this instead of the setDataStore if you're using a database that isn't listed in
-     * the <code>SQL_ERROR_CODES_PROPERTIES</code> files.
-     *
-     * @param duplicateKeyCodes A list of error codes that indicate a duplicate key constraint violation
-     */
-    public void setDuplicateKeyCodes(List<Integer> duplicateKeyCodes) {
-        this.duplicateKeyCodes = duplicateKeyCodes;
     }
 }
