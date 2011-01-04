@@ -106,8 +106,8 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     }
 
     /**
-     * Initialize the SQLErrorCodesResolver with the given <code>properties<code> and use the <code>dataSource</code> to
-     * automatically retrieve the database product name.
+     * Initialize the SQLErrorCodesResolver with the given <code>properties</code> and use the <code>dataSource</code>
+     * to automatically retrieve the database product name.
      * <p/>
      * The form of the properies is expected to be:<br/> <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
      * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
