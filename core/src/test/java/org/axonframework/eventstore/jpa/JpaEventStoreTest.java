@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,8 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.StringAggregateIdentifier;
+import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
@@ -37,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -163,18 +166,30 @@ public class JpaEventStoreTest {
     }
 
     @Test(expected = ConcurrencyException.class)
-    public void testStoreDuplicateKeyTranslation() {
-        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
-        DomainEventStream events = aggregate1.getUncommittedEvents();
-        while (events.hasNext()) {
-            domainEvents.add(events.next());
-        }
-        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
-        aggregate1.commitEvents();
-        entityManager.flush();
-        entityManager.clear();
+    public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
+        testSubject.appendEvents("test",
+                                 new SimpleDomainEventStream(new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                 0),
+                                                             new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                 0)));
+    }
 
-        testSubject.appendEvents("test",  new SimpleDomainEventStream(domainEvents));
+    @Test()
+    public void testStoreDuplicateEvent_NoSqlExceptionTranslator() {
+        testSubject.setPersistenceExceptionResolver(null);
+        try {
+            testSubject.appendEvents("test",
+                                     new SimpleDomainEventStream(new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                     0),
+                                                                 new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                     0)));
+        } catch (ConcurrencyException ex) {
+            fail("Didn't expect exception to be translated");
+        } catch (PersistenceException ex) {
+            assertTrue("Got the right exception, "
+                               + "but the message doesn't seem to mention 'Constraint': " + ex.getMessage(),
+                       ex.getMessage().contains("Constraint"));
+        }
     }
 
 
