@@ -22,7 +22,7 @@
             <td><c:out value='${address.streetAndNumber}'/></td>
             <td><c:out value='${address.zipCode}'/></td>
             <td><c:out value='${address.city}'/></td>
-            <td><a href="${ctx}/contacts/${identifier}/address/delete&addressType=${address.addressType}">Remove</a>
+            <td><a href="${ctx}/contacts/${identifier}/address/delete/${address.addressType}">Remove</a>
             </td>
         </tr>
     </c:forEach>
