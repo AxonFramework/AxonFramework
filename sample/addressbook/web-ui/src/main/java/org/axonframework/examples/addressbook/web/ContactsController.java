@@ -166,7 +166,7 @@ public class ContactsController {
         return "contacts/removeAddress";
     }
 
-    @RequestMapping(value = "{identifier}/address/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "{identifier}/address/delete/{addressType}", method = RequestMethod.POST)
     public String formDeleteAddressSubmit(@ModelAttribute("address") AddressEntry address, BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
             RemoveAddressCommand command = new RemoveAddressCommand();
