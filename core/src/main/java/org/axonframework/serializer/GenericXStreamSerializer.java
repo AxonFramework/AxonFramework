@@ -48,6 +48,7 @@ import java.util.UUID;
  * @since 0.6
  */
 public class GenericXStreamSerializer {
+    private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
 
     private final XStream xStream;
     private final Charset charset;
@@ -57,7 +58,17 @@ public class GenericXStreamSerializer {
      * XppDriver}) is used to perform the serialization.
      */
     public GenericXStreamSerializer() {
-        this(Charset.forName("UTF-8"));
+        this(DEFAULT_CHARSET_NAME);
+    }
+
+    /**
+     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to
+     * perform the serialization.
+     *
+     * @param xStream XStream instance to use
+     */
+    public GenericXStreamSerializer(XStream xStream) {
+        this(DEFAULT_CHARSET_NAME, xStream);
     }
 
     /**
@@ -164,7 +175,6 @@ public class GenericXStreamSerializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
-     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
