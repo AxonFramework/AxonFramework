@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,12 +29,11 @@ import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.core.io.Resource;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -47,8 +46,7 @@ import static org.axonframework.eventstore.fs.EventSerializationUtils.*;
  * writes them to files to disk. Each aggregate is represented by a single file, where each event of that aggregate is a
  * line in that file. Events are serialized to XML format, making them readable for both user and machine.
  * <p/>
- * Use {@link #setBaseDir(org.springframework.core.io.Resource)} to specify the directory where event files should be
- * stored.
+ * Use {@link #setBaseDir(java.io.File)} to specify the directory where event files should be stored.
  * <p/>
  * Note that the resource supplied must point to a folder and should contain a trailing slash. See {@link
  * org.springframework.core.io.FileSystemResource#FileSystemResource(String)}.
@@ -127,7 +125,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         } catch (IOException e) {
             throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
-                            + "for aggregate type [%s] with identifier [%s]",
+                                          + "for aggregate type [%s] with identifier [%s]",
                                   type,
                                   identifier.toString()), e);
         }
@@ -176,8 +174,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
                 lastReadSequenceNumber = entry.getSequenceNumber();
             }
             return countingInputStream.getByteCount();
-        }
-        finally {
+        } finally {
             IOUtils.closeQuietly(countingInputStream);
         }
     }
@@ -212,8 +209,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
                             type,
                             identifier.toString());
                 }
-            }
-            finally {
+            } finally {
                 IOUtils.closeQuietly(snapshotFileInputStream);
             }
         }
@@ -225,9 +221,17 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      *
      * @param baseDir the location to store event files
      */
-    @Required
-    public void setBaseDir(Resource baseDir) {
+    public void setBaseDir(File baseDir) {
         eventFileResolver = new SimpleEventFileResolver(baseDir);
+    }
+
+    /**
+     * Sets the event file resolver to use. This setter is an alternative to the {@link #setBaseDir(java.io.File)} one.
+     *
+     * @param eventFileResolver The EventFileResolver providing access to event files
+     */
+    public void setEventFileResolver(EventFileResolver eventFileResolver) {
+        this.eventFileResolver = eventFileResolver;
     }
 
     /**
@@ -300,6 +304,5 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
                 throw e;
             }
         }
-
     }
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,12 +29,11 @@ import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.junit.rules.*;
-import org.springframework.core.io.FileSystemResource;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -53,7 +52,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private AggregateIdentifier aggregateIdentifier;
     private EventBus mockEventBus;
     private FileSystemEventStore eventStore;
-    private List<Throwable> uncaughtExceptions = new Vector<Throwable>();
+    private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<Throwable>();
     private List<Thread> startedThreads = new ArrayList<Thread>();
     private static final int CONCURRENT_MODIFIERS = 10;
 
@@ -89,7 +88,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private void initializeRepository(LockingStrategy strategy) {
         repository = new SimpleEventSourcingRepository(strategy);
         eventStore = new FileSystemEventStore(new XStreamEventSerializer());
-        eventStore.setBaseDir(new FileSystemResource(folder.getRoot().getPath() + "/"));
+        eventStore.setBaseDir(folder.getRoot());
         repository.setEventStore(eventStore);
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);

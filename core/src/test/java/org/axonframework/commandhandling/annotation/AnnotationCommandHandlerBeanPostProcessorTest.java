@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.annotation.postprocessor;
+package org.axonframework.commandhandling.annotation;
 
 import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 
@@ -85,7 +84,6 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         commandHandler.handle(myCommand, null);
 
         assertEquals(1, annotatedCommandHandler.getInvocationCount());
-
     }
 
     @SuppressWarnings({"unchecked"})
@@ -122,5 +120,4 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
     private static class MyCommand {
 
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,14 @@ import org.axonframework.eventhandling.EventSequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.TransactionStatus;
+import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.FieldAccessibilityCallback;
+import org.axonframework.util.ReflectionUtils;
 import org.axonframework.util.Subscribable;
-import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -156,15 +156,26 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
 
     private TransactionManager findTransactionManagerInField(Object bean) {
         TransactionManagerFieldCallback transactionManagerFieldCallback = new TransactionManagerFieldCallback(bean);
-        ReflectionUtils.doWithFields(bean.getClass(), transactionManagerFieldCallback);
+        for (Field f : ReflectionUtils.fieldsOf(bean.getClass())) {
+            try {
+                transactionManagerFieldCallback.doWith(f);
+            } catch (IllegalAccessException e) {
+                throw new AxonConfigurationException("Field should be accessible.", e);
+            }
+        }
         return transactionManagerFieldCallback.getTransactionManager();
     }
 
     private boolean hasTransactionalMethods(Object bean) {
-        HasTransactionMethodCallback hasTransactionMethodCallback = new HasTransactionMethodCallback();
-        ReflectionUtils.doWithMethods(bean.getClass(), hasTransactionMethodCallback);
-        return hasTransactionMethodCallback.isFound();
-
+//        HasTransactionMethodCallback hasTransactionMethodCallback = new HasTransactionMethodCallback();
+        boolean found = false;
+        for (Method method : ReflectionUtils.methodsOf(bean.getClass())) {
+            if (method.isAnnotationPresent(BeforeTransaction.class)
+                    || method.isAnnotationPresent(AfterTransaction.class)) {
+                found = true;
+            }
+        }
+        return found;
     }
 
     private AsynchronousEventHandlerWrapper createAsynchronousWrapperForBean(Object bean,
@@ -221,25 +232,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
         }
     }
 
-    private static class HasTransactionMethodCallback implements ReflectionUtils.MethodCallback {
-
-        private final AtomicBoolean found = new AtomicBoolean(false);
-
-        @Override
-        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-            if (method.isAnnotationPresent(BeforeTransaction.class)
-                    || method.isAnnotationPresent(AfterTransaction.class)) {
-                found.set(true);
-            }
-        }
-
-        public boolean isFound() {
-            return found.get();
-        }
-
-    }
-
-    private static class TransactionManagerFieldCallback implements ReflectionUtils.FieldCallback {
+    private static class TransactionManagerFieldCallback {
 
         private final AtomicReference<org.axonframework.eventhandling.TransactionManager> tm;
         private final Object bean;
@@ -249,8 +242,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
             tm = new AtomicReference<TransactionManager>();
         }
 
-        @Override
-        public void doWith(final Field field) throws IllegalArgumentException, IllegalAccessException {
+        public void doWith(final Field field) throws IllegalAccessException {
             if (field.isAnnotationPresent(org.axonframework.eventhandling.annotation.TransactionManager.class)) {
                 doPrivileged(new FieldAccessibilityCallback(field));
 

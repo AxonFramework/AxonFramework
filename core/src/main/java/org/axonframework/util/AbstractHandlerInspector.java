@@ -16,8 +16,6 @@
 
 package org.axonframework.util;
 
-import org.springframework.util.ReflectionUtils;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
@@ -51,7 +49,11 @@ public abstract class AbstractHandlerInspector {
      */
     protected Method findHandlerMethod(Class<?> targetType, final Class<?> parameterType) {
         MostSuitableHandlerCallback callback = new MostSuitableHandlerCallback(parameterType, annotationType);
-        ReflectionUtils.doWithMethods(targetType, callback, callback);
+        for (Method method : ReflectionUtils.methodsOf(targetType)) {
+            if (callback.matches(method)) {
+                callback.doWith(method);
+            }
+        }
         return callback.foundHandler();
     }
 
@@ -64,8 +66,7 @@ public abstract class AbstractHandlerInspector {
      * Example:<br/> <code>MostSuitableHandlerCallback callback = new MostSuitableHandlerCallback(eventType) <br/>
      * ReflectionUtils.doWithMethods(eventListenerClass, callback, callback);</code>
      */
-    private static final class MostSuitableHandlerCallback
-            implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
+    private static final class MostSuitableHandlerCallback {
 
         private final Class<?> parameterType;
         private final Class<? extends Annotation> annotationClass;
@@ -86,7 +87,6 @@ public abstract class AbstractHandlerInspector {
         /**
          * {@inheritDoc}
          */
-        @Override
         public boolean matches(Method method) {
             Method foundSoFar = bestMethodSoFar;
             Class<?> classUnderInvestigation = method.getDeclaringClass();
@@ -101,8 +101,7 @@ public abstract class AbstractHandlerInspector {
         /**
          * {@inheritDoc}
          */
-        @Override
-        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+        public void doWith(Method method) {
             // method is eligible, but is it the best?
             if (bestMethodSoFar == null) {
                 // if we have none yet, this one is the best

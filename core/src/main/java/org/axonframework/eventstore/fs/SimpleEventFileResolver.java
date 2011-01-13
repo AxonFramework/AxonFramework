@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,10 @@ package org.axonframework.eventstore.fs;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
-import org.springframework.core.io.Resource;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +46,7 @@ public class SimpleEventFileResolver implements EventFileResolver {
      */
     public static final String FILE_EXTENSION_SNAPSHOTS = "snapshots";
 
-    private final Resource baseDir;
+    private final File baseDir;
 
     /**
      * Initialize the SimpleEventFileResolver with the given <code>baseDir</code>.
@@ -56,31 +56,31 @@ public class SimpleEventFileResolver implements EventFileResolver {
      *
      * @param baseDir The directory where event files are stored.
      */
-    public SimpleEventFileResolver(Resource baseDir) {
+    public SimpleEventFileResolver(File baseDir) {
         this.baseDir = baseDir;
     }
 
     @Override
     public OutputStream openEventFileForWriting(String type, AggregateIdentifier aggregateIdentifier)
             throws IOException {
-        File eventFile = getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_EVENTS).getFile();
+        File eventFile = getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_EVENTS);
         return new BufferedOutputStream(new FileOutputStream(eventFile, true));
     }
 
     @Override
     public OutputStream openSnapshotFileForWriting(String type, AggregateIdentifier aggregateIdentifier)
             throws IOException {
-        return new FileOutputStream(getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_SNAPSHOTS).getFile(), true);
+        return new FileOutputStream(getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_SNAPSHOTS), true);
     }
 
     @Override
     public InputStream openEventFileForReading(String type, AggregateIdentifier identifier) throws IOException {
-        return getEventsFile(type, identifier, FILE_EXTENSION_EVENTS).getInputStream();
+        return new FileInputStream(getEventsFile(type, identifier, FILE_EXTENSION_EVENTS));
     }
 
     @Override
     public InputStream openSnapshotFileForReading(String type, AggregateIdentifier identifier) throws IOException {
-        return getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS).getInputStream();
+        return new FileInputStream(getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS));
     }
 
     @Override
@@ -93,14 +93,14 @@ public class SimpleEventFileResolver implements EventFileResolver {
         return getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS).exists();
     }
 
-    private Resource getEventsFile(String type, AggregateIdentifier identifier, String extension) throws IOException {
-        return getBaseDirForType(type).createRelative(identifier + "." + extension);
+    private File getEventsFile(String type, AggregateIdentifier identifier, String extension) throws IOException {
+        return new File(getBaseDirForType(type), identifier + "." + extension);
     }
 
-    private Resource getBaseDirForType(String type) throws IOException {
+    private File getBaseDirForType(String type) throws IOException {
 
-        Resource typeSpecificDir = baseDir.createRelative("/" + type + "/");
-        if (!typeSpecificDir.exists() && !typeSpecificDir.getFile().mkdirs()) {
+        File typeSpecificDir = new File(baseDir, type);
+        if (!typeSpecificDir.exists() && !typeSpecificDir.mkdirs()) {
             throw new EventStoreException(
                     "The given event store directory doesn't exist and could not be created");
         }

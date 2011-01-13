@@ -27,8 +27,6 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.repository.ConcurrencyException;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -77,7 +75,6 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(propagation = Propagation.MANDATORY)
     public void appendEvents(String type, DomainEventStream events) {
 
         DomainEvent event = null;

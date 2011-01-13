@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,8 @@ import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.eventhandling.UnsupportedHandlerMethodException;
 import org.axonframework.util.AbstractHandlerInvoker;
-import org.springframework.util.ReflectionUtils;
+import org.axonframework.util.AxonConfigurationException;
+import org.axonframework.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -50,7 +51,10 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
     }
 
     private void validateEventHandlerMethods(Object target) {
-        ReflectionUtils.doWithMethods(target.getClass(), new EventHandlerValidatorCallback());
+        EventHandlerValidator validator = new EventHandlerValidator();
+        for (Method m : ReflectionUtils.methodsOf(target.getClass())) {
+            validator.validate(m);
+        }
     }
 
     /**
@@ -73,7 +77,6 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
                     "An error occurred when handling an event of type [%s]",
                     event.getClass().getSimpleName()), e);
         }
-
     }
 
     /**
@@ -90,7 +93,15 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
                                          TransactionStatus transactionStatus) {
         CallFirstTransactionMethodCallback callback = new CallFirstTransactionMethodCallback(beforeTransactionClass,
                                                                                              transactionStatus);
-        ReflectionUtils.doWithMethods(getTarget().getClass(), callback, callback);
+        for (Method m : ReflectionUtils.methodsOf(getTarget().getClass())) {
+            if (callback.matches(m)) {
+                try {
+                    callback.doWith(m);
+                } catch (IllegalAccessException e) {
+                    throw new AxonConfigurationException("Should be Illegal to access this method", e);
+                }
+            }
+        }
     }
 
     /**
@@ -103,8 +114,7 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
         invokeTransactionMethod(AfterTransaction.class, transactionStatus);
     }
 
-    private class CallFirstTransactionMethodCallback
-            implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
+    private class CallFirstTransactionMethodCallback {
 
         private final AtomicBoolean found = new AtomicBoolean(false);
         private final Class<? extends Annotation> annotation;
@@ -122,8 +132,7 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
         /**
          * {@inheritDoc}
          */
-        @Override
-        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+        public void doWith(Method method) throws IllegalAccessException {
             found.set(true);
             try {
                 if (method.getParameterTypes().length == 1) {
@@ -142,7 +151,6 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
         /**
          * {@inheritDoc}
          */
-        @Override
         public boolean matches(Method method) {
             return !found.get()
                     && method.isAnnotationPresent(annotation)
@@ -151,10 +159,10 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
         }
     }
 
-    private static class EventHandlerValidatorCallback implements ReflectionUtils.MethodCallback {
+    private static class EventHandlerValidator {
 
-        @Override
-        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+
+        public void validate(Method method) {
             if (method.isAnnotationPresent(EventHandler.class)) {
                 if (method.getParameterTypes().length > 2) {
                     throw new UnsupportedHandlerMethodException(String.format(

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.util.AbstractHandlerInvoker;
+import org.axonframework.util.ReflectionUtils;
 import org.axonframework.util.Subscribable;
-import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -107,9 +107,14 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private <T> List<Class<? extends T>> findAcceptedHandlerParameters() {
         final List<Class<? extends T>> handlerParameters = new LinkedList<Class<? extends T>>();
-        ReflectionUtils.doWithMethods(getTarget().getClass(), new CommandHandlerResolverCallback<T>(handlerParameters));
+        for (Method m : ReflectionUtils.methodsOf(getTarget().getClass())) {
+            if (m.isAnnotationPresent(CommandHandler.class)) {
+                handlerParameters.add((Class<T>) m.getParameterTypes()[0]);
+            }
+        }
         return handlerParameters;
     }
 
@@ -126,24 +131,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      * @param command The command to find the handler method for
      * @return the command handler method for the given command
      */
-    public Method findCommandHandlerMethodFor(Object command) {
+    public Method findCommandHandlerMethodFor(String command) {
         return super.findHandlerMethod(getTarget().getClass(), command.getClass());
-    }
-
-    private static class CommandHandlerResolverCallback<T> implements ReflectionUtils.MethodCallback {
-
-        private final List<Class<? extends T>> handlerParameters;
-
-        public CommandHandlerResolverCallback(List<Class<? extends T>> handlerParameters) {
-            this.handlerParameters = handlerParameters;
-        }
-
-        @Override
-        @SuppressWarnings({"unchecked"})
-        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-            if (method.isAnnotationPresent(CommandHandler.class)) {
-                handlerParameters.add((Class<T>) method.getParameterTypes()[0]);
-            }
-        }
     }
 }
