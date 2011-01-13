@@ -33,7 +33,6 @@ import org.axonframework.util.Subscribable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -155,15 +154,23 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     }
 
     private TransactionManager findTransactionManagerInField(Object bean) {
-        TransactionManagerFieldCallback transactionManagerFieldCallback = new TransactionManagerFieldCallback(bean);
+        TransactionManager tm = null;
         for (Field f : ReflectionUtils.fieldsOf(bean.getClass())) {
             try {
-                transactionManagerFieldCallback.doWith(f);
+                if (f.isAnnotationPresent(org.axonframework.eventhandling.annotation.TransactionManager.class)) {
+                    doPrivileged(new FieldAccessibilityCallback(f));
+
+                    if (TransactionManager.class.isAssignableFrom(f.getType())) {
+                        tm = (TransactionManager) f.get(bean);
+                    } else {
+                        tm = new AnnotationTransactionManager(f.get(bean));
+                    }
+                }
             } catch (IllegalAccessException e) {
                 throw new AxonConfigurationException("Field should be accessible.", e);
             }
         }
-        return transactionManagerFieldCallback.getTransactionManager();
+        return tm;
     }
 
     private boolean hasTransactionalMethods(Object bean) {
@@ -188,8 +195,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     }
 
     private EventSequencingPolicy getSequencingPolicyFor(Object listener) {
-        AsynchronousEventListener annotation = findAnnotation(listener.getClass(),
-                                                              AsynchronousEventListener.class);
+        AsynchronousEventListener annotation = findAnnotation(listener.getClass(), AsynchronousEventListener.class);
         if (annotation == null) {
             return new SequentialPolicy();
         }
@@ -229,33 +235,6 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
         @Override
         public void handle(Event event) {
             eventHandlerInvoker.invokeEventHandlerMethod(event);
-        }
-    }
-
-    private static class TransactionManagerFieldCallback {
-
-        private final AtomicReference<org.axonframework.eventhandling.TransactionManager> tm;
-        private final Object bean;
-
-        public TransactionManagerFieldCallback(Object bean) {
-            this.bean = bean;
-            tm = new AtomicReference<TransactionManager>();
-        }
-
-        public void doWith(final Field field) throws IllegalAccessException {
-            if (field.isAnnotationPresent(org.axonframework.eventhandling.annotation.TransactionManager.class)) {
-                doPrivileged(new FieldAccessibilityCallback(field));
-
-                if (TransactionManager.class.isAssignableFrom(field.getType())) {
-                    tm.set((TransactionManager) field.get(bean));
-                } else {
-                    tm.set(new AnnotationTransactionManager(field.get(bean)));
-                }
-            }
-        }
-
-        public TransactionManager getTransactionManager() {
-            return tm.get();
         }
     }
 }
