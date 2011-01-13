@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,10 +16,12 @@
 
 package org.axonframework.util;
 
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.InvocationHandler;
+import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.IntroductionInfo;
+import org.springframework.aop.IntroductionInterceptor;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
@@ -27,7 +29,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -113,15 +114,14 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
      */
     protected abstract Subscribable initializeAdapterFor(Object bean);
 
-    private Object createAdapterProxy(Class targetClass, Object annotatedHandler, Object adapter,
-                                      Class<?> adapterInterface) {
-        Enhancer enhancer = new Enhancer();
-        enhancer.setSuperclass(targetClass);
-        enhancer.setClassLoader(targetClass.getClassLoader());
-        enhancer.setInterfaces(new Class[]{adapterInterface});
-        enhancer.setCallback(new AdapterInvocationHandler(adapter, adapterInterface, annotatedHandler));
-        enhancer.setNamingPolicy(new AxonNamingPolicy());
-        return enhancer.create();
+    private Object createAdapterProxy(Class targetClass, Object annotatedHandler, final Object adapter,
+                                      final Class<?> adapterInterface) {
+        ProxyFactory pf = new ProxyFactory(annotatedHandler);
+        pf.addAdvice(new AdapterIntroductionInterceptor(adapter, adapterInterface));
+        pf.addInterface(adapterInterface);
+        pf.setProxyTargetClass(true);
+        pf.setExposeProxy(true);
+        return pf.getProxy(targetClass.getClassLoader());
     }
 
     /**
@@ -141,33 +141,36 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
         this.applicationContext = applicationContext;
     }
 
-    private static final class AdapterInvocationHandler implements InvocationHandler {
+    private static class AdapterIntroductionInterceptor implements IntroductionInfo, IntroductionInterceptor {
 
         private final Object adapter;
-        private final Object bean;
-        private final Class<?> adapterInterface;
+        private Class<?> adapterInterface;
 
-        private AdapterInvocationHandler(Object adapter, Class<?> adapterInterface, Object bean) {
+        public AdapterIntroductionInterceptor(Object adapter, Class<?> adapterInterface) {
             this.adapter = adapter;
-            this.bean = bean;
             this.adapterInterface = adapterInterface;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
-        public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
-            try {
-                // this is where we test the method
-                Class declaringClass = method.getDeclaringClass();
-                if (declaringClass.equals(adapterInterface)) {
-                    return method.invoke(adapter, arguments);
+        public boolean implementsInterface(Class<?> intf) {
+            return intf.equals(adapterInterface);
+        }
+
+        @Override
+        public Object invoke(MethodInvocation invocation) throws Throwable {
+            if (invocation.getMethod().getDeclaringClass().equals(adapterInterface)) {
+                try {
+                    return invocation.getMethod().invoke(adapter, invocation.getArguments());
+                } catch (InvocationTargetException e) {
+                    throw e.getCause();
                 }
-                return method.invoke(bean, arguments);
-            } catch (InvocationTargetException e) {
-                throw e.getTargetException();
             }
+            return invocation.proceed();
+        }
+
+        @Override
+        public Class[] getInterfaces() {
+            return new Class[]{adapterInterface};
         }
     }
 }
