@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.EventSerializer;
-import org.joda.time.LocalDateTime;
+import org.joda.time.DateTime;
 
 import javax.persistence.Basic;
 import javax.persistence.GeneratedValue;
@@ -125,7 +125,7 @@ abstract class AbstractEventEntry {
      *
      * @return the time stamp of the associated event.
      */
-    public LocalDateTime getTimeStamp() {
-        return new LocalDateTime(timeStamp);
+    public DateTime getTimeStamp() {
+        return new DateTime(timeStamp);
     }
 }

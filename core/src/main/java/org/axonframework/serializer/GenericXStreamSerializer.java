@@ -26,7 +26,6 @@ import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.XppDriver;
 import org.axonframework.util.SerializationException;
 import org.joda.time.DateTime;
-import org.joda.time.LocalDateTime;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -62,8 +61,8 @@ public class GenericXStreamSerializer {
     }
 
     /**
-     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to
-     * perform the serialization.
+     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
+     * the serialization.
      *
      * @param xStream XStream instance to use
      */
@@ -94,7 +93,7 @@ public class GenericXStreamSerializer {
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.registerConverter(new AggregateIdentifierConverter());
-        xStream.aliasType("localDateTime", LocalDateTime.class);
+        xStream.aliasType("localDateTime", DateTime.class);
         xStream.aliasType("dateTime", DateTime.class);
         xStream.aliasType("uuid", UUID.class);
     }
@@ -175,6 +174,7 @@ public class GenericXStreamSerializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
+     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
@@ -182,7 +182,7 @@ public class GenericXStreamSerializer {
     }
 
     /**
-     * XStream Converter to serialize LocalDateTime classes as a String.
+     * XStream Converter to serialize DateTime classes as a String.
      */
     private static final class JodaTimeConverter implements Converter {
 
@@ -191,7 +191,7 @@ public class GenericXStreamSerializer {
          */
         @Override
         public boolean canConvert(Class type) {
-            return type != null && LocalDateTime.class.getPackage().equals(type.getPackage());
+            return type != null && DateTime.class.getPackage().equals(type.getPackage());
         }
 
         @Override

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,7 +66,7 @@ public class LegacyAxonEventUpcasterTest {
                 + "</org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest_-TestEvent>").getBytes("utf-8");
         TestEvent testEvent = (TestEvent) serializer.deserialize(oldskoolEvent);
         assertEquals("62daf7f6-c3ab-4179-a212-6b1da2a6ec72", testEvent.getAggregateIdentifier().asString());
-        assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
+        assertEquals(new DateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
         assertNull(testEvent.getMetaDataValue("someValueThatDoesNotExist"));
     }
 
@@ -96,7 +96,7 @@ public class LegacyAxonEventUpcasterTest {
                 "utf-8");
         TestEvent testEvent = (TestEvent) serializer.deserialize(oldskoolEvent);
         assertEquals("62daf7f6-c3ab-4179-a212-6b1da2a6ec72", testEvent.getAggregateIdentifier().asString());
-        assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
+        assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp().toLocalDateTime());
         assertEquals("someValue", testEvent.getMetaDataValue("someKey"));
     }
 
@@ -130,5 +130,4 @@ public class LegacyAxonEventUpcasterTest {
             return name;
         }
     }
-
 }
