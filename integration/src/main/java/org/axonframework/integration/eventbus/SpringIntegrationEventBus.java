@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,23 +19,22 @@ package org.axonframework.integration.eventbus;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.springframework.integration.channel.SubscribableChannel;
+import org.springframework.integration.core.MessageHandler;
+import org.springframework.integration.core.SubscribableChannel;
 import org.springframework.integration.message.GenericMessage;
-import org.springframework.integration.message.MessageHandler;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * {@link org.axonframework.eventhandling.EventBus} implementation that delegates all subscription and publishing
- * requests to a {@link org.springframework.integration.channel.SubscribableChannel Spring Integration channel}.
+ * requests to a {@link SubscribableChannel Spring Integration channel}.
  * <p/>
- * Use {@link #setChannel(org.springframework.integration.channel.SubscribableChannel)} to set the channel to delegate
- * all the requests to.
+ * Use {@link #setChannel(org.springframework.integration.core.SubscribableChannel)} to set the channel to delegate all
+ * the requests to.
  * <p/>
- * This EventBus will automatically wrap and unwrap events in {@link org.springframework.integration.core.Message
- * Messages} and {@link org.axonframework.eventhandling.EventListener EventListeners} in {@link
- * org.springframework.integration.message.MessageHandler MessageHandlers}.
+ * This EventBus will automatically wrap and unwrap events in {@link org.springframework.integration.Message Messages}
+ * and {@link org.axonframework.eventhandling.EventListener EventListeners} in {@link MessageHandler MessageHandlers}.
  * <p/>
  * This implementation expects the Spring Integration to be configured to handle messages asynchronously.
  *
@@ -83,5 +82,4 @@ public class SpringIntegrationEventBus implements EventBus {
     public void setChannel(SubscribableChannel channel) {
         this.channel = channel;
     }
-
 }
