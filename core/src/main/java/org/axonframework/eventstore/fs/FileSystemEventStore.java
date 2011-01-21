@@ -186,8 +186,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         if (snapshotEntry != null) {
             String timeStamp = snapshotEntry.getTimeStamp();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            writeEventEntry(baos, snapshotEntry.getSequenceNumber(), timeStamp, IOUtils.toByteArray(
-                    snapshotEntry.getBytes()));
+            writeEventEntry(baos, snapshotEntry.getSequenceNumber(), timeStamp, snapshotEntry.getBytes());
             is = new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), eventFileInputStream);
         }
         return new BufferedReaderDomainEventStream(is, eventSerializer);
