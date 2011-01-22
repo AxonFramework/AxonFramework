@@ -16,7 +16,6 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
@@ -24,7 +23,6 @@ import org.axonframework.saga.spring.SpringResourceInjector;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -54,7 +52,7 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
 
         parseSagaRepositoryAttribute(element, parserContext, sagaManagerDefinition.getConstructorArgumentValues());
         parseSagaFactoryAttribute(element, sagaManagerDefinition.getConstructorArgumentValues());
-        parseEventBusAttribute(element, sagaManagerDefinition.getConstructorArgumentValues());
+        parseEventBusAttribute(element, sagaManagerDefinition);
         parseTypesElement(element, sagaManagerDefinition);
 
         return sagaManagerDefinition;
@@ -62,7 +60,8 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
 
     private void parseTypesElement(Element element, GenericBeanDefinition sagaManagerDefinition) {
         Element childNode = DomUtils.getChildElementByTagName(element, "types");
-        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(3, childNode.getTextContent());
+        sagaManagerDefinition.getConstructorArgumentValues()
+                             .addIndexedArgumentValue(3, childNode.getTextContent().split(","));
     }
 
     private void parseResourceInjectorAttribute(Element element) {
@@ -71,11 +70,12 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
         }
     }
 
-    private void parseEventBusAttribute(Element element, ConstructorArgumentValues properties) {
+    private void parseEventBusAttribute(Element element, GenericBeanDefinition beanDefinition) {
+        ConstructorArgumentValues properties = beanDefinition.getConstructorArgumentValues();
         if (element.hasAttribute(EVENT_BUS_ATTRIBUTE)) {
             properties.addIndexedArgumentValue(2, new RuntimeBeanReference(element.getAttribute(EVENT_BUS_ATTRIBUTE)));
         } else {
-            properties.addIndexedArgumentValue(2, new AutowireCandidateQualifier(EventBus.class));
+            beanDefinition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_CONSTRUCTOR);
         }
     }
 
