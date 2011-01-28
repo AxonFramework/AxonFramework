@@ -17,6 +17,7 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
@@ -24,6 +25,8 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -41,5 +44,28 @@ public class PessimisticLockManagerTest {
         locksField.setAccessible(true);
         Map locks = (Map) locksField.get(manager);
         assertEquals("Expected lock to be cleaned up", 0, locks.size());
+    }
+
+    @Test
+    public void testLockOnlyCleanedUpIfNoLocksAreHeld() {
+        PessimisticLockManager manager = new PessimisticLockManager();
+        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        AggregateRoot aggregateRoot = mock(AggregateRoot.class);
+        when(aggregateRoot.getIdentifier()).thenReturn(identifier);
+
+        assertFalse(manager.validateLock(aggregateRoot));
+
+        manager.obtainLock(identifier);
+        assertTrue(manager.validateLock(aggregateRoot));
+
+        manager.obtainLock(identifier);
+        assertTrue(manager.validateLock(aggregateRoot));
+
+        manager.releaseLock(identifier);
+        assertTrue(manager.validateLock(aggregateRoot));
+
+        manager.releaseLock(identifier);
+        assertFalse(manager.validateLock(aggregateRoot));
+
     }
 }
