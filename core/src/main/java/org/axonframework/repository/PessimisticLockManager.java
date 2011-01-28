@@ -15,7 +15,6 @@
  */
 
 
-
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateIdentifier;
@@ -122,10 +121,15 @@ class PessimisticLockManager implements LockManager {
 
         private synchronized void disposeIfUnused(AggregateIdentifier aggregateIdentifier) {
             if (lock.tryLock()) {
-                // we now have a lock. We can shut it down.
-                isClosed = true;
-                locks.remove(aggregateIdentifier.asString(), this);
-                lock.unlock();
+                try {
+                    if (lock.getHoldCount() == 1) {
+                        // we now have a lock. We can shut it down.
+                        isClosed = true;
+                        locks.remove(aggregateIdentifier.asString(), this);
+                    }
+                } finally {
+                    lock.unlock();
+                }
             }
         }
     }
