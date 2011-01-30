@@ -130,10 +130,10 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
 
     private void validate(Method method) {
         if (method.isAnnotationPresent(EventHandler.class)) {
-            if (method.getParameterTypes().length > 2) {
+            if (method.getParameterTypes().length > 2 || method.getParameterTypes().length < 1) {
                 throw new UnsupportedHandlerMethodException(String.format(
-                        "Event Handling class %s contains method %s that has more than two parameters. "
-                                + "Either remove @EventHandler annotation or reduce to one or two parameters.",
+                        "Event Handling class %s contains method %s that has no or more than two parameters. "
+                                + "Either remove @EventHandler annotation or provide to one or two parameters.",
                         method.getDeclaringClass().getSimpleName(),
                         method.getName()),
                                                             method);
