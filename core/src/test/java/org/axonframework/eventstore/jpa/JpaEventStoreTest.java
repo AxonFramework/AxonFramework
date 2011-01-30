@@ -100,32 +100,52 @@ public class JpaEventStoreTest {
     }
 
     @Test
-    public void testLoadSegment() {
-        assertNotNull(testSubject);
-        // aggregate1 has 10 uncommitted events
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+    public void testLoad_LargeAmountOfEvents() {
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>(110);
+        AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
+        for (int t = 0; t < 110; t++) {
+            domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
         entityManager.flush();
-        assertEquals((long) aggregate1.getUncommittedEventCount(),
-                     entityManager.createQuery("SELECT count(e) FROM DomainEventEntry e").getSingleResult());
+        entityManager.clear();
 
-        DomainEventStream events = testSubject.readEventSegment("test", aggregate1.getIdentifier(), 4);
+        DomainEventStream events = testSubject.readEvents("test", aggregateIdentifier);
+        Long t = 0L;
         while (events.hasNext()) {
             DomainEvent event = events.next();
-            assertTrue(event.getSequenceNumber() >= 4);
+            assertEquals(t, event.getSequenceNumber());
+            t++;
         }
+        assertEquals((Long) 110L, t);
     }
 
     @Test
-    public void testLoadSegment_NoCandidates() {
-        assertNotNull(testSubject);
-        // aggregate1 has 10 uncommitted events
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
-        entityManager.flush();
-        assertEquals((long) aggregate1.getUncommittedEventCount(),
-                     entityManager.createQuery("SELECT count(e) FROM DomainEventEntry e").getSingleResult());
+    public void testLoad_LargeAmountOfEventsInSmallBatches() {
+        testSubject.setBatchSize(10);
+        testLoad_LargeAmountOfEvents();
+    }
 
-        DomainEventStream events = testSubject.readEventSegment("test", aggregate1.getIdentifier(), 10);
-        assertFalse(events.hasNext());
+    @Test
+    public void testLoad_LargeAmountOfEventsWithSnapshot() {
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>(110);
+        AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
+        for (int t = 0; t < 110; t++) {
+            domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        testSubject.appendSnapshotEvent("test", new StubDomainEvent(aggregateIdentifier, 30));
+        entityManager.flush();
+        entityManager.clear();
+
+        DomainEventStream events = testSubject.readEvents("test", aggregateIdentifier);
+        Long t = 30L;
+        while (events.hasNext()) {
+            DomainEvent event = events.next();
+            assertEquals(t, event.getSequenceNumber());
+            t++;
+        }
+        assertEquals((Long) 110L, t);
     }
 
     @Test

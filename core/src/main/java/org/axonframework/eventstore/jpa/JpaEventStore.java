@@ -19,7 +19,6 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStoreManagement;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -27,9 +26,12 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.repository.ConcurrencyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -47,10 +49,13 @@ import javax.sql.DataSource;
  */
 public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
+    private static final Logger logger = LoggerFactory.getLogger(JpaEventStore.class);
+
     private EntityManager entityManager;
 
     private final EventSerializer eventSerializer;
-    private static final int EVENT_VISITOR_BATCH_SIZE = 50;
+    private static final int DEFAULT_BATCH_SIZE = 100;
+    private int batchSize = DEFAULT_BATCH_SIZE;
 
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
@@ -108,38 +113,19 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
-        List<DomainEvent> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
+        List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1, batchSize);
         if (lastSnapshotEvent != null) {
             events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
         if (events.isEmpty()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new SimpleDomainEventStream(events);
-    }
-
-    /**
-     * Reads a segment of the events of an aggregate. The sequence number of the first event in de the domain event
-     * stream is equal to the given <code>firstSequenceNumber</code>, if any. If no events with sequence number equal or
-     * greater to the <code>firstSequenceNumber</code> are available, an empty DomainEventStream is returned.
-     * <p/>
-     * The DomainEventStream returned by this call will <em>never</em> contain any snapshot events.
-     * <p/>
-     * Note: To return all events after the <code>firstSequenceNumber</code>, use <code>Long.MAX_VALUE</code> as
-     * <code>lastSequenceNumber</code>.
-     *
-     * @param type                The type descriptor of the object to retrieve
-     * @param identifier          The unique aggregate identifier of the events to load
-     * @param firstSequenceNumber The sequence number of the first event to return
-     * @return a DomainEventStream containing a segment of past events of an aggregate
-     */
-    public DomainEventStream readEventSegment(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
-        return new SimpleDomainEventStream(readEventSegmentInternal(type, identifier, firstSequenceNumber));
+        return new BatchingDomainEventStream(events, identifier, type);
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEvent> readEventSegmentInternal(String type, AggregateIdentifier identifier,
-                                                       long firstSequenceNumber) {
+    private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber,
+                                         int batchSize) {
         List<DomainEventEntry> entries = (List<DomainEventEntry>) entityManager.createQuery(
                 "SELECT e FROM DomainEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
@@ -148,6 +134,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                                                                              identifier.asString())
                                                                                .setParameter("type", type)
                                                                                .setParameter("seq", firstSequenceNumber)
+                                                                               .setMaxResults(batchSize)
                                                                                .getResultList();
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
         for (DomainEventEntry entry : entries) {
@@ -155,6 +142,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         }
         return events;
     }
+
 
     @SuppressWarnings({"unchecked"})
     private SnapshotEventEntry loadLastSnapshotEvent(String type, AggregateIdentifier identifier) {
@@ -184,12 +172,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         List<DomainEventEntry> batch;
         boolean shouldContinue = true;
         while (shouldContinue) {
-            batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE);
+            batch = fetchBatch(first, batchSize);
             for (DomainEventEntry entry : batch) {
                 visitor.doWithEvent(entry.getDomainEvent(eventSerializer));
             }
-            shouldContinue = (batch.size() >= EVENT_VISITOR_BATCH_SIZE);
-            first += EVENT_VISITOR_BATCH_SIZE;
+            shouldContinue = (batch.size() >= batchSize);
+            first += batchSize;
         }
     }
 
@@ -237,5 +225,59 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      */
     public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
         this.persistenceExceptionResolver = persistenceExceptionResolver;
+    }
+
+    /**
+     * Sets the number of events that should be read at each database access. When more than this number of events must
+     * be read to rebuild an aggregate's state, the events are read in batches of this size. Defaults to 100.
+     * <p/>
+     * Tip: if you use a snapshotter, make sure to choose snapshot trigger and batch size such that a single batch will
+     * generally retrieve all events required to rebuild an aggregate's state.
+     *
+     * @param batchSize the number of events to read on each database access. Default to 100.
+     */
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    private class BatchingDomainEventStream implements DomainEventStream {
+
+        private int currentBatchSize;
+        private Iterator<DomainEvent> currentBatch;
+        private DomainEvent next;
+        private final AggregateIdentifier id;
+        private final String typeId;
+
+        private BatchingDomainEventStream(List<DomainEvent> firstBatch, AggregateIdentifier id,
+                                          String typeId) {
+            this.id = id;
+            this.typeId = typeId;
+            this.currentBatchSize = firstBatch.size();
+            this.currentBatch = firstBatch.iterator();
+            if (currentBatch.hasNext()) {
+                next = currentBatch.next();
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public DomainEvent next() {
+            DomainEvent nextEvent = next;
+            if (!currentBatch.hasNext() && currentBatchSize >= batchSize) {
+                logger.debug("Fetching new batch for Aggregate [{}]", id.asString());
+                currentBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1, batchSize).iterator();
+            }
+            next = currentBatch.hasNext() ? currentBatch.next() : null;
+            return nextEvent;
+        }
+
+        @Override
+        public DomainEvent peek() {
+            return next;
+        }
     }
 }
