@@ -40,7 +40,10 @@ import javax.persistence.Version;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated Use the general {@link AbstractAggregateRoot} instead. This class will be removed prior to the 1.0
+ *             release.
  */
+@Deprecated
 @MappedSuperclass
 public abstract class AbstractJpaAggregateRoot implements AggregateRoot {
 
@@ -137,7 +140,7 @@ public abstract class AbstractJpaAggregateRoot implements AggregateRoot {
     @Override
     public void commitEvents() {
         lastEventSequenceNumber = uncommittedEvents.getLastSequenceNumber();
-        uncommittedEvents.clear();
+        uncommittedEvents.commit();
     }
 
     /**

@@ -43,7 +43,6 @@ abstract class EventSerializationUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(EventSerializationUtils.class);
 
-    private static final String CHARSET_UTF8 = "UTF-8";
     private static final int LATEST_ENTRY_VERSION = 0;
 
     private EventSerializationUtils() {
@@ -73,11 +72,10 @@ abstract class EventSerializationUtils {
         int sequenceNumber = (int) in.readNumber();
         String timeStamp = in.readString();
         byte[] serializedEvent = in.readBytes();
-        if (logger.isWarnEnabled() && serializedEvent == null) {
-            logger.warn("Failed to read the required amount of bytes from the underlying stream. "
-                                + "This may result in a failure to deserialize the event");
+        if (serializedEvent == null) {
+            logger.warn("Failed to read the required amount of bytes from the underlying stream.");
+            return null;
         }
-
         return new EventEntry(sequenceNumber, timeStamp, serializedEvent);
     }
 

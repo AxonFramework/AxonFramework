@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,24 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.util;
+package org.axonframework.integrationtests.jpa;
 
-import net.sf.cglib.core.DefaultNamingPolicy;
+import org.axonframework.domain.DomainEvent;
 
 /**
- * CGLib naming policy for classes that tags generated classed with "axon". This helps identify which classes were
- * generated for Axon, and which cglib classes were generated for other purposes.
- *
  * @author Allard Buijze
- * @since 0.3
  */
-public class AxonNamingPolicy extends DefaultNamingPolicy {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String getTag() {
-        return "axon";
-    }
+public class SomeEvent extends DomainEvent {
 }

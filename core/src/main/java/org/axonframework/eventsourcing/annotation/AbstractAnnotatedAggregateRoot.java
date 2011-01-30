@@ -22,8 +22,8 @@ import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 
-import java.io.IOException;
 import java.util.UUID;
+import javax.persistence.MappedSuperclass;
 
 /**
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
@@ -35,6 +35,7 @@ import java.util.UUID;
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
+@MappedSuperclass
 public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
     private static final long serialVersionUID = -1206026570158467937L;
@@ -77,12 +78,10 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
      * @see org.axonframework.eventhandling.annotation.EventHandler
      */
     @Override
-    protected void handle(DomainEvent event) {
+    protected synchronized void handle(DomainEvent event) {
+        if (eventHandlerInvoker == null) {
+            eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
+        }
         eventHandlerInvoker.invokeEventHandlerMethod(event);
-    }
-
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
     }
 }
