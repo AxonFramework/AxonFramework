@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -68,20 +68,15 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         registeredAggregates.clear();
         eventsToPublish.clear();
         notifyListenersRollback(cause);
-        notifyListenersCleanup();
-        listeners.clear();
     }
 
     @Override
     protected void doCommit() {
-        notifyListenersPrepareCommit();
-        saveAggregates();
         publishEvents();
 
         commitInnerUnitOfWork();
 
         notifyListenersAfterCommit();
-        notifyListenersCleanup();
     }
 
     @Override
@@ -135,9 +130,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         dispatcherStatus = Status.READY;
     }
 
-    /**
-     * Saves all registered aggregates by calling their respective callbacks.
-     */
+    @Override
     protected void saveAggregates() {
         for (AggregateEntry entry : registeredAggregates.values()) {
             entry.saveAggregate();
@@ -145,10 +138,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         registeredAggregates.clear();
     }
 
-    /**
-     * Send a {@link UnitOfWorkListener#onPrepareCommit(java.util.Set, java.util.List)} notification to all registered
-     * listeners.
-     */
+    @Override
     protected void notifyListenersPrepareCommit() {
         List<Event> events = eventsToPublish();
         for (UnitOfWorkListener listener : listeners) {
