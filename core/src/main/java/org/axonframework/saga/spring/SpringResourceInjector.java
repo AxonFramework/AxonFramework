@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.saga.spring;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -37,7 +36,7 @@ import org.springframework.context.ApplicationContextAware;
  * @author Allard Buijze
  * @since 0.7
  */
-public class SpringResourceInjector implements ResourceInjector, ApplicationContextAware, InitializingBean {
+public class SpringResourceInjector implements ResourceInjector, ApplicationContextAware {
 
     private AutowireCapableBeanFactory autowireCapableBeanFactory;
 
@@ -49,12 +48,5 @@ public class SpringResourceInjector implements ResourceInjector, ApplicationCont
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.autowireCapableBeanFactory = applicationContext.getAutowireCapableBeanFactory();
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        if (autowireCapableBeanFactory == null) {
-            throw new IllegalStateException("The SpringResourceInjector must have an ApplicationContext set");
-        }
     }
 }
