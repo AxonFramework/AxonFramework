@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.eventhandling.EventSequencingPolicy;
+import org.axonframework.eventhandling.SequencingPolicy;
 import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.util.DirectExecutor;
 import org.junit.*;
@@ -233,7 +233,7 @@ public class AnnotationEventListenerAdapterTest {
         }
     }
 
-    private class WrongPolicy implements EventSequencingPolicy {
+    private class WrongPolicy implements SequencingPolicy<Event> {
 
         public WrongPolicy(Object anyParameter) {
             // this constructor makes it unsuitable as policy class

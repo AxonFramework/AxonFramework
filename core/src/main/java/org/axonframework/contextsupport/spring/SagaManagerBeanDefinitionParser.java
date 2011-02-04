@@ -16,13 +16,17 @@
 
 package org.axonframework.contextsupport.spring;
 
+import org.axonframework.eventhandling.NoTransactionManager;
+import org.axonframework.eventhandling.transactionmanagers.SpringTransactionManager;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.saga.spring.SpringResourceInjector;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -43,6 +47,8 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
     private Object resourceInjector;
     private static final String RESOURCE_INJECTOR_ATTRIBUTE = "resource-injector";
     private static final String SAGA_REPOSITORY_ATTRIBUTE = "saga-repository";
+    private static final String EXECUTOR_ATTRIBUTE = "executor";
+    private static final String TRANSACTION_MANAGER_ATTRIBUTE = "transaction-manager";
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -53,15 +59,39 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
         parseSagaRepositoryAttribute(element, parserContext, sagaManagerDefinition.getConstructorArgumentValues());
         parseSagaFactoryAttribute(element, sagaManagerDefinition.getConstructorArgumentValues());
         parseEventBusAttribute(element, sagaManagerDefinition);
-        parseTypesElement(element, sagaManagerDefinition);
+        boolean isAsync = parseAsyncAttributes(element, sagaManagerDefinition);
+        parseTypesElement(element, sagaManagerDefinition, isAsync);
 
         return sagaManagerDefinition;
     }
 
-    private void parseTypesElement(Element element, GenericBeanDefinition sagaManagerDefinition) {
+    private boolean parseAsyncAttributes(Element element, GenericBeanDefinition sagaManagerDefinition) {
+        if (element.hasAttribute(EXECUTOR_ATTRIBUTE)) {
+            sagaManagerDefinition.getConstructorArgumentValues()
+                                 .addIndexedArgumentValue(3, new RuntimeBeanReference(
+                                         element.getAttribute(EXECUTOR_ATTRIBUTE)));
+            if (element.hasAttribute(TRANSACTION_MANAGER_ATTRIBUTE)) {
+                BeanDefinition bd =
+                        BeanDefinitionBuilder.genericBeanDefinition(SpringTransactionManager.class)
+                                             .addPropertyValue("transactionManager",
+                                                               new RuntimeBeanReference(element.getAttribute(
+                                                                       TRANSACTION_MANAGER_ATTRIBUTE)))
+                                             .getBeanDefinition();
+                sagaManagerDefinition.getConstructorArgumentValues()
+                                     .addIndexedArgumentValue(4, bd);
+            } else {
+                sagaManagerDefinition.getConstructorArgumentValues()
+                                     .addIndexedArgumentValue(4, new NoTransactionManager());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void parseTypesElement(Element element, GenericBeanDefinition sagaManagerDefinition, boolean isAsync) {
         Element childNode = DomUtils.getChildElementByTagName(element, "types");
         sagaManagerDefinition.getConstructorArgumentValues()
-                             .addIndexedArgumentValue(3, childNode.getTextContent().split(","));
+                             .addIndexedArgumentValue(isAsync ? 5 : 3, childNode.getTextContent().split(","));
     }
 
     private void parseResourceInjectorAttribute(Element element) {

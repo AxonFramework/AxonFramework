@@ -29,8 +29,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -42,6 +48,19 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     @SuppressWarnings({"SpringJavaAutowiringInspection"})
     @Autowired
     private DefaultListableBeanFactory beanFactory;
+
+    @Autowired
+    private SagaFactory sagaFactory;
+    @Autowired
+    private PlatformTransactionManager tm;
+    @Autowired
+    private ThreadPoolTaskExecutor te;
+
+
+    @Before
+    public void startup() {
+        reset(sagaFactory, tm);
+    }
 
     @Test
     public void testParseInternalElementParserContext() {
@@ -78,11 +97,14 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
                 "__axon-annotation-command-handler-bean-post-processor",
                 AnnotationCommandHandlerBeanPostProcessor.class);
         assertNotNull(handler);
+    }
 
+    @Test
+    @DirtiesContext
+    public void testSagaManagerWiring() {
         // this part should prove correct autowiring of the saga manager
         SagaManager sagaManager = beanFactory.getBean("sagaManager", SagaManager.class);
         assertNotNull(sagaManager);
-        SagaFactory sagaFactory = beanFactory.getBean("sagaFactory", SagaFactory.class);
 
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
@@ -90,5 +112,44 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         sagaManager.handle(new StubDomainEvent(new UUIDAggregateIdentifier()));
 
         verify(sagaFactory).createSaga(StubSaga.class);
+    }
+
+    @Test
+    @DirtiesContext
+    public void testAsyncTransactionalSagaManagerWiring() throws InterruptedException {
+
+        // this part should prove correct autowiring of the saga manager
+        SagaManager sagaManager = beanFactory.getBean("asyncTransactionalSagaManager", SagaManager.class);
+        assertNotNull(sagaManager);
+
+        when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
+        when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
+
+        sagaManager.handle(new StubDomainEvent(new UUIDAggregateIdentifier()));
+        Thread.sleep(250);
+        te.shutdown();
+        te.getThreadPoolExecutor().awaitTermination(2, TimeUnit.SECONDS);
+        verify(sagaFactory).createSaga(StubSaga.class);
+        verify(tm, atLeastOnce()).getTransaction(isA(TransactionDefinition.class));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testAsyncSagaManagerWiring() throws InterruptedException {
+
+        // this part should prove correct autowiring of the saga manager
+        SagaManager sagaManager = beanFactory.getBean("asyncSagaManager", SagaManager.class);
+        assertNotNull(sagaManager);
+        assertNotNull(tm);
+
+        when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
+        when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
+
+        sagaManager.handle(new StubDomainEvent(new UUIDAggregateIdentifier()));
+        Thread.sleep(250);
+        te.shutdown();
+        te.getThreadPoolExecutor().awaitTermination(2, TimeUnit.SECONDS);
+        verify(sagaFactory).createSaga(StubSaga.class);
+        verify(tm, never()).getTransaction(isA(TransactionDefinition.class));
     }
 }

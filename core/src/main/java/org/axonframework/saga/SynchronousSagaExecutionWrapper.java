@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.saga;
 
 /**
- * SequencingPolicy that does not enforce any sequencing requirements on event processing.
- *
  * @author Allard Buijze
- * @since 0.3
  */
-public class FullConcurrencyPolicy implements SequencingPolicy<Object> {
+public class SynchronousSagaExecutionWrapper implements SagaHandlerExecutor {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Object getSequenceIdentifierFor(Object event) {
-        return null;
+    public void scheduleLookupTask(Runnable task) {
+        task.run();
+    }
+
+    @Override
+    public void scheduleEventProcessingTask(String sagaIdentifier, Runnable task) {
+        task.run();
     }
 }

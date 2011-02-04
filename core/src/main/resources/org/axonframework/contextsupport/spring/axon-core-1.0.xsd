@@ -322,6 +322,22 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="transaction-manager" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the PlatformTransactionManager that manages the transactions
+                                while reading, processing and persisting Sagas. Is ignored unless used in combination
+                                with the executor property.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="executor" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to an Executor (e.g. TaskExecutor) instance that provides the
+                                threads to process the incoming Events in. If an executor is provided, all event
+                                handling is done asynchronously using this executor.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,66 +30,53 @@ import java.util.concurrent.TimeUnit;
 import static org.axonframework.eventhandling.YieldPolicy.DO_NOT_YIELD;
 
 /**
- * The EventProcessingScheduler is responsible for scheduling all events within the same SequencingIdentifier in an
- * Executor. It will only handle events that were present in the queue at the moment processing started. Any events
- * added later will be rescheduled automatically.
- *
  * @author Allard Buijze
- * @since 0.3
  */
-public class EventProcessingScheduler implements Runnable {
+public abstract class EventProcessingScheduler<T> implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessingScheduler.class);
 
-    private final EventListener eventListener;
-    private final ShutdownCallback shutDownCallback;
-    private final TransactionManager transactionManager;
-    private final Executor executor;
-
+    protected final ShutdownCallback shutDownCallback;
+    protected final TransactionManager transactionManager;
+    protected final Executor executor;
     // guarded by "this"
-    private final Queue<Event> eventQueue;
-    private final List<Event> currentBatch = new LinkedList<Event>();
+    protected final Queue<T> eventQueue;
+    private final List<T> currentBatch = new LinkedList<T>();
     // guarded by "this"
     private boolean isScheduled = false;
     private volatile boolean cleanedUp;
     private volatile long retryAfter;
     private volatile boolean transactionStarted;
 
+
     /**
-     * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>.
+     * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule
+     * events.
      *
-     * @param eventListener      The event listener for which this scheduler schedules events
      * @param transactionManager The transaction manager that manages underlying transactions
      * @param executor           The executor service that will process the events
      * @param shutDownCallback   The callback to notify when the scheduler finishes processing events
      */
-    public EventProcessingScheduler(EventListener eventListener,
-                                    TransactionManager transactionManager,
-                                    Executor executor,
+    public EventProcessingScheduler(TransactionManager transactionManager, Executor executor,
                                     ShutdownCallback shutDownCallback) {
-        this(eventListener, transactionManager, executor, new LinkedList<Event>(), shutDownCallback);
+        this(transactionManager, new LinkedList<T>(), executor, shutDownCallback);
     }
 
     /**
-     * Initialize a scheduler for the given <code>eventListener</code> using the given <code>executor</code>. The
-     * <code>eventQueue</code> is the queue from which the scheduler should obtain it's events. This queue must be
-     * thread safe, as it can be used simultaneously by multiple threads.
+     * Initialize a scheduler using the given <code>executor</code>. The <code>eventQueue</code> is the queue from which
+     * the scheduler should obtain it's events. This queue must be thread safe, as it can be used simultaneously by
+     * multiple threads.
      *
-     * @param eventListener      The event listener for which this scheduler schedules events
      * @param transactionManager The transaction manager that manages underlying transactions
      * @param executor           The executor service that will process the events
      * @param eventQueue         The queue from which this scheduler gets events
      * @param shutDownCallback   The callback to notify when the scheduler finishes processing events
      */
-    public EventProcessingScheduler(EventListener eventListener,
-                                    TransactionManager transactionManager,
-                                    Executor executor,
-                                    Queue<Event> eventQueue,
+    public EventProcessingScheduler(TransactionManager transactionManager, Queue<T> eventQueue, Executor executor,
                                     ShutdownCallback shutDownCallback) {
-        this.eventQueue = eventQueue;
-        this.eventListener = eventListener;
-        this.shutDownCallback = shutDownCallback;
         this.transactionManager = transactionManager;
+        this.eventQueue = eventQueue;
+        this.shutDownCallback = shutDownCallback;
         this.executor = executor;
     }
 
@@ -103,8 +89,10 @@ public class EventProcessingScheduler implements Runnable {
      *
      * @param event the event to schedule
      * @return true if the event was scheduled successfully, false if this scheduler is not available to process events
+     *
+     * @throws IllegalStateException if the queue in this scheduler does not have the capacity to add this event
      */
-    public synchronized boolean scheduleEvent(Event event) {
+    public synchronized boolean scheduleEvent(T event) {
         if (cleanedUp) {
             return false;
         }
@@ -121,8 +109,8 @@ public class EventProcessingScheduler implements Runnable {
      *
      * @return the next DomainEvent for processing, of null if none is available
      */
-    private synchronized Event nextEvent() {
-        Event e = eventQueue.poll();
+    private synchronized T nextEvent() {
+        T e = eventQueue.poll();
         if (e != null) {
             currentBatch.add(e);
         }
@@ -143,20 +131,18 @@ public class EventProcessingScheduler implements Runnable {
             try {
                 if (retryAfter <= System.currentTimeMillis()) {
                     executor.execute(this);
-                    logger.info("Processing of event listener [{}] yielded.", eventListener.toString());
+                    logger.info("Processing of event listener yielded.");
                 } else {
                     long waitTimeRemaining = retryAfter - System.currentTimeMillis();
                     boolean executionScheduled = scheduleDelayedExecution(waitTimeRemaining);
                     if (!executionScheduled) {
                         logger.warn("The provided executor does not seem to support delayed execution. Scheduling for "
-                                + "immediate processing and expecting processing to wait if scheduled to soon.");
+                                            + "immediate processing and expecting processing to wait if scheduled to soon.");
                         executor.execute(this);
                     }
                 }
-            }
-            catch (RejectedExecutionException e) {
-                logger.info("Processing of event listener [{}] could not yield. Executor refused the task.",
-                            eventListener.toString());
+            } catch (RejectedExecutionException e) {
+                logger.info("Processing of event listener could not yield. Executor refused the task.");
                 return false;
             }
         } else {
@@ -257,8 +243,7 @@ public class EventProcessingScheduler implements Runnable {
                 transactionManager.afterTransaction(status);
             }
             currentBatch.clear();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // the batch failed.
             prepareBatchRetry(status, e);
         }
@@ -297,7 +282,7 @@ public class EventProcessingScheduler implements Runnable {
     }
 
     private void markLastEventForRetry() {
-        Event lastEvent = currentBatch.get(currentBatch.size() - 1);
+        T lastEvent = currentBatch.get(currentBatch.size() - 1);
         currentBatch.clear();
         if (lastEvent != null) {
             currentBatch.add(lastEvent);
@@ -305,19 +290,27 @@ public class EventProcessingScheduler implements Runnable {
     }
 
     private void retryEventBatch(TransactionStatus status) {
-        for (Event event : this.currentBatch) {
+        for (T event : this.currentBatch) {
             startTransactionIfNecessary(status);
-            eventListener.handle(event);
+            doHandle(event);
             status.recordEventProcessed();
         }
         currentBatch.clear();
     }
 
+    /**
+     * Does the actual processing of the event. This method is invoked if the scheduler has decided this event is up
+     * next for execution. Implementation should not pass this scheduling to an asynchronous executor
+     *
+     * @param event The event to handle
+     */
+    protected abstract void doHandle(T event);
+
     private void handleEventBatch(TransactionStatus status) {
-        Event event;
+        T event;
         while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) {
             startTransactionIfNecessary(status);
-            eventListener.handle(event);
+            doHandle(event);
             status.recordEventProcessed();
         }
     }

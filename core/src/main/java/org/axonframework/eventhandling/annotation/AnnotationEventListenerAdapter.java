@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.AsynchronousEventHandlerWrapper;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerProxy;
-import org.axonframework.eventhandling.EventSequencingPolicy;
+import org.axonframework.eventhandling.SequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.TransactionStatus;
@@ -194,13 +194,13 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
                                                    executor);
     }
 
-    private EventSequencingPolicy getSequencingPolicyFor(Object listener) {
+    private SequencingPolicy getSequencingPolicyFor(Object listener) {
         AsynchronousEventListener annotation = findAnnotation(listener.getClass(), AsynchronousEventListener.class);
         if (annotation == null) {
             return new SequentialPolicy();
         }
 
-        Class<? extends EventSequencingPolicy> policyClass = annotation.sequencingPolicyClass();
+        Class<? extends SequencingPolicy> policyClass = annotation.sequencingPolicyClass();
         try {
             return policyClass.newInstance();
         } catch (InstantiationException e) {

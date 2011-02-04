@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,16 +30,9 @@ import org.axonframework.domain.Event;
  *
  * @author Allard Buijze
  * @since 0.3
+ * @deprecated Use {@link SequencingPolicy} instead.
  */
-public interface EventSequencingPolicy {
+@Deprecated
+public interface EventSequencingPolicy extends SequencingPolicy<Event> {
 
-    /**
-     * Returns the sequence identifier for the given <code>event</code>. When two events have the same identifier (as
-     * defined by their equals method), they will be executed sequentially. A <code>null</code> value indicates that
-     * there are no sequencing requirements for the handling of this event.
-     *
-     * @param event the event for which to get the sequencing identifier
-     * @return a sequence identifier for the given event
-     */
-    Object getSequenceIdentifierFor(Event event);
 }

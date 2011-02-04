@@ -17,18 +17,19 @@
 package org.axonframework.eventhandling;
 
 /**
- * SequencingPolicy that does not enforce any sequencing requirements on event processing.
+ * TransactionManager implementation that does nothing. Is a placeholder implementation for the cases where no special
+ * transaction management is required.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 1.0
  */
-public class FullConcurrencyPolicy implements SequencingPolicy<Object> {
+public class NoTransactionManager implements TransactionManager {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Object getSequenceIdentifierFor(Object event) {
-        return null;
+    public void beforeTransaction(TransactionStatus transactionStatus) {
+    }
+
+    @Override
+    public void afterTransaction(TransactionStatus transactionStatus) {
     }
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.eventhandling.EventSequencingPolicy;
+import org.axonframework.domain.Event;
+import org.axonframework.eventhandling.SequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 
 import java.lang.annotation.Documented;
@@ -32,8 +33,8 @@ import java.lang.annotation.Target;
  * policy for this EventListener.
  * <p/>
  * This annotation allows the configuration of any {@link #sequencingPolicyClass() arbitrary class}, as long as it
- * implements the {@link org.axonframework.eventhandling.EventSequencingPolicy} interface. It also needs to have (at
- * least) a no-arg constructor.
+ * implements the {@link org.axonframework.eventhandling.SequencingPolicy} interface. It also needs to have (at least) a
+ * no-arg constructor.
  *
  * @author Allard Buijze
  * @since 0.3
@@ -45,8 +46,7 @@ public @interface AsynchronousEventListener {
 
     /**
      * Defines the policy type to use for event handling sequencing. The provided class must implement {@link
-     * org.axonframework.eventhandling.EventSequencingPolicy} and provide an accessible no-arg constructor.
+     * org.axonframework.eventhandling.SequencingPolicy} and provide an accessible no-arg constructor.
      */
-    Class<? extends EventSequencingPolicy> sequencingPolicyClass() default SequentialPolicy.class;
-
+    Class<? extends SequencingPolicy<? super Event>> sequencingPolicyClass() default SequentialPolicy.class;
 }
