@@ -30,24 +30,27 @@ import java.util.concurrent.TimeUnit;
 import static org.axonframework.eventhandling.YieldPolicy.DO_NOT_YIELD;
 
 /**
+ * Scheduler that keeps track of (Event processing) tasks that need to be executed sequentially.
+ *
+ * @param <T> The type of class representing the processing instruction for the event.
  * @author Allard Buijze
+ * @since 1.0
  */
 public abstract class EventProcessingScheduler<T> implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessingScheduler.class);
 
-    protected final ShutdownCallback shutDownCallback;
-    protected final TransactionManager transactionManager;
-    protected final Executor executor;
+    private final ShutdownCallback shutDownCallback;
+    private final TransactionManager transactionManager;
+    private final Executor executor;
     // guarded by "this"
-    protected final Queue<T> eventQueue;
+    private final Queue<T> eventQueue;
     private final List<T> currentBatch = new LinkedList<T>();
     // guarded by "this"
     private boolean isScheduled = false;
     private volatile boolean cleanedUp;
     private volatile long retryAfter;
     private volatile boolean transactionStarted;
-
 
     /**
      * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule

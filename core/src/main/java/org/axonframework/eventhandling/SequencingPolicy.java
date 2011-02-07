@@ -27,6 +27,7 @@ package org.axonframework.eventhandling;
  * same aggregate to be handled sequentially. At most one thread will be processing events of a single aggregate at any
  * time</ul>
  *
+ * @param <T> The type of object representing the processing instruction for the event.
  * @author Allard Buijze
  * @since 0.3
  */

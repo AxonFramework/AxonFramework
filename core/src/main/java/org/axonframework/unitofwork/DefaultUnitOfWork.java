@@ -95,11 +95,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         eventsToPublish.add(new EventEntry(event, eventBus));
     }
 
-    /**
-     * Send a {@link UnitOfWorkListener#onRollback(Throwable)} notification to all registered listeners.
-     *
-     * @param cause The cause of the rollback
-     */
+    @Override
     protected void notifyListenersRollback(Throwable cause) {
         for (UnitOfWorkListener listener : listeners) {
             listener.onRollback(cause);
@@ -146,10 +142,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         }
     }
 
-    /**
-     * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onCleanup()} notification to all registered
-     * listeners.
-     */
+    @Override
     protected void notifyListenersCleanup() {
         for (UnitOfWorkListener listener : listeners) {
             listener.onCleanup();

@@ -29,7 +29,7 @@ import java.util.concurrent.Executor;
  */
 public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrapper<Event> implements EventListenerProxy {
 
-    protected final EventListener eventListener;
+    private final EventListener eventListener;
 
     /**
      * Initialize the AsynchronousEventHandlerWrapper for the given <code>eventListener</code> using the given
