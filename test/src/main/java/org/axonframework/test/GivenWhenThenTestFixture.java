@@ -39,6 +39,8 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,9 +59,9 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private AggregateIdentifier aggregateIdentifier;
     private EventStore eventStore;
 
-    private List<DomainEvent> givenEvents;
+    private Collection<DomainEvent> givenEvents;
 
-    private LinkedList<DomainEvent> storedEvents;
+    private Deque<DomainEvent> storedEvents;
     private List<Event> publishedEvents;
     private long sequenceNumber = 0;
 
@@ -123,6 +125,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         return this;
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator when(Object command) {
         ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);

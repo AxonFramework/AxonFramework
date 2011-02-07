@@ -113,7 +113,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
-        List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1, batchSize);
+        List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
             events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
@@ -124,18 +124,17 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber,
-                                         int batchSize) {
+    private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
         List<DomainEventEntry> entries = (List<DomainEventEntry>) entityManager.createQuery(
                 "SELECT e FROM DomainEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
                         + "ORDER BY e.sequenceNumber ASC")
-                                                                               .setParameter("id",
-                                                                                             identifier.asString())
-                                                                               .setParameter("type", type)
-                                                                               .setParameter("seq", firstSequenceNumber)
-                                                                               .setMaxResults(batchSize)
-                                                                               .getResultList();
+                .setParameter("id",
+                              identifier.asString())
+                .setParameter("type", type)
+                .setParameter("seq", firstSequenceNumber)
+                .setMaxResults(batchSize)
+                .getResultList();
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
         for (DomainEventEntry entry : entries) {
             events.add(entry.getDomainEvent(eventSerializer));
@@ -143,18 +142,17 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         return events;
     }
 
-
     @SuppressWarnings({"unchecked"})
     private SnapshotEventEntry loadLastSnapshotEvent(String type, AggregateIdentifier identifier) {
         List<SnapshotEventEntry> entries = entityManager.createQuery(
                 "SELECT e FROM SnapshotEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
                         + "ORDER BY e.sequenceNumber DESC")
-                                                        .setParameter("id", identifier.asString())
-                                                        .setParameter("type", type)
-                                                        .setMaxResults(1)
-                                                        .setFirstResult(0)
-                                                        .getResultList();
+                .setParameter("id", identifier.asString())
+                .setParameter("type", type)
+                .setMaxResults(1)
+                .setFirstResult(0)
+                .getResultList();
         if (entries.size() < 1) {
             return null;
         }
@@ -172,7 +170,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         List<DomainEventEntry> batch;
         boolean shouldContinue = true;
         while (shouldContinue) {
-            batch = fetchBatch(first, batchSize);
+            batch = fetchBatch(first);
             for (DomainEventEntry entry : batch) {
                 visitor.doWithEvent(entry.getDomainEvent(eventSerializer));
             }
@@ -182,12 +180,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEventEntry> fetchBatch(int startPosition, int batchSize) {
+    private List<DomainEventEntry> fetchBatch(int startPosition) {
         return entityManager.createQuery(
                 "SELECT e FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
-                            .setFirstResult(startPosition)
-                            .setMaxResults(batchSize)
-                            .getResultList();
+                .setFirstResult(startPosition)
+                .setMaxResults(batchSize)
+                .getResultList();
     }
 
     /**
@@ -240,7 +238,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         this.batchSize = batchSize;
     }
 
-    private class BatchingDomainEventStream implements DomainEventStream {
+    private final class BatchingDomainEventStream implements DomainEventStream {
 
         private int currentBatchSize;
         private Iterator<DomainEvent> currentBatch;
@@ -269,7 +267,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             DomainEvent nextEvent = next;
             if (!currentBatch.hasNext() && currentBatchSize >= batchSize) {
                 logger.debug("Fetching new batch for Aggregate [{}]", id.asString());
-                currentBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1, batchSize).iterator();
+                currentBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1).iterator();
             }
             next = currentBatch.hasNext() ? currentBatch.next() : null;
             return nextEvent;

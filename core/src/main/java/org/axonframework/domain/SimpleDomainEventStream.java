@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.axonframework.domain;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Creates a DomainEventStream that streams the contents of a list.
@@ -37,7 +36,7 @@ public class SimpleDomainEventStream implements DomainEventStream {
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if the given list is empty
      */
-    public SimpleDomainEventStream(List<? extends DomainEvent> events) {
+    public SimpleDomainEventStream(Iterable<? extends DomainEvent> events) {
         this.iterator = events.iterator();
     }
 

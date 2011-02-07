@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import org.hamcrest.StringDescription;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -37,8 +38,8 @@ import java.util.List;
  */
 class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
 
-    private final List<DomainEvent> storedEvents;
-    private final List<Event> publishedEvents;
+    private final Collection<DomainEvent> storedEvents;
+    private final Collection<Event> publishedEvents;
 
     private Object actualReturnValue;
     private Throwable actualException;
@@ -51,7 +52,7 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
      * @param storedEvents    The events that were stored during command execution
      * @param publishedEvents The events that were published during command execution
      */
-    public ResultValidatorImpl(List<DomainEvent> storedEvents, List<Event> publishedEvents) {
+    public ResultValidatorImpl(Collection<DomainEvent> storedEvents, Collection<Event> publishedEvents) {
         this.storedEvents = storedEvents;
         this.publishedEvents = publishedEvents;
     }

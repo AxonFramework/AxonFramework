@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import java.io.CharArrayWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -46,7 +47,8 @@ class Reporter {
      * @param storedEvents    The events that were stored
      * @param publishedEvents The events that were published
      */
-    public void reportDifferenceInStoredVsPublished(List<DomainEvent> storedEvents, List<Event> publishedEvents) {
+    public void reportDifferenceInStoredVsPublished(Collection<DomainEvent> storedEvents,
+                                                    Collection<Event> publishedEvents) {
         StringBuilder sb = new StringBuilder(
                 "The stored events do not match the published events.");
         appendEventOverview(sb, storedEvents, publishedEvents, "Stored events", "Published events");
@@ -61,7 +63,7 @@ class Reporter {
      * @param expectedEvents The events that were expected
      * @param probableCause  An optional exception that might be the reason for wrong events
      */
-    public void reportWrongEvent(List<? extends Event> actualEvents, List<? extends Event> expectedEvents,
+    public void reportWrongEvent(Collection<? extends Event> actualEvents, Collection<? extends Event> expectedEvents,
                                  Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events");
@@ -79,7 +81,7 @@ class Reporter {
      * @param expectation   A Description of what was expected
      * @param probableCause An optional exception that might be the reason for wrong events
      */
-    public void reportWrongEvent(List<? extends Event> actualEvents, StringDescription expectation,
+    public void reportWrongEvent(Collection<? extends Event> actualEvents, StringDescription expectation,
                                  Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events.");
@@ -224,7 +226,7 @@ class Reporter {
         if (probableCause != null) {
             sb.append(NEWLINE);
             sb.append("A probable cause for the wrong chain of events is an "
-                    + "exception that occurred while handling the command");
+                              + "exception that occurred while handling the command");
             CharArrayWriter charArrayWriter = new CharArrayWriter();
             probableCause.printStackTrace(new PrintWriter(charArrayWriter));
             sb.append(charArrayWriter.toCharArray());
@@ -256,8 +258,8 @@ class Reporter {
         }
     }
 
-    private void appendEventOverview(StringBuilder sb, List<? extends Event> leftColumnEvents,
-                                     List<? extends Event> rightColumnEvents,
+    private void appendEventOverview(StringBuilder sb, Collection<? extends Event> leftColumnEvents,
+                                     Collection<? extends Event> rightColumnEvents,
                                      String leftColumnName,
                                      String rightColumnName) {
         List<String> actualTypes = new ArrayList<String>(rightColumnEvents.size());
