@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,11 +65,16 @@ public abstract class ReflectionUtils {
                 }
             } else if (Iterable.class.isAssignableFrom(field.getType())) {
                 // it's a collection
-                children.addAll(filterByType((Iterable<?>) getFieldValue(field, instance), type));
+                Iterable<?> iterable = (Iterable<?>) getFieldValue(field, instance);
+                if (iterable != null) {
+                    children.addAll(filterByType(iterable, type));
+                }
             } else if (Map.class.isAssignableFrom(field.getType())) {
                 Map map = (Map) getFieldValue(field, instance);
-                children.addAll(filterByType(map.keySet(), type));
-                children.addAll(filterByType(map.values(), type));
+                if (map != null) {
+                    children.addAll(filterByType(map.keySet(), type));
+                    children.addAll(filterByType(map.values(), type));
+                }
             }
         }
         return children;
