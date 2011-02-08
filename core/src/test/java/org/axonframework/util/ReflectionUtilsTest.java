@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import org.junit.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -83,6 +88,21 @@ public class ReflectionUtilsTest {
         assertTrue(ReflectionUtils.isAccessible(field3));
     }
 
+    @Test
+    public void testfindFieldValuesOfType_Nulls() {
+        ContainsCollectionsType item = new ContainsCollectionsType(null, null, null);
+        assertEquals(2, ReflectionUtils.findFieldValuesOfType(item, String.class).size());
+    }
+
+    @Test
+    public void testfindFieldValuesOfType_WithCollections() {
+        ContainsCollectionsType item = new ContainsCollectionsType(Arrays.asList("one"),
+                                                                   Collections.singletonMap("two",
+                                                                                            "three"),
+                                                                   Collections.singleton("four"));
+        assertEquals(6, ReflectionUtils.findFieldValuesOfType(item, String.class).size());
+    }
+
     private static class SomeType {
 
         private String field1 = "field1";
@@ -103,6 +123,32 @@ public class ReflectionUtilsTest {
 
         public int getField3() {
             return field3;
+        }
+    }
+
+    public static class ContainsCollectionsType extends SomeType {
+
+        private List<String> listOfStrings;
+        private Map<String, String> mapOfStringToString;
+        private Set<String> setOfStrings;
+
+        public ContainsCollectionsType(List<String> listOfStrings, Map<String, String> mapOfStringToString,
+                                       Set<String> setOfStrings) {
+            this.listOfStrings = listOfStrings;
+            this.mapOfStringToString = mapOfStringToString;
+            this.setOfStrings = setOfStrings;
+        }
+
+        public List<String> getListOfStrings() {
+            return listOfStrings;
+        }
+
+        public Map<String, String> getMapOfStringToString() {
+            return mapOfStringToString;
+        }
+
+        public Set<String> getSetOfStrings() {
+            return setOfStrings;
         }
     }
 
