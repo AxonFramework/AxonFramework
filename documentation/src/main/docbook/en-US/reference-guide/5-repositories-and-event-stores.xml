@@ -155,6 +155,19 @@
                 instantiate your aggregates. This will also inject any dependencies in your
                 aggregate.</para>
         </simplesect>
+        <simplesect>
+            <title><code>HybridJpaRepository</code></title>
+            <para>The <code>HybridJpaRepository</code> is a combination of the
+                    <code>GenericJpaRepository</code> and an Event Sourcing repository. It can only
+                deal with event sourced aggregates, and stores them in a relational model as well as
+                in an event store. When the repository reads an aggregate back in, it uses the
+                relational model exclusively.</para>
+            <para>This repository removes the need for Event Upcasters, making data migrations
+                potentially easier. Since the aggregates are event sourced, you keep the ability to
+                use the given-when-then test fixtures (see <xref linkend="testing"/>). On the other
+                hand, since it doesn't use the event store for reading, it doesn't allow for
+                automated conflict resolution.</para>
+        </simplesect>
         </sect1>
         <sect1 xml:id="implementing-an-eventstore">
             <title>Event store implementations</title>
