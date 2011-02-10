@@ -21,6 +21,7 @@ import com.vaadin.data.util.BeanItem;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Form;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Window;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.examples.addressbook.vaadin.data.ChangeContactNameBean;
 import org.axonframework.examples.addressbook.vaadin.data.CreateContactBean;
@@ -64,6 +65,7 @@ public class ContactForm extends Form implements Button.ClickListener {
             commit();
 
             AbstractOrderCommand command;
+            String message;
             if (newContactMode) {
                 newContactMode = false;
                 // add contact to internal container
@@ -71,15 +73,17 @@ public class ContactForm extends Form implements Button.ClickListener {
                 CreateContactCommand createCommand = new CreateContactCommand();
                 createCommand.setNewContactName(contact.getBean().getNewName());
                 command = createCommand;
+                message = "Created new contact with name " + contact.getBean().getNewName();
             } else {
                 BeanItem<ChangeContactNameBean> contact = (BeanItem<ChangeContactNameBean>) getItemDataSource();
                 ChangeContactNameCommand changeCommand = new ChangeContactNameCommand();
                 changeCommand.setContactNewName(contact.getBean().getChangedName());
                 changeCommand.setContactId(contact.getBean().getIdentifier());
                 command = changeCommand;
+                message = "Changed name of contact into " + contact.getBean().getChangedName();
             }
+            getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
             commandBus.dispatch(command);
-
             setReadOnly(true);
         } else if (source == cancel) {
             if (newContactMode) {

@@ -20,6 +20,7 @@ import com.vaadin.Application;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.event.ItemClickEvent;
+import com.vaadin.terminal.ThemeResource;
 import com.vaadin.ui.*;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.examples.addressbook.vaadin.data.ChangeContactNameBean;
@@ -33,6 +34,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class AddressbookApplication extends Application
         implements Button.ClickListener, Property.ValueChangeListener, ItemClickEvent.ItemClickListener {
+    private static final String SMALL_ICONS = "../runo/icons/16/";
+
     private Button newContact = new Button("Add contact");
     private Button search = new Button("Search");
     private Button help = new Button("Help");
@@ -56,6 +59,9 @@ public class AddressbookApplication extends Application
     @Override
     public void init() {
         buildMainLayout();
+        newContact.setIcon(new ThemeResource(SMALL_ICONS + "document-add.png"));
+        search.setIcon(new ThemeResource(SMALL_ICONS + "globe.png"));
+        help.setIcon(new ThemeResource(SMALL_ICONS + "help.png"));
     }
 
     private void buildMainLayout() {
