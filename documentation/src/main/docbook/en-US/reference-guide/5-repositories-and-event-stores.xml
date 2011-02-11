@@ -63,7 +63,19 @@
                 strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
                 the second thread saving an aggregate will receive a
                     <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
-                access to the aggregate alltogether.<note>
+                access to the aggregate alltogether.</para>
+            <para><warning>
+                    <title>Event ordering and optimistic locking strategy</title>
+                <para>Note that the optimistic lock doesn't lock any threads at all. While this reduces contention, it also means
+                    that the thread scheduler of your underlying architecture (OS, CPU, etc) is free to
+                    schedule threads as it sees fit. In high-concurrent environments (many threads
+                    accessing the same aggregate simultaneously), this could lead to events not being
+                    dispatched in exactly the same order as they are generated. If this guarantee is
+                    important, use pessimistic locking instead.</para>
+                </warning></para>
+            <para>
+                <note>
+                    <title>ConcurrencyException vs ConflictingModificationException</title>
                     <para>Note that there is a clear distinction between a
                             <code>ConcurrencyException</code> and a
                             <code>ConflictingModificationException</code>. The first is used to
@@ -72,7 +84,8 @@
                         indicates that the loaded aggregate contains changes that might not have
                         been seen by the end-user. See <xref linkend="conflict-resolution"/> for
                         more information.</para>
-                </note></para>
+                </note>
+            </para>
             </simplesect>
         <simplesect>
             <title><code>GenericJpaRepository</code></title>
