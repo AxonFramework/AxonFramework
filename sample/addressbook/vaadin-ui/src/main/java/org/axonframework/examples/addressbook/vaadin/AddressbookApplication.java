@@ -111,9 +111,9 @@ public class AddressbookApplication extends Application
             contactList.addListener((Property.ValueChangeListener) this);
             contactForm = new ContactForm(commandBus);
             contactForm.addListener((ContactForm.CommitListener) this);
-            contactForm.addListener((Property.ValueChangeListener) this);
             listView = new ListView(contactList, contactForm);
         }
+        contactForm.setItemDataSource(null);
         contactContainer.refreshContent();
         return listView;
     }

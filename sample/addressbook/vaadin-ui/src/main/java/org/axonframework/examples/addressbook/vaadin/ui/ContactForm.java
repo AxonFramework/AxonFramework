@@ -33,7 +33,6 @@ import java.io.Serializable;
  * <p>Form that can be used to create new contacts, change the details of an existing contact and to remove a contact.
  * </p>
  * <p>The form makes use of the command bus to send commands to the backend</p>
- * TODO jettro : do something with events to make clear to the application that data is changed and a refresh is required
  *
  * @author Jettro Coenradie
  */
@@ -48,7 +47,6 @@ public class ContactForm extends Form implements Button.ClickListener {
 
     public ContactForm(CommandBus commandBus) {
         this.commandBus = commandBus;
-        setWriteThrough(false);
         save.setIcon(new ThemeResource(Theme.save));
         cancel.setIcon(new ThemeResource(Theme.cancel));
         edit.setIcon(new ThemeResource(Theme.documentEdit));
@@ -109,6 +107,7 @@ public class ContactForm extends Form implements Button.ClickListener {
         command.setContactId(contact.getIdentifier());
         commandBus.dispatch(command);
         String message = "Removed the contact with name " + contact.getName();
+        fireEvent(new FormIsSuccessfullyCommittedEvent(this));
         getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
     }
 
@@ -127,14 +126,12 @@ public class ContactForm extends Form implements Button.ClickListener {
         if (!isValid()) {
             return;
         }
-        commit();
 
         AbstractOrderCommand command;
         ContactFormBean contact = obtainContactFormBeanFromDatasource();
 
         if (newContactMode) {
             newContactMode = false;
-            // add contact to internal container
             CreateContactCommand createCommand = new CreateContactCommand();
             createCommand.setNewContactName(contact.getName());
             command = createCommand;
