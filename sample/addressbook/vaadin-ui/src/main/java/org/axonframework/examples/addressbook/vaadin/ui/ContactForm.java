@@ -28,6 +28,8 @@ import org.axonframework.examples.addressbook.vaadin.data.CreateContactBean;
 import org.axonframework.sample.app.api.AbstractOrderCommand;
 import org.axonframework.sample.app.api.ChangeContactNameCommand;
 import org.axonframework.sample.app.api.CreateContactCommand;
+import org.axonframework.sample.app.api.RemoveContactCommand;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Jettro Coenradie
@@ -36,6 +38,7 @@ public class ContactForm extends Form implements Button.ClickListener {
     private Button save = new Button("Save", (Button.ClickListener) this);
     private Button cancel = new Button("Cancel", (Button.ClickListener) this);
     private Button edit = new Button("Edit", (Button.ClickListener) this);
+    private Button delete = new Button("Delete", (Button.ClickListener) this);
 
     private boolean newContactMode = false;
     private CommandBus commandBus;
@@ -49,6 +52,7 @@ public class ContactForm extends Form implements Button.ClickListener {
         footer.addComponent(save);
         footer.addComponent(cancel);
         footer.addComponent(edit);
+        footer.addComponent(delete);
         footer.setVisible(false);
 
         setFooter(footer);
@@ -58,6 +62,7 @@ public class ContactForm extends Form implements Button.ClickListener {
     @Override
     public void buttonClick(Button.ClickEvent event) {
         Button source = event.getButton();
+        String message = null;
         if (source == save) {
             if (!isValid()) {
                 return;
@@ -65,7 +70,6 @@ public class ContactForm extends Form implements Button.ClickListener {
             commit();
 
             AbstractOrderCommand command;
-            String message;
             if (newContactMode) {
                 newContactMode = false;
                 // add contact to internal container
@@ -82,7 +86,6 @@ public class ContactForm extends Form implements Button.ClickListener {
                 command = changeCommand;
                 message = "Changed name of contact into " + contact.getBean().getChangedName();
             }
-            getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
             commandBus.dispatch(command);
             setReadOnly(true);
         } else if (source == cancel) {
@@ -95,7 +98,18 @@ public class ContactForm extends Form implements Button.ClickListener {
             setReadOnly(true);
         } else if (source == edit) {
             setReadOnly(false);
+        } else if (source == delete) {
+            setReadOnly(true);
+            BeanItem<ChangeContactNameBean> contact = (BeanItem<ChangeContactNameBean>) getItemDataSource();
+            RemoveContactCommand command = new RemoveContactCommand();
+            command.setContactId(contact.getBean().getIdentifier());
+            commandBus.dispatch(command);
+            message = "Removed the contact with name " + contact.getBean().getChangedName();
         }
+        if (StringUtils.hasText(message)) {
+            getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
+        }
+
     }
 
     @Override
