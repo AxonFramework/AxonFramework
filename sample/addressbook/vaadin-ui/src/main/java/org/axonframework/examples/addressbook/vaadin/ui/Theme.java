@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.addressbook.vaadin.data;
-
-import java.io.Serializable;
+package org.axonframework.examples.addressbook.vaadin.ui;
 
 /**
  * @author Jettro Coenradie
  */
-public class CreateContactBean implements Serializable {
-    private String newName;
+public interface Theme {
+    String smallIcons = "../runo/icons/16/";
 
-    public String getNewName() {
-        return newName;
-    }
+    String search = smallIcons + "globe.png";
+    String help = smallIcons + "help.png";
+    String save = smallIcons + "ok.png";
+    String cancel = smallIcons + "cancel.png";
 
-    public void setNewName(String newName) {
-        this.newName = newName;
-    }
+    String documentAdd = smallIcons + "document-add.png";
+    String documentEdit = smallIcons + "document-txt.png";
+    String documentDelete = smallIcons + "document-delete.png";
+
 }

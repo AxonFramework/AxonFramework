@@ -22,9 +22,10 @@ import com.vaadin.data.util.BeanItem;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.terminal.ThemeResource;
 import com.vaadin.ui.*;
+import com.vaadin.ui.themes.Runo;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.examples.addressbook.vaadin.data.ChangeContactNameBean;
 import org.axonframework.examples.addressbook.vaadin.data.ContactContainer;
+import org.axonframework.examples.addressbook.vaadin.data.ContactFormBean;
 import org.axonframework.examples.addressbook.vaadin.ui.*;
 import org.axonframework.sample.app.query.ContactEntry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class AddressbookApplication extends Application
         implements Button.ClickListener, Property.ValueChangeListener, ItemClickEvent.ItemClickListener {
-    private static final String SMALL_ICONS = "../runo/icons/16/";
 
     private Button newContact = new Button("Add contact");
     private Button search = new Button("Search");
@@ -58,10 +58,11 @@ public class AddressbookApplication extends Application
 
     @Override
     public void init() {
+        setTheme(Runo.themeName());
         buildMainLayout();
-        newContact.setIcon(new ThemeResource(SMALL_ICONS + "document-add.png"));
-        search.setIcon(new ThemeResource(SMALL_ICONS + "globe.png"));
-        help.setIcon(new ThemeResource(SMALL_ICONS + "help.png"));
+        newContact.setIcon(new ThemeResource(Theme.documentAdd));
+        search.setIcon(new ThemeResource(Theme.search));
+        help.setIcon(new ThemeResource(Theme.help));
     }
 
     private void buildMainLayout() {
@@ -72,7 +73,7 @@ public class AddressbookApplication extends Application
         verticalLayout.addComponent(createToolbar());
         verticalLayout.addComponent(horizontalSplit);
         verticalLayout.setExpandRatio(horizontalSplit, 1);
-        horizontalSplit.setSplitPosition(200, HorizontalSplitPanel.UNITS_PIXELS);
+        horizontalSplit.setSplitPosition(150, HorizontalSplitPanel.UNITS_PIXELS);
         horizontalSplit.setFirstComponent(tree);
         tree.addListener((ItemClickEvent.ItemClickListener) this);
         getMainWindow().setContent(verticalLayout);
@@ -150,11 +151,10 @@ public class AddressbookApplication extends Application
     public void valueChange(Property.ValueChangeEvent event) {
         Property property = event.getProperty();
         if (property == contactList) {
-            BeanItem<ContactEntry> item = (BeanItem<ContactEntry>) contactList.getItem(contactList.getValue());
-            ChangeContactNameBean changeContactNameBean = new ChangeContactNameBean();
-            changeContactNameBean.setChangedName(item.getBean().getName());
-            changeContactNameBean.setIdentifier(item.getBean().getIdentifier());
-            contactForm.setItemDataSource(new BeanItem<ChangeContactNameBean>(changeContactNameBean));
+            @SuppressWarnings({"unchecked"})
+            ContactEntry item = ((BeanItem<ContactEntry>) contactList.getItem(contactList.getValue())).getBean();
+            ContactFormBean contactFormBean = new ContactFormBean(item.getIdentifier(), item.getName());
+            contactForm.setItemDataSource(new BeanItem<ContactFormBean>(contactFormBean));
         }
     }
 

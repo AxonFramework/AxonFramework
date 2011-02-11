@@ -18,20 +18,24 @@ package org.axonframework.examples.addressbook.vaadin.ui;
 
 import com.vaadin.data.Item;
 import com.vaadin.data.util.BeanItem;
+import com.vaadin.terminal.ThemeResource;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Form;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Window;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.examples.addressbook.vaadin.data.ChangeContactNameBean;
-import org.axonframework.examples.addressbook.vaadin.data.CreateContactBean;
+import org.axonframework.examples.addressbook.vaadin.data.ContactFormBean;
 import org.axonframework.sample.app.api.AbstractOrderCommand;
 import org.axonframework.sample.app.api.ChangeContactNameCommand;
 import org.axonframework.sample.app.api.CreateContactCommand;
 import org.axonframework.sample.app.api.RemoveContactCommand;
-import org.springframework.util.StringUtils;
 
 /**
+ * <p>Form that can be used to create new contacts, change the details of an existing contact and to remove a contact.
+ * </p>
+ * <p>The form makes use of the command bus to send commands to the backend</p>
+ * TODO jettro : do something with events to make clear to the application that data is changed and a refresh is required
+ *
  * @author Jettro Coenradie
  */
 public class ContactForm extends Form implements Button.ClickListener {
@@ -45,71 +49,27 @@ public class ContactForm extends Form implements Button.ClickListener {
 
     public ContactForm(CommandBus commandBus) {
         this.commandBus = commandBus;
-
         setWriteThrough(false);
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.setSpacing(true);
-        footer.addComponent(save);
-        footer.addComponent(cancel);
-        footer.addComponent(edit);
-        footer.addComponent(delete);
-        footer.setVisible(false);
+        save.setIcon(new ThemeResource(Theme.save));
+        cancel.setIcon(new ThemeResource(Theme.cancel));
+        edit.setIcon(new ThemeResource(Theme.documentEdit));
+        delete.setIcon(new ThemeResource(Theme.documentDelete));
 
-        setFooter(footer);
-
+        createAndSetFooter();
     }
 
     @Override
     public void buttonClick(Button.ClickEvent event) {
         Button source = event.getButton();
-        String message = null;
         if (source == save) {
-            if (!isValid()) {
-                return;
-            }
-            commit();
-
-            AbstractOrderCommand command;
-            if (newContactMode) {
-                newContactMode = false;
-                // add contact to internal container
-                BeanItem<CreateContactBean> contact = (BeanItem<CreateContactBean>) getItemDataSource();
-                CreateContactCommand createCommand = new CreateContactCommand();
-                createCommand.setNewContactName(contact.getBean().getNewName());
-                command = createCommand;
-                message = "Created new contact with name " + contact.getBean().getNewName();
-            } else {
-                BeanItem<ChangeContactNameBean> contact = (BeanItem<ChangeContactNameBean>) getItemDataSource();
-                ChangeContactNameCommand changeCommand = new ChangeContactNameCommand();
-                changeCommand.setContactNewName(contact.getBean().getChangedName());
-                changeCommand.setContactId(contact.getBean().getIdentifier());
-                command = changeCommand;
-                message = "Changed name of contact into " + contact.getBean().getChangedName();
-            }
-            commandBus.dispatch(command);
-            setReadOnly(true);
+            handleSave();
         } else if (source == cancel) {
-            if (newContactMode) {
-                newContactMode = false;
-                setItemDataSource(null);
-            } else {
-                discard();
-            }
-            setReadOnly(true);
+            handleCancel();
+        } else if (source == delete) {
+            handleDelete();
         } else if (source == edit) {
             setReadOnly(false);
-        } else if (source == delete) {
-            setReadOnly(true);
-            BeanItem<ChangeContactNameBean> contact = (BeanItem<ChangeContactNameBean>) getItemDataSource();
-            RemoveContactCommand command = new RemoveContactCommand();
-            command.setContactId(contact.getBean().getIdentifier());
-            commandBus.dispatch(command);
-            message = "Removed the contact with name " + contact.getBean().getChangedName();
         }
-        if (StringUtils.hasText(message)) {
-            getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
-        }
-
     }
 
     @Override
@@ -131,12 +91,81 @@ public class ContactForm extends Form implements Button.ClickListener {
         save.setVisible(!readOnly);
         cancel.setVisible(!readOnly);
         edit.setVisible(readOnly);
+        delete.setVisible(readOnly);
+    }
+
+    /**
+     * Setup the form to create a new Contact
+     */
+    public void addContact() {
+        setItemDataSource(new BeanItem<ContactFormBean>(new ContactFormBean()));
+        newContactMode = true;
+        setReadOnly(false);
+    }
+
+    private void handleDelete() {
+        setReadOnly(true);
+        ContactFormBean contact = obtainContactFormBeanFromDatasource();
+        RemoveContactCommand command = new RemoveContactCommand();
+        command.setContactId(contact.getIdentifier());
+        commandBus.dispatch(command);
+        String message = "Removed the contact with name " + contact.getName();
+        getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
+    }
+
+    private void handleCancel() {
+        if (newContactMode) {
+            newContactMode = false;
+            setItemDataSource(null);
+        } else {
+            discard();
+        }
+        setReadOnly(true);
+    }
+
+    private void handleSave() {
+        String message;
+        if (!isValid()) {
+            return;
+        }
+        commit();
+
+        AbstractOrderCommand command;
+        ContactFormBean contact = obtainContactFormBeanFromDatasource();
+
+        if (newContactMode) {
+            newContactMode = false;
+            // add contact to internal container
+            CreateContactCommand createCommand = new CreateContactCommand();
+            createCommand.setNewContactName(contact.getName());
+            command = createCommand;
+            message = "Created new contact with name " + contact.getName();
+        } else {
+            ChangeContactNameCommand changeCommand = new ChangeContactNameCommand();
+            changeCommand.setContactNewName(contact.getName());
+            changeCommand.setContactId(contact.getIdentifier());
+            command = changeCommand;
+            message = "Changed name of contact into " + contact.getName();
+        }
+        commandBus.dispatch(command);
+        setReadOnly(true);
+        getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
+    }
+
+    private ContactFormBean obtainContactFormBeanFromDatasource() {
+        //noinspection unchecked
+        return ((BeanItem<ContactFormBean>) getItemDataSource()).getBean();
     }
 
 
-    public void addContact() {
-        setItemDataSource(new BeanItem<CreateContactBean>(new CreateContactBean()));
-        newContactMode = true;
-        setReadOnly(false);
+    private void createAndSetFooter() {
+        HorizontalLayout footer = new HorizontalLayout();
+        footer.setSpacing(true);
+        footer.addComponent(save);
+        footer.addComponent(cancel);
+        footer.addComponent(edit);
+        footer.addComponent(delete);
+        footer.setVisible(false);
+        setFooter(footer);
     }
 }

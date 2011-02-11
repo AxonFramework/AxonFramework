@@ -19,18 +19,21 @@ package org.axonframework.examples.addressbook.vaadin.data;
 import java.io.Serializable;
 
 /**
+ * <p>Data bean to support the Contact Form</p>
+ *
  * @author Jettro Coenradie
  */
-public class ChangeContactNameBean implements Serializable {
-    private String changedName;
+public class ContactFormBean implements Serializable {
     private String identifier;
+    private String name;
 
-    public String getChangedName() {
-        return changedName;
+    public ContactFormBean() {
+        this(null, null);
     }
 
-    public void setChangedName(String changedName) {
-        this.changedName = changedName;
+    public ContactFormBean(String identifier, String name) {
+        this.identifier = identifier;
+        this.name = name;
     }
 
     public String getIdentifier() {
@@ -39,5 +42,13 @@ public class ChangeContactNameBean implements Serializable {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
