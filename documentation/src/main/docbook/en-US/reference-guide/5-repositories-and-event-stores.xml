@@ -63,7 +63,8 @@
                 strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
                 the second thread saving an aggregate will receive a
                     <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
-                access to the aggregate alltogether.</para>
+                access to the aggregate alltogether. The pessimistic locking strategy is the default
+                strategy.</para>
             <para><warning>
                     <title>Event ordering and optimistic locking strategy</title>
                 <para>Note that the optimistic lock doesn't lock any threads at all. While this reduces contention, it also means
