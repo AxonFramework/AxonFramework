@@ -259,10 +259,15 @@
                     <code>SagaRepository</code> to inject resources into a Saga. Axon provides a
                     <code>SpringResourceInjector</code>, which injects annotated fields and methods
                 with Resources from the Application Context.</para>
-            <para>Since resources should not be persisted with the Saga, make sure to add the
-                    <code>transient</code> keyword to those fields. This will prevent the
-                serialization mechanism to attempt to write the contents of these fields to the
-                repository.</para>
+            
+                <tip>
+                    <title>Mark fields holding injected resources <code>transient</code></title>
+                    <para>Since resources should not be persisted with the Saga, make sure to add
+                    the <code>transient</code> keyword to those fields. This will prevent the
+                    serialization mechanism to attempt to write the contents of these fields to the
+                    repository. The repository will automatically re-inject the required resources
+                    after a Saga has been deserialized.</para></tip>
+            
         </sect2>
     </sect1>
     <sect1>
@@ -329,6 +334,45 @@
         another.fq.ClassName
 	&lt;/axon:types>
 &lt;/axon:saga-manager></programlisting>
+            </simplesect>
+            <simplesect>
+                <title>Asynchronous Event Handling for Sagas</title>
+                <para>As with Event Listeners, it is also possible to asynchronously handle events
+                    for sagas. To handle events asynchronously, the SagaManager needs to be
+                    configured with an <code>Executor</code> implementation. The
+                        <code>Executor</code> supplies the threads needed to process the events
+                    asynchronously. Ofter, you'll want to use a thread pool. You may, if you want,
+                    share this thread pool with other asynchronous activities.</para>
+                <para>When an executor is provided, the SagaManager will automatically use it to
+                    find associated Saga instances and dispatch the events each of these instances.
+                    The SagaManager will guarantee that for each Saga instance, all events are
+                    processed in the order they arrive. For optimization purposes, this guarantee
+                    does not count in between Sagas.</para>
+                <para>Because Transactions are often Thread bound, you may need to configure a
+                    Transaction Manager with the SagaManager. This transaction manager is invoked
+                    before and after each invocation to the Saga Repository and before and after
+                    each batch of Events has been processed by the Saga itself. The Transaction
+                    Manager has the opportunity to configure the batch size each time a transaction
+                    starts. The batch size describes the number of Events that a Saga may process
+                    before the transaction is committed. This mechanism can be compared to the
+                    mechanism for Event Listeners, desribed in <xref linkend="transactionmanager"
+                    />.</para>
+                <para>In a Spring application context, a Saga Manager can be marked as asynchronous
+                    by adding the <code>executor</code> and optionally the
+                        <code>transaction-manager</code> attributes to the <code>saga-manager</code>
+                    element, as shown below.
+                    <programlisting language="java">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
+                   saga-repository="sagaRepository" event-bus="eventBus"
+                   executor="myThreadPool" transaction-manager="txManager">
+	&lt;axon:types>
+		fully.qualified.ClassName,
+        another.fq.ClassName
+	&lt;/axon:types>
+	&lt;/axon:saga-manager></programlisting>The
+                    transaction-manager should point to a <code>PlatformTransactionManager</code>,
+                    Spring's interface for transaction managers. Generally you can use the same
+                    transaction manager as the other components in your application (e.g.
+                        <code>JpaTransactionManager</code>).</para>
             </simplesect>
         </sect2>
         <sect2>
