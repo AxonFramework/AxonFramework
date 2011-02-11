@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
  * reattempt saving the aggregate again. If the lock is available, the thread automatically takes back the lock. If,
  * however, another thread has obtained the lock first, a ConcurrencyException is thrown.
  *
- * @author Allard Buijze
  * @param <T> The type that this aggregate stores
+ * @author Allard Buijze
  * @since 0.3
  */
 public abstract class LockingRepository<T extends AggregateRoot> extends AbstractRepository<T> {
@@ -163,9 +163,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
 
         @Override
         public void onCleanup() {
-            if (lockManager.validateLock(aggregate)) {
-                lockManager.releaseLock(aggregate.getIdentifier());
-            }
+            lockManager.releaseLock(aggregate.getIdentifier());
         }
     }
 }

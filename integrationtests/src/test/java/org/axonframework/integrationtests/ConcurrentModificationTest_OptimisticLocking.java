@@ -18,6 +18,7 @@ package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
@@ -28,15 +29,21 @@ import org.axonframework.integrationtests.eventhandling.RegisteringEventHandler;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Log4jConfigurer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -46,9 +53,11 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
         "/META-INF/spring/infrastructure-context.xml",
-        "/META-INF/spring/application-context-pessimistic.xml"})
+        "/META-INF/spring/application-context-optimistic.xml"})
 @Transactional
-public class ConcurrentModificationTest_PessimisticLocking implements Thread.UncaughtExceptionHandler {
+public class ConcurrentModificationTest_OptimisticLocking implements Thread.UncaughtExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(ConcurrentModificationTest_OptimisticLocking.class);
 
     @Autowired
     private CommandBus commandBus;
@@ -58,6 +67,7 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
 
     private List<Throwable> uncaughtExceptions = new ArrayList<Throwable>();
     private static final int THREAD_COUNT = 50;
+    private static final int COMMAND_PER_THREAD_COUNT = 20;
 
     @Before
     public void clearUnitsOfWork() {
@@ -76,40 +86,90 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
      */
     @Test
     public void testConcurrentModifications() throws Exception {
+        Log4jConfigurer.initLogging("classpath:log4j_silenced.properties");
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
         final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);
+        final CountDownLatch starter = new CountDownLatch(1);
+
+        final AtomicInteger successCounter = new AtomicInteger();
+        final AtomicInteger failCounter = new AtomicInteger();
         for (int t = 0; t < THREAD_COUNT; t++) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
-                        cdl.countDown();
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
+                        starter.await();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
+                    for (int t = 0; t < COMMAND_PER_THREAD_COUNT; t++) {
+                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), new VoidCallback() {
+                            @Override
+                            protected void onSuccess() {
+                                successCounter.incrementAndGet();
+                            }
+
+                            @Override
+                            public void onFailure(Throwable cause) {
+                                failCounter.incrementAndGet();
+                            }
+                        });
+                    }
+                    cdl.countDown();
                 }
             });
-            thread.setUncaughtExceptionHandler(ConcurrentModificationTest_PessimisticLocking.this);
+            thread.setUncaughtExceptionHandler(ConcurrentModificationTest_OptimisticLocking.this);
             thread.start();
         }
-        cdl.await(THREAD_COUNT / 2, TimeUnit.SECONDS);
-        assertEquals(0, uncaughtExceptions.size());
-        assertEquals(THREAD_COUNT * 2 + 1, registeringEventHandler.getCapturedEvents().size());
-        validateDispatchingOrder();
+        starter.countDown();
+        cdl.await((THREAD_COUNT * COMMAND_PER_THREAD_COUNT) / 4, TimeUnit.SECONDS);
+        if (uncaughtExceptions.size() > 0) {
+            System.out.println("*** Uncaught Exceptions ***");
+            for (Throwable uncaught : uncaughtExceptions) {
+                uncaught.printStackTrace();
+            }
+        }
+        assertEquals("Got exceptions", 0, uncaughtExceptions.size());
+        assertEquals(successCounter.get() + 1, registeringEventHandler.getCapturedEvents().size());
+        assertEquals(THREAD_COUNT * COMMAND_PER_THREAD_COUNT, successCounter.get(), failCounter.get());
+
+        reportOutOfSyncEvents();
+
+        logger.info("Results: {} successful, {} failed.", successCounter.get(), failCounter.get());
+
+        // to prove that all locks are properly cleared, this command must succeed.
+        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), new VoidCallback() {
+            @Override
+            protected void onSuccess() {
+
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                cause.printStackTrace();
+                fail("Should be succesful. Is there a lock hanging?");
+            }
+        });
     }
 
-    private void validateDispatchingOrder() {
+    private void reportOutOfSyncEvents() {
+        if (!logger.isInfoEnabled()) {
+            return;
+        }
         Long expectedSequenceNumber = 0L;
+        Map<Long, Long> outOfSyncs = new HashMap<Long, Long>();
         for (Event event : registeringEventHandler.getCapturedEvents()) {
             assertTrue(event instanceof DomainEvent);
-            assertEquals("Events are dispatched in the wrong order!",
-                         expectedSequenceNumber,
-                         ((DomainEvent) event).getSequenceNumber());
+            Long actual = ((DomainEvent) event).getSequenceNumber();
+            if (!expectedSequenceNumber.equals(actual)) {
+                outOfSyncs.put(expectedSequenceNumber, actual);
+            }
             expectedSequenceNumber++;
+        }
+        for (Map.Entry<Long, Long> entry : outOfSyncs.entrySet()) {
+            logger.info(String.format("Got %s, where expected %s", entry.getValue(), entry.getKey()));
         }
     }
 
