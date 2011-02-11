@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,7 +43,7 @@ public class AsynchronousSagaExecutor
      * @param executor           The executor that processes the tasks
      */
     public AsynchronousSagaExecutor(Executor executor, TransactionManager transactionManager) {
-        super(executor, transactionManager, new SageSequencingPolicy());
+        super(executor, transactionManager, new SagaSequencingPolicy());
     }
 
     @Override
@@ -61,7 +61,7 @@ public class AsynchronousSagaExecutor
         task.execute();
     }
 
-    private static class SageSequencingPolicy implements SequencingPolicy<Task> {
+    private static class SagaSequencingPolicy implements SequencingPolicy<Task> {
         @Override
         public Object getSequenceIdentifierFor(Task task) {
             return task.getSequenceId();
