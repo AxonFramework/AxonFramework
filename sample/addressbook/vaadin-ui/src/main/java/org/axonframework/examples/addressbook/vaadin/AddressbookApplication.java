@@ -34,7 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author Jettro Coenradie
  */
 public class AddressbookApplication extends Application
-        implements Button.ClickListener, Property.ValueChangeListener, ItemClickEvent.ItemClickListener {
+        implements Button.ClickListener, Property.ValueChangeListener, ItemClickEvent.ItemClickListener, ContactForm.CommitListener {
 
     private Button newContact = new Button("Add contact");
     private Button search = new Button("Search");
@@ -78,6 +78,7 @@ public class AddressbookApplication extends Application
         tree.addListener((ItemClickEvent.ItemClickListener) this);
         getMainWindow().setContent(verticalLayout);
         setMainComponent(getListView());
+
     }
 
     private Window getHelpWindow() {
@@ -109,6 +110,8 @@ public class AddressbookApplication extends Application
             contactList.setContainerDataSource(contactContainer);
             contactList.addListener((Property.ValueChangeListener) this);
             contactForm = new ContactForm(commandBus);
+            contactForm.addListener((ContactForm.CommitListener) this);
+            contactForm.addListener((Property.ValueChangeListener) this);
             listView = new ListView(contactList, contactForm);
         }
         contactContainer.refreshContent();
@@ -172,4 +175,8 @@ public class AddressbookApplication extends Application
         }
     }
 
+    @Override
+    public void formIsCommitted(ContactForm.FormIsSuccessfullyCommittedEvent event) {
+        showListView();
+    }
 }

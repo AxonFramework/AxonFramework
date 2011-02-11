@@ -19,16 +19,15 @@ package org.axonframework.examples.addressbook.vaadin.ui;
 import com.vaadin.data.Item;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.terminal.ThemeResource;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.Form;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Window;
+import com.vaadin.ui.*;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.examples.addressbook.vaadin.data.ContactFormBean;
 import org.axonframework.sample.app.api.AbstractOrderCommand;
 import org.axonframework.sample.app.api.ChangeContactNameCommand;
 import org.axonframework.sample.app.api.CreateContactCommand;
 import org.axonframework.sample.app.api.RemoveContactCommand;
+
+import java.io.Serializable;
 
 /**
  * <p>Form that can be used to create new contacts, change the details of an existing contact and to remove a contact.
@@ -148,6 +147,7 @@ public class ContactForm extends Form implements Button.ClickListener {
             message = "Changed name of contact into " + contact.getName();
         }
         commandBus.dispatch(command);
+        fireEvent(new FormIsSuccessfullyCommittedEvent(this));
         setReadOnly(true);
         getApplication().getMainWindow().showNotification(message, Window.Notification.TYPE_TRAY_NOTIFICATION);
     }
@@ -167,5 +167,46 @@ public class ContactForm extends Form implements Button.ClickListener {
         footer.addComponent(delete);
         footer.setVisible(false);
         setFooter(footer);
+    }
+
+
+    /*
+        EVENTS
+     */
+    public class FormIsSuccessfullyCommittedEvent extends Component.Event {
+        private String name;
+        private String identifier;
+
+        /**
+         * Constructs a new event with the specified source component.
+         *
+         * @param source the source component of the event
+         */
+        public FormIsSuccessfullyCommittedEvent(Component source) {
+            super(source);
+            ContactFormBean contactFormBean = obtainContactFormBeanFromDatasource();
+            name = contactFormBean.getName();
+            identifier = contactFormBean.getIdentifier();
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    public interface CommitListener extends Serializable {
+        public void formIsCommitted(FormIsSuccessfullyCommittedEvent event);
+    }
+
+    public void addListener(CommitListener listener) {
+        addListener(FormIsSuccessfullyCommittedEvent.class, listener, "formIsCommitted");
+    }
+
+    public void removeListener(CommitListener listener) {
+        removeListener(FormIsSuccessfullyCommittedEvent.class, listener, "formIsCommitted");
     }
 }
