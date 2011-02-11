@@ -28,15 +28,15 @@ import org.slf4j.LoggerFactory;
  * modifications of persisted aggregates. Unless there is a locking mechanism present in the underlying persistence
  * environment, it is recommended to use a LockingRepository (or one of its subclasses).
  * <p/>
- * The LockingRepository can be initialized with two strategies: <ul><li><em>Optimistic Locking</em> strategy (default):
- * This strategy performs better than the pessimistic one, but you will only discover a concurrency issue at the time a
+ * The LockingRepository can be initialized with two strategies: <ul><li><em>Optimistic Locking</em> strategy: This
+ * strategy performs better than the pessimistic one, but you will only discover a concurrency issue at the time a
  * thread tries to save an aggregate. If another thread has saved the same aggregate earlier (but after the first thread
  * loaded its copy), an exception is thrown. The only way to recover from this exception is to load the aggregate from
- * the repository again, replay all actions on it and save it. <li><em>Pessimistic Locking</em> strategy: Pessimistic
- * Locking requires an exclusive lock to be handed to a thread loading an aggregate before the aggregate is handed over.
- * This means that, once an aggregate is loaded, it has full exclusive access to it, until it saves the aggregate. With
- * this strategy, it is important that -no matter what- the aggregate is saved to the repository. Any failure to do so
- * will result in threads blocking endlessly, waiting for a lock that might never be released. </ul>
+ * the repository again, replay all actions on it and save it. <li><em>Pessimistic Locking</em> strategy (default):
+ * Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before the aggregate is
+ * handed over. This means that, once an aggregate is loaded, it has full exclusive access to it, until it saves the
+ * aggregate. With this strategy, it is important that -no matter what- the aggregate is saved to the repository. Any
+ * failure to do so will result in threads blocking endlessly, waiting for a lock that might never be released. </ul>
  * <p/>
  * Important: If an exception is thrown during the saving process, any locks held are released. The calling thread may
  * reattempt saving the aggregate again. If the lock is available, the thread automatically takes back the lock. If,
@@ -53,10 +53,10 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
     private final LockManager lockManager;
 
     /**
-     * Initialize a repository with an optimistic locking strategy.
+     * Initialize a repository with a pessimistic locking strategy.
      */
     protected LockingRepository() {
-        this(LockingStrategy.OPTIMISTIC);
+        this(LockingStrategy.PESSIMISTIC);
     }
 
     /**
