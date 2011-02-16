@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class LegacyAxonEventUpcaster implements EventUpcaster<Document> {
                 Element childNode = children.next();
                 String childName = childNode.getName();
                 if ("eventIdentifier".equals(childName)) {
-                    addMetaDataEntry(metaData, "_eventIdentifier", childNode.getTextTrim(), "uuid");
+                    addMetaDataEntry(metaData, "_identifier", childNode.getTextTrim(), "uuid");
                     rootNode.remove(childNode);
                 } else if ("timestamp".equals(childName)) {
                     addMetaDataEntry(metaData, "_timestamp", childNode.getTextTrim(), "localDateTime");
