@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.Period;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 
@@ -68,6 +70,7 @@ public class LegacyAxonEventUpcasterTest {
         assertEquals("62daf7f6-c3ab-4179-a212-6b1da2a6ec72", testEvent.getAggregateIdentifier().asString());
         assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
         assertNull(testEvent.getMetaDataValue("someValueThatDoesNotExist"));
+        assertNotNull(testEvent.hashCode());
     }
 
     /**
@@ -83,7 +86,7 @@ public class LegacyAxonEventUpcasterTest {
                 "<org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest_-TestEvent eventRevision=\"0\">"
                         + "<metaData><values>"
                         + "<entry><string>_timestamp</string><localDateTime>2010-09-15T21:43:01.000</localDateTime></entry>"
-                        + "<entry><string>_eventIdentifier</string><uuid>36f20a77-cdba-4e63-8c02-825486aad301</uuid></entry>"
+                        + "<entry><string>_identifier</string><uuid>36f20a77-cdba-4e63-8c02-825486aad301</uuid></entry>"
                         + "<entry><string>someKey</string><string>someValue</string></entry>"
                         + "</values></metaData>"
                         + "<sequenceNumber>0</sequenceNumber>"
@@ -98,6 +101,7 @@ public class LegacyAxonEventUpcasterTest {
         assertEquals("62daf7f6-c3ab-4179-a212-6b1da2a6ec72", testEvent.getAggregateIdentifier().asString());
         assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
         assertEquals("someValue", testEvent.getMetaDataValue("someKey"));
+        assertNotNull(testEvent.hashCode());
     }
 
     @Test
