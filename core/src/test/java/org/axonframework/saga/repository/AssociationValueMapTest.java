@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,16 @@
 package org.axonframework.saga.repository;
 
 import org.axonframework.saga.AssociationValue;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -102,14 +104,11 @@ public class AssociationValueMapTest {
         }
 
         assertEquals(10000, testSubject.size());
-        long t1 = System.currentTimeMillis();
         for (AssociationValue item : usedAssociations) {
             Set<String> actualResult = testSubject.findSagas(item);
             assertEquals("Failure on item: " + usedAssociations.indexOf(item), 1, actualResult.size());
             assertEquals(item.getKey(), actualResult.iterator().next());
         }
-        long t2 = System.currentTimeMillis();
-        System.out.println("Elapsed time while searching (ms): " + (t2 - t1));
     }
 
     private static class FixedHashAndToString {

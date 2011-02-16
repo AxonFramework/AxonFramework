@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,16 +21,13 @@ import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider
 import com.thoughtworks.xstream.io.binary.BinaryStreamReader;
 import com.thoughtworks.xstream.io.binary.BinaryStreamWriter;
 import org.axonframework.serializer.GenericXStreamSerializer;
-import org.junit.*;
+import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Allard Buijze
@@ -51,8 +48,6 @@ public class JavaSerializationTest {
         String xml = new String(baos.toByteArray(), UTF8);
         assertNotNull(xml);
 
-        printResult(xml);
-
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate)
                 serializer.deserialize(new BinaryStreamReader(new ByteArrayInputStream(baos.toByteArray())));
 
@@ -70,8 +65,6 @@ public class JavaSerializationTest {
         serializer.serialize(aggregateRoot, baos);
         String xml = new String(baos.toByteArray(), UTF8);
         assertNotNull(xml);
-
-        printResult(xml);
 
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(new ByteArrayInputStream(
                 baos.toByteArray()));
@@ -91,8 +84,6 @@ public class JavaSerializationTest {
         String xml = new String(baos.toByteArray(), UTF8);
         assertNotNull(xml);
 
-        printResult(xml);
-
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(new ByteArrayInputStream(
                 baos.toByteArray()));
 
@@ -108,17 +99,10 @@ public class JavaSerializationTest {
         byte[] serialized = baos.toByteArray();
         assertNotNull(serialized);
 
-        System.out.println("Size: " + serialized.length);
-
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) new ObjectInputStream(
                 new ByteArrayInputStream(serialized)).readObject();
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
-    }
-
-    private void printResult(String xml) {
-        System.out.println(xml);
-        System.out.println("Size: " + xml.length());
     }
 
     private void validateAggregateCondition(StubAnnotatedAggregate original, StubAnnotatedAggregate unmarshalled) {

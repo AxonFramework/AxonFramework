@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,8 @@
 package org.axonframework.domain;
 
 import org.axonframework.serializer.GenericXStreamSerializer;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,8 +50,6 @@ public class AbstractAggregateRootTest {
         GenericXStreamSerializer serializer = new GenericXStreamSerializer();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         serializer.serialize(testSubject, baos);
-        System.out.println(new String(baos.toByteArray(), "UTF-8"));
-        System.out.println(baos.size());
 
         assertEquals(0, deserialized(baos).getUncommittedEventCount());
         assertFalse(deserialized(baos).getUncommittedEvents().hasNext());

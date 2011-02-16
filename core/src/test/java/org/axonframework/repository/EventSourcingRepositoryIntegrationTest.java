@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,8 +27,9 @@ import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.rules.*;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -73,11 +74,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         initializeRepository(LockingStrategy.OPTIMISTIC);
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
         assertTrue("Expected at least one successful modification. Got " + getSuccessfulModifications(),
-                   getSuccessfulModifications() >= 1);
+                getSuccessfulModifications() >= 1);
         int expectedEventCount = getSuccessfulModifications() * 2;
         assertEquals(expectedEventCount, lastSequenceNumber);
-        System.out.println("Successful modifications: " + getSuccessfulModifications());
-
         verify(mockEventBus, atLeast(2)).publish(isA(DomainEvent.class));
     }
 
@@ -126,8 +125,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         while (committedEvents.hasNext()) {
             DomainEvent nextEvent = committedEvents.next();
             assertEquals("Events are not stored sequentially. Most likely due to unlocked concurrent access.",
-                         new Long(++lastSequenceNumber),
-                         nextEvent.getSequenceNumber());
+                    new Long(++lastSequenceNumber),
+                    nextEvent.getSequenceNumber());
         }
         return lastSequenceNumber;
     }

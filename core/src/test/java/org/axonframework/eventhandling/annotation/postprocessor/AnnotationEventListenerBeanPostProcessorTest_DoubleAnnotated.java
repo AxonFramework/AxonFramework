@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +19,9 @@ package org.axonframework.eventhandling.annotation.postprocessor;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -32,7 +33,8 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests to verify that Spring-generated proxy beans are also neatly proxied. Relates to issue #111
@@ -75,13 +77,4 @@ public class AnnotationEventListenerBeanPostProcessorTest_DoubleAnnotated {
         assertEquals(2, transactionalListener.getInvocations());
     }
 
-    private void printHierarchy(Class<?> aClass) {
-        System.out.println(aClass.getName());
-        for (Class intf : aClass.getInterfaces()) {
-            System.out.println(intf.getName());
-        }
-        if (!aClass.equals(Object.class)) {
-            printHierarchy(aClass.getSuperclass());
-        }
-    }
 }
