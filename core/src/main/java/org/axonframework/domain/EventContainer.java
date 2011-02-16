@@ -20,8 +20,8 @@ import org.axonframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Container for events related to a single aggregate. All events added to this container will automatically be assigned
@@ -36,9 +36,10 @@ class EventContainer implements Serializable {
 
     private static final long serialVersionUID = -3981639335939587822L;
 
-    private final Deque<DomainEvent> events = new LinkedList<DomainEvent>();
+    private final List<DomainEvent> events = new LinkedList<DomainEvent>();
     private final AggregateIdentifier aggregateIdentifier;
-    private Long lastCommittedSequenceNumber;
+    private Long lastSequenceNumber;
+    private long firstSequenceNumber = 0;
 
     /**
      * Initialize an EventContainer for an aggregate with the given <code>aggregateIdentifier</code>. This identifier
@@ -61,8 +62,8 @@ class EventContainer implements Serializable {
      */
     public void addEvent(DomainEvent event) {
         Assert.isTrue(event.getSequenceNumber() == null
-                              || getLastSequenceNumber() == null
-                              || event.getSequenceNumber().equals(getLastSequenceNumber() + 1),
+                              || lastSequenceNumber == null
+                              || event.getSequenceNumber().equals(lastSequenceNumber + 1),
                       "The given event's sequence number is discontinuous");
 
         Assert.isTrue(event.getAggregateIdentifier() == null
@@ -75,20 +76,29 @@ class EventContainer implements Serializable {
 
         if (event.getSequenceNumber() == null) {
             event.setSequenceNumber(newSequenceNumber());
+        } else {
+            lastSequenceNumber = event.getSequenceNumber();
         }
 
         events.add(event);
     }
 
     /**
-     * Read the events inside this container using a {@link org.axonframework.domain.DomainEventStream}. The returned
-     * stream is a snapshot of the uncommitted events in the aggregate at the time of the invocation. Once returned,
-     * newly applied events are not accessible from the returned event stream.
+     * Read the events inside this container using a {@link org.axonframework.domain.DomainEventStream}.
      *
      * @return a DomainEventStream providing access to the events in this container
      */
     public DomainEventStream getEventStream() {
-        return new SimpleDomainEventStream(new ArrayList<DomainEvent>(events));
+        return new SimpleDomainEventStream(events);
+    }
+
+    /**
+     * Returns a List of DomainEvents contained in this container instance.
+     *
+     * @return a List of DomainEvents contained in this container instance
+     */
+    public List<DomainEvent> getEvents() {
+        return new ArrayList<DomainEvent>(events);
     }
 
     /**
@@ -107,7 +117,8 @@ class EventContainer implements Serializable {
      */
     public void initializeSequenceNumber(Long lastKnownSequenceNumber) {
         Assert.state(events.size() == 0, "Cannot set first sequence number if events have already been added");
-        lastCommittedSequenceNumber = lastKnownSequenceNumber;
+        this.firstSequenceNumber = lastKnownSequenceNumber == null ? 0 : lastKnownSequenceNumber + 1;
+        this.lastSequenceNumber = lastKnownSequenceNumber;
     }
 
     /**
@@ -116,27 +127,13 @@ class EventContainer implements Serializable {
      * @return the sequence number of the last event
      */
     public Long getLastSequenceNumber() {
-        if (events.isEmpty()) {
-            return lastCommittedSequenceNumber;
-        } else {
-            return events.peekLast().getSequenceNumber();
-        }
-    }
-
-    /**
-     * Returns the sequence number of the last committed event, or <code>null</code> if no events have been committed.
-     *
-     * @return the sequence number of the last committed event
-     */
-    public Long getLastCommittedSequenceNumber() {
-        return lastCommittedSequenceNumber;
+        return lastSequenceNumber;
     }
 
     /**
      * Clears the events in this container. The sequence number is not modified by this call.
      */
-    public void commit() {
-        lastCommittedSequenceNumber = getLastSequenceNumber();
+    public void clear() {
         events.clear();
     }
 
@@ -150,10 +147,11 @@ class EventContainer implements Serializable {
     }
 
     private long newSequenceNumber() {
-        Long lastSequenceNumber = getLastSequenceNumber();
         if (lastSequenceNumber == null) {
-            return 0;
+            lastSequenceNumber = firstSequenceNumber;
+        } else {
+            lastSequenceNumber++;
         }
-        return lastSequenceNumber + 1;
+        return lastSequenceNumber;
     }
 }

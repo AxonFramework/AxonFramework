@@ -62,17 +62,8 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         }
     }
 
-    /**
-     * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onCleanup()} notification to all registered
-     * listeners.
-     */
     protected abstract void notifyListenersCleanup();
 
-    /**
-     * Send a {@link UnitOfWorkListener#onRollback(Throwable)} notification to all registered listeners.
-     *
-     * @param cause The cause of the rollback
-     */
     protected abstract void notifyListenersRollback(Throwable cause);
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,6 @@ public enum LockingStrategy {
     /**
      * Indicator of an optimistic locking strategy. Concurrent access is not prevented. Instead, when concurrent
      * modifications are detected, an exception is thrown.
-     * <p/>
-     * <strong>Important note</strong>: in a highly concurrent environment (i.e. multiple threads acting on the same
-     * aggregate simultaneously), the optimistic locking strategy cannot guarantee that events are dispatched in the
-     * exact same order as they are generated. Whether this occurs or not depends highly on the CPU architecture and the
-     * scheduling of threads. For full ordering guarantee, regardless hardware architecture, use the pessimistic locking
-     * strategy.
      *
      * @see LockingRepository
      * @see ConcurrencyException

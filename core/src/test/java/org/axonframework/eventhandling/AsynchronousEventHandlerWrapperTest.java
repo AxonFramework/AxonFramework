@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,23 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.Event;
+import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.junit.*;
+import org.springframework.util.StopWatch;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -43,11 +50,13 @@ public class AsynchronousEventHandlerWrapperTest {
         executorService.setMaximumPoolSize(100);
         executorService.setKeepAliveTime(1, TimeUnit.MINUTES);
         testSubject = new AsynchronousEventHandlerWrapper(mockEventListener,
-                new SequentialPerAggregatePolicy(), executorService);
+                                                          new SequentialPerAggregatePolicy(), executorService);
     }
 
     @Test
     public void testEventsAreExecutedInOrder() throws InterruptedException {
+        StopWatch sw = new StopWatch();
+        sw.start("Generate events");
         AggregateIdentifier[] groupIds = new AggregateIdentifier[100];
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch finish = new CountDownLatch(groupIds.length);
@@ -55,10 +64,20 @@ public class AsynchronousEventHandlerWrapperTest {
         for (int t = 0; t < groupIds.length; t++) {
             groupIds[t] = startEventDispatcher(start, finish, eventsPerGroup);
         }
+        sw.stop();
+        sw.start("Dispatching events");
         start.countDown();
         finish.await();
+        sw.stop();
+        long taskTime = sw.getTaskInfo()[sw.getTaskCount() - 1].getTimeMillis();
+        sw.start("Wait for executor shutdown");
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
+        sw.stop();
+        System.out.println(String.format("Dispatched %s items in %s milliseconds",
+                                         (eventsPerGroup * groupIds.length),
+                                         taskTime));
+        System.out.println(sw.prettyPrint());
         BlockingQueue<Event> actualEventOrder = mockEventListener.events;
         assertEquals("Expected all events to be dispatched", eventsPerGroup * groupIds.length, actualEventOrder.size());
 
@@ -68,8 +87,8 @@ public class AsynchronousEventHandlerWrapperTest {
                 DomainEvent domainEvent = (DomainEvent) event;
                 if (groupId.equals(domainEvent.getAggregateIdentifier())) {
                     assertEquals("Expected all events of same aggregate to be handled sequentially",
-                            ++lastFromGroup,
-                            (long) domainEvent.getSequenceNumber());
+                                 ++lastFromGroup,
+                                 (long) domainEvent.getSequenceNumber());
                 }
             }
         }

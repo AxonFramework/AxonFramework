@@ -27,7 +27,6 @@ import org.axonframework.util.ReflectionUtils;
 
 import java.util.Collection;
 import java.util.UUID;
-import javax.persistence.MappedSuperclass;
 
 /**
  * Abstract convenience class to be extended by all aggregate roots. The AbstractEventSourcedAggregateRoot tracks all
@@ -37,7 +36,6 @@ import javax.persistence.MappedSuperclass;
  * @author Allard Buijze
  * @since 0.1
  */
-@MappedSuperclass
 public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregateRoot
         implements EventSourcedAggregateRoot {
 
@@ -152,9 +150,4 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * @param event The event to handle
      */
     protected abstract void handle(DomainEvent event);
-
-    @Override
-    public Long getVersion() {
-        return getLastCommittedEventSequenceNumber();
-    }
 }

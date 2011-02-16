@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,20 +23,20 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.junit.*;
-import org.mockito.*;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 
 /**
@@ -50,7 +50,7 @@ public class FileSystemEventStoreTest {
     @Before
     public void setUp() {
         eventStore = new FileSystemEventStore(new XStreamEventSerializer());
-        eventStore.setBaseDir(new File("target/"));
+        eventStore.setBaseDir(new FileSystemResource("target/"));
 
         aggregateIdentifier = new UUIDAggregateIdentifier();
     }
@@ -102,33 +102,48 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testRead_FileNotReadable() throws IOException {
-        EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
-        InputStream mockInputStream = mock(InputStream.class);
-        when(mockEventFileResolver.eventFileExists(isA(String.class), isA(AggregateIdentifier.class))).thenReturn(true);
-        when(mockEventFileResolver.openEventFileForReading(isA(String.class), isA(AggregateIdentifier.class)))
-                .thenReturn(mockInputStream);
-        IOException exception = new IOException("Mock Exception");
-        when(mockInputStream.read()).thenThrow(exception);
-        when(mockInputStream.read(Matchers.<byte[]>any())).thenThrow(exception);
-        when(mockInputStream.read(Matchers.<byte[]>any(), anyInt(), anyInt())).thenThrow(exception);
-        eventStore.setEventFileResolver(mockEventFileResolver);
+        Resource mockResource = mock(Resource.class);
+        when(mockResource.exists()).thenReturn(true);
+        when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
+        IOException exception = new IOException("Mock exception");
+        when(mockResource.getInputStream()).thenThrow(exception);
+        eventStore.setBaseDir(mockResource);
 
         try {
             eventStore.readEvents("test", new UUIDAggregateIdentifier());
             fail("Expected an exception");
-        } catch (EventStoreException e) {
+        }
+        catch (EventStoreException e) {
             assertSame(exception, e.getCause());
+        }
+    }
+
+    @Test
+    public void testRead_FileDoesNotExist() throws IOException {
+        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+        Resource mockResource = mock(Resource.class);
+        when(mockResource.exists()).thenReturn(true, false); // true for dir, false for file
+        when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
+        eventStore.setBaseDir(mockResource);
+
+        try {
+            eventStore.readEvents("test", aggregateId);
+            fail("Expected an exception");
+        }
+        catch (EventStreamNotFoundException e) {
+            assertTrue(e.getMessage().contains(aggregateId.toString()));
         }
     }
 
     @Test
     public void testWrite_FileDoesNotExist() throws IOException {
         AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+        Resource mockResource = mock(Resource.class);
+        when(mockResource.exists()).thenReturn(true, false); // true for dir, false for file
+        when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
         IOException exception = new IOException("Mock");
-        EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
-        when(mockEventFileResolver.openEventFileForWriting(isA(String.class), isA(AggregateIdentifier.class)))
-                .thenThrow(exception);
-        eventStore.setEventFileResolver(mockEventFileResolver);
+        when(mockResource.getFile()).thenThrow(exception);
+        eventStore.setBaseDir(mockResource);
 
         StubDomainEvent event1 = new StubDomainEvent(aggregateId, 0);
         StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
@@ -138,8 +153,35 @@ public class FileSystemEventStoreTest {
         try {
             eventStore.appendEvents("test", stream);
             fail("Expected an exception");
-        } catch (EventStoreException e) {
+        }
+        catch (EventStoreException e) {
             assertEquals(exception, e.getCause());
+        }
+    }
+
+    @Test
+    public void testWrite_DirectoryCannotBeCreated() throws IOException {
+        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+        Resource mockResource = mock(Resource.class);
+        File mockFile = mock(File.class);
+        when(mockResource.exists()).thenReturn(false);
+        when(mockResource.getFile()).thenReturn(mockFile);
+        when(mockFile.mkdirs()).thenReturn(false);
+        when(mockResource.createRelative(isA(String.class))).thenReturn(mockResource);
+
+        eventStore.setBaseDir(mockResource);
+
+        StubDomainEvent event1 = new StubDomainEvent(aggregateId, 0);
+        StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
+        StubDomainEvent event3 = new StubDomainEvent(aggregateId, 2);
+        DomainEventStream stream = new SimpleDomainEventStream(event1, event2, event3);
+
+        try {
+            eventStore.appendEvents("test", stream);
+            fail("Expected an exception");
+        }
+        catch (EventStoreException e) {
+            assertTrue(e.getMessage().contains("could not be created"));
         }
     }
 

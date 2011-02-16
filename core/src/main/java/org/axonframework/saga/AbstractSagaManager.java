@@ -18,22 +18,17 @@ package org.axonframework.saga;
 
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.util.Subscribable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.Executor;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import static java.lang.String.format;
 
 /**
- * Abstract implementation of the SagaManager interface that provides basic functionality required by most SagaManager
- * implementations. Provides support for Saga lifecycle management and asynchronous handling of events.
- *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -46,7 +41,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     private SagaFactory sagaFactory;
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
-    private final SagaHandlerExecutor executionWrapper;
 
     /**
      * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code>.
@@ -59,31 +53,22 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         this.eventBus = eventBus;
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;
-        this.executionWrapper = new SynchronousSagaExecutionWrapper();
-    }
-
-    /**
-     * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code> which handles
-     * the saga lookup and invocation asynchronously using the given <code>executor</code> and
-     * <code>transactionManager</code>.
-     *
-     * @param eventBus           The event bus providing the events to route to sagas.
-     * @param sagaRepository     The repository providing the saga instances.
-     * @param sagaFactory        The factory providing new saga instances
-     * @param executor           The executor providing the threads to process events in
-     * @param transactionManager The transaction manager that manages transactions around event processing
-     */
-    public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory,
-                               Executor executor, TransactionManager transactionManager) {
-        this.eventBus = eventBus;
-        this.sagaRepository = sagaRepository;
-        this.sagaFactory = sagaFactory;
-        this.executionWrapper = new AsynchronousSagaExecutor(executor, transactionManager);
     }
 
     @Override
-    public void handle(final Event event) {
-        executionWrapper.scheduleLookupTask(new SagaLookupAndInvocationTask(event));
+    public void handle(Event event) {
+        Set<Saga> sagas = findSagas(event);
+        for (Saga saga : sagas) {
+            if (synchronizeSagaAccess) {
+                //Saga instance is unique (no two instances will exist inside a JVM with the same identifier)
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (saga) {
+                    invokeSagaHandler(event, saga);
+                }
+            } else {
+                invokeSagaHandler(event, saga);
+            }
+        }
     }
 
     /**
@@ -190,45 +175,5 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
-    }
-
-    private class SagaInvocationTask implements Runnable {
-        private final Saga saga;
-        private final Event event;
-
-        public SagaInvocationTask(Saga saga, Event event) {
-            this.saga = saga;
-            this.event = event;
-        }
-
-        @Override
-        public void run() {
-            if (synchronizeSagaAccess) {
-                //Saga instance is unique (no two instances will exist inside a JVM with the same identifier)
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (saga) {
-                    invokeSagaHandler(event, saga);
-                }
-            } else {
-                invokeSagaHandler(event, saga);
-            }
-        }
-    }
-
-    private class SagaLookupAndInvocationTask implements Runnable {
-        private final Event event;
-
-        public SagaLookupAndInvocationTask(Event event) {
-            this.event = event;
-        }
-
-        @Override
-        public void run() {
-            Set<Saga> sagas = findSagas(event);
-            for (final Saga saga : sagas) {
-                executionWrapper.scheduleEventProcessingTask(saga.getSagaIdentifier(),
-                                                             new SagaInvocationTask(saga, event));
-            }
-        }
     }
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -79,15 +79,12 @@ public class EventProcessingSchedulerTest {
     public void testEventProcessingDelayed_ScheduledExecutorService() {
         StubDomainEvent event1 = new StubDomainEvent(1);
         StubDomainEvent event2 = new StubDomainEvent(2);
-        final TransactionalEventListener listener = mock(TransactionalEventListener.class);
+        TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
-        testSubject = new EventProcessingScheduler<Event>(listener, mockExecutorService,
-                                                          new NullShutdownCallback()) {
-            @Override
-            protected void doHandle(Event event) {
-                listener.handle(event);
-            }
-        };
+        testSubject = new EventProcessingScheduler(listener,
+                                                   listener,
+                                                   mockExecutorService,
+                                                   new NullShutdownCallback());
 
         doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(event1);
         doAnswer(new Answer() {
@@ -119,15 +116,11 @@ public class EventProcessingSchedulerTest {
     public void testEventProcessingDelayed_ExecutorDoesNotSupportScheduling() {
         StubDomainEvent event1 = new StubDomainEvent(1);
         StubDomainEvent event2 = new StubDomainEvent(2);
-        final TransactionalEventListener listener = mock(TransactionalEventListener.class);
+        TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ExecutorService mockExecutorService = mock(ExecutorService.class);
-        testSubject = new EventProcessingScheduler<Event>(listener, mockExecutorService,
-                                                          new NullShutdownCallback()) {
-            @Override
-            protected void doHandle(Event event) {
-                listener.handle(event);
-            }
-        };
+        testSubject = new EventProcessingScheduler(listener, listener,
+                                                   mockExecutorService,
+                                                   new NullShutdownCallback());
 
         doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(event1);
         doAnswer(new Answer() {
@@ -167,15 +160,11 @@ public class EventProcessingSchedulerTest {
     public void testEventProcessingRetried_BeforeTransactionFails() {
         StubDomainEvent event1 = new StubDomainEvent(1);
         StubDomainEvent event2 = new StubDomainEvent(2);
-        final TransactionalEventListener listener = mock(TransactionalEventListener.class);
+        TransactionalEventListener listener = mock(TransactionalEventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
-        testSubject = new EventProcessingScheduler<Event>(listener, mockExecutorService,
-                                                          new NullShutdownCallback()) {
-            @Override
-            protected void doHandle(Event event) {
-                listener.handle(event);
-            }
-        };
+        testSubject = new EventProcessingScheduler(listener, listener,
+                                                   mockExecutorService,
+                                                   new NullShutdownCallback());
 
         doThrow(new RuntimeException("Mock")).doNothing().when(listener)
                 .beforeTransaction(isA(TransactionStatus.class));
@@ -207,14 +196,10 @@ public class EventProcessingSchedulerTest {
 
     private MockEventListener executeEventProcessing(RetryPolicy policy) {
         ExecutorService mockExecutorService = mock(ExecutorService.class);
-        final MockEventListener listener = new MockEventListener(policy);
-        testSubject = new EventProcessingScheduler<Event>(listener, mockExecutorService,
-                                                          new NullShutdownCallback()) {
-            @Override
-            protected void doHandle(Event event) {
-                listener.handle(event);
-            }
-        };
+        MockEventListener listener = new MockEventListener(policy);
+        testSubject = new EventProcessingScheduler(listener, listener,
+                                                   mockExecutorService,
+                                                   new NullShutdownCallback());
 
         doNothing().doThrow(new RejectedExecutionException()).when(mockExecutorService).execute(isA(Runnable.class));
         testSubject.scheduleEvent(new StubDomainEvent());

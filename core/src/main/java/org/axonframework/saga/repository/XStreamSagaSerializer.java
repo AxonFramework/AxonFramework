@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,21 +44,12 @@ public class XStreamSagaSerializer implements SagaSerializer {
     }
 
     /**
-     * Initialize an XStreamSagaSerializer with given <code>charset</code> and a default XStream instance.
-     *
-     * @param charset The character set to use to convert the XML to bytes.
-     */
-    public XStreamSagaSerializer(Charset charset) {
-        serializer = new GenericXStreamSerializer(charset);
-    }
-
-    /**
      * Initialize an XStreamSagaSerializer with UTF-8 character set and the given <code>xStream</code> instance.
      *
      * @param xStream The XStream instance to use. Default converters and aliases will be registered to it.
      */
     public XStreamSagaSerializer(XStream xStream) {
-        serializer = new GenericXStreamSerializer(xStream);
+        this(Charset.forName("UFT-8"), xStream);
     }
 
     /**

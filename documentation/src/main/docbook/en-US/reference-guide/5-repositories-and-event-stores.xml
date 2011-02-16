@@ -63,20 +63,7 @@
                 strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
                 the second thread saving an aggregate will receive a
                     <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
-                access to the aggregate alltogether. The pessimistic locking strategy is the default
-                strategy.</para>
-            <para><warning>
-                    <title>Event ordering and optimistic locking strategy</title>
-                <para>Note that the optimistic lock doesn't lock any threads at all. While this reduces contention, it also means
-                    that the thread scheduler of your underlying architecture (OS, CPU, etc) is free to
-                    schedule threads as it sees fit. In high-concurrent environments (many threads
-                    accessing the same aggregate simultaneously), this could lead to events not being
-                    dispatched in exactly the same order as they are generated. If this guarantee is
-                    important, use pessimistic locking instead.</para>
-                </warning></para>
-            <para>
-                <note>
-                    <title>ConcurrencyException vs ConflictingModificationException</title>
+                access to the aggregate alltogether.<note>
                     <para>Note that there is a clear distinction between a
                             <code>ConcurrencyException</code> and a
                             <code>ConflictingModificationException</code>. The first is used to
@@ -85,8 +72,7 @@
                         indicates that the loaded aggregate contains changes that might not have
                         been seen by the end-user. See <xref linkend="conflict-resolution"/> for
                         more information.</para>
-                </note>
-            </para>
+                </note></para>
             </simplesect>
         <simplesect>
             <title><code>GenericJpaRepository</code></title>
@@ -168,19 +154,6 @@
                 instances of using a constructor, it uses the Spring Application Context to
                 instantiate your aggregates. This will also inject any dependencies in your
                 aggregate.</para>
-        </simplesect>
-        <simplesect>
-            <title><code>HybridJpaRepository</code></title>
-            <para>The <code>HybridJpaRepository</code> is a combination of the
-                    <code>GenericJpaRepository</code> and an Event Sourcing repository. It can only
-                deal with event sourced aggregates, and stores them in a relational model as well as
-                in an event store. When the repository reads an aggregate back in, it uses the
-                relational model exclusively.</para>
-            <para>This repository removes the need for Event Upcasters, making data migrations
-                potentially easier. Since the aggregates are event sourced, you keep the ability to
-                use the given-when-then test fixtures (see <xref linkend="testing"/>). On the other
-                hand, since it doesn't use the event store for reading, it doesn't allow for
-                automated conflict resolution.</para>
         </simplesect>
         </sect1>
         <sect1 xml:id="implementing-an-eventstore">

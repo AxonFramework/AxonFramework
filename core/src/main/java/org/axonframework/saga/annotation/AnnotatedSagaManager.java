@@ -18,7 +18,6 @@ package org.axonframework.saga.annotation;
 
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.GenericSagaFactory;
@@ -30,7 +29,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 /**
  * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike the
@@ -41,8 +39,8 @@ import java.util.concurrent.Executor;
  */
 public class AnnotatedSagaManager extends AbstractSagaManager {
 
-    private final Set<Class<? extends AbstractAnnotatedSaga>> managedSagaTypes = new HashSet<Class<? extends AbstractAnnotatedSaga>>();
-    private final SagaAnnotationInspector inspector = new SagaAnnotationInspector();
+    private Set<Class<? extends AbstractAnnotatedSaga>> managedSagaTypes = new HashSet<Class<? extends AbstractAnnotatedSaga>>();
+    private SagaAnnotationInspector inspector = new SagaAnnotationInspector();
 
     /**
      * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
@@ -57,43 +55,25 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     }
 
     /**
-     * Initialize the AnnotatedSagaManager using the given resources.
+     * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
      *
      * @param sagaRepository The repository providing access to the Saga instances
      * @param sagaFactory    The factory creating new instances of a Saga
      * @param eventBus       The event bus publishing the events
      * @param sagaClasses    The types of Saga that this instance should manage
      */
-    public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory, EventBus eventBus,
+    public AnnotatedSagaManager(SagaRepository sagaRepository,
+                                SagaFactory sagaFactory, EventBus eventBus,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(eventBus, sagaRepository, sagaFactory);
-        managedSagaTypes.addAll(Arrays.asList(sagaClasses));
-    }
-
-    /**
-     * Initialize the AnnotatedSagaManager using the given resources. Saga lookup and processing is done asynchronously
-     * using the given <code>executor</code> and <code>transactionManager</code>.
-     *
-     * @param sagaRepository     The repository providing access to the Saga instances
-     * @param sagaFactory        The factory creating new instances of a Saga
-     * @param eventBus           The event bus publishing the events
-     * @param executor           The executor providing the threads to process events in
-     * @param transactionManager The transaction manager that manages transactions around event processing
-     * @param sagaClasses        The types of Saga that this instance should manage
-     */
-    public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory, EventBus eventBus,
-                                Executor executor,
-                                TransactionManager transactionManager,
-                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        super(eventBus, sagaRepository, sagaFactory, executor, transactionManager);
         managedSagaTypes.addAll(Arrays.asList(sagaClasses));
     }
 
     @Override
     protected Set<Saga> findSagas(Event event) {
         Set<Saga> sagasFound = new HashSet<Saga>();
-        for (Class<? extends AbstractAnnotatedSaga> sagaType : managedSagaTypes) {
-            sagasFound.addAll(findSagas(event, sagaType));
+        for (Class<? extends AbstractAnnotatedSaga> saga : managedSagaTypes) {
+            sagasFound.addAll(findSagas(event, saga));
         }
         return sagasFound;
     }

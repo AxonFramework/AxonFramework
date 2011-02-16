@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,6 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -59,9 +56,9 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private AggregateIdentifier aggregateIdentifier;
     private EventStore eventStore;
 
-    private Collection<DomainEvent> givenEvents;
+    private List<DomainEvent> givenEvents;
 
-    private Deque<DomainEvent> storedEvents;
+    private List<DomainEvent> storedEvents;
     private List<Event> publishedEvents;
     private long sequenceNumber = 0;
 
@@ -125,7 +122,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         return this;
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator when(Object command) {
         ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
@@ -134,7 +130,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     private void clearGivenWhenState() {
-        storedEvents = new LinkedList<DomainEvent>();
+        storedEvents = new ArrayList<DomainEvent>();
         publishedEvents = new ArrayList<Event>();
         givenEvents = new ArrayList<DomainEvent>();
         sequenceNumber = 0;
@@ -186,18 +182,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         public void appendEvents(String type, DomainEventStream events) {
             while (events.hasNext()) {
                 DomainEvent next = events.next();
-                if (!storedEvents.isEmpty()) {
-                    DomainEvent lastEvent = storedEvents.peekLast();
-                    if (!lastEvent.getAggregateIdentifier().equals(next.getAggregateIdentifier())) {
-                        throw new EventStoreException("Writing events for an unexpected aggregate. This could "
-                                                              + "indicate that a wrong aggregate is being triggered.");
-                    } else if (lastEvent.getSequenceNumber() != next.getSequenceNumber() - 1) {
-                        throw new EventStoreException(String.format("Unexpected sequence number on stored event. "
-                                                                            + "Expected %s, but got %s.",
-                                                                    lastEvent.getSequenceNumber() + 1,
-                                                                    next.getSequenceNumber()));
-                    }
-                }
                 storedEvents.add(next);
             }
         }

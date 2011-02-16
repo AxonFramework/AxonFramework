@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,14 +21,13 @@ import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.eventhandling.UnsupportedHandlerMethodException;
 import org.axonframework.util.AbstractHandlerInvoker;
-import org.axonframework.util.AxonConfigurationException;
-import org.axonframework.util.ReflectionUtils;
+import org.springframework.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility class that supports invocation of specific handler methods for a given event. See {@link EventHandler} for
@@ -41,7 +40,7 @@ import java.util.Iterator;
 public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
 
     /**
-     * Initialize an event handler invoker that invokes handlers on the given <code>target</code>.
+     * Initialize an event handler invoker that invokes handlers on the given <code>target</code>
      *
      * @param target the bean on which to invoke event handlers
      */
@@ -50,8 +49,12 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
         validateEventHandlerMethods(target);
     }
 
+    private void validateEventHandlerMethods(Object target) {
+        ReflectionUtils.doWithMethods(target.getClass(), new EventHandlerValidatorCallback());
+    }
+
     /**
-     * Invoke the event handler on the target for the given <code>event</code>.
+     * Invoke the event handler on the target for the given <code>event</code>
      *
      * @param event the event to handle
      */
@@ -70,6 +73,7 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
                     "An error occurred when handling an event of type [%s]",
                     event.getClass().getSimpleName()), e);
         }
+
     }
 
     /**
@@ -82,6 +86,13 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
         invokeTransactionMethod(BeforeTransaction.class, transactionStatus);
     }
 
+    private void invokeTransactionMethod(Class<? extends Annotation> beforeTransactionClass,
+                                         TransactionStatus transactionStatus) {
+        CallFirstTransactionMethodCallback callback = new CallFirstTransactionMethodCallback(beforeTransactionClass,
+                                                                                             transactionStatus);
+        ReflectionUtils.doWithMethods(getTarget().getClass(), callback, callback);
+    }
+
     /**
      * Invoke the "AfterTransaction" method on the target. This is the method annotated with {@link
      * org.axonframework.eventhandling.annotation.AfterTransaction}
@@ -92,80 +103,96 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
         invokeTransactionMethod(AfterTransaction.class, transactionStatus);
     }
 
-    private void invokeTransactionMethod(Class<? extends Annotation> annotation,
-                                         TransactionStatus transactionStatus) {
-        Iterator<Method> iterator = ReflectionUtils.methodsOf(getTarget().getClass()).iterator();
-        boolean found = false;
-        while (!found && iterator.hasNext()) {
-            Method m = iterator.next();
-            if (m.isAnnotationPresent(annotation)
-                    && (m.getParameterTypes().length == 0
-                    || m.getParameterTypes()[0].equals(TransactionStatus.class))) {
-                try {
-                    found = true;
-                    try {
-                        if (m.getParameterTypes().length == 1) {
-                            m.invoke(getTarget(), transactionStatus);
-                        } else {
-                            m.invoke(getTarget());
-                        }
-                    } catch (InvocationTargetException e) {
-                        throw new TransactionMethodExecutionException(String.format(
-                                "An error occurred while invoking [%s] on [%s].",
-                                m.getName(),
-                                getTarget().getClass().getSimpleName()), e);
-                    }
-                } catch (IllegalAccessException e) {
-                    throw new AxonConfigurationException("Should be Illegal to access this method", e);
+    private class CallFirstTransactionMethodCallback
+            implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
+
+        private final AtomicBoolean found = new AtomicBoolean(false);
+        private final Class<? extends Annotation> annotation;
+        private final TransactionStatus transactionStatus;
+
+        /**
+         * {@inheritDoc}
+         */
+        public CallFirstTransactionMethodCallback(
+                Class<? extends Annotation> annotation, TransactionStatus transactionStatus) {
+            this.annotation = annotation;
+            this.transactionStatus = transactionStatus;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+            found.set(true);
+            try {
+                if (method.getParameterTypes().length == 1) {
+                    method.invoke(getTarget(), transactionStatus);
+                } else {
+                    method.invoke(getTarget());
                 }
-            }
-        }
-    }
-
-    private void validateEventHandlerMethods(Object target) {
-        for (Method m : ReflectionUtils.methodsOf(target.getClass())) {
-            validate(m);
-        }
-    }
-
-    private void validate(Method method) {
-        if (method.isAnnotationPresent(EventHandler.class)) {
-            if (method.getParameterTypes().length > 2 || method.getParameterTypes().length < 1) {
-                throw new UnsupportedHandlerMethodException(String.format(
-                        "Event Handling class %s contains method %s that has no or more than two parameters. "
-                                + "Either remove @EventHandler annotation or provide to one or two parameters.",
-                        method.getDeclaringClass().getSimpleName(),
-                        method.getName()),
-                                                            method);
-            }
-            if (!Event.class.isAssignableFrom(method.getParameterTypes()[0])) {
-                throw new UnsupportedHandlerMethodException(String.format(
-                        "Event Handling class %s contains method %s that has an invalid parameter. "
-                                + "Parameter must extend from Event",
-                        method.getDeclaringClass().getSimpleName(),
-                        method.getName()),
-                                                            method);
-            }
-            if (method.getParameterTypes().length == 2
-                    && !TransactionStatus.class.equals(method.getParameterTypes()[1])) {
-                throw new UnsupportedHandlerMethodException(String.format(
-                        "Event Handling class %s contains method %s that has an invalid parameter. "
-                                + "The (optional) second parameter must be of type: %s",
-                        method.getDeclaringClass().getSimpleName(),
+            } catch (InvocationTargetException e) {
+                throw new TransactionMethodExecutionException(String.format(
+                        "An error occurred while invoking [%s] on [%s].",
                         method.getName(),
-                        TransactionStatus.class.getName()),
-                                                            method);
+                        getTarget().getClass().getSimpleName()), e);
             }
-            Method[] forbiddenMethods = EventListener.class.getDeclaredMethods();
-            for (Method forbiddenMethod : forbiddenMethods) {
-                if (method.getName().equals(forbiddenMethod.getName())
-                        && Arrays.equals(method.getParameterTypes(), forbiddenMethod.getParameterTypes())) {
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean matches(Method method) {
+            return !found.get()
+                    && method.isAnnotationPresent(annotation)
+                    && (method.getParameterTypes().length == 0
+                    || method.getParameterTypes()[0].equals(TransactionStatus.class));
+        }
+    }
+
+    private static class EventHandlerValidatorCallback implements ReflectionUtils.MethodCallback {
+
+        @Override
+        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+            if (method.isAnnotationPresent(EventHandler.class)) {
+                if (method.getParameterTypes().length > 2) {
                     throw new UnsupportedHandlerMethodException(String.format(
-                            "Event Handling class %s contains method %s that has a naming conflict with a "
-                                    + "method on the EventHandler interface. Please rename the method.",
+                            "Event Handling class %s contains method %s that has more than two parameters. "
+                                    + "Either remove @EventHandler annotation or reduce to one or two parameters.",
                             method.getDeclaringClass().getSimpleName(),
                             method.getName()),
                                                                 method);
+                }
+                if (!Event.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                    throw new UnsupportedHandlerMethodException(String.format(
+                            "Event Handling class %s contains method %s that has an invalid parameter. "
+                                    + "Parameter must extend from Event",
+                            method.getDeclaringClass().getSimpleName(),
+                            method.getName()),
+                                                                method);
+                }
+                if (method.getParameterTypes().length == 2
+                        && !TransactionStatus.class.equals(method.getParameterTypes()[1])) {
+                    throw new UnsupportedHandlerMethodException(String.format(
+                            "Event Handling class %s contains method %s that has an invalid parameter. "
+                                    + "The (optional) second parameter must be of type: %s",
+                            method.getDeclaringClass().getSimpleName(),
+                            method.getName(),
+                            TransactionStatus.class.getName()),
+                                                                method);
+                }
+                Method[] forbiddenMethods = EventListener.class.getDeclaredMethods();
+                for (Method forbiddenMethod : forbiddenMethods) {
+                    if (method.getName().equals(forbiddenMethod.getName())
+                            && Arrays.equals(method.getParameterTypes(), forbiddenMethod.getParameterTypes())) {
+                        throw new UnsupportedHandlerMethodException(String.format(
+                                "Event Handling class %s contains method %s that has a naming conflict with a "
+                                        + "method on the EventHandler interface. Please rename the method.",
+                                method.getDeclaringClass().getSimpleName(),
+                                method.getName()),
+                                                                    method);
+                    }
                 }
             }
         }

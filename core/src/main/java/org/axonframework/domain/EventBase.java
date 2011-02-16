@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 package org.axonframework.domain;
 
-import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -29,8 +29,6 @@ import java.util.UUID;
  */
 public abstract class EventBase implements Event {
 
-    private static final long serialVersionUID = 8354215007776930168L;
-
     private final MutableEventMetaData metaData;
     private long eventRevision;
 
@@ -39,7 +37,7 @@ public abstract class EventBase implements Event {
      * current date and time.
      */
     protected EventBase() {
-        metaData = new MutableEventMetaData(new DateTime(), UUID.randomUUID());
+        metaData = new MutableEventMetaData(new LocalDateTime(), UUID.randomUUID());
     }
 
     /**
@@ -70,7 +68,7 @@ public abstract class EventBase implements Event {
      * {@inheritDoc}
      */
     @Override
-    public DateTime getTimestamp() {
+    public LocalDateTime getTimestamp() {
         return metaData.getTimestamp();
     }
 

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,16 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.domain.Event;
+
 /**
- * SequencingPolicy that requires serialized handling of all events delivered to an event handler. This is the default
- * policy for event handlers.
+ * EventSequencingPolicy that requires serialized handling of all events delivered to an event handler. This is the
+ * default policy for event handlers.
  *
  * @author Allard Buijze
  * @since 0.3
  */
-public class SequentialPolicy implements SequencingPolicy<Object> {
+public class SequentialPolicy implements EventSequencingPolicy {
 
     private static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
@@ -31,7 +33,7 @@ public class SequentialPolicy implements SequencingPolicy<Object> {
      * {@inheritDoc}
      */
     @Override
-    public Object getSequenceIdentifierFor(Object task) {
+    public Object getSequenceIdentifierFor(Event event) {
         return FULL_SEQUENTIAL_POLICY;
     }
 }

@@ -16,6 +16,8 @@
 
 package org.axonframework.util;
 
+import org.springframework.util.ReflectionUtils;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
@@ -48,27 +50,78 @@ public abstract class AbstractHandlerInspector {
      * @return the  handler method for the given parameterType
      */
     protected Method findHandlerMethod(Class<?> targetType, final Class<?> parameterType) {
-        Method bestMethodSoFar = null;
-        for (Method method : ReflectionUtils.methodsOf(targetType)) {
+        MostSuitableHandlerCallback callback = new MostSuitableHandlerCallback(parameterType, annotationType);
+        ReflectionUtils.doWithMethods(targetType, callback, callback);
+        return callback.foundHandler();
+    }
+
+    /**
+     * MethodCallback and MethodFilter implementation that finds the most suitable event handler method for an event of
+     * given type.
+     * <p/>
+     * Note that this callback must used both as MethodCallback and MethodCallback.
+     * <p/>
+     * Example:<br/> <code>MostSuitableHandlerCallback callback = new MostSuitableHandlerCallback(eventType) <br/>
+     * ReflectionUtils.doWithMethods(eventListenerClass, callback, callback);</code>
+     */
+    private static final class MostSuitableHandlerCallback
+            implements ReflectionUtils.MethodCallback, ReflectionUtils.MethodFilter {
+
+        private final Class<?> parameterType;
+        private final Class<? extends Annotation> annotationClass;
+        private Method bestMethodSoFar;
+
+        /**
+         * Initialize this callback for the given event class. The callback will find the most suitable method for an
+         * event of given type.
+         *
+         * @param parameterType   The type of event to find the handler for
+         * @param annotationClass The annotation demarcating handler methods
+         */
+        public MostSuitableHandlerCallback(Class<?> parameterType, Class<? extends Annotation> annotationClass) {
+            this.parameterType = parameterType;
+            this.annotationClass = annotationClass;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean matches(Method method) {
             Method foundSoFar = bestMethodSoFar;
             Class<?> classUnderInvestigation = method.getDeclaringClass();
             boolean bestInClassFound =
                     foundSoFar != null
                             && !classUnderInvestigation.equals(foundSoFar.getDeclaringClass())
                             && classUnderInvestigation.isAssignableFrom(foundSoFar.getDeclaringClass());
-            if (!bestInClassFound && method.isAnnotationPresent(annotationType)
-                    && method.getParameterTypes()[0].isAssignableFrom(parameterType)) {
-                // method is eligible, but is it the best?
-                if (bestMethodSoFar == null) {
-                    // if we have none yet, this one is the best
-                    bestMethodSoFar = method;
-                } else if (bestMethodSoFar.getDeclaringClass().equals(method.getDeclaringClass())
-                        && bestMethodSoFar.getParameterTypes()[0].isAssignableFrom(method.getParameterTypes()[0])) {
-                    // this one is more specific, so it wins
-                    bestMethodSoFar = method;
-                }
+            return !bestInClassFound && method.isAnnotationPresent(annotationClass)
+                    && method.getParameterTypes()[0].isAssignableFrom(parameterType);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+            // method is eligible, but is it the best?
+            if (bestMethodSoFar == null) {
+                // if we have none yet, this one is the best
+                bestMethodSoFar = method;
+            } else if (bestMethodSoFar.getDeclaringClass().equals(method.getDeclaringClass())
+                    && bestMethodSoFar.getParameterTypes()[0].isAssignableFrom(
+                    method.getParameterTypes()[0])) {
+                // this one is more specific, so it wins
+                bestMethodSoFar = method;
             }
         }
-        return bestMethodSoFar;
+
+        /**
+         * Returns the event handler suitable for the given event, or null if no suitable event handler could be found.
+         *
+         * @return the found event handler, or null if none could be found
+         */
+        public Method foundHandler() {
+            return bestMethodSoFar;
+        }
     }
 }

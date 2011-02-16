@@ -57,16 +57,6 @@ public class XStreamEventSerializer implements EventSerializer {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
-     * encoding.
-     *
-     * @param xStream XStream instance to use
-     */
-    public XStreamEventSerializer(XStream xStream) {
-        this(DEFAULT_CHARSET_NAME, xStream);
-    }
-
-    /**
      * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using thy character
      * set with the given name. If the character set is not supported by the JVM an UnsupportedCharsetException is
      * thrown.
@@ -84,28 +74,12 @@ public class XStreamEventSerializer implements EventSerializer {
      * @param charset The character set to use.
      */
     public XStreamEventSerializer(Charset charset) {
-        this(charset, null);
-    }
-
-    /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given character
-     * set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
-     *
-     * @param charset         The character set to use.
-     * @param providedXStream XStream instance to use
-     */
-    public XStreamEventSerializer(Charset charset, XStream providedXStream) {
         this.charset = charset;
-        if (providedXStream != null) {
-            genericXStreamSerializer = new GenericXStreamSerializer(charset, providedXStream);
-        } else {
-            genericXStreamSerializer = new GenericXStreamSerializer(charset);
-        }
+        genericXStreamSerializer = new GenericXStreamSerializer(charset);
         XStream xStream = genericXStreamSerializer.getXStream();
         xStream.useAttributeFor(EventBase.class, "eventRevision");
         xStream.addImmutableType(AggregateIdentifier.class);
         xStream.aliasType("aggregateIdentifier", AggregateIdentifier.class);
-
     }
 
     /**
@@ -184,6 +158,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
+     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {

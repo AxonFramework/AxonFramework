@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,7 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
-import org.axonframework.eventstore.EventStoreException;
 import org.junit.*;
 
 import java.util.UUID;
@@ -53,27 +48,4 @@ public class FixtureTest_Generic {
         assertEquals("My value", fixture.getAggregateIdentifier().asString());
     }
 
-    @Test(expected = EventStoreException.class)
-    public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new StubDomainEvent(new UUIDAggregateIdentifier(), 0),
-                new StubDomainEvent(new UUIDAggregateIdentifier(), 1)));
-    }
-
-    @Test(expected = EventStoreException.class)
-    public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
-        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new StubDomainEvent(identifier, 0),
-                new StubDomainEvent(identifier, 1),
-                new StubDomainEvent(identifier, 3)));
-    }
-
-    private class StubDomainEvent extends DomainEvent {
-        private static final long serialVersionUID = 123033211453385579L;
-
-        public StubDomainEvent(AggregateIdentifier aggregateIdentifier, long sequenceNumber) {
-            super(sequenceNumber, aggregateIdentifier);
-        }
-    }
 }

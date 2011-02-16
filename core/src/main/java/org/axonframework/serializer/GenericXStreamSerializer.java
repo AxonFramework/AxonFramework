@@ -24,11 +24,9 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.XppDriver;
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.util.SerializationException;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -39,8 +37,7 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 /**
- * Serializer that uses XStream to serialize and deserialize arbitrary objects. The XStream instance is configured to
- * deal with the Classes used in Axon Framework in the most compact fashion.
+ * Serializer that uses XStream to serialize and deserialize arbitrary objects.
  * <p/>
  * When running on a Sun JVM, XStream does not pose any restrictions on classes to serialize. On other JVM's, however,
  * you need to either implement Serializable, or provide a default constructor (accessible under the JVM's security
@@ -51,7 +48,6 @@ import java.util.UUID;
  * @since 0.6
  */
 public class GenericXStreamSerializer {
-    private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
 
     private final XStream xStream;
     private final Charset charset;
@@ -61,17 +57,7 @@ public class GenericXStreamSerializer {
      * XppDriver}) is used to perform the serialization.
      */
     public GenericXStreamSerializer() {
-        this(DEFAULT_CHARSET_NAME);
-    }
-
-    /**
-     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
-     * the serialization.
-     *
-     * @param xStream XStream instance to use
-     */
-    public GenericXStreamSerializer(XStream xStream) {
-        this(DEFAULT_CHARSET_NAME, xStream);
+        this(Charset.forName("UTF-8"));
     }
 
     /**
@@ -96,42 +82,21 @@ public class GenericXStreamSerializer {
         this.xStream = xStream;
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
-        xStream.addImmutableType(AggregateIdentifier.class);
-        xStream.addImmutableType(StringAggregateIdentifier.class);
-        xStream.addImmutableType(UUIDAggregateIdentifier.class);
         xStream.registerConverter(new AggregateIdentifierConverter());
-        xStream.aliasPackage("axon.domain", "org.axonframework.domain");
-        xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
-
-        xStream.addDefaultImplementation(StringAggregateIdentifier.class, AggregateIdentifier.class);
-        xStream.aliasType("aggregate-id", AggregateIdentifier.class);
-
-        xStream.aliasType("localDateTime", DateTime.class);
+        xStream.aliasType("localDateTime", LocalDateTime.class);
         xStream.aliasType("dateTime", DateTime.class);
         xStream.aliasType("uuid", UUID.class);
     }
 
     /**
-     * Serialize the given <code>object</code> to Compact XML (see {@link CompactWriter}) and write the bytes to the
-     * given <code>outputStream</code>. Bytes are written using the character set provided during initialization of the
-     * serializer.
+     * Serialize the given <code>object</code> and write the bytes to the given <code>outputStream</code>. Bytes are
+     * written using the character set provided during initialization of the serializer.
      *
      * @param object       The object to serialize.
      * @param outputStream The stream to write bytes to
-     * @see CompactWriter
      */
     public void serialize(Object object, OutputStream outputStream) {
         xStream.marshal(object, new CompactWriter(new OutputStreamWriter(outputStream, charset)));
-    }
-
-    /**
-     * Serialize the given <code>object</code> and write the bytes to the given <code>writer</code>.
-     *
-     * @param object The object to serialize
-     * @param writer The writer to write the serialized object o
-     */
-    public void serialize(Object object, HierarchicalStreamWriter writer) {
-        xStream.marshal(object, writer);
     }
 
     /**
@@ -207,7 +172,7 @@ public class GenericXStreamSerializer {
     }
 
     /**
-     * XStream Converter to serialize DateTime classes as a String.
+     * XStream Converter to serialize LocalDateTime classes as a String.
      */
     private static final class JodaTimeConverter implements Converter {
 
@@ -216,7 +181,7 @@ public class GenericXStreamSerializer {
          */
         @Override
         public boolean canConvert(Class type) {
-            return type != null && DateTime.class.getPackage().equals(type.getPackage());
+            return type != null && LocalDateTime.class.getPackage().equals(type.getPackage());
         }
 
         @Override

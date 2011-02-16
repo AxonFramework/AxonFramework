@@ -23,6 +23,7 @@ import org.axonframework.eventstore.XStreamEventSerializer;
 import org.dom4j.Document;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
 import org.joda.time.Period;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,7 +68,7 @@ public class LegacyAxonEventUpcasterTest {
                 + "</org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest_-TestEvent>").getBytes("utf-8");
         TestEvent testEvent = (TestEvent) serializer.deserialize(oldskoolEvent);
         assertEquals("62daf7f6-c3ab-4179-a212-6b1da2a6ec72", testEvent.getAggregateIdentifier().asString());
-        assertEquals(new DateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
+        assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
         assertNull(testEvent.getMetaDataValue("someValueThatDoesNotExist"));
         assertNotNull(testEvent.hashCode());
     }
@@ -98,7 +99,7 @@ public class LegacyAxonEventUpcasterTest {
                 "utf-8");
         TestEvent testEvent = (TestEvent) serializer.deserialize(oldskoolEvent);
         assertEquals("62daf7f6-c3ab-4179-a212-6b1da2a6ec72", testEvent.getAggregateIdentifier().asString());
-        assertEquals(new DateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
+        assertEquals(new LocalDateTime("2010-09-15T21:43:01.000"), testEvent.getTimestamp());
         assertEquals("someValue", testEvent.getMetaDataValue("someKey"));
         assertNotNull(testEvent.hashCode());
     }
@@ -133,4 +134,5 @@ public class LegacyAxonEventUpcasterTest {
             return name;
         }
     }
+
 }

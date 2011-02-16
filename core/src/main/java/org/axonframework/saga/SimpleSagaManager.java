@@ -18,14 +18,12 @@ package org.axonframework.saga;
 
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TransactionManager;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 /**
  * Simple SagaManager implementation. This implementation requires the Event that should cause new Saga's to be created,
@@ -72,26 +70,6 @@ public class SimpleSagaManager extends AbstractSagaManager {
                              AssociationValueResolver associationValueResolver,
                              EventBus eventBus) {
         super(eventBus, sagaRepository, new GenericSagaFactory());
-        this.sagaType = sagaType;
-        this.associationValueResolver = associationValueResolver;
-    }
-
-    /**
-     * Initialize the AnnotatedSagaManager using the given resources. Saga lookup and processing is done asynchronously
-     * using the given <code>executor</code> and <code>transactionManager</code>.
-     *
-     * @param sagaType                 The type of Saga managed by this SagaManager
-     * @param sagaRepository           The repository providing access to the Saga instances
-     * @param associationValueResolver The instance providing AssociationValues for incoming Events
-     * @param sagaFactory              The factory creating new instances of a Saga
-     * @param eventBus                 The event bus publishing the events
-     * @param executor                 The executor providing the threads to process events in
-     * @param transactionManager       The transaction manager that manages transactions around event processing
-     */
-    public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
-                             AssociationValueResolver associationValueResolver, SagaFactory sagaFactory,
-                             EventBus eventBus, Executor executor, TransactionManager transactionManager) {
-        super(eventBus, sagaRepository, sagaFactory, executor, transactionManager);
         this.sagaType = sagaType;
         this.associationValueResolver = associationValueResolver;
     }

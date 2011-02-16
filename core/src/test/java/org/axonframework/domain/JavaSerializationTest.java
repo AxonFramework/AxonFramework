@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,16 +18,17 @@ package org.axonframework.domain;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
-import com.thoughtworks.xstream.io.binary.BinaryStreamReader;
-import com.thoughtworks.xstream.io.binary.BinaryStreamWriter;
 import org.axonframework.serializer.GenericXStreamSerializer;
-import org.junit.Test;
+import org.junit.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -35,24 +36,6 @@ import static org.junit.Assert.assertNotNull;
 public class JavaSerializationTest {
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
-
-    @Test
-    public void testSerialize_XStreamWithBinaryOutput() {
-        XStream xstream = new XStream();
-        GenericXStreamSerializer serializer = new GenericXStreamSerializer(UTF8, xstream);
-
-        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
-        aggregateRoot.doSomething();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        serializer.serialize(aggregateRoot, new BinaryStreamWriter(baos));
-        String xml = new String(baos.toByteArray(), UTF8);
-        assertNotNull(xml);
-
-        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate)
-                serializer.deserialize(new BinaryStreamReader(new ByteArrayInputStream(baos.toByteArray())));
-
-        validateAggregateCondition(aggregateRoot, unmarshalled);
-    }
 
     @Test
     public void testSerialize_XStreamWithPureJavaReflectionProvider() {
@@ -65,7 +48,6 @@ public class JavaSerializationTest {
         serializer.serialize(aggregateRoot, baos);
         String xml = new String(baos.toByteArray(), UTF8);
         assertNotNull(xml);
-
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(new ByteArrayInputStream(
                 baos.toByteArray()));
 
@@ -74,7 +56,7 @@ public class JavaSerializationTest {
 
     @Test
     public void testSerialize_XStreamWithDefaultReflectionProvider() {
-        XStream xstream = new XStream();
+        XStream xstream = new XStream(new PureJavaReflectionProvider());
         GenericXStreamSerializer serializer = new GenericXStreamSerializer(UTF8, xstream);
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
@@ -83,7 +65,6 @@ public class JavaSerializationTest {
         serializer.serialize(aggregateRoot, baos);
         String xml = new String(baos.toByteArray(), UTF8);
         assertNotNull(xml);
-
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(new ByteArrayInputStream(
                 baos.toByteArray()));
 
@@ -98,7 +79,6 @@ public class JavaSerializationTest {
         new ObjectOutputStream(baos).writeObject(aggregateRoot);
         byte[] serialized = baos.toByteArray();
         assertNotNull(serialized);
-
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) new ObjectInputStream(
                 new ByteArrayInputStream(serialized)).readObject();
 

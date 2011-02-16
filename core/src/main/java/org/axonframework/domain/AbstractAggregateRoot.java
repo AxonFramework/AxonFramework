@@ -16,13 +16,10 @@
 
 package org.axonframework.domain;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import javax.persistence.Basic;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.PostLoad;
-import javax.persistence.Transient;
-import javax.persistence.Version;
+import java.util.List;
 
 /**
  * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
@@ -31,23 +28,13 @@ import javax.persistence.Version;
  * @author Allard Buijze
  * @since 0.6
  */
-@MappedSuperclass
 public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
 
-    private static final long serialVersionUID = 6330592271927197888L;
+    private static final long serialVersionUID = -1617322323158336719L;
 
-    @Transient
-    private EventContainer eventContainer;
-
-    @Id
-    private String id;
-
-    @Basic(optional = true)
-    private volatile Long lastEventSequenceNumber;
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @Version
-    private volatile Long version;
+    private final AggregateIdentifier identifier;
+    private transient EventContainer uncommittedEvents;
+    private volatile transient Long lastCommitted;
 
     /**
      * Initializes the aggregate root using a random aggregate identifier.
@@ -65,8 +52,8 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
         if (identifier == null) {
             throw new IllegalArgumentException("Aggregate identifier may not be null.");
         }
-        this.id = identifier.asString();
-        eventContainer = new EventContainer(identifier);
+        this.identifier = identifier;
+        uncommittedEvents = new EventContainer(identifier);
     }
 
     /**
@@ -75,7 +62,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @param event the event to register
      */
     protected void registerEvent(DomainEvent event) {
-        eventContainer.addEvent(event);
+        uncommittedEvents.addEvent(event);
     }
 
     /**
@@ -83,22 +70,15 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      */
     @Override
     public DomainEventStream getUncommittedEvents() {
-        if (eventContainer == null) {
-            return new SimpleDomainEventStream();
-        }
-        return eventContainer.getEventStream();
+        return uncommittedEvents.getEventStream();
     }
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * Callers should not expect the exact same instance, nor an instance of the same class as provided in the
-     * constructor. When this aggregate has been serialized or persisted using JPA, the identifier returned here is an
-     * instance of {@link StringAggregateIdentifier}.
      */
     @Override
     public AggregateIdentifier getIdentifier() {
-        return eventContainer.getAggregateIdentifier();
+        return identifier;
     }
 
     /**
@@ -106,8 +86,8 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      */
     @Override
     public void commitEvents() {
-        lastEventSequenceNumber = eventContainer.getLastSequenceNumber();
-        eventContainer.commit();
+        lastCommitted = uncommittedEvents.getLastSequenceNumber();
+        uncommittedEvents.clear();
     }
 
     /**
@@ -115,7 +95,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      */
     @Override
     public int getUncommittedEventCount() {
-        return eventContainer != null ? eventContainer.size() : 0;
+        return uncommittedEvents.size();
     }
 
     /**
@@ -125,18 +105,8 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @param lastSequenceNumber The sequence number of the last event from this aggregate
      */
     protected void initializeEventStream(long lastSequenceNumber) {
-        eventContainer.initializeSequenceNumber(lastSequenceNumber);
-        lastEventSequenceNumber = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
-    }
-
-    /**
-     * Returns the sequence number of the last committed event, or <code>null</code> if no events have been committed
-     * before.
-     *
-     * @return the sequence number of the last committed event
-     */
-    protected Long getLastCommittedEventSequenceNumber() {
-        return eventContainer.getLastCommittedSequenceNumber();
+        uncommittedEvents.initializeSequenceNumber(lastSequenceNumber);
+        lastCommitted = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
     }
 
     /**
@@ -144,21 +114,24 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      */
     @Override
     public Long getVersion() {
-        return version;
+        return lastCommitted;
     }
 
-    /**
-     * JPA / EJB3 @PostLoad annotated method used to initialize the fields in this class after an instance has been
-     * loaded from persistent storage.
-     * <p/>
-     * Subclasses are responsible for invoking this method if they provide their own {@link @PostLoad} annotated method.
-     * Failure to do so will inevitably result in <code>NullPointerException</code>.
-     *
-     * @see PostLoad
-     */
-    @PostLoad
-    protected void performPostLoadInitialization() {
-        eventContainer = new EventContainer(new StringAggregateIdentifier(id));
-        eventContainer.initializeSequenceNumber(lastEventSequenceNumber);
+    @SuppressWarnings({"unchecked"})
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        lastCommitted = (Long) in.readObject();
+        uncommittedEvents = new EventContainer(identifier);
+        uncommittedEvents.initializeSequenceNumber(lastCommitted);
+        List<DomainEvent> uncommitted = (List<DomainEvent>) in.readObject();
+        for (DomainEvent uncommittedEvent : uncommitted) {
+            uncommittedEvents.addEvent(uncommittedEvent);
+        }
+    }
+
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        out.writeObject(lastCommitted);
+        out.writeObject(uncommittedEvents.getEvents());
     }
 }

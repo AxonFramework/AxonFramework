@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package org.axonframework.integrationtests;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
@@ -99,18 +97,6 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
         cdl.await(THREAD_COUNT / 2, TimeUnit.SECONDS);
         assertEquals(0, uncaughtExceptions.size());
         assertEquals(THREAD_COUNT * 2 + 1, registeringEventHandler.getCapturedEvents().size());
-        validateDispatchingOrder();
-    }
-
-    private void validateDispatchingOrder() {
-        Long expectedSequenceNumber = 0L;
-        for (Event event : registeringEventHandler.getCapturedEvents()) {
-            assertTrue(event instanceof DomainEvent);
-            assertEquals("Events are dispatched in the wrong order!",
-                         expectedSequenceNumber,
-                         ((DomainEvent) event).getSequenceNumber());
-            expectedSequenceNumber++;
-        }
     }
 
     @Override

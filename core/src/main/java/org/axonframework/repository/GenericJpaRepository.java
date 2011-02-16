@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,15 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AbstractJpaAggregateRoot;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.AggregateRoot;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 /**
  * Generic repository implementation that stores JPA annotated aggregates. These aggregates must implement {@link
- * org.axonframework.domain.AggregateRoot} and have the proper JPA Annotations.
+ * org.axonframework.domain.AbstractJpaAggregateRoot}.
  * <p/>
  * Optionally, the repository may be configured with a locking scheme. The repository will always force optimistic
  * locking in the backing data store. The optional lock in the repository is in addition to this optimistic lock. Note
@@ -33,11 +33,11 @@ import javax.persistence.PersistenceContext;
  * When this repository is requested to persist changes to an aggregate, it will also flush the EntityManager, to
  * enforce checking of database constraints and optimistic locks.
  *
- * @param <T> The type of aggregate the repository provides access to
  * @author Allard Buijze
+ * @param <T> The type of aggregate the repository provides access to
  * @since 0.7
  */
-public class GenericJpaRepository<T extends AggregateRoot> extends LockingRepository<T> {
+public class GenericJpaRepository<T extends AbstractJpaAggregateRoot> extends LockingRepository<T> {
 
     private EntityManager entityManager;
     private final Class<T> aggregateType;
@@ -71,15 +71,6 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
         if (forceFlushOnSave) {
             entityManager.flush();
         }
-    }
-
-    /**
-     * Returns the aggregate type stored by this repository.
-     *
-     * @return the aggregate type stored by this repository
-     */
-    protected Class<T> getAggregateType() {
-        return aggregateType;
     }
 
     @Override

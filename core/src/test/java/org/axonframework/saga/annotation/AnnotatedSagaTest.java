@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,74 +19,99 @@ package org.axonframework.saga.annotation;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.TransactionManager;
-import org.axonframework.eventhandling.TransactionStatus;
-import org.axonframework.saga.GenericSagaFactory;
-import org.axonframework.saga.SagaFactory;
+import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.SagaManager;
+import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
 
+import static org.axonframework.util.TestUtils.setOf;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class AnnotatedSagaManagerTest_Asynchronous {
+public class AnnotatedSagaTest {
 
-    private AnnotatedSagaManager manager;
-    private InMemorySagaRepository sageRepository;
-    private SimpleEventBus eventBus;
-    private ScheduledExecutorService executor;
-    private SagaFactory sagaFactory;
-    private TransactionManager transactionManager;
-    private static CountDownLatch endingLatch;
+    private SagaRepository sagaRepository;
+    private SagaManager manager;
 
     @Before
     public void setUp() throws Exception {
-        sageRepository = new InMemorySagaRepository();
-        eventBus = new SimpleEventBus();
-        executor = new ScheduledThreadPoolExecutor(4);
-        sagaFactory = new GenericSagaFactory();
-        transactionManager = mock(TransactionManager.class);
-        manager = new AnnotatedSagaManager(sageRepository, sagaFactory, eventBus, executor, transactionManager,
-                                           MyTestSaga.class);
-        manager.subscribe();
-        endingLatch = new CountDownLatch(2);
+        sagaRepository = new InMemorySagaRepository();
+        manager = new AnnotatedSagaManager(sagaRepository, new SimpleEventBus(), MyTestSaga.class);
     }
 
     @Test
-    public void testDispatchEvent_NormalEventLifecycle() throws InterruptedException {
-        final AtomicInteger counter = new AtomicInteger(0);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                TransactionStatus status = (TransactionStatus) invocation.getArguments()[0];
-                counter.getAndAdd(status.getEventsProcessedInTransaction());
-                return Void.TYPE;
-            }
-        }).when(transactionManager).afterTransaction(isA(TransactionStatus.class));
-        eventBus.publish(new StartingEvent("saga1"));
-        eventBus.publish(new ForcingStartEvent("saga1"));
-        eventBus.publish(new EndingEvent("saga1"));
+    public void testCreationPolicy_NoneExists() {
+        manager.handle(new StartingEvent("123"));
+        assertEquals(1, repositoryContents("123").size());
+    }
 
-        endingLatch.await();
-        executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.SECONDS);
-        // expect 8 invocations: 3x for lookup, 1x for StartingEvent, 2x for ForceStartEvent, 2x for EndingEvent
-        assertEquals(8, counter.get());
-        verify(transactionManager, atMost(8)).afterTransaction(isA(TransactionStatus.class));
-        verify(transactionManager, atMost(8)).beforeTransaction(isA(TransactionStatus.class));
+    @Test
+    public void testCreationPolicy_OneAlreadyExists() {
+        manager.handle(new StartingEvent("123"));
+        manager.handle(new StartingEvent("123"));
+        assertEquals(1, repositoryContents("123").size());
+    }
+
+    @Test
+    public void testCreationPolicy_CreationForced() {
+        StartingEvent startingEvent = new StartingEvent("123");
+        manager.handle(startingEvent);
+        manager.handle(new ForcingStartEvent("123"));
+        Set<MyTestSaga> sagas = repositoryContents("123");
+        assertEquals(2, sagas.size());
+        for (MyTestSaga saga : sagas) {
+            if (saga.getCapturedEvents().contains(startingEvent)) {
+                assertEquals(2, saga.getCapturedEvents().size());
+            }
+            assertTrue(saga.getCapturedEvents().size() >= 1);
+        }
+    }
+
+    @Test
+    public void testCreationPolicy_SagaNotCreated() {
+        manager.handle(new MiddleEvent("123"));
+        assertEquals(0, repositoryContents("123").size());
+    }
+
+    @Test
+    public void testLifecycle_DestroyedOnEnd() {
+        manager.handle(new StartingEvent("12"));
+        manager.handle(new StartingEvent("23"));
+        manager.handle(new MiddleEvent("12"));
+        manager.handle(new MiddleEvent("23"));
+        assertEquals(1, repositoryContents("12").size());
+        assertEquals(1, repositoryContents("23").size());
+        manager.handle(new EndingEvent("12"));
+        assertEquals(1, repositoryContents("23").size());
+        assertEquals(0, repositoryContents("12").size());
+        manager.handle(new EndingEvent("23"));
+        assertEquals(0, repositoryContents("23").size());
+        assertEquals(0, repositoryContents("12").size());
+    }
+
+    @Test
+    public void testLifeCycle_ExistingInstanceIgnoresEvent() {
+        manager.handle(new StartingEvent("12"));
+        manager.handle(new StubDomainEvent());
+        assertEquals(1, repositoryContents("12").size());
+        assertEquals(1, repositoryContents("12").iterator().next().getCapturedEvents().size());
+    }
+
+    @Test
+    public void testLifeCycle_IgnoredEventDoesNotCreateInstance() {
+        manager.handle(new StubDomainEvent());
+        assertEquals(0, repositoryContents("12").size());
+    }
+
+    private Set<MyTestSaga> repositoryContents(String lookupValue) {
+        return sagaRepository.find(MyTestSaga.class, setOf(new AssociationValue("myIdentifier", lookupValue)));
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
@@ -110,7 +135,6 @@ public class AnnotatedSagaManagerTest_Asynchronous {
         @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleSomeEvent(EndingEvent event) {
             capturedEvents.add(event);
-            endingLatch.countDown();
         }
 
         @SagaEventHandler(associationProperty = "myIdentifier")

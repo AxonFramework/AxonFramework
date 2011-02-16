@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,19 @@ import org.axonframework.eventhandling.AsynchronousEventHandlerWrapper;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerProxy;
-import org.axonframework.eventhandling.SequencingPolicy;
+import org.axonframework.eventhandling.EventSequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.TransactionStatus;
-import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.FieldAccessibilityCallback;
-import org.axonframework.util.ReflectionUtils;
 import org.axonframework.util.Subscribable;
+import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -154,35 +155,16 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     }
 
     private TransactionManager findTransactionManagerInField(Object bean) {
-        TransactionManager tm = null;
-        for (Field f : ReflectionUtils.fieldsOf(bean.getClass())) {
-            try {
-                if (f.isAnnotationPresent(org.axonframework.eventhandling.annotation.TransactionManager.class)) {
-                    doPrivileged(new FieldAccessibilityCallback(f));
-
-                    if (TransactionManager.class.isAssignableFrom(f.getType())) {
-                        tm = (TransactionManager) f.get(bean);
-                    } else {
-                        tm = new AnnotationTransactionManager(f.get(bean));
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                throw new AxonConfigurationException("Field should be accessible.", e);
-            }
-        }
-        return tm;
+        TransactionManagerFieldCallback transactionManagerFieldCallback = new TransactionManagerFieldCallback(bean);
+        ReflectionUtils.doWithFields(bean.getClass(), transactionManagerFieldCallback);
+        return transactionManagerFieldCallback.getTransactionManager();
     }
 
     private boolean hasTransactionalMethods(Object bean) {
-//        HasTransactionMethodCallback hasTransactionMethodCallback = new HasTransactionMethodCallback();
-        boolean found = false;
-        for (Method method : ReflectionUtils.methodsOf(bean.getClass())) {
-            if (method.isAnnotationPresent(BeforeTransaction.class)
-                    || method.isAnnotationPresent(AfterTransaction.class)) {
-                found = true;
-            }
-        }
-        return found;
+        HasTransactionMethodCallback hasTransactionMethodCallback = new HasTransactionMethodCallback();
+        ReflectionUtils.doWithMethods(bean.getClass(), hasTransactionMethodCallback);
+        return hasTransactionMethodCallback.isFound();
+
     }
 
     private AsynchronousEventHandlerWrapper createAsynchronousWrapperForBean(Object bean,
@@ -194,13 +176,14 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
                                                    executor);
     }
 
-    private SequencingPolicy getSequencingPolicyFor(Object listener) {
-        AsynchronousEventListener annotation = findAnnotation(listener.getClass(), AsynchronousEventListener.class);
+    private EventSequencingPolicy getSequencingPolicyFor(Object listener) {
+        AsynchronousEventListener annotation = findAnnotation(listener.getClass(),
+                                                              AsynchronousEventListener.class);
         if (annotation == null) {
             return new SequentialPolicy();
         }
 
-        Class<? extends SequencingPolicy> policyClass = annotation.sequencingPolicyClass();
+        Class<? extends EventSequencingPolicy> policyClass = annotation.sequencingPolicyClass();
         try {
             return policyClass.newInstance();
         } catch (InstantiationException e) {
@@ -235,6 +218,52 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
         @Override
         public void handle(Event event) {
             eventHandlerInvoker.invokeEventHandlerMethod(event);
+        }
+    }
+
+    private static class HasTransactionMethodCallback implements ReflectionUtils.MethodCallback {
+
+        private final AtomicBoolean found = new AtomicBoolean(false);
+
+        @Override
+        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+            if (method.isAnnotationPresent(BeforeTransaction.class)
+                    || method.isAnnotationPresent(AfterTransaction.class)) {
+                found.set(true);
+            }
+        }
+
+        public boolean isFound() {
+            return found.get();
+        }
+
+    }
+
+    private static class TransactionManagerFieldCallback implements ReflectionUtils.FieldCallback {
+
+        private final AtomicReference<org.axonframework.eventhandling.TransactionManager> tm;
+        private final Object bean;
+
+        public TransactionManagerFieldCallback(Object bean) {
+            this.bean = bean;
+            tm = new AtomicReference<TransactionManager>();
+        }
+
+        @Override
+        public void doWith(final Field field) throws IllegalArgumentException, IllegalAccessException {
+            if (field.isAnnotationPresent(org.axonframework.eventhandling.annotation.TransactionManager.class)) {
+                doPrivileged(new FieldAccessibilityCallback(field));
+
+                if (TransactionManager.class.isAssignableFrom(field.getType())) {
+                    tm.set((TransactionManager) field.get(bean));
+                } else {
+                    tm.set(new AnnotationTransactionManager(field.get(bean)));
+                }
+            }
+        }
+
+        public TransactionManager getTransactionManager() {
+            return tm.get();
         }
     }
 }

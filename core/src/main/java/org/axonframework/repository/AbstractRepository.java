@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,8 +35,8 @@ import javax.annotation.Resource;
  * Note that this repository implementation does not take care of any locking. The underlying persistence is expected to
  * deal with concurrency. Alternatively, consider using the {@link LockingRepository}.
  *
- * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
+ * @param <T> The type of aggregate this repository stores
  * @see #setEventBus(org.axonframework.eventhandling.EventBus)
  * @see LockingRepository
  * @since 0.1
@@ -98,7 +98,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
         if (expectedVersion != null && aggregate.getVersion() != null && aggregate.getVersion() > expectedVersion) {
             throw new ConflictingAggregateVersionException(
                     String.format("Aggregate with identifier [%s] contains conflicting changes. "
-                                          + "Expected version [%s], but was [%s]",
+                            + "Expected version [%s], but was [%s]",
                                   aggregate.getIdentifier(),
                                   aggregate.getVersion(),
                                   expectedVersion));
@@ -138,18 +138,19 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
 
         @Override
         public void save(final T aggregate) {
-            DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
             doSave(aggregate);
-            aggregate.commitEvents();
-            dispatchUncommittedEvents(uncommittedEvents);
+            dispatchUncommittedEvents(aggregate);
         }
 
-        private void dispatchUncommittedEvents(DomainEventStream uncommittedEvents) {
+        private void dispatchUncommittedEvents(T aggregate) {
+            DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
             while (uncommittedEvents.hasNext()) {
                 DomainEvent event = uncommittedEvents.next();
                 logger.debug("Publishing event [{}] to the UnitOfWork", event.getClass().getSimpleName());
                 CurrentUnitOfWork.get().publishEvent(event, eventBus);
             }
+            aggregate.commitEvents();
         }
+
     }
 }

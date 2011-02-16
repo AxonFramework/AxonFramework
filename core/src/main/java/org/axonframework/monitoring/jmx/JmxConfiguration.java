@@ -41,7 +41,7 @@ public final class JmxConfiguration {
     private static final JmxConfiguration INSTANCE = new JmxConfiguration();
 
     private MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-    private boolean enabled = true;
+    private boolean enabled;
 
     private JmxConfiguration() {
     }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventstore.fs;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 
 /**
@@ -54,8 +56,8 @@ class SnapshotEventEntry {
      *
      * @return An InputStream accessing the bytes.
      */
-    public byte[] getBytes() {
-        return serializedEvent;
+    public InputStream getBytes() {
+        return new ByteArrayInputStream(serializedEvent);
     }
 
     /**

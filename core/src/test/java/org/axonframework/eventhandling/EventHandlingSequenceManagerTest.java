@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -71,7 +71,7 @@ public class EventHandlingSequenceManagerTest {
         executorService.shutdown();
         assertTrue("Shutdown took too long.", executorService.awaitTermination(5, TimeUnit.SECONDS));
 
-        transactionsField = testSubject.getClass().getSuperclass().getDeclaredField("transactions");
+        transactionsField = testSubject.getClass().getDeclaredField("transactions");
         transactionsField.setAccessible(true);
         Map transactions = (Map) transactionsField.get(testSubject);
         assertTrue("Expected transaction schedulers to be cleaned up", transactions.isEmpty());
@@ -94,9 +94,9 @@ public class EventHandlingSequenceManagerTest {
     }
 
     /**
-     * Very useless implementation of SequencingPolicy that is the fastest way to display a memory leak
+     * Very useless implementation of EventSequencingPolicy that is the fastest way to display a memory leak
      */
-    private class FullRandomPolicy implements SequencingPolicy<Event> {
+    private class FullRandomPolicy implements EventSequencingPolicy {
 
         @Override
         public Object getSequenceIdentifierFor(Event event) {
@@ -110,6 +110,7 @@ public class EventHandlingSequenceManagerTest {
         public void handle(Event event) {
             countdownLatch.countDown();
         }
+
     }
 
     private class FullConcurrentEventListener implements EventListener, TransactionManager {

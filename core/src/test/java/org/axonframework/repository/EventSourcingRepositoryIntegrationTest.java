@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.*;
+import org.junit.rules.*;
+import org.springframework.core.io.FileSystemResource;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -53,7 +53,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private AggregateIdentifier aggregateIdentifier;
     private EventBus mockEventBus;
     private FileSystemEventStore eventStore;
-    private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<Throwable>();
+    private List<Throwable> uncaughtExceptions = new Vector<Throwable>();
     private List<Thread> startedThreads = new ArrayList<Thread>();
     private static final int CONCURRENT_MODIFIERS = 10;
 
@@ -74,9 +74,11 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         initializeRepository(LockingStrategy.OPTIMISTIC);
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
         assertTrue("Expected at least one successful modification. Got " + getSuccessfulModifications(),
-                getSuccessfulModifications() >= 1);
+                   getSuccessfulModifications() >= 1);
         int expectedEventCount = getSuccessfulModifications() * 2;
         assertEquals(expectedEventCount, lastSequenceNumber);
+        System.out.println("Successful modifications: " + getSuccessfulModifications());
+
         verify(mockEventBus, atLeast(2)).publish(isA(DomainEvent.class));
     }
 
@@ -87,7 +89,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private void initializeRepository(LockingStrategy strategy) {
         repository = new SimpleEventSourcingRepository(strategy);
         eventStore = new FileSystemEventStore(new XStreamEventSerializer());
-        eventStore.setBaseDir(folder.getRoot());
+        eventStore.setBaseDir(new FileSystemResource(folder.getRoot().getPath() + "/"));
         repository.setEventStore(eventStore);
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
@@ -125,8 +127,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         while (committedEvents.hasNext()) {
             DomainEvent nextEvent = committedEvents.next();
             assertEquals("Events are not stored sequentially. Most likely due to unlocked concurrent access.",
-                    new Long(++lastSequenceNumber),
-                    nextEvent.getSequenceNumber());
+                         new Long(++lastSequenceNumber),
+                         nextEvent.getSequenceNumber());
         }
         return lastSequenceNumber;
     }
