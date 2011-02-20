@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -97,8 +97,10 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
      */
     public synchronized boolean scheduleEvent(T event) {
         if (cleanedUp) {
+            // this scheduler has been shut down; accept no more events
             return false;
         }
+        // add the event to the queue which this scheduler processes
         eventQueue.add(event);
         scheduleIfNecessary();
         return true;
@@ -121,7 +123,7 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
     }
 
     /**
-     * Tries to yield to other threads be rescheduling processing of any further queued events. If rescheduling fails,
+     * Tries to yield to other threads by rescheduling processing of any further queued events. If rescheduling fails,
      * this call returns false, indicating that processing should continue in the current thread.
      * <p/>
      * This method is thread safe
@@ -130,7 +132,6 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
      */
     private synchronized boolean yield() {
         if (eventQueue.size() > 0 || currentBatch.size() > 0) {
-            isScheduled = true;
             try {
                 if (retryAfter <= System.currentTimeMillis()) {
                     executor.execute(this);
@@ -216,8 +217,7 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
     }
 
     private void waitUntilAllowedStartingTime() {
-        long waitTimeRemaining;
-        waitTimeRemaining = retryAfter - System.currentTimeMillis();
+        long waitTimeRemaining = retryAfter - System.currentTimeMillis();
         if (waitTimeRemaining > 0) {
             try {
                 logger.warn("Event processing started before delay expired. Forcing thread to sleep for {} millis.",
@@ -225,6 +225,7 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
                 Thread.sleep(waitTimeRemaining);
             } catch (InterruptedException e) {
                 logger.warn("Thread was interrupted while waiting for retry. Scheduling for immediate retry.");
+                Thread.currentThread().interrupt();
             } finally {
                 retryAfter = 0;
             }

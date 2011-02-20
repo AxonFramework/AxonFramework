@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,31 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.Event;
+import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
  */
 public class AsynchronousEventHandlerWrapperTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(AsynchronousEventHandlerWrapperTest.class);
 
     private AsynchronousEventHandlerWrapper testSubject;
     private StubEventListener mockEventListener;
@@ -43,7 +53,7 @@ public class AsynchronousEventHandlerWrapperTest {
         executorService.setMaximumPoolSize(100);
         executorService.setKeepAliveTime(1, TimeUnit.MINUTES);
         testSubject = new AsynchronousEventHandlerWrapper(mockEventListener,
-                new SequentialPerAggregatePolicy(), executorService);
+                                                          new SequentialPerAggregatePolicy(), executorService);
     }
 
     @Test
@@ -68,8 +78,8 @@ public class AsynchronousEventHandlerWrapperTest {
                 DomainEvent domainEvent = (DomainEvent) event;
                 if (groupId.equals(domainEvent.getAggregateIdentifier())) {
                     assertEquals("Expected all events of same aggregate to be handled sequentially",
-                            ++lastFromGroup,
-                            (long) domainEvent.getSequenceNumber());
+                                 ++lastFromGroup,
+                                 (long) domainEvent.getSequenceNumber());
                 }
             }
         }
@@ -91,6 +101,8 @@ public class AsynchronousEventHandlerWrapperTest {
                         testSubject.handle(event);
                     }
                 } catch (InterruptedException e) {
+                    logger.warn("Interrupted while attempting dispatch of events.");
+                    Thread.currentThread().interrupt();
                     // then we don't dispatch anything
                 }
                 waitToEnd.countDown();
@@ -107,7 +119,5 @@ public class AsynchronousEventHandlerWrapperTest {
         public void handle(Event event) {
             events.add(event);
         }
-
     }
-
 }
