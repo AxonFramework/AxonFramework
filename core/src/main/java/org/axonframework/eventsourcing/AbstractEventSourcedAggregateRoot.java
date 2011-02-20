@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,12 +21,10 @@ import org.axonframework.domain.AggregateDeletedEvent;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.util.Assert;
 import org.axonframework.util.ReflectionUtils;
 
 import java.util.Collection;
-import java.util.UUID;
 import javax.persistence.MappedSuperclass;
 
 /**
@@ -57,18 +55,6 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      */
     protected AbstractEventSourcedAggregateRoot(AggregateIdentifier identifier) {
         super(identifier);
-    }
-
-    /**
-     * Initializes the aggregate root using the provided aggregate identifier.
-     *
-     * @param identifier the identifier of this aggregate
-     * @deprecated Use {@link #AbstractEventSourcedAggregateRoot(org.axonframework.domain.AggregateIdentifier)}. Will be
-     *             removed in next release.
-     */
-    @Deprecated
-    protected AbstractEventSourcedAggregateRoot(UUID identifier) {
-        super(new UUIDAggregateIdentifier(identifier));
     }
 
     /**

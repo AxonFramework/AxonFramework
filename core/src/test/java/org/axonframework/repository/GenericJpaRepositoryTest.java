@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AbstractJpaAggregateRoot;
+import org.axonframework.domain.AbstractAggregateRoot;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -85,7 +85,7 @@ public class GenericJpaRepositoryTest {
         verify(mockEntityManager, never()).flush();
     }
 
-    private class StubJpaAggregate extends AbstractJpaAggregateRoot {
+    private class StubJpaAggregate extends AbstractAggregateRoot {
 
         private StubJpaAggregate(AggregateIdentifier identifier) {
             super(identifier);
