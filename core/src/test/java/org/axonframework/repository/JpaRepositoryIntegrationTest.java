@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -90,15 +90,16 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.persist(agg);
         entityManager.flush();
         entityManager.clear();
+        assertEquals((Long) 0L, agg.getVersion());
 
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         JpaAggregate aggregate = repository.load(agg.getIdentifier());
         aggregate.setMessage("And again");
         aggregate.setMessage("And more");
         uow.commit();
-        entityManager.flush();
-        assertEquals((Long) 1L, aggregate.getLastEventSequenceNumber());
+
         assertEquals((Long) 1L, aggregate.getVersion());
+        assertEquals(0L, aggregate.getUncommittedEventCount());
         Assert.assertEquals(2, capturedEvents.size());
         Assert.assertEquals((Long) 0L, capturedEvents.get(0).getSequenceNumber());
         Assert.assertEquals((Long) 1L, capturedEvents.get(1).getSequenceNumber());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.*;
-
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -48,7 +48,7 @@ public class AbstractAnnotatedAggregateRootTest {
 
     @Test
     public void testInitializeWithIdentifier() {
-        testSubject = new SimpleAggregateRoot(UUID.randomUUID());
+        testSubject = new SimpleAggregateRoot(new UUIDAggregateIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());
     }
 
@@ -61,8 +61,8 @@ public class AbstractAnnotatedAggregateRootTest {
             apply(new StubDomainEvent());
         }
 
-        public SimpleAggregateRoot(UUID uuid) {
-            super(uuid);
+        private SimpleAggregateRoot(AggregateIdentifier identifier) {
+            super(identifier);
         }
 
         @EventHandler
@@ -90,6 +90,5 @@ public class AbstractAnnotatedAggregateRootTest {
         public void myEventHandlerMethod(StubDomainEvent event) {
             this.invocationCount++;
         }
-
     }
 }
