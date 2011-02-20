@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,7 @@ import java.util.LinkedList;
  */
 public abstract class CurrentUnitOfWork {
 
-    private static final ThreadLocal<Deque<UnitOfWork>> CURRENT = new ThreadLocal<Deque<UnitOfWork>>() {
-        @Override
-        protected Deque<UnitOfWork> initialValue() {
-            return new LinkedList<UnitOfWork>();
-        }
-    };
+    private static final ThreadLocal<Deque<UnitOfWork>> CURRENT = new ThreadLocal<Deque<UnitOfWork>>();
 
     private CurrentUnitOfWork() {
     }
@@ -45,7 +40,7 @@ public abstract class CurrentUnitOfWork {
      * @return whether a UnitOfWork has already been started.
      */
     public static boolean isStarted() {
-        return !CURRENT.get().isEmpty();
+        return CURRENT.get() != null && !CURRENT.get().isEmpty();
     }
 
     /**
@@ -59,11 +54,15 @@ public abstract class CurrentUnitOfWork {
      * @throws IllegalStateException if no UnitOfWork is active
      */
     public static UnitOfWork get() {
-        Deque<UnitOfWork> currentUnitOfWork = CURRENT.get();
-        if (currentUnitOfWork.isEmpty()) {
+        if (isEmpty()) {
             throw new IllegalStateException("No UnitOfWork is currently started for this thread.");
         }
-        return currentUnitOfWork.peek();
+        return CURRENT.get().peek();
+    }
+
+    private static boolean isEmpty() {
+        Deque<UnitOfWork> unitsOfWork = CURRENT.get();
+        return unitsOfWork == null || unitsOfWork.isEmpty();
     }
 
     /**
@@ -73,10 +72,7 @@ public abstract class CurrentUnitOfWork {
      * @see org.axonframework.unitofwork.UnitOfWork#commit()
      */
     public static void commit() {
-        if (!CurrentUnitOfWork.isStarted()) {
-            throw new IllegalStateException("No UnitOfWork is currenly started");
-        }
-        CurrentUnitOfWork.get().commit();
+        get().commit();
     }
 
     /**
@@ -86,6 +82,9 @@ public abstract class CurrentUnitOfWork {
      * @param unitOfWork The UnitOfWork to bind to the current thread.
      */
     static void set(UnitOfWork unitOfWork) {
+        if (CURRENT.get() == null) {
+            CURRENT.set(new LinkedList<UnitOfWork>());
+        }
         CURRENT.get().push(unitOfWork);
     }
 
@@ -100,6 +99,9 @@ public abstract class CurrentUnitOfWork {
     static void clear(UnitOfWork unitOfWork) {
         if (isStarted() && CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
+            if (CURRENT.get().isEmpty()) {
+                CURRENT.remove();
+            }
         } else {
             throw new IllegalStateException("Could not clear this UnitOfWork. It is not the active one.");
         }
