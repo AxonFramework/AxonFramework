@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,6 +144,73 @@ public class DefaultUnitOfWorkTest {
         inOrder.verify(listener2, times(1)).handle(event1);
         inOrder.verify(listener1, times(1)).handle(event2);
         inOrder.verify(listener2, times(1)).handle(event2);
+    }
+
+    @Test
+    public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnPrepareCommit() {
+        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
+        doThrow(new RuntimeException("Mock")).when(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class),
+                                                                                 anyListOf(Event.class));
+        testSubject.registerListener(mockListener);
+        testSubject.start();
+        try {
+            testSubject.commit();
+            fail("Expected exception");
+        } catch (RuntimeException e) {
+            assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
+            assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
+        }
+        verify(mockListener).onRollback(isA(RuntimeException.class));
+        verify(mockListener, never()).afterCommit();
+        verify(mockListener).onCleanup();
+    }
+
+    @SuppressWarnings({"unchecked"})
+    @Test
+    public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnCommitAggregate() {
+        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
+        doThrow(new RuntimeException("Mock")).when(callback).save(isA(AggregateRoot.class));
+        testSubject.registerListener(mockListener);
+        testSubject.registerAggregate(mockAggregateRoot, callback);
+        testSubject.start();
+        try {
+            testSubject.commit();
+            fail("Expected exception");
+        } catch (RuntimeException e) {
+            assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
+            assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
+        }
+        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+        verify(mockListener).onRollback(isA(RuntimeException.class));
+        verify(mockListener, never()).afterCommit();
+        verify(mockListener).onCleanup();
+    }
+
+    @SuppressWarnings({"unchecked"})
+    @Test
+    public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnDispatchEvents() {
+        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
+        doThrow(new RuntimeException("Mock")).when(mockEventBus).publish(isA(Event.class));
+        testSubject.start();
+        testSubject.registerListener(mockListener);
+        testSubject.publishEvent(new StubDomainEvent(), mockEventBus);
+        try {
+            testSubject.commit();
+            fail("Expected exception");
+        } catch (RuntimeException e) {
+            assertThat(e, new ArgumentMatcher<RuntimeException>() {
+                @Override
+                public boolean matches(Object o) {
+                    return "Mock".equals(((RuntimeException) o).getMessage());
+                }
+            });
+            assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
+            assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
+        }
+        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+        verify(mockListener).onRollback(isA(RuntimeException.class));
+        verify(mockListener, never()).afterCommit();
+        verify(mockListener).onCleanup();
     }
 
     private class PublishEvent implements Answer {

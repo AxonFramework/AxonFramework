@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,16 +49,17 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             notifyListenersPrepareCommit();
             saveAggregates();
             if (outerUnitOfWork == null) {
-                performCommit();
+                doCommit();
+                stop();
+                notifyListenersCleanup();
             }
         } catch (RuntimeException e) {
-            if (outerUnitOfWork != null) {
-                outerUnitOfWork.rollback(e);
-            }
+            doRollback(e);
+            stop();
+            notifyListenersCleanup();
             throw e;
         } finally {
             clear();
-            notifyListenersCleanup();
         }
     }
 
@@ -143,14 +144,17 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
      */
     protected abstract void doRollback(Throwable cause);
 
-    private void performCommit() {
+    private void performInnerCommit() {
+        CurrentUnitOfWork.set(this);
         try {
             doCommit();
         } catch (RuntimeException t) {
             doRollback(t);
             throw t;
         } finally {
+            clear();
             stop();
+            notifyListenersCleanup();
         }
     }
 
@@ -171,12 +175,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     protected void commitInnerUnitOfWork() {
         for (AbstractUnitOfWork unitOfWork : innerUnitsOfWork) {
             if (unitOfWork.isStarted()) {
-                CurrentUnitOfWork.set(unitOfWork);
-                try {
-                    unitOfWork.performCommit();
-                } finally {
-                    CurrentUnitOfWork.clear(unitOfWork);
-                }
+                unitOfWork.performInnerCommit();
             }
         }
     }
@@ -200,12 +199,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
         @Override
         public void afterCommit() {
-            CurrentUnitOfWork.set(AbstractUnitOfWork.this);
-            try {
-                performCommit();
-            } finally {
-                CurrentUnitOfWork.clear(AbstractUnitOfWork.this);
-            }
+            performInnerCommit();
         }
 
         @Override
