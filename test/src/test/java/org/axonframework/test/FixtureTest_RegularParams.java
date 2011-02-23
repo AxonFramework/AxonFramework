@@ -42,10 +42,10 @@ public class FixtureTest_RegularParams {
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                                                                      fixture.getEventBus()))
-                .given(new MyEvent(1))
-                .when(new TestCommand(fixture.getAggregateIdentifier()))
-                .expectReturnValue(Void.TYPE)
-                .expectEvents(new MyEvent(2));
+               .given(new MyEvent(1))
+               .when(new TestCommand(fixture.getAggregateIdentifier()))
+               .expectReturnValue(Void.TYPE)
+               .expectEvents(new MyEvent(2));
     }
 
     @Test
@@ -53,10 +53,10 @@ public class FixtureTest_RegularParams {
         MyCommandHandler commandHandler = new MyCommandHandler();
         commandHandler.setRepository(fixture.createGenericRepository(MyAggregate.class));
         fixture.registerAnnotatedCommandHandler(commandHandler)
-                .given(new MyEvent(1), new MyEvent(2))
-                .when(new TestCommand(fixture.getAggregateIdentifier()))
-                .expectReturnValue(Void.TYPE)
-                .expectEvents(new MyEvent(3));
+               .given(new MyEvent(1), new MyEvent(2))
+               .when(new TestCommand(fixture.getAggregateIdentifier()))
+               .expectReturnValue(Void.TYPE)
+               .expectEvents(new MyEvent(3));
     }
 
     @Test
@@ -102,7 +102,6 @@ public class FixtureTest_RegularParams {
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("org.axonframework.test.MyEvent <|> "));
         }
-
     }
 
     @Test
@@ -119,7 +118,7 @@ public class FixtureTest_RegularParams {
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("org.axonframework.test.MyOtherEvent <|>"
-                    + " org.axonframework.test.MyEvent"));
+                                                       + " org.axonframework.test.MyEvent"));
         }
     }
 
@@ -166,9 +165,9 @@ public class FixtureTest_RegularParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new TestCommand(fixture.getAggregateIdentifier()))
-                    .expectReturnValue(null);
+                   .given(givenEvents)
+                   .when(new TestCommand(fixture.getAggregateIdentifier()))
+                   .expectReturnValue(null);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("<null> but got <void>"));
@@ -182,9 +181,9 @@ public class FixtureTest_RegularParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new StrangeCommand(fixture.getAggregateIdentifier()))
-                    .expectException(IOException.class);
+                   .given(givenEvents)
+                   .when(new StrangeCommand(fixture.getAggregateIdentifier()))
+                   .expectException(IOException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(
@@ -248,7 +247,7 @@ public class FixtureTest_RegularParams {
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("The stored events do not match the published events."));
             assertTrue(e.getMessage().contains(" <|> org.axonframework.test.MyApplicationEvent"));
+            assertTrue(e.getMessage().contains("probable cause"));
         }
     }
-
 }

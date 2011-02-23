@@ -44,10 +44,10 @@ public class FixtureTest_MatcherParams {
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                                                                      fixture.getEventBus()))
-                .given(new MyEvent(1))
-                .when(new TestCommand(fixture.getAggregateIdentifier()))
-                .expectReturnValue(new DoesMatch())
-                .expectEvents(new DoesMatch<List<? extends Event>>());
+               .given(new MyEvent(1))
+               .when(new TestCommand(fixture.getAggregateIdentifier()))
+               .expectReturnValue(new DoesMatch())
+               .expectEvents(new DoesMatch<List<? extends Event>>());
     }
 
     @Test
@@ -93,9 +93,9 @@ public class FixtureTest_MatcherParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new TestCommand(fixture.getAggregateIdentifier()))
-                    .expectReturnValue(new DoesNotMatch());
+                   .given(givenEvents)
+                   .when(new TestCommand(fixture.getAggregateIdentifier()))
+                   .expectReturnValue(new DoesNotMatch());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("<something you can never give me> but got <void>"));
@@ -109,9 +109,9 @@ public class FixtureTest_MatcherParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new StrangeCommand(fixture.getAggregateIdentifier()))
-                    .expectException(new DoesNotMatch());
+                   .given(givenEvents)
+                   .when(new StrangeCommand(fixture.getAggregateIdentifier()))
+                   .expectException(new DoesNotMatch());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(
@@ -134,6 +134,7 @@ public class FixtureTest_MatcherParams {
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("The stored events do not match the published events."));
             assertTrue(e.getMessage().contains(" <|> org.axonframework.test.MyApplicationEvent"));
+            assertTrue(e.getMessage().contains("probable cause"));
         }
     }
 

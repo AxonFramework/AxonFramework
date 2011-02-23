@@ -46,12 +46,14 @@ class Reporter {
      *
      * @param storedEvents    The events that were stored
      * @param publishedEvents The events that were published
+     * @param probableCause   An exception that might be the cause of the failure
      */
     public void reportDifferenceInStoredVsPublished(Collection<DomainEvent> storedEvents,
-                                                    Collection<Event> publishedEvents) {
+                                                    Collection<Event> publishedEvents, Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The stored events do not match the published events.");
         appendEventOverview(sb, storedEvents, publishedEvents, "Stored events", "Published events");
+        appendProbableCause(probableCause, sb);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -115,14 +117,14 @@ class Reporter {
      */
     public void reportUnexpectedException(Throwable actualException, Description expectation) {
         StringBuilder sb = new StringBuilder("The command handler threw an unexpected exception");
-        sb.append(NEWLINE);
-        sb.append(NEWLINE);
-        sb.append("Expected <");
-        sb.append(expectation.toString());
-        sb.append("> but got <exception of type [")
-                .append(actualException.getClass().getSimpleName());
-        sb.append("]>. Stack trace follows:");
-        sb.append(NEWLINE);
+        sb.append(NEWLINE)
+          .append(NEWLINE)
+          .append("Expected <")
+          .append(expectation.toString())
+          .append("> but got <exception of type [")
+          .append(actualException.getClass().getSimpleName())
+          .append("]>. Stack trace follows:")
+          .append(NEWLINE);
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
@@ -137,13 +139,13 @@ class Reporter {
     public void reportWrongResult(Object actualReturnValue, Description expectation) {
         StringBuilder sb = new StringBuilder("The command handler returned an unexpected value");
         sb.append(NEWLINE)
-                .append(NEWLINE)
-                .append("Expected <");
+          .append(NEWLINE)
+          .append("Expected <");
         sb.append(expectation.toString());
         sb.append("> but got <");
         describe(actualReturnValue, sb);
         sb.append(">")
-                .append(NEWLINE);
+          .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -156,13 +158,13 @@ class Reporter {
     public void reportUnexpectedReturnValue(Object actualReturnValue, Description description) {
         StringBuilder sb = new StringBuilder("The command handler returned normally, but an exception was expected");
         sb.append(NEWLINE)
-                .append(NEWLINE)
-                .append("Expected <");
+          .append(NEWLINE)
+          .append("Expected <");
         sb.append(description.toString());
         sb.append("> but returned with <");
         describe(actualReturnValue, sb);
         sb.append(">")
-                .append(NEWLINE);
+          .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -175,13 +177,13 @@ class Reporter {
     public void reportWrongException(Throwable actualException, Description description) {
         StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type");
         sb.append(NEWLINE)
-                .append(NEWLINE)
-                .append("Expected <")
-                .append(description.toString())
-                .append("> but got <exception of type [")
-                .append(actualException.getClass().getSimpleName())
-                .append("]>. Stacktrace follows: ")
-                .append(NEWLINE);
+          .append(NEWLINE)
+          .append("Expected <")
+          .append(description.toString())
+          .append("> but got <exception of type [")
+          .append(actualException.getClass().getSimpleName())
+          .append("]>. Stacktrace follows: ")
+          .append(NEWLINE);
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
@@ -199,26 +201,26 @@ class Reporter {
                                              Object expected) {
         StringBuilder sb = new StringBuilder("One of the events contained different values than expected");
         sb.append(NEWLINE)
-                .append(NEWLINE)
-                .append("In an event of type [")
-                .append(eventType.getSimpleName())
-                .append("], the property [")
-                .append(field.getName())
-                .append("] ");
+          .append(NEWLINE)
+          .append("In an event of type [")
+          .append(eventType.getSimpleName())
+          .append("], the property [")
+          .append(field.getName())
+          .append("] ");
         if (!eventType.equals(field.getDeclaringClass())) {
             sb.append("(declared in [")
-                    .append(field.getDeclaringClass().getSimpleName())
-                    .append("]) ");
+              .append(field.getDeclaringClass().getSimpleName())
+              .append("]) ");
         }
 
         sb.append("was not as expected.")
-                .append(NEWLINE)
-                .append("Expected <")
-                .append(nullSafeToString(expected))
-                .append("> but got <")
-                .append(nullSafeToString(actual))
-                .append(">")
-                .append(NEWLINE);
+          .append(NEWLINE)
+          .append("Expected <")
+          .append(nullSafeToString(expected))
+          .append("> but got <")
+          .append(nullSafeToString(actual))
+          .append(">")
+          .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -226,7 +228,8 @@ class Reporter {
         if (probableCause != null) {
             sb.append(NEWLINE);
             sb.append("A probable cause for the wrong chain of events is an "
-                              + "exception that occurred while handling the command");
+                              + "exception that occurred while handling the command.");
+            sb.append(NEWLINE);
             CharArrayWriter charArrayWriter = new CharArrayWriter();
             probableCause.printStackTrace(new PrintWriter(charArrayWriter));
             sb.append(charArrayWriter.toCharArray());
@@ -280,8 +283,8 @@ class Reporter {
         sb.append(leftColumnName);
         pad(sb, leftColumnName.length(), largestExpectedSize, " ");
         sb.append("  |  ")
-                .append(rightColumnName)
-                .append(NEWLINE);
+          .append(rightColumnName)
+          .append(NEWLINE);
         pad(sb, 0, largestExpectedSize, "-");
         sb.append("--|--");
         pad(sb, 0, largestExpectedSize, "-");

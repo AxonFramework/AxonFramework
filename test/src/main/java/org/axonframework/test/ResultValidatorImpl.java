@@ -60,16 +60,15 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     @Override
     public ResultValidator expectEvents(DomainEvent... expectedEvents) {
         if (publishedEvents.size() != storedEvents.size()) {
-            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents);
+            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
         }
-
         return expectPublishedEvents(expectedEvents);
     }
 
     @Override
     public ResultValidator expectEvents(Matcher<List<? extends Event>> matcher) {
         if (publishedEvents.size() != storedEvents.size()) {
-            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents);
+            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
         }
 
         return expectPublishedEvents(matcher);
