@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.CachingGenericEventSourcingRepository;
 import org.axonframework.eventsourcing.GenericEventSourcingRepository;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.LockingStrategy;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
@@ -87,11 +89,13 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
         }
 
         parseAggregateRootType(element, repositoryDefinition);
-        parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues());
-        parseReferenceAttribute(element, EVENT_STORE_ATTRIBUTE, "eventStore", repositoryDefinition.getPropertyValues());
+        parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues(),
+                                EventBus.class);
+        parseReferenceAttribute(element, EVENT_STORE_ATTRIBUTE, "eventStore", repositoryDefinition.getPropertyValues(),
+                                EventStore.class);
         parseReferenceAttribute(element, CONFLICT_RESOLVER_ATTRIBUTE, "conflictResolver",
-                                repositoryDefinition.getPropertyValues());
-        parseReferenceAttribute(element, CACHE_ATTRIBUTE, "cache", repositoryDefinition.getPropertyValues());
+                                repositoryDefinition.getPropertyValues(), null);
+        parseReferenceAttribute(element, CACHE_ATTRIBUTE, "cache", repositoryDefinition.getPropertyValues(), null);
         parseProcessors(element, parserContext, repositoryDefinition);
         return repositoryDefinition;
     }
@@ -126,12 +130,16 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      * @param referenceName The name of the reference attribute.
      * @param propertyName  The name of the property to set the references object to
      * @param properties    The properties of the bean definition
+     * @param autowiredType An optional class defining the type to autowire. Use <code>null</code> to indicate that no
+     *                      autowiring is required.
      */
 
     private void parseReferenceAttribute(Element element, String referenceName, String propertyName,
-                                         MutablePropertyValues properties) {
+                                         MutablePropertyValues properties, Class<?> autowiredType) {
         if (element.hasAttribute(referenceName)) {
             properties.add(propertyName, new RuntimeBeanReference(element.getAttribute(referenceName)));
+        } else if (autowiredType != null) {
+            properties.add(propertyName, new AutowiredBean(autowiredType));
         }
     }
 
@@ -166,5 +174,4 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
                     "No class of name " + aggregateRootTypeString + " was found on the classpath", e);
         }
     }
-
 }
