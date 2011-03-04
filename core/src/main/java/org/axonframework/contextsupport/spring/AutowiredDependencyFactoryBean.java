@@ -28,6 +28,7 @@ import org.springframework.context.ApplicationContextAware;
  * <p/>
  * This factory does not create beans. It merely returns references to beans already existing.
  *
+ * @param <T> The type of autowired bean
  * @author Allard Buijze
  * @since 1.0
  */
