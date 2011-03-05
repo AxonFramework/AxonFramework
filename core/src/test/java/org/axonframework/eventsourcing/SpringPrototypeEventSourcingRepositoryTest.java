@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,23 +68,25 @@ public class SpringPrototypeEventSourcingRepositoryTest {
     public void testCreateInstances() {
         try {
             new DefaultUnitOfWork().start();
-            final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
-            when(mockEventStore.readEvents(repository.getTypeIdentifier(), aggregateIdentifier))
+            final AggregateIdentifier aggregateIdentifier1 = new UUIDAggregateIdentifier();
+            final AggregateIdentifier aggregateIdentifier2 = new UUIDAggregateIdentifier();
+            when(mockEventStore.readEvents(eq(repository.getTypeIdentifier()), isA(AggregateIdentifier.class)))
                     .thenAnswer(new Answer<Object>() {
                         @Override
                         public Object answer(InvocationOnMock invocation) throws Throwable {
-                            return new SimpleDomainEventStream(new StubDomainEvent(aggregateIdentifier, 0L));
+                            return new SimpleDomainEventStream(
+                                    new StubDomainEvent((AggregateIdentifier) invocation.getArguments()[1],
+                                                        0L));
                         }
                     });
-            StubAggregate aggregate1 = repository.load(aggregateIdentifier, 0L);
-            StubAggregate aggregate2 = repository.load(aggregateIdentifier, 0L);
+            StubAggregate aggregate1 = repository.load(aggregateIdentifier1, 0L);
+            StubAggregate aggregate2 = repository.load(aggregateIdentifier2, 0L);
 
             assertNotSame(aggregate1, aggregate2);
             assertEquals(Long.valueOf(0L), aggregate1.getVersion());
             assertEquals(Long.valueOf(0L), aggregate2.getVersion());
-
         } finally {
-            if (CurrentUnitOfWork.isStarted()) {
+            while (CurrentUnitOfWork.isStarted()) {
                 CurrentUnitOfWork.get().rollback();
             }
         }
