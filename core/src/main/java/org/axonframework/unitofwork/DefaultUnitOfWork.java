@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,12 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,6 +43,8 @@ import java.util.Set;
  * @since 0.6
  */
 public class DefaultUnitOfWork extends AbstractUnitOfWork {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultUnitOfWork.class);
 
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
     private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
@@ -79,25 +84,59 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         notifyListenersAfterCommit();
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
-    public <T extends AggregateRoot> void registerAggregate(T aggregate,
-                                                            SaveAggregateCallback<T> callback) {
+    public <T extends AggregateRoot> T registerAggregate(T aggregate,
+                                                         SaveAggregateCallback<T> callback) {
+        T similarAggregate = (T) findSimilarAggregate(aggregate.getClass(), aggregate.getIdentifier());
+        if (similarAggregate != null) {
+            logger.warn("An aggregate is being registered with this UnitOfWork more than once. "
+                                + "Although this is not likely to cause problems, it is improper use of resources. "
+                                + "Duplicated aggregate: type [{}], identifier [{}]",
+                        aggregate.getClass().getSimpleName(),
+                        aggregate.getIdentifier().asString());
+            return similarAggregate;
+        }
         registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, callback));
+        return aggregate;
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private <T extends AggregateRoot> T findSimilarAggregate(Class<T> aggregateType,
+                                                             AggregateIdentifier identifier) {
+        for (AggregateRoot aggregate : registeredAggregates.keySet()) {
+            if (aggregateType.isInstance(aggregate) && identifier.equals(aggregate.getIdentifier())) {
+                return (T) aggregate;
+            }
+        }
+        return null;
     }
 
     @Override
     public void registerListener(UnitOfWorkListener listener) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Registering listener: {}", listener.getClass().getName());
+        }
         listeners.add(listener);
     }
 
     @Override
     public void publishEvent(Event event, EventBus eventBus) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Staging event for publishing: [{}] on [{}]",
+                         event.getClass().getName(),
+                         eventBus.getClass().getName());
+        }
         eventsToPublish.add(new EventEntry(event, eventBus));
     }
 
     @Override
     protected void notifyListenersRollback(Throwable cause) {
+        logger.debug("Notifying listeners of rollback");
         for (UnitOfWorkListener listener : listeners) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Notifying listener [{}] of rollback", listener.getClass().getName());
+            }
             listener.onRollback(cause);
         }
     }
@@ -106,7 +145,11 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
      * Send a {@link UnitOfWorkListener#afterCommit()} notification to all registered listeners.
      */
     protected void notifyListenersAfterCommit() {
+        logger.debug("Notifying listeners after commit");
         for (UnitOfWorkListener listener : listeners) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Notifying listener [{}] after commit", listener.getClass().getName());
+            }
             listener.afterCommit();
         }
     }
@@ -115,38 +158,65 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
      * Publishes all registered events to their respective event bus.
      */
     protected void publishEvents() {
+        logger.debug("Publishing events to the event bus");
         if (dispatcherStatus == Status.DISPATCHING) {
             // this prevents events from overtaking each other
+            logger.debug("UnitOfWork is already in the dispatch process. "
+                                 + "That process will publish events instead. Aborting...");
             return;
         }
         dispatcherStatus = Status.DISPATCHING;
         while (!eventsToPublish.isEmpty()) {
-            eventsToPublish.poll().publishEvent();
+            EventEntry eventEntry = eventsToPublish.poll();
+            if (logger.isDebugEnabled()) {
+                logger.debug("Publishing event [{}] to event bus [{}]",
+                             eventEntry.event.getClass().getName(),
+                             eventEntry.eventBus.getClass().getName());
+            }
+            eventEntry.publishEvent();
         }
+        logger.debug("All events successfully published.");
         dispatcherStatus = Status.READY;
     }
 
     @Override
     protected void saveAggregates() {
+        logger.debug("Persisting changes to aggregates");
         for (AggregateEntry entry : registeredAggregates.values()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Persisting changes to [{}], identifier: [{}]",
+                             entry.aggregateRoot.getClass().getName(),
+                             entry.aggregateRoot.getIdentifier().asString());
+            }
             entry.saveAggregate();
         }
+        logger.debug("Aggregates successfully persisted");
         registeredAggregates.clear();
     }
 
     @Override
     protected void notifyListenersPrepareCommit() {
+        logger.debug("Notifying listeners of commit request");
         List<Event> events = eventsToPublish();
         for (UnitOfWorkListener listener : listeners) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Notifying listener [{}] of upcoming commit", listener.getClass().getName());
+            }
             listener.onPrepareCommit(registeredAggregates.keySet(), events);
         }
+        logger.debug("Listeners successfully notified");
     }
 
     @Override
     protected void notifyListenersCleanup() {
+        logger.debug("Notifying listeners of cleanup");
         for (UnitOfWorkListener listener : listeners) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
+            }
             listener.onCleanup();
         }
+        logger.debug("Listeners successfully notified");
     }
 
     private List<Event> eventsToPublish() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,15 +86,25 @@ public interface UnitOfWork {
 
     /**
      * Register an aggregate with this UnitOfWork. These aggregates will be saved (at the latest) when the UnitOfWork is
-     * committed.
+     * committed. This method returns the instance of the aggregate root that should be used as part of the processing
+     * in this Unit Of Work.
+     * <p/>
+     * If an aggregate of the same type and with the same identifier has already been registered, one of two things may
+     * happen, depending on the actual implementation: <ul><li>the instance that has already been registered is
+     * returned. In which case the given <code>saveAggregateCallback</code> is ignored.</li><li>an IllegalStateException
+     * is thrown to indicate an illegal attempt to register a duplicate</li></ul>.
      *
      * @param aggregateRoot         The aggregate root to register in the UnitOfWork
      * @param saveAggregateCallback The callback that is invoked when the UnitOfWork wants to store the registered
      *                              aggregate
      * @param <T>                   the type of aggregate to register
+     * @return The actual aggregate instance to use
+     *
+     * @throws IllegalStateException if this Unit Of Work does not support registrations of aggregates with identical
+     *                               type and identifier
      */
-    <T extends AggregateRoot> void registerAggregate(T aggregateRoot,
-                                                     SaveAggregateCallback<T> saveAggregateCallback);
+    <T extends AggregateRoot> T registerAggregate(T aggregateRoot,
+                                                  SaveAggregateCallback<T> saveAggregateCallback);
 
     /**
      * Request to publish the given <code>event</code> on the given <code>eventBus</code>. The UnitOfWork may either

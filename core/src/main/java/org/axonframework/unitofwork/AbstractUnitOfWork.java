@@ -44,21 +44,27 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     @Override
     public void commit() {
+        logger.debug("Committing Unit Of Work");
         assertStarted();
         try {
             notifyListenersPrepareCommit();
             saveAggregates();
             if (outerUnitOfWork == null) {
+                logger.debug("This Unit Of Work is not nested. Finalizing commit...");
                 doCommit();
                 stop();
                 notifyListenersCleanup();
+            } else if (logger.isDebugEnabled()) {
+                logger.debug("This Unit Of Work is nested. Commit will be finalized by outer Unit Of Work.");
             }
         } catch (RuntimeException e) {
+            logger.warn("An error occurred while committing this UnitOfWork. Performing rollback...");
             doRollback(e);
             stop();
             notifyListenersCleanup();
             throw e;
         } finally {
+            logger.debug("Clearing resources of this Unit Of Work.");
             clear();
         }
     }
@@ -84,7 +90,9 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     @Override
     public void rollback(Throwable cause) {
         if (cause != null && logger.isInfoEnabled()) {
-            logger.info("Rolling back UnitOfWork due to exception. ", cause);
+            logger.debug("Rollback requested for Unit Of Work due to exception. ", cause);
+        } else if (logger.isInfoEnabled()) {
+            logger.debug("Rollback requested for Unit Of Work for unknown reason.");
         }
 
         try {
@@ -99,6 +107,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     @Override
     public void start() {
+        logger.debug("Starting Unit Of Work.");
         if (isStarted) {
             throw new IllegalStateException("UnitOfWork is already started");
         } else if (CurrentUnitOfWork.isStarted()) {
@@ -110,6 +119,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
                 outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
             }
         }
+        logger.debug("Registering Unit Of Work as CurrentUnitOfWork");
         CurrentUnitOfWork.set(this);
         isStarted = true;
         doStart();
@@ -121,6 +131,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     private void stop() {
+        logger.debug("Stopping Unit Of Work");
         isStarted = false;
     }
 
@@ -145,6 +156,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     protected abstract void doRollback(Throwable cause);
 
     private void performInnerCommit() {
+        logger.debug("Finalizing commit of inner Unit Of Work...");
         CurrentUnitOfWork.set(this);
         try {
             doCommit();
