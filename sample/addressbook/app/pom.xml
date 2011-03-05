@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.axonframework.samples</groupId>
         <artifactId>axon-addressbook</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0-rc2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
