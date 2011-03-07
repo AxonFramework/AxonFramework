@@ -18,7 +18,6 @@ package org.axonframework.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 /**
  * Abstract class to support implementations that need to invoke methods based on an annotation.
@@ -69,19 +68,19 @@ public abstract class AbstractHandlerInvoker extends AbstractHandlerInspector {
      */
     protected Object invokeHandlerMethod(Object parameter, Object secondHandlerParameter)
             throws InvocationTargetException, IllegalAccessException {
-        final Method m = findHandlerMethod(parameter.getClass());
+        final Handler m = findHandlerMethod(parameter.getClass());
         if (m == null) {
             // event listener doesn't support this type of event
             return onNoMethodFound(parameter.getClass());
         }
         Object retVal;
-        if (m.getParameterTypes().length == 1) {
-            retVal = m.invoke(target, parameter);
+        if (m.hasOptionalParameter()) {
+            retVal = m.getMethod().invoke(target, parameter, secondHandlerParameter);
         } else {
-            retVal = m.invoke(target, parameter, secondHandlerParameter);
+            retVal = m.getMethod().invoke(target, parameter);
         }
         // let's make a clear distinction between null return value and void methods
-        if (Void.TYPE.equals(m.getReturnType())) {
+        if (Void.TYPE.equals(m.getMethod().getReturnType())) {
             return Void.TYPE;
         }
         return retVal;

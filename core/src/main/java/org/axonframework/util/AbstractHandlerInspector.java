@@ -35,7 +35,7 @@ public abstract class AbstractHandlerInspector {
     private static final HandlerMethodComparator HANDLER_METHOD_COMPARATOR = new HandlerMethodComparator();
 
     private final Class<?> targetType;
-    private final SortedSet<Method> handlers = new TreeSet<Method>(HANDLER_METHOD_COMPARATOR);
+    private final SortedSet<Handler> handlers = new TreeSet<Handler>(HANDLER_METHOD_COMPARATOR);
 
     /**
      * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the
@@ -49,7 +49,7 @@ public abstract class AbstractHandlerInspector {
         this.targetType = targetType;
         for (Method method : ReflectionUtils.methodsOf(targetType)) {
             if (method.isAnnotationPresent(annotationType)) {
-                handlers.add(method);
+                handlers.add(new Handler(method));
                 if (!method.isAccessible()) {
                     doPrivileged(new MethodAccessibilityCallback(method));
                 }
@@ -64,11 +64,11 @@ public abstract class AbstractHandlerInspector {
      * @param parameterType The parameter type to find a handler for
      * @return the  handler method for the given parameterType
      */
-    protected Method findHandlerMethod(final Class<?> parameterType) {
-        for (Method method : handlers) {
-            if (method.getParameterTypes()[0].isAssignableFrom(parameterType)) {
+    protected Handler findHandlerMethod(final Class<?> parameterType) {
+        for (Handler handler : handlers) {
+            if (handler.getParameter().isAssignableFrom(parameterType)) {
                 // method is eligible and first is best
-                return method;
+                return handler;
             }
         }
         return null;
@@ -83,9 +83,11 @@ public abstract class AbstractHandlerInspector {
         return targetType;
     }
 
-    private static class HandlerMethodComparator implements Comparator<Method> {
+    private static class HandlerMethodComparator implements Comparator<Handler> {
         @Override
-        public int compare(Method m1, Method m2) {
+        public int compare(Handler h1, Handler h2) {
+            Method m1 = h1.getMethod();
+            Method m2 = h2.getMethod();
             if (m1.getDeclaringClass().equals(m2.getDeclaringClass())) {
                 // they're in the same class. Pick the most specific method.
                 if (m1.getParameterTypes()[0].isAssignableFrom(m2.getParameterTypes()[0])) {

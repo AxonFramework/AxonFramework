@@ -19,9 +19,9 @@ package org.axonframework.saga.annotation;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.annotation.EventHandlerInvocationException;
 import org.axonframework.util.AbstractHandlerInvoker;
+import org.axonframework.util.Handler;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 /**
  * Utility class that invokes annotated Event Handlers on Sagas.
@@ -50,8 +50,8 @@ class SagaEventHandlerInvoker extends AbstractHandlerInvoker {
      *         <code>false</code> otherwise.
      */
     public boolean isEndingEvent(Object event) {
-        Method method = super.findHandlerMethod(event.getClass());
-        return method != null && method.isAnnotationPresent(EndSaga.class);
+        Handler handler = super.findHandlerMethod(event.getClass());
+        return handler != null && handler.getMethod().isAnnotationPresent(EndSaga.class);
     }
 
     /**

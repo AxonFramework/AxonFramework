@@ -20,6 +20,7 @@ import org.axonframework.domain.Event;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.util.AbstractHandlerInspector;
 import org.axonframework.util.AxonConfigurationException;
+import org.axonframework.util.Handler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -50,10 +51,11 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
      * @return the configuration of the handler, as defined by the annotations.
      */
     public HandlerConfiguration findHandlerConfiguration(Event event) {
-        Method handlerMethod = findHandlerMethod(event.getClass());
-        if (handlerMethod == null) {
+        Handler handler = findHandlerMethod(event.getClass());
+        if (handler == null) {
             return HandlerConfiguration.noHandler();
         }
+        Method handlerMethod = handler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
         StartSaga startAnnotation = handlerMethod.getAnnotation(StartSaga.class);
         EndSaga endAnnotation = handlerMethod.getAnnotation(EndSaga.class);
