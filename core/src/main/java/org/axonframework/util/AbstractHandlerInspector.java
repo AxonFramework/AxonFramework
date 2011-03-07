@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,11 @@ package org.axonframework.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Comparator;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import static java.security.AccessController.doPrivileged;
 
 /**
  * Abstract utility class that inspects handler methods.
@@ -27,48 +32,75 @@ import java.lang.reflect.Method;
  */
 public abstract class AbstractHandlerInspector {
 
-    private final Class<? extends Annotation> annotationType;
+    private static final HandlerMethodComparator HANDLER_METHOD_COMPARATOR = new HandlerMethodComparator();
+
+    private final Class<?> targetType;
+    private final SortedSet<Method> handlers = new TreeSet<Method>(HANDLER_METHOD_COMPARATOR);
 
     /**
-     * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the Event
+     * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the
+     * Event
      * Handler methods.
      *
+     * @param targetType     The targetType to inspect methods on
      * @param annotationType The annotation used on the Event Handler methods.
      */
-    public AbstractHandlerInspector(Class<? extends Annotation> annotationType) {
-        this.annotationType = annotationType;
+    protected AbstractHandlerInspector(Class<?> targetType, Class<? extends Annotation> annotationType) {
+        this.targetType = targetType;
+        for (Method method : ReflectionUtils.methodsOf(targetType)) {
+            if (method.isAnnotationPresent(annotationType)) {
+                handlers.add(method);
+                if (!method.isAccessible()) {
+                    doPrivileged(new MethodAccessibilityCallback(method));
+                }
+            }
+        }
     }
 
     /**
      * Returns the handler method that handles objects of the given <code>parameterType</code>. Returns
      * <code>null</code> is no such method is found.
      *
-     * @param targetType    The type on which to find a suitable handler
      * @param parameterType The parameter type to find a handler for
      * @return the  handler method for the given parameterType
      */
-    protected Method findHandlerMethod(Class<?> targetType, final Class<?> parameterType) {
-        Method bestMethodSoFar = null;
-        for (Method method : ReflectionUtils.methodsOf(targetType)) {
-            Method foundSoFar = bestMethodSoFar;
-            Class<?> classUnderInvestigation = method.getDeclaringClass();
-            boolean bestInClassFound =
-                    foundSoFar != null
-                            && !classUnderInvestigation.equals(foundSoFar.getDeclaringClass())
-                            && classUnderInvestigation.isAssignableFrom(foundSoFar.getDeclaringClass());
-            if (!bestInClassFound && method.isAnnotationPresent(annotationType)
-                    && method.getParameterTypes()[0].isAssignableFrom(parameterType)) {
-                // method is eligible, but is it the best?
-                if (bestMethodSoFar == null) {
-                    // if we have none yet, this one is the best
-                    bestMethodSoFar = method;
-                } else if (bestMethodSoFar.getDeclaringClass().equals(method.getDeclaringClass())
-                        && bestMethodSoFar.getParameterTypes()[0].isAssignableFrom(method.getParameterTypes()[0])) {
-                    // this one is more specific, so it wins
-                    bestMethodSoFar = method;
-                }
+    protected Method findHandlerMethod(final Class<?> parameterType) {
+        for (Method method : handlers) {
+            if (method.getParameterTypes()[0].isAssignableFrom(parameterType)) {
+                // method is eligible and first is best
+                return method;
             }
         }
-        return bestMethodSoFar;
+        return null;
+    }
+
+    /**
+     * Returns the targetType on which handler methods are invoked.
+     *
+     * @return the targetType on which handler methods are invoked
+     */
+    public Class<?> getTargetType() {
+        return targetType;
+    }
+
+    private static class HandlerMethodComparator implements Comparator<Method> {
+        @Override
+        public int compare(Method m1, Method m2) {
+            if (m1.getDeclaringClass().equals(m2.getDeclaringClass())) {
+                // they're in the same class. Pick the most specific method.
+                if (m1.getParameterTypes()[0].isAssignableFrom(m2.getParameterTypes()[0])) {
+                    return 1;
+                } else if (m2.getParameterTypes()[0].isAssignableFrom(m1.getParameterTypes()[0])) {
+                    return -1;
+                } else {
+                    // the parameters are in a different hierarchy. The order doesn't matter.
+                    return m1.toGenericString().compareTo(m2.toGenericString());
+                }
+            } else if (m1.getDeclaringClass().isAssignableFrom(m2.getDeclaringClass())) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
     }
 }

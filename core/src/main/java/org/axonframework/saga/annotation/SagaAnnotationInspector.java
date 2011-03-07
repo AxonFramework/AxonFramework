@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,27 +28,29 @@ import java.lang.reflect.Method;
  * Utility class that inspects annotation on a Saga instance and returns the relevant configuration for its Event
  * Handlers.
  *
+ * @param <T> The type of saga targeted by this inspector
  * @author Allard Buijze
  * @since 0.7
  */
-class SagaAnnotationInspector extends AbstractHandlerInspector {
+class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractHandlerInspector {
 
     /**
      * Initialize the inspector.
+     *
+     * @param sagaType The type of saga this inspector handles
      */
-    public SagaAnnotationInspector() {
-        super(SagaEventHandler.class);
+    public SagaAnnotationInspector(Class<T> sagaType) {
+        super(sagaType, SagaEventHandler.class);
     }
 
     /**
      * Find the configuration for the handler on the given <code>sagaType</code> for the given <code>event</code>.
      *
-     * @param sagaType The type of saga to investigate
-     * @param event    The Event to investigate the handler for
+     * @param event The Event to investigate the handler for
      * @return the configuration of the handler, as defined by the annotations.
      */
-    public HandlerConfiguration findHandlerConfiguration(Class<?> sagaType, Event event) {
-        Method handlerMethod = findHandlerMethod(sagaType, event.getClass());
+    public HandlerConfiguration findHandlerConfiguration(Event event) {
+        Method handlerMethod = findHandlerMethod(event.getClass());
         if (handlerMethod == null) {
             return HandlerConfiguration.noHandler();
         }
@@ -56,8 +58,9 @@ class SagaAnnotationInspector extends AbstractHandlerInspector {
         StartSaga startAnnotation = handlerMethod.getAnnotation(StartSaga.class);
         EndSaga endAnnotation = handlerMethod.getAnnotation(EndSaga.class);
         String associationProperty = handlerAnnotation.associationProperty();
-        String associationKey = handlerAnnotation.keyName().isEmpty() ? associationProperty : handlerAnnotation
-                .keyName();
+        String associationKey = handlerAnnotation.keyName().isEmpty()
+                ? associationProperty
+                : handlerAnnotation.keyName();
         Object associationValue = getPropertyValue(event, associationProperty);
         AssociationValue association = new AssociationValue(associationKey, associationValue);
         return new HandlerConfiguration(creationPolicy(startAnnotation),
@@ -91,5 +94,10 @@ class SagaAnnotationInspector extends AbstractHandlerInspector {
 
     private String capitalize(String s) {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    @SuppressWarnings({"unchecked"})
+    public Class<T> getSagaType() {
+        return (Class<T>) super.getTargetType();
     }
 }

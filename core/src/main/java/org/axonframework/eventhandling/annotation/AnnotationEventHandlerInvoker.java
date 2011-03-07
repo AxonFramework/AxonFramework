@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -94,7 +94,7 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
 
     private void invokeTransactionMethod(Class<? extends Annotation> annotation,
                                          TransactionStatus transactionStatus) {
-        Iterator<Method> iterator = ReflectionUtils.methodsOf(getTarget().getClass()).iterator();
+        Iterator<Method> iterator = ReflectionUtils.methodsOf(getTargetType()).iterator();
         boolean found = false;
         while (!found && iterator.hasNext()) {
             Method m = iterator.next();
@@ -113,7 +113,7 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
                         throw new TransactionMethodExecutionException(String.format(
                                 "An error occurred while invoking [%s] on [%s].",
                                 m.getName(),
-                                getTarget().getClass().getSimpleName()), e);
+                                getTargetType().getSimpleName()), e);
                     }
                 } catch (IllegalAccessException e) {
                     throw new AxonConfigurationException("Should be Illegal to access this method", e);

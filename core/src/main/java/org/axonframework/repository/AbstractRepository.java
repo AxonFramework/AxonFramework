@@ -32,7 +32,8 @@ import javax.annotation.Resource;
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
  * persisted. All uncommitted events on an aggregate are dispatched when the aggregate is saved.
  * <p/>
- * Note that this repository implementation does not take care of any locking. The underlying persistence is expected to
+ * Note that this repository implementation does not take care of any locking. The underlying persistence is expected
+ * to
  * deal with concurrency. Alternatively, consider using the {@link LockingRepository}.
  *
  * @param <T> The type of aggregate this repository stores
@@ -83,7 +84,8 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * Checks the aggregate for concurrent changes. Throws a {@link org.axonframework.repository.ConflictingModificationException}
      * when conflicting changes have been detected.
      * <p/>
-     * This implementation throws a {@link ConflictingAggregateVersionException} if the expected version is not null and
+     * This implementation throws a {@link ConflictingAggregateVersionException} if the expected version is not null
+     * and
      * the version number of the aggregate does not match the expected version
      *
      * @param aggregate       The loaded aggregate
@@ -146,7 +148,9 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
         private void dispatchUncommittedEvents(DomainEventStream uncommittedEvents) {
             while (uncommittedEvents.hasNext()) {
                 DomainEvent event = uncommittedEvents.next();
-                logger.debug("Publishing event [{}] to the UnitOfWork", event.getClass().getSimpleName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Publishing event [{}] to the UnitOfWork", event.getClass().getSimpleName());
+                }
                 CurrentUnitOfWork.get().publishEvent(event, eventBus);
             }
         }

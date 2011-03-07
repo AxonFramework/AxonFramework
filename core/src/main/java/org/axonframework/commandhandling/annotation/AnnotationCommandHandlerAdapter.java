@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,7 +45,8 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     private final CommandBus commandBus;
 
     /**
-     * Initialize the command handler adapter for the given <code>target</code> which is to be subscribed with the given
+     * Initialize the command handler adapter for the given <code>target</code> which is to be subscribed with the
+     * given
      * <code>commandBus</code>.
      * <p/>
      * Note that you need to call {@link #subscribe()} to actually subscribe the command handlers to the command bus.
@@ -83,7 +84,8 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     }
 
     /**
-     * Subscribe the command handlers to the command bus assigned during the initialization. A subscription is made with
+     * Subscribe the command handlers to the command bus assigned during the initialization. A subscription is made
+     * with
      * the command bus for each accepted type of command.
      */
     @Override
@@ -110,7 +112,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     @SuppressWarnings({"unchecked"})
     private <T> List<Class<? extends T>> findAcceptedHandlerParameters() {
         final List<Class<? extends T>> handlerParameters = new LinkedList<Class<? extends T>>();
-        for (Method m : ReflectionUtils.methodsOf(getTarget().getClass())) {
+        for (Method m : ReflectionUtils.methodsOf(getTargetType())) {
             if (m.isAnnotationPresent(CommandHandler.class)) {
                 handlerParameters.add((Class<T>) m.getParameterTypes()[0]);
             }
@@ -122,16 +124,5 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     protected Object onNoMethodFound(Class<?> parameterType) {
         throw new NoHandlerForCommandException(
                 String.format("No Handler found for a command of type[%s]", parameterType.getSimpleName()));
-    }
-
-    /**
-     * Returns the method that will be called to handle the given command. Returns <code>null</code> is no such method
-     * is found.
-     *
-     * @param command The command to find the handler method for
-     * @return the command handler method for the given command
-     */
-    public Method findCommandHandlerMethodFor(String command) {
-        return super.findHandlerMethod(getTarget().getClass(), command.getClass());
     }
 }
