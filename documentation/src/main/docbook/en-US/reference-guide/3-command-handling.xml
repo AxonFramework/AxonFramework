@@ -81,7 +81,7 @@
         <para>The CommandBus provides two methods to dispatch commands to their respective handler:
                 <code>dispatch(command, callback)</code> and <code>dispatch(command)</code>. The
             first parameter is the actual command to dispatch. The optional second parameter takes a
-            callback that is allows the dispatching component to be notified when command handling
+            callback that allows the dispatching component to be notified when command handling
             is completed. This callback has two methods: <code>onSuccess()</code> and
                 <code>onFailure()</code>, which are called when command handling returned normally,
             or when it threw an exception, respectively.</para>
@@ -91,7 +91,7 @@
                 <code>FutureCallback</code>. It is a combination of a <code>Future</code> (as
             defined in the java.concurrent package) and Axon's <code>CommandCallback</code>.</para>
         <para>Best scalability is achieved when your application is not interested in the result of
-            a dispatched command at all. In that case, you you should use the single-parameter
+            a dispatched command at all. In that case, you should use the single-parameter
             version of the <code>dispatch</code> method. If the <code>CommandBus</code> is fully
             asynchronous, it will return immediately after the command has been successfully
             received. Your application will just have to guarantee that the command is processed and
