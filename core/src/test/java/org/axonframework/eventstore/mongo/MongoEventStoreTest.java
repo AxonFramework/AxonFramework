@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,17 @@
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.Mongo;
-import org.axonframework.domain.*;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +38,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
@@ -95,12 +96,16 @@ public class MongoEventStoreTest {
 
         // we store some more events to make sure only correct events are retrieved
         eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
-
         DomainEventStream events = eventStore.readEvents("test", aggregate1.getIdentifier());
         List<DomainEvent> actualEvents = new ArrayList<DomainEvent>();
+        Long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
             DomainEvent event = events.next();
             actualEvents.add(event);
+            assertEquals("Events are read back in in the wrong order",
+                         expectedSequenceNumber,
+                         event.getSequenceNumber());
+            expectedSequenceNumber++;
         }
         assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
     }
@@ -173,5 +178,4 @@ public class MongoEventStoreTest {
             super(sequenceNumber, aggregateIdentifier);
         }
     }
-
 }
