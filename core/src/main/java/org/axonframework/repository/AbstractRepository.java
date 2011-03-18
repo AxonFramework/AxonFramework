@@ -101,8 +101,8 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
                     String.format("Aggregate with identifier [%s] contains conflicting changes. "
                                           + "Expected version [%s], but was [%s]",
                                   aggregate.getIdentifier(),
-                                  aggregate.getVersion(),
-                                  expectedVersion));
+                                  expectedVersion,
+                                  aggregate.getVersion()));
         }
     }
 
