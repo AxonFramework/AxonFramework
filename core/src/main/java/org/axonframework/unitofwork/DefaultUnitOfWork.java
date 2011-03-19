@@ -211,10 +211,14 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     protected void notifyListenersCleanup() {
         logger.debug("Notifying listeners of cleanup");
         for (UnitOfWorkListener listener : listeners) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
+            try {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
+                }
+                listener.onCleanup();
+            } catch (RuntimeException e) {
+                logger.warn("Listener raised an exception on cleanup. Ignoring...", e);
             }
-            listener.onCleanup();
         }
         logger.debug("Listeners successfully notified");
     }

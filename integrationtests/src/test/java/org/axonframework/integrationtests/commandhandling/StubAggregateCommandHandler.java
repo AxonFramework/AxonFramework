@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,12 @@ public class StubAggregateCommandHandler {
     public void handleStubAggregateUpdated(UpdateStubAggregateCommand command) {
         StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
         aggregate.makeAChange();
+    }
+
+    @CommandHandler
+    public void handleProblematicCommand(ProblematicCommand command) {
+        StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
+        aggregate.causeTrouble();
     }
 
     public void setRepository(Repository<StubAggregate> repository) {

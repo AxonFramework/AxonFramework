@@ -71,7 +71,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     /**
      * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onCleanup()} notification to all registered
-     * listeners.
+     * listeners. The implementation must ensure that all listeners are notified, even if one throws an exception.
      */
     protected abstract void notifyListenersCleanup();
 
@@ -100,6 +100,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
                 doRollback(cause);
             }
         } finally {
+            notifyListenersCleanup();
             clear();
             stop();
         }

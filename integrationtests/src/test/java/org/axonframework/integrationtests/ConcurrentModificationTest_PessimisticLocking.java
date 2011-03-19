@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
+import org.axonframework.integrationtests.commandhandling.ProblematicCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.integrationtests.eventhandling.RegisteringEventHandler;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -86,6 +87,7 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
                 public void run() {
                     try {
                         commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
+                        commandBus.dispatch(new ProblematicCommand(aggregateId), NoOpCallback.INSTANCE);
                         commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
                         cdl.countDown();
                     } catch (Exception ex) {
