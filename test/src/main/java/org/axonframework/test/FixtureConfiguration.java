@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -34,7 +35,8 @@ import java.util.List;
  * In the preparation stage, you should register all components required for your test, mainly the command handler. A
  * typical command handler will require a repository. The test fixture can create a generic repository using the {@link
  * #createGenericRepository(Class)} method. Alternatively, you can register your own repository using the {@link
- * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)} method. Registering the repository will
+ * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)} method. Registering the repository
+ * will
  * cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by the
  * test.
  * <p/>
@@ -86,7 +88,8 @@ public interface FixtureConfiguration {
     <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createGenericRepository(Class<T> aggregateClass);
 
     /**
-     * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository will be wired with
+     * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository will be wired
+     * with
      * an Event Store and Event Bus implementation suitable for this test fixture.
      *
      * @param repository The repository to use in the test case
@@ -95,7 +98,8 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerRepository(EventSourcingRepository<?> repository);
 
     /**
-     * Registers an <code>annotatedCommandHandler</code> with this fixture. This will register this command handler with
+     * Registers an <code>annotatedCommandHandler</code> with this fixture. This will register this command handler
+     * with
      * the command bus used in this fixture.
      *
      * @param annotatedCommandHandler The command handler to register for this test
@@ -104,7 +108,8 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerAnnotatedCommandHandler(Object annotatedCommandHandler);
 
     /**
-     * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the command
+     * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the
+     * command
      * bus used by this fixture.
      *
      * @param commandType    The type of command to register the handler for
@@ -127,6 +132,20 @@ public interface FixtureConfiguration {
 
     /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
+     * store when an aggregate is loaded. This method will read the events from the event stream, possibly (and
+     * probably) moving the pointer to the end of the stream. Further reading from the stream will therefore not result
+     * in events being available.
+     * <p/>
+     * Note that the aggregate identifier and the sequence number do not have to be set on these events. The fixture
+     * will automatically set those.
+     *
+     * @param domainEvents the domain events the event store should return
+     * @return a TestExecutor instance that can execute the test with this configuration
+     */
+    TestExecutor given(DomainEventStream domainEvents);
+
+    /**
+     * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
      * <p/>
      * Note that the aggregate identifier and the sequence number do not have to be set on these events. The fixture
@@ -138,7 +157,8 @@ public interface FixtureConfiguration {
     TestExecutor given(List<DomainEvent> domainEvents);
 
     /**
-     * Returns the identifier of the aggregate that this fixture prepares. When commands need to load an aggregate using
+     * Returns the identifier of the aggregate that this fixture prepares. When commands need to load an aggregate
+     * using
      * a specific identifier, use this method to obtain the correct identifier to use.
      *
      * @return the identifier of the aggregate prepared in this fixture
@@ -155,7 +175,8 @@ public interface FixtureConfiguration {
 
     /**
      * Returns the event bus used by this fixture. The event bus is provided for wiring purposes only, for example to
-     * allow command handlers to publish events other than Domain Events. Events published on the returned event bus are
+     * allow command handlers to publish events other than Domain Events. Events published on the returned event bus
+     * are
      * recorded an evaluated in the {@link ResultValidator} operations.
      *
      * @return the event bus used by this fixture
@@ -170,7 +191,8 @@ public interface FixtureConfiguration {
     EventStore getEventStore();
 
     /**
-     * Returns the repository used by this fixture. This repository is provided for wiring purposes only. The repository
+     * Returns the repository used by this fixture. This repository is provided for wiring purposes only. The
+     * repository
      * is configured to use the fixture's event store to load events.
      *
      * @return the repository used by this fixture

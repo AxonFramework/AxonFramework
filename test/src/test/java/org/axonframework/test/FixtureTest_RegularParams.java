@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.test;
 
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.SimpleDomainEventStream;
 import org.junit.*;
 
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class FixtureTest_RegularParams {
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                                                                      fixture.getEventBus()))
-               .given(new MyEvent(1))
+               .given(new SimpleDomainEventStream(new MyEvent(1)))
                .when(new TestCommand(fixture.getAggregateIdentifier()))
                .expectReturnValue(Void.TYPE)
                .expectEvents(new MyEvent(2));
