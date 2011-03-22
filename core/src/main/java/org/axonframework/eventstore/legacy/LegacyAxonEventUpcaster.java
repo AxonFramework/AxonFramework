@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ public class LegacyAxonEventUpcaster implements EventUpcaster<Document> {
     public Document upcast(Document event) {
         Element rootNode = event.getRootElement();
         if (rootNode.attribute("eventRevision") == null) {
+            rootNode.addAttribute("eventRevision", "0");
             Element metaData = rootNode.addElement("metaData").addElement("values");
             Iterator<Element> children = rootNode.elementIterator();
             while (children.hasNext()) {
