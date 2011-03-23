@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
-import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
@@ -33,8 +32,7 @@ import org.w3c.dom.Element;
  * @author Allard Buijze
  * @since 0.7
  */
-public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser
-        implements BeanDefinitionParser {
+public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
     /**
      * The entity manager attribute.

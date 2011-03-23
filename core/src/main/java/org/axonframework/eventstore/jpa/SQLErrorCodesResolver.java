@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,8 +35,10 @@ import javax.sql.DataSource;
  * SQLErrorCodesResolver is an implementation of PersistenceExceptionResolver used to resolve sql error codes to see if
  * it is an duplicate key constraint violation.
  * <p/>
- * SQL Code configuration is available for the following database engines, which may be identifier automatically via the
- * data source: <ul> <li>HSQL DB</li> <li>MySQL</li> <li>Apache Derby</li> <li>DB2</li> <li>H2</li> <li>Informix Dynamic
+ * SQL Code configuration is available for the following database engines, which may be identifier automatically via
+ * the
+ * data source: <ul> <li>HSQL DB</li> <li>MySQL</li> <li>Apache Derby</li> <li>DB2</li> <li>H2</li> <li>Informix
+ * Dynamic
  * Server</li> <li>MS SQL Server</li> <li>Oracle</li> <li>PostgreSQL</li> <li>Sybase</li> </ul>
  *
  * @author Martin Tilma
@@ -46,8 +48,8 @@ import javax.sql.DataSource;
 public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(SQLErrorCodesResolver.class);
-    private final static String SQL_ERROR_CODES_PROPERTIES = "SQLErrorCode.properties";
-    private final static String PROPERTY_NAME_SUFFIX = ".duplicateKeyCodes";
+    private static final String SQL_ERROR_CODES_PROPERTIES = "SQLErrorCode.properties";
+    private static final String PROPERTY_NAME_SUFFIX = ".duplicateKeyCodes";
     private static final String LIST_SEPARATOR = ",";
 
     private List<Integer> duplicateKeyCodes = Collections.emptyList();

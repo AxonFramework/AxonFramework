@@ -16,7 +16,6 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.CachingGenericEventSourcingRepository;
 import org.axonframework.eventsourcing.GenericEventSourcingRepository;
@@ -27,10 +26,8 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
-import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
@@ -46,7 +43,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 0.7
  */
-public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser implements BeanDefinitionParser {
+public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     /**
      * The conflict resolver attribute name.
@@ -158,10 +155,11 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     }
 
     /**
-     * Parse the {@link AggregateRoot} type information and make it a constructor argument.
+     * Parse the {@link org.axonframework.domain.AggregateRoot} type information and make it a constructor argument.
      *
      * @param element The {@link Element} being parsed.
-     * @param builder The {@link BeanDefinitionBuilder} being used to construct the {@link BeanDefinition}.
+     * @param builder The {@link org.springframework.beans.factory.support.BeanDefinitionBuilder} being used to
+     *                construct the {@link BeanDefinition}.
      */
     private void parseAggregateRootType(Element element, GenericBeanDefinition builder) {
         // Mandatory in the XSD

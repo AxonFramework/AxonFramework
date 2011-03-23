@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,10 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
-import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
@@ -37,8 +35,7 @@ import org.w3c.dom.Element;
  * @author Ben Z. Tels
  * @since 0.7
  */
-public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDefinitionParser
-        implements BeanDefinitionParser {
+public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     /**
      * The executor attribute text.
@@ -73,7 +70,8 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
     }
 
     /**
-     * Create the {@link BeanDefinition} for the {@link AnnotationEventListenerBeanPostProcessor} and register it.
+     * Create the {@link org.springframework.beans.factory.config.BeanDefinition} for the {@link
+     * AnnotationEventListenerBeanPostProcessor} and register it.
      *
      * @param element       The {@link Element} being parsed.
      * @param parserContext The running {@link ParserContext}.
@@ -96,7 +94,8 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
     }
 
     /**
-     * Create the {@link BeanDefinition} for the {@link AnnotationCommandHandlerBeanPostProcessor} and register it.
+     * Create the {@link org.springframework.beans.factory.config.BeanDefinition} for the {@link
+     * AnnotationCommandHandlerBeanPostProcessor} and register it.
      *
      * @param element       The {@link Element} being parsed.
      * @param parserContext The running {@link ParserContext}.
@@ -112,5 +111,4 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
 
         parserContext.getRegistry().registerBeanDefinition(COMMAND_HANDLER_BEAN_NAME, beanDefinition);
     }
-
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Abstract implementation for saga repositories. This (partial) implementation will take care of the uniqueness of saga
+ * Abstract implementation for saga repositories. This (partial) implementation will take care of the uniqueness of
+ * saga
  * instances in the JVM. That means it will prevent multiple instances of the same conceptual Saga (i.e. with same
  * identifier) to exist within the JVM.
  *
@@ -66,7 +67,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
                 return null;
             }
             cachedSaga = sagaCache.put(storedSaga);
-            if (cachedSaga == storedSaga) {
+            if (isSameInstance(cachedSaga, storedSaga)) {
                 cachedSaga.getAssociationValues().addChangeListener(
                         new AssociationValueChangeListener(cachedSaga.getSagaIdentifier()));
             }
@@ -80,7 +81,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
     @Override
     public void add(Saga saga) {
         Saga cachedSaga = sagaCache.put(saga);
-        if (cachedSaga == saga) {
+        if (isSameInstance(cachedSaga, saga)) {
             for (AssociationValue av : saga.getAssociationValues()) {
                 associationValueMap.add(av, saga.getSagaIdentifier());
                 storeAssociationValue(av, saga.getSagaIdentifier());
@@ -88,6 +89,20 @@ public abstract class AbstractSagaRepository implements SagaRepository {
             saga.getAssociationValues().addChangeListener(new AssociationValueChangeListener(saga.getSagaIdentifier()));
             storeSaga(saga);
         }
+    }
+
+    /**
+     * Returns <code>true</code> if the two parameters point to exactly the same object instance. This method will
+     * always return <code>true</code> if sagaInstance.equals(anotherSaga) return <code>true</code>, but not
+     * necessarily
+     * vice versa.
+     *
+     * @param sagaInstance One instance to compare
+     * @param anotherSaga  Another instance to compare
+     * @return <code>true</code> if both references point to exactly the same instance
+     */
+    private boolean isSameInstance(Saga sagaInstance, Saga anotherSaga) {
+        return sagaInstance == anotherSaga;
     }
 
     @Override

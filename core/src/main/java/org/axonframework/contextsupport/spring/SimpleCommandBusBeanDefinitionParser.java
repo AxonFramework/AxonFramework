@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,11 +17,9 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
-import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
@@ -29,14 +27,15 @@ import org.w3c.dom.Element;
 import java.util.List;
 
 /**
- * The SimpleCommandBusBeanDefinitionParser does the actual work of parsing the <code>commandBus</code> element from the
+ * The SimpleCommandBusBeanDefinitionParser does the actual work of parsing the <code>commandBus</code> element from
+ * the
  * Axon namespace. This DefinitionParser creates a {@link org.axonframework.commandhandling.SimpleCommandBus} {@link
  * org.springframework.beans.factory.config.BeanDefinition}, with optional interceptors and subscribers.
  *
  * @author Ben Z. Tels
  * @since 0.7
  */
-public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinitionParser implements BeanDefinitionParser {
+public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     /**
      * {@inheritDoc}
@@ -62,16 +61,15 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
      *
      * @param element              The {@link Element} being parsed.
      * @param parserContext        The running {@link ParserContext}.
-     * @param commandBusDefinition The {@link BeanDefinition} being built.
+     * @param commandBusDefinition The {@link org.springframework.beans.factory.config.BeanDefinition} being built.
      */
     private void parseInterceptorConfiguration(Element element, ParserContext parserContext,
                                                GenericBeanDefinition commandBusDefinition) {
         Element interceptorsElement = DomUtils.getChildElementByTagName(element, "interceptors");
         if (interceptorsElement != null) {
             List<?> interceptorsList = parserContext.getDelegate().parseListElement(interceptorsElement,
-                    commandBusDefinition);
+                                                                                    commandBusDefinition);
             commandBusDefinition.getPropertyValues().add("interceptors", interceptorsList);
         }
     }
-
 }

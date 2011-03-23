@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
-import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 /**
  * The FileSystemEventStoreBeanDefinitionParser is responsible for parsing the <code>eventStore</code> element form the
- * Axon namespace. It creates a {@link org.springframework.beans.factory.config.BeanDefinition} based either on a {@link
+ * Axon namespace. It creates a {@link org.springframework.beans.factory.config.BeanDefinition} based either on a
+ * {@link
  * org.axonframework.eventstore.jpa.JpaEventStore} or on a {@link org.axonframework.eventstore.fs.FileSystemEventStore},
  * depending on the selected configuration.
  *
@@ -33,8 +33,7 @@ import org.w3c.dom.Element;
  * @author Allard Buijze
  * @since 0.7
  */
-public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser
-        implements BeanDefinitionParser {
+public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
     /**
      * The base directory attribute.

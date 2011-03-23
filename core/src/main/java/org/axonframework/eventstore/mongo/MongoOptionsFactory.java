@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.MongoOptions;
@@ -24,14 +40,14 @@ public class MongoOptionsFactory {
     private int socketTimeOut;
 
     /**
-     * Default constructor for the factory that initializes the defaults
+     * Default constructor for the factory that initializes the defaults.
      */
     public MongoOptionsFactory() {
         defaults = new MongoOptions();
     }
 
     /**
-     * Uses the configured parameters to create a MongoOptions instance
+     * Uses the configured parameters to create a MongoOptions instance.
      *
      * @return MongoOptions instance based on the configured properties
      */
@@ -56,7 +72,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Getter for the AutoConnectRetry property
+     * Getter for the AutoConnectRetry property.
      *
      * @return true if autoConnectRetry is true
      */
@@ -65,7 +81,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Setter for AutoConnectRetry
+     * Setter for AutoConnectRetry.
      *
      * @param autoConnectRetry true if must try to auto reconnect
      */
@@ -74,7 +90,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Getter for connectionsPerHost
+     * Getter for connectionsPerHost.
      *
      * @return number representing the connections per host
      */
@@ -83,7 +99,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Setter for the connections per host that are allowed
+     * Setter for the connections per host that are allowed.
      *
      * @param connectionsPerHost number representing the number of connections per host
      */
@@ -101,7 +117,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Setter for the connection time out
+     * Setter for the connection time out.
      *
      * @param connectionTimeout number representing the connection timeout in millis
      */
@@ -110,7 +126,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * get the maximum time a blocked thread that waits for a connection should wait
+     * get the maximum time a blocked thread that waits for a connection should wait.
      *
      * @return number of milli seconds the thread waits for a connection
      */
@@ -119,7 +135,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Set the max wait time for a blocked thread in milli seconds
+     * Set the max wait time for a blocked thread in milli seconds.
      *
      * @param maxWaitTime number representing the number of milli seconds to wait for a thread
      */
@@ -128,7 +144,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Getter for the socket timeout
+     * Getter for the socket timeout.
      *
      * @return Number representing the amount of milli seconds to wait for a socket connection
      */
@@ -137,7 +153,7 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Setter for the socket time out
+     * Setter for the socket time out.
      *
      * @param socketTimeOut number representing the amount of milli seconds to wait for a socket connection
      */
@@ -146,18 +162,19 @@ public class MongoOptionsFactory {
     }
 
     /**
-     * Getter for the amount of threads that block in relation to the amount of possible connections
+     * Getter for the amount of threads that block in relation to the amount of possible connections.
      *
      * @return Number representing the multiplier of maximum allowed blocked connections in relation to the maximum
      *         allowed connections
      */
     public int getThreadsAllowedToBlockForConnectionMultiplier() {
-        return (threadsAllowedToBlockForConnectionMultiplier > 0) ? threadsAllowedToBlockForConnectionMultiplier :
-                defaults.threadsAllowedToBlockForConnectionMultiplier;
+        return (threadsAllowedToBlockForConnectionMultiplier > 0)
+                ? threadsAllowedToBlockForConnectionMultiplier
+                : defaults.threadsAllowedToBlockForConnectionMultiplier;
     }
 
     /**
-     * Set the multiplier for the amount of threads to block in relation to the maximum amount of connections
+     * Set the multiplier for the amount of threads to block in relation to the maximum amount of connections.
      *
      * @param threadsAllowedToBlockForConnectionMultiplier
      *         Number representing the multiplier of the amount of

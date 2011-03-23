@@ -98,6 +98,11 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
+    /**
+     * Returns the type of saga this inspector handles.
+     *
+     * @return the type of saga (Class) this inspector handles
+     */
     @SuppressWarnings({"unchecked"})
     public Class<T> getSagaType() {
         return (Class<T>) super.getTargetType();

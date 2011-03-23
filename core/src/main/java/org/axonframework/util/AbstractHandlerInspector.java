@@ -16,6 +16,7 @@
 
 package org.axonframework.util;
 
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Comparator;
@@ -83,7 +84,10 @@ public abstract class AbstractHandlerInspector {
         return targetType;
     }
 
-    private static class HandlerMethodComparator implements Comparator<Handler> {
+    private static class HandlerMethodComparator implements Comparator<Handler>, Serializable {
+
+        private static final long serialVersionUID = 5042125127769533663L;
+
         @Override
         public int compare(Handler h1, Handler h2) {
             Method m1 = h1.getMethod();
