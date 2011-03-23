@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,7 +53,9 @@ public class SpringIntegrationEventBus implements EventBus {
     @Override
     public void unsubscribe(EventListener eventListener) {
         MessageHandler messageHandler = handlers.remove(eventListener);
-        channel.unsubscribe(messageHandler);
+        if (messageHandler != null) {
+            channel.unsubscribe(messageHandler);
+        }
     }
 
     /**
@@ -62,8 +64,10 @@ public class SpringIntegrationEventBus implements EventBus {
     @Override
     public void subscribe(EventListener eventListener) {
         MessageHandler messagehandler = new MessageHandlerAdapter(eventListener);
-        handlers.putIfAbsent(eventListener, messagehandler);
-        channel.subscribe(messagehandler);
+        MessageHandler oldHandler = handlers.putIfAbsent(eventListener, messagehandler);
+        if (oldHandler == null) {
+            channel.subscribe(messagehandler);
+        }
     }
 
     /**
