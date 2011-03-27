@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,17 +16,11 @@
 
 package org.axonframework.util;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.security.AccessController.doPrivileged;
 import static org.axonframework.util.CollectionUtils.filterByType;
@@ -158,5 +152,45 @@ public abstract class ReflectionUtils {
             currentClazz = currentClazz.getSuperclass();
         } while (currentClazz != null);
         return Collections.unmodifiableList(methods);
+    }
+
+    /**
+     * Inspects the given <code>type</code> and returns the annotation of given <code>annotationType</code>. THis method
+     * investigates the entire hierarchy of given <code>type</code>, including declared interfaces and other
+     * annotations.
+     *
+     * @param type           The type to find the annotation on
+     * @param annotationType The type of annotation to find
+     * @param <A>            The type of annotation
+     * @return the found annotation, or <code>null</code> if not found.
+     */
+    public static <A extends Annotation> A findAnnotation(Class<?> type, Class<A> annotationType) {
+        // check if the class is annotated directly
+        A annotation = type.getAnnotation(annotationType);
+        if (annotation != null) {
+            return annotation;
+        }
+        // check if any of the declared interfaces are annotated
+        for (Class<?> ifc : type.getInterfaces()) {
+            annotation = findAnnotation(ifc, annotationType);
+            if (annotation != null) {
+                return annotation;
+            }
+        }
+        // check if any other annotations are annotated (meta-annotations)
+        if (!Annotation.class.isAssignableFrom(type)) {
+            for (Annotation ann : type.getAnnotations()) {
+                annotation = findAnnotation(ann.annotationType(), annotationType);
+                if (annotation != null) {
+                    return annotation;
+                }
+            }
+        }
+        // move up the hierarchy
+        Class<?> superClass = type.getSuperclass();
+        if (superClass == null || superClass == Object.class) {
+            return null;
+        }
+        return findAnnotation(superClass, annotationType);
     }
 }
