@@ -19,9 +19,10 @@ package org.axonframework.util;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.List;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -36,11 +37,10 @@ public abstract class AbstractHandlerInspector {
     private static final HandlerMethodComparator HANDLER_METHOD_COMPARATOR = new HandlerMethodComparator();
 
     private final Class<?> targetType;
-    private final SortedSet<Handler> handlers = new TreeSet<Handler>(HANDLER_METHOD_COMPARATOR);
+    private final List<Handler> handlers = new ArrayList<Handler>();
 
     /**
-     * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the
-     * Event
+     * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the Event
      * Handler methods.
      *
      * @param targetType     The targetType to inspect methods on
@@ -56,6 +56,7 @@ public abstract class AbstractHandlerInspector {
                 }
             }
         }
+        Collections.sort(handlers, HANDLER_METHOD_COMPARATOR);
     }
 
     /**
@@ -100,7 +101,7 @@ public abstract class AbstractHandlerInspector {
                     return -1;
                 } else {
                     // the parameters are in a different hierarchy. The order doesn't matter.
-                    return m1.toGenericString().compareTo(m2.toGenericString());
+                    return 0;
                 }
             } else if (m1.getDeclaringClass().isAssignableFrom(m2.getDeclaringClass())) {
                 return 1;
