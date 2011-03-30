@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,8 @@ import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.*;
+import org.junit.rules.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -74,10 +73,10 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         initializeRepository(LockingStrategy.OPTIMISTIC);
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
         assertTrue("Expected at least one successful modification. Got " + getSuccessfulModifications(),
-                getSuccessfulModifications() >= 1);
+                   getSuccessfulModifications() >= 1);
         int expectedEventCount = getSuccessfulModifications() * 2;
-        assertEquals(expectedEventCount, lastSequenceNumber);
-        verify(mockEventBus, atLeast(2)).publish(isA(DomainEvent.class));
+        assertTrue("It seems that no events have been published at all", lastSequenceNumber >= 0);
+        verify(mockEventBus, times(expectedEventCount)).publish(isA(DomainEvent.class));
     }
 
     private int getSuccessfulModifications() {
@@ -125,8 +124,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         while (committedEvents.hasNext()) {
             DomainEvent nextEvent = committedEvents.next();
             assertEquals("Events are not stored sequentially. Most likely due to unlocked concurrent access.",
-                    new Long(++lastSequenceNumber),
-                    nextEvent.getSequenceNumber());
+                         new Long(++lastSequenceNumber),
+                         nextEvent.getSequenceNumber());
         }
         return lastSequenceNumber;
     }
