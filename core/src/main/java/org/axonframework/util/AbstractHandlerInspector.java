@@ -16,13 +16,12 @@
 
 package org.axonframework.util;
 
-import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -34,13 +33,13 @@ import static java.security.AccessController.doPrivileged;
  */
 public abstract class AbstractHandlerInspector {
 
-    private static final HandlerMethodComparator HANDLER_METHOD_COMPARATOR = new HandlerMethodComparator();
-
     private final Class<?> targetType;
-    private final List<Handler> handlers = new ArrayList<Handler>();
+    private final HierarchicHandlerCollection handlers;
+    private final Map<Class<?>, Handler> handlerCache = new HashMap<Class<?>, Handler>();
 
     /**
-     * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the Event
+     * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the
+     * Event
      * Handler methods.
      *
      * @param targetType     The targetType to inspect methods on
@@ -48,6 +47,7 @@ public abstract class AbstractHandlerInspector {
      */
     protected AbstractHandlerInspector(Class<?> targetType, Class<? extends Annotation> annotationType) {
         this.targetType = targetType;
+        handlers = new HierarchicHandlerCollection(targetType);
         for (Method method : ReflectionUtils.methodsOf(targetType)) {
             if (method.isAnnotationPresent(annotationType)) {
                 handlers.add(new Handler(method));
@@ -56,7 +56,6 @@ public abstract class AbstractHandlerInspector {
                 }
             }
         }
-        Collections.sort(handlers, HANDLER_METHOD_COMPARATOR);
     }
 
     /**
@@ -67,13 +66,10 @@ public abstract class AbstractHandlerInspector {
      * @return the  handler method for the given parameterType
      */
     protected Handler findHandlerMethod(final Class<?> parameterType) {
-        for (Handler handler : handlers) {
-            if (handler.getParameter().isAssignableFrom(parameterType)) {
-                // method is eligible and first is best
-                return handler;
-            }
+        if (!handlerCache.containsKey(parameterType)) {
+            handlerCache.put(parameterType, handlers.findHandler(parameterType));
         }
-        return null;
+        return handlerCache.get(parameterType);
     }
 
     /**
@@ -85,28 +81,53 @@ public abstract class AbstractHandlerInspector {
         return targetType;
     }
 
-    private static class HandlerMethodComparator implements Comparator<Handler>, Serializable {
+    private static class HierarchicHandlerCollection {
 
-        private static final long serialVersionUID = 5042125127769533663L;
+        private final ConcurrentMap<Class<?>, Handler> knownHandlers = new ConcurrentHashMap<Class<?>, Handler>();
+        private final Class<?> levelType;
+        private volatile HierarchicHandlerCollection parent;
 
-        @Override
-        public int compare(Handler h1, Handler h2) {
-            Method m1 = h1.getMethod();
-            Method m2 = h2.getMethod();
-            if (m1.getDeclaringClass().equals(m2.getDeclaringClass())) {
-                // they're in the same class. Pick the most specific method.
-                if (m1.getParameterTypes()[0].isAssignableFrom(m2.getParameterTypes()[0])) {
-                    return 1;
-                } else if (m2.getParameterTypes()[0].isAssignableFrom(m1.getParameterTypes()[0])) {
-                    return -1;
-                } else {
-                    // the parameters are in a different hierarchy. The order doesn't matter.
-                    return 0;
+        public HierarchicHandlerCollection(Class<?> handlerType) {
+            this.levelType = handlerType;
+        }
+
+        public Handler findHandler(Class<?> parameterType) {
+            Handler found = knownHandlers.get(parameterType);
+            if (found == null) {
+                found = findHandlerOnLevel(parameterType);
+                if (found == null && parent != null) {
+                    found = parent.findHandler(parameterType);
                 }
-            } else if (m1.getDeclaringClass().isAssignableFrom(m2.getDeclaringClass())) {
-                return 1;
+            }
+            return found;
+        }
+
+        private Handler findHandlerOnLevel(Class<?> parameterType) {
+            Handler found = knownHandlers.get(parameterType);
+            if (found == null) {
+                for (Class<?> iFace : parameterType.getInterfaces()) {
+                    found = findHandlerOnLevel(iFace);
+                }
+            }
+
+            if (found == null && parameterType != Object.class && parameterType.getSuperclass() != null) {
+                found = findHandlerOnLevel(parameterType.getSuperclass());
+            }
+            return found;
+        }
+
+        public synchronized void add(Handler handler) {
+            if (!handler.getDeclaringClass().isAssignableFrom(levelType)) {
+                throw new IllegalArgumentException("Cannot add this handler. "
+                                                           + "The subclass handlers must be added prior to handlers declared in the superclass.");
+            }
+            if (levelType.equals(handler.getDeclaringClass())) {
+                knownHandlers.putIfAbsent(handler.getParameter(), handler);
             } else {
-                return -1;
+                if (parent == null) {
+                    parent = new HierarchicHandlerCollection(handler.getDeclaringClass());
+                }
+                parent.add(handler);
             }
         }
     }

@@ -25,9 +25,11 @@ import java.lang.reflect.Method;
  * @since 1.0
  */
 public class Handler {
+
     private final Method method;
     private final Class<?> parameter;
     private final boolean optionalParameter;
+    private final Class<?> declaringClass;
 
     /**
      * Create a handler instance for the given method. A method is regarded a handler method if it has either 1 or 2
@@ -40,6 +42,7 @@ public class Handler {
         Class<?>[] parameterTypes = method.getParameterTypes();
         this.parameter = parameterTypes[0];
         this.optionalParameter = parameterTypes.length > 1;
+        this.declaringClass = method.getDeclaringClass();
     }
 
     /**
@@ -58,6 +61,15 @@ public class Handler {
      */
     public Class<?> getParameter() {
         return parameter;
+    }
+
+    /**
+     * Returns the class on which the handler method is declared.
+     *
+     * @return the class on which the handler method is declared
+     */
+    public Class<?> getDeclaringClass() {
+        return declaringClass;
     }
 
     /**
