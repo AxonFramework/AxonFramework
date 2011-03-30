@@ -23,9 +23,6 @@ import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.util.DirectExecutor;
 import org.junit.*;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -36,7 +33,7 @@ public class AnnotationEventListenerAdapterTest {
 
     @Test
     public void testHandlerCorrectlyUsed() {
-        AnnotatedEventHandler handler = new AnnotatedEventHandler();
+        AnnotatedEventHandler handler = mock(AnnotatedEventHandler.class);
         AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler, null);
 
         TransactionStatus transactionStatus = new TransactionStatus() {
@@ -46,8 +43,7 @@ public class AnnotationEventListenerAdapterTest {
         adapter.handle(event);
         adapter.afterTransaction(transactionStatus);
 
-        assertEquals(1, handler.getHandledEvents().size());
-        assertEquals(event, handler.getHandledEvents().get(0));
+        verify(handler).handleEvent(event);
     }
 
     @Test
@@ -179,15 +175,8 @@ public class AnnotationEventListenerAdapterTest {
 
     private static class AnnotatedEventHandler {
 
-        private List<Event> handledEvents = new LinkedList<Event>();
-
         @EventHandler
         public void handleEvent(Event event) {
-            handledEvents.add(event);
-        }
-
-        public List<Event> getHandledEvents() {
-            return handledEvents;
         }
     }
 
