@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,9 @@ import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.util.DirectExecutor;
 import org.junit.*;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -33,7 +36,7 @@ public class AnnotationEventListenerAdapterTest {
 
     @Test
     public void testHandlerCorrectlyUsed() {
-        AnnotatedEventHandler handler = mock(AnnotatedEventHandler.class);
+        AnnotatedEventHandler handler = new AnnotatedEventHandler();
         AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler, null);
 
         TransactionStatus transactionStatus = new TransactionStatus() {
@@ -43,7 +46,8 @@ public class AnnotationEventListenerAdapterTest {
         adapter.handle(event);
         adapter.afterTransaction(transactionStatus);
 
-        verify(handler).handleEvent(event);
+        assertEquals(1, handler.getHandledEvents().size());
+        assertEquals(event, handler.getHandledEvents().get(0));
     }
 
     @Test
@@ -175,8 +179,15 @@ public class AnnotationEventListenerAdapterTest {
 
     private static class AnnotatedEventHandler {
 
+        private List<Event> handledEvents = new LinkedList<Event>();
+
         @EventHandler
         public void handleEvent(Event event) {
+            handledEvents.add(event);
+        }
+
+        public List<Event> getHandledEvents() {
+            return handledEvents;
         }
     }
 
