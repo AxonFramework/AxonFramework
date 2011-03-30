@@ -49,7 +49,7 @@ public abstract class AbstractHandlerInspector {
         this.targetType = targetType;
         handlers = new HierarchicHandlerCollection(targetType);
         for (Method method : ReflectionUtils.methodsOf(targetType)) {
-            if (method.isAnnotationPresent(annotationType)) {
+            if (method.isAnnotationPresent(annotationType) && !method.isSynthetic() && !method.isBridge()) {
                 handlers.add(new Handler(method));
                 if (!method.isAccessible()) {
                     doPrivileged(new MethodAccessibilityCallback(method));
