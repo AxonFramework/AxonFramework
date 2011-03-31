@@ -19,9 +19,9 @@ package org.axonframework.util;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -34,7 +34,7 @@ import static java.security.AccessController.doPrivileged;
 public abstract class AbstractHandlerInspector {
 
     private final Class<?> targetType;
-    private final HierarchicHandlerCollection handlers;
+    private final List<Handler> handlers = new LinkedList<Handler>();
     private final Map<Class<?>, Handler> handlerCache = new HashMap<Class<?>, Handler>();
 
     /**
@@ -47,7 +47,6 @@ public abstract class AbstractHandlerInspector {
      */
     protected AbstractHandlerInspector(Class<?> targetType, Class<? extends Annotation> annotationType) {
         this.targetType = targetType;
-        handlers = new HierarchicHandlerCollection(targetType);
         for (Method method : ReflectionUtils.methodsOf(targetType)) {
             if (method.isAnnotationPresent(annotationType)) {
                 handlers.add(new Handler(method));
@@ -66,10 +65,27 @@ public abstract class AbstractHandlerInspector {
      * @return the  handler method for the given parameterType
      */
     protected Handler findHandlerMethod(final Class<?> parameterType) {
-        if (!handlerCache.containsKey(parameterType)) {
-            handlerCache.put(parameterType, handlers.findHandler(parameterType));
+        Handler bestHandlerSoFar = null;
+        for (Handler handler : handlers) {
+            Handler foundSoFar = bestHandlerSoFar;
+            Class<?> classUnderInvestigation = handler.getDeclaringClass();
+            boolean bestInClassFound =
+                    foundSoFar != null
+                            && !classUnderInvestigation.equals(foundSoFar.getDeclaringClass())
+                            && classUnderInvestigation.isAssignableFrom(foundSoFar.getDeclaringClass());
+            if (!bestInClassFound && handler.getParameter().isAssignableFrom(parameterType)) {
+                // method is eligible, but is it the best?
+                if (bestHandlerSoFar == null) {
+                    // if we have none yet, this one is the best
+                    bestHandlerSoFar = handler;
+                } else if (bestHandlerSoFar.getDeclaringClass().equals(handler.getDeclaringClass())
+                        && bestHandlerSoFar.getParameter().isAssignableFrom(handler.getParameter())) {
+                    // this one is more specific, so it wins
+                    bestHandlerSoFar = handler;
+                }
+            }
         }
-        return handlerCache.get(parameterType);
+        return bestHandlerSoFar;
     }
 
     /**
@@ -79,56 +95,5 @@ public abstract class AbstractHandlerInspector {
      */
     public Class<?> getTargetType() {
         return targetType;
-    }
-
-    private static class HierarchicHandlerCollection {
-
-        private final ConcurrentMap<Class<?>, Handler> knownHandlers = new ConcurrentHashMap<Class<?>, Handler>();
-        private final Class<?> levelType;
-        private volatile HierarchicHandlerCollection parent;
-
-        public HierarchicHandlerCollection(Class<?> handlerType) {
-            this.levelType = handlerType;
-        }
-
-        public Handler findHandler(Class<?> parameterType) {
-            Handler found = knownHandlers.get(parameterType);
-            if (found == null) {
-                found = findHandlerOnLevel(parameterType);
-                if (found == null && parent != null) {
-                    found = parent.findHandler(parameterType);
-                }
-            }
-            return found;
-        }
-
-        private Handler findHandlerOnLevel(Class<?> parameterType) {
-            Handler found = knownHandlers.get(parameterType);
-            if (found == null) {
-                for (Class<?> iFace : parameterType.getInterfaces()) {
-                    found = findHandlerOnLevel(iFace);
-                }
-            }
-
-            if (found == null && parameterType != Object.class && parameterType.getSuperclass() != null) {
-                found = findHandlerOnLevel(parameterType.getSuperclass());
-            }
-            return found;
-        }
-
-        public synchronized void add(Handler handler) {
-            if (!handler.getDeclaringClass().isAssignableFrom(levelType)) {
-                throw new IllegalArgumentException("Cannot add this handler. "
-                                                           + "The subclass handlers must be added prior to handlers declared in the superclass.");
-            }
-            if (levelType.equals(handler.getDeclaringClass())) {
-                knownHandlers.putIfAbsent(handler.getParameter(), handler);
-            } else {
-                if (parent == null) {
-                    parent = new HierarchicHandlerCollection(handler.getDeclaringClass());
-                }
-                parent.add(handler);
-            }
-        }
     }
 }
