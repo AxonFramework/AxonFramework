@@ -18,10 +18,8 @@ package org.axonframework.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -35,7 +33,6 @@ public abstract class AbstractHandlerInspector {
 
     private final Class<?> targetType;
     private final List<Handler> handlers = new LinkedList<Handler>();
-    private final Map<Class<?>, Handler> handlerCache = new HashMap<Class<?>, Handler>();
 
     /**
      * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the
