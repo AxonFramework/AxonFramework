@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.management.StandardMBean;
 
 /**
  * <p>Statistics object to store information about the internals of the <code>SimpleCommandBus</code>.</p> <p>You can
@@ -31,11 +32,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Allard Buijze
  * @since 0.6
  */
-class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXBean {
+class SimpleCommandBusStatistics extends StandardMBean implements SimpleCommandBusStatisticsMXBean {
 
     private AtomicLong handlerCounter = new AtomicLong(0);
     private AtomicLong receivedCommandCounter = new AtomicLong(0);
     private List<String> handlerTypes = new CopyOnWriteArrayList<String>();
+
+    /**
+     * Creates an instance of this statistics MBean.
+     */
+    public SimpleCommandBusStatistics() {
+        super(SimpleCommandBusStatisticsMXBean.class, true);
+    }
 
     /**
      * Returns the amount of registered handlers.
@@ -102,5 +110,4 @@ class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXBean {
     void recordReceivedCommand() {
         receivedCommandCounter.incrementAndGet();
     }
-
 }
