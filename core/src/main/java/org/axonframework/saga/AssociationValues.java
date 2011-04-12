@@ -46,7 +46,7 @@ public interface AssociationValues extends Set<AssociationValue> {
      * interface are invoked immediately <em>after</em> the event has occurred, and before the changes have been
      * committed to a repository.
      */
-    static interface ChangeListener {
+    interface ChangeListener {
 
         /**
          * Invoked when an AssociationValue has been added to the collection.

@@ -24,6 +24,7 @@ import org.axonframework.util.Handler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Locale;
 
 /**
  * Utility class that inspects annotation on a Saga instance and returns the relevant configuration for its Event
@@ -95,7 +96,7 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
     }
 
     private String capitalize(String s) {
-        return s.substring(0, 1).toUpperCase() + s.substring(1);
+        return s.substring(0, 1).toUpperCase(Locale.ENGLISH) + s.substring(1);
     }
 
     /**
