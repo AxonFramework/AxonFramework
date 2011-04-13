@@ -73,12 +73,8 @@ public abstract class AbstractHandlerInvoker extends AbstractHandlerInspector {
             // event listener doesn't support this type of event
             return onNoMethodFound(parameter.getClass());
         }
-        Object retVal;
-        if (m.hasOptionalParameter()) {
-            retVal = m.getMethod().invoke(target, parameter, secondHandlerParameter);
-        } else {
-            retVal = m.getMethod().invoke(target, parameter);
-        }
+
+        Object retVal = m.invoke(target, parameter, secondHandlerParameter);
         // let's make a clear distinction between null return value and void methods
         if (Void.TYPE.equals(m.getMethod().getReturnType())) {
             return Void.TYPE;

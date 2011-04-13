@@ -47,9 +47,6 @@ public abstract class AbstractHandlerInspector {
         for (Method method : ReflectionUtils.methodsOf(targetType)) {
             if (method.isAnnotationPresent(annotationType)) {
                 handlers.add(new Handler(method));
-                if (!method.isAccessible()) {
-                    doPrivileged(new MethodAccessibilityCallback(method));
-                }
             }
         }
     }

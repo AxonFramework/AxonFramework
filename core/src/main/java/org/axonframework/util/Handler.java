@@ -16,7 +16,10 @@
 
 package org.axonframework.util;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import static java.security.AccessController.doPrivileged;
 
 /**
  * Represents a method recognized as a handler by the handler inspector (see {@link AbstractHandlerInspector}).
@@ -79,5 +82,33 @@ public class Handler {
      */
     public boolean hasOptionalParameter() {
         return optionalParameter;
+    }
+
+    /**
+     * Invokes the handler method on given <code>target</code> using given <code>parameter</code> and -when available
+     * on the handler- the given <code>secondHandlerParameter</code>. If the handler only specifies a single
+     * parameter, the <code>secondHandlerParameter</code> is ignored.
+     *
+     * @param target                 The instance to invoke the handler on
+     * @param parameter              The first parameter of the handler method
+     * @param secondHandlerParameter The (optional) second parameter of the handler method
+     * @return The return value of the handler invocation
+     *
+     * @throws IllegalAccessException    If the handler method could not be accessed
+     * @throws InvocationTargetException If the target handler threw an exception
+     */
+    public Object invoke(Object target, Object parameter, Object secondHandlerParameter)
+            throws IllegalAccessException, InvocationTargetException {
+        if (!method.isAccessible()) {
+            doPrivileged(new MethodAccessibilityCallback(method));
+        }
+
+        Object retVal;
+        if (hasOptionalParameter()) {
+            retVal = getMethod().invoke(target, parameter, secondHandlerParameter);
+        } else {
+            retVal = getMethod().invoke(target, parameter);
+        }
+        return retVal;
     }
 }
