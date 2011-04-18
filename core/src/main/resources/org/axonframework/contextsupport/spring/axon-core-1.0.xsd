@@ -232,9 +232,9 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="locking-strategy" use="optional" default="OPTIMISTIC">
+                    <xsd:attribute name="locking-strategy" use="optional" default="PESSIMISTIC">
                         <xsd:annotation>
-                            <xsd:documentation>The locking strategy used by this repository (default: OPTIMISTIC).
+                            <xsd:documentation>The locking strategy used by this repository (default: PESSIMISTIC).
                             </xsd:documentation>
                         </xsd:annotation>
                         <xsd:simpleType>
