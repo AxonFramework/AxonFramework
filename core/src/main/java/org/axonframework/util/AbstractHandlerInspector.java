@@ -21,8 +21,6 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
 
-import static java.security.AccessController.doPrivileged;
-
 /**
  * Abstract utility class that inspects handler methods.
  *
@@ -67,13 +65,13 @@ public abstract class AbstractHandlerInspector {
                     foundSoFar != null
                             && !classUnderInvestigation.equals(foundSoFar.getDeclaringClass())
                             && classUnderInvestigation.isAssignableFrom(foundSoFar.getDeclaringClass());
-            if (!bestInClassFound && handler.getParameter().isAssignableFrom(parameterType)) {
+            if (!bestInClassFound && handler.getParameterType().isAssignableFrom(parameterType)) {
                 // method is eligible, but is it the best?
                 if (bestHandlerSoFar == null) {
                     // if we have none yet, this one is the best
                     bestHandlerSoFar = handler;
                 } else if (bestHandlerSoFar.getDeclaringClass().equals(handler.getDeclaringClass())
-                        && bestHandlerSoFar.getParameter().isAssignableFrom(handler.getParameter())) {
+                        && bestHandlerSoFar.getParameterType().isAssignableFrom(handler.getParameterType())) {
                     // this one is more specific, so it wins
                     bestHandlerSoFar = handler;
                 }

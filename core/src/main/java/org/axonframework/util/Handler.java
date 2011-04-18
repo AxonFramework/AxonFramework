@@ -30,7 +30,7 @@ import static java.security.AccessController.doPrivileged;
 public class Handler {
 
     private final Method method;
-    private final Class<?> parameter;
+    private final Class<?> parameterType;
     private final boolean optionalParameter;
     private final Class<?> declaringClass;
 
@@ -43,7 +43,7 @@ public class Handler {
     public Handler(Method method) {
         this.method = method;
         Class<?>[] parameterTypes = method.getParameterTypes();
-        this.parameter = parameterTypes[0];
+        this.parameterType = parameterTypes[0];
         this.optionalParameter = parameterTypes.length > 1;
         this.declaringClass = method.getDeclaringClass();
     }
@@ -62,8 +62,8 @@ public class Handler {
      *
      * @return the main parameter of the handler
      */
-    public Class<?> getParameter() {
-        return parameter;
+    public Class<?> getParameterType() {
+        return parameterType;
     }
 
     /**
