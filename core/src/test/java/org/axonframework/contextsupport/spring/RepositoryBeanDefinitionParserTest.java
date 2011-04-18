@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,6 @@ public class RepositoryBeanDefinitionParserTest {
         public void initializeState(DomainEventStream domainEventStream) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
-
     }
 
     @Autowired
@@ -140,12 +139,12 @@ public class RepositoryBeanDefinitionParserTest {
         assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
 
         PropertyValue eventStreamDecoratorsProperty = beanDefinition.getPropertyValues()
-                .getPropertyValue("eventStreamDecorators");
+                                                                    .getPropertyValue("eventStreamDecorators");
         assertNotNull("Property missing", eventStreamDecoratorsProperty);
         List decorators = (List) eventStreamDecoratorsProperty.getValue();
         assertEquals("Wrong number of decorators", 1, decorators.size());
         PropertyValue snapshotterTrigger = beanDefinition.getPropertyValues()
-                .getPropertyValue("snapshotterTrigger");
+                                                         .getPropertyValue("snapshotterTrigger");
         assertNotNull("Property missing", snapshotterTrigger);
 
         @SuppressWarnings("unchecked")
@@ -182,11 +181,11 @@ public class RepositoryBeanDefinitionParserTest {
         assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
 
         PropertyValue cacheRefProperty = beanDefinition.getPropertyValues()
-                .getPropertyValue("cache");
+                                                       .getPropertyValue("cache");
         assertNotNull("Property missing", cacheRefProperty);
 
         PropertyValue snapshotterTrigger = beanDefinition.getPropertyValues()
-                .getPropertyValue("snapshotterTrigger");
+                                                         .getPropertyValue("snapshotterTrigger");
         assertNotNull("Property missing", snapshotterTrigger);
         BeanDefinition decorators = (BeanDefinition) snapshotterTrigger.getValue();
 //        assertNEquals("Wrong number of decorators", 1, decorators.size());
@@ -212,7 +211,7 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1,
                                                                                                     LockingStrategy.class);
         assertNotNull("Second argument is wrong", secondArgument);
-        assertEquals("Second argument is wrong", LockingStrategy.OPTIMISTIC, secondArgument.getValue());
+        assertEquals("Second argument is wrong", LockingStrategy.PESSIMISTIC, secondArgument.getValue());
 
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
         assertNotNull("Property missing", eventBusPropertyValue);
@@ -245,5 +244,4 @@ public class RepositoryBeanDefinitionParserTest {
         assertNotNull(snapshotTrigger);
 //        snapshotTrigger.
     }
-
 }
