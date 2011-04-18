@@ -52,7 +52,7 @@
             <directory>documentation/target/docbook/publish/en-US/pdf/</directory>
             <outputDirectory>documentation</outputDirectory>
             <includes>
-                <include>*.pdf</include>
+                <include>reference-guide-*.pdf</include>
             </includes>
         </fileSet>
         <fileSet>
