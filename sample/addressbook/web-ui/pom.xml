@@ -21,12 +21,12 @@
     <parent>
         <groupId>org.axonframework.samples</groupId>
         <artifactId>axon-addressbook</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <groupId>org.axonframework.samples</groupId>
     <artifactId>axon-addressbook-webui</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <name>Axon Address Book Sample - Web ui</name>
     <packaging>war</packaging>
 
