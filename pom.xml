@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <modules>
         <module>core</module>
         <module>integration</module>
@@ -198,9 +198,9 @@
         </repository>
     </distributionManagement>
     <scm>
-        <connection>scm:svn:http://axonframework.googlecode.com/svn/tags/axon-1.0</connection>
-        <developerConnection>scm:svn:https://axonframework.googlecode.com/svn/tags/axon-1.0</developerConnection>
-        <url>http://code.google.com/p/axonframework/source/browse/tags/axon-1.0</url>
+        <connection>scm:svn:http://axonframework.googlecode.com/svn/trunk</connection>
+        <developerConnection>scm:svn:https://axonframework.googlecode.com/svn/trunk</developerConnection>
+        <url>http://code.google.com/p/axonframework/source/browse/</url>
     </scm>
 
     <developers>
