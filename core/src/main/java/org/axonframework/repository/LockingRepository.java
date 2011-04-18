@@ -96,8 +96,8 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
     public void add(T aggregate) {
         lockManager.obtainLock(aggregate.getIdentifier());
         try {
-            CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
             super.add(aggregate);
+            CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
         } catch (RuntimeException ex) {
             logger.warn("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregate.getIdentifier());
