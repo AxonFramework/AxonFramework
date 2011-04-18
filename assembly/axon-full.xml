@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2010. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@
     </moduleSets>
     <fileSets>
         <fileSet>
-            <directory>documentation/target/en-US/pdf/</directory>
+            <directory>documentation/target/docbook/publish/en-US/pdf/</directory>
             <outputDirectory>documentation</outputDirectory>
             <includes>
                 <include>*.pdf</include>
