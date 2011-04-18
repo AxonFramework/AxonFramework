@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class LockingRepositoryTest {
         testSubject.add(aggregate);
         CurrentUnitOfWork.commit();
 
-        verifyZeroInteractions(lockManager);
+        verify(lockManager).obtainLock(aggregate.getIdentifier());
         verify(mockEventBus).publish(isA(DomainEvent.class));
     }
 
@@ -75,7 +75,10 @@ public class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
+        verify(lockManager).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
+        verify(lockManager).releaseLock(aggregate.getIdentifier());
+        reset(lockManager);
 
         DefaultUnitOfWork.startAndGet();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
@@ -97,7 +100,10 @@ public class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
+        verify(lockManager).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
+        verify(lockManager).releaseLock(aggregate.getIdentifier());
+        reset(lockManager);
 
         DefaultUnitOfWork.startAndGet();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
@@ -112,14 +118,12 @@ public class LockingRepositoryTest {
         try {
             CurrentUnitOfWork.commit();
             fail("Expected exception to be thrown");
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             assertEquals("Mock Exception", e.getMessage());
         }
 
         // make sure the lock is released
         verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
-
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -135,7 +139,10 @@ public class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
+        verify(lockManager).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
+        verify(lockManager).releaseLock(aggregate.getIdentifier());
+        reset(lockManager);
 
         DefaultUnitOfWork.startAndGet();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
@@ -151,8 +158,7 @@ public class LockingRepositoryTest {
         try {
             CurrentUnitOfWork.commit();
             fail("Expected exception to be thrown");
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             assertEquals("Mock Exception", e.getMessage());
         }
 
@@ -194,5 +200,4 @@ public class LockingRepositoryTest {
             // that's ok
         }
     }
-
 }
