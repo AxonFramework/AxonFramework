@@ -50,7 +50,7 @@ public abstract class EventListMatcher extends BaseMatcher<List<? extends Event>
      * Indicates whether the given List of Events meets the expectations of this matcher.
      *
      * @param events The events to verify
-     * @return <code>true<code> if expectations are met, <code>false</code> otherwise.
+     * @return <code>true</code> if expectations are met, <code>false</code> otherwise.
      */
     public abstract boolean matchesEventList(List<? extends Event> events);
 }
