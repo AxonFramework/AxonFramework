@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,23 @@ import org.axonframework.domain.DomainEvent;
 class MyEvent extends DomainEvent {
 
     private static final long serialVersionUID = -8646752013150772644L;
-    private Integer someValue;
+    private final Integer someValue;
+    private final byte[] someBytes;
 
     public MyEvent(Integer someValue) {
+        this(someValue, new byte[]{});
+    }
+
+    public MyEvent(Integer someValue, byte[] someBytes) {
         this.someValue = someValue;
+        this.someBytes = someBytes;
     }
 
     public Integer getSomeValue() {
         return someValue;
+    }
+
+    public byte[] getSomeBytes() {
+        return someBytes;
     }
 }

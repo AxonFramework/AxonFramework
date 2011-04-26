@@ -200,7 +200,11 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
 
                 Object expected = field.get(expectedEvent);
                 Object actual = field.get(actualEvent);
-                if ((expected != null && !expected.equals(actual)) || expected == null && actual != null) {
+                if (expected != null && actual != null && expected.getClass().isArray()) {
+                    if (!Arrays.deepEquals(new Object[]{expected}, new Object[]{actual})) {
+                        reporter.reportDifferentEventContents(expectedEvent.getClass(), field, actual, expected);
+                    }
+                } else if ((expected != null && !expected.equals(actual)) || expected == null && actual != null) {
                     reporter.reportDifferentEventContents(expectedEvent.getClass(), field, actual, expected);
                 }
             } catch (IllegalAccessException e) {
