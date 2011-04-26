@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.EventBase;
-import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -29,6 +28,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * Implementation of the ResultValidator. It also acts as a CommandCallback, and registers the actual result.
@@ -135,15 +136,15 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     @Override
     public ResultValidator expectReturnValue(Object expectedReturnValue) {
         if (expectedReturnValue == null) {
-            return expectReturnValue(CoreMatchers.<Object>nullValue());
+            return expectReturnValue(nullValue());
         }
-        return expectReturnValue(CoreMatchers.equalTo(expectedReturnValue));
+        return expectReturnValue(equalTo(expectedReturnValue));
     }
 
     @Override
     public ResultValidator expectReturnValue(Matcher<?> matcher) {
         if (matcher == null) {
-            return expectReturnValue(CoreMatchers.<Object>nullValue());
+            return expectReturnValue(nullValue());
         }
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
@@ -158,7 +159,7 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator expectException(Class<? extends Throwable> expectedException) {
-        return expectException(CoreMatchers.instanceOf(expectedException));
+        return expectException(instanceOf(expectedException));
     }
 
     @Override
