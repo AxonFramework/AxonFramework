@@ -20,7 +20,6 @@ import org.axonframework.domain.Event;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -36,10 +35,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class SequenceOfEventsMatcher extends EventListMatcher {
-
-    private final Matcher<? extends Event>[] matchers;
-    private Matcher<? extends Event> failedMatcher;
+public class SequenceOfEventsMatcher extends AbstractCollectionOfEventsMatcher {
 
     /**
      * Construct a matcher that will return true if all the given <code>matchers</code> match against an Event
@@ -49,13 +45,13 @@ public class SequenceOfEventsMatcher extends EventListMatcher {
      * @param matchers The matchers that must match against at least one Event in the list.
      */
     public SequenceOfEventsMatcher(Matcher<? extends Event>... matchers) {
-        this.matchers = matchers;
+        super(matchers);
     }
 
     @Override
     public boolean matchesEventList(List<? extends Event> events) {
         Iterator<? extends Event> eventIterator = events.iterator();
-        Iterator<Matcher<? extends Event>> matcherIterator = Arrays.asList(matchers).iterator();
+        Iterator<Matcher<? extends Event>> matcherIterator = getMatchers().iterator();
         Matcher<? extends Event> currentMatcher = null;
         if (matcherIterator.hasNext()) {
             currentMatcher = matcherIterator.next();
@@ -72,31 +68,15 @@ public class SequenceOfEventsMatcher extends EventListMatcher {
             }
         }
         if (currentMatcher != null && !currentMatcher.matches(null)) {
-            failedMatcher = currentMatcher;
+            reportFailed(currentMatcher);
             return false;
         }
-        while (matcherIterator.hasNext()) {
-            if (!matcherIterator.next().matches(null)) {
-                failedMatcher = currentMatcher;
-                return false;
-            }
-        }
-        return true;
+
+        return matchRemainder(matcherIterator);
     }
 
     @Override
-    public void describeTo(Description description) {
-        description.appendText("list with sequence of: ");
-        for (int t = 0; t < matchers.length; t++) {
-            if (t != 0 && t < matchers.length - 1) {
-                description.appendText(", ");
-            } else if (t == matchers.length - 1) {
-                description.appendText(" and ");
-            }
-            matchers[t].describeTo(description);
-            if (matchers[t].equals(failedMatcher)) {
-                description.appendText(" (FAILED!)");
-            }
-        }
+    protected void describeCollectionType(Description description) {
+        description.appendText("sequence");
     }
 }

@@ -20,7 +20,6 @@ import org.axonframework.domain.Event;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,10 +29,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class ListWithAnyOfMatcher extends EventListMatcher {
-
-    private final Matcher<? extends Event>[] matchers;
-    private List<Matcher<? extends Event>> failedMatchers = new ArrayList<Matcher<? extends Event>>();
+public class ListWithAnyOfMatcher extends AbstractCollectionOfEventsMatcher {
 
     /**
      * Construct a matcher that will return true if any of the given <code>matchers</code> matches against at least one
@@ -42,13 +38,13 @@ public class ListWithAnyOfMatcher extends EventListMatcher {
      * @param matchers The matchers that must match against at least one Event in the list.
      */
     public ListWithAnyOfMatcher(Matcher<? extends Event>... matchers) {
-        this.matchers = matchers;
+        super(matchers);
     }
 
     @Override
     public boolean matchesEventList(List<? extends Event> events) {
         boolean match = false;
-        for (Matcher<? extends Event> matcher : matchers) {
+        for (Matcher<? extends Event> matcher : getMatchers()) {
             boolean matcherMatch = false;
             for (Event event : events) {
                 if (matcher.matches(event)) {
@@ -57,25 +53,24 @@ public class ListWithAnyOfMatcher extends EventListMatcher {
                 }
             }
             if (!matcherMatch) {
-                failedMatchers.add(matcher);
+                reportFailed(matcher);
             }
         }
         return match;
     }
 
     @Override
-    public void describeTo(Description description) {
-        description.appendText("list with any of: ");
-        for (int t = 0; t < matchers.length; t++) {
-            if (t != 0 && t < matchers.length - 1) {
-                description.appendText(", ");
-            } else if (t == matchers.length - 1) {
-                description.appendText(" or ");
-            }
-            matchers[t].describeTo(description);
-            if (failedMatchers.contains(matchers[t])) {
-                description.appendText(" (NO MATCH)");
-            }
-        }
+    protected void describeCollectionType(Description description) {
+        description.appendText("any");
+    }
+
+    @Override
+    protected String failedMatcherMessage() {
+        return "NO MATCH";
+    }
+
+    @Override
+    protected String getLastSeparator() {
+        return "or";
     }
 }

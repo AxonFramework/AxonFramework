@@ -29,10 +29,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class ListWithAllOfMatcher extends EventListMatcher {
-
-    private final Matcher<? extends Event>[] matchers;
-    private Matcher<? extends Event> failedMatcher;
+public class ListWithAllOfMatcher extends AbstractCollectionOfEventsMatcher {
 
     /**
      * Construct a matcher that will return true if all the given <code>matchers</code> match against at least one
@@ -42,12 +39,12 @@ public class ListWithAllOfMatcher extends EventListMatcher {
      * @param matchers The matchers that must match against at least one Event in the list.
      */
     public ListWithAllOfMatcher(Matcher<? extends Event>... matchers) {
-        this.matchers = matchers;
+        super(matchers);
     }
 
     @Override
     public boolean matchesEventList(List<? extends Event> events) {
-        for (Matcher<? extends Event> matcher : matchers) {
+        for (Matcher<? extends Event> matcher : getMatchers()) {
             boolean match = false;
             for (Event event : events) {
                 if (matcher.matches(event)) {
@@ -55,26 +52,16 @@ public class ListWithAllOfMatcher extends EventListMatcher {
                 }
             }
             if (!match) {
-                failedMatcher = matcher;
+                reportFailed(matcher);
                 return false;
             }
         }
         return true;
     }
 
+
     @Override
-    public void describeTo(Description description) {
-        description.appendText("list with all of: ");
-        for (int t = 0; t < matchers.length; t++) {
-            if (t != 0 && t < matchers.length - 1) {
-                description.appendText(", ");
-            } else if (t == matchers.length - 1) {
-                description.appendText(" and ");
-            }
-            matchers[t].describeTo(description);
-            if (matchers[t].equals(failedMatcher)) {
-                description.appendText(" (FAILED!)");
-            }
-        }
+    protected void describeCollectionType(Description description) {
+        description.appendText("all");
     }
 }
