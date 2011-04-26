@@ -71,11 +71,9 @@ public class SequenceOfEventsMatcher extends EventListMatcher {
                 }
             }
         }
-        if (currentMatcher != null) {
-            if (!currentMatcher.matches(null)) {
-                failedMatcher = currentMatcher;
-                return false;
-            }
+        if (currentMatcher != null && !currentMatcher.matches(null)) {
+            failedMatcher = currentMatcher;
+            return false;
         }
         while (matcherIterator.hasNext()) {
             if (!matcherIterator.next().matches(null)) {
