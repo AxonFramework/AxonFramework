@@ -51,7 +51,9 @@ public abstract class AbstractSagaRepository implements SagaRepository {
         if (!sagaIdentifiers.isEmpty()) {
             for (String sagaId : sagaIdentifiers) {
                 T cachedSaga = load(type, sagaId);
-                result.add(cachedSaga);
+                if (cachedSaga != null) {
+                    result.add(cachedSaga);
+                }
             }
         }
         return result;
@@ -113,6 +115,8 @@ public abstract class AbstractSagaRepository implements SagaRepository {
     /**
      * Loads a known Saga instance by its unique identifier. Implementations are encouraged, but not required to return
      * the same instance when two Sagas with equal identifiers are loaded.
+     * <p/>
+     * If the saga with given identifier is not of the given type, <code>null</code> should be returned instead.
      *
      * @param type           The expected type of Saga
      * @param sagaIdentifier The unique identifier of the Saga to load
