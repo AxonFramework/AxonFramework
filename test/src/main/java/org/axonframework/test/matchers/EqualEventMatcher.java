@@ -31,6 +31,7 @@ import java.util.Arrays;
  * expected event. All fields in the hierarchy are compared, with the exclusion of the aggregate identifier, sequence
  * number and meta data, which are generally not set in the expected events.
  *
+ * @param <T> The type of event m
  * @author Allard Buijze
  * @since 1.1
  */
@@ -67,20 +68,20 @@ public class EqualEventMatcher<T extends Event> extends BaseMatcher<T> {
         for (Field field : aClass.getDeclaredFields()) {
             field.setAccessible(true);
             try {
-
-                Object expected = field.get(expectedEvent);
-                Object actual = field.get(actualEvent);
-                if (expected != null && actual != null && expected.getClass().isArray()) {
-                    if (!Arrays.deepEquals(new Object[]{expected}, new Object[]{actual})) {
+                Object expectedFieldValue = field.get(expectedEvent);
+                Object actualFieldValue = field.get(actualEvent);
+                if (expectedFieldValue != null && actualFieldValue != null && expectedFieldValue.getClass().isArray()) {
+                    if (!Arrays.deepEquals(new Object[]{expectedFieldValue}, new Object[]{actualFieldValue})) {
                         failedField = field;
-                        failedFieldExpectedValue = expected;
-                        failedFieldActualValue = actual;
+                        failedFieldExpectedValue = expectedFieldValue;
+                        failedFieldActualValue = actualFieldValue;
                         return false;
                     }
-                } else if ((expected != null && !expected.equals(actual)) || expected == null && actual != null) {
+                } else if ((expectedFieldValue != null && !expectedFieldValue.equals(actualFieldValue))
+                        || (expectedFieldValue == null && actualFieldValue != null)) {
                     failedField = field;
-                    failedFieldExpectedValue = expected;
-                    failedFieldActualValue = actual;
+                    failedFieldExpectedValue = expectedFieldValue;
+                    failedFieldActualValue = actualFieldValue;
                     return false;
                 }
             } catch (IllegalAccessException e) {
