@@ -31,7 +31,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public abstract class AbstractCollectionOfEventsMatcher extends EventListMatcher {
+public abstract class CollectionOfEventsMatcher extends EventListMatcher {
 
     private List<Matcher<? extends Event>> failedMatchers = new ArrayList<Matcher<? extends Event>>();
     private final Matcher<? extends Event>[] matchers;
@@ -41,7 +41,7 @@ public abstract class AbstractCollectionOfEventsMatcher extends EventListMatcher
      *
      * @param matchers The matchers to match the individual Events in the Collection
      */
-    protected AbstractCollectionOfEventsMatcher(Matcher<? extends Event>... matchers) {
+    protected CollectionOfEventsMatcher(Matcher<? extends Event>... matchers) {
         this.matchers = matchers;
     }
 
@@ -80,7 +80,6 @@ public abstract class AbstractCollectionOfEventsMatcher extends EventListMatcher
     protected List<Matcher<? extends Event>> getMatchers() {
         return Arrays.asList(matchers);
     }
-
 
     /**
      * Describes the type of collection expected. To be used in the sentence: "list with ... of: <description of

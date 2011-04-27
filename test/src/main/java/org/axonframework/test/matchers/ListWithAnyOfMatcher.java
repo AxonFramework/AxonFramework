@@ -29,7 +29,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class ListWithAnyOfMatcher extends AbstractCollectionOfEventsMatcher {
+public class ListWithAnyOfMatcher extends CollectionOfEventsMatcher {
 
     /**
      * Construct a matcher that will return true if any of the given <code>matchers</code> matches against at least one

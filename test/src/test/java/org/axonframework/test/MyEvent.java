@@ -21,7 +21,7 @@ import org.axonframework.domain.DomainEvent;
 /**
  * @author Allard Buijze
  */
-class MyEvent extends DomainEvent {
+public class MyEvent extends DomainEvent {
 
     private static final long serialVersionUID = -8646752013150772644L;
     private final Integer someValue;

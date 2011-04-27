@@ -35,7 +35,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class ExactSequenceOfEventsMatcher extends AbstractCollectionOfEventsMatcher {
+public class ExactSequenceOfEventsMatcher extends CollectionOfEventsMatcher {
 
     /**
      * Construct a matcher that will return true if all the given <code>matchers</code> match against the event with

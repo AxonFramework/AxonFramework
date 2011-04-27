@@ -19,11 +19,10 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
-import org.axonframework.domain.EventBase;
+import org.axonframework.test.matchers.EqualEventMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -189,32 +188,13 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
         if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
             return false;
         }
-        verifyEqualFields(expectedEvent.getClass(), expectedEvent, actualEvent);
+        EqualEventMatcher<Event> matcher = new EqualEventMatcher<Event>(expectedEvent);
+        if (!matcher.matches(actualEvent)) {
+            reporter.reportDifferentEventContents(expectedEvent.getClass(),
+                                                  matcher.getFailedField(),
+                                                  matcher.getFailedFieldActualValue(),
+                                                  matcher.getFailedFieldExpectedValue());
+        }
         return true;
-    }
-
-    private void verifyEqualFields(Class<?> aClass, Event expectedEvent, Event actualEvent) {
-        for (Field field : aClass.getDeclaredFields()) {
-            field.setAccessible(true);
-            try {
-
-                Object expected = field.get(expectedEvent);
-                Object actual = field.get(actualEvent);
-                if (expected != null && actual != null && expected.getClass().isArray()) {
-                    if (!Arrays.deepEquals(new Object[]{expected}, new Object[]{actual})) {
-                        reporter.reportDifferentEventContents(expectedEvent.getClass(), field, actual, expected);
-                    }
-                } else if ((expected != null && !expected.equals(actual)) || expected == null && actual != null) {
-                    reporter.reportDifferentEventContents(expectedEvent.getClass(), field, actual, expected);
-                }
-            } catch (IllegalAccessException e) {
-                throw new FixtureExecutionException("Could not confirm event equality due to an exception", e);
-            }
-        }
-        if (aClass.getSuperclass() != DomainEvent.class
-                && aClass.getSuperclass() != EventBase.class
-                && aClass.getSuperclass() != Object.class) {
-            verifyEqualFields(aClass.getSuperclass(), expectedEvent, actualEvent);
-        }
     }
 }

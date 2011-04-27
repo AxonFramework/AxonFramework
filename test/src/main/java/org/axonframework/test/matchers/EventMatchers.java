@@ -84,12 +84,25 @@ public abstract class EventMatchers {
     }
 
     /**
+     * Matches against each event of the same runtime type that has all field values equal to the fields in the
+     * expected event. All fields are compared, except for the aggregate identifier and sequence number, as they are
+     * generally not set on the expected event.
+     *
+     * @param expected The event with the expected field values
+     * @param <T>      The type of event to match against
+     * @return a matcher that matches based on the equality of field values
+     */
+    public static <T extends Event> EqualEventMatcher<T> equalTo(T expected) {
+        return new EqualEventMatcher<T>(expected);
+    }
+
+    /**
      * Matches against <code>null</code> or <code>void</code>. Can be used to make sure no trailing
      * events remain when using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
      *
      * @return a matcher that matches against "nothing".
      */
-    public static Matcher<? extends Event> andNoMore() {
+    public static NullOrVoidMatcher andNoMore() {
         return nothing();
     }
 
@@ -99,7 +112,7 @@ public abstract class EventMatchers {
      *
      * @return a matcher that matches against "nothing".
      */
-    public static Matcher<? extends Event> nothing() {
+    public static NullOrVoidMatcher nothing() {
         return new NullOrVoidMatcher();
     }
 }
