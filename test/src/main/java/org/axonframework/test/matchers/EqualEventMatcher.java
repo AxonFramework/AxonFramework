@@ -19,7 +19,6 @@ package org.axonframework.test.matchers;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.EventBase;
-import org.axonframework.test.FixtureExecutionException;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
@@ -85,7 +84,7 @@ public class EqualEventMatcher<T extends Event> extends BaseMatcher<T> {
                     return false;
                 }
             } catch (IllegalAccessException e) {
-                throw new FixtureExecutionException("Could not confirm event equality due to an exception", e);
+                throw new MatcherExecutionException("Could not confirm event equality due to an exception", e);
             }
         }
         if (aClass.getSuperclass() != DomainEvent.class

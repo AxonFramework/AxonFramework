@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.test;
+package org.axonframework.test.matchers;
 
 import org.axonframework.util.AxonNonTransientException;
 
 /**
- * Exception indicating that an error occurred that prevented successful execution of a test fixture.
+ * Exception indicating that an error occurred that prevented successful execution of a matcher. This exception does
+ * not mean an actual instance does not match the expected instance. It means the matcher was unable to perform the
+ * match due to external factors.
  *
  * @author Allard Buijze
- * @since 0.6
+ * @since 1.1
  */
-public class FixtureExecutionException extends AxonNonTransientException {
+public class MatcherExecutionException extends AxonNonTransientException {
 
     private static final long serialVersionUID = 2867528683103491260L;
 
@@ -33,7 +35,7 @@ public class FixtureExecutionException extends AxonNonTransientException {
      *
      * @param message the message describing the cause
      */
-    public FixtureExecutionException(String message) {
+    public MatcherExecutionException(String message) {
         super(message);
     }
 
@@ -43,7 +45,7 @@ public class FixtureExecutionException extends AxonNonTransientException {
      * @param message the message describing the cause
      * @param cause   the underlying cause
      */
-    public FixtureExecutionException(String message, Throwable cause) {
+    public MatcherExecutionException(String message, Throwable cause) {
         super(message, cause);
     }
 }
