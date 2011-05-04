@@ -127,6 +127,12 @@
             <version>1.8.4</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>1.0.0.GA</version>
+            <optional>true</optional>
+        </dependency>
 
         <!-- JPA support -->
         <dependency>
@@ -140,6 +146,12 @@
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
             <version>3.4.0.GA</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>4.1.0.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
