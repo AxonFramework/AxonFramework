@@ -182,6 +182,28 @@
                 transaction is committed after a successful commit of the Unit of Work, or rolled
                 back as the Unit of Work is rolled back.</para>
         </sect2>
+        <sect2>
+            <title>Structural validation</title>
+            <para>There is no point in processing a command if it does not contain all required
+                information in the correct format. In fact, a command that lacks information should
+                be blocked as early as possible, preferably even before any transaction is started.
+                Therefore, an interceptor should check all incoming commands for the availability of
+                such information. This is called structural validation.</para>
+            <para>Axon Framework has support for JSR 303 Bean Validation based validation. This
+                allows you to annotate the fields on commands with annotations like
+                    <code>@NotEmpty</code> and <code>@Pattern</code>. You need to include a JSR 303
+                implementation (such as Hibernate-Validator) on your classpath. Then, configure a
+                    <code>BeanValidationInterceptor</code> on your Command Bus, and it will
+                automatically find and configure your validator implementation. While it uses
+                sensible defaults, you can fine-tune it to your specific needs.<tip>
+                    <para>You want to spend as less resources on an invalid command as possible.
+                        Therefore, this interceptor is generally placed in the very front of the
+                        interceptor chain. In some cases, a Logging or Auditing interceptor might
+                        need to be placed in front, with the validating interceptor immediately
+                        following it. Transaction Management is better done after structural
+                        validation, as it often requires remote resources.</para>
+                </tip></para>
+        </sect2>
         <sect2 xml:id="auditing-interceptor">
             <title>Auditing</title>
             <para>Well designed events will give clear insight in what has happened, when and why.
