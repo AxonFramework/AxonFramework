@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
 /**
  * The Axon namespace handler is responsible for parsing the elements of the Axon namespace and adjusting the Spring
- * context configuration accordingly. However, in reality the namespace handler really just delegates to specific parser
+ * context configuration accordingly. However, in reality the namespace handler really just delegates to specific
+ * parser
  * classes for each element. Please refer to <a href= "http://static.springsource.org/spring/docs/3.0.x/spring-framework-reference/html/extensible-xml.html"
  * >Appendix D</a> of the Spring Framework Reference Documentation for more information.
  *
@@ -35,6 +36,7 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
      */
     @Override
     public void init() {
+        registerBeanDefinitionParser("snapshotter", new SnapshotterBeanDefinitionParser());
         registerBeanDefinitionParser("annotation-config", new AnnotationConfigurationBeanDefinitionParser());
         registerBeanDefinitionParser("command-bus", new SimpleCommandBusBeanDefinitionParser());
         registerBeanDefinitionParser("event-bus", new EventBusBeanDefinitionParser());
@@ -43,5 +45,4 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("event-sourcing-repository", new RepositoryBeanDefinitionParser());
         registerBeanDefinitionParser("saga-manager", new SagaManagerBeanDefinitionParser());
     }
-
 }
