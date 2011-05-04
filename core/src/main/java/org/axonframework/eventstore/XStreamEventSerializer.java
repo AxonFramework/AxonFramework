@@ -44,10 +44,10 @@ import javax.xml.stream.XMLStreamException;
  */
 public class XStreamEventSerializer implements EventSerializer {
 
-    private GenericXStreamSerializer genericXStreamSerializer;
+    private final GenericXStreamSerializer genericXStreamSerializer;
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
-    private List<EventUpcaster<Document>> upcasters = new ArrayList<EventUpcaster<Document>>();
-    private Charset charset;
+    private final List<EventUpcaster<Document>> upcasters = new ArrayList<EventUpcaster<Document>>();
+    private final Charset charset;
 
     /**
      * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
@@ -128,7 +128,7 @@ public class XStreamEventSerializer implements EventSerializer {
         if (upcasters.isEmpty()) {
             return (DomainEvent) genericXStreamSerializer.deserialize(new ByteArrayInputStream(serializedEvent));
         } else {
-            Document document = readDocument(serializedEvent, charset);
+            Document document = readDocument(serializedEvent);
             for (EventUpcaster<Document> upcaster : upcasters) {
                 document = upcaster.upcast(document);
             }
@@ -137,16 +137,17 @@ public class XStreamEventSerializer implements EventSerializer {
     }
 
     /**
-     * Reads the given <code>serializedEvent</code> into a Dom4J document, interpreting the bytes using the given
-     * <code>charset</code>. The default implementation uses a StAX reader.
+     * Reads the given <code>serializedEvent</code> into a Dom4J document. The default implementation uses a StAX
+     * reader.
      * <p/>
-     * This method can be safely overridden to alter the deserialization mechanism.
+     * This method can be safely overridden to alter the deserialization mechanism. Make sure to use the correct
+     * charset
+     * (using {@link #getCharset()}) when converting characters to bytes and vice versa.
      *
      * @param serializedEvent The bytes containing the serialized event
-     * @param charset         The character set needed to convert bytes into characters.
      * @return a Dom4J Document representation of the event
      */
-    protected Document readDocument(byte[] serializedEvent, Charset charset) {
+    protected Document readDocument(byte[] serializedEvent) {
         try {
             STAXEventReader reader = new STAXEventReader();
             return reader.readDocument(new InputStreamReader(new ByteArrayInputStream(serializedEvent), charset));
@@ -206,6 +207,15 @@ public class XStreamEventSerializer implements EventSerializer {
     }
 
     /**
+     * Returns the character set used to serialize XML to bytes and vice versa.
+     *
+     * @return the character set used to serialize XML to bytes and vice versa
+     */
+    public Charset getCharset() {
+        return charset;
+    }
+
+    /**
      * Sets the event upcasters the serializer may use. Note that this serializer only supports the dom4j Document
      * representation of upcasters. This means they should all implement <code>EventUpcaster&lt;Document&gt;</code>.
      *
@@ -213,7 +223,8 @@ public class XStreamEventSerializer implements EventSerializer {
      */
     public void setEventUpcasters(List<EventUpcaster<Document>> eventUpcasters) {
         assertSupportDom4jDocument(eventUpcasters);
-        this.upcasters = eventUpcasters;
+        this.upcasters.clear();
+        this.upcasters.addAll(eventUpcasters);
     }
 
     private void assertSupportDom4jDocument(List<EventUpcaster<Document>> eventUpcasters) {
