@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.eventstore;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.dom4j.Document;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -26,6 +27,7 @@ import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -94,6 +96,41 @@ public class XStreamEventSerializerTest {
         assertTrue(asString.contains("<aggId>"));
         StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
         assertEquals(new Long(1), deserialized.getSequenceNumber());
+    }
+
+    /**
+     * Tests the scenario as described in <a href="http://code.google.com/p/axonframework/issues/detail?id=150">issue
+     * #150</a>.
+     */
+    @Test
+    public void testSerializeWithSpecialCharacters_WithUpcasters() {
+        testSubject.setEventUpcasters(Arrays.<EventUpcaster<Document>>asList(new EventUpcaster<Document>() {
+            @Override
+            public Class<Document> getSupportedRepresentation() {
+                return Document.class;
+            }
+
+            @Override
+            public Document upcast(Document event) {
+                return event;
+            }
+        }));
+        String special_char_string = "Special '\"&; chars";
+        byte[] serialized = testSubject.serialize(new TestEvent(special_char_string));
+        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        assertEquals(special_char_string, deserialized.getName());
+    }
+
+    /**
+     * Tests the scenario as described in <a href="http://code.google.com/p/axonframework/issues/detail?id=150">issue
+     * #150</a>.
+     */
+    @Test
+    public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
+        String special_char_string = "Special '\"&; chars";
+        byte[] serialized = testSubject.serialize(new TestEvent(special_char_string));
+        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        assertEquals(special_char_string, deserialized.getName());
     }
 
     public static class TestEvent extends DomainEvent {

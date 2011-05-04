@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.serializer.GenericXStreamSerializer;
 import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.SerializationException;
 import org.dom4j.Document;
-import org.dom4j.io.XPP3Reader;
+import org.dom4j.io.STAXEventReader;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.stream.XMLStreamException;
 
 /**
  * Implementation of the serializer that uses XStream as underlying serialization mechanism. Events are serialized to
@@ -78,7 +79,8 @@ public class XStreamEventSerializer implements EventSerializer {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given character
+     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given
+     * character
      * set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
      *
      * @param charset The character set to use.
@@ -88,7 +90,8 @@ public class XStreamEventSerializer implements EventSerializer {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given character
+     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given
+     * character
      * set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
      *
      * @param charset         The character set to use.
@@ -105,7 +108,6 @@ public class XStreamEventSerializer implements EventSerializer {
         xStream.useAttributeFor(EventBase.class, "eventRevision");
         xStream.addImmutableType(AggregateIdentifier.class);
         xStream.aliasType("aggregateIdentifier", AggregateIdentifier.class);
-
     }
 
     /**
@@ -126,19 +128,31 @@ public class XStreamEventSerializer implements EventSerializer {
         if (upcasters.isEmpty()) {
             return (DomainEvent) genericXStreamSerializer.deserialize(new ByteArrayInputStream(serializedEvent));
         } else {
-            XPP3Reader reader = new XPP3Reader();
-            Document document;
-            try {
-                document = reader.read(new InputStreamReader(new ByteArrayInputStream(serializedEvent), charset));
-            } catch (Exception e) {
-                throw new SerializationException("Exception while preprocessing events", e);
-            }
+            Document document = readDocument(serializedEvent, charset);
             for (EventUpcaster<Document> upcaster : upcasters) {
                 document = upcaster.upcast(document);
             }
             return (DomainEvent) genericXStreamSerializer.deserialize(new Dom4JReader(document));
         }
+    }
 
+    /**
+     * Reads the given <code>serializedEvent</code> into a Dom4J document, interpreting the bytes using the given
+     * <code>charset</code>. The default implementation uses a StAX reader.
+     * <p/>
+     * This method can be safely overridden to alter the deserialization mechanism.
+     *
+     * @param serializedEvent The bytes containing the serialized event
+     * @param charset         The character set needed to convert bytes into characters.
+     * @return a Dom4J Document representation of the event
+     */
+    protected Document readDocument(byte[] serializedEvent, Charset charset) {
+        try {
+            STAXEventReader reader = new STAXEventReader();
+            return reader.readDocument(new InputStreamReader(new ByteArrayInputStream(serializedEvent), charset));
+        } catch (XMLStreamException e) {
+            throw new SerializationException("Exception while preprocessing events", e);
+        }
     }
 
     /**
@@ -184,6 +198,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
+     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
