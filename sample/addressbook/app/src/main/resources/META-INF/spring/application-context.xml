@@ -104,11 +104,14 @@
         <axon:snapshotter-trigger event-count-threshold="5" snapshotter-ref="snapshotter"/>
     </axon:event-sourcing-repository>
 
+    <!--
     <bean id="snapshotter"
           class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
         <property name="eventStore" ref="eventStore"/>
         <property name="executor" ref="taskExecutor"/>
     </bean>
+    -->
+    <axon:snapshotter id="snapshotter" event-store="eventStore" executor="taskExecutor"/>
 
     <!--	<bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore" />-->
     <axon:jpa-event-store id="eventStore"/>
