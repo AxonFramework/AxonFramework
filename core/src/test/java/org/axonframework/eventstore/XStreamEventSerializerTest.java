@@ -37,6 +37,7 @@ import static org.junit.Assert.*;
 public class XStreamEventSerializerTest {
 
     private XStreamEventSerializer testSubject;
+    private static final String SPECIAL__CHAR__STRING = "Special chars: '\"&;\n\\<>/\r";
 
     @Before
     public void setUp() {
@@ -115,10 +116,9 @@ public class XStreamEventSerializerTest {
                 return event;
             }
         }));
-        String special_char_string = "Special '\"&; chars";
-        byte[] serialized = testSubject.serialize(new TestEvent(special_char_string));
+        byte[] serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
         TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
-        assertEquals(special_char_string, deserialized.getName());
+        assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 
     /**
@@ -127,10 +127,9 @@ public class XStreamEventSerializerTest {
      */
     @Test
     public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
-        String special_char_string = "Special '\"&; chars";
-        byte[] serialized = testSubject.serialize(new TestEvent(special_char_string));
+        byte[] serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
         TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
-        assertEquals(special_char_string, deserialized.getName());
+        assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 
     public static class TestEvent extends DomainEvent {
