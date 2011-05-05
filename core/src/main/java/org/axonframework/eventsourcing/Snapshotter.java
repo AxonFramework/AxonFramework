@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.domain.AggregateIdentifier;
 
 /**
- * Interface describing a instances that are capable of creating snapshot events for aggregates. Although snapshotting
+ * Interface describing instances that are capable of creating snapshot events for aggregates. Although snapshotting
  * is typically an asynchronous process, implementations may to choose to create snapshots in the calling thread.
  *
  * @author Allard Buijze
@@ -36,5 +36,4 @@ public interface Snapshotter {
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
     void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier);
-
 }
