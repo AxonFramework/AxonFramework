@@ -55,7 +55,7 @@ import static org.mockito.Mockito.*;
 public class JpaEventStoreTest {
 
     @Autowired
-    private JpaEventStore eventStore;
+    private JpaEventStore testSubject;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -79,18 +79,18 @@ public class JpaEventStoreTest {
 
     @Test
     public void testStoreAndLoadEvents() {
-        assertNotNull(eventStore);
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
+        assertNotNull(testSubject);
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         entityManager.flush();
         assertEquals((long) aggregate1.getUncommittedEventCount(),
                      entityManager.createQuery("SELECT count(e) FROM DomainEventEntry e").getSingleResult());
 
         // we store some more events to make sure only correct events are retrieved
-        eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
+        testSubject.appendEvents("test", aggregate2.getUncommittedEvents());
         entityManager.flush();
         entityManager.clear();
 
-        DomainEventStream events = eventStore.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
         List<DomainEvent> actualEvents = new ArrayList<DomainEvent>();
         while (events.hasNext()) {
             DomainEvent event = events.next();
@@ -106,11 +106,11 @@ public class JpaEventStoreTest {
         for (int t = 0; t < 110; t++) {
             domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
         }
-        eventStore.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
         entityManager.flush();
         entityManager.clear();
 
-        DomainEventStream events = eventStore.readEvents("test", aggregateIdentifier);
+        DomainEventStream events = testSubject.readEvents("test", aggregateIdentifier);
         Long t = 0L;
         while (events.hasNext()) {
             DomainEvent event = events.next();
@@ -122,7 +122,7 @@ public class JpaEventStoreTest {
 
     @Test
     public void testLoad_LargeAmountOfEventsInSmallBatches() {
-        eventStore.setBatchSize(10);
+        testSubject.setBatchSize(10);
         testLoad_LargeAmountOfEvents();
     }
 
@@ -133,12 +133,12 @@ public class JpaEventStoreTest {
         for (int t = 0; t < 110; t++) {
             domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
         }
-        eventStore.appendEvents("test", new SimpleDomainEventStream(domainEvents));
-        eventStore.appendSnapshotEvent("test", new StubDomainEvent(aggregateIdentifier, 30));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        testSubject.appendSnapshotEvent("test", new StubDomainEvent(aggregateIdentifier, 30));
         entityManager.flush();
         entityManager.clear();
 
-        DomainEventStream events = eventStore.readEvents("test", aggregateIdentifier);
+        DomainEventStream events = testSubject.readEvents("test", aggregateIdentifier);
         Long t = 30L;
         while (events.hasNext()) {
             DomainEvent event = events.next();
@@ -150,18 +150,18 @@ public class JpaEventStoreTest {
 
     @Test
     public void testLoadWithSnapshotEvent() {
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
         entityManager.flush();
         entityManager.clear();
-        eventStore.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
         entityManager.flush();
         entityManager.clear();
         aggregate1.changeState();
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
 
-        DomainEventStream actualEventStream = eventStore.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
         List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
@@ -172,37 +172,37 @@ public class JpaEventStoreTest {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        eventStore.readEvents("test", new UUIDAggregateIdentifier());
+        testSubject.readEvents("test", new UUIDAggregateIdentifier());
     }
 
     @Test
     public void testDoWithAllEvents() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        eventStore.appendEvents("type1", new SimpleDomainEventStream(createDomainEvents(77)));
-        eventStore.appendEvents("type2", new SimpleDomainEventStream(createDomainEvents(23)));
+        testSubject.appendEvents("type1", new SimpleDomainEventStream(createDomainEvents(77)));
+        testSubject.appendEvents("type2", new SimpleDomainEventStream(createDomainEvents(23)));
 
-        eventStore.visitEvents(eventVisitor);
+        testSubject.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEvent.class));
     }
 
     @Test(expected = ConcurrencyException.class)
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
-        eventStore.appendEvents("test",
-                                new SimpleDomainEventStream(new StubDomainEvent(new StringAggregateIdentifier("123"),
-                                                                                0),
-                                                            new StubDomainEvent(new StringAggregateIdentifier("123"),
-                                                                                0)));
+        testSubject.appendEvents("test",
+                                 new SimpleDomainEventStream(new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                 0),
+                                                             new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                 0)));
     }
 
     @Test
     public void testStoreDuplicateEvent_NoSqlExceptionTranslator() {
-        eventStore.setPersistenceExceptionResolver(null);
+        testSubject.setPersistenceExceptionResolver(null);
         try {
-            eventStore.appendEvents("test",
-                                    new SimpleDomainEventStream(new StubDomainEvent(new StringAggregateIdentifier("123"),
-                                                                                    0),
-                                                                new StubDomainEvent(new StringAggregateIdentifier("123"),
-                                                                                    0)));
+            testSubject.appendEvents("test",
+                                     new SimpleDomainEventStream(new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                     0),
+                                                                 new StubDomainEvent(new StringAggregateIdentifier("123"),
+                                                                                     0)));
         } catch (ConcurrencyException ex) {
             fail("Didn't expect exception to be translated");
         } catch (PersistenceException ex) {
@@ -213,31 +213,40 @@ public class JpaEventStoreTest {
     }
 
     @Test
-    public void testPrunesSnaphotWhenMaxSnapshotsArchivedIsExceeded() {
+    public void testPrunesSnaphotsWhenNumberOfSnapshotsExceedsConfiguredMaxSnapshotsArchived() {
+        testSubject.setMaxSnapshotsArchived(1);
+
         StubAggregateRoot aggregate = new StubAggregateRoot();
 
         aggregate.changeState();
-        eventStore.appendEvents("type", aggregate.getUncommittedEvents());
+        testSubject.appendEvents("type", aggregate.getUncommittedEvents());
         aggregate.commitEvents();
         entityManager.flush();
         entityManager.clear();
 
-        eventStore.appendSnapshotEvent("type", aggregate.createSnapshotEvent());
+        testSubject.appendSnapshotEvent("type", aggregate.createSnapshotEvent());
         entityManager.flush();
         entityManager.clear();
 
         aggregate.changeState();
-        eventStore.appendEvents("type", aggregate.getUncommittedEvents());
+        testSubject.appendEvents("type", aggregate.getUncommittedEvents());
         aggregate.commitEvents();
         entityManager.flush();
         entityManager.clear();
 
-        eventStore.appendSnapshotEvent("type", aggregate.createSnapshotEvent());
+        testSubject.appendSnapshotEvent("type", aggregate.createSnapshotEvent());
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals("SnapshotEventEntry count", 1L,
-                     entityManager.createQuery("SELECT count(e) FROM SnapshotEventEntry e").getSingleResult());
+        @SuppressWarnings({"unchecked"})
+        List<SnapshotEventEntry> snapshotEntry = entityManager.createQuery("SELECT e FROM SnapshotEventEntry e "
+                                                                                   + "WHERE e.type = 'type' "
+                                                                                   + "AND e.aggregateIdentifier = :aggregateIdentifier")
+                                                              .setParameter("aggregateIdentifier",
+                                                                            aggregate.getIdentifier().asString())
+                                                              .getResultList();
+        assertEquals("archived snapshot count", 1L, snapshotEntry.size());
+        assertEquals("archived snapshot sequence", 1L, snapshotEntry.iterator().next().getSequenceNumber());
     }
 
     private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {
