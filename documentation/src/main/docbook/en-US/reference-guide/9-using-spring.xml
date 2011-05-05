@@ -313,13 +313,13 @@
     </sect1>
     <sect1>
         <title>Wiring the command bus</title>
-        <sect2>
-        	<title>The basics</title>
-	        <para>The command bus doesn't take any configuration to use. However, it allows you to
-	            configure a number of interceptors that should take action based on each incoming
-	            command.</para>
-	        <para>
-	            <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+        <simplesect>
+            <title>The basics</title>
+            <para>The command bus doesn't take any configuration to use. However, it allows you to
+                configure a number of interceptors that should take action based on each incoming
+                command.</para>
+            <para>
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
 
     &lt;bean id="eventBus" class="org.axonframework.commandhandling.CommandBus">
         &lt;property name="interceptors">
@@ -333,15 +333,14 @@
     &lt;/bean>
 
 &lt;/beans></programlisting>
-        	</para>
-        </sect2>
-        <sect2>
-        	<title>Using the Axon namespace</title>
-        	<para>Setting up a basic command bus using the Axon namspace is a piece of cake: you can
+            </para>
+        </simplesect>
+        <simplesect>
+            <title>Using the Axon namespace</title>
+            <para>Setting up a basic command bus using the Axon namspace is a piece of cake: you can
                 use the <code>commandBus</code> element:
                 <programlisting language="xml">&lt;axon:command-bus id="commandBus"/></programlisting></para>
-        		
-        	<para>Configuring command interceptors for your command bus is also possible using the
+            <para>Configuring command interceptors for your command bus is also possible using the
                     <code>&lt;axon:command-bus></code> element, like so:
                 <programlisting language="xml">&lt;axon:command-bus id="commandBus">
 	&lt;axon:interceptors>
@@ -352,40 +351,7 @@
 &lt;/axon:command-bus></programlisting>
                 Of course you are not limited to bean references; you can also include local bean
                 definitions if you want. </para>
-            
-        	
-        	<para>In case you aren't using annotation-based command handler configuration, you can
-                configure your command bus with a map of command handler subscriptions. You do this
-                using the <code>subscriptions</code> child element of <code>commandBus</code> , in
-                which you then include a list of Spring-standard <code>entry</code> elements. You
-                use the command type as the key and the handler as the value in each mapping. <programlistingco>
-                    <areaspec>
-                        <area coords="2 23" xml:id="ex.subscriptions.elt"/>
-                        <area coords="4 38" xml:id="ex.subscriptions.key"/>
-                        <area coords="5 45" xml:id="ex.subscriptions.val"/>
-                    </areaspec>
-                    <programlisting language="xml">&lt;axon:command-bus id="commandBus">
-	&lt;axon:subscriptions>
-		&lt;entry>
-			&lt;key>org...MyExampleCommand&lt;/key>
-			&lt;value>&lt;ref>commandHandler&lt;/ref>&lt;/value>
-		&lt;/entry>
-	&lt;/axon:subscriptions>
-&lt;/axon:command-bus></programlisting>
-                    <calloutlist>
-                        <callout arearefs="ex.subscriptions.elt">
-                            <para>The subscriptions element is used to set up a map of
-                                subscriptions.</para>
-                        </callout>
-                        <callout arearefs="ex.subscriptions.key">
-                            <para>The command class that a handler is to be subscribed to.</para>
-                        </callout>
-                        <callout arearefs="ex.subscriptions.val">
-                            <para>The command handler interested in the command type.</para>
-                        </callout>
-                    </calloutlist>
-                </programlistingco></para>
-        </sect2>
+        </simplesect>
     </sect1>
     <sect1>
         <title>Wiring the Repository</title>
@@ -447,7 +413,7 @@
 &lt;axon:filesystem-event-store id="fileSystemEventStore" baseDir="/data"/></programlisting></para>
         
     </sect1>
-    <sect1>
+    <sect1 xml:id="spring-snapshotting">
         <title>Configuring Snapshotting</title>
         <para>Configuring snapshotting using Spring is not complex, but does require a number of
             beans to be configured in your application context.</para>
@@ -472,20 +438,26 @@
             Snapshot creation when 20 or more events are required to reload the aggregate's current
             state. </para>
         <para>The snapshotter is configured as follows:</para>
-        <programlisting language="xml">&lt;bean id="snapshotter" class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
+<programlisting language="xml">&lt;bean id="snapshotter" class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
     &lt;property name="eventStore" ref="eventStore"/>
     &lt;property name="executor" ref="taskExecutor"/>
 &lt;/bean>
 
+&lt;!-- or, when using the namespace -->
+
+&lt;axon:snapshotter id="snapshotter" event-store="eventStore" executor=taskExecutor"/>
+
+&lt;!-- the task executor attribute is optional. When used you can define (for example) a thread pool to perform the snapshotting -->
 &lt;bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
     &lt;property name="corePoolSize" value="2"/>
     &lt;property name="maxPoolSize" value="5"/>
     &lt;property name="waitForTasksToCompleteOnShutdown" value="true"/>
 &lt;/bean></programlisting>
-        <para>In this sample, a <code>SpringAggregateSnapshotter</code> is used. This snapshotter
-            will automatically detect any <code>PlatformTransactionManager</code> in your
-            application context, as well as <code>AggregateFactory</code> instances, which all
-            repositories typically are. That means you only need very little configuration to use a
-                <code>Snapshotter</code> within Spring.</para>
+        <para>The <code>SpringAggregateSnapshotter</code> will automatically detect any
+                <code>PlatformTransactionManager</code> in your application context, as well as
+                <code>AggregateFactory</code> instances, which all repositories typically are. That
+            means you only need very little configuration to use a <code>Snapshotter</code> within
+            Spring. If you have multiple <code>PlatformTransactionManager</code> beans in your
+            context, you should explicitly configure the one to use.</para>
     </sect1>
 </chapter>

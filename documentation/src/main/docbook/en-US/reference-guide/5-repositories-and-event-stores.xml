@@ -423,6 +423,9 @@
                         <code>SpringAggregateSnapshotter</code> will autowire all repositores, if
                     they are not explicitly configured.</para>
             </note>
+            <para>Spring users should use the <code>SpringAggregateSnapshotter</code> instead. See
+                    <xref xmlns:xlink="http://www.w3.org/1999/xlink" linkend="spring-snapshotting"/>
+                for more details about configuring snapshotting in Spring.</para>
         </sect2>
         <sect2>
             <title>Storing Snapshot Events</title>
