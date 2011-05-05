@@ -180,6 +180,74 @@
                 you to express your expectation. For example, a "GreaterThanTwoMatcher" could append
                 "any event with value greater than two" to the description. Descriptions allow
                 expressive error messages to be created about why a test case fails.</para>
+            <para>Creating matchers for a list of events can be tedious and error-prone work. To
+                simplify things, Axon provides a set of matchers that allow you to provide a set of
+                event specific matchers and tell Axon how they should match against the list.</para>
+            <para>Below is an overview of the available Event List matchers and their purpose:<itemizedlist>
+                    <listitem>
+                        <para><emphasis role="bold">List with all of</emphasis>: <code>Matchers.listWithAllOf(event matchers...)</code></para>
+                        <para>This matcher will succeed if all of the provided Event Matchers match
+                            against at least one event in the list of actual events. It does not
+                            matter whether multiple matchers match against the same event, nor if an
+                            event in the list does not match against any of the matchers.</para>
+                    </listitem>
+                    <listitem>
+                        <para><emphasis role="bold">List with any of</emphasis>: <code>Matchers.listWithAnyOf(event matchers...)</code></para>
+                        <para>This matcher will succeed if one of more of the provided Event
+                            Matchers matches against one or more of the events in the actual list of
+                            events. Some matchers may not even match at all, while another matches
+                            against multiple others.</para>
+                    </listitem>
+                    <listitem>
+                        <para><emphasis role="bold">Sequence of Events</emphasis>: <code>Matchers.sequenceOf(event matchers...)</code></para>
+                        <para>Use this matcher to verify that the actual Events are match in the
+                            same order as the provided Event Matchers. It will succeed if each
+                            Matcher matches against an Event that comes after the Event that the
+                            previous matcher matched against. This means that "gaps" with unmatched
+                            events may appear.</para>
+                        <para>If, after evaluating the events, more matchers are available, they are
+                            all matched against "<code>null</code>". It is up to the Event Matchers
+                            to decide whether they accept that or not.</para>
+                    </listitem>
+                    <listitem>
+                        <para><emphasis role="bold">Exact sequence of Events</emphasis>: <code>Matchers.exactSequenceOf(event matchers...)</code></para>
+                        <para>Variation of the "Sequence of Events" matcher where gaps of unmatched
+                            events are not allowed. This means each matcher must match against the
+                            Event directly following the Event the previous matcher matched
+                            against.</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para> For convenience, a few commonly required Event Matchers are provided. They match
+                against a single Event instance:<itemizedlist>
+                    <listitem>
+                        <para><emphasis role="bold">Equal Event</emphasis>:
+                                <code>Matchers.equalTo(event instance...)</code></para>
+                        <para>Verifies that the given event is semantically equal to the actual
+                            event. This matcher will compare all values in the fields of both actual
+                            and expected Events using a null-safe equals method. The aggregate
+                            identifier and sequence number are ignored, as they are often not set on
+                            the "expected" Event.</para>
+                    </listitem>
+                    <listitem>
+                        <para><emphasis role="bold">No More Events</emphasis>:
+                                <code>Matchers.andNoMore()</code> or
+                            <code>Matchers.nothing()</code></para>
+                        <para>Only matches against a <code>null</code> value. This matcher can be
+                            added as last matcher to the Exact Sequence of Events matchers to ensure
+                            that no unmatched events remain.</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>Below is a small code sample displaying the usage of these matchers. In this
+                example, we expect two events to be stored and published. The first event must be
+                "aThirdEvent", and the second "aFourthEventWithSomeSpecialThings". There may be no
+                third event, as that will fail against the "andNoMore"
+                matcher.<programlisting language="java">fixture.given(new FirstEvent(), new SecondEvent())
+       .when(new DoSomethingCommand(fixture.getAggregateIdentifier()))
+       .expectEvents(exactSequenceOf(
+           aThirdEvent(),
+           aFourthEventWithSomeSpecialThings(),
+           andNoMore()
+       ));</programlisting></para>
         </simplesect>
     </sect1>
 </chapter>
