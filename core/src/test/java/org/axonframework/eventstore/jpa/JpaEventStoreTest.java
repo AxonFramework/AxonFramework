@@ -239,14 +239,14 @@ public class JpaEventStoreTest {
         entityManager.clear();
 
         @SuppressWarnings({"unchecked"})
-        List<SnapshotEventEntry> snapshotEntry = entityManager.createQuery("SELECT e FROM SnapshotEventEntry e "
-                                                                                   + "WHERE e.type = 'type' "
-                                                                                   + "AND e.aggregateIdentifier = :aggregateIdentifier")
-                                                              .setParameter("aggregateIdentifier",
-                                                                            aggregate.getIdentifier().asString())
-                                                              .getResultList();
-        assertEquals("archived snapshot count", 1L, snapshotEntry.size());
-        assertEquals("archived snapshot sequence", 1L, snapshotEntry.iterator().next().getSequenceNumber());
+        List<SnapshotEventEntry> snapshots =
+                entityManager.createQuery("SELECT e FROM SnapshotEventEntry e "
+                                                  + "WHERE e.type = 'type' "
+                                                  + "AND e.aggregateIdentifier = :aggregateIdentifier")
+                             .setParameter("aggregateIdentifier", aggregate.getIdentifier().asString())
+                             .getResultList();
+        assertEquals("archived snapshot count", 1L, snapshots.size());
+        assertEquals("archived snapshot sequence", 1L, snapshots.iterator().next().getSequenceNumber());
     }
 
     private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {
