@@ -34,7 +34,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.joda.time.Duration;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +41,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Fixture for testing Annotated Sagas based on events and time passing. This fixture allows resources to be configured
+ * for the sagas to use.
+ *
  * @author Allard Buijze
+ * @since 1.1
  */
 public class AnnotatedSagaTestFixture implements FixtureConfiguration, ContinuedGivenState {
 
@@ -51,9 +54,13 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     private final List<Object> registeredResources = new LinkedList<Object>();
 
     private Map<AggregateIdentifier, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<AggregateIdentifier, AggregateEventPublisherImpl>();
-    private List<Event> publishedEvents = new ArrayList<Event>();
     private FixtureExecutionResultImpl fixtureExecutionResult;
 
+    /**
+     * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given <code>sagaType</code>.
+     *
+     * @param sagaType The type of saga under test
+     */
     public AnnotatedSagaTestFixture(Class<? extends AbstractAnnotatedSaga> sagaType) {
         eventScheduler = new StubEventScheduler();
         GenericSagaFactory genericSagaFactory = new GenericSagaFactory();
@@ -129,16 +136,16 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         return fixtureExecutionResult;
     }
 
+    @Override
+    public DateTime currentTime() {
+        return eventScheduler.getCurrentDateTime();
+    }
+
     private AggregateEventPublisherImpl getPublisherFor(AggregateIdentifier aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
         }
         return aggregatePublishers.get(aggregateIdentifier);
-    }
-
-    @Override
-    public DateTime currentTime() {
-        return eventScheduler.getCurrentDateTime();
     }
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
