@@ -20,6 +20,7 @@ import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.junit.*;
 import org.junit.runner.*;
+import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
@@ -47,9 +48,11 @@ public class JpaEventStoreBeanDefinitionParserTest {
         assertNotNull("Event serializer reference is wrong", reference);
         RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
         assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());
+        PropertyValue maxSnapshotsArchived = definition.getPropertyValues().getPropertyValue("maxSnapshotsArchived");
+        assertNotNull("maxSnapshotsArchived is defined", maxSnapshotsArchived);
+        assertEquals("maxSnapshotsArchived value", "2", maxSnapshotsArchived.getValue());
 
         JpaEventStore jpaEventStore = beanFactory.getBean("eventStore", JpaEventStore.class);
         assertNotNull(jpaEventStore);
     }
-
 }

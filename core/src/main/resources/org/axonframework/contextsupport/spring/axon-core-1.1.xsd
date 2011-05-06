@@ -188,6 +188,14 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="max-snapshots-archived" use="optional" type="xsd:integer">
+                        <xsd:annotation>
+                            <xsd:documentation>Sets the maximum number of snapshots to archive for an aggregate.
+                                The EventStore will keep at most this number of snapshots per aggregate. Defaults to 1.
+                                A value less than 1 disables pruning.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

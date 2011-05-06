@@ -44,8 +44,8 @@ import javax.sql.DataSource;
  * specific aggregate in the correct order.
  * <p/>
  * This EventStore supports snapshots pruning, which can enabled by configuring a {@link #setMaxSnapshotsArchived(int)
- * maximum number of snapshots to archive}. By default snapshot pruned to keep only {@value
- * #DEFAULT_MAX_SNAPSHOTS_ARCHIVED} item.
+ * maximum number of snapshots to archive}. By default snapshot pruning is configured to archive only {@value
+ * #DEFAULT_MAX_SNAPSHOTS_ARCHIVED} snapshot per aggregate.
  * <p/>
  * The serializer used to serialize the events is configurable. By default, the {@link XStreamEventSerializer} is used.
  *
@@ -307,7 +307,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * Defaults to {@value #DEFAULT_MAX_SNAPSHOTS_ARCHIVED}.
      *
      * @param maxSnapshotsArchived The maximum number of snapshots to archive for an aggregate. A value less than 1
-     *                             disables pruning.
+     *                             disables pruning of snapshots.
      */
     public void setMaxSnapshotsArchived(int maxSnapshotsArchived) {
         this.maxSnapshotsArchived = maxSnapshotsArchived;

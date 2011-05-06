@@ -30,6 +30,7 @@ import org.w3c.dom.Element;
  *
  * @author Ben Z. Tels
  * @author Allard Buijze
+ * @author Rob van der Linden Vooren
  * @since 0.7
  */
 public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
@@ -44,6 +45,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
     private static final String EVENT_SERIALIZER_ATTRIBUTE = "event-serializer";
     private static final String DATA_SOURCE_ATTRIBUTE = "data-source";
     private static final String PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE = "persistence-exception-resolver";
+    private static final String MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE = "max-snapshots-archived";
 
     /**
      * {@inheritDoc}
@@ -70,6 +72,10 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         if (element.hasAttribute(PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE)) {
             builder.addPropertyReference("persistenceExceptionResolver", element.getAttribute(
                     PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE));
+        }
+        if (element.hasAttribute(MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE)) {
+            builder.addPropertyValue("maxSnapshotsArchived", element.getAttribute(
+                    MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE));
         }
     }
 }

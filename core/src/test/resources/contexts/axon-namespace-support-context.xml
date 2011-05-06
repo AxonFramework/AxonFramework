@@ -70,7 +70,7 @@
     <axon:event-bus id="eventBus"/>
 
     <axon:jpa-event-store id="eventStore" data-source="dataSource"
-                          event-serializer="eventSerializer" entity-manager="entityManager"/>
+                          event-serializer="eventSerializer" entity-manager="entityManager" max-snapshots-archived="2"/>
 
     <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer"/>
 
