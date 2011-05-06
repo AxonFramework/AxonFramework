@@ -17,17 +17,18 @@
 package org.axonframework.test.matchers;
 
 import org.axonframework.domain.Event;
+import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 
 /**
- * Utility class containing static methods to obtain instances of Event List Matchers.
+ * Utility class containing static methods to obtain instances of (List) Matchers.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public abstract class EventMatchers {
+public abstract class Matchers {
 
-    private EventMatchers() {
+    private Matchers() {
     }
 
     /**
@@ -36,6 +37,7 @@ public abstract class EventMatchers {
      * @param matchers the matchers that should match against one of the items in the List of Events.
      * @return a matcher that matches a number of event-matchers against a list of events
      */
+    @Factory
     public static ListWithAllOfMatcher listWithAllOf(Matcher<? extends Event>... matchers) {
         return new ListWithAllOfMatcher(matchers);
     }
@@ -47,6 +49,7 @@ public abstract class EventMatchers {
      * @param matchers the matchers that should match against one of the items in the List of Events.
      * @return a matcher that matches a number of event-matchers against a list of events
      */
+    @Factory
     public static ListWithAnyOfMatcher listWithAnyOf(Matcher<? extends Event>... matchers) {
         return new ListWithAnyOfMatcher(matchers);
     }
@@ -61,8 +64,9 @@ public abstract class EventMatchers {
      * @param matchers the matchers to match against the list of events
      * @return a matcher that matches a number of event-matchers against a list of events
      */
-    public static SequenceOfEventsMatcher sequenceOf(Matcher<? extends Event>... matchers) {
-        return new SequenceOfEventsMatcher(matchers);
+    @Factory
+    public static <T> SequenceMatcher<T> sequenceOf(Matcher<T>... matchers) {
+        return new SequenceMatcher<T>(matchers);
     }
 
     /**
@@ -79,8 +83,19 @@ public abstract class EventMatchers {
      * @param matchers the matchers to match against the list of events
      * @return a matcher that matches a number of event-matchers against a list of events
      */
-    public static ExactSequenceOfEventsMatcher exactSequenceOf(Matcher<? extends Event>... matchers) {
-        return new ExactSequenceOfEventsMatcher(matchers);
+    @Factory
+    public static ExactSequenceMatcher exactSequenceOf(Matcher<? extends Event>... matchers) {
+        return new ExactSequenceMatcher(matchers);
+    }
+
+    /**
+     * Matches an empty List of Events.
+     *
+     * @return a matcher that matches an empty list of events
+     */
+    @Factory
+    public static NoEventsMatcher noEvents() {
+        return new NoEventsMatcher();
     }
 
     /**
@@ -92,6 +107,7 @@ public abstract class EventMatchers {
      * @param <T>      The type of event to match against
      * @return a matcher that matches based on the equality of field values
      */
+    @Factory
     public static <T extends Event> EqualEventMatcher<T> equalTo(T expected) {
         return new EqualEventMatcher<T>(expected);
     }
@@ -102,6 +118,7 @@ public abstract class EventMatchers {
      *
      * @return a matcher that matches against "nothing".
      */
+    @Factory
     public static NullOrVoidMatcher andNoMore() {
         return nothing();
     }
@@ -112,6 +129,7 @@ public abstract class EventMatchers {
      *
      * @return a matcher that matches against "nothing".
      */
+    @Factory
     public static NullOrVoidMatcher nothing() {
         return new NullOrVoidMatcher();
     }

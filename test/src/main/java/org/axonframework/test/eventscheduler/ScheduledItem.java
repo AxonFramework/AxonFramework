@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.matchers;
+package org.axonframework.test.eventscheduler;
 
-import org.junit.*;
-
-import static org.axonframework.test.matchers.Matchers.nothing;
-import static org.junit.Assert.*;
+import org.axonframework.domain.ApplicationEvent;
+import org.joda.time.DateTime;
 
 /**
- * @author Allard Buijze
+ *
  */
-public class NullOrVoidMatcherTest {
+public interface ScheduledItem {
 
-    @Test
-    public void testMatcherMatchesVoidAndNull() {
-        assertTrue(nothing().matches(Void.class));
-        assertTrue(nothing().matches(null));
-        assertFalse(nothing().matches(new Object()));
-    }
+    DateTime getScheduleTime();
+
+    ApplicationEvent getEvent();
 }

@@ -26,7 +26,7 @@ import org.mockito.stubbing.*;
 
 import java.util.Arrays;
 
-import static org.axonframework.test.matchers.EventMatchers.sequenceOf;
+import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -38,12 +38,12 @@ public class SequenceOfEventsMatcherTest {
     private Matcher<Event> mockMatcher1;
     private Matcher<Event> mockMatcher2;
     private Matcher<Event> mockMatcher3;
-    private SequenceOfEventsMatcher testSubject;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
     private StubEvent stubEvent3;
     private StubEvent stubEvent4;
     private StubEvent stubEvent5;
+    private SequenceMatcher<Event> testSubject;
 
     @SuppressWarnings({"unchecked"})
     @Before
@@ -64,8 +64,8 @@ public class SequenceOfEventsMatcherTest {
 
     @Test
     public void testMatch_FullMatch() {
-        assertTrue(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2, stubEvent3,
-                                                              stubEvent4, stubEvent5)));
+        assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3,
+                                                     stubEvent4, stubEvent5)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1, never()).matches(stubEvent2);
@@ -92,8 +92,8 @@ public class SequenceOfEventsMatcherTest {
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher2.matches(stubEvent5)).thenReturn(true);
 
-        assertTrue(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2, stubEvent3,
-                                                              stubEvent4, stubEvent5)));
+        assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3,
+                                                     stubEvent4, stubEvent5)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1, never()).matches(stubEvent2);
@@ -122,7 +122,7 @@ public class SequenceOfEventsMatcherTest {
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(null)).thenReturn(false);
 
-        assertFalse(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -140,7 +140,7 @@ public class SequenceOfEventsMatcherTest {
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
 
-        assertFalse(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -152,7 +152,7 @@ public class SequenceOfEventsMatcherTest {
 
     @Test
     public void testDescribe() {
-        testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2));
+        testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
         doAnswer(new DescribingAnswer("B")).when(mockMatcher2).describeTo(isA(Description.class));
@@ -160,7 +160,7 @@ public class SequenceOfEventsMatcherTest {
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         String actual = description.toString();
-        assertEquals("list with sequence of: A, B and C", actual);
+        assertEquals("list with sequence of: <A>, <B> and <C>", actual);
     }
 
     @Test
@@ -169,7 +169,7 @@ public class SequenceOfEventsMatcherTest {
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
 
-        testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2));
+        testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
         doAnswer(new DescribingAnswer("B")).when(mockMatcher2).describeTo(isA(Description.class));
@@ -177,7 +177,7 @@ public class SequenceOfEventsMatcherTest {
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         String actual = description.toString();
-        assertEquals("list with sequence of: A, B (FAILED!) and C", actual);
+        assertEquals("list with sequence of: <A>, <B> (FAILED!) and <C>", actual);
     }
 
     private static class DescribingAnswer implements Answer<Object> {

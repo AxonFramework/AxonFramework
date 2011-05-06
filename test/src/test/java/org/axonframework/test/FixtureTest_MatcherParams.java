@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.junit.*;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
 
 /**
@@ -47,7 +48,7 @@ public class FixtureTest_MatcherParams {
                .given(new MyEvent(1))
                .when(new TestCommand(fixture.getAggregateIdentifier()))
                .expectReturnValue(new DoesMatch())
-               .expectEvents(new DoesMatch<List<? extends Event>>());
+               .expectEvents(sequenceOf(new DoesMatch<Event>()));
     }
 
     @Test

@@ -16,20 +16,27 @@
 
 package org.axonframework.test.matchers;
 
-import org.junit.*;
+import org.axonframework.domain.Event;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 
-import static org.axonframework.test.matchers.Matchers.nothing;
-import static org.junit.Assert.*;
+import java.util.Collection;
+import java.util.List;
 
 /**
+ * Matches any empty collection.
+ *
  * @author Allard Buijze
+ * @since 1.1
  */
-public class NullOrVoidMatcherTest {
+public class NoEventsMatcher extends BaseMatcher<List<? extends Event>> {
+    @Override
+    public boolean matches(Object item) {
+        return item instanceof Collection && ((Collection) item).isEmpty();
+    }
 
-    @Test
-    public void testMatcherMatchesVoidAndNull() {
-        assertTrue(nothing().matches(Void.class));
-        assertTrue(nothing().matches(null));
-        assertFalse(nothing().matches(new Object()));
+    @Override
+    public void describeTo(Description description) {
+        description.appendText("no events");
     }
 }

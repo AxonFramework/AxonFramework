@@ -26,7 +26,7 @@ import org.mockito.stubbing.*;
 
 import java.util.Arrays;
 
-import static org.axonframework.test.matchers.EventMatchers.listWithAllOf;
+import static org.axonframework.test.matchers.Matchers.listWithAllOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -58,7 +58,7 @@ public class ListWithAllOfMatcherTest {
 
     @Test
     public void testMatch_FullMatch() {
-        assertTrue(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -74,7 +74,7 @@ public class ListWithAllOfMatcherTest {
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
 
-        assertTrue(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -90,7 +90,7 @@ public class ListWithAllOfMatcherTest {
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
 
-        assertFalse(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -98,7 +98,7 @@ public class ListWithAllOfMatcherTest {
 
     @Test
     public void testDescribe() {
-        testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2));
+        testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
         doAnswer(new DescribingAnswer("B")).when(mockMatcher2).describeTo(isA(Description.class));
@@ -106,14 +106,14 @@ public class ListWithAllOfMatcherTest {
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         String actual = description.toString();
-        assertEquals("list with all of: A, B and C", actual);
+        assertEquals("list with all of: <A>, <B> and <C>", actual);
     }
 
     @Test
     public void testDescribe_OneMatcherFailed() {
         when(mockMatcher2.matches(any())).thenReturn(false);
 
-        testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2));
+        testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
         doAnswer(new DescribingAnswer("B")).when(mockMatcher2).describeTo(isA(Description.class));
@@ -121,7 +121,7 @@ public class ListWithAllOfMatcherTest {
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         String actual = description.toString();
-        assertEquals("list with all of: A, B (FAILED!) and C", actual);
+        assertEquals("list with all of: <A>, <B> (FAILED!) and <C>", actual);
     }
 
     private static class DescribingAnswer implements Answer<Object> {

@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.matchers;
+package org.axonframework.test.saga;
 
-import org.junit.*;
-
-import static org.axonframework.test.matchers.Matchers.nothing;
-import static org.junit.Assert.*;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.ApplicationEvent;
 
 /**
  * @author Allard Buijze
  */
-public class NullOrVoidMatcherTest {
+public class TimerTriggeredEvent extends ApplicationEvent {
 
-    @Test
-    public void testMatcherMatchesVoidAndNull() {
-        assertTrue(nothing().matches(Void.class));
-        assertTrue(nothing().matches(null));
-        assertFalse(nothing().matches(new Object()));
+    private static final long serialVersionUID = 1476052251573200552L;
+    private final AggregateIdentifier aggregateIdentifier;
+
+    protected TimerTriggeredEvent(Object source, AggregateIdentifier aggregateIdentifier) {
+        super(source);
+        this.aggregateIdentifier = aggregateIdentifier;
+    }
+
+    public AggregateIdentifier getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 }

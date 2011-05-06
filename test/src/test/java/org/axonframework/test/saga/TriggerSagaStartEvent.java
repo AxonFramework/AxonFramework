@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.matchers;
+package org.axonframework.test.saga;
 
-import org.junit.*;
-
-import static org.axonframework.test.matchers.Matchers.nothing;
-import static org.junit.Assert.*;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public class NullOrVoidMatcherTest {
+public class TriggerSagaStartEvent extends DomainEvent {
 
-    @Test
-    public void testMatcherMatchesVoidAndNull() {
-        assertTrue(nothing().matches(Void.class));
-        assertTrue(nothing().matches(null));
-        assertFalse(nothing().matches(new Object()));
+    public TriggerSagaStartEvent() {
+    }
+
+    public TriggerSagaStartEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
+        super(sequenceNumber, aggregateIdentifier);
     }
 }

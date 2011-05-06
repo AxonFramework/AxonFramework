@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.matchers;
-
-import org.junit.*;
-
-import static org.axonframework.test.matchers.Matchers.nothing;
-import static org.junit.Assert.*;
-
 /**
- * @author Allard Buijze
+ * A collection of classes which may prove useful when testing Axon-based classes.
  */
-public class NullOrVoidMatcherTest {
-
-    @Test
-    public void testMatcherMatchesVoidAndNull() {
-        assertTrue(nothing().matches(Void.class));
-        assertTrue(nothing().matches(null));
-        assertFalse(nothing().matches(new Object()));
-    }
-}
+package org.axonframework.test.utils;

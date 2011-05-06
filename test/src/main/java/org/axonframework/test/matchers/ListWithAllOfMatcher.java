@@ -16,38 +16,35 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Event;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
 import java.util.List;
 
 /**
- * A matcher that will match if all the given <code>matchers</code> match against at least one Event in a given List of
- * Events.
+ * A matcher that will match if all the given <code>matchers</code> match against at least one item in a given List.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class ListWithAllOfMatcher extends CollectionOfEventsMatcher {
+public class ListWithAllOfMatcher<T> extends ListMatcher<T> {
 
     /**
      * Construct a matcher that will return true if all the given <code>matchers</code> match against at least one
-     * Event
-     * in any given List.
+     * item in any given List.
      *
-     * @param matchers The matchers that must match against at least one Event in the list.
+     * @param matchers The matchers that must match against at least one item in the list.
      */
-    public ListWithAllOfMatcher(Matcher<? extends Event>... matchers) {
+    public ListWithAllOfMatcher(Matcher<T>... matchers) {
         super(matchers);
     }
 
     @Override
-    public boolean matchesEventList(List<? extends Event> events) {
-        for (Matcher<? extends Event> matcher : getMatchers()) {
+    public boolean matchesList(List<T> items) {
+        for (Matcher<T> matcher : getMatchers()) {
             boolean match = false;
-            for (Event event : events) {
-                if (matcher.matches(event)) {
+            for (T item : items) {
+                if (matcher.matches(item)) {
                     match = true;
                 }
             }

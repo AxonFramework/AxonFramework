@@ -16,7 +16,6 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Event;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
@@ -24,41 +23,40 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A matcher that will match if all the given <code>matchers</code> each match against an event that the previous
- * matcher matched against. That means the second matcher should match an Event that follow the Event that the first
+ * A matcher that will match if all the given <code>matchers</code> each match against an item that the previous
+ * matcher matched against. That means the second matcher should match an item that follow the item that the first
  * matcher matched.
  * <p/>
- * If the number of Events is larger than the number of matchers, the excess events are not evaluated. Use {@link
- * EventMatchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If the last event of the list
- * has been evaluated, and Matcher still remain, they are evaluated against a <code>null</code> value.
+ * If the number of items is larger than the number of matchers, the excess items are not evaluated. Use {@link
+ * Matchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If the last item of the list
+ * has been evaluated, and Matchers still remain, they are evaluated against a <code>null</code> value.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class SequenceOfEventsMatcher extends CollectionOfEventsMatcher {
+public class SequenceMatcher<T> extends ListMatcher<T> {
 
     /**
-     * Construct a matcher that will return true if all the given <code>matchers</code> match against an Event
-     * positioned
-     * after the event that the previous matcher matched against.
+     * Construct a matcher that will return true if all the given <code>matchers</code> match against an item
+     * positioned after the item that the previous matcher matched against.
      *
-     * @param matchers The matchers that must match against at least one Event in the list.
+     * @param matchers The matchers that must match against at least one item in the list.
      */
-    public SequenceOfEventsMatcher(Matcher<? extends Event>... matchers) {
+    public SequenceMatcher(Matcher<T>... matchers) {
         super(matchers);
     }
 
     @Override
-    public boolean matchesEventList(List<? extends Event> events) {
-        Iterator<? extends Event> eventIterator = events.iterator();
-        Iterator<Matcher<? extends Event>> matcherIterator = getMatchers().iterator();
-        Matcher<? extends Event> currentMatcher = null;
+    public boolean matchesList(List<T> items) {
+        Iterator<T> itemIterator = items.iterator();
+        Iterator<Matcher<T>> matcherIterator = getMatchers().iterator();
+        Matcher<T> currentMatcher = null;
         if (matcherIterator.hasNext()) {
             currentMatcher = matcherIterator.next();
         }
 
-        while (eventIterator.hasNext() && currentMatcher != null) {
-            boolean hasMatch = currentMatcher.matches(eventIterator.next());
+        while (itemIterator.hasNext() && currentMatcher != null) {
+            boolean hasMatch = currentMatcher.matches(itemIterator.next());
             if (hasMatch) {
                 if (matcherIterator.hasNext()) {
                     currentMatcher = matcherIterator.next();

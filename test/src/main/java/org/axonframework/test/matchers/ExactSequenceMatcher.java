@@ -16,7 +16,6 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Event;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
@@ -29,13 +28,13 @@ import java.util.List;
  * and so forth.
  * <p/>
  * If the number of Events is larger than the number of matchers, the excess events are not evaluated. Use {@link
- * EventMatchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If there are more matchers
+ * Matchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If there are more matchers
  * than Events, the remainder of matchers is evaluated against a <code>null</code> value.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class ExactSequenceOfEventsMatcher extends CollectionOfEventsMatcher {
+public class ExactSequenceMatcher<T> extends ListMatcher<T> {
 
     /**
      * Construct a matcher that will return true if all the given <code>matchers</code> match against the event with
@@ -43,16 +42,16 @@ public class ExactSequenceOfEventsMatcher extends CollectionOfEventsMatcher {
      *
      * @param matchers The matchers that must match against at least one Event in the list.
      */
-    public ExactSequenceOfEventsMatcher(Matcher<? extends Event>... matchers) {
+    public ExactSequenceMatcher(Matcher<T>... matchers) {
         super(matchers);
     }
 
     @Override
-    public boolean matchesEventList(List<? extends Event> events) {
-        Iterator<? extends Event> eventIterator = events.iterator();
-        Iterator<Matcher<? extends Event>> matcherIterator = getMatchers().iterator();
+    public boolean matchesList(List<T> events) {
+        Iterator<T> eventIterator = events.iterator();
+        Iterator<Matcher<T>> matcherIterator = getMatchers().iterator();
         while (eventIterator.hasNext() && matcherIterator.hasNext()) {
-            Matcher<? extends Event> matcher = matcherIterator.next();
+            Matcher<T> matcher = matcherIterator.next();
             if (!matcher.matches(eventIterator.next())) {
                 reportFailed(matcher);
                 return false;

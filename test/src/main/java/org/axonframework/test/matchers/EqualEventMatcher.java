@@ -16,9 +16,11 @@
 
 package org.axonframework.test.matchers;
 
+import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.EventBase;
+import org.axonframework.domain.SystemEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
@@ -88,6 +90,9 @@ public class EqualEventMatcher<T extends Event> extends BaseMatcher<T> {
             }
         }
         if (aClass.getSuperclass() != DomainEvent.class
+                && aClass.getSuperclass() != ApplicationEvent.class
+                && aClass.getSuperclass() != SystemEvent.class
+                && aClass.getSuperclass() != Event.class
                 && aClass.getSuperclass() != EventBase.class
                 && aClass.getSuperclass() != Object.class) {
             match = fieldsMatch(aClass.getSuperclass(), expectedEvent, actualEvent);

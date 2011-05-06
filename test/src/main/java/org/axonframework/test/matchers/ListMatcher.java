@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Event;
+import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
@@ -31,19 +31,29 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public abstract class CollectionOfEventsMatcher extends EventListMatcher {
+public abstract class ListMatcher<T> extends BaseMatcher<List<? extends T>> {
 
-    private List<Matcher<? extends Event>> failedMatchers = new ArrayList<Matcher<? extends Event>>();
-    private final Matcher<? extends Event>[] matchers;
+    private List<Matcher<T>> failedMatchers = new ArrayList<Matcher<T>>();
+    private final Matcher<T>[] matchers;
 
     /**
      * Creates an abstract matcher to match a number of Matchers against Events contained inside a Collection.
      *
      * @param matchers The matchers to match the individual Events in the Collection
      */
-    protected CollectionOfEventsMatcher(Matcher<? extends Event>... matchers) {
+    protected ListMatcher(Matcher<T>... matchers) {
         this.matchers = matchers;
     }
+
+    @Override
+    public boolean matches(Object item) {
+        if (List.class.isInstance(item)) {
+            return matchesList((List<T>) item);
+        }
+        return false;
+    }
+
+    protected abstract boolean matchesList(List<T> item);
 
     /**
      * Matches all the remaining Matchers in the given <code>matcherIterator</code> against <code>null</code>.
@@ -51,10 +61,10 @@ public abstract class CollectionOfEventsMatcher extends EventListMatcher {
      * @param matcherIterator The iterator potentially containing more matchers
      * @return true if no matchers remain or all matchers succeeded
      */
-    protected boolean matchRemainder(Iterator<Matcher<? extends Event>> matcherIterator) {
+    protected boolean matchRemainder(Iterator<Matcher<T>> matcherIterator) {
         // evaluate any excess matchers against null
         while (matcherIterator.hasNext()) {
-            Matcher<? extends Event> matcher = matcherIterator.next();
+            Matcher<T> matcher = matcherIterator.next();
             if (!matcher.matches(null)) {
                 failedMatchers.add(matcher);
                 return false;
@@ -68,7 +78,7 @@ public abstract class CollectionOfEventsMatcher extends EventListMatcher {
      *
      * @param matcher The failing matcher.
      */
-    protected void reportFailed(Matcher<? extends Event> matcher) {
+    protected void reportFailed(Matcher<T> matcher) {
         failedMatchers.add(matcher);
     }
 
@@ -77,7 +87,7 @@ public abstract class CollectionOfEventsMatcher extends EventListMatcher {
      *
      * @return a read-only list of Matchers, in the order they were provided in the constructor
      */
-    protected List<Matcher<? extends Event>> getMatchers() {
+    protected List<Matcher<T>> getMatchers() {
         return Arrays.asList(matchers);
     }
 
@@ -97,12 +107,14 @@ public abstract class CollectionOfEventsMatcher extends EventListMatcher {
         for (int t = 0; t < matchers.length; t++) {
             if (t != 0 && t < matchers.length - 1) {
                 description.appendText(", ");
-            } else if (t == matchers.length - 1) {
+            } else if (t == matchers.length - 1 && t > 0) {
                 description.appendText(" ");
                 description.appendText(getLastSeparator());
                 description.appendText(" ");
             }
+            description.appendText("<");
             matchers[t].describeTo(description);
+            description.appendText(">");
             if (failedMatchers.contains(matchers[t])) {
                 description.appendText(" (");
                 description.appendText(failedMatcherMessage());

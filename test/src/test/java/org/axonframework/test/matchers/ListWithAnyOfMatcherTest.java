@@ -26,7 +26,7 @@ import org.mockito.stubbing.*;
 
 import java.util.Arrays;
 
-import static org.axonframework.test.matchers.EventMatchers.listWithAnyOf;
+import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -58,7 +58,7 @@ public class ListWithAnyOfMatcherTest {
 
     @Test
     public void testMatch_FullMatch() {
-        assertTrue(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -74,7 +74,7 @@ public class ListWithAnyOfMatcherTest {
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
 
-        assertTrue(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -90,7 +90,7 @@ public class ListWithAnyOfMatcherTest {
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
 
-        assertFalse(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -106,7 +106,7 @@ public class ListWithAnyOfMatcherTest {
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
 
-        assertTrue(testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2)));
+        assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
         verify(mockMatcher1).matches(stubEvent2);
@@ -118,7 +118,7 @@ public class ListWithAnyOfMatcherTest {
 
     @Test
     public void testDescribe() {
-        testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2));
+        testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
         doAnswer(new DescribingAnswer("B")).when(mockMatcher2).describeTo(isA(Description.class));
@@ -126,7 +126,7 @@ public class ListWithAnyOfMatcherTest {
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         String actual = description.toString();
-        assertEquals("list with any of: A, B or C", actual);
+        assertEquals("list with any of: <A>, <B> or <C>", actual);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class ListWithAnyOfMatcherTest {
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
 
-        testSubject.matchesEventList(Arrays.asList(stubEvent1, stubEvent2));
+        testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
         doAnswer(new DescribingAnswer("B")).when(mockMatcher2).describeTo(isA(Description.class));
@@ -143,7 +143,7 @@ public class ListWithAnyOfMatcherTest {
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         String actual = description.toString();
-        assertEquals("list with any of: A (NO MATCH), B (NO MATCH) or C (NO MATCH)", actual);
+        assertEquals("list with any of: <A> (NO MATCH), <B> (NO MATCH) or <C> (NO MATCH)", actual);
     }
 
     private static class DescribingAnswer implements Answer<Object> {

@@ -40,7 +40,7 @@ public class EqualEventMatcherTest {
     @Before
     public void setUp() {
         expectedEvent = new MyEvent(1);
-        testSubject = EventMatchers.equalTo(expectedEvent);
+        testSubject = Matchers.equalTo(expectedEvent);
     }
 
     @Test
