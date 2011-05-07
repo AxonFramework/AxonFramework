@@ -208,10 +208,8 @@
             <title>Keeping track of Deadlines</title>
             <para>It is easy to make a Saga take action when something happens. After all, there is
                 an Event to notify the Saga. But what if you want your Saga to do something when
-                something expected does <emphasis>not</emphasis> happen? You can't ever be sure that
-                something does not happen. To do that, you'd have to wait until eternity, and only
-                then you know for sure. That's why there is always a deadline for a certain
-                activity. In invoices, that's typically several weeks, while the confirmation of a
+                <emphasis>nothing</emphasis> happens? That's what deadlines are used for. In 
+                invoices, that's typically several weeks, while the confirmation of a
                 credit card payment should occur within a few seconds.</para>
             <para>In Axon, you can use an <code>EventScheduler</code> to schedule an Event for
                 publication. In the example of an Invoice, you'd expect that invoice to be paid
@@ -331,7 +329,7 @@
                    saga-repository="sagaRepository" event-bus="eventBus">
 	&lt;axon:types>
 		fully.qualified.ClassName,
-        another.fq.ClassName
+    another.fq.ClassName
 	&lt;/axon:types>
 &lt;/axon:saga-manager></programlisting>
             </simplesect>
@@ -341,7 +339,7 @@
                     for sagas. To handle events asynchronously, the SagaManager needs to be
                     configured with an <code>Executor</code> implementation. The
                         <code>Executor</code> supplies the threads needed to process the events
-                    asynchronously. Ofter, you'll want to use a thread pool. You may, if you want,
+                    asynchronously. Often, you'll want to use a thread pool. You may, if you want,
                     share this thread pool with other asynchronous activities.</para>
                 <para>When an executor is provided, the SagaManager will automatically use it to
                     find associated Saga instances and dispatch the events each of these instances.
@@ -408,7 +406,7 @@
                 <para>In order to ensure that only a single instance exists for each conceptual
                     Saga, the JpaSagaRepository uses a specialized cache. Unlike many other caches,
                     the primary goal of this cache is to prevent multiple instances of a single
-                    Saga. These Sagas are Weakly References. That means that once a Saga is no
+                    Saga. These Sagas are Weakly Referenced. That means that once a Saga is no
                     longer referenced, the Garbage Collector may clean them up. When the Saga is
                     needed, a new instance is automatically created.</para>
                 <para>The JpaSagaRepository is configured with a JPA <code>EntityManager</code>, a
