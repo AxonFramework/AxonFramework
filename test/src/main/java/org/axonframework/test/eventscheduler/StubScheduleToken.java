@@ -34,6 +34,14 @@ class StubScheduleToken implements ScheduleToken, Comparable<StubScheduleToken>,
     private final ApplicationEvent event;
     private final int counter;
 
+    /**
+     * Initialize the token with the given <code>scheduleTime</code>, <code>event</code> and <code>counter</code>.
+     *
+     * @param scheduleTime The time at which to trigger the event
+     * @param event        The scheduled event
+     * @param counter      A counter used for sorting purposes. When two events are scheduled for the same time, the
+     *                     counter decides which comes first.
+     */
     StubScheduleToken(DateTime scheduleTime, ApplicationEvent event, int counter) {
         this.scheduleTime = scheduleTime;
         this.event = event;

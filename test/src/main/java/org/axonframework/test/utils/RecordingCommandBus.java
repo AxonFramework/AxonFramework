@@ -90,6 +90,7 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @param commandType    The type of command to verify the subscription for
      * @param commandHandler The command handler to verify the subscription for
+     * @param <C>            The type of command to verify the subscription for
      * @return <code>true</code> if the handler is subscribed, otherwise <code>false</code>.
      */
     public <C> boolean isSubscribed(Class<C> commandType, CommandHandler<? super C> commandHandler) {
