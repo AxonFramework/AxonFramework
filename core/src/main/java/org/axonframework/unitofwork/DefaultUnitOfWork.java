@@ -59,6 +59,9 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     /**
      * Starts a new DefaultUnitOfWork instance, registering it a CurrentUnitOfWork. This methods returns the started
      * UnitOfWork instance.
+     * <p/>
+     * Note that this Unit Of Work type is not meant to be shared among different Threads. A single DefaultUnitOfWork
+     * instance should be used exclusively by the Thread that created it.
      *
      * @return the started UnitOfWork instance
      */
@@ -90,11 +93,12 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
                                                          SaveAggregateCallback<T> callback) {
         T similarAggregate = (T) findSimilarAggregate(aggregate.getClass(), aggregate.getIdentifier());
         if (similarAggregate != null) {
-            logger.warn("An aggregate is being registered with this UnitOfWork more than once. "
-                                + "Although this is not likely to cause problems, it is improper use of resources. "
-                                + "Duplicated aggregate: type [{}], identifier [{}]",
-                        aggregate.getClass().getSimpleName(),
-                        aggregate.getIdentifier().asString());
+            if (logger.isInfoEnabled()) {
+                logger.info("Ignoring aggregate registration. An aggregate of same type and identifier was already"
+                                    + "registered in this Unit Of Work: type [{}], identifier [{}]",
+                            aggregate.getClass().getSimpleName(),
+                            aggregate.getIdentifier().asString());
+            }
             return similarAggregate;
         }
         registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, callback));
