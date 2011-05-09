@@ -100,4 +100,19 @@ public class StubSaga extends AbstractAnnotatedSaga {
     public void setCommandBus(CommandBus commandBus) {
         this.commandBus = commandBus;
     }
+
+    @Override
+    public void associateWith(String key, Object value) {
+        super.associateWith(key, value);
+    }
+
+    @Override
+    public void removeAssociationWith(String key, Object value) {
+        super.removeAssociationWith(key, value);
+    }
+
+    @Override
+    public void end() {
+        super.end();
+    }
 }

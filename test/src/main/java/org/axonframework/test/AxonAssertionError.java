@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,10 @@ import java.util.Arrays;
  */
 public class AxonAssertionError extends AssertionError {
 
+    private static final long serialVersionUID = 3731933425096971345L;
+
     /**
-     * Create a new error instance using the given <code>detailMessage</code>
+     * Create a new error instance using the given <code>detailMessage</code>.
      *
      * @param detailMessage a detailed description of the failed assertion
      */
