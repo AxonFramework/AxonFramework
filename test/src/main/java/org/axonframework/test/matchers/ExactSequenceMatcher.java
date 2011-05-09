@@ -48,8 +48,8 @@ public class ExactSequenceMatcher<T> extends ListMatcher<T> {
     }
 
     @Override
-    public boolean matchesList(List<T> events) {
-        Iterator<T> eventIterator = events.iterator();
+    public boolean matchesList(List<?> events) {
+        Iterator<?> eventIterator = events.iterator();
         Iterator<Matcher<T>> matcherIterator = getMatchers().iterator();
         while (eventIterator.hasNext() && matcherIterator.hasNext()) {
             Matcher<T> matcher = matcherIterator.next();

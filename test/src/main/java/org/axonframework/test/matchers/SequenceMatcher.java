@@ -48,8 +48,8 @@ public class SequenceMatcher<T> extends ListMatcher<T> {
     }
 
     @Override
-    public boolean matchesList(List<T> items) {
-        Iterator<T> itemIterator = items.iterator();
+    public boolean matchesList(List<?> items) {
+        Iterator<?> itemIterator = items.iterator();
         Iterator<Matcher<T>> matcherIterator = getMatchers().iterator();
         Matcher<T> currentMatcher = null;
         if (matcherIterator.hasNext()) {

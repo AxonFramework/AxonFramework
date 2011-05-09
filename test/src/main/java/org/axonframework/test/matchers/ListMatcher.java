@@ -46,23 +46,22 @@ public abstract class ListMatcher<T> extends BaseMatcher<List<? extends T>> {
         this.matchers = matchers;
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     public boolean matches(Object item) {
-        if (List.class.isInstance(item)) {
-            return matchesList((List<T>) item);
-        }
-        return false;
+        return List.class.isInstance(item) && matchesList((List<T>) item);
     }
 
     /**
-     * Evaluates the matcher for argument <code>item</code>.
+     * Evaluates the matcher for argument <code>item</code>. The item has been verified to be a list, but the exact
+     * type of contents of a list cannot be verified, due to Erasure of Generic Types.
      *
      * @param item the object against which the matcher is evaluated.
      * @return <code>true</code> if <code>item</code> matches, otherwise <code>false</code>.
      *
      * @see BaseMatcher
      */
-    protected abstract boolean matchesList(List<T> item);
+    protected abstract boolean matchesList(List<?> item);
 
     /**
      * Matches all the remaining Matchers in the given <code>matcherIterator</code> against <code>null</code>.

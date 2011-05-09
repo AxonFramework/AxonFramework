@@ -41,10 +41,10 @@ public class ListWithAllOfMatcher<T> extends ListMatcher<T> {
     }
 
     @Override
-    public boolean matchesList(List<T> items) {
+    public boolean matchesList(List<?> items) {
         for (Matcher<T> matcher : getMatchers()) {
             boolean match = false;
-            for (T item : items) {
+            for (Object item : items) {
                 if (matcher.matches(item)) {
                     match = true;
                 }
