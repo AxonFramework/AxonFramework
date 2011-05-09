@@ -35,6 +35,7 @@ public abstract class Matchers {
      * Matches a List of Events where all the given matchers match with at least one of the Events in that list.
      *
      * @param matchers the matchers that should match against one of the items in the List of Events.
+     * @param <T>      The type of event to match against
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
@@ -47,6 +48,7 @@ public abstract class Matchers {
      * list.
      *
      * @param matchers the matchers that should match against one of the items in the List of Events.
+     * @param <T>      The type of event to match against
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
@@ -62,6 +64,7 @@ public abstract class Matchers {
      * To match the exact sequence of events (i.e. without gaps), use {@link #exactSequenceOf(org.hamcrest.Matcher[])}.
      *
      * @param matchers the matchers to match against the list of events
+     * @param <T>      The type of event to match against
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
@@ -81,6 +84,7 @@ public abstract class Matchers {
      * To allow "gaps" of unmatched Events, use {@link #sequenceOf(org.hamcrest.Matcher[])} instead.
      *
      * @param matchers the matchers to match against the list of events
+     * @param <T>      The type of event to match against
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory

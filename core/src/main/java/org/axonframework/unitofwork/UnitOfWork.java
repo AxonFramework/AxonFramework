@@ -16,7 +16,6 @@
 
 package org.axonframework.unitofwork;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
@@ -119,8 +118,4 @@ public interface UnitOfWork {
      * @param eventBus The event bus on which to publish the event
      */
     void publishEvent(Event event, EventBus eventBus);
-
-    boolean isRegistered(Class<? extends AggregateRoot> aggregateType, AggregateIdentifier aggregateIdentifier);
-
-    <T extends AggregateRoot> T getRegisteredAggregate(Class<T> aggregateType, AggregateIdentifier aggregateIdentifier);
 }
