@@ -391,7 +391,7 @@
                 <code>eventBus</code>.</para>
     </sect1>
     <sect1>
-        <title>Wiring the event store</title>
+        <title>Wiring the Event Store</title>
         <para>All event sourcing repositorties need an event store. Wiring the
                 <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> is very
             similar, but the <code>JpaEventStore</code> needs to run in a Spring managed

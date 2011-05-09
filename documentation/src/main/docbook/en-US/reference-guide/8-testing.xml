@@ -26,7 +26,7 @@
             <code>&lt;artifactId>axon-text&lt;/artifactId></code>) or from the full package
         download. </para>
     <sect1>
-        <title>Behavior Driven Testing</title>
+        <title>Command Component Testing</title>
         <para>The command handling component is typically the component in any CQRS based
             architecture that contains the most complexity. Being more complex than the others, this
             also means that there are extra test related requirements for this component. Simply
