@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.ScheduledEvent;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
@@ -35,6 +36,8 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
 /**
+ * EventScheduler implementation that delegates scheduling and triggering to a Quartz Scheduler.
+ *
  * @author Allard Buijze
  * @since 0.7
  */
@@ -47,6 +50,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private EventBus eventBus;
     private String groupIdentifier = DEFAULT_GROUP_NAME;
     private volatile boolean initialized;
+    private EventTriggerCallback eventTriggerCallback;
 
     @Override
     public ScheduleToken schedule(DateTime triggerDateTime, ApplicationEvent event) {
@@ -105,6 +109,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         Assert.notNull(scheduler, "A Scheduler must be provided.");
         Assert.notNull(eventBus, "An EventBus must be provided.");
         scheduler.getContext().put(FireEventJob.EVENT_BUS_KEY, eventBus);
+        scheduler.getContext().put(FireEventJob.TRIGGER_CALLBACK_KEY, eventTriggerCallback);
         initialized = true;
     }
 
@@ -135,5 +140,14 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      */
     public void setGroupIdentifier(String groupIdentifier) {
         this.groupIdentifier = groupIdentifier;
+    }
+
+    /**
+     * Sets the callback to invoke before and after publication of a scheduled event.
+     *
+     * @param eventTriggerCallback the callback to invoke before and after publication of a scheduled event
+     */
+    public void setEventTriggerCallback(EventTriggerCallback eventTriggerCallback) {
+        this.eventTriggerCallback = eventTriggerCallback;
     }
 }

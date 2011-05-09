@@ -44,15 +44,17 @@
 
     <bean class="org.axonframework.saga.spring.SpringResourceInjector"/>
 
-    <bean class="org.axonframework.eventhandling.scheduling.quartz.QuartzEventSchedulerFactoryBean">
-        <property name="scheduler" ref="scheduler"/>
-        <property name="eventBus" ref="eventBus"/>
+    <bean class="org.axonframework.eventhandling.scheduling.java.SimpleEventSchedulerFactoryBean">
         <property name="transactionManager" ref="transactionManager"/>
+        <property name="executorService" ref="threadPoolExecutor"/>
     </bean>
 
-    <bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
-        <property name="dataSource" ref="dataSource"/>
-        <property name="transactionManager" ref="transactionManager"/>
-        <property name="configLocation" value="classpath:/quartz.test.properties"/>
+    <bean id="threadPoolExecutor"
+          class="org.axonframework.eventhandling.scheduling.java.ResultStoringScheduledExecutorService">
+        <constructor-arg>
+            <bean class="java.util.concurrent.ScheduledThreadPoolExecutor" destroy-method="shutdown">
+                <constructor-arg value="2"/>
+            </bean>
+        </constructor-arg>
     </bean>
 </beans>

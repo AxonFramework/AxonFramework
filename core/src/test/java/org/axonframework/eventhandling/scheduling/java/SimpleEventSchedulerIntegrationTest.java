@@ -14,21 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.scheduling.quartz;
+package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.scheduling.SimpleTimingSaga;
 import org.axonframework.eventhandling.scheduling.StartingEvent;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaRepository;
 import org.junit.*;
 import org.junit.runner.*;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.JobListener;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -39,20 +33,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.axonframework.util.TestUtils.setOf;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "/META-INF/spring/saga-quartz-integration-test.xml")
-public class QuartzSagaTimerIntegrationTest {
+@ContextConfiguration(locations = "/META-INF/spring/saga-simplescheduler-integration-test.xml")
+public class SimpleEventSchedulerIntegrationTest {
 
     @Autowired
     private EventBus eventBus;
@@ -64,37 +56,11 @@ public class QuartzSagaTimerIntegrationTest {
     private PlatformTransactionManager transactionManager;
 
     @Autowired
-    private Scheduler scheduler;
+    private ResultStoringScheduledExecutorService executorService;
 
     @Test
-    public void testJobExecutesInTime() throws InterruptedException, SchedulerException {
-        final AtomicReference<JobExecutionException> jobExecutionResult = new AtomicReference<JobExecutionException>();
-        final CountDownLatch jobExecutionLatch = new CountDownLatch(1);
-        scheduler.addGlobalJobListener(new JobListener() {
-            @Override
-            public String getName() {
-                return "job execution result validator";
-            }
-
-            @Override
-            public void jobToBeExecuted(JobExecutionContext context) {
-            }
-
-            @Override
-            public void jobExecutionVetoed(JobExecutionContext context) {
-            }
-
-            @Override
-            public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-                jobExecutionResult.set(jobException);
-                jobExecutionLatch.countDown();
-            }
-        });
-        assertNotNull(eventBus);
+    public void testTimerExecution() throws InterruptedException, ExecutionException {
         final String randomAssociationValue = UUID.randomUUID().toString();
-        EventListener listener = mock(EventListener.class);
-        eventBus.subscribe(listener);
-
         SimpleTimingSaga saga = new TransactionTemplate(transactionManager)
                 .execute(new TransactionCallback<SimpleTimingSaga>() {
                     @Override
@@ -111,10 +77,9 @@ public class QuartzSagaTimerIntegrationTest {
 
         saga.waitForEventProcessing(10000);
         assertTrue("Expected saga to be triggered", saga.isTriggered());
-        assertTrue("Job did not complete within 10 seconds", jobExecutionLatch.await(10, TimeUnit.SECONDS));
-        JobExecutionException jobExecutionException = jobExecutionResult.get();
-        if (jobExecutionException != null) {
-            throw jobExecutionException;
+        // we make sure all submitted jobs are executed successfully. get() will throw an exception if a job had failed
+        for (Future<?> future : executorService.getResults()) {
+            future.get();
         }
     }
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.scheduling.quartz;
+package org.axonframework.eventhandling.scheduling;
 
 import org.axonframework.domain.ApplicationEvent;
 
@@ -23,6 +23,7 @@ import org.axonframework.domain.ApplicationEvent;
  */
 public class StartingEvent extends ApplicationEvent {
 
+    private static final long serialVersionUID = -6273851928820885751L;
     private final String association;
 
     /**
@@ -32,7 +33,7 @@ public class StartingEvent extends ApplicationEvent {
      *
      * @param source the instance that reported this event. If any.
      */
-    protected StartingEvent(Object source, String association) {
+    public StartingEvent(Object source, String association) {
         super(source);
         this.association = association;
     }

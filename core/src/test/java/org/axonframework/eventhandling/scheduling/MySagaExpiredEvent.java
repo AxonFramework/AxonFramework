@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.scheduling.quartz;
+package org.axonframework.eventhandling.scheduling;
 
-import org.axonframework.eventhandling.scheduling.ScheduledEvent;
 import org.axonframework.saga.Saga;
 import org.joda.time.Duration;
 
@@ -25,6 +24,7 @@ import org.joda.time.Duration;
  */
 public class MySagaExpiredEvent extends ScheduledEvent {
 
+    private static final long serialVersionUID = 131758935012163469L;
     private final String association;
 
     public MySagaExpiredEvent(Saga source, int scheduleDuration, String association) {

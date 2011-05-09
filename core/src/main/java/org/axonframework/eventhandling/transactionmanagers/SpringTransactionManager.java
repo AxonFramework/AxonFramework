@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class SpringTransactionManager implements TransactionManager {
             logger.warn("Found failed transaction: [{}].", transactionStatus.getException().getClass().getSimpleName());
             if (!isTransient(transactionStatus.getException())) {
                 logger.error("ERROR! Exception is not transient or recoverable! Committing transaction and "
-                        + "skipping Event processing", transactionStatus.getException());
+                                     + "skipping Event processing", transactionStatus.getException());
                 transactionStatus.setRetryPolicy(RetryPolicy.SKIP_FAILED_EVENT);
                 transactionManager.commit(TRANSACTION.get());
             } else {

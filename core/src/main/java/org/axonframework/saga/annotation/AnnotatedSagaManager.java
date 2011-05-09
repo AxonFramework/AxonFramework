@@ -33,8 +33,7 @@ import java.util.concurrent.Executor;
 
 /**
  * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike
- * the
- * SimpleSagaManager, this implementation can manage several types of Saga in a single AnnotatedSagaManager.
+ * the SimpleSagaManager, this implementation can manage several types of Saga in a single AnnotatedSagaManager.
  *
  * @author Allard Buijze
  * @since 0.7
