@@ -245,6 +245,20 @@
                         <code>EventBus</code>. Optionally, you may set the name of the group that
                     Quartz jobs are scheduled in, which defaults to "AxonFramework-Events".</para>
             </simplesect>
+            <simplesect>
+                <title>Scheduled Events and Transactions</title>
+                <para>One or more components will be listening for scheduled Events. These
+                    components might rely on a Transaction being bound to the Thread that invokes
+                    them. Scheduled Events are published by Threads managed by the
+                        <code>EventScheduler</code>. To manage threads, you can configure a
+                        <code>EventTriggerCallback</code> to listen for publication of scheduled
+                    Events and manage transactions around them.</para>
+                <note>
+                    <para>Spring users can use the <code>QuartzEventSchedulerFactoryBean</code> or
+                            <code>SimpleEventSchedulerFactoryBean</code> for easier configuration.
+                        It allows you to set the PlatformTransactionManager directly.</para>
+                </note>
+            </simplesect>
         </sect2>
         <sect2>
             <title>Injecting Resources</title>
