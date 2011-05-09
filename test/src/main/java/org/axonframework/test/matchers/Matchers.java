@@ -38,8 +38,8 @@ public abstract class Matchers {
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
-    public static ListWithAllOfMatcher listWithAllOf(Matcher<? extends Event>... matchers) {
-        return new ListWithAllOfMatcher(matchers);
+    public static <T> ListWithAllOfMatcher listWithAllOf(Matcher<T>... matchers) {
+        return new ListWithAllOfMatcher<T>(matchers);
     }
 
     /**
@@ -50,8 +50,8 @@ public abstract class Matchers {
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
-    public static ListWithAnyOfMatcher listWithAnyOf(Matcher<? extends Event>... matchers) {
-        return new ListWithAnyOfMatcher(matchers);
+    public static <T> ListWithAnyOfMatcher<T> listWithAnyOf(Matcher<T>... matchers) {
+        return new ListWithAnyOfMatcher<T>(matchers);
     }
 
     /**
@@ -84,8 +84,8 @@ public abstract class Matchers {
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
-    public static ExactSequenceMatcher exactSequenceOf(Matcher<? extends Event>... matchers) {
-        return new ExactSequenceMatcher(matchers);
+    public static <T> ExactSequenceMatcher<T> exactSequenceOf(Matcher<T>... matchers) {
+        return new ExactSequenceMatcher<T>(matchers);
     }
 
     /**

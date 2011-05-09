@@ -31,6 +31,7 @@ import java.util.List;
  * Matchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If there are more matchers
  * than Events, the remainder of matchers is evaluated against a <code>null</code> value.
  *
+ * @param <T> the type of object expected in the matched List
  * @author Allard Buijze
  * @since 1.1
  */

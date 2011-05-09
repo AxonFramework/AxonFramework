@@ -31,6 +31,7 @@ import java.util.List;
  * Matchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If the last item of the list
  * has been evaluated, and Matchers still remain, they are evaluated against a <code>null</code> value.
  *
+ * @param <T> the type of object expected in the matched List
  * @author Allard Buijze
  * @since 1.1
  */

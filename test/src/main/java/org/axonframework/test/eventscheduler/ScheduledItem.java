@@ -20,11 +20,24 @@ import org.axonframework.domain.ApplicationEvent;
 import org.joda.time.DateTime;
 
 /**
+ * Interface describing an event to be scheduled at a given date and time.
  *
+ * @author Allard Buijze
+ * @since 1.1
  */
 public interface ScheduledItem {
 
+    /**
+     * The time the event was scheduled for publication.
+     *
+     * @return time the event was scheduled for publication
+     */
     DateTime getScheduleTime();
 
+    /**
+     * The Event scheduled for publication.
+     *
+     * @return the Event scheduled for publication
+     */
     ApplicationEvent getEvent();
 }

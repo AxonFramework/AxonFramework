@@ -32,7 +32,15 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * EventScheduler implementation that uses it's own concept of "Current Time" for the purpose of testing. Instead of
+ * publishing events, it allows (test) classes to obtain a reference to scheduled events for a certain time frame.
+ * <p/>
+ * To obtain scheduled events, the conceptual "current time" of the Scheduler must be advanced. All events that have
+ * been scheduled within the advanced time frame are returned. It is up to the calling class to decide what to do with
+ * these events.
  *
+ * @author Allard Buijze
+ * @since 1.1
  */
 public class StubEventScheduler implements EventScheduler {
 
@@ -40,9 +48,20 @@ public class StubEventScheduler implements EventScheduler {
     private final AtomicInteger counter = new AtomicInteger(0);
     private DateTime currentDateTime;
 
+    /**
+     * Creates an instance of the StubScheduler that uses the current date time as its conceptual "current time".
+     * Unlike the real "current time", the time of the Event Scheduler is fixed.
+     */
     public StubEventScheduler() {
-        currentDateTime = new DateTime();
+        this(null);
     }
+
+    /**
+     * Creates an instance of the StubScheduler that uses the given <code>currentDateTime</code> as its conceptual
+     * "current time".
+     *
+     * @param currentDateTime The instant to use as current Date and Time
+     */
 
     public StubEventScheduler(ReadableInstant currentDateTime) {
         this.currentDateTime = new DateTime(currentDateTime);
@@ -79,14 +98,30 @@ public class StubEventScheduler implements EventScheduler {
         scheduledEvents.remove(scheduleToken);
     }
 
+    /**
+     * Returns a view of all the scheduled Events at the time this method is called.
+     *
+     * @return a view of all the scheduled Events at the time this method is called
+     */
     public List<ScheduledItem> getScheduledItems() {
         return new ArrayList<ScheduledItem>(scheduledEvents);
     }
 
+    /**
+     * Returns the "Current Date Time" as used by the scheduler.
+     *
+     * @return the "Current Date Time" as used by the scheduler
+     */
     public DateTime getCurrentDateTime() {
         return currentDateTime;
     }
 
+    /**
+     * Advances the "current time" of the scheduler to the next scheduled Event, and returns that event. In theory,
+     * this may cause "current time" to move backwards.
+     *
+     * @return the first event scheduled
+     */
     public ApplicationEvent advanceToNextTrigger() {
         if (scheduledEvents.isEmpty()) {
             throw new NoSuchElementException("There are no scheduled events");
@@ -98,6 +133,13 @@ public class StubEventScheduler implements EventScheduler {
         return nextItem.getEvent();
     }
 
+    /**
+     * Advance time to the given <code>newDateTime</code> and returns all events scheduled for publication until that
+     * time.
+     *
+     * @param newDateTime The time to advance the "current time" of the scheduler to
+     * @return A list of Events scheduled for publication on or before the new time
+     */
     public List<ApplicationEvent> advanceTime(DateTime newDateTime) {
         List<ApplicationEvent> triggeredEvents = new ArrayList<ApplicationEvent>();
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
@@ -109,6 +151,13 @@ public class StubEventScheduler implements EventScheduler {
         return triggeredEvents;
     }
 
+    /**
+     * Advance time by the given <code>duration</code> and returns all events scheduled for publication until that
+     * time.
+     *
+     * @param duration The amount of time to advance the "current time" of the scheduler with
+     * @return A list of Events scheduled for publication on or before the new time
+     */
     public List<ApplicationEvent> advanceTime(Duration duration) {
         return advanceTime(currentDateTime.plus(duration));
     }

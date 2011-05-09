@@ -27,6 +27,9 @@ import java.lang.reflect.Method;
 import static org.axonframework.util.ReflectionUtils.methodsOf;
 
 /**
+ * Resource injector that uses setter methods to inject resources. All methods starting with "set" are evaluated. If
+ * that method has a single parameter, a Resource of that type is injected into it, if present.
+ *
  * @author Allard Buijze
  * @since 1.1
  */
@@ -34,6 +37,11 @@ public class AutowiredResourceInjector implements ResourceInjector {
 
     private Iterable<?> resources;
 
+    /**
+     * Initializes the resource injector to inject to given <code>resources</code>.
+     *
+     * @param resources The resources to inject
+     */
     public AutowiredResourceInjector(Iterable<?> resources) {
         this.resources = resources;
     }

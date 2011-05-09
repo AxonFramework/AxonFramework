@@ -21,9 +21,14 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.joda.time.DateTime;
 
 /**
+ * ScheduleToken returned by the StubEventScheduler.
  *
+ * @author Allard Buijze
+ * @since 1.1
  */
 class StubScheduleToken implements ScheduleToken, Comparable<StubScheduleToken>, ScheduledItem {
+
+    private static final long serialVersionUID = 3763093001261110665L;
 
     private final DateTime scheduleTime;
     private final ApplicationEvent event;

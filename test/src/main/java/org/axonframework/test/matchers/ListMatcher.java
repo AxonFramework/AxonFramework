@@ -28,6 +28,7 @@ import java.util.List;
 /**
  * Abstract implementation for matchers that use event-specific matchers to match against a list of Events.
  *
+ * @param <T> the type of object expected in the matched List
  * @author Allard Buijze
  * @since 1.1
  */
@@ -53,6 +54,14 @@ public abstract class ListMatcher<T> extends BaseMatcher<List<? extends T>> {
         return false;
     }
 
+    /**
+     * Evaluates the matcher for argument <var>item</var>.
+     *
+     * @param item the object against which the matcher is evaluated.
+     * @return <code>true</code> if <var>item</var> matches, otherwise <code>false</code>.
+     *
+     * @see BaseMatcher
+     */
     protected abstract boolean matchesList(List<T> item);
 
     /**

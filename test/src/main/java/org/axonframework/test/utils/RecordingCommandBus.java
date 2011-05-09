@@ -60,26 +60,56 @@ public class RecordingCommandBus implements CommandBus {
         subscriptions.remove(commandType);
     }
 
+    /**
+     * Clears all the commands recorded by this Command Bus.
+     */
     public void clearCommands() {
         dispatchedCommands.clear();
     }
 
+    /**
+     * Clears all subscribed handlers on this command bus.
+     */
     public void clearSubscriptions() {
         subscriptions.clear();
     }
 
+    /**
+     * Indicates whether the given <code>commandHandler</code> is subscribed to this command bus.
+     *
+     * @param commandHandler The command handler to verify the subscription for
+     * @return <code>true</code> if the handler is subscribed, otherwise <code>false</code>.
+     */
     public boolean isSubscribed(CommandHandler<?> commandHandler) {
         return subscriptions.containsValue(commandHandler);
     }
 
+    /**
+     * Indicates whether the given <code>commandHandler</code> is subscribed to commands of the given
+     * <code>commandType</code> on this command bus.
+     *
+     * @param commandType    The type of command to verify the subscription for
+     * @param commandHandler The command handler to verify the subscription for
+     * @return <code>true</code> if the handler is subscribed, otherwise <code>false</code>.
+     */
     public <C> boolean isSubscribed(Class<C> commandType, CommandHandler<? super C> commandHandler) {
         return subscriptions.containsKey(commandType) && subscriptions.get(commandType).equals(commandHandler);
     }
 
+    /**
+     * Returns a Map will all Command Types and their Command Handler that have been subscribed to this command bus.
+     *
+     * @return a Map will all Command Types and their Command Handler
+     */
     public Map<Class<?>, CommandHandler<?>> getSubscriptions() {
         return subscriptions;
     }
 
+    /**
+     * Returns a list with all commands that have been dispatched by this command bus.
+     *
+     * @return a list with all commands that have been dispatched
+     */
     public List<Object> getDispatchedCommands() {
         return dispatchedCommands;
     }

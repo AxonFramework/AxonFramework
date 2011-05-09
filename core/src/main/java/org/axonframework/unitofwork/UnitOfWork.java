@@ -16,13 +16,15 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 
 /**
  * This class represents a UnitOfWork in which modifications are made to aggregates. A typical UnitOfWork scope is the
- * execution of a command. A UnitOfWork may be used to prevent individual events from being published before a number of
+ * execution of a command. A UnitOfWork may be used to prevent individual events from being published before a number
+ * of
  * aggregates has been processed. It also allows repositories to manage resources, such as locks, over an entire
  * transaction. Locks, for example, will only be released when the UnitOfWork is either committed or rolled back.
  * <p/>
@@ -68,7 +70,8 @@ public interface UnitOfWork {
     void start();
 
     /**
-     * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called, and
+     * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called,
+     * and
      * if the UnitOfWork has not been committed or rolled back.
      *
      * @return <code>true</code> if this UnitOfWork is started, <code>false</code> otherwise.
@@ -85,13 +88,15 @@ public interface UnitOfWork {
     void registerListener(UnitOfWorkListener listener);
 
     /**
-     * Register an aggregate with this UnitOfWork. These aggregates will be saved (at the latest) when the UnitOfWork is
+     * Register an aggregate with this UnitOfWork. These aggregates will be saved (at the latest) when the UnitOfWork
+     * is
      * committed. This method returns the instance of the aggregate root that should be used as part of the processing
      * in this Unit Of Work.
      * <p/>
      * If an aggregate of the same type and with the same identifier has already been registered, one of two things may
      * happen, depending on the actual implementation: <ul><li>the instance that has already been registered is
-     * returned. In which case the given <code>saveAggregateCallback</code> is ignored.</li><li>an IllegalStateException
+     * returned. In which case the given <code>saveAggregateCallback</code> is ignored.</li><li>an
+     * IllegalStateException
      * is thrown to indicate an illegal attempt to register a duplicate</li></ul>.
      *
      * @param aggregateRoot         The aggregate root to register in the UnitOfWork
@@ -114,4 +119,8 @@ public interface UnitOfWork {
      * @param eventBus The event bus on which to publish the event
      */
     void publishEvent(Event event, EventBus eventBus);
+
+    boolean isRegistered(Class<? extends AggregateRoot> aggregateType, AggregateIdentifier aggregateIdentifier);
+
+    <T extends AggregateRoot> T getRegisteredAggregate(Class<T> aggregateType, AggregateIdentifier aggregateIdentifier);
 }

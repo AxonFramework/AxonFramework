@@ -87,6 +87,17 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         notifyListenersAfterCommit();
     }
 
+    @Override
+    public boolean isRegistered(Class<? extends AggregateRoot> aggregateType, AggregateIdentifier aggregateIdentifier) {
+        return findSimilarAggregate(aggregateType, aggregateIdentifier) != null;
+    }
+
+    @Override
+    public <T extends AggregateRoot> T getRegisteredAggregate(Class<T> aggregateType,
+                                                              AggregateIdentifier aggregateIdentifier) {
+        return findSimilarAggregate(aggregateType, aggregateIdentifier);
+    }
+
     @SuppressWarnings({"unchecked"})
     @Override
     public <T extends AggregateRoot> T registerAggregate(T aggregate,

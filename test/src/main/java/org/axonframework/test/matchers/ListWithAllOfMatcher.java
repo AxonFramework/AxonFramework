@@ -24,6 +24,7 @@ import java.util.List;
 /**
  * A matcher that will match if all the given <code>matchers</code> match against at least one item in a given List.
  *
+ * @param <T> the type of object expected in the matched List
  * @author Allard Buijze
  * @since 1.1
  */

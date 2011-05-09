@@ -26,6 +26,10 @@ import java.lang.reflect.Method;
 import static org.axonframework.util.ReflectionUtils.ensureAccessible;
 
 /**
+ * Utility class to set aggregate identifiers and sequence numbers on Domain Events. These settings are generally
+ * set by the command handling component. However, when testing Query components in isolation, Events need to be
+ * "manually" injected with this information.
+ *
  * @author Allard Buijze
  * @since 1.1
  */
@@ -48,6 +52,13 @@ public abstract class DomainEventUtils {
     private DomainEventUtils() {
     }
 
+    /**
+     * Sets the given <code>sequenceNumber</code> on the given <code>event</code>. Note that a sequence number may be
+     * set at most once on any given <code>event</code>.
+     *
+     * @param event          The event to set the sequence number on
+     * @param sequenceNumber The sequence number to set on the event
+     */
     public static void setSequenceNumber(DomainEvent event, long sequenceNumber) {
         assertInitialized();
         try {
@@ -60,6 +71,13 @@ public abstract class DomainEventUtils {
         }
     }
 
+    /**
+     * Sets the given <code>identifier</code> on the given <code>event</code>. Note that an aggregate identifier may be
+     * set at most once on any given <code>event</code>.
+     *
+     * @param event      The event to set the aggregate identifier on
+     * @param identifier The aggregate identifier to set on the event
+     */
     public static void setAggregateIdentifier(DomainEvent event, AggregateIdentifier identifier) {
         assertInitialized();
         try {

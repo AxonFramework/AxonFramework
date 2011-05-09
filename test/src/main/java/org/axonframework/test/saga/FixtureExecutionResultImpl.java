@@ -26,6 +26,7 @@ import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.eventscheduler.ScheduledItem;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
+import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -42,10 +43,11 @@ import java.util.Set;
 
 import static java.lang.String.format;
 import static org.axonframework.test.matchers.Matchers.equalTo;
-import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
 import static org.hamcrest.CoreMatchers.any;
 
 /**
+ * Default implementation of FixtureExecutionResult.
+ *
  * @author Allard Buijze
  * @since 1.1
  */
@@ -58,6 +60,15 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult, EventListene
     private final Class<? extends AbstractAnnotatedSaga> sagaType;
     private final List<Event> publishedEvents = new ArrayList<Event>();
 
+    /**
+     * Initializes an instance and make it monitor the given infrastructure classes.
+     *
+     * @param sagaRepository The repository to monitor
+     * @param eventScheduler The scheduler to monitor
+     * @param eventBus       The event bus to monitor
+     * @param commandBus     The command bus to monitor
+     * @param sagaType       The type of Saga under test
+     */
     FixtureExecutionResultImpl(InMemorySagaRepository sagaRepository, StubEventScheduler eventScheduler,
                                EventBus eventBus, RecordingCommandBus commandBus,
                                Class<? extends AbstractAnnotatedSaga> sagaType) {
@@ -68,14 +79,18 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult, EventListene
         this.sagaType = sagaType;
     }
 
-    @Override
-    public void handle(Event event) {
-        publishedEvents.add(event);
-    }
-
+    /**
+     * Tells this class to start monitoring activity in infrastructure classes.
+     */
     public void startRecording() {
         eventBus.subscribe(this);
         commandBus.clearCommands();
+    }
+
+
+    @Override
+    public void handle(Event event) {
+        publishedEvents.add(event);
     }
 
     @Override
@@ -238,12 +253,12 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult, EventListene
 
     @Override
     public FixtureExecutionResult expectPublishedEvents(Event... expected) {
-        expectPublishedEvents(exactSequenceOf(createEqualToMatchers(expected)));
+        expectPublishedEvents(Matchers.exactSequenceOf(createEqualToMatchers(expected)));
         return this;
     }
 
     @SuppressWarnings({"unchecked"})
-    private Matcher<? extends Event>[] createEqualToMatchers(Event[] expected) {
+    private Matcher<Event>[] createEqualToMatchers(Event[] expected) {
         List<Matcher<? extends Event>> matchers = new ArrayList<Matcher<? extends Event>>(expected.length);
         for (Event event : expected) {
             matchers.add(equalTo(event));
