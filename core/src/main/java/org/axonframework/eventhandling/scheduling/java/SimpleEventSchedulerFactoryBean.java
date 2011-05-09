@@ -25,7 +25,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -119,7 +118,8 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     }
 
     /**
-     * The TransactionDefinition to use by the transaction manager. Default to a {@link DefaultTransactionDefinition}.
+     * The TransactionDefinition to use by the transaction manager. Default to a {@link
+     * org.springframework.transaction.support.DefaultTransactionDefinition}.
      * Is ignored if no transaction manager is configured.
      *
      * @param transactionDefinition the TransactionDefinition to use by the transaction manager
