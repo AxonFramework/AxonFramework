@@ -55,10 +55,10 @@ public abstract class ListMatcher<T> extends BaseMatcher<List<? extends T>> {
     }
 
     /**
-     * Evaluates the matcher for argument <var>item</var>.
+     * Evaluates the matcher for argument <code>item</code>.
      *
      * @param item the object against which the matcher is evaluated.
-     * @return <code>true</code> if <var>item</var> matches, otherwise <code>false</code>.
+     * @return <code>true</code> if <code>item</code> matches, otherwise <code>false</code>.
      *
      * @see BaseMatcher
      */
