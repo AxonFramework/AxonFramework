@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright (c) 2010. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
   -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       ">
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
     <bean id="benchMark"
           class="org.axonframework.integrationtests.eventstore.benchmark.fs.FileSystemEventStoreBenchMark">
@@ -26,6 +25,11 @@
     </bean>
 
     <bean id="fsEventStore" class="org.axonframework.eventstore.fs.FileSystemEventStore">
-        <property name="baseDir" value="file:/data/"/>
+        <property name="eventFileResolver" ref="cachingEventFileResolver"/>
+    </bean>
+
+    <bean id="cachingEventFileResolver"
+          class="org.axonframework.integrationtests.eventstore.benchmark.fs.CachingEventFileResolver">
+        <constructor-arg value="file:/data/"/>
     </bean>
 </beans>

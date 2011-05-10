@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,14 +63,14 @@ public abstract class AbstractEventStoreBenchmark {
         long end = System.currentTimeMillis();
 
         System.out.println(String.format(
-                "Result: %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %.0f events per second",
+                "Result (%s): %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %.0f events per second",
+                getClass().getSimpleName(),
                 getThreadCount(),
                 getTransactionCount(),
                 getTransactionSize(),
                 (end - start),
                 (((float) getThreadCount() * getTransactionCount() * getTransactionSize()) / ((float) (end - start)
                         / 1000))));
-
     }
 
     protected abstract Runnable getRunnableInstance();
