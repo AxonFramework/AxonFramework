@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.test.saga;
+
+import org.axonframework.test.AxonAssertionError;
+import org.axonframework.test.utils.RecordingCommandBus;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.StringDescription;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
+import static java.lang.String.format;
+
+/**
+ * Helper class for validation of dispatched commands.
+ *
+ * @author Allard Buijze
+ * @since 1.1
+ */
+class CommandValidator {
+
+    private final RecordingCommandBus commandBus;
+
+    /**
+     * Creates a validator which monitors the given <code>commandBus</code>.
+     *
+     * @param commandBus the command bus to monitor
+     */
+    public CommandValidator(RecordingCommandBus commandBus) {
+        this.commandBus = commandBus;
+    }
+
+    /**
+     * Starts recording commands on the command bus.
+     */
+    public void startRecording() {
+        commandBus.clearCommands();
+    }
+
+    /**
+     * Assert that the given commands have been dispatched in the exact sequence provided.
+     *
+     * @param expected The commands expected to have been published on the bus
+     */
+    public void assertDispatched(Object... expected) {
+        List<Object> actual = commandBus.getDispatchedCommands();
+        if (actual.size() != expected.length) {
+            throw new AxonAssertionError(format(
+                    "Got wrong number of commands dispatched. Expected <%s>, got <%s>",
+                    expected.length,
+                    actual.size()));
+        }
+        Iterator<Object> actualIterator = actual.iterator();
+        Iterator<Object> expectedIterator = Arrays.asList(expected).iterator();
+
+        int counter = 0;
+        while (actualIterator.hasNext()) {
+            Object actualItem = actualIterator.next();
+            Object expectedItem = expectedIterator.next();
+            if (!expectedItem.equals(actualItem)) {
+                throw new AxonAssertionError(format(
+                        "Unexpected command at position %s (0-based). Expected <%s>, got <%s>",
+                        counter,
+                        expectedItem,
+                        actualItem));
+            }
+            counter++;
+        }
+    }
+
+    /**
+     * Assert that commands matching the given <code>matcher</code> has been dispatched on the command bus.
+     *
+     * @param matcher The matcher validating the actual commands
+     */
+    public void assertDispatched(Matcher<List<?>> matcher) {
+        if (!matcher.matches(commandBus.getDispatchedCommands())) {
+            Description expectedDescription = new StringDescription();
+            Description actualDescription = new StringDescription();
+            matcher.describeTo(expectedDescription);
+            describe(commandBus.getDispatchedCommands(), actualDescription);
+            throw new AxonAssertionError(format("Incorrect dispatched commands. Expected <%s>, but got <%s>",
+                                                expectedDescription, actualDescription));
+        }
+    }
+
+    private void describe(List<?> list, Description description) {
+        int counter = 0;
+        description.appendText("List with ");
+        for (Object item : list) {
+            description.appendText("<")
+                       .appendText(item != null ? item.toString() : "null")
+                       .appendText(">");
+            if (counter == list.size() - 2) {
+                description.appendText(" and ");
+            } else if (counter < list.size() - 2) {
+                description.appendText(", ");
+            }
+            counter++;
+        }
+    }
+}

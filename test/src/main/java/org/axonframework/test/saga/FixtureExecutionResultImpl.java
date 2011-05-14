@@ -19,29 +19,16 @@ package org.axonframework.test.saga;
 import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
-import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.eventscheduler.ScheduledItem;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
-import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.StringDescription;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import static java.lang.String.format;
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.hamcrest.CoreMatchers.any;
 
@@ -51,14 +38,12 @@ import static org.hamcrest.CoreMatchers.any;
  * @author Allard Buijze
  * @since 1.1
  */
-class FixtureExecutionResultImpl implements FixtureExecutionResult, EventListener {
+class FixtureExecutionResultImpl implements FixtureExecutionResult {
 
-    private final InMemorySagaRepository sagaRepository;
-    private final StubEventScheduler eventScheduler;
-    private final EventBus eventBus;
-    private final RecordingCommandBus commandBus;
-    private final Class<? extends AbstractAnnotatedSaga> sagaType;
-    private final List<Event> publishedEvents = new ArrayList<Event>();
+    private final RepositoryContentValidator repositoryContentValidator;
+    private final EventValidator eventValidator;
+    private final EventSchedulerValidator eventSchedulerValidator;
+    private CommandValidator commandValidator;
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
@@ -72,70 +57,43 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult, EventListene
     FixtureExecutionResultImpl(InMemorySagaRepository sagaRepository, StubEventScheduler eventScheduler,
                                EventBus eventBus, RecordingCommandBus commandBus,
                                Class<? extends AbstractAnnotatedSaga> sagaType) {
-        this.sagaRepository = sagaRepository;
-        this.eventScheduler = eventScheduler;
-        this.eventBus = eventBus;
-        this.commandBus = commandBus;
-        this.sagaType = sagaType;
+        commandValidator = new CommandValidator(commandBus);
+        repositoryContentValidator = new RepositoryContentValidator(sagaRepository, sagaType);
+        eventValidator = new EventValidator(eventBus);
+        eventSchedulerValidator = new EventSchedulerValidator(eventScheduler);
     }
 
     /**
      * Tells this class to start monitoring activity in infrastructure classes.
      */
     public void startRecording() {
-        eventBus.subscribe(this);
-        commandBus.clearCommands();
-    }
-
-
-    @Override
-    public void handle(Event event) {
-        publishedEvents.add(event);
+        eventValidator.startRecording();
+        commandValidator.startRecording();
     }
 
     @Override
     public FixtureExecutionResult expectActiveSagas(int expected) {
-        if (expected != sagaRepository.size()) {
-            throw new AxonAssertionError(format("Wrong number of active sagas. Expected <%s>, got <%s>.",
-                                                expected,
-                                                sagaRepository.size()));
-        }
+        repositoryContentValidator.assertActiveSagas(expected);
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectAssociationWith(String associationKey, Object associationValue) {
-        Set<? extends AbstractAnnotatedSaga> associatedSagas =
-                sagaRepository.find(sagaType, Collections.singleton(new AssociationValue(associationKey,
-                                                                                         associationValue)));
-        if (associatedSagas.isEmpty()) {
-            throw new AxonAssertionError(format(
-                    "Expected a saga to be associated with key:<%s> value:<%s>, but found <none>",
-                    associationKey,
-                    associationValue));
-        }
+        repositoryContentValidator.assertAssociationPresent(associationKey, associationValue);
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoAssociationWith(String associationKey, Object associationValue) {
-        Set<? extends AbstractAnnotatedSaga> associatedSagas =
-                sagaRepository.find(sagaType, Collections.singleton(new AssociationValue(associationKey,
-                                                                                         associationValue)));
-        if (!associatedSagas.isEmpty()) {
-            throw new AxonAssertionError(format(
-                    "Expected a saga to be associated with key:<%s> value:<%s>, but found <%s>",
-                    associationKey,
-                    associationValue,
-                    associatedSagas.size()));
-        }
+        repositoryContentValidator.assertNoAssociationPresent(associationKey,
+                                                              associationValue);
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectScheduledEvent(Duration duration, Matcher<? extends ApplicationEvent> matcher) {
-        DateTime targetTime = eventScheduler.getCurrentDateTime().plus(duration);
-        return expectScheduledEvent(targetTime, matcher);
+        eventSchedulerValidator.assertScheduledEvent(duration, matcher);
+        return this;
     }
 
     @Override
@@ -151,14 +109,8 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult, EventListene
     @Override
     public FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime,
                                                        Matcher<? extends ApplicationEvent> matcher) {
-
-        List<ScheduledItem> schedule = eventScheduler.getScheduledItems();
-        for (ScheduledItem item : schedule) {
-            if (item.getScheduleTime().equals(scheduledTime) && matcher.matches(item.getEvent())) {
-                return this;
-            }
-        }
-        throw new AxonAssertionError("Did not find an event at the given schedule.");// + describe(schedule));
+        eventSchedulerValidator.assertScheduledEvent(scheduledTime, matcher);
+        return this;
     }
 
     @Override
@@ -174,95 +126,31 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult, EventListene
 
     @Override
     public FixtureExecutionResult expectDispatchedCommands(Object... expected) {
-        List<Object> actual = commandBus.getDispatchedCommands();
-        if (actual.size() != expected.length) {
-            throw new AxonAssertionError(format(
-                    "Got wrong number of commands dispatched. Expected <%s>, got <%s>",
-                    expected.length,
-                    actual.size()));
-        }
-        Iterator<Object> actualIterator = actual.iterator();
-        Iterator<Object> expectedIterator = Arrays.asList(expected).iterator();
-
-        int counter = 0;
-        while (actualIterator.hasNext()) {
-            Object actualItem = actualIterator.next();
-            Object expectedItem = expectedIterator.next();
-            if (!expectedItem.equals(actualItem)) {
-                throw new AxonAssertionError(format(
-                        "Unexpected command at position %s (0-based). Expected <%s>, got <%s>",
-                        counter,
-                        expectedItem,
-                        actualItem));
-            }
-            counter++;
-        }
+        commandValidator.assertDispatched(expected);
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectDispatchedCommands(Matcher<List<?>> matcher) {
-        if (!matcher.matches(commandBus.getDispatchedCommands())) {
-            Description expectedDescription = new StringDescription();
-            Description actualDescription = new StringDescription();
-            matcher.describeTo(expectedDescription);
-            describe(commandBus.getDispatchedCommands(), actualDescription);
-            throw new AxonAssertionError(format("Incorrect dispatched commands. Expected <%s>, but got <%s>",
-                                                expectedDescription, actualDescription));
-        }
+        commandValidator.assertDispatched(matcher);
         return this;
-    }
-
-    private void describe(List<?> list, Description description) {
-        int counter = 0;
-        description.appendText("List with ");
-        for (Object item : list) {
-            description.appendText("<")
-                       .appendText(item != null ? item.toString() : "null")
-                       .appendText(">");
-            if (counter == list.size() - 2) {
-                description.appendText(" and ");
-            } else if (counter < list.size() - 2) {
-                description.appendText(", ");
-            }
-            counter++;
-        }
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledEvents() {
-        List<ScheduledItem> scheduledItems = eventScheduler.getScheduledItems();
-        if (scheduledItems != null && !scheduledItems.isEmpty()) {
-            throw new AxonAssertionError("Expected no scheduled events, got " + scheduledItems.size());
-        }
+        eventSchedulerValidator.assertNoScheduledEvents();
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectPublishedEvents(Matcher<List<? extends Event>> matcher) {
-        if (!matcher.matches(publishedEvents)) {
-            StringDescription expectedDescription = new StringDescription();
-            StringDescription actualDescription = new StringDescription();
-            matcher.describeTo(expectedDescription);
-            describe(publishedEvents, actualDescription);
-            throw new AxonAssertionError(format("Published events did not match.\nExpected:\n<%s>\n\nGot:\n<%s>\n",
-                                                expectedDescription, actualDescription));
-        }
+        eventValidator.assertPublishedEvents(matcher);
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectPublishedEvents(Event... expected) {
-        expectPublishedEvents(Matchers.exactSequenceOf(createEqualToMatchers(expected)));
+        eventValidator.assertPublishedEvents(expected);
         return this;
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private Matcher<Event>[] createEqualToMatchers(Event[] expected) {
-        List<Matcher<? extends Event>> matchers = new ArrayList<Matcher<? extends Event>>(expected.length);
-        for (Event event : expected) {
-            matchers.add(equalTo(event));
-        }
-        return matchers.toArray(new Matcher[matchers.size()]);
     }
 }
