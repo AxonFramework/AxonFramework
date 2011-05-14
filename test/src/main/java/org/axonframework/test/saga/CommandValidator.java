@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static java.lang.String.format;
+import static org.axonframework.test.saga.DescriptionUtils.describe;
 
 /**
  * Helper class for validation of dispatched commands.
@@ -98,22 +99,6 @@ class CommandValidator {
             describe(commandBus.getDispatchedCommands(), actualDescription);
             throw new AxonAssertionError(format("Incorrect dispatched commands. Expected <%s>, but got <%s>",
                                                 expectedDescription, actualDescription));
-        }
-    }
-
-    private void describe(List<?> list, Description description) {
-        int counter = 0;
-        description.appendText("List with ");
-        for (Object item : list) {
-            description.appendText("<")
-                       .appendText(item != null ? item.toString() : "null")
-                       .appendText(">");
-            if (counter == list.size() - 2) {
-                description.appendText(" and ");
-            } else if (counter < list.size() - 2) {
-                description.appendText(", ");
-            }
-            counter++;
         }
     }
 }

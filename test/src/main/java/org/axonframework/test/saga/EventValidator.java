@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -30,6 +29,7 @@ import java.util.List;
 
 import static java.lang.String.format;
 import static org.axonframework.test.matchers.Matchers.equalTo;
+import static org.axonframework.test.saga.DescriptionUtils.describe;
 
 /**
  * Helper class for validating events published on a given EventBus.
@@ -87,23 +87,6 @@ class EventValidator implements EventListener {
      */
     public void startRecording() {
         eventBus.subscribe(this);
-    }
-
-
-    private void describe(List<?> list, Description description) {
-        int counter = 0;
-        description.appendText("List with ");
-        for (Object item : list) {
-            description.appendText("<")
-                       .appendText(item != null ? item.toString() : "null")
-                       .appendText(">");
-            if (counter == list.size() - 2) {
-                description.appendText(" and ");
-            } else if (counter < list.size() - 2) {
-                description.appendText(", ");
-            }
-            counter++;
-        }
     }
 
     @SuppressWarnings({"unchecked"})
