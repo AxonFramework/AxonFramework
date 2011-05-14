@@ -26,8 +26,14 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-class DescriptionUtils {
+abstract class DescriptionUtils {
 
+    /**
+     * Describe the contents of the given <code>list</code> in the given <code>description</code>.
+     *
+     * @param list        The list to describe
+     * @param description The description to describe to
+     */
     static void describe(List<?> list, Description description) {
         int counter = 0;
         description.appendText("List with ");
