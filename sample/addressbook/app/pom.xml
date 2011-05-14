@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2011. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.axonframework.samples</groupId>
         <artifactId>axon-addressbook</artifactId>
@@ -84,7 +85,7 @@
         <dependency>
             <groupId>c3p0</groupId>
             <artifactId>c3p0</artifactId>
-            <version>0.9.1</version>
+            <version>0.9.1.2</version>
         </dependency>
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
