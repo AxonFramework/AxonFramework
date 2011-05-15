@@ -26,7 +26,10 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-abstract class DescriptionUtils {
+class DescriptionUtils {
+
+    private DescriptionUtils() {
+    }
 
     /**
      * Describe the contents of the given <code>list</code> in the given <code>description</code>.
