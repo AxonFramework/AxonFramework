@@ -42,6 +42,7 @@
     <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
 
     <bean id="capturingEventHandler" class="org.axonframework.integrationtests.eventhandling.RegisteringEventHandler"/>
+    <bean id="loopingEventHandler" class="org.axonframework.integrationtests.eventhandling.LoopingEventHandler"/>
 
     <!-- Database configuration -->
 
@@ -72,7 +73,7 @@
         <property name="jdbcUrl" value="${jdbc.url}"/>
         <property name="user" value="${jdbc.username}"/>
         <property name="password" value="${jdbc.password}"/>
-        <property name="maxPoolSize" value="8"/>
+        <property name="maxPoolSize" value="50"/>
         <property name="minPoolSize" value="1"/>
     </bean>
 

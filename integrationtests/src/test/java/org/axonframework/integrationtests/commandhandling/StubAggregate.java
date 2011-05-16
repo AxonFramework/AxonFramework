@@ -54,4 +54,8 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
     private void onChange(StubAggregateChangedEvent event) {
         changeCounter++;
     }
+
+    public void makeALoopingChange() {
+        apply(new LoopingChangeDoneEvent());
+    }
 }
