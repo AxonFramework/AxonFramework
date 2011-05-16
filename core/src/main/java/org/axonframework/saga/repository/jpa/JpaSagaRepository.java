@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -88,7 +88,11 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         if (entry == null) {
             throw new NoSuchSagaException(type, sagaId);
         }
-        T storedSaga = type.cast(entry.getSaga(serializer));
+        Saga loadedSaga = entry.getSaga(serializer);
+        if (!type.isInstance(loadedSaga)) {
+            return null;
+        }
+        T storedSaga = type.cast(loadedSaga);
         if (injector != null) {
             injector.injectResources(storedSaga);
         }
