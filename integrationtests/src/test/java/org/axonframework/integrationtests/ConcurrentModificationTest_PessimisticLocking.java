@@ -23,6 +23,7 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
+import org.axonframework.integrationtests.commandhandling.LoopingCommand;
 import org.axonframework.integrationtests.commandhandling.ProblematicCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.integrationtests.eventhandling.RegisteringEventHandler;
@@ -34,10 +35,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.*;
 
@@ -49,7 +53,7 @@ import static org.junit.Assert.*;
         "/META-INF/spring/infrastructure-context.xml",
         "/META-INF/spring/application-context-pessimistic.xml"})
 @Transactional
-public class ConcurrentModificationTest_PessimisticLocking implements Thread.UncaughtExceptionHandler {
+public class ConcurrentModificationTest_PessimisticLocking {
 
     @Autowired
     private CommandBus commandBus;
@@ -57,7 +61,6 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
     @Autowired
     private RegisteringEventHandler registeringEventHandler;
 
-    private List<Throwable> uncaughtExceptions = new ArrayList<Throwable>();
     private static final int THREAD_COUNT = 50;
 
     @Before
@@ -68,39 +71,45 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
         }
     }
 
-    /**
+    /*
      * This test shows the presence, or better, the absence of a problem caused by repository locks being released
      * before a database transaction is committed. This would cause an aggregate waiting for a lock to be release, to
      * load in events, while another thread is committing a transaction (and thus adding them).
-     *
-     * @throws InterruptedException
      */
-    @Test
+    @Test(timeout = 30000)
     public void testConcurrentModifications() throws Exception {
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
-        final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);
-        for (int t = 0; t < THREAD_COUNT; t++) {
-            Thread thread = new Thread(new Runnable() {
+        ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
+        final AtomicLong counter = new AtomicLong(0);
+        List<Future<?>> results = new LinkedList<Future<?>>();
+        for (int t = 0; t < 100; t++) {
+            results.add(service.submit(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
                         commandBus.dispatch(new ProblematicCommand(aggregateId), NoOpCallback.INSTANCE);
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
-                        cdl.countDown();
+                        commandBus.dispatch(new LoopingCommand(aggregateId), NoOpCallback.INSTANCE);
+                        counter.incrementAndGet();
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
                 }
-            });
-            thread.setUncaughtExceptionHandler(ConcurrentModificationTest_PessimisticLocking.this);
-            thread.start();
+            }));
         }
-        cdl.await(THREAD_COUNT / 2, TimeUnit.SECONDS);
-        assertEquals(0, uncaughtExceptions.size());
-        assertEquals(THREAD_COUNT * 2 + 1, registeringEventHandler.getCapturedEvents().size());
+        service.shutdown();
+        while (!service.awaitTermination(3, TimeUnit.SECONDS)) {
+            System.out.println("Did " + counter.get() + " batches");
+        }
+
+        for (Future<?> result : results) {
+            if (result.isDone()) {
+                result.get();
+            }
+        }
+        assertEquals(301, registeringEventHandler.getCapturedEvents().size());
         validateDispatchingOrder();
     }
 
@@ -113,10 +122,5 @@ public class ConcurrentModificationTest_PessimisticLocking implements Thread.Unc
                          ((DomainEvent) event).getSequenceNumber());
             expectedSequenceNumber++;
         }
-    }
-
-    @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        uncaughtExceptions.add(e);
     }
 }
