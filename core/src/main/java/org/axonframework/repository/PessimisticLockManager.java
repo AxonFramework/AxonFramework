@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,9 +94,9 @@ class PessimisticLockManager implements LockManager {
 
     private final class DisposableLock {
 
-        private ReentrantLock lock;
-        // guarded by "this"
-        private boolean isClosed = false;
+        private final ReentrantLock lock;
+        // guarded by "lock"
+        private volatile boolean isClosed = false;
 
         private DisposableLock() {
             this.lock = new ReentrantLock();
@@ -111,15 +111,16 @@ class PessimisticLockManager implements LockManager {
             disposeIfUnused(aggregateIdentifier);
         }
 
-        private synchronized boolean lock() {
+        private boolean lock() {
+            lock.lock();
             if (isClosed) {
+                lock.unlock();
                 return false;
             }
-            lock.lock();
             return true;
         }
 
-        private synchronized void disposeIfUnused(AggregateIdentifier aggregateIdentifier) {
+        private void disposeIfUnused(AggregateIdentifier aggregateIdentifier) {
             if (lock.tryLock()) {
                 try {
                     if (lock.getHoldCount() == 1) {

@@ -38,6 +38,12 @@ public class StubAggregateCommandHandler {
     }
 
     @CommandHandler
+    public void handleStubAggregateLooping(LoopingCommand command) {
+        StubAggregate aggregate = repository.load(command.getAggregateId());
+        aggregate.makeALoopingChange();
+    }
+
+    @CommandHandler
     public void handleProblematicCommand(ProblematicCommand command) {
         StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
         aggregate.causeTrouble();
