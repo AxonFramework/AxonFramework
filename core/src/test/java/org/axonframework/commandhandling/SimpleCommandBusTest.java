@@ -18,9 +18,12 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.unitofwork.RuntimeExceptionRollbackAttribute;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.axonframework.util.*;
 import org.junit.*;
+import org.junit.Assert;
 import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -28,6 +31,7 @@ import org.mockito.stubbing.*;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -122,6 +126,38 @@ public class SimpleCommandBusTest {
         });
         assertFalse(CurrentUnitOfWork.isStarted());
     }
+
+
+    @Test
+    public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() {
+        UnitOfWorkFactory mockUnitOfWorkFactory = mock(DefaultUnitOfWorkFactory.class);
+        UnitOfWork mockUnitOfWork = mock(UnitOfWork.class);
+        when(mockUnitOfWorkFactory.createUnitOfWork()).thenReturn(mockUnitOfWork);
+
+        testSubject.setUnitOfWorkFactory(mockUnitOfWorkFactory);
+        testSubject.subscribe(String.class, new CommandHandler<String>() {
+            @Override
+            public Object handle(String command, UnitOfWork unitOfWork) throws Throwable {
+                throw new Exception();
+            }
+        });
+        testSubject.setRollbackAttribute(new RuntimeExceptionRollbackAttribute());
+
+        testSubject.dispatch("Say hi!", new CommandCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                fail("Expected exception");
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                assertThat(cause, is(Exception.class));
+            }
+        });
+
+        verify(mockUnitOfWork).commit();
+    }
+
 
     @Test(expected = NoHandlerForCommandException.class)
     public void testDispatchCommand_NoHandlerSubscribed() throws Exception {

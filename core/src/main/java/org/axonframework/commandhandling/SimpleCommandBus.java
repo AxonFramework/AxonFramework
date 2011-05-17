@@ -17,7 +17,9 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.jmx.JmxConfiguration;
+import org.axonframework.unitofwork.DefaultRollbackAttribute;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.unitofwork.RollbackAttribute;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -39,6 +41,7 @@ import static java.lang.String.format;
  * This class can be monitored as the implementation of the <code>StatisticsProvider</code> interface indicates.
  *
  * @author Allard Buijze
+ * @author Martin Tilma
  * @since 0.5
  */
 public class SimpleCommandBus implements CommandBus {
@@ -49,6 +52,7 @@ public class SimpleCommandBus implements CommandBus {
     private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
     private volatile Iterable<? extends CommandHandlerInterceptor> interceptors = Collections.emptyList();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
+    private RollbackAttribute rollbackAttribute = new DefaultRollbackAttribute();
 
     /**
      * Initializes the SimpleCommandBus and registers the mbeans for management information.
@@ -78,7 +82,7 @@ public class SimpleCommandBus implements CommandBus {
             throw e;
         } catch (Throwable throwable) {
             logger.error(format("Processing of a [%s] resulted in an exception: ", command.getClass().getSimpleName()),
-                    throwable);
+                         throwable);
         }
     }
 
@@ -98,7 +102,7 @@ public class SimpleCommandBus implements CommandBus {
         final CommandHandler handler = subscriptions.get(command.getClass());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
-                    command.getClass().getSimpleName()));
+                                                          command.getClass().getSimpleName()));
         }
         return handler;
     }
@@ -107,10 +111,26 @@ public class SimpleCommandBus implements CommandBus {
         statistics.recordReceivedCommand();
         UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, interceptors);
+
+        Object returnValue;
         try {
-            Object returnValue = chain.proceed();
+            returnValue = chain.proceed();
+        } catch (Throwable throwable) {
+            if (rollbackAttribute.rollBackOn(throwable)) {
+                unitOfWork.rollback(throwable);
+            } else {
+                commitUnitOfWork(unitOfWork);
+            }
+            throw throwable;
+        }
+
+        commitUnitOfWork(unitOfWork);
+        return returnValue;
+    }
+
+    private void commitUnitOfWork(UnitOfWork unitOfWork) throws Throwable {
+        try {
             unitOfWork.commit();
-            return returnValue;
         } catch (Throwable throwable) {
             if (unitOfWork.isStarted()) {
                 unitOfWork.rollback(throwable);
@@ -143,7 +163,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Registers the given list of interceptors to the command bus. All incoming commands will pass throught the
+     * Registers the given list of interceptors to the command bus. All incoming commands will pass through the
      * interceptors at the given order before the command is passed to the handler for processing. After handling, the
      * <code>afterCommandHandling</code> methods are invoked on the interceptors in the reverse order.
      *
@@ -175,5 +195,15 @@ public class SimpleCommandBus implements CommandBus {
      */
     public void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         this.unitOfWorkFactory = unitOfWorkFactory;
+    }
+
+    /**
+     * Sets the RollbackAttribute that allows you to change when the UnitOfWork is committed. If not set the
+     * DefaultRollbackAttribute will be used. The default will rollback on every throwable.
+     *
+     * @param rollbackAttribute The RollbackAttribute.
+     */
+    public void setRollbackAttribute(RollbackAttribute rollbackAttribute) {
+        this.rollbackAttribute = rollbackAttribute;
     }
 }
