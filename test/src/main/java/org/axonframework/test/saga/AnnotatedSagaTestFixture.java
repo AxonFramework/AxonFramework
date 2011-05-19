@@ -61,6 +61,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
      *
      * @param sagaType The type of saga under test
      */
+    @SuppressWarnings({"unchecked"})
     public AnnotatedSagaTestFixture(Class<? extends AbstractAnnotatedSaga> sagaType) {
         eventScheduler = new StubEventScheduler();
         GenericSagaFactory genericSagaFactory = new GenericSagaFactory();

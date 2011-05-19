@@ -51,7 +51,7 @@ public class AnnotatedSagaTest {
                .expectScheduledEvent(fixture.currentTime().plusMinutes(10), TimerTriggeredEvent.class)
                .expectScheduledEvent(fixture.currentTime().plusMinutes(10), CoreMatchers.any(TimerTriggeredEvent.class))
                .expectScheduledEvent(fixture.currentTime().plusMinutes(10), new TimerTriggeredEvent(null, aggregate1))
-               .expectDispatchedCommands()
+               .expectDispatchedCommandsEqualTo()
                .expectPublishedEvents(noEvents());
     }
 
@@ -69,7 +69,7 @@ public class AnnotatedSagaTest {
                .expectNoAssociationWith("aggregateIdentifier", aggregate2)
                .expectNoAssociationWith("aggregateIdentifier", aggregate1)
                .expectNoScheduledEvents()
-               .expectDispatchedCommands()
+               .expectDispatchedCommandsEqualTo()
                .expectPublishedEvents();
     }
 
@@ -86,7 +86,7 @@ public class AnnotatedSagaTest {
                .expectAssociationWith("aggregateIdentifier", aggregate1)
                .expectNoAssociationWith("aggregateIdentifier", aggregate2)
                .expectScheduledEvent(Duration.standardMinutes(10), CoreMatchers.any(ApplicationEvent.class))
-               .expectDispatchedCommands()
+               .expectDispatchedCommandsEqualTo()
                .expectPublishedEvents(new SagaWasTriggeredEvent(null));
     }
 
@@ -105,7 +105,7 @@ public class AnnotatedSagaTest {
                .expectAssociationWith("aggregateIdentifier", identifier)
                .expectNoAssociationWith("aggregateIdentifier", identifier2)
                .expectNoScheduledEvents()
-               .expectDispatchedCommands("Say hi!")
+               .expectDispatchedCommandsEqualTo("Say hi!")
                .expectPublishedEvents(noEvents());
     }
 
@@ -124,6 +124,6 @@ public class AnnotatedSagaTest {
                .expectAssociationWith("aggregateIdentifier", identifier)
                .expectNoAssociationWith("aggregateIdentifier", identifier2)
                .expectNoScheduledEvents()
-               .expectDispatchedCommands("Say hi!");
+               .expectDispatchedCommandsEqualTo("Say hi!");
     }
 }

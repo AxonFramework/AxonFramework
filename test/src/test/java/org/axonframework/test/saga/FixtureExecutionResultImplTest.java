@@ -67,7 +67,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch("Second");
 
         testSubject.expectPublishedEvents(endEvent);
-        testSubject.expectDispatchedCommands("Second");
+        testSubject.expectDispatchedCommandsEqualTo("Second");
     }
 
     @Test(expected = AxonAssertionError.class)
@@ -98,7 +98,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch("Third");
         commandBus.dispatch("Fourth");
 
-        testSubject.expectDispatchedCommands("First", "Second", "Third");
+        testSubject.expectDispatchedCommandsEqualTo("First", "Second", "Third");
     }
 
     @Test(expected = AxonAssertionError.class)
@@ -106,12 +106,12 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch("First");
         commandBus.dispatch("Second");
 
-        testSubject.expectDispatchedCommands("First", "Third");
+        testSubject.expectDispatchedCommandsEqualTo("First", "Third");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectDispatchedCommands_FailedMatcher() {
-        testSubject.expectDispatchedCommands(new FailingMatcher<String>());
+        testSubject.expectDispatchedCommandsEqualTo(new FailingMatcher<String>());
     }
 
     @Test(expected = AxonAssertionError.class)

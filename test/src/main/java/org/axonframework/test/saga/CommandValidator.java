@@ -60,7 +60,7 @@ class CommandValidator {
      *
      * @param expected The commands expected to have been published on the bus
      */
-    public void assertDispatched(Object... expected) {
+    public void assertDispatchedEqualTo(Object... expected) {
         List<Object> actual = commandBus.getDispatchedCommands();
         if (actual.size() != expected.length) {
             throw new AxonAssertionError(format(
@@ -91,7 +91,7 @@ class CommandValidator {
      *
      * @param matcher The matcher validating the actual commands
      */
-    public void assertDispatched(Matcher<List<?>> matcher) {
+    public void assertDispatchedMatching(Matcher<List<?>> matcher) {
         if (!matcher.matches(commandBus.getDispatchedCommands())) {
             Description expectedDescription = new StringDescription();
             Description actualDescription = new StringDescription();

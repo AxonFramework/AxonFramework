@@ -144,7 +144,7 @@ public interface FixtureExecutionResult {
      * @param commands The expected commands
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectDispatchedCommands(Object... commands);
+    FixtureExecutionResult expectDispatchedCommandsEqualTo(Object... commands);
 
     /**
      * Asserts that the sagas dispatched commands as defined by the given <code>fixture</code>. Only commands as a
@@ -153,7 +153,7 @@ public interface FixtureExecutionResult {
      * @param matcher The matcher that describes the expected list of commands
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectDispatchedCommands(Matcher<List<?>> matcher);
+    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<List<?>> matcher);
 
     /**
      * Assert that no events are scheduled for publication. This means that either no events were scheduled at all, all
