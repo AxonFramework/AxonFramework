@@ -53,7 +53,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
                 logger.debug("This Unit Of Work is not nested. Finalizing commit...");
                 doCommit();
                 stop();
-                notifyListenersCleanup();
+                performCleanup();
             } else if (logger.isDebugEnabled()) {
                 logger.debug("This Unit Of Work is nested. Commit will be finalized by outer Unit Of Work.");
             }
@@ -61,12 +61,21 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             logger.debug("An error occurred while committing this UnitOfWork. Performing rollback...");
             doRollback(e);
             stop();
-            notifyListenersCleanup();
+            if (outerUnitOfWork == null) {
+                performCleanup();
+            }
             throw e;
         } finally {
             logger.debug("Clearing resources of this Unit Of Work.");
             clear();
         }
+    }
+
+    private void performCleanup() {
+        for (AbstractUnitOfWork uow : innerUnitsOfWork) {
+            uow.notifyListenersCleanup();
+        }
+        notifyListenersCleanup();
     }
 
     /**
@@ -97,10 +106,16 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
         try {
             if (isStarted()) {
+                for (AbstractUnitOfWork inner : innerUnitsOfWork) {
+                    CurrentUnitOfWork.set(inner);
+                    inner.rollback(cause);
+                }
                 doRollback(cause);
             }
         } finally {
-            notifyListenersCleanup();
+            if (outerUnitOfWork == null) {
+                performCleanup();
+            }
             clear();
             stop();
         }
@@ -167,7 +182,6 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         } finally {
             clear();
             stop();
-            notifyListenersCleanup();
         }
     }
 
@@ -231,6 +245,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
         @Override
         public void onCleanup() {
+            performCleanup();
         }
     }
 }

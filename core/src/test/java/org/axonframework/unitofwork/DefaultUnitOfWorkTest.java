@@ -71,9 +71,7 @@ public class DefaultUnitOfWorkTest {
 
     @After
     public void tearDown() {
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
-        }
+        assertFalse("A UnitOfWork was not properly cleared", CurrentUnitOfWork.isStarted());
     }
 
     @Test
@@ -98,7 +96,7 @@ public class DefaultUnitOfWorkTest {
                 isRolledBack.set(true);
             }
         });
-        inner.rollback();
+        inner.commit();
         outer.rollback();
         assertTrue("The inner UoW wasn't properly rolled back", isRolledBack.get());
         assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
@@ -211,6 +209,72 @@ public class DefaultUnitOfWorkTest {
         verify(mockListener).onRollback(isA(RuntimeException.class));
         verify(mockListener, never()).afterCommit();
         verify(mockListener).onCleanup();
+    }
+
+    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
+    @Test
+    public void testUnitOfWorkCleanupDelayedUntilOuterUnitOfWorkIsCleanedUp_InnerCommit() {
+        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class);
+        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class);
+        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
+        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
+        inner.registerListener(innerListener);
+        outer.registerListener(outerListener);
+        inner.commit();
+        verify(innerListener, never()).afterCommit();
+        verify(innerListener, never()).onCleanup();
+        outer.commit();
+
+        InOrder inOrder = inOrder(innerListener, outerListener);
+        inOrder.verify(innerListener).afterCommit();
+        inOrder.verify(outerListener).afterCommit();
+        inOrder.verify(innerListener).onCleanup();
+        inOrder.verify(outerListener).onCleanup();
+    }
+
+    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored", "NullableProblems"})
+    @Test
+    public void testUnitOfWorkCleanupDelayedUntilOuterUnitOfWorkIsCleanedUp_InnerRollback() {
+        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class);
+        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class);
+        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
+        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
+        inner.registerListener(innerListener);
+        outer.registerListener(outerListener);
+        inner.rollback();
+        verify(innerListener, never()).afterCommit();
+        verify(innerListener, never()).onCleanup();
+        outer.commit();
+
+        InOrder inOrder = inOrder(innerListener, outerListener);
+        inOrder.verify(innerListener).onRollback(null);
+        inOrder.verify(outerListener).afterCommit();
+        inOrder.verify(innerListener).onCleanup();
+        inOrder.verify(outerListener).onCleanup();
+    }
+
+    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored", "NullableProblems"})
+    @Test
+    public void testUnitOfWorkCleanupDelayedUntilOuterUnitOfWorkIsCleanedUp_InnerCommit_OuterRollback() {
+        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class);
+        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class);
+        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
+        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
+        inner.registerListener(innerListener);
+        outer.registerListener(outerListener);
+        inner.commit();
+        verify(innerListener, never()).afterCommit();
+        verify(innerListener, never()).onCleanup();
+        outer.rollback();
+        verify(outerListener, never()).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+
+        InOrder inOrder = inOrder(innerListener, outerListener);
+        inOrder.verify(innerListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+
+        inOrder.verify(innerListener).onRollback(null);
+        inOrder.verify(outerListener).onRollback(null);
+        inOrder.verify(innerListener).onCleanup();
+        inOrder.verify(outerListener).onCleanup();
     }
 
     private class PublishEvent implements Answer {
