@@ -39,7 +39,9 @@ public interface UnitOfWork {
      * respective repositories, buffered events are sent to their respective event bus, and all registered
      * UnitOfWorkListeners are notified.
      * <p/>
-     * After the commit (successful or not), the UnitOfWork is unregistered from the CurrentUnitOfWork.
+     * After the commit (successful or not), the UnitOfWork is unregistered from the CurrentUnitOfWork and has cleaned
+     * up all resources it occupied. This effectively means that a rollback should be done if Unit Of Work failed to
+     * commit.
      *
      * @throws IllegalStateException if the UnitOfWork wasn't started
      */

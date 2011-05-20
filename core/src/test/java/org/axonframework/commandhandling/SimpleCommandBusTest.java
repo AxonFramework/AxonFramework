@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.unitofwork.RuntimeExceptionRollbackAttribute;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
-import org.axonframework.util.*;
 import org.junit.*;
-import org.junit.Assert;
 import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -141,7 +138,7 @@ public class SimpleCommandBusTest {
                 throw new Exception();
             }
         });
-        testSubject.setRollbackAttribute(new RuntimeExceptionRollbackAttribute());
+        testSubject.setRollbackConfiguration(new RollbackOnUncheckedExceptionConfiguration());
 
         testSubject.dispatch("Say hi!", new CommandCallback<Object>() {
             @Override
@@ -313,7 +310,6 @@ public class SimpleCommandBusTest {
         inOrder.verify(mockInterceptor2).handle(isA(Object.class),
                                                 isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(commandHandler, never()).handle(eq("Hi there!"), isA(UnitOfWork.class));
-
     }
 
     private static class MyStringCommandHandler implements CommandHandler<String> {

@@ -17,9 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.jmx.JmxConfiguration;
-import org.axonframework.unitofwork.DefaultRollbackAttribute;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.unitofwork.RollbackAttribute;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -52,7 +50,7 @@ public class SimpleCommandBus implements CommandBus {
     private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
     private volatile Iterable<? extends CommandHandlerInterceptor> interceptors = Collections.emptyList();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
-    private RollbackAttribute rollbackAttribute = new DefaultRollbackAttribute();
+    private RollbackConfiguration rollbackConfiguration = new RollbackOnAllExceptionsConfiguration();
 
     /**
      * Initializes the SimpleCommandBus and registers the mbeans for management information.
@@ -116,7 +114,7 @@ public class SimpleCommandBus implements CommandBus {
         try {
             returnValue = chain.proceed();
         } catch (Throwable throwable) {
-            if (rollbackAttribute.rollBackOn(throwable)) {
+            if (rollbackConfiguration.rollBackOn(throwable)) {
                 unitOfWork.rollback(throwable);
             } else {
                 unitOfWork.commit();
@@ -187,12 +185,12 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Sets the RollbackAttribute that allows you to change when the UnitOfWork is committed. If not set the
-     * DefaultRollbackAttribute will be used. The default will rollback on every throwable.
+     * Sets the RollbackConfiguration that allows you to change when the UnitOfWork is committed. If not set the
+     * RollbackOnAllExceptionsConfiguration will be used, which triggers a rollback on all exceptions.
      *
-     * @param rollbackAttribute The RollbackAttribute.
+     * @param rollbackConfiguration The RollbackConfiguration.
      */
-    public void setRollbackAttribute(RollbackAttribute rollbackAttribute) {
-        this.rollbackAttribute = rollbackAttribute;
+    public void setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+        this.rollbackConfiguration = rollbackConfiguration;
     }
 }
