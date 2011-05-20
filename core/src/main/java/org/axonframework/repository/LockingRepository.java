@@ -99,7 +99,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
             super.add(aggregate);
             CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
         } catch (RuntimeException ex) {
-            logger.warn("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
+            logger.info("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregate.getIdentifier());
             throw ex;
         }
@@ -120,7 +120,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
             CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
             return aggregate;
         } catch (RuntimeException ex) {
-            logger.warn("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
+            logger.info("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregateIdentifier);
             throw ex;
         }
