@@ -26,7 +26,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-class DescriptionUtils {
+abstract class DescriptionUtils {
 
     private DescriptionUtils() {
     }
