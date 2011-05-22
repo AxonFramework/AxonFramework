@@ -83,15 +83,34 @@ public class ContactsController {
 
     @RequestMapping(value = "{identifier}/edit", method = RequestMethod.POST)
     public String formEditSubmit(@ModelAttribute("contact") @Valid ContactEntry contact, BindingResult bindingResult) {
-        if (!bindingResult.hasErrors()) {
-            ChangeContactNameCommand command = new ChangeContactNameCommand();
-            command.setContactNewName(contact.getName());
-            command.setContactId(contact.getIdentifier());
-
-            commandBus.dispatch(command);
-
-            return "redirect:/contacts";
+        if (bindingResult.hasErrors()) {
+            return "contacts/edit";
         }
+        ChangeContactNameCommand command = new ChangeContactNameCommand();
+        command.setContactNewName(contact.getName());
+        command.setContactId(contact.getIdentifier());
+
+        FutureCallback<Void> voidFutureCallback = new FutureCallback<Void>();
+        commandBus.dispatch(command, voidFutureCallback);
+        ObjectError error;
+        try {
+            voidFutureCallback.get();
+            return "redirect:/contacts";
+        } catch (InterruptedException e) {
+            logger.debug("Error while changing name of contact", e);
+            error = new ObjectError("contact", "Please try again, something went wrong on the server");
+        } catch (ExecutionException e) {
+            logger.debug("Error while changing name of contact", e);
+            if (e.getCause().getClass().equals(ContactNameAlreadyTakenException.class)) {
+                error = new FieldError("contact", "name",
+                        "The provided name \'" + contact.getName() + "\' already exists");
+            } else {
+                error = new ObjectError("contact",
+                        "Something went wrong on the server that we did not expect: " + e.getMessage());
+            }
+        }
+        bindingResult.addError(error);
+
         return "contacts/edit";
 
     }
