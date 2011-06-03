@@ -24,6 +24,8 @@ import javax.persistence.Entity;
 @Entity
 public class JpaAggregate extends AbstractAggregateRoot {
 
+    private static final long serialVersionUID = -7075224524414732603L;
+
     @Basic
     private String message;
 
@@ -40,5 +42,9 @@ public class JpaAggregate extends AbstractAggregateRoot {
     public void setMessage(String newMessage) {
         this.message = newMessage;
         registerEvent(new MessageUpdatedEvent(message));
+    }
+
+    public void delete() {
+        markDeleted();
     }
 }

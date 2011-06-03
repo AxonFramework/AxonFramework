@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,8 @@ public interface AggregateRoot {
     DomainEventStream getUncommittedEvents();
 
     /**
-     * Returns the current version number of the aggregate, or <code>null</code> if the aggregate is newly created. This
+     * Returns the current version number of the aggregate, or <code>null</code> if the aggregate is newly created.
+     * This
      * version must reflect the version number of the aggregate on which changes are applied.
      * <p/>
      * Each time the aggregate is <em>modified and stored</em> in a repository, the version number must be increased by
@@ -65,4 +66,15 @@ public interface AggregateRoot {
      * @return the current version number of this aggregate, or <code>null</code> if no events were ever committed
      */
     Long getVersion();
+
+    /**
+     * Indicates whether this aggregate has been marked as deleted. When <code>true</code>, it is an instruction
+     * to the repository to remove this instance at an appropriate time.
+     * <p/>
+     * Repositories should not return any instances of Aggregates that return <code>true</code> on
+     * <code>isDeleted()</code>.
+     *
+     * @return <code>true</code> if this aggregate was marked as deleted, otherwise <code>false</code>.
+     */
+    boolean isDeleted();
 }

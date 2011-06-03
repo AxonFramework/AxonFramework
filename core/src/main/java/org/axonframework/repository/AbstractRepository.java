@@ -125,6 +125,15 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     protected abstract T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
 
     /**
+     * Removes the aggregate from the repository. Typically, the repository should ensure that any calls to {@link
+     * #doLoad(org.axonframework.domain.AggregateIdentifier, Long)} throw a {@link AggregateNotFoundException} when
+     * loading a deleted aggregate.
+     *
+     * @param aggregate the aggregate to delete
+     */
+    protected abstract void doDelete(T aggregate);
+
+    /**
      * Sets the event bus to which newly stored events should be published. Optional. By default, the repository tries
      * to autowire the event bus.
      *
@@ -140,7 +149,11 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
         @Override
         public void save(final T aggregate) {
             DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
-            doSave(aggregate);
+            if (aggregate.isDeleted()) {
+                doDelete(aggregate);
+            } else {
+                doSave(aggregate);
+            }
             aggregate.commitEvents();
             dispatchUncommittedEvents(uncommittedEvents);
         }

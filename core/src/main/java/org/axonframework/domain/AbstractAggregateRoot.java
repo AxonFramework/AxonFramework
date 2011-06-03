@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,6 +38,9 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
 
     @Transient
     private EventContainer eventContainer;
+
+    @Transient
+    private boolean deleted = false;
 
     @Id
     private String id;
@@ -76,6 +79,22 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      */
     protected void registerEvent(DomainEvent event) {
         eventContainer.addEvent(event);
+    }
+
+    /**
+     * Marks this aggregate as deleted, instructing a Repository to remove that aggregate at an appropriate time.
+     * <p/>
+     * Note that different Repository implementation may react differently to aggregates marked for deletion.
+     * Typically,
+     * Event Sourced Repositories will ignore the marking and expect Events implementing {@link AggregateDeletedEvent}.
+     */
+    protected void markDeleted() {
+        this.deleted = true;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return deleted;
     }
 
     /**
@@ -151,8 +170,8 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * JPA / EJB3 @PostLoad annotated method used to initialize the fields in this class after an instance has been
      * loaded from persistent storage.
      * <p/>
-     * Subclasses are responsible for invoking this method if they provide their own {@link @PostLoad} annotated method.
-     * Failure to do so will inevitably result in <code>NullPointerException</code>.
+     * Subclasses are responsible for invoking this method if they provide their own {@link @PostLoad} annotated
+     * method. Failure to do so will inevitably result in <code>NullPointerException</code>.
      *
      * @see PostLoad
      */

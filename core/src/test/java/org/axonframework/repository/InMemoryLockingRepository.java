@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,12 @@ public class InMemoryLockingRepository extends LockingRepository<StubAggregate> 
     @Override
     protected void doSaveWithLock(StubAggregate aggregate) {
         store.put(aggregate.getIdentifier(), aggregate);
+        saveCount++;
+    }
+
+    @Override
+    protected void doDeleteWithLock(StubAggregate aggregate) {
+        store.remove(aggregate.getIdentifier());
         saveCount++;
     }
 

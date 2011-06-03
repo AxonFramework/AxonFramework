@@ -91,6 +91,14 @@ public class RepositoryBeanDefinitionParserTest {
          * {@inheritDoc}
          */
         @Override
+        public boolean isDeleted() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public Long getVersion() {
             throw new UnsupportedOperationException("Not implemented yet");
         }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -54,7 +54,8 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
     }
 
     /**
-     * Initialize a repository  for storing aggregates of the given <code>aggregateType</code> with an additional <code>
+     * Initialize a repository  for storing aggregates of the given <code>aggregateType</code> with an additional
+     * <code>
      * lockingStrategy</code>.
      *
      * @param aggregateType   the aggregate type this repository manages
@@ -68,6 +69,14 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
     @Override
     protected void doSaveWithLock(T aggregate) {
         entityManager.persist(aggregate);
+        if (forceFlushOnSave) {
+            entityManager.flush();
+        }
+    }
+
+    @Override
+    protected void doDeleteWithLock(T aggregate) {
+        entityManager.remove(aggregate);
         if (forceFlushOnSave) {
             entityManager.flush();
         }

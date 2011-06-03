@@ -65,14 +65,16 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * <code>AggregateSnapshot</code>, which is a snapshot event, containing the actual aggregate inside.
      * <p/>
      * When an <code>AggregateDeletedEvent</code> is encountered, a <code>AggregateDeletedException</code> is thrown,
-     * unless there are events following the <code>AggregateDeletedEvent</code>. This could be the case when an event is
+     * unless there are events following the <code>AggregateDeletedEvent</code>. This could be the case when an event
+     * is
      * added to the stream as a correction to an earlier event.
      * <p/>
      * <code>AggregateSnapshot</code> events are used to initialize the aggregate with the correct version ({@link
      * #getVersion()}).
      *
      * @throws IllegalStateException     if this aggregate was already initialized.
-     * @throws AggregateDeletedException if the event stream contains an event of type {@link AggregateDeletedEvent} (or
+     * @throws AggregateDeletedException if the event stream contains an event of type {@link AggregateDeletedEvent}
+     *                                   (or
      *                                   subtype).
      */
     @Override
@@ -105,6 +107,9 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
     protected void apply(DomainEvent event) {
         registerEvent(event);
         handleRecursively(event);
+        if (event instanceof AggregateDeletedEvent) {
+            markDeleted();
+        }
     }
 
     private void handleRecursively(DomainEvent event) {

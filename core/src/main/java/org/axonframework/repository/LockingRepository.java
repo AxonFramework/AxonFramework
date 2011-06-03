@@ -146,11 +146,37 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
     }
 
     /**
+     * Verifies whether all locks are valid and delegates to {@link #doDeleteWithLock(org.axonframework.domain.AggregateRoot)}
+     * to perform actual deleting.
+     *
+     * @param aggregate the aggregate to delete
+     */
+    @Override
+    protected final void doDelete(T aggregate) {
+        if (aggregate.getVersion() != null && !lockManager.validateLock(aggregate)) {
+            throw new ConcurrencyException(String.format(
+                    "The aggregate of type [%s] with identifier [%s] could not be "
+                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
+                            + "the current thread had released its lock earlier on.",
+                    aggregate.getClass().getSimpleName(),
+                    aggregate.getIdentifier()));
+        }
+        doDeleteWithLock(aggregate);
+    }
+
+    /**
      * Perform the actual saving of the aggregate. All necessary locks have been verified.
      *
      * @param aggregate the aggregate to store
      */
     protected abstract void doSaveWithLock(T aggregate);
+
+    /**
+     * Perform the actual deleting of the aggregate. All necessary locks have been verifierd.
+     *
+     * @param aggregate the aggregate to delete
+     */
+    protected abstract void doDeleteWithLock(T aggregate);
 
     /**
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.

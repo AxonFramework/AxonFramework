@@ -100,9 +100,34 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
         assertEquals((Long) 1L, aggregate.getVersion());
         assertEquals(0L, aggregate.getUncommittedEventCount());
-        Assert.assertEquals(2, capturedEvents.size());
-        Assert.assertEquals((Long) 0L, capturedEvents.get(0).getSequenceNumber());
-        Assert.assertEquals((Long) 1L, capturedEvents.get(1).getSequenceNumber());
+        assertEquals(2, capturedEvents.size());
+        assertEquals((Long) 0L, capturedEvents.get(0).getSequenceNumber());
+        assertEquals((Long) 1L, capturedEvents.get(1).getSequenceNumber());
+    }
+
+    @Test
+    public void testDeleteAnAggregate() {
+        JpaAggregate agg = new JpaAggregate();
+        entityManager.persist(agg);
+        entityManager.flush();
+        entityManager.clear();
+        assertEquals((Long) 0L, agg.getVersion());
+
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        JpaAggregate aggregate = repository.load(agg.getIdentifier());
+        aggregate.setMessage("And again");
+        aggregate.setMessage("And more");
+        aggregate.delete();
+        uow.commit();
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(0L, aggregate.getUncommittedEventCount());
+        assertEquals(2, capturedEvents.size());
+        assertEquals((Long) 0L, capturedEvents.get(0).getSequenceNumber());
+        assertEquals((Long) 1L, capturedEvents.get(1).getSequenceNumber());
+
+        assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier().asString()));
     }
 
     @Override

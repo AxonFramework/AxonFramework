@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,12 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  * the need to read all events from disk, at the cost of memory usage. Since caching is not compatible with the
  * optimistic locking strategy, only pessimistic locking is available for this type of repository.
  * <p/>
- * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that aggregate.
+ * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that
+ * aggregate.
  * This is done to prevent the cache from returning aggregates that may not have fully persisted to disk.
  *
- * @author Allard Buijze
  * @param <T> The type of aggregate this repository stores
+ * @author Allard Buijze
  * @since 0.3
  */
 public abstract class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
@@ -62,16 +63,22 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
         cache.put(aggregate.getIdentifier(), aggregate);
         try {
             super.doSaveWithLock(aggregate);
-        }
-        catch (RuntimeException ex) {
+        } catch (RuntimeException ex) {
             // when an exception occurs, the lock is release and cached state is compromised.
             cache.remove(aggregate.getIdentifier());
             throw ex;
         }
     }
 
+    @Override
+    protected void doDeleteWithLock(T aggregate) {
+        cache.remove(aggregate.getIdentifier());
+        super.doDeleteWithLock(aggregate);
+    }
+
     /**
-     * Perform the actual loading of an aggregate. The necessary locks have been obtained. If the aggregate is available
+     * Perform the actual loading of an aggregate. The necessary locks have been obtained. If the aggregate is
+     * available
      * in the cache, it is returned from there. Otherwise the underlying persistence logic is called to retrieve the
      * aggregate.
      *

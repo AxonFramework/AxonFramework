@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ import javax.annotation.Resource;
  * automatically publish new events to the given {@link org.axonframework.eventhandling.EventBus} and delegate event
  * storage to the provided {@link org.axonframework.eventstore.EventStore}.
  *
- * @author Allard Buijze
  * @param <T> The type of aggregate this repository stores
+ * @author Allard Buijze
  * @see EventSourcedAggregateRoot
  * @see org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot
  * @see org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
@@ -91,6 +91,19 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     }
 
     /**
+     * Delegates to {@link #doSaveWithLock(EventSourcedAggregateRoot)}, as Event Sourcing generally doesn't delete
+     * aggregates (not their events).
+     * <p/>
+     * This method may be safely overridden for special cases that do require deleting an Aggregate's Events.
+     *
+     * @param aggregate the aggregate to delete
+     */
+    @Override
+    protected void doDeleteWithLock(T aggregate) {
+        doSaveWithLock(aggregate);
+    }
+
+    /**
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
@@ -131,9 +144,9 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation is aware of the AggregateSnapshot type events. When <code>firstEvent</code> is an instance of
-     * {@link AggregateSnapshot}, the aggregate is extracted from the event. Otherwise, aggregate creation is delegated
-     * to the abstract {@link #instantiateAggregate(org.axonframework.domain.AggregateIdentifier,
+     * This implementation is aware of the AggregateSnapshot type events. When <code>firstEvent</code> is an instance
+     * of {@link AggregateSnapshot}, the aggregate is extracted from the event. Otherwise, aggregate creation is
+     * delegated to the abstract {@link #instantiateAggregate(org.axonframework.domain.AggregateIdentifier,
      * org.axonframework.domain.DomainEvent)} method.
      */
     @Override
@@ -169,8 +182,8 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation will do nothing if a conflict resolver (See {@link #setConflictResolver(ConflictResolver)} is
-     * set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
+     * This implementation will do nothing if a conflict resolver (See {@link #setConflictResolver(ConflictResolver)}
+     * is set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
      */
     @Override
     protected void validateOnLoad(T aggregate, Long expectedVersion) {
