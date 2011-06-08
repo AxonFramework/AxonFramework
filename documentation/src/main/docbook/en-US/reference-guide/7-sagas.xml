@@ -39,7 +39,7 @@
         In the context of Domain Driven Design, it is not uncommon for Sagas to be used as
         coordination mechanism between several bounded contexts.</para>
     <sect1>
-        <title>Saga</title>
+        <title xml:id="saga">Saga</title>
         <para>A Saga is a special type of Event Listener: one that manages a business transaction.
             Some transactions could be running for days or even weeks, while others are completed
             within a few milliseconds. In Axon, each instance of a Saga is responsible for managing

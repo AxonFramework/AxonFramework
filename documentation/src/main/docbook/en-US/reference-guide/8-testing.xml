@@ -185,21 +185,24 @@
                 event specific matchers and tell Axon how they should match against the list.</para>
             <para>Below is an overview of the available Event List matchers and their purpose:<itemizedlist>
                     <listitem>
-                        <para><emphasis role="bold">List with all of</emphasis>: <code>Matchers.listWithAllOf(event matchers...)</code></para>
+                        <para><emphasis role="bold">List with all of</emphasis>:
+                                <code>Matchers.listWithAllOf(event matchers...)</code></para>
                         <para>This matcher will succeed if all of the provided Event Matchers match
                             against at least one event in the list of actual events. It does not
                             matter whether multiple matchers match against the same event, nor if an
                             event in the list does not match against any of the matchers.</para>
                     </listitem>
                     <listitem>
-                        <para><emphasis role="bold">List with any of</emphasis>: <code>Matchers.listWithAnyOf(event matchers...)</code></para>
+                        <para><emphasis role="bold">List with any of</emphasis>:
+                                <code>Matchers.listWithAnyOf(event matchers...)</code></para>
                         <para>This matcher will succeed if one of more of the provided Event
                             Matchers matches against one or more of the events in the actual list of
                             events. Some matchers may not even match at all, while another matches
                             against multiple others.</para>
                     </listitem>
                     <listitem>
-                        <para><emphasis role="bold">Sequence of Events</emphasis>: <code>Matchers.sequenceOf(event matchers...)</code></para>
+                        <para><emphasis role="bold">Sequence of Events</emphasis>:
+                                <code>Matchers.sequenceOf(event matchers...)</code></para>
                         <para>Use this matcher to verify that the actual Events are match in the
                             same order as the provided Event Matchers. It will succeed if each
                             Matcher matches against an Event that comes after the Event that the
@@ -210,7 +213,8 @@
                             to decide whether they accept that or not.</para>
                     </listitem>
                     <listitem>
-                        <para><emphasis role="bold">Exact sequence of Events</emphasis>: <code>Matchers.exactSequenceOf(event matchers...)</code></para>
+                        <para><emphasis role="bold">Exact sequence of Events</emphasis>:
+                                <code>Matchers.exactSequenceOf(event matchers...)</code></para>
                         <para>Variation of the "Sequence of Events" matcher where gaps of unmatched
                             events are not allowed. This means each matcher must match against the
                             Event directly following the Event the previous matcher matched
@@ -248,6 +252,89 @@
            aFourthEventWithSomeSpecialThings(),
            andNoMore()
        ));</programlisting></para>
+        </simplesect>
+    </sect1>
+    <sect1>
+        <title>Testing Annotated Sagas</title>
+        <para>Similar to Command Handling components, Sagas have a clearly defined interface: they
+            only respond to Events. On the other hand, Saga's have a notion of time and may interact
+            with other components as part of their event handling process. Axon Framework's test
+            support module contains fixtures that help you writing tests for sagas.</para>
+        <para>Each test fixture contains three phases, similar to those of the Command Handling
+            component fixture described in the previous section. <itemizedlist>
+                <listitem>
+                    <para>given certain events (from certain aggregates),</para>
+                </listitem>
+                <listitem>
+                    <para>when an event arrives or time elapses,</para>
+                </listitem>
+                <listitem>
+                    <para>expect certain behavior or state.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para>Both the "given" and the "when" phases accept events as part of their interaction.
+            During the "given" phase, all side effects, such as generated commands are ignored, when
+            possible. During the "when" phase, on the other hand, events and commands generated from
+            the Saga are recorded and can be verified.</para>
+        <para>The following code sample shows an example of how the fixtures can be used to test a
+            saga that sends a notification if an invoice isn't paid within 30 days:<programlistingco>
+                <areaspec>
+                    <area coords="1 87" xml:id="sagafixture-create-co"/>
+                    <area coords="2 72" xml:id="sagafixture-given-co"/>
+                    <area coords="3 52" xml:id="sagafixture-when-time-co"/>
+                    <area coords="4 92" xml:id="sagafixture-then-command-co"/>
+                </areaspec>
+                <programlisting language="java">AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(InvoicingSaga.class);
+fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
+       .whenTimeElapses(Duration.standardDays(31))
+       .expectDispatchedCommandsMatching(Matchers.listWithAllOf(aMarkAsOverdueCommand()));  </programlisting>
+                <calloutlist>
+                    <callout arearefs="sagafixture-create-co">
+                        <para>Creates a fixture to test the InvoiceSaga class</para>
+                    </callout>
+                    <callout arearefs="sagafixture-given-co">
+                        <para>Notifies the saga that a specific aggregate (with id "invoiceId") has generated an event</para>
+                    </callout>
+                    <callout arearefs="sagafixture-when-time-co">
+                        <para>Tells the saga that time elapses, triggering events scheduled in that time frame</para>
+                    </callout>
+                    <callout arearefs="sagafixture-then-command-co">
+                        <para>Verifies that the saga has sent a command matching the return value of <code>aMarkAsOverdueCommand()</code> (a Hamcrest matcher)</para>
+                    </callout>
+                </calloutlist>
+               
+            </programlistingco></para>
+        <simplesect>
+            <title>Injecting Resources</title>
+            <para>Often, Sagas will interact with external resources. These resources aren't part of
+                the Saga's state, but are injected after a Saga is loaded or created. The test
+                fixtures allows you to register resources that need to be injected in the Saga. To
+                register a resource, simply invoke the <code>fixture.registerResource(Object)</code>
+                method with the resource as parameter. The fixture will detect appropriate setter
+                methods on the Saga and invoke it with an available resource.</para>
+            <tip>
+                <title>Invoking mock objects as resources</title>
+                <para>It can be very useful to inject mock objects (e.g. Mockito or Easymock) into
+                    your Saga. It allows you to verify that the saga interacts correctly with your
+                    external resources.</para>
+            </tip>
+        </simplesect>
+        <simplesect>
+            <title>Time as a parameter in your tests</title>
+            <para xml:id="para_jha_bfw_oc">The test fixture tries to eliminate elapsing system time
+                where possible. This means that it will appear that no time elapses while the test
+                executes, unless you explicitly state so using <code>whenTimeElapses()</code>. All
+                events will have the timestamp of the moment the test fixture was created.</para>
+            <para>Having the time stopped during the test makes it easier to predict at what time
+                events are scheduled for publication. If your test case verifies that an event is
+                scheduled for publication in 30 seconds, it will remain 30 seconds, regardless of
+                the time taken between actual scheduling and test execution.<note>
+                    <para>Time is stopped using Joda Time's <code>JodaTimeUtils</code> class. This
+                        means that the concept of stopped time is only visible when using Joda
+                        time's classes. The <code>System.currentTimeMillis()</code> will keep
+                        returning the actual date and time. Axon only uses Joda Time classes for
+                        Date and Time operations.</para>
+                </note></para>
         </simplesect>
     </sect1>
 </chapter>
