@@ -313,7 +313,7 @@ fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
                 method with the resource as parameter. The fixture will detect appropriate setter
                 methods on the Saga and invoke it with an available resource.</para>
             <tip>
-                <title>Invoking mock objects as resources</title>
+                <title>Injecting mock objects as resources</title>
                 <para>It can be very useful to inject mock objects (e.g. Mockito or Easymock) into
                     your Saga. It allows you to verify that the saga interacts correctly with your
                     external resources.</para>
