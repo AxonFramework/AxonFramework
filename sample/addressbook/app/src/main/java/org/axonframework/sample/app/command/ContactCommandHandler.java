@@ -176,6 +176,7 @@ public class ContactCommandHandler {
         unitOfWork.registerListener(new UnitOfWorkListenerAdapter() {
             @Override
             public void afterCommit() {
+                logger.debug("About to cancel the name {}", contactEntry.getName());
                 contactNameRepository.cancelContactName(contactEntry.getName());
             }
         });

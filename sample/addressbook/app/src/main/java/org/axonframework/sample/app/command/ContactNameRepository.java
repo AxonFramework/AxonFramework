@@ -16,6 +16,8 @@
 
 package org.axonframework.sample.app.command;
 
+import java.util.List;
+
 /**
  * <p>Repository used to manage unique contact names</p>
  *
@@ -37,4 +39,11 @@ public interface ContactNameRepository {
      * @param contactName String containing the name to release the claim for
      */
     void cancelContactName(String contactName);
+
+    /**
+     * Returns a list with all claimed contact names as stored in the repository
+     *
+     * @return List of claimed contact names
+     */
+    List<ClaimedContactName> obtainAllClaimedNames();
 }
