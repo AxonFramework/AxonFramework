@@ -16,11 +16,15 @@
   -->
 
 <xsd:schema xmlns="http://www.axonframework.org/schema/core"
-            xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.axonframework.org/schema/core"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tool="http://www.springframework.org/schema/tool"
+            targetNamespace="http://www.axonframework.org/schema/core"
             xmlns:beans="http://www.springframework.org/schema/beans"
             elementFormDefault="qualified">
 
-    <xsd:import namespace="http://www.springframework.org/schema/beans"/>
+    <xsd:import namespace="http://www.springframework.org/schema/beans"
+                schemaLocation="http://www.springframework.org/schema/beans/spring-beans.xsd"/>
+    <xsd:import namespace="http://www.springframework.org/schema/tool"
+                schemaLocation="http://www.springframework.org/schema/tool/spring-tool.xsd"/>
 
     <!-- ================================== -->
     <!-- ==== eventBus ==================== -->
@@ -31,6 +35,11 @@
                 Spring context schema extension for the definition
                 of an EventBus instance.
             </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventhandling.SimpleEventBus"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
@@ -56,6 +65,11 @@
                 Spring context schema extension for the definition
                 of a CommandBus instance.
             </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.commandhandling.SimpleCommandBus"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
 
         <xsd:complexType>
@@ -90,8 +104,17 @@
         <xsd:annotation>
             <xsd:documentation>This element activates annotation-based
                 configuration of event handling and command processing in the Axon
-                framework. This relies on Spring to work.
+                framework. All beans with @CommandHandler or @EventHandler annotations will be configured to receive
+                commands from the command bus and events from the event bus, respectively.
             </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports
+                            type="org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor"/>
+                    <tool:exports
+                            type="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:attribute name="command-bus" type="xsd:string" use="optional">
@@ -99,6 +122,11 @@
                     <xsd:documentation>Explicitly select a command bus to use. If left
                         blank, a command bus will be selected from the context.
                     </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="org.axonframework.commandhandling.CommandBus"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
                 </xsd:annotation>
             </xsd:attribute>
             <xsd:attribute name="executor" type="xsd:string" use="optional">
@@ -106,6 +134,11 @@
                     <xsd:documentation>Select an executor to use for the event
                         handlers.
                     </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="java.util.concurrent.Executor"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
                 </xsd:annotation>
             </xsd:attribute>
             <xsd:attribute name="event-bus" type="xsd:string" use="optional">
@@ -113,6 +146,11 @@
                     <xsd:documentation>Explicitly select an event bus to use. If left
                         blank, an event bus will be selected from the context.
                     </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
                 </xsd:annotation>
             </xsd:attribute>
         </xsd:complexType>
@@ -126,6 +164,11 @@
                         <xsd:documentation>Reference to an event serializer to use with this event store. Defaults to
                             an org.axonframework.eventstore.XStreamEventSerializer
                         </xsd:documentation>
+                        <xsd:appinfo>
+                            <tool:annotation kind="ref">
+                                <tool:expected-type type="org.axonframework.eventstore.EventSerializer"/>
+                            </tool:annotation>
+                        </xsd:appinfo>
                     </xsd:annotation>
                 </xsd:attribute>
             </xsd:extension>
@@ -137,9 +180,14 @@
     <!-- ================================== -->
     <xsd:element name="filesystem-event-store">
         <xsd:annotation>
-            <xsd:documentation>Spring context schema extension for the definition
-                of an EvenStore instance.
+            <xsd:documentation>Spring context schema extension for the definition of an EvenStore instance that stores
+                events in files on the filesystem.
             </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventstore.fs.FileSystemEventStore"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
@@ -163,6 +211,11 @@
             <xsd:documentation>Spring context schema extension for the definition
                 of an EvenStore instance.
             </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventstore.jpa.JpaEventStore"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
@@ -171,6 +224,11 @@
                         <xsd:annotation>
                             <xsd:documentation>Reference to an entity manager to use with this event store.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="javax.persistence.EntityManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="data-source" use="optional" type="xsd:string">
@@ -179,6 +237,11 @@
                                 source is used to detect database type, and define which error codes represent
                                 concurrency related errors.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="javax.sql.DataSource"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="persistence-exception-resolver" use="optional" type="xsd:string">
@@ -186,6 +249,12 @@
                             <xsd:documentation>Sets the persistence exception resolver to use to detect concurrency
                                 related errors in database generated exceptions.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.axonframework.eventstore.jpa.PersistenceExceptionResolver"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="max-snapshots-archived" use="optional" type="xsd:integer">
@@ -209,21 +278,26 @@
         <xsd:annotation>
             <xsd:documentation>Spring context schema extension for the definition of a Repository instance.
             </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventsourcing.GenericEventSourcingRepository"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="beans:identifiedType">
                     <xsd:all>
-                        <xsd:element name="snapshotter-trigger" minOccurs="0" maxOccurs="1">
-                            <xsd:complexType>
-                                <xsd:complexContent>
-                                    <xsd:extension base="beans:identifiedType">
-                                        <xsd:attribute name="event-count-threshold" use="required"
-                                                       type="xsd:positiveInteger"/>
-                                        <xsd:attribute name="snapshotter-ref" use="required" type="xsd:string"/>
-                                    </xsd:extension>
-                                </xsd:complexContent>
-                            </xsd:complexType>
+                        <xsd:element name="snapshotter-trigger" type="snapshotterTriggerType" minOccurs="0"
+                                     maxOccurs="1">
+                            <xsd:annotation>
+                                <xsd:appinfo>
+                                    <tool:annotation>
+                                        <tool:exports
+                                                type="org.axonframework.eventsourcing.EventCountSnapshotterTrigger"/>
+                                    </tool:annotation>
+                                </xsd:appinfo>
+                            </xsd:annotation>
                         </xsd:element>
                         <xsd:element name="event-processors" type="beans:listOrSetType" minOccurs="0" maxOccurs="1">
                             <xsd:annotation>
@@ -256,28 +330,83 @@
                     <xsd:attribute name="event-store" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the EventStore used by this repository.</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventstore.EventStore"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="event-bus" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the EventBus used by this repository.</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="conflict-resolver" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the ConflictResolver used by this repository.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventsourcing.ConflictResolver"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="cache-ref" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the cache that stores aggregates.</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="net.sf.jsr107cache.Cache"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>
     </xsd:element>
+
+    <xsd:complexType name="snapshotterTriggerType">
+        <xsd:complexContent>
+            <xsd:extension base="beans:identifiedType">
+                <xsd:attribute name="event-count-threshold" use="required"
+                               type="xsd:positiveInteger">
+                    <xsd:annotation>
+                        <xsd:documentation>The amount of events that will trigger a snapshot to
+                            be created. More specifically, if the framework detects that more
+                            than the given amount of events would needed to recreate the current
+                            state of an aggregate, it triggers the creation of a snapshot.
+                        </xsd:documentation>
+                        <xsd:appinfo>
+                            <tool:annotation>
+                                <tool:exports type="org.axonframework.eventsourcing.SnapshotterTrigger"/>
+                            </tool:annotation>
+                        </xsd:appinfo>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="snapshotter-ref" use="required" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            The snapshotter to trigger when the number of events exceeds the
+                            threshold.
+                        </xsd:documentation>
+                        <xsd:appinfo>
+                            <tool:annotation kind="ref">
+                                <tool:expected-type type="org.axonframework.eventsourcing.Snapshotter"/>
+                            </tool:annotation>
+                        </xsd:appinfo>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
 
     <!-- ================================== -->
     <!-- == saga manager ================== -->
@@ -286,6 +415,11 @@
     <xsd:element name="saga-manager">
         <xsd:annotation>
             <xsd:documentation>Definition of the saga manager</xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.saga.annotation.AnnotatedSagaManager"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
@@ -304,6 +438,11 @@
                             <xsd:documentation>Reference to the saga factory to use. Defaults to the GenericSagaFactory,
                                 which requires a default (no-arg) constructor.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.SagaFactory"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
@@ -312,6 +451,11 @@
                                 instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
                                 the Spring Application Context.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="event-bus" use="optional" type="xsd:string">
@@ -320,6 +464,11 @@
                                 instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
                                 the Spring Application Context.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="saga-repository" use="optional" type="xsd:string">
@@ -328,6 +477,11 @@
                                 repository. Note that sagas will not survive an application restart when using these
                                 defaults.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.SagaRepository"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="transaction-manager" use="optional" type="xsd:string">
@@ -336,6 +490,12 @@
                                 while reading, processing and persisting Sagas. Is ignored unless used in combination
                                 with the executor property.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.springframework.transaction.PlatformTransactionManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="executor" use="optional" type="xsd:string">
@@ -344,6 +504,11 @@
                                 threads to process the incoming Events in. If an executor is provided, all event
                                 handling is done asynchronously using this executor.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="java.util.concurrent.Executor"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>
@@ -360,6 +525,11 @@
             <xsd:documentation>Configures a snapshotter that writes snapshots to the given event-store. Optionally,
                 an executor may be provided to execute snapshotting asynchronously. Added in Axon 1.1.
             </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventsourcing.SpringAggregateSnapshotter"/>
+                </tool:annotation>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
@@ -369,6 +539,11 @@
                             <xsd:documentation>Explicitly sets a specific event store to send snapshots to. The given
                                 event store must implement SnapshotEventStore.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventstore.EventStore"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="executor" type="xsd:string" use="optional">
@@ -376,6 +551,11 @@
                             <xsd:documentation>Select an executor to use for the snapshot creation and persistence
                                 process.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="java.util.concurrent.Executor"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="transaction-manager" type="xsd:string" use="optional">
@@ -383,6 +563,12 @@
                             <xsd:documentation>Sets the transaction manager to use. Only needed if the context contains
                                 more than one transaction manager and a transaction is needed to persist the snapshots.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.springframework.transaction.PlatformTransactionManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>

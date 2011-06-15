@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2011. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,18 +25,12 @@
         <property name="repository" ref="stubAggregateRepository"/>
     </bean>
 
+    <axon:snapshotter id="snapshotter" event-store="eventStore"/>
+
     <axon:event-sourcing-repository id="stubAggregateRepository" locking-strategy="OPTIMISTIC" event-bus="eventBus"
                                     event-store="eventStore"
                                     aggregate-type="org.axonframework.integrationtests.commandhandling.StubAggregate">
         <axon:snapshotter-trigger event-count-threshold="100" snapshotter-ref="snapshotter"/>
     </axon:event-sourcing-repository>
-
-    <bean id="snapshotter"
-          class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
-        <property name="eventStore" ref="eventStore"/>
-        <property name="executor">
-            <bean class="org.axonframework.util.DirectExecutor"/>
-        </property>
-    </bean>
 
 </beans>
