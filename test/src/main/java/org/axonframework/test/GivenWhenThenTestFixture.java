@@ -34,6 +34,7 @@ import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.monitoring.jmx.JmxConfiguration;
+import org.axonframework.repository.AggregateNotFoundException;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -216,6 +217,9 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
             if (!aggregateIdentifier.equals(identifier)) {
                 throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
                                                       + "to get the aggregate identifier to use");
+            }
+            if (givenEvents.isEmpty()) {
+                throw new AggregateNotFoundException("No 'given' events were configured for this aggregate.");
             }
             return new SimpleDomainEventStream(givenEvents);
         }

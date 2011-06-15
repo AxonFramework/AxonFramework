@@ -18,6 +18,7 @@ package org.axonframework.test;
 
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.repository.AggregateNotFoundException;
 import org.junit.*;
 
 import java.io.IOException;
@@ -40,13 +41,22 @@ public class FixtureTest_RegularParams {
     }
 
     @Test
+    public void testFixture_NoEventsInStore() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                                     fixture.getEventBus()))
+                .given()
+                .when(new TestCommand(fixture.getAggregateIdentifier()))
+                .expectException(AggregateNotFoundException.class);
+    }
+
+    @Test
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                                                                      fixture.getEventBus()))
-               .given(new SimpleDomainEventStream(new MyEvent(1)))
-               .when(new TestCommand(fixture.getAggregateIdentifier()))
-               .expectReturnValue(Void.TYPE)
-               .expectEvents(new MyEvent(2));
+                .given(new SimpleDomainEventStream(new MyEvent(1)))
+                .when(new TestCommand(fixture.getAggregateIdentifier()))
+                .expectReturnValue(Void.TYPE)
+                .expectEvents(new MyEvent(2));
     }
 
     @Test
@@ -54,10 +64,10 @@ public class FixtureTest_RegularParams {
         MyCommandHandler commandHandler = new MyCommandHandler();
         commandHandler.setRepository(fixture.createGenericRepository(MyAggregate.class));
         fixture.registerAnnotatedCommandHandler(commandHandler)
-               .given(new MyEvent(1), new MyEvent(2))
-               .when(new TestCommand(fixture.getAggregateIdentifier()))
-               .expectReturnValue(Void.TYPE)
-               .expectEvents(new MyEvent(3));
+                .given(new MyEvent(1), new MyEvent(2))
+                .when(new TestCommand(fixture.getAggregateIdentifier()))
+                .expectReturnValue(Void.TYPE)
+                .expectEvents(new MyEvent(3));
     }
 
     @Test
@@ -166,9 +176,9 @@ public class FixtureTest_RegularParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                   .given(givenEvents)
-                   .when(new TestCommand(fixture.getAggregateIdentifier()))
-                   .expectReturnValue(null);
+                    .given(givenEvents)
+                    .when(new TestCommand(fixture.getAggregateIdentifier()))
+                    .expectReturnValue(null);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("<null> but got <void>"));
@@ -182,9 +192,9 @@ public class FixtureTest_RegularParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                   .given(givenEvents)
-                   .when(new StrangeCommand(fixture.getAggregateIdentifier()))
-                   .expectException(IOException.class);
+                    .given(givenEvents)
+                    .when(new StrangeCommand(fixture.getAggregateIdentifier()))
+                    .expectException(IOException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(
