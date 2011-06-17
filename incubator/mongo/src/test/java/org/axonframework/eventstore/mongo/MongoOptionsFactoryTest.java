@@ -23,7 +23,7 @@ public class MongoOptionsFactoryTest {
         MongoOptions options = factory.createMongoOptions();
         MongoOptions defaults = new MongoOptions();
 
-        assertEquals(defaults.autoConnectRetry,options.autoConnectRetry);
+        assertEquals(defaults.autoConnectRetry, options.autoConnectRetry);
         assertEquals(defaults.maxWaitTime, options.maxWaitTime);
         assertEquals(defaults.socketTimeout, options.socketTimeout);
         assertEquals(defaults.connectionsPerHost, options.connectionsPerHost);

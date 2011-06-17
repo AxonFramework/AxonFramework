@@ -18,7 +18,8 @@ package org.axonframework.eventstore.mongo;
 
 import com.mongodb.DB;
 import com.mongodb.Mongo;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.mockito.Mockito.*;
 

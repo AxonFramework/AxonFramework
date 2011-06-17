@@ -86,6 +86,12 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>with-incubator</id>
+            <modules>
+                <module>incubator/mongo</module>
+            </modules>
+        </profile>
     </profiles>
 
     <properties>
