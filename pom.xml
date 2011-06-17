@@ -90,6 +90,7 @@
             <id>with-incubator</id>
             <modules>
                 <module>incubator/mongo</module>
+                <module>incubator/google-app-engine</module>
             </modules>
         </profile>
     </profiles>
