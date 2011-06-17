@@ -37,4 +37,12 @@ public interface ContactNameRepository {
      * @param contactName String containing the name to release the claim for
      */
     void cancelContactName(String contactName);
+
+    /**
+     * Returns true if the contact name is available, and false if it has been taken.
+     *
+     * @param contactName String containing the contact name to check for vacancy
+     * @return true if the provided contact name has not been taken, false otherwise
+     */
+    boolean vacantContactName(String contactName);
 }

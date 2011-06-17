@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 
 /**
@@ -58,10 +59,20 @@ public class JpaContactNameRepository implements ContactNameRepository {
      */
     @Override
     public void cancelContactName(String contactName) {
-        ClaimedContactName claimedContactName = entityManager.getReference(ClaimedContactName.class, contactName);
-        if (claimedContactName == null) {
+        try {
+            ClaimedContactName claimedContactName = entityManager.getReference(ClaimedContactName.class, contactName);
+            entityManager.remove(claimedContactName);
+        } catch (EntityNotFoundException e) {
             logger.warn("Could not obtain reference to the claimed contact name {}", contactName);
         }
-        entityManager.remove(claimedContactName);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean vacantContactName(String contactName) {
+        ClaimedContactName claimedContactName = entityManager.find(ClaimedContactName.class, contactName);
+        return claimedContactName == null;
     }
 }

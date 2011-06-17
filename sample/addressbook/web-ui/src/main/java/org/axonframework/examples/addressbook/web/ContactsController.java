@@ -17,8 +17,8 @@
 package org.axonframework.examples.addressbook.web;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.sample.app.api.*;
+import org.axonframework.sample.app.command.ContactNameRepository;
 import org.axonframework.sample.app.query.AddressEntry;
 import org.axonframework.sample.app.query.ContactEntry;
 import org.axonframework.sample.app.query.ContactRepository;
@@ -37,7 +37,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 /**
  * @author Jettro Coenradie
@@ -49,6 +48,9 @@ public class ContactsController {
 
     @Autowired
     private ContactRepository repository;
+
+    @Autowired
+    private ContactNameRepository contactNameRepository;
 
     @Autowired
     private CommandBus commandBus;
@@ -83,33 +85,16 @@ public class ContactsController {
 
     @RequestMapping(value = "{identifier}/edit", method = RequestMethod.POST)
     public String formEditSubmit(@ModelAttribute("contact") @Valid ContactEntry contact, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
+        // beware, we cannot support other updates since that would always give an error when the name is not changed
+        if (contactHasErrors(contact, bindingResult)) {
             return "contacts/edit";
         }
+
         ChangeContactNameCommand command = new ChangeContactNameCommand();
         command.setContactNewName(contact.getName());
         command.setContactId(contact.getIdentifier());
 
-        FutureCallback<Void> voidFutureCallback = new FutureCallback<Void>();
-        commandBus.dispatch(command, voidFutureCallback);
-        ObjectError error;
-        try {
-            voidFutureCallback.get();
-            return "redirect:/contacts";
-        } catch (InterruptedException e) {
-            logger.debug("Error while changing name of contact", e);
-            error = new ObjectError("contact", "Please try again, something went wrong on the server");
-        } catch (ExecutionException e) {
-            logger.debug("Error while changing name of contact", e);
-            if (e.getCause().getClass().equals(ContactNameAlreadyTakenException.class)) {
-                error = new FieldError("contact", "name",
-                        "The provided name \'" + contact.getName() + "\' already exists");
-            } else {
-                error = new ObjectError("contact",
-                        "Something went wrong on the server that we did not expect: " + e.getMessage());
-            }
-        }
-        bindingResult.addError(error);
+        commandBus.dispatch(command);
 
         return "contacts/edit";
 
@@ -132,33 +117,16 @@ public class ContactsController {
      */
     @RequestMapping(value = "new", method = RequestMethod.POST)
     public String formNewSubmit(@ModelAttribute("contact") @Valid ContactEntry contact, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
+        if (contactHasErrors(contact, bindingResult)) {
             return "contacts/new";
         }
+
         CreateContactCommand command = new CreateContactCommand();
         command.setNewContactName(contact.getName());
 
-        FutureCallback<Void> voidFutureCallback = new FutureCallback<Void>();
-        commandBus.dispatch(command, voidFutureCallback);
-        ObjectError error;
-        try {
-            voidFutureCallback.get();
-            return "redirect:/contacts";
-        } catch (InterruptedException e) {
-            logger.debug("Error while registering a new contact", e);
-            error = new ObjectError("contact", "Please try again, something went wrong on the server");
-        } catch (ExecutionException e) {
-            logger.debug("Error while registering a new contact", e);
-            if (e.getCause().getClass().equals(ContactNameAlreadyTakenException.class)) {
-                error = new FieldError("contact", "name",
-                        "The provided name \'" + contact.getName() + "\' already exists");
-            } else {
-                error = new ObjectError("contact",
-                        "Something went wrong on the server that we did not expect: " + e.getMessage());
-            }
-        }
-        bindingResult.addError(error);
-        return "contacts/new";
+        commandBus.dispatch(command);
+
+        return "redirect:/contacts";
     }
 
     @RequestMapping(value = "{identifier}/delete", method = RequestMethod.GET)
@@ -207,7 +175,6 @@ public class ContactsController {
         return "contacts/address";
     }
 
-
     @RequestMapping(value = "{identifier}/address/delete/{addressType}", method = RequestMethod.GET)
     public String formDeleteAddress(@PathVariable String identifier, @PathVariable AddressType addressType, Model model) {
         ContactEntry contactEntry = repository.loadContactDetails(identifier);
@@ -218,6 +185,7 @@ public class ContactsController {
         model.addAttribute("address", addressEntry);
         return "contacts/removeAddress";
     }
+
 
     @RequestMapping(value = "{identifier}/address/delete/{addressType}", method = RequestMethod.POST)
     public String formDeleteAddressSubmit(@ModelAttribute("address") AddressEntry address, BindingResult bindingResult) {
@@ -230,5 +198,22 @@ public class ContactsController {
             return "redirect:/contacts/" + address.getIdentifier();
         }
         return "contacts/removeAddress";
+    }
+
+    /**
+     * Checks if the entered data for a contact is valid and if the provided contact has not yet been taken.
+     *
+     * @param contact       Contact to validate
+     * @param bindingResult BindingResult that can contain error and can be used to store additional errors
+     * @return true if the contact has errors, false otherwise
+     */
+    private boolean contactHasErrors(ContactEntry contact, BindingResult bindingResult) {
+        if (bindingResult.hasErrors() || !contactNameRepository.vacantContactName(contact.getName())) {
+            ObjectError error = new FieldError("contact", "name",
+                    "The provided name \'" + contact.getName() + "\' already exists");
+            bindingResult.addError(error);
+            return true;
+        }
+        return false;
     }
 }
