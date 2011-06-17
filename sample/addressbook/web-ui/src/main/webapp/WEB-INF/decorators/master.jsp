@@ -27,20 +27,22 @@
     <script type="text/javascript">
         $(function() {
             $('#tabs').tabs({
-                select: function(event, ui) {
-                    var url = $.data(ui.tab, 'load.tabs');
-                    if (url) {
-                        location.href = url;
-                        return false;
-                    }
-                    return true;
-                }
-            });
+                        select: function(event, ui) {
+                            var url = $.data(ui.tab, 'load.tabs');
+                            if (url) {
+                                location.href = url;
+                                return false;
+                            }
+                            return true;
+                        }
+                    });
 
             $('#primaryNavigation ul li.current').removeClass('current');
             var loc = window.location.pathname;
             if (loc.indexOf('/contacts') > -1) {
                 $('#primaryNavigation ul li.contacts').addClass('current');
+            } else if (loc.indexOf('/db') > -1) {
+                $('#primaryNavigation ul li.db').addClass('current');
             } else {
                 $('#primaryNavigation ul li.home').addClass('current');
             }
@@ -55,6 +57,7 @@
         <ul>
             <li class="home"><a href="${ctx}/"><span>Home</span></a></li>
             <li class="contacts"><a href="${ctx}/contacts"><span>Contacts</span></a></li>
+            <li class="db"><a href="${ctx}/db"><span>Database</span></a></li>
         </ul>
     </div>
 </div>

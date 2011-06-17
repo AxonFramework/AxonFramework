@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.util.List;
 
 /**
  * <p>Jpa implementation for the contact claim repository</p>
@@ -64,11 +63,5 @@ public class JpaContactNameRepository implements ContactNameRepository {
             logger.warn("Could not obtain reference to the claimed contact name {}", contactName);
         }
         entityManager.remove(claimedContactName);
-    }
-
-    @Override
-    @SuppressWarnings({"unchecked"})
-    public List<ClaimedContactName> obtainAllClaimedNames() {
-        return entityManager.createQuery("select c from ClaimedContactName c").getResultList();
     }
 }
