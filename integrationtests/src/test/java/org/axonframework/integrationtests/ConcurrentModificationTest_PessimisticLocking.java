@@ -84,7 +84,7 @@ public class ConcurrentModificationTest_PessimisticLocking {
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         final AtomicLong counter = new AtomicLong(0);
         List<Future<?>> results = new LinkedList<Future<?>>();
-        for (int t = 0; t < 100; t++) {
+        for (int t = 0; t < 30; t++) {
             results.add(service.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -109,7 +109,7 @@ public class ConcurrentModificationTest_PessimisticLocking {
                 result.get();
             }
         }
-        assertEquals(301, registeringEventHandler.getCapturedEvents().size());
+        assertEquals(91, registeringEventHandler.getCapturedEvents().size());
         validateDispatchingOrder();
     }
 

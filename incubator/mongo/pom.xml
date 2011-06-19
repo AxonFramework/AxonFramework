@@ -78,5 +78,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-integrationtests</artifactId>
+            <version>${axon.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.eventstore.benchmark.mongo;
+package org.axonframework.eventstore.mongo.integrationtests;
 
 import com.mongodb.Mongo;
 import org.axonframework.domain.AggregateIdentifier;
@@ -64,5 +64,4 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
             }
         }
     }
-
 }
