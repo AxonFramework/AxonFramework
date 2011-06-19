@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2011. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@
     <artifactId>axon-googleappengine</artifactId>
     <packaging>jar</packaging>
 
-    <name>The Google App Engine integration of Axon.</name>
+    <name>Axon - Google App Engine integration</name>
+    <description>The Google App Engine integration of Axon.</description>
 
     <properties>
         <axon.version>${parent.version}</axon.version>
@@ -48,24 +49,14 @@
             <groupId>com.google.appengine</groupId>
             <artifactId>appengine-api-1.0-sdk</artifactId>
             <version>${gae.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${spring.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>${spring.version}</version>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <groupId>commons-logging</groupId>
@@ -81,14 +72,12 @@
             <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
             <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.google.appengine</groupId>
             <artifactId>appengine-api-stubs</artifactId>
@@ -101,7 +90,5 @@
             <version>${gae.version}</version>
             <scope>test</scope>
         </dependency>
-
-
     </dependencies>
 </project>
