@@ -91,6 +91,7 @@
             <modules>
                 <module>incubator/mongo</module>
                 <module>incubator/google-app-engine</module>
+                <module>incubator/dcb</module>
             </modules>
         </profile>
     </profiles>
