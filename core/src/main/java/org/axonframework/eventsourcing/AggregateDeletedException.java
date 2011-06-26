@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.repository.AggregateNotFoundException;
 
 /**
@@ -28,11 +29,13 @@ import org.axonframework.repository.AggregateNotFoundException;
 public class AggregateDeletedException extends AggregateNotFoundException {
 
     /**
-     * Initialize a AggregateDeletedException with the given <code>message</code>
+     * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
+     * given <code>message</code>.
      *
-     * @param message The message describing the cause of the exception
+     * @param aggregateIdentifier The identifier of the aggregate that has been deleted
+     * @param message             The message describing the cause of the exception
      */
-    public AggregateDeletedException(String message) {
-        super(message);
+    public AggregateDeletedException(AggregateIdentifier aggregateIdentifier, String message) {
+        super(aggregateIdentifier, message);
     }
 }

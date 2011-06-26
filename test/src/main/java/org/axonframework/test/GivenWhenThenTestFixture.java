@@ -219,7 +219,8 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                                                       + "to get the aggregate identifier to use");
             }
             if (givenEvents.isEmpty()) {
-                throw new AggregateNotFoundException("No 'given' events were configured for this aggregate.");
+                throw new AggregateNotFoundException(identifier,
+                                                     "No 'given' events were configured for this aggregate.");
             }
             return new SimpleDomainEventStream(givenEvents);
         }

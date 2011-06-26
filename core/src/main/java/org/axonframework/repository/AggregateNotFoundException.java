@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.util.AxonNonTransientException;
 
 /**
@@ -27,23 +28,40 @@ import org.axonframework.util.AxonNonTransientException;
 public class AggregateNotFoundException extends AxonNonTransientException {
 
     private static final long serialVersionUID = 1343530021245649274L;
+    private final AggregateIdentifier aggregateIdentifier;
 
     /**
-     * Initialize a AggregateNotFoundException with the given <code>message</code>
+     * Initialize a AggregateNotFoundException for an aggregate identifier by given <code>aggregateIdentifier</code>
+     * and given <code>message</code>.
      *
-     * @param message The message describing the cause of the exception
+     * @param aggregateIdentifier The identifier of the aggregate that could not be found
+     * @param message             The message describing the cause of the exception
      */
-    public AggregateNotFoundException(String message) {
+    public AggregateNotFoundException(AggregateIdentifier aggregateIdentifier, String message) {
         super(message);
+        this.aggregateIdentifier = aggregateIdentifier;
     }
 
     /**
-     * Initialize a AggregateNotFoundException with the given <code>message</code> and <code>cause</code>
+     * Initialize a AggregateNotFoundException for an aggregate identifier by given <code>aggregateIdentifier</code>
+     * and
+     * with the given <code>message</code> and <code>cause</code>.
      *
-     * @param message The message describing the cause of the exception
-     * @param cause   The underlying cause of the exception
+     * @param aggregateIdentifier The identifier of the aggregate that could not be found
+     * @param message             The message describing the cause of the exception
+     * @param cause               The underlying cause of the exception
      */
-    public AggregateNotFoundException(String message, Throwable cause) {
+    public AggregateNotFoundException(AggregateIdentifier aggregateIdentifier, String message, Throwable cause) {
         super(message, cause);
+        this.aggregateIdentifier = aggregateIdentifier;
+    }
+
+    /**
+     * Returns the identifier of the aggregate that could not be found.
+     *
+     * @return the identifier of the aggregate that could not be found
+     */
+    public AggregateIdentifier getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 }

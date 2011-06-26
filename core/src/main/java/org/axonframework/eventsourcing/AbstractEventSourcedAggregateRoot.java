@@ -84,7 +84,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         while (domainEventStream.hasNext()) {
             DomainEvent event = domainEventStream.next();
             if (event instanceof AggregateDeletedEvent) {
-                throw new AggregateDeletedException(String.format(
+                throw new AggregateDeletedException(event.getAggregateIdentifier(), String.format(
                         "Aggregate with identifier [%s] not found. It has been deleted.",
                         event.getAggregateIdentifier()));
             }

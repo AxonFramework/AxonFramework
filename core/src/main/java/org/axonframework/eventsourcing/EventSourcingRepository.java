@@ -120,7 +120,7 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         try {
             events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
         } catch (EventStreamNotFoundException e) {
-            throw new AggregateNotFoundException("The aggregate was not found", e);
+            throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found", e);
         }
         for (EventStreamDecorator decorator : eventStreamDecorators) {
             events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
