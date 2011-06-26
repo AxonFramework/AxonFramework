@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ package org.axonframework.eventhandling.annotation.postprocessor;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -33,8 +32,7 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests to verify that Spring-generated proxy beans are also neatly proxied. Relates to issue #111
@@ -59,6 +57,7 @@ public class AnnotationEventListenerBeanPostProcessorTest_DoubleAnnotated {
 
     @Before
     public void beforeClass() {
+        reset(mockTransactionManager);
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(new SimpleTransactionStatus(true));
     }
@@ -76,5 +75,4 @@ public class AnnotationEventListenerBeanPostProcessorTest_DoubleAnnotated {
         ((EventListener) transactionalListener).handle(new StubDomainEvent());
         assertEquals(2, transactionalListener.getInvocations());
     }
-
 }

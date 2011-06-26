@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2011. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~     http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,21 +17,26 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
        xmlns:axon="http://www.axonframework.org/schema/core" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:security="http://www.springframework.org/schema/security"
        xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd
-       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                           http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd">
 
-    <axon:annotation-config event-bus="eventBus"/>
+    <axon:annotation-config event-bus="eventBus" command-bus="commandBus"/>
+    <security:global-method-security secured-annotations="enabled"/>
+
     <axon:event-bus id="eventBus"/>
     <axon:command-bus id="commandBus"/>
 
     <bean class="org.axonframework.eventhandling.annotation.postprocessor.TransactionalListener"/>
+    <bean class="org.axonframework.commandhandling.annotation.TransactionalCommandHandler"/>
 
     <bean id="transactionManager" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.springframework.transaction.PlatformTransactionManager"/>
         <property name="singleton" value="true"/>
     </bean>
+
     <tx:annotation-driven proxy-target-class="true"/>
 </beans>

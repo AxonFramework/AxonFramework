@@ -167,6 +167,14 @@
             <version>0.9.1.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Other (test) dependencies -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+            <version>3.0.5.RELEASE</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
