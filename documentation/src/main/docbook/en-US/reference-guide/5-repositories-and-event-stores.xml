@@ -494,6 +494,18 @@
                 That means aggregates never need to be able to deal with
                     <code>AggregateSnapshot</code> instances themselves.</para>
         </sect2>
+        <sect2>
+            <title>Pruning Snapshot Events</title>
+            <para>Onec a snapshot event is written, it prevents older events and snapshot events
+                from being read. Domain Events are still used in case a snapshot event becomes
+                obsolete due to changes in the structure of an aggregate. The older snapshot events
+                are hardly ever needed. <code>SnapshotEventStore</code> implementation may choose to
+                keep only a limited amount of snapshots (e.g. only one) for each aggregate.</para>
+            <para>The <code>JpaEventStore</code> allows you to configure the amount of snapshots to
+                keep per aggregate. It defaults to 1, meaning that only the latest snapshot event is
+                kept for each aggregate. Use <code>setMaxSnapshotsArchived(int)</code> to change
+                this setting. Use a negative integer to prevent pruning altogether.</para>
+        </sect2>
     </sect1>
     <sect1 xml:id="conflict-resolution">
         <title>Advanced conflict detection and resolution</title>
