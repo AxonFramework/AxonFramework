@@ -335,6 +335,13 @@ fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
                         returning the actual date and time. Axon only uses Joda Time classes for
                         Date and Time operations.</para>
                 </note></para>
+            <para>You can also use the <code>StubEventScheduler</code> independently of the test
+                fixtures if you need to test scheduling of events. This <code>EventScheduler</code>
+                implementation allows you to verify which events are scheduled for whch time and
+                gives you options to manipulate the progress of time. You can either advance time
+                with a specific <code>Duration</code>, move the clock to a specific
+                    <code>DateTime</code> or advance time to the next scheduled event. All these
+                opertaions will return the events scheduled within the progressed interval.</para>
         </simplesect>
     </sect1>
 </chapter>
