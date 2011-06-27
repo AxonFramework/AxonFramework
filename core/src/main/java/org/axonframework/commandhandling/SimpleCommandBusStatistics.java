@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.management.StandardMBean;
 
 /**
  * <p>Statistics object to store information about the internals of the <code>SimpleCommandBus</code>.</p> <p>You can
@@ -32,7 +31,7 @@ import javax.management.StandardMBean;
  * @author Allard Buijze
  * @since 0.6
  */
-class SimpleCommandBusStatistics extends StandardMBean implements SimpleCommandBusStatisticsMXBean {
+class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXBean {
 
     private AtomicLong handlerCounter = new AtomicLong(0);
     private AtomicLong receivedCommandCounter = new AtomicLong(0);
@@ -42,7 +41,6 @@ class SimpleCommandBusStatistics extends StandardMBean implements SimpleCommandB
      * Creates an instance of this statistics MBean.
      */
     public SimpleCommandBusStatistics() {
-        super(SimpleCommandBusStatisticsMXBean.class, true);
     }
 
     /**

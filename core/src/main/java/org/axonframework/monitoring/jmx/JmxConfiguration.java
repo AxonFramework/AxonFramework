@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+import javax.management.StandardMBean;
 
 /**
  * Utility class that allows Axon-related components to be configured with an MBeanServer. By default all MBeans are
@@ -67,7 +68,7 @@ public final class JmxConfiguration {
     public void registerMBean(Object mBean, Class<?> monitoredType) {
         if (enabled) {
             try {
-                mBeanServer.registerMBean(mBean, objectNameFor(monitoredType));
+                mBeanServer.registerMBean(new StandardMBean(mBean, null, true), objectNameFor(monitoredType));
             } catch (InstanceAlreadyExistsException e) {
                 logger.warn("Object {} has already been registered as an MBean", mBean);
             } catch (MBeanRegistrationException e) {

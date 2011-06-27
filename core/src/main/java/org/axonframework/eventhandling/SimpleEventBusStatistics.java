@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.management.StandardMBean;
 
 /**
  * <p>Statistics object to store information about the internal of the <code>SimpleEventBus</code>.</p> <p>You can
@@ -32,7 +31,7 @@ import javax.management.StandardMBean;
  * @see org.axonframework.eventhandling.SimpleEventBus
  * @since 0.6
  */
-class SimpleEventBusStatistics extends StandardMBean implements SimpleEventBusStatisticsMXBean {
+class SimpleEventBusStatistics implements SimpleEventBusStatisticsMXBean {
 
     private AtomicLong listenerCount = new AtomicLong(0);
     private AtomicLong publishedEventCounter = new AtomicLong(0);
@@ -42,7 +41,6 @@ class SimpleEventBusStatistics extends StandardMBean implements SimpleEventBusSt
      * Creates an instance of this statistics MBean.
      */
     SimpleEventBusStatistics() {
-        super(SimpleEventBusStatisticsMXBean.class, true);
     }
 
     /**
