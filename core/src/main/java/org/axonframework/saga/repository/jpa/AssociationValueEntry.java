@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaStorageException;
+import org.axonframework.saga.repository.SagaSerializer;
 
 import java.io.Serializable;
 import javax.persistence.Basic;
@@ -46,7 +47,7 @@ public class AssociationValueEntry {
     private String associationKey;
 
     @Lob
-    private Serializable associationValue;
+    private byte[] associationValue;
 
     /**
      * Initialize a new AssociationValueEntry for a saga with given <code>sagaIdentifier</code> and
@@ -54,29 +55,32 @@ public class AssociationValueEntry {
      *
      * @param sagaIdentifier   The identifier of the saga
      * @param associationValue The association value for the saga
+     * @param serializer       The serializer to convert the <code>associationValue</code> into bytes with
      */
-    public AssociationValueEntry(String sagaIdentifier, AssociationValue associationValue) {
+    public AssociationValueEntry(String sagaIdentifier, AssociationValue associationValue, SagaSerializer serializer) {
         if (!Serializable.class.isInstance(associationValue.getValue())) {
             throw new SagaStorageException("Could not persist a saga association, since the value is not serializable");
         }
         this.sagaId = sagaIdentifier;
         this.associationKey = associationValue.getKey();
-        this.associationValue = (Serializable) associationValue.getValue();
+        this.associationValue = serializer.serializeAssociationValue(associationValue.getValue());
     }
 
     /**
      * Constructor required by JPA. Do not use directly.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     protected AssociationValueEntry() {
     }
 
     /**
      * Returns the association value contained in this entry.
      *
+     * @param serializer The serializer used to deserialize the association value
      * @return the association value contained in this entry
      */
-    public AssociationValue getAssociationValue() {
-        return new AssociationValue(associationKey, associationValue);
+    public AssociationValue getAssociationValue(SagaSerializer serializer) {
+        return new AssociationValue(associationKey, serializer.deserializeAssociationValue(associationValue));
     }
 
     /**

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,4 +48,20 @@ public interface SagaSerializer {
      *                            if a technical error occurs while deserializing the Saga
      */
     Saga deserialize(byte[] serializedSaga);
+
+    /**
+     * Serializes the given <code>associationValue</code>.
+     *
+     * @param associationValue The association value to serialize
+     * @return the serialized form of the association value
+     */
+    byte[] serializeAssociationValue(Object associationValue);
+
+    /**
+     * Deserializes the given <code>serializedAssociationValue</code>.
+     *
+     * @param serializedAssociationValue The serialized form of the association value.
+     * @return The deserialized association value
+     */
+    Object deserializeAssociationValue(byte[] serializedAssociationValue);
 }

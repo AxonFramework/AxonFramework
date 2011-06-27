@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,9 +21,6 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -35,6 +32,8 @@ import java.util.UUID;
  * @since 0.7
  */
 public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
+
+    private static final long serialVersionUID = 2385024168304711298L;
 
     private final AssociationValues associationValues;
     private final String identifier;
@@ -72,6 +71,9 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     @Override
     public final void handle(Event event) {
+        if (eventHandlerInvoker == null) {
+            eventHandlerInvoker = new SagaEventHandlerInvoker(this);
+        }
         doHandle(event);
     }
 
@@ -136,16 +138,5 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      */
     protected void removeAssociationWith(String key, Object value) {
         associationValues.remove(new AssociationValue(key, value));
-    }
-
-    // Java Serialization methods
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        eventHandlerInvoker = new SagaEventHandlerInvoker(this);
     }
 }

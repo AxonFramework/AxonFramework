@@ -65,7 +65,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
                                                                        .setParameter("sagaId", sagaIdentifier)
                                                                        .getResultList();
         for (AssociationValueEntry entry : potentialCandidates) {
-            if (associationValue.getValue().equals(entry.getAssociationValue().getValue())) {
+            if (associationValue.getValue().equals(entry.getAssociationValue(serializer).getValue())) {
                 entityManager.remove(entry);
             }
         }
@@ -76,7 +76,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void storeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
-        entityManager.persist(new AssociationValueEntry(sagaIdentifier, associationValue));
+        entityManager.persist(new AssociationValueEntry(sagaIdentifier, associationValue, serializer));
         if (useExplicitFlush) {
             entityManager.flush();
         }
@@ -101,8 +101,15 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void updateSaga(Saga saga) {
-        entityManager.merge(new SagaEntry(saga, serializer));
-        if (useExplicitFlush) {
+        byte[] serializedSaga = serializer.serialize(saga);
+        int updates = entityManager.createQuery(
+                "UPDATE SagaEntry se SET se.serializedSaga = :serializedSaga WHERE se.sagaId = :sagaId")
+                                   .setParameter("sagaId", saga.getSagaIdentifier())
+                                   .setParameter("serializedSaga", serializedSaga)
+                                   .executeUpdate();
+        if (updates == 0) {
+            storeSaga(saga);
+        } else if (useExplicitFlush) {
             entityManager.flush();
         }
     }
@@ -126,7 +133,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
                 entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae").getResultList();
         getAssociationValueMap().clear();
         for (AssociationValueEntry entry : entries) {
-            AssociationValue associationValue = entry.getAssociationValue();
+            AssociationValue associationValue = entry.getAssociationValue(serializer);
             getAssociationValueMap().add(associationValue, entry.getSagaIdentifier());
         }
     }

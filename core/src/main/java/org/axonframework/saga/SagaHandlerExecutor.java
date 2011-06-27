@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,8 +41,8 @@ public interface SagaHandlerExecutor {
      * If the tasks are provided by different threads, implementation is <em>recommended</em> to execute them
      * sequentially.
      *
-     * @param sagaIdentifier The identifier of the saga to execute this task for
-     * @param task           The task to execute
+     * @param saga The saga to execute this task for
+     * @param task The task to execute
      */
-    void scheduleEventProcessingTask(String sagaIdentifier, Runnable task);
+    void scheduleEventProcessingTask(Saga saga, Runnable task);
 }

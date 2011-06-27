@@ -50,6 +50,7 @@ public class JpaSagaRepositoryTest {
 
     @PersistenceContext
     private EntityManager entityManager;
+    private XStreamSagaSerializer serializer;
 
     @Before
     public void setUp() {
@@ -58,6 +59,7 @@ public class JpaSagaRepositoryTest {
         entityManager.createQuery("DELETE FROM AssociationValueEntry");
         repository.initialize();
         repository.setSerializer(new XStreamSagaSerializer());
+        serializer = new XStreamSagaSerializer();
     }
 
     @Rollback
@@ -150,8 +152,8 @@ public class JpaSagaRepositoryTest {
     public void testLoadUncachedSaga_ByAssociationValue() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
-        entityManager.persist(new SagaEntry(saga, new XStreamSagaSerializer()));
-        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value")));
+        entityManager.persist(new SagaEntry(saga, serializer));
+        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value"), serializer));
         entityManager.flush();
         entityManager.clear();
         repository.initialize();
@@ -173,8 +175,8 @@ public class JpaSagaRepositoryTest {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
-        entityManager.persist(new SagaEntry(saga, new XStreamSagaSerializer()));
-        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value")));
+        entityManager.persist(new SagaEntry(saga, serializer));
+        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value"), serializer));
         entityManager.flush();
         entityManager.clear();
         repository.initialize();
@@ -192,6 +194,8 @@ public class JpaSagaRepositoryTest {
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.counter = 1;
         repository.commit(loaded);
+
+        entityManager.clear();
 
         SagaEntry entry = entityManager.find(SagaEntry.class, identifier);
         MyTestSaga actualSaga = (MyTestSaga) entry.getSaga(new XStreamSagaSerializer());

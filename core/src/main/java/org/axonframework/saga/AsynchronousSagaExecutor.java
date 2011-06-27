@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package org.axonframework.saga;
 
 import org.axonframework.eventhandling.AsynchronousExecutionWrapper;
-import org.axonframework.eventhandling.SequencingPolicy;
+import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
+import org.axonframework.eventhandling.TransactionStatus;
 
 import java.util.concurrent.Executor;
 
@@ -30,9 +31,8 @@ import java.util.concurrent.Executor;
  * @since 1.0
  */
 public class AsynchronousSagaExecutor
-        extends AsynchronousExecutionWrapper<AsynchronousSagaExecutor.Task> implements SagaHandlerExecutor {
+        extends AsynchronousExecutionWrapper<Runnable> implements SagaHandlerExecutor {
 
-    private static final Object SEQUENCE_ID = new Object();
 
     /**
      * Initializes an AsynchronousSagaExecutor using the given <code>executor</code> and
@@ -43,64 +43,43 @@ public class AsynchronousSagaExecutor
      * @param executor           The executor that processes the tasks
      */
     public AsynchronousSagaExecutor(Executor executor, TransactionManager transactionManager) {
-        super(executor, transactionManager, new SagaSequencingPolicy());
+        super(executor, new OneEventPerTransaction(transactionManager), new SequentialPolicy());
     }
 
     @Override
     public void scheduleLookupTask(Runnable task) {
-        schedule(new Task(task, SEQUENCE_ID));
+        schedule(task);
     }
 
     @Override
-    public void scheduleEventProcessingTask(String sagaIdentifier, Runnable task) {
-        schedule(new Task(task, sagaIdentifier));
+    public void scheduleEventProcessingTask(Saga saga, Runnable task) {
+        // it is unsafe to schedule Sagas completely concurrently, as association values might not be processed while
+        // new events are arriving. To provide necessary ordering guarantees, all activity runs in a single thread.
+        task.run();
     }
 
     @Override
-    protected void doHandle(Task task) {
-        task.execute();
+    protected void doHandle(Runnable task) {
+        task.run();
     }
 
-    private static class SagaSequencingPolicy implements SequencingPolicy<Task> {
+    private static class OneEventPerTransaction implements TransactionManager {
+        private final TransactionManager delegate;
+
+        public OneEventPerTransaction(
+                TransactionManager transactionManager) {
+            delegate = transactionManager;
+        }
+
         @Override
-        public Object getSequenceIdentifierFor(Task task) {
-            return task.getSequenceId();
-        }
-    }
-
-    /**
-     * Object used internally to represent a task that needs to be scheduled sequentially to some other tasks.
-     */
-    public static class Task {
-        private final Runnable runnable;
-        private final Object sequenceId;
-
-        /**
-         * Initializes a task defined by the given <code>runnable</code> and sequenced using the given
-         * <code>sequenceId</code>.
-         *
-         * @param runnable   The runnable defining the task
-         * @param sequenceId The sequence identifier
-         */
-        public Task(Runnable runnable, Object sequenceId) {
-            this.runnable = runnable;
-            this.sequenceId = sequenceId;
+        public void beforeTransaction(TransactionStatus transactionStatus) {
+            delegate.beforeTransaction(transactionStatus);
+            transactionStatus.setMaxTransactionSize(1);
         }
 
-        /**
-         * Executes the given runnable.
-         */
-        public void execute() {
-            runnable.run();
-        }
-
-        /**
-         * Returns the sequence identifier of this task.
-         *
-         * @return the sequence identifier of this task
-         */
-        public Object getSequenceId() {
-            return sequenceId;
+        @Override
+        public void afterTransaction(TransactionStatus transactionStatus) {
+            delegate.afterTransaction(transactionStatus);
         }
     }
 }

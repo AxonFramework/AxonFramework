@@ -14,23 +14,29 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga;
+package org.axonframework.integrationtests.saga;
+
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEvent;
 
 /**
- * Execution wrapper that executes saga related tasks (lookup and invocation) in the thread that schedules these tasks.
- *
  * @author Allard Buijze
- * @since 1.0
  */
-public class SynchronousSagaExecutionWrapper implements SagaHandlerExecutor {
+public class SagaTriggeringEvent extends DomainEvent {
 
-    @Override
-    public void scheduleLookupTask(Runnable task) {
-        task.run();
+    private static final long serialVersionUID = -3129068088052658674L;
+    private final String message;
+
+    public SagaTriggeringEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier, String message) {
+        super(sequenceNumber, aggregateIdentifier);
+        this.message = message;
     }
 
-    @Override
-    public void scheduleEventProcessingTask(Saga saga, Runnable task) {
-        task.run();
+    public String getMyId() {
+        return getAggregateIdentifier().asString();
+    }
+
+    public String getMessage() {
+        return message;
     }
 }
