@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
+
+    <context:component-scan base-package="org.axonframework.examples.addressbook.rest"/>
+
+    <context:annotation-config/>
+
+    <mvc:annotation-driven/>
+
+    <mvc:default-servlet-handler/>
+
+    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+        <property name="messageConverters">
+            <list>
+                <ref bean="jsonConverter"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="jsonConverter" class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+        <property name="supportedMediaTypes" value="application/json"/>
+    </bean>
+
+    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+        <property name="mediaTypes">
+            <map>
+                <entry value="application/json" key="json"/>
+            </map>
+        </property>
+        <property name="viewResolvers">
+            <list>
+                <bean class="org.springframework.web.servlet.view.BeanNameViewResolver"/>
+            </list>
+        </property>
+        <property name="defaultViews">
+            <list>
+                <bean class="org.springframework.web.servlet.view.json.MappingJacksonJsonView"/>
+            </list>
+        </property>
+    </bean>
+</beans>

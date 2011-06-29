@@ -34,6 +34,7 @@
         <module>web-ui</module>
         <module>vaadin-ui</module>
         <module>flex-ui</module>
+        <module>rest-ui</module>
     </modules>
 
     <dependencyManagement>
