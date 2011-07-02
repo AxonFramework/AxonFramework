@@ -57,7 +57,7 @@ public class SnapshotterBeanDefinitionParserTest {
         assertNotNull("snapshotter not configured properly", snapshotter);
         assertNotNull("inThreadsnapshotter not configured properly", inThreadSnapshotter);
         assertEquals(DirectExecutor.INSTANCE, getExecutorFrom(inThreadSnapshotter));
-        assertNotNull(getTransactionManagerFrom(inThreadSnapshotter));
+        assertNotNull(getTransactionManagerFrom(snapshotter));
     }
 
     private Object getExecutorFrom(Snapshotter snapshotter) throws NoSuchFieldException, IllegalAccessException {
