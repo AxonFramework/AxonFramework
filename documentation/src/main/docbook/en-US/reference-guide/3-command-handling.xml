@@ -147,6 +147,24 @@
                 transaction to the Unit of Work's commit. See <xref
                     linkend="transactional-interceptor"/>.</para>
         </note>
+        <simplesect>
+            <title>UnitOfWork and Exceptions</title>
+            <para>Your command handlers may throw an Exception as a result of command processing. By
+                default, these exceptions will cause the UnifOfWork to roll back all changes. As a
+                result, no Events are stored or published. In some cases, however, you might want to
+                commit the Unif of Work and still notify the dispatcher of the command of an
+                exception through the callback. The <code>SimpleCommandBus</code> allows you to
+                provide a <code>RollbackConfiguration</code>. The <code>RollbackConfiguration</code>
+                instance indicates whether an exception should perform a rollback on the Unit of
+                Work, or a commit. Axon provides two implementation, which should cover most of the
+                cases. </para>
+            <para>The <code>RollbackOnAllExceptionsConfiguration</code>, which is the default, will
+                cause a rollback on any exception (or error). The other is the
+                    <code>RollbackOnUncheckedExceptionConfiguration</code>, which will commit the
+                Unit of Work on unchecked exceptions (those not extending
+                    <code>RuntimeException</code>) while still performing a rollback on Errors and
+                Runtime Exceptions.</para>
+        </simplesect>
     </sect1>
         <sect1>
         <title>Command Handler Interceptors</title>
