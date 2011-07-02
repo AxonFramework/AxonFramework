@@ -33,6 +33,20 @@
         Axon Framework makes a distinction between repositories that save the current state of the
         aggregate (see <xref linkend="standard-repositories"/>), and those that store the events of
         an aggregate (see <xref linkend="event-sourcing-repositories"/>).</para>
+    <para>Note that the Repository interface does not prescribe a <code>delete(identifier)</code>
+        method. Deleting aggregates is done by invoking the (protected) <code>markDeleted()</code>
+        method in an aggreate. This method is protected and not available from outside the
+        aggregate. The motivation for this, is that the aggregate is responsible for maintaining its
+        own state. Deleting an aggregate is a state migration like any other, with the only
+        difference that it is irreversible in many cases. You should create your own meaningful
+        method on your aggregate which sets the aggregate's state to "deleted". This also allows you
+        to register any events that you would like to have published. </para>
+    <para>Repositories should use the <code>isDeleted()</code> method to find out if an aggregate
+        has been marked for deletion. If such an aggregate is then loaded again, the repository
+        should throw an <code>AggregateNotFoundException</code> (or when possible, an
+            <code>AggregateDeletedException</code>). Axon's standard repository implementations will
+        delete an aggregate from the repository, while event sourcing repositories will append a
+        special <code>AggregateDeletedEvent</code> to the event store.</para>
         <sect1 xml:id="standard-repositories">
             <title>Standard repositories</title>
         <para>Standard repositories store the actual state of an Aggregate. Upon each change, the
@@ -41,10 +55,6 @@
             depending on the type of application you are creating, be the simplest solution. If that
             is the case, Axon provides some building blocks that help you implement such a
             repository.</para>
-        <para>Note that the Repository interface does not prescribe a
-                <code>delete(identifier)</code> method. This is because not all types of
-            repositories use that functionality. Of course, nothing witholds you from adding it to
-            your repository implementation.</para>
             <simplesect>
                 <title><code>AbstractRepository</code></title>
             <para>The most basic implementation of the repository is AbstractRepository. It takes
