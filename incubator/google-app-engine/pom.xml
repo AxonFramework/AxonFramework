@@ -32,7 +32,7 @@
     <description>The Google App Engine integration of Axon.</description>
 
     <properties>
-        <axon.version>${parent.version}</axon.version>
+        <axon.version>${project.parent.version}</axon.version>
         <gae.version>1.5.0.1</gae.version>
     </properties>
 

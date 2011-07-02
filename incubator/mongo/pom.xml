@@ -28,11 +28,11 @@
     <artifactId>axon-mongo</artifactId>
     <packaging>jar</packaging>
 
-    <name>Axon - Mongo integration</name>
+    <name>Axon - MongoDB integration</name>
     <description>The mongo integration of Axon. This project contains the mongo event store.</description>
 
     <properties>
-        <axon.version>${parent.version}</axon.version>
+        <axon.version>${project.parent.version}</axon.version>
     </properties>
 
     <dependencies>
