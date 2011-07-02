@@ -36,10 +36,6 @@ import org.w3c.dom.Element;
 public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
     /**
-     * The entity manager attribute.
-     */
-    private static final String ENTITY_MANAGER_ATTRIBUTE = "entity-manager";
-    /**
      * the event serializer attribute.
      */
     private static final String EVENT_SERIALIZER_ATTRIBUTE = "event-serializer";
@@ -62,9 +58,6 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {
             builder.addConstructorArgReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
-        }
-        if (element.hasAttribute(ENTITY_MANAGER_ATTRIBUTE)) {
-            builder.addPropertyReference("entityManager", element.getAttribute(ENTITY_MANAGER_ATTRIBUTE));
         }
         if (element.hasAttribute(DATA_SOURCE_ATTRIBUTE)) {
             builder.addPropertyReference("dataSource", element.getAttribute(DATA_SOURCE_ATTRIBUTE));

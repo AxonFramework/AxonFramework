@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ public class JpaEventStoreBeanDefinitionParserTest {
         BeanDefinition definition = beanFactory.getBeanDefinition("eventStore");
         assertNotNull("BeanDefinition not created", definition);
         assertEquals("Wrong bean class", JpaEventStore.class.getName(), definition.getBeanClassName());
-        assertNotNull("Entity manager not defined", definition.getPropertyValues().getPropertyValue("entityManager"));
         ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, EventSerializer.class);
         assertNotNull("Event serializer reference is wrong", reference);
         RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();

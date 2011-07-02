@@ -220,17 +220,6 @@
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="eventStoreType">
-                    <xsd:attribute name="entity-manager" use="optional" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>Reference to an entity manager to use with this event store.
-                            </xsd:documentation>
-                            <xsd:appinfo>
-                                <tool:annotation kind="ref">
-                                    <tool:expected-type type="javax.persistence.EntityManager"/>
-                                </tool:annotation>
-                            </xsd:appinfo>
-                        </xsd:annotation>
-                    </xsd:attribute>
                     <xsd:attribute name="data-source" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Data Source that provides access to the backing database. This data
@@ -509,6 +498,59 @@
                                     <tool:expected-type type="java.util.concurrent.Executor"/>
                                 </tool:annotation>
                             </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- == jpa saga repository =========== -->
+    <!-- ================================== -->
+
+    <xsd:element name="jpa-saga-repository">
+        <xsd:annotation>
+            <xsd:documentation>Definition of a Saga Repository that uses JPA to persist Sagas and Association Values.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the resource injector that provides the resources to Saga
+                                instances. Defaults to a resource injector that uses autowiring on Saga instances.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="saga-serializer" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the serializer that converts Sagas and Association Values
+                                into bytes and vice-versa. Defaults to an XStream based Serializer.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.repository.SagaSerializer"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="use-explicit-flush" use="optional" type="xsd:boolean" default="true">
+                        <xsd:annotation>
+                            <xsd:documentation>Indicates whether the repository should perform an explicit
+                                EntityManager.flush() when changes are made. Defaults to true.
+                            </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>
