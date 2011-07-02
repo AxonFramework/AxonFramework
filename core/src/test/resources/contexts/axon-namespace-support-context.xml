@@ -38,8 +38,8 @@
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
 
-    <axon:saga-manager id="asyncTransactionalSagaManager" saga-factory="sagaFactory" executor="taskExecutor"
-                       transaction-manager="mockTransactionManager">
+    <axon:saga-manager id="asyncTransactionalSagaManager" saga-repository="allDefinedSagaRepository"
+                       saga-factory="sagaFactory" executor="taskExecutor" transaction-manager="mockTransactionManager">
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
 
