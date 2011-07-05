@@ -212,13 +212,14 @@
         <sect2>
             <title>Infrastructure requirements</title>
             <para>Axon Framework doesn't impose many requirements on the infrastructure. It has been
-                built and tested against Java 6.</para>
+                built and tested against Java 6, making that more or less the only
+                requirement.</para>
             <para>Since Axon doesn't create any connections or threads by itself, it is safe to run
                 on an Application Server. Axon abstracts all asynchronous behavior by using
                     <code>Executor</code>s, meaning that you can easily pass a container managed
-                Thread Pool, for example. If you don't use an Application Server, you can use the
-                    <code>Executors</code> class or the Spring Framework to create and configure
-                Thread Pools or Thread Factories.</para>
+                Thread Pool, for example. If you don't use an Application Server (e.g. Tomcat, Jetty
+                or a stand-alone app), you can use the <code>Executors</code> class or the Spring
+                Framework to create and configure Thread Pools.</para>
         </sect2>
     </sect1>
     <sect1 xml:id="contributing">
