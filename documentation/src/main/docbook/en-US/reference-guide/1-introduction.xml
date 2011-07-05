@@ -195,18 +195,30 @@
                 <title>Spring Integration</title>
                 <para>The Axon Framework provides connectors that allow you to publish events on a
                     Spring Integration channel. These connectors require Spring Integration on the
-                    classpath. You need the following maven dependencies to use these connectors. </para>
+                    classpath. You need the following maven dependencies to use these connectors.
+                    Axon was compiled against Spring Integration 2.</para>
                 <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-integration</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.integration</groupId>
     <artifactId>spring-integration-core</artifactId>
-    <version>2.0.1.RELEASE</version>
+    <version><!-- Add version here --></version>
 </dependency>]]></programlisting>
             </simplesect>
+        </sect2>
+        <sect2>
+            <title>Infrastructure requirements</title>
+            <para>Axon Framework doesn't impose many requirements on the infrastructure. It has been
+                built and tested against Java 6.</para>
+            <para>Since Axon doesn't create any connections or threads by itself, it is safe to run
+                on an Application Server. Axon abstracts all asynchronous behavior by using
+                    <code>Executor</code>s, meaning that you can easily pass a container managed
+                Thread Pool, for example. If you don't use an Application Server, you can use the
+                    <code>Executors</code> class or the Spring Framework to create and configure
+                Thread Pools or Thread Factories.</para>
         </sect2>
     </sect1>
     <sect1 xml:id="contributing">
