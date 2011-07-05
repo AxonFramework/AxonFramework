@@ -20,12 +20,12 @@
     <parent>
         <groupId>org.axonframework.samples</groupId>
         <artifactId>axon-addressbook</artifactId>
-        <version>1.1</version>
+        <version>1.2-SNAPSHOT</version>
     </parent>
 
     <groupId>org.axonframework.samples</groupId>
     <artifactId>axon-addressbook-vaadinui</artifactId>
-    <version>1.1</version>
+    <version>1.2-SNAPSHOT</version>
     <name>Axon Address Book Sample - Vaadin ui</name>
     <packaging>war</packaging>
 
