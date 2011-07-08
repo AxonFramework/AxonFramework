@@ -12,7 +12,8 @@
         <param-value>
             classpath:META-INF/spring/application-context.xml,
             classpath:META-INF/spring/database-context.xml,
-            classpath:META-INF/spring/datainit-context.xml
+            classpath:META-INF/spring/datainit-context.xml,
+            classpath:META-INF/spring/listener-context.xml
         </param-value>
     </context-param>
 

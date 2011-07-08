@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    <!--
+        Registration of all components related to listening to contact and address related events. We scan the package
+         for all annotated classes like the Listeners and the RedisPublisher. We also define the jedisPool, a Redis
+         connection pool as provided by Jedis.
+    -->
+    <context:component-scan base-package="org.axonframework.examples.addressbook.rest.listener"/>
+
+    <bean id="jedisPool" class="redis.clients.jedis.JedisPool" destroy-method="destroy">
+        <constructor-arg index="0">
+            <bean class="redis.clients.jedis.JedisPoolConfig"/>
+        </constructor-arg>
+        <constructor-arg index="1" type="java.lang.String" value="localhost"/>
+    </bean>
+</beans>
