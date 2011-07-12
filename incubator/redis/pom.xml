@@ -28,12 +28,19 @@
 
     <groupId>org.axonframework.incubator</groupId>
     <artifactId>axon-redis</artifactId>
+    <name>Redis support for Axon</name>
+    <description>Modules containing classes in support of integration with the Redis Key-Value store.</description>
 
     <properties>
         <axon.version>${project.parent.version}</axon.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>axon-core</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>

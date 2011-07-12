@@ -25,5 +25,10 @@ public interface RedisConnectionProvider {
 
     Jedis newConnection();
 
+    /**
+     * TODO: This method should be removed in favor of a truly abstracted ConnectionFactory.
+     *
+     * @param toClose
+     */
     void closeConnection(Jedis toClose);
 }
