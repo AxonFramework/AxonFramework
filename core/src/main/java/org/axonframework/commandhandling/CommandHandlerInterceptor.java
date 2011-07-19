@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,15 +29,15 @@ import org.axonframework.unitofwork.UnitOfWork;
 public interface CommandHandlerInterceptor {
 
     /**
-     * The handle method is invoked each time a command is dispatched through the event bus that the
+     * The handle method is invoked each time a command is dispatched through the command bus that the
      * CommandHandlerInterceptor is declared on. The incoming command and contextual information can be found in the
-     * given <code>commandContext</code>.
+     * given <code>unitOfWork</code>.
      * <p/>
      * The interceptor is responsible for the continuation of the dispatch process by invoking the {@link
      * org.axonframework.commandhandling.InterceptorChain#proceed(Object)} method on the given
      * <code>interceptorChain</code>.
      * <p/>
-     * Any information gathered by interceptors may be attached to the command context. This information is made
+     * Any information gathered by interceptors may be attached to the unitOfWork. This information is made
      * available to the CommandCallback provided by the dispatching component.
      * <p/>
      * Interceptors are highly recommended not to change the type of the command handling result, as the dispatching
@@ -51,5 +51,4 @@ public interface CommandHandlerInterceptor {
      * @throws Throwable any exception that occurs while handling the command
      */
     Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain) throws Throwable;
-
 }
