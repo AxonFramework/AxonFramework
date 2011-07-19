@@ -81,7 +81,7 @@ public abstract class CurrentUnitOfWork {
      *
      * @param unitOfWork The UnitOfWork to bind to the current thread.
      */
-    static void set(UnitOfWork unitOfWork) {
+    public static void set(UnitOfWork unitOfWork) {
         if (CURRENT.get() == null) {
             CURRENT.set(new LinkedList<UnitOfWork>());
         }
@@ -96,7 +96,7 @@ public abstract class CurrentUnitOfWork {
      * @throws IllegalStateException when the given UnitOfWork was not the current active UnitOfWork. This exception
      *                               indicates a potentially wrong nesting of Units Of Work.
      */
-    static void clear(UnitOfWork unitOfWork) {
+    public static void clear(UnitOfWork unitOfWork) {
         if (isStarted() && CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
             if (CURRENT.get().isEmpty()) {
