@@ -38,4 +38,15 @@ public class AggregateDeletedException extends AggregateNotFoundException {
     public AggregateDeletedException(AggregateIdentifier aggregateIdentifier, String message) {
         super(aggregateIdentifier, message);
     }
+
+    /**
+     * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
+     * a default <code>message</code>.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate that has been deleted
+     */
+    public AggregateDeletedException(AggregateIdentifier aggregateIdentifier) {
+        this(aggregateIdentifier,
+             String.format("Aggregate with identifier [%s] not found. It has been deleted.", aggregateIdentifier));
+    }
 }

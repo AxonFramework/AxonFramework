@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.axonframework.domain.Event;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -98,6 +99,29 @@ public class CachingEventSourcingRepositoryTest {
         assertNotSame(aggregate1, reloadedAggregate1);
         assertEquals(aggregate1.getVersion(),
                      reloadedAggregate1.getVersion());
+    }
+
+    @Test
+    public void testLoadDeletedAggregate() {
+        DefaultUnitOfWork.startAndGet();
+        StubAggregate aggregate1 = new StubAggregate();
+        testSubject.add(aggregate1);
+        CurrentUnitOfWork.commit();
+
+        AggregateIdentifier identifier = aggregate1.getIdentifier();
+
+        DefaultUnitOfWork.startAndGet();
+        aggregate1.delete();
+        CurrentUnitOfWork.commit();
+
+        DefaultUnitOfWork.startAndGet();
+        try {
+            testSubject.load(identifier);
+            fail("Expected AggregateDeletedException");
+        } catch (AggregateDeletedException e) {
+            assertTrue(e.getMessage().contains(identifier.toString()));
+        }
+        CurrentUnitOfWork.commit();
     }
 
     private static class StubCachingEventSourcingRepository extends CachingEventSourcingRepository<StubAggregate> {

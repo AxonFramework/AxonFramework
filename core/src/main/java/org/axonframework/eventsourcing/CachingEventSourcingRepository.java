@@ -92,6 +92,8 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
         T aggregate = (T) cache.get(aggregateIdentifier);
         if (aggregate == null) {
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
+        } else if (aggregate.isDeleted()) {
+            throw new AggregateDeletedException(aggregateIdentifier);
         }
         CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
         return aggregate;

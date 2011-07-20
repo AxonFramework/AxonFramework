@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,5 +49,9 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     public DomainEvent createSnapshotEvent() {
         return new StubDomainEvent(getIdentifier(), 5);
+    }
+
+    public void delete() {
+        apply(new StubAggregateDeletedEvent());
     }
 }
