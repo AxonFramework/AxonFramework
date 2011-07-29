@@ -16,19 +16,22 @@
 
 package org.axonframework.saga.repository.jpa;
 
+import org.axonframework.domain.Event;
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.NoSuchSagaException;
+import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaStorageException;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.XStreamSagaSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import javax.persistence.EntityManager;
@@ -62,7 +65,39 @@ public class JpaSagaRepositoryTest {
         serializer = new XStreamSagaSerializer();
     }
 
-    @Rollback
+    @Test
+    public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaFound() {
+        MyTestSaga testSaga = new MyTestSaga("test1");
+        MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
+        repository.add(testSaga);
+        repository.add(otherTestSaga);
+        testSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        entityManager.flush();
+        entityManager.clear();
+        Set<MyTestSaga> actual = repository.find(MyTestSaga.class, Collections.singleton(new AssociationValue("key",
+                                                                                                              "value")));
+        assertEquals(1, actual.size());
+        assertEquals(MyTestSaga.class, actual.iterator().next().getClass());
+    }
+
+    @Test
+    public void testLoadSagaOfDifferentTypesWithSameAssociationValue_NoSagaFound() {
+        MyTestSaga testSaga = new MyTestSaga("test1");
+        MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
+        repository.add(testSaga);
+        repository.add(otherTestSaga);
+        testSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        entityManager.flush();
+        entityManager.clear();
+        Set<InexistentSaga> actual = repository.find(InexistentSaga.class, Collections.singleton(new AssociationValue(
+                "key",
+                "value")));
+        assertTrue("Didn't expect any sagas", actual.isEmpty());
+    }
+
+
     @Test
     public void testAddAndLoadSaga_ByIdentifier() {
         String identifier = UUID.randomUUID().toString();
@@ -74,7 +109,6 @@ public class JpaSagaRepositoryTest {
         assertNotNull(entityManager.find(SagaEntry.class, identifier));
     }
 
-    @Rollback
     @Test
     public void testAddAndLoadSaga_ByAssociationValue() {
         String identifier = UUID.randomUUID().toString();
@@ -89,7 +123,6 @@ public class JpaSagaRepositoryTest {
         assertNotNull(entityManager.find(SagaEntry.class, identifier));
     }
 
-    @Rollback
     @Test
     public void testAddAndLoadSaga_MultipleHitsByAssociationValue() {
         String identifier1 = UUID.randomUUID().toString();
@@ -243,6 +276,28 @@ public class JpaSagaRepositoryTest {
 
         public void removeAssociationValue(String key, String value) {
             removeAssociationWith(key, value);
+        }
+    }
+
+    private class InexistentSaga implements Saga {
+        @Override
+        public String getSagaIdentifier() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public AssociationValues getAssociationValues() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public void handle(Event event) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public boolean isActive() {
+            throw new UnsupportedOperationException("Not implemented yet");
         }
     }
 }

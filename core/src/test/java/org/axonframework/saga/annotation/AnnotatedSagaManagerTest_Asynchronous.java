@@ -62,11 +62,11 @@ public class AnnotatedSagaManagerTest_Asynchronous {
         manager = new AnnotatedSagaManager(sageRepository, sagaFactory, eventBus, executor, transactionManager,
                                            MyTestSaga.class);
         manager.subscribe();
-        endingLatch = new CountDownLatch(2);
     }
 
     @Test
     public void testDispatchEvent_NormalEventLifecycle() throws InterruptedException {
+        endingLatch = new CountDownLatch(2);
         final AtomicInteger counter = new AtomicInteger(0);
         doAnswer(new Answer() {
             @Override
@@ -83,10 +83,35 @@ public class AnnotatedSagaManagerTest_Asynchronous {
         endingLatch.await();
         executor.shutdown();
         executor.awaitTermination(1, TimeUnit.SECONDS);
-        // expect 8 invocations: 3x for lookup, 1x for StartingEvent, 2x for ForceStartEvent, 2x for EndingEvent
+
         assertEquals(3, counter.get());
-        verify(transactionManager, times(3)).afterTransaction(isA(TransactionStatus.class));
-        verify(transactionManager, times(3)).beforeTransaction(isA(TransactionStatus.class));
+        verify(transactionManager, atMost(3)).afterTransaction(isA(TransactionStatus.class));
+        verify(transactionManager, atMost(3)).beforeTransaction(isA(TransactionStatus.class));
+    }
+
+    @Test
+    public void testDispatchEvent_SagaShouldNotBeStartedTwice() throws InterruptedException {
+        endingLatch = new CountDownLatch(1);
+        final AtomicInteger counter = new AtomicInteger(0);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                TransactionStatus status = (TransactionStatus) invocation.getArguments()[0];
+                counter.getAndAdd(status.getEventsProcessedInTransaction());
+                return Void.TYPE;
+            }
+        }).when(transactionManager).afterTransaction(isA(TransactionStatus.class));
+        eventBus.publish(new StartingEvent("saga1"));
+        eventBus.publish(new StartingEvent("saga1"));
+        eventBus.publish(new EndingEvent("saga1"));
+
+        endingLatch.await();
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.SECONDS);
+
+        assertEquals(3, counter.get());
+        verify(transactionManager, atMost(3)).afterTransaction(isA(TransactionStatus.class));
+        verify(transactionManager, atMost(3)).beforeTransaction(isA(TransactionStatus.class));
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
