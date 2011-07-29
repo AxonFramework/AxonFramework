@@ -52,6 +52,11 @@ public class RedisEventStoreTest {
                 toClose.disconnect();
             }
         });
+        try {
+            jedis.ping();
+        } catch (Exception e) {
+            Assume.assumeNoException(e);
+        }
     }
 
     @Test
