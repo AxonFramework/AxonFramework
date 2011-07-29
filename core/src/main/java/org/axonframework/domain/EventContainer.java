@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,11 +20,12 @@ import org.axonframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
- * Container for events related to a single aggregate. All events added to this container will automatically be assigned
+ * Container for events related to a single aggregate. All events added to this container will automatically be
+ * assigned
  * the aggregate identifier and a sequence number.
  *
  * @author Allard Buijze
@@ -34,9 +35,9 @@ import java.util.LinkedList;
  */
 class EventContainer implements Serializable {
 
-    private static final long serialVersionUID = -3981639335939587822L;
+    private static final long serialVersionUID = -39816393359395878L;
 
-    private final Deque<DomainEvent> events = new LinkedList<DomainEvent>();
+    private final LinkedList<DomainEvent> events = new LinkedList<DomainEvent>();
     private final AggregateIdentifier aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
 
@@ -88,7 +89,7 @@ class EventContainer implements Serializable {
      * @return a DomainEventStream providing access to the events in this container
      */
     public DomainEventStream getEventStream() {
-        return new SimpleDomainEventStream(new ArrayList<DomainEvent>(events));
+        return new SimpleDomainEventStream(events);
     }
 
     /**
@@ -155,5 +156,9 @@ class EventContainer implements Serializable {
             return 0;
         }
         return lastSequenceNumber + 1;
+    }
+
+    public List<DomainEvent> getEventList() {
+        return new ArrayList<DomainEvent>(events);
     }
 }

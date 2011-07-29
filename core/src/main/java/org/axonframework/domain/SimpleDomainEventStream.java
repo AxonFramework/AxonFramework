@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,10 @@
 
 package org.axonframework.domain;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Creates a DomainEventStream that streams the contents of a list.
@@ -27,8 +29,9 @@ import java.util.Iterator;
  */
 public class SimpleDomainEventStream implements DomainEventStream {
 
-    private final Iterator<? extends DomainEvent> iterator;
-    private volatile DomainEvent peeked;
+    private Iterator<? extends DomainEvent> iterator;
+    private DomainEvent peeked;
+    private ArrayList<DomainEvent> backingList;
 
     /**
      * Initialize the event stream using the given List of DomainEvent and aggregate identifier.
@@ -36,8 +39,8 @@ public class SimpleDomainEventStream implements DomainEventStream {
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if the given list is empty
      */
-    public SimpleDomainEventStream(Iterable<? extends DomainEvent> events) {
-        this.iterator = events.iterator();
+    public SimpleDomainEventStream(List<? extends DomainEvent> events) {
+        this.backingList = new ArrayList<DomainEvent>(events);
     }
 
     /**
@@ -57,6 +60,9 @@ public class SimpleDomainEventStream implements DomainEventStream {
      */
     @Override
     public boolean hasNext() {
+        if (iterator == null) {
+            iterator = backingList.iterator();
+        }
         return peeked != null || iterator.hasNext();
     }
 
@@ -68,6 +74,9 @@ public class SimpleDomainEventStream implements DomainEventStream {
      */
     @Override
     public DomainEvent next() {
+        if (iterator == null) {
+            iterator = backingList.iterator();
+        }
         if (peeked != null) {
             DomainEvent returnValue = peeked;
             peeked = null;
@@ -87,7 +96,18 @@ public class SimpleDomainEventStream implements DomainEventStream {
         if (peeked != null) {
             return peeked;
         }
+        if (iterator == null) {
+            return backingList.get(0);
+        }
         peeked = iterator.next();
         return peeked;
+    }
+
+    public List<DomainEvent> getBackingList() {
+        return backingList;
+    }
+
+    public void reset() {
+        iterator = backingList.iterator();
     }
 }

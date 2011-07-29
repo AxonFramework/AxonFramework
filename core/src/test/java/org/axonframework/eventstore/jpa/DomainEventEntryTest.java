@@ -16,14 +16,13 @@
 
 package org.axonframework.eventstore.jpa;
 
+import com.eaio.uuid.UUID;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventSerializer;
 import org.joda.time.DateTime;
 import org.junit.*;
-
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -49,7 +48,7 @@ public class DomainEventEntryTest {
     public void testDomainEventEntry_WrapEventsCorrectly() {
         AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         DateTime timestamp = new DateTime();
-        UUID eventIdentifier = UUID.randomUUID();
+        UUID eventIdentifier = new UUID();
 
         when(mockDomainEvent.getAggregateIdentifier()).thenReturn(aggregateIdentifier);
         when(mockDomainEvent.getSequenceNumber()).thenReturn(2L);
