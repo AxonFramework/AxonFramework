@@ -97,6 +97,22 @@ public class JpaSagaRepositoryTest {
         assertTrue("Didn't expect any sagas", actual.isEmpty());
     }
 
+    @Test
+    public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaDeleted() {
+        MyTestSaga testSaga = new MyTestSaga("test1");
+        MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
+        repository.add(testSaga);
+        repository.add(otherTestSaga);
+        testSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        testSaga.end();
+        repository.commit(testSaga);
+        entityManager.flush();
+        entityManager.clear();
+        Set<MyTestSaga> actual = repository.find(MyTestSaga.class,
+                                                 Collections.singleton(new AssociationValue("key", "value")));
+        assertTrue("Didn't expect any sagas", actual.isEmpty());
+    }
 
     @Test
     public void testAddAndLoadSaga_ByIdentifier() {
@@ -236,6 +252,20 @@ public class JpaSagaRepositoryTest {
         assertEquals(1, actualSaga.counter);
     }
 
+    @Test
+    public void testEndSaga() {
+        String identifier = UUID.randomUUID().toString();
+        MyTestSaga saga = new MyTestSaga(identifier);
+        entityManager.persist(new SagaEntry(saga, new XStreamSagaSerializer()));
+        MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
+        loaded.end();
+        repository.commit(loaded);
+
+        entityManager.clear();
+
+        assertNull(entityManager.find(SagaEntry.class, identifier));
+    }
+
     @Test(expected = SagaStorageException.class)
     public void testStoreAssociationValue_NotSerializable() {
         String identifier = UUID.randomUUID().toString();
@@ -259,6 +289,11 @@ public class JpaSagaRepositoryTest {
 
         public void removeAssociationValue(String key, String value) {
             removeAssociationWith(key, value);
+        }
+
+        @Override
+        public void end() {
+            super.end();
         }
     }
 

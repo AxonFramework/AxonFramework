@@ -55,13 +55,17 @@ public interface SagaRepository {
      * @param <T>            The expected type of Saga
      * @return The Saga instance, or <code>null</code> if the Saga is not of the given <code>type</code>
      *
-     * @throws NoSuchSagaException if no Saga with given identifier can be found
+     * @throws NoSuchSagaException if no Saga with given identifier can be found (at all)
      */
     <T extends Saga> T load(Class<T> type, String sagaIdentifier) throws NoSuchSagaException;
 
     /**
      * Commits the changes made to the Saga instance. At this point, the repository may release any resources kept for
-     * this saga.
+     * this saga. If the committed saga is marked inActive ({@link org.axonframework.saga.Saga#isActive()} returns
+     * {@code false}), the repository should delete the saga from underlying storage and remove all stored association
+     * values associated with that Saga.
+     * <p/>
+     * Implementations *may* (temporary) return a cached version of the Saga, which is marked inactive.
      *
      * @param saga The Saga instance to commit
      */

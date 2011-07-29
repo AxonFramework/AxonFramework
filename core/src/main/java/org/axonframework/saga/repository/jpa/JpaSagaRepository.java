@@ -100,6 +100,17 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
+    protected void deleteSaga(Saga saga) {
+        entityManager.flush();
+        entityManager.createQuery("DELETE FROM SagaEntry se WHERE se.sagaId = :sagaId")
+                     .setParameter("sagaId", saga.getSagaIdentifier())
+                     .executeUpdate();
+        entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
+                     .setParameter("sagaId", saga.getSagaIdentifier())
+                     .executeUpdate();
+    }
+
+    @Override
     protected void updateSaga(Saga saga) {
         byte[] serializedSaga = serializer.serialize(saga);
         int updates = entityManager.createQuery(

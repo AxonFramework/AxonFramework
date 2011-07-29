@@ -109,8 +109,23 @@ public abstract class AbstractSagaRepository implements SagaRepository {
 
     @Override
     public void commit(Saga saga) {
-        updateSaga(saga);
+        if (!saga.isActive()) {
+            for (AssociationValue associationValue : saga.getAssociationValues()) {
+                associationValueMap.remove(associationValue, saga.getSagaIdentifier());
+            }
+            deleteSaga(saga);
+        } else {
+            updateSaga(saga);
+        }
     }
+
+    /**
+     * Remove the given saga as well as all known association values pointing to it from the repository. If no such
+     * saga exists, nothing happens.
+     *
+     * @param saga The saga instance to remove from the repository
+     */
+    protected abstract void deleteSaga(Saga saga);
 
     /**
      * Loads a known Saga instance by its unique identifier. Implementations are encouraged, but not required to return
