@@ -81,6 +81,15 @@ public abstract class AbstractHandlerInspector {
     }
 
     /**
+     * Returns the list of handlers found on target type.
+     *
+     * @return the list of handlers found on target type
+     */
+    public List<Handler> getHandlers() {
+        return handlers;
+    }
+
+    /**
      * Returns the targetType on which handler methods are invoked.
      *
      * @return the targetType on which handler methods are invoked
