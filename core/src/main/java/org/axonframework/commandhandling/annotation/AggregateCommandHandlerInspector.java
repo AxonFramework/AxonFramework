@@ -27,6 +27,7 @@ import java.util.List;
  * Handler inspector that finds annotated constructors and methods on a given aggregate type and provides handlers for
  * those methods.
  *
+ * @param <T> the type of aggregate inspected by this class
  * @author Allard Buijze
  * @since 1.2
  */

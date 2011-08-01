@@ -25,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * Command Handler that creates a new aggregate instance by invoking that aggregate's constructor.
  *
+ * @param <T> the type of aggregate this handler handles commands for
  * @author Allard Buijze
  * @since 1.2
  */

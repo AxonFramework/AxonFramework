@@ -35,6 +35,7 @@ import java.util.Map;
  * needs to be targeted by the command (see {@link org.axonframework.domain.AggregateIdentifier}), or on the
  * constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
  *
+ * @param <T> the type of aggregate this handler handles commands for
  * @author Allard Buijze
  * @since 1.2
  */
