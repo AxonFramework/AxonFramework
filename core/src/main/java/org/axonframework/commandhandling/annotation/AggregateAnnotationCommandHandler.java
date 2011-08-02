@@ -28,6 +28,8 @@ import org.axonframework.util.Subscribable;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Command handler that handles commands based on {@link org.axonframework.commandhandling.annotation.CommandHandler}
@@ -46,7 +48,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     private final Repository<T> repository;
 
     private final Map<Class, CommandHandler> registeredCommandHandlers = new HashMap<Class, CommandHandler>();
-    private final CommandTargetResolver aggregateIdentifierResolver;
+    private final CommandTargetResolver commandTargetResolver;
 
     /**
      * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, to be
@@ -73,18 +75,20 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
                                              CommandTargetResolver commandTargetResolver) {
         this.repository = repository;
         this.commandBus = commandBus;
-        this.aggregateIdentifierResolver = commandTargetResolver;
+        this.commandTargetResolver = commandTargetResolver;
         this.inspector = new AggregateCommandHandlerInspector<T>(aggregateType);
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
+    @PreDestroy
     public synchronized void unsubscribe() {
         for (Map.Entry<Class, CommandHandler> handlerEntry : registeredCommandHandlers.entrySet()) {
             commandBus.unsubscribe(handlerEntry.getKey(), handlerEntry.getValue());
         }
     }
 
+    @PostConstruct
     @Override
     public synchronized void subscribe() {
         for (final Handler commandHandler : inspector.getHandlers()) {
@@ -105,7 +109,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     }
 
     private T loadAggregate(Object command) {
-        VersionedAggregateIdentifier iv = aggregateIdentifierResolver.resolveTarget(command);
+        VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
         return repository.load(iv.getIdentifier(), iv.getVersion());
     }
 

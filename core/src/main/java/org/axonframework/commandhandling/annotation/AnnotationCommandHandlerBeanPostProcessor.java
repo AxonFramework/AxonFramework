@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.util.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 
@@ -64,15 +65,15 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
             Map<String, CommandBus> beans = getApplicationContext().getBeansOfType(CommandBus.class);
             if (beans.size() != 1) {
                 throw new IllegalStateException("If no specific CommandBus is provided, the application context must "
-                        + "contain exactly one bean of type CommandBus. The current application context has: "
-                        + beans.size());
+                                                        + "contain exactly one bean of type CommandBus. The current application context has: "
+                                                        + beans.size());
             }
             this.commandBus = beans.entrySet().iterator().next().getValue();
         }
     }
 
     private boolean isNotCommandHandlerSubclass(Class<?> beanClass) {
-        return !CommandHandler.class.isAssignableFrom(beanClass);
+        return !CommandHandler.class.isAssignableFrom(beanClass) && !AggregateRoot.class.isAssignableFrom(beanClass);
     }
 
     private boolean hasCommandHandlerMethod(Class<?> beanClass) {

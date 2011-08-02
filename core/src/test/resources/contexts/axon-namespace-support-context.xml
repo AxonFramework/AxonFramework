@@ -19,8 +19,10 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:axon="http://www.axonframework.org/schema/core"
        xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
-       xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd
-                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+       xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-1.2.xsd
+                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
 
     <context:annotation-config/>
     <tx:annotation-driven transaction-manager="transactionManager"/>
@@ -43,13 +45,36 @@
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
 
+    <axon:aggregate-command-handler id="aggregateCommandHandlerWithoutTargetResolver"
+                                    aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"
+                                    repository="testRepository"
+                                    command-bus="mockCommandBus1"/>
+
+    <axon:aggregate-command-handler id="aggregateCommandHandlerWithTargetResolver"
+                                    aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"
+                                    repository="testRepository"
+                                    command-bus="mockCommandBus2"
+                                    command-target-resolver="commandTargetResolver"/>
+
     <axon:jpa-saga-repository id="allDefinedSagaRepository" resource-injector="mockResourceInjector"
                               use-explicit-flush="false" saga-serializer="sagaSerializer"/>
 
     <bean id="sagaSerializer" class="org.axonframework.saga.repository.XStreamSagaSerializer"/>
 
+    <bean id="commandTargetResolver" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.commandhandling.CommandTargetResolver"/>
+    </bean>
+
     <bean id="sagaFactory" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.saga.SagaFactory"/>
+    </bean>
+
+    <bean id="mockCommandBus1" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.commandhandling.CommandBus"/>
+    </bean>
+
+    <bean id="mockCommandBus2" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.commandhandling.CommandBus"/>
     </bean>
 
     <bean id="mockResourceInjector" class="org.axonframework.testutils.MockitoMockFactoryBean">
