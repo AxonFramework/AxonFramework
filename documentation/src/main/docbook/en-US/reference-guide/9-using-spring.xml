@@ -445,7 +445,7 @@
 
 &lt;!-- or, when using the namespace -->
 
-&lt;axon:snapshotter id="snapshotter" event-store="eventStore" executor=taskExecutor"/>
+&lt;axon:snapshotter id="snapshotter" event-store="eventStore" executor="taskExecutor"/>
 
 &lt;!-- the task executor attribute is optional. When used you can define (for example) a thread pool to perform the snapshotting -->
 &lt;bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
