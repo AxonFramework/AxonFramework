@@ -506,7 +506,7 @@
         </sect2>
         <sect2>
             <title>Pruning Snapshot Events</title>
-            <para>Onec a snapshot event is written, it prevents older events and snapshot events
+            <para>Once a snapshot event is written, it prevents older events and snapshot events
                 from being read. Domain Events are still used in case a snapshot event becomes
                 obsolete due to changes in the structure of an aggregate. The older snapshot events
                 are hardly ever needed. <code>SnapshotEventStore</code> implementation may choose to
