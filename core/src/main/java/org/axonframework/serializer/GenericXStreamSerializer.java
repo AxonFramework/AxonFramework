@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -104,11 +104,14 @@ public class GenericXStreamSerializer {
         xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
 
         xStream.addDefaultImplementation(StringAggregateIdentifier.class, AggregateIdentifier.class);
-        xStream.aliasType("aggregate-id", AggregateIdentifier.class);
+        xStream.alias("uuid-id", UUIDAggregateIdentifier.class);
+        xStream.alias("aggregate-id", StringAggregateIdentifier.class);
+        xStream.alias("string-id", StringAggregateIdentifier.class);
 
-        xStream.aliasType("localDateTime", DateTime.class);
-        xStream.aliasType("dateTime", DateTime.class);
-        xStream.aliasType("uuid", UUID.class);
+        // for backward compatibility
+        xStream.alias("localDateTime", DateTime.class);
+        xStream.alias("dateTime", DateTime.class);
+        xStream.alias("uuid", UUID.class);
     }
 
     /**
