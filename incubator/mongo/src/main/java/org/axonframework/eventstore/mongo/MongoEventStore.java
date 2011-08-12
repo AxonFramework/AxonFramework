@@ -16,20 +16,28 @@
 
 package org.axonframework.eventstore.mongo;
 
-import com.mongodb.*;
+import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.Mongo;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventstore.*;
+import org.axonframework.eventstore.EventSerializer;
+import org.axonframework.eventstore.EventStoreManagement;
+import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.eventstore.XStreamEventSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.PostConstruct;
 
 import static org.axonframework.eventstore.mongo.EventEntry.UTF8;
 
@@ -75,15 +83,15 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     }
 
     /**
-     * Make sure an index is created on the collection that stores domain events
+     * Make sure an index is created on the collection that stores domain events.
      */
     @PostConstruct
     public void ensureIndexes() {
         if (indexesAssured.compareAndSet(false, true)) {
             mongoTemplate.domainEventCollection().ensureIndex(EventEntry.INDEX, "uniqueAggregateIndex", true);
             mongoTemplate.domainEventCollection().ensureIndex(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, 1),
-                    "sequenceNumber",
-                    false);
+                                                              "sequenceNumber",
+                                                              false);
         }
     }
 
@@ -106,30 +114,22 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     @Override
     public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
-        StringBuilder sb = new StringBuilder(250);
-        long start = new Date().getTime();
-
         long snapshotSequenceNumber = -1;
         EventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
         if (lastSnapshotEvent != null) {
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
-        sb.append("snapshot : ").append(new Date().getTime() - start);
-
         List<DomainEvent> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
             events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
 
-        sb.append(", event : ").append(new Date().getTime() - start);
         if (events.isEmpty()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        SimpleDomainEventStream simpleDomainEventStream = new SimpleDomainEventStream(events);
 
-        sb.append(", serialize : ").append(new Date().getTime() - start);
-        return simpleDomainEventStream;
+        return new SimpleDomainEventStream(events);
     }
 
     @Override
@@ -157,10 +157,10 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                                        long firstSequenceNumber) {
 
         DBCursor dbCursor = mongoTemplate.domainEventCollection()
-                .find(EventEntry.forAggregate(type,
-                        identifier.asString(),
-                        firstSequenceNumber))
-                .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
+                                         .find(EventEntry.forAggregate(type,
+                                                                       identifier.asString(),
+                                                                       firstSequenceNumber))
+                                         .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
         List<DomainEvent> events = new ArrayList<DomainEvent>(dbCursor.size());
         while (dbCursor.hasNext()) {
             String nextItem = (String) dbCursor.next().get(EventEntry.SERIALIZED_EVENT_PROPERTY);
@@ -172,13 +172,13 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     private EventEntry loadLastSnapshotEvent(String type, AggregateIdentifier identifier) {
         DBObject mongoEntry = BasicDBObjectBuilder.start()
-                .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, identifier.asString())
-                .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
-                .get();
+                                                  .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, identifier.asString())
+                                                  .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
+                                                  .get();
         DBCursor dbCursor = mongoTemplate.snapshotEventCollection()
-                .find(mongoEntry)
-                .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1))
-                .limit(1);
+                                         .find(mongoEntry)
+                                         .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1))
+                                         .limit(1);
 
         if (!dbCursor.hasNext()) {
             return null;
@@ -190,9 +190,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     private List<EventEntry> fetchBatch(int startPosition, int batchSize) {
         DBObject sort = BasicDBObjectBuilder.start()
-                .add(EventEntry.TIME_STAMP_PROPERTY, -1)
-                .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1)
-                .get();
+                                            .add(EventEntry.TIME_STAMP_PROPERTY, -1)
+                                            .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1)
+                                            .get();
         DBCursor batchDomainEvents = mongoTemplate.domainEventCollection().find().sort(sort).limit(batchSize).skip(
                 startPosition);
         List<EventEntry> entries = new ArrayList<EventEntry>();
