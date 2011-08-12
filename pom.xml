@@ -26,6 +26,8 @@
         <module>integration</module>
         <module>test</module>
         <module>integrationtests</module>
+        <module>incubator/mongo</module>
+        <module>incubator/google-app-engine</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -89,8 +91,6 @@
         <profile>
             <id>with-incubator</id>
             <modules>
-                <module>incubator/mongo</module>
-                <module>incubator/google-app-engine</module>
                 <module>incubator/dcb</module>
                 <module>incubator/redis</module>
             </modules>
