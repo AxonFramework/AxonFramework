@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import javax.persistence.UniqueConstraint;
  */
 @Entity
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"aggregateIdentifier", "sequenceNumber"})})
+        @UniqueConstraint(columnNames = {"aggregateIdentifier", "sequenceNumber", "type"})})
 public class DomainEventEntry extends AbstractEventEntry {
 
     /**
@@ -54,5 +54,4 @@ public class DomainEventEntry extends AbstractEventEntry {
     public DomainEventEntry(String type, DomainEvent event, EventSerializer eventSerializer) {
         super(type, event, eventSerializer);
     }
-
 }
