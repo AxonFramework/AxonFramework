@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     }
 
     /**
-     * Inidicates whether to maintain counters for aggregates after appending events to the event store for these
+     * Indicates whether to maintain counters for aggregates after appending events to the event store for these
      * aggregates. Defaults to <code>true</code>.
      * <p/>
      * By setting this value to false, event counters are kept in memory. This is particularly useful when repositories
@@ -109,7 +109,8 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
 
     /**
      * Sets the Cache instance used be Caching repositories. By registering them to the snapshotter trigger, it can
-     * optimize memory usage by clearing counters held for aggregates that are contained in caches. When an aggregate is
+     * optimize memory usage by clearing counters held for aggregates that are contained in caches. When an aggregate
+     * is
      * evicted or deleted from the cache, its event counter is removed from the trigger.
      * <p/>
      * Use the {@link #setAggregateCaches(java.util.List)} method if you have configured different caches for different
@@ -127,7 +128,8 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
 
     /**
      * Sets the Cache instances used be Caching repositories. By registering them to the snapshotter trigger, it can
-     * optimize memory usage by clearing counters held for aggregates that are contained in caches. When an aggregate is
+     * optimize memory usage by clearing counters held for aggregates that are contained in caches. When an aggregate
+     * is
      * evicted or deleted from the cache, its event counter is removed from the trigger.
      *
      * @param caches The caches used by caching repositories
