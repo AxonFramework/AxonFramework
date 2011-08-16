@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,8 +27,11 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Implementation of the {@link org.axonframework.eventsourcing.AggregateSnapshotter} that eases the configuration when
@@ -71,8 +74,8 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
     }
 
     /**
-     * Optionally sets the transaction definition to use. By default, uses the application context's default transaction
-     * semantics (see {@link org.springframework.transaction.support.DefaultTransactionDefinition}).
+     * Optionally sets the transaction definition to use. By default, uses the application context's default
+     * transaction semantics (see {@link org.springframework.transaction.support.DefaultTransactionDefinition}).
      *
      * @param transactionDefinition the transaction definition to use
      */
@@ -84,8 +87,14 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
     @Override
     public void afterPropertiesSet() throws Exception {
         if (autoDetectAggregateFactories) {
-            Map<String, AggregateFactory> factories = applicationContext.getBeansOfType(AggregateFactory.class);
-            setAggregateFactories(new ArrayList(factories.values()));
+            Set<AggregateFactory> factoriesFound = new HashSet<AggregateFactory>();
+            factoriesFound.addAll(applicationContext.getBeansOfType(AggregateFactory.class).values());
+            Collection<EventSourcingRepository> eventSourcingRepositories =
+                    applicationContext.getBeansOfType(EventSourcingRepository.class).values();
+            for (EventSourcingRepository repo : eventSourcingRepositories) {
+                factoriesFound.add(repo.getAggregateFactory());
+            }
+            setAggregateFactories(new ArrayList(factoriesFound));
         }
 
         if (transactionManager == null) {

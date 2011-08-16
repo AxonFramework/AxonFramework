@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,18 @@ public abstract class Assert {
      */
     public static void isTrue(boolean expression, String message) {
         if (!expression) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Asserts that the given <code>expression</code> is false. If not, an IllegalArgumentException is thrown.
+     *
+     * @param expression the state validation expression
+     * @param message    The message that the exception contains if state evaluates to true
+     */
+    public static void isFalse(boolean expression, String message) {
+        if (expression) {
             throw new IllegalArgumentException(message);
         }
     }

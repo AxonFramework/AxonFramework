@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AggregateDeletedException;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshot;
 import org.axonframework.eventsourcing.ConflictResolver;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -63,7 +64,7 @@ public class EventSourcingRepositoryTest {
     public void setUp() {
         mockEventStore = mock(SnapshotEventStore.class);
         mockEventBus = mock(EventBus.class);
-        testSubject = new EventSourcingRepositoryImpl();
+        testSubject = new EventSourcingRepository<TestAggregate>(new SubtAggregateFactory());
         testSubject.setEventBus(mockEventBus);
         testSubject.setEventStore(mockEventStore);
         unitOfWork = DefaultUnitOfWork.startAndGet();
@@ -249,14 +250,13 @@ public class EventSourcingRepositoryTest {
 
         inOrder.verify(decorator1.lastSpy).next();
         inOrder.verify(decorator2.lastSpy).next();
-
     }
 
-    private static class EventSourcingRepositoryImpl extends EventSourcingRepository<TestAggregate> {
+    private static class SubtAggregateFactory implements AggregateFactory<TestAggregate> {
 
         @Override
-        public TestAggregate instantiateAggregate(AggregateIdentifier aggregateIdentifier,
-                                                  DomainEvent event) {
+        public TestAggregate createAggregate(AggregateIdentifier aggregateIdentifier,
+                                             DomainEvent firstEvent) {
             return new TestAggregate(aggregateIdentifier);
         }
 

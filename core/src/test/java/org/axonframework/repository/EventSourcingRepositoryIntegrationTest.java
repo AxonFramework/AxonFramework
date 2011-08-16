@@ -22,6 +22,7 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
@@ -84,7 +85,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     private void initializeRepository(LockingStrategy strategy) {
-        repository = new SimpleEventSourcingRepository(strategy);
+        repository = new EventSourcingRepository<SimpleAggregateRoot>(new SimpleAggregateFactory(), strategy);
         eventStore = new FileSystemEventStore(new XStreamEventSerializer());
         eventStore.setBaseDir(folder.getRoot());
         repository.setEventStore(eventStore);
@@ -192,15 +193,10 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
     }
 
-    private static class SimpleEventSourcingRepository extends EventSourcingRepository<SimpleAggregateRoot> {
-
-        private SimpleEventSourcingRepository(LockingStrategy lockingStrategy) {
-            super(lockingStrategy);
-        }
+    private static class SimpleAggregateFactory implements AggregateFactory<SimpleAggregateRoot> {
 
         @Override
-        public SimpleAggregateRoot instantiateAggregate(AggregateIdentifier aggregateIdentifier,
-                                                        DomainEvent event) {
+        public SimpleAggregateRoot createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
             return new SimpleAggregateRoot(aggregateIdentifier);
         }
 

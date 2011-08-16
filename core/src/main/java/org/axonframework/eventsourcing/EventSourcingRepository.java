@@ -51,28 +51,58 @@ import javax.annotation.Resource;
  * @see org.axonframework.eventstore.fs.FileSystemEventStore
  * @since 0.1
  */
-public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T>
-        implements AggregateFactory<T> {
+public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
 
     private volatile EventStore eventStore;
     private ConflictResolver conflictResolver;
     private Deque<EventStreamDecorator> eventStreamDecorators = new LinkedList<EventStreamDecorator>();
+    private final AggregateFactory<T> aggregateFactory;
 
     /**
      * Initializes a repository with the default locking strategy.
      *
      * @see org.axonframework.repository.LockingRepository#LockingRepository()
+     * @deprecated This constructor will be removed in future releases. Use {@link
+     *             #EventSourcingRepository(AggregateFactory)} instead.
      */
+    @Deprecated
     protected EventSourcingRepository() {
+        aggregateFactory = null;
     }
 
     /**
      * Initialize a repository with the given locking strategy.
      *
      * @param lockingStrategy the locking strategy to apply to this
+     * @deprecated This constructor will be removed in future release. Use {@link
+     *             #EventSourcingRepository(AggregateFactory, org.axonframework.repository.LockingStrategy)} instead.
      */
+    @Deprecated
     protected EventSourcingRepository(final LockingStrategy lockingStrategy) {
         super(lockingStrategy);
+        aggregateFactory = null;
+    }
+
+    /**
+     * Initializes a repository with the default locking strategy.
+     *
+     * @param aggregateFactory The factory for new aggregate instances
+     * @see org.axonframework.repository.LockingRepository#LockingRepository()
+     */
+    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory) {
+        this.aggregateFactory = aggregateFactory;
+    }
+
+    /**
+     * Initialize a repository with the given locking strategy.
+     *
+     * @param aggregateFactory The factory for new aggregate instances
+     * @param lockingStrategy  the locking strategy to apply to this
+     */
+    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory,
+                                   final LockingStrategy lockingStrategy) {
+        super(lockingStrategy);
+        this.aggregateFactory = aggregateFactory;
     }
 
     /**
@@ -133,6 +163,15 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
         return aggregate;
     }
 
+    /**
+     * Returns the factory used by this repository.
+     *
+     * @return the factory used by this repository
+     */
+    public AggregateFactory<T> getAggregateFactory() {
+        return aggregateFactory;
+    }
+
     private List<DomainEvent> asList(DomainEventStream domainEventStream) {
         List<DomainEvent> unseenEvents = new ArrayList<DomainEvent>();
         while (domainEventStream.hasNext()) {
@@ -149,9 +188,9 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * delegated to the abstract {@link #instantiateAggregate(org.axonframework.domain.AggregateIdentifier,
      * org.axonframework.domain.DomainEvent)} method.
      */
-    @Override
+    @Deprecated
     @SuppressWarnings({"unchecked"})
-    public T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
+    protected T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
         T aggregate;
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
@@ -176,8 +215,33 @@ public abstract class EventSourcingRepository<T extends EventSourcedAggregateRoo
      * @param firstEvent          The first event in the event stream. This is either the event generated during
      *                            creation of the aggregate, or a snapshot event
      * @return an aggregate ready for initialization using a DomainEventStream.
+     *
+     * @deprecated Explicit use of this method is deprecated. Instead of overriding this method, use the{@link
+     *             #EventSourcingRepository(AggregateFactory)} or {@link #EventSourcingRepository(AggregateFactory,
+     *             org.axonframework.repository.LockingStrategy)} constructor to indicate how an aggregate should be
+     *             created.
      */
-    protected abstract T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent);
+    @Deprecated
+    protected T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
+        if (aggregateFactory == null) {
+            throw new IllegalStateException("Either an aggregate factory must be configured (recommended), "
+                                                    + "or the instantiateAggregate() method must be overridden.");
+        }
+        return aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
+    }
+
+    /**
+     * Return the type identifier belonging to the AggregateFactory of this repository.
+     *
+     * @return the type identifier belonging to the AggregateFactory of this repository
+     */
+    public String getTypeIdentifier() {
+        if (aggregateFactory == null) {
+            throw new IllegalStateException("Either an aggregate factory must be configured (recommended), "
+                                                    + "or the getTypeIdentifier() method must be overridden.");
+        }
+        return aggregateFactory.getTypeIdentifier();
+    }
 
     /**
      * {@inheritDoc}

@@ -18,9 +18,12 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotterTrigger;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.GenericEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.repository.LockingStrategy;
 import org.junit.*;
 import org.junit.runner.*;
@@ -121,9 +124,13 @@ public class RepositoryBeanDefinitionParserTest {
         assertNotNull("BeanDefinition not created", beanDefinition);
 
         assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
+        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
+                                                                                                   AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
-        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
+        assertEquals("First argument is wrong", GenericAggregateFactory.class, firstArgument.getValue().getClass());
+        assertEquals("First argument is wrong",
+                     EventSourcedAggregateRootMock.class.getSimpleName(),
+                     ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1,
                                                                                                     LockingStrategy.class);
         assertNotNull("Second argument is wrong", secondArgument);
@@ -156,8 +163,8 @@ public class RepositoryBeanDefinitionParserTest {
         assertNotNull("Property missing", snapshotterTrigger);
 
         @SuppressWarnings("unchecked")
-        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository =
-                beanFactory.getBean("testRepository", GenericEventSourcingRepository.class);
+        EventSourcingRepository<EventSourcedAggregateRootMock> repository =
+                beanFactory.getBean("testRepository", EventSourcingRepository.class);
         assertNotNull(repository);
     }
 
@@ -166,10 +173,13 @@ public class RepositoryBeanDefinitionParserTest {
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition("testCacheRepository");
         assertNotNull("BeanDefinition not created", beanDefinition);
 
-        assertEquals("Wrong number of arguments", 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
+        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
+                                                                                                   AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
-        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
+        assertEquals("First argument is wrong", GenericAggregateFactory.class, firstArgument.getValue().getClass());
+        assertEquals("First argument is wrong",
+                     EventSourcedAggregateRootMock.class.getSimpleName(),
+                     ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
 
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
         assertNotNull("Property missing", eventBusPropertyValue);
@@ -196,14 +206,12 @@ public class RepositoryBeanDefinitionParserTest {
                                                          .getPropertyValue("snapshotterTrigger");
         assertNotNull("Property missing", snapshotterTrigger);
         BeanDefinition decorators = (BeanDefinition) snapshotterTrigger.getValue();
-//        assertNEquals("Wrong number of decorators", 1, decorators.size());
-//        BeanDefinition triggerDefinition = (BeanDefinition) decorators.get(0);
         assertNotNull("Property 'aggregateCache' not set",
                       decorators.getPropertyValues().getPropertyValue("aggregateCache"));
 
         @SuppressWarnings("unchecked")
-        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository =
-                beanFactory.getBean("testRepository", GenericEventSourcingRepository.class);
+        EventSourcingRepository<EventSourcedAggregateRootMock> repository =
+                beanFactory.getBean("testCacheRepository", CachingEventSourcingRepository.class);
         assertNotNull(repository);
     }
 
@@ -213,9 +221,14 @@ public class RepositoryBeanDefinitionParserTest {
         assertNotNull("BeanDefinition not created", beanDefinition);
 
         assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Class.class);
+        ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
+                                                                                                   AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
-        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class, firstArgument.getValue());
+        assertEquals("First argument is wrong", GenericAggregateFactory.class, firstArgument.getValue().getClass());
+        assertEquals("First argument is wrong",
+                     EventSourcedAggregateRootMock.class.getSimpleName(),
+                     ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
+
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1,
                                                                                                     LockingStrategy.class);
         assertNotNull("Second argument is wrong", secondArgument);
@@ -239,9 +252,8 @@ public class RepositoryBeanDefinitionParserTest {
         assertEquals("Wrong reference", "conflictResolver", conflictResolverReference.getBeanName());
 
         @SuppressWarnings("unchecked")
-        GenericEventSourcingRepository<EventSourcedAggregateRootMock> repository = beanFactory.getBean(
-                "defaultStrategyRepository",
-                GenericEventSourcingRepository.class);
+        EventSourcingRepository<EventSourcedAggregateRootMock> repository = beanFactory.getBean(
+                "defaultStrategyRepository", EventSourcingRepository.class);
         assertNotNull(repository);
     }
 

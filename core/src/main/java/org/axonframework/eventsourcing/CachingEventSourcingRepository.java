@@ -28,15 +28,13 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  * optimistic locking strategy, only pessimistic locking is available for this type of repository.
  * <p/>
  * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that
- * aggregate.
- * This is done to prevent the cache from returning aggregates that may not have fully persisted to disk.
+ * aggregate. This is done to prevent the cache from returning aggregates that may not have fully persisted to disk.
  *
  * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
  * @since 0.3
  */
-public abstract class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
-        extends EventSourcingRepository<T> {
+public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot> extends EventSourcingRepository<T> {
 
     private static final NoCache DEFAULT_CACHE = new NoCache();
 
@@ -44,9 +42,23 @@ public abstract class CachingEventSourcingRepository<T extends EventSourcedAggre
 
     /**
      * Initializes a repository with a pessimistic locking strategy. Optimistic locking is not compatible with caching.
+     *
+     * @deprecated Use {@link #CachingEventSourcingRepository(AggregateFactory)} instead.
      */
+    @Deprecated
     protected CachingEventSourcingRepository() {
         super(LockingStrategy.PESSIMISTIC);
+    }
+
+    /**
+     * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
+     * Optimistic locking is not compatible with caching.
+     *
+     * @param aggregateFactory The factory for new aggregate instances
+     * @see org.axonframework.repository.LockingRepository#LockingRepository()
+     */
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory) {
+        super(aggregateFactory, LockingStrategy.PESSIMISTIC);
     }
 
     /**

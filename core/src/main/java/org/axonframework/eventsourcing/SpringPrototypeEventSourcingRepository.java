@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,12 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-
-import static java.lang.String.format;
 
 /**
  * Repository implementation that creates and initializes aggregates based on a Spring prototype bean. This allows
@@ -35,27 +31,22 @@ import static java.lang.String.format;
  * prototype. It is required that the bean implements {@link org.axonframework.eventsourcing.EventSourcedAggregateRoot},
  * and it should have an accessible constructor that takes a single {@link java.util.UUID} argument.
  *
- * @author Allard Buijze
  * @param <T> The type of bean managed by this repository.
+ * @author Allard Buijze
  * @since 0.6
  */
 public class SpringPrototypeEventSourcingRepository<T extends EventSourcedAggregateRoot>
         extends EventSourcingRepository<T> implements InitializingBean, ApplicationContextAware, BeanNameAware {
 
-    private String prototypeBeanName;
-    private String typeIdentifier;
-    private ApplicationContext applicationContext;
-    private String beanName;
+    private final SpringPrototypeAggregateFactory<T> prototypeFactory;
 
-    @SuppressWarnings({"unchecked"})
-    @Override
-    protected T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
-        return (T) applicationContext.getBean(prototypeBeanName, aggregateIdentifier);
-    }
-
-    @Override
-    public String getTypeIdentifier() {
-        return typeIdentifier;
+    /**
+     *
+     */
+    @Deprecated
+    public SpringPrototypeEventSourcingRepository() {
+        super(new SpringPrototypeAggregateFactory<T>());
+        this.prototypeFactory = (SpringPrototypeAggregateFactory<T>) getAggregateFactory();
     }
 
     /**
@@ -66,7 +57,7 @@ public class SpringPrototypeEventSourcingRepository<T extends EventSourcedAggreg
      */
     @Required
     public void setPrototypeBeanName(String prototypeBeanName) {
-        this.prototypeBeanName = prototypeBeanName;
+        prototypeFactory.setPrototypeBeanName(prototypeBeanName);
     }
 
     /**
@@ -78,33 +69,21 @@ public class SpringPrototypeEventSourcingRepository<T extends EventSourcedAggreg
      * @param typeIdentifier the type identifier of the aggregate served by this repository.
      */
     public void setTypeIdentifier(String typeIdentifier) {
-        this.typeIdentifier = typeIdentifier;
+        prototypeFactory.setTypeIdentifier(typeIdentifier);
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        if (this.typeIdentifier == null) {
-            this.typeIdentifier = prototypeBeanName;
-        }
-        if (!applicationContext.isPrototype(prototypeBeanName)) {
-            throw new IncompatibleAggregateException(format("Cannot initialize repository '%s'. "
-                    + "The bean with name '%s' does not have the prototype scope.",
-                                                            beanName, prototypeBeanName));
-        }
-        if (!EventSourcedAggregateRoot.class.isAssignableFrom(applicationContext.getType(prototypeBeanName))) {
-            throw new IncompatibleAggregateException(format("Cannot initialize repository '%s'. "
-                    + "The bean with name '%s' does not extend from EventSourcingAggregateRoot.",
-                                                            beanName, prototypeBeanName));
-        }
+        prototypeFactory.afterPropertiesSet();
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+        prototypeFactory.setApplicationContext(applicationContext);
     }
 
     @Override
     public void setBeanName(String name) {
-        this.beanName = name;
+        prototypeFactory.setBeanName(name);
     }
 }

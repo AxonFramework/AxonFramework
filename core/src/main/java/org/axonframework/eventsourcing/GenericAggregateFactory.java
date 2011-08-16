@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,18 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.util.Assert;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 
 /**
- * Aggregate factory that uses a convention to create instances of aggregates. The aggregate must have a constructor
- * with a single parameter: the AggregateIdentifier. This constructor should not do any initialization. The type
- * identifier for the aggregate is the simple name (class name without the package) of the aggregate type.
+ * Aggregate factory that uses a convention to create instances of aggregates. The type must declare an
+ * accessible constructor accepting a {@link org.axonframework.domain.AggregateIdentifier} as single parameter. This
+ * constructor may not perform any initialization on the aggregate, other than setting the identifier.
+ * <p/>
+ * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
+ * GenericEventSourcingRepository will try to make it accessible.
  *
- * @author Allard Buijze
  * @param <T> The type of aggregate this factory creates
+ * @author Allard Buijze
  * @since 0.7
  */
 public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implements AggregateFactory<T> {
@@ -47,6 +51,7 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
     public GenericAggregateFactory(Class<T> aggregateType) {
         Assert.isTrue(EventSourcedAggregateRoot.class.isAssignableFrom(aggregateType),
                       "The given aggregateType must be a subtype of EventSourcedAggregateRoot");
+        Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
         this.aggregateType = aggregateType.getSimpleName();
         try {
             this.constructor = aggregateType.getDeclaredConstructor(AggregateIdentifier.class);
@@ -64,7 +69,8 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation is {@link AggregateSnapshot} aware. If the first event is an AggregateSnapshot, the aggregate
+     * This implementation is {@link AggregateSnapshot} aware. If the first event is an AggregateSnapshot, the
+     * aggregate
      * is retrieved from the snapshot, instead of creating a new -blank- instance.
      *
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security

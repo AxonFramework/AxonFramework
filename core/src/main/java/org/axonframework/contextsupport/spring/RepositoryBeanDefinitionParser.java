@@ -17,8 +17,9 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.CachingGenericEventSourcingRepository;
-import org.axonframework.eventsourcing.GenericEventSourcingRepository;
+import org.axonframework.eventsourcing.CachingEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.LockingStrategy;
 import org.springframework.beans.MutablePropertyValues;
@@ -79,9 +80,9 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition repositoryDefinition = new GenericBeanDefinition();
         if (element.hasAttribute(CACHE_ATTRIBUTE)) {
-            repositoryDefinition.setBeanClass(CachingGenericEventSourcingRepository.class);
+            repositoryDefinition.setBeanClass(CachingEventSourcingRepository.class);
         } else {
-            repositoryDefinition.setBeanClass(GenericEventSourcingRepository.class);
+            repositoryDefinition.setBeanClass(EventSourcingRepository.class);
             parseLockingStrategy(element, repositoryDefinition);
         }
 
@@ -161,12 +162,14 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      * @param builder The {@link org.springframework.beans.factory.support.BeanDefinitionBuilder} being used to
      *                construct the {@link BeanDefinition}.
      */
+    @SuppressWarnings({"unchecked"})
     private void parseAggregateRootType(Element element, GenericBeanDefinition builder) {
         // Mandatory in the XSD
         String aggregateRootTypeString = element.getAttribute(AGGREGATE_ROOT_TYPE_ATTRIBUTE);
         try {
             Class<?> aggregateRootType = Class.forName(aggregateRootTypeString);
-            builder.getConstructorArgumentValues().addGenericArgumentValue(aggregateRootType);
+            builder.getConstructorArgumentValues()
+                   .addGenericArgumentValue(new GenericAggregateFactory(aggregateRootType));
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(
                     "No class of name " + aggregateRootTypeString + " was found on the classpath", e);

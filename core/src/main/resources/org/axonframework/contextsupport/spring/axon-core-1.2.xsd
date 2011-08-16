@@ -277,7 +277,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.eventsourcing.GenericEventSourcingRepository"/>
+                    <tool:exports type="org.axonframework.eventsourcing.EventSourcingRepository"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -373,8 +373,7 @@
     <xsd:complexType name="snapshotterTriggerType">
         <xsd:complexContent>
             <xsd:extension base="beans:identifiedType">
-                <xsd:attribute name="event-count-threshold" use="required"
-                               type="xsd:positiveInteger">
+                <xsd:attribute name="event-count-threshold" use="required" type="xsd:positiveInteger">
                     <xsd:annotation>
                         <xsd:documentation>The amount of events that will trigger a snapshot to
                             be created. More specifically, if the framework detects that more

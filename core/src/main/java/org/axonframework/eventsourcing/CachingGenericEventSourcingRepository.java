@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-
 /**
  * The CachingGenericEventSourcingRepository is a special EventSourcingRepository implementation that can act as a
  * repository for any type of {@link EventSourcedAggregateRoot}. In contrast to the GenericEventSourcingRepository, it
@@ -31,14 +28,12 @@ import org.axonframework.domain.DomainEvent;
  * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
  * GenericEventSourcingRepository will try to make it accessible.
  *
- * @author Allard Buijze
  * @param <T> The aggregate type this repository serves
+ * @author Allard Buijze
  * @since 0.7
  */
 public class CachingGenericEventSourcingRepository<T extends EventSourcedAggregateRoot>
         extends CachingEventSourcingRepository<T> {
-
-    private final GenericAggregateFactory<T> aggregateFactory;
 
     /**
      * Creates a GenericEventSourcingRepository for aggregates of the given <code>aggregateType</code>, using the
@@ -53,28 +48,6 @@ public class CachingGenericEventSourcingRepository<T extends EventSourcedAggrega
      *                                        parameter
      */
     public CachingGenericEventSourcingRepository(Class<T> aggregateType) {
-        aggregateFactory = new GenericAggregateFactory<T>(aggregateType);
-    }
-
-    /**
-     * Returns the simple name of the aggregate class.
-     *
-     * @return the simple name of the aggregate class.
-     */
-    @Override
-    public String getTypeIdentifier() {
-        return aggregateFactory.getTypeIdentifier();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     *                                        settings prevent the GenericEventSourcingRepository from calling the
-     *                                        constructor.
-     */
-    @Override
-    public T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
-        return aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
+        super(new GenericAggregateFactory<T>(aggregateType));
     }
 }
