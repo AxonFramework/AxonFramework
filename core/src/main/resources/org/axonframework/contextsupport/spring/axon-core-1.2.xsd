@@ -254,6 +254,14 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="batch-size" use="optional" type="xsd:integer">
+                        <xsd:annotation>
+                            <xsd:documentation>Sets the number of events that should be read at each database access.
+                                When more than this number of events must be read to rebuild an aggregate's state, the
+                                events are read in batches of this size. Defaults to 100.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

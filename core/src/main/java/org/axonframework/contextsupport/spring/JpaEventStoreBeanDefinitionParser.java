@@ -42,6 +42,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
     private static final String DATA_SOURCE_ATTRIBUTE = "data-source";
     private static final String PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE = "persistence-exception-resolver";
     private static final String MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE = "max-snapshots-archived";
+    private static final String BATCH_SIZE_ATTRIBUTE = "batch-size";
 
     /**
      * {@inheritDoc}
@@ -67,8 +68,10 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
                     PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE));
         }
         if (element.hasAttribute(MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE)) {
-            builder.addPropertyValue("maxSnapshotsArchived", element.getAttribute(
-                    MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE));
+            builder.addPropertyValue("maxSnapshotsArchived", element.getAttribute(MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE));
+        }
+        if (element.hasAttribute(BATCH_SIZE_ATTRIBUTE)) {
+            builder.addPropertyValue("batchSize", element.getAttribute(BATCH_SIZE_ATTRIBUTE));
         }
     }
 }
