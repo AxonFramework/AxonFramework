@@ -116,13 +116,22 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
         long snapshotSequenceNumber = -1;
         SnapshotEventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
+        DomainEvent snapshotEvent = null;
         if (lastSnapshotEvent != null) {
-            snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
+            try {
+                snapshotEvent = lastSnapshotEvent.getDomainEvent(eventSerializer);
+                snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
+            } catch (RuntimeException ex) {
+                logger.warn("Error while reading snapshot event entry. "
+                                    + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
+                            ex.getClass().getName(),
+                            ex.getMessage());
+            }
         }
 
         List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1);
-        if (lastSnapshotEvent != null) {
-            events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
+        if (snapshotEvent != null) {
+            events.add(0, snapshotEvent);
         }
         if (events.isEmpty()) {
             throw new EventStreamNotFoundException(type, identifier);

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.repository.ConcurrencyException;
@@ -124,6 +125,36 @@ public class JpaEventStoreTest {
     public void testLoad_LargeAmountOfEventsInSmallBatches() {
         testSubject.setBatchSize(10);
         testLoad_LargeAmountOfEvents();
+    }
+
+    @Test
+    public void testEntireStreamIsReadOnUnserializableSnapshot() {
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>(110);
+        AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
+        for (int t = 0; t < 110; t++) {
+            domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        SnapshotEventEntry entry = new SnapshotEventEntry("test",
+                                                          new StubDomainEvent(aggregateIdentifier, 30),
+                                                          new EventSerializer() {
+                                                              @Override
+                                                              public byte[] serialize(DomainEvent event) {
+                                                                  return "this ain't gonna work!".getBytes();
+                                                              }
+
+                                                              @Override
+                                                              public DomainEvent deserialize(byte[] serializedEvent) {
+                                                                  throw new UnsupportedOperationException(
+                                                                          "Not implemented yet");
+                                                              }
+                                                          });
+        entityManager.persist(entry);
+        entityManager.flush();
+        entityManager.clear();
+
+        DomainEventStream stream = testSubject.readEvents("test", aggregateIdentifier);
+        assertEquals(0L, (long) stream.peek().getSequenceNumber());
     }
 
     @Test
