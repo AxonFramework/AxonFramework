@@ -132,19 +132,20 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     @SuppressWarnings({"unchecked"})
     private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
-        List<DomainEventEntry> entries = (List<DomainEventEntry>) entityManager.createQuery(
-                "SELECT e FROM DomainEventEntry e "
+        List<byte[]> entries = (List<byte[]>) entityManager.createQuery(
+                "SELECT e.serializedEvent "
+                        + "FROM DomainEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
                         + "ORDER BY e.sequenceNumber ASC")
-                                                                               .setParameter("id",
-                                                                                             identifier.asString())
-                                                                               .setParameter("type", type)
-                                                                               .setParameter("seq", firstSequenceNumber)
-                                                                               .setMaxResults(batchSize)
-                                                                               .getResultList();
+                                                           .setParameter("id",
+                                                                         identifier.asString())
+                                                           .setParameter("type", type)
+                                                           .setParameter("seq", firstSequenceNumber)
+                                                           .setMaxResults(batchSize)
+                                                           .getResultList();
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
-        for (DomainEventEntry entry : entries) {
-            events.add(entry.getDomainEvent(eventSerializer));
+        for (byte[] entry : entries) {
+            events.add(eventSerializer.deserialize(entry));
         }
         return events;
     }
@@ -243,11 +244,14 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     @SuppressWarnings({"unchecked"})
     private List<DomainEventEntry> fetchBatch(int startPosition) {
-        return entityManager.createQuery(
+        List resultList = entityManager.createQuery(
                 "SELECT e FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
-                            .setFirstResult(startPosition)
-                            .setMaxResults(batchSize)
-                            .getResultList();
+                                       .setFirstResult(startPosition)
+                                       .setMaxResults(batchSize)
+                                       .getResultList();
+        entityManager.flush();
+        entityManager.clear();
+        return resultList;
     }
 
     /**
