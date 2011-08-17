@@ -1,4 +1,20 @@
-package org.axonframework.eventstore.gae;
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.gae.eventstore;
 
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
@@ -41,14 +57,14 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
     @Override
     public void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
         logger.debug("Schedule a new task to create a snapshot for type {} and aggregate {}",
-                typeIdentifier, aggregateIdentifier);
+                     typeIdentifier, aggregateIdentifier);
 
         Queue queue = QueueFactory.getQueue("snapshotter");
 
         queue.add(TaskOptions.Builder.withUrl("/task/snapshot")
-                .param("typeIdentifier", typeIdentifier)
-                .param("aggregateIdentifier", aggregateIdentifier.asString())
-                .method(TaskOptions.Method.POST)
+                                     .param("typeIdentifier", typeIdentifier)
+                                     .param("aggregateIdentifier", aggregateIdentifier.asString())
+                                     .method(TaskOptions.Method.POST)
         );
     }
 
@@ -59,7 +75,6 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         if (snapshotEvent != null) {
             eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
         }
-
     }
 
     @Override
