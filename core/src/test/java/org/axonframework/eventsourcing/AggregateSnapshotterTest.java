@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -61,5 +63,26 @@ public class AggregateSnapshotterTest {
 
         verify(mockAggregateFactory).createAggregate(aggregateIdentifier, firstEvent);
         assertSame(aggregate, snapshot.getAggregate());
+    }
+
+    @Test
+    public void testCreateSnapshot_FirstEventLoadedIsSnapshotEvent() {
+        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
+        aggregate.doSomething();
+        aggregate.commitEvents();
+
+        DomainEvent firstEvent = new AggregateSnapshot<StubAggregate>(aggregate);
+        StubDomainEvent secondEvent = new StubDomainEvent(aggregateIdentifier, 0);
+        SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent, secondEvent);
+
+        when(mockAggregateFactory.createAggregate(any(AggregateIdentifier.class), any(DomainEvent.class)))
+                .thenThrow(new AssertionError("This invocation is not expected. When an aggregate snapshot is read, "
+                                                      + "the aggregate should be extracted from there."));
+
+        AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", eventStream);
+        assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getAggregate());
+
+        verify(mockAggregateFactory, never()).createAggregate(any(AggregateIdentifier.class), any(DomainEvent.class));
     }
 }

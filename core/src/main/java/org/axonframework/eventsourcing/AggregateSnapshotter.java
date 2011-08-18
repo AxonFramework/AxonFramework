@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import javax.annotation.Resource;
 
 /**
  * Implementation of a snapshotter that uses the actual aggregate and its state to create a snapshot event. The
- * motivation is that an aggregate always contains all relevant state. Therefore, storing the aggregate itself inside an
+ * motivation is that an aggregate always contains all relevant state. Therefore, storing the aggregate itself inside
+ * an
  * event should capture all necessary information.
  *
  * @author Allard Buijze
@@ -43,8 +44,12 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
 
         DomainEvent firstEvent = eventStream.peek();
         AggregateIdentifier aggregateIdentifier = firstEvent.getAggregateIdentifier();
-
-        EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
+        EventSourcedAggregateRoot aggregate;
+        if (firstEvent instanceof AggregateSnapshot) {
+            aggregate = ((AggregateSnapshot) firstEvent).getAggregate();
+        } else {
+            aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
+        }
         aggregate.initializeState(eventStream);
 
         return new AggregateSnapshot<EventSourcedAggregateRoot>(aggregate);
