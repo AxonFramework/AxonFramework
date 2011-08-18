@@ -31,16 +31,12 @@
     <name>Axon - MongoDB integration</name>
     <description>The mongo integration of Axon. This project contains the mongo event store.</description>
 
-    <properties>
-        <axon.version>${project.parent.version}</axon.version>
-    </properties>
-
     <dependencies>
         <!-- Axon dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-core</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <!-- Mongo dependencies -->
@@ -81,7 +77,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-integrationtests</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.parent.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
