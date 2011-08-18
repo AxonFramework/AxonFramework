@@ -28,9 +28,11 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.repository.ConcurrencyException;
 import org.junit.*;
 import org.junit.runner.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -42,6 +44,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -135,20 +138,22 @@ public class JpaEventStoreTest {
             domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
         }
         testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
-        SnapshotEventEntry entry = new SnapshotEventEntry("test",
-                                                          new StubDomainEvent(aggregateIdentifier, 30),
-                                                          new EventSerializer() {
-                                                              @Override
-                                                              public byte[] serialize(DomainEvent event) {
-                                                                  return "this ain't gonna work!".getBytes();
-                                                              }
+        final EventSerializer serializer = new EventSerializer() {
+            @Override
+            public byte[] serialize(DomainEvent event) {
+                return "this ain't gonna work!".getBytes();
+            }
 
-                                                              @Override
-                                                              public DomainEvent deserialize(byte[] serializedEvent) {
-                                                                  throw new UnsupportedOperationException(
-                                                                          "Not implemented yet");
-                                                              }
-                                                          });
+            @Override
+            public DomainEvent deserialize(byte[] serializedEvent) {
+                throw new UnsupportedOperationException(
+                        "Not implemented yet");
+            }
+        };
+        final StubDomainEvent stubDomainEvent = new StubDomainEvent(aggregateIdentifier, 30);
+        SnapshotEventEntry entry = new SnapshotEventEntry("test",
+                                                          stubDomainEvent,
+                                                          serializer.serialize(stubDomainEvent));
         entityManager.persist(entry);
         entityManager.flush();
         entityManager.clear();
@@ -278,6 +283,32 @@ public class JpaEventStoreTest {
                              .getResultList();
         assertEquals("archived snapshot count", 1L, snapshots.size());
         assertEquals("archived snapshot sequence", 1L, snapshots.iterator().next().getSequenceNumber());
+    }
+
+    @SuppressWarnings({"PrimitiveArrayArgumentToVariableArgMethod"})
+    @Test
+    public void testCustomEventEntryStore() {
+        EventEntryStore eventEntryStore = mock(EventEntryStore.class);
+        testSubject = new JpaEventStore(eventEntryStore);
+        testSubject.setEntityManager(entityManager);
+        testSubject.appendEvents("test", new SimpleDomainEventStream(new StubDomainEvent(), new StubDomainEvent()));
+        verify(eventEntryStore, times(2)).persistEvent(eq("test"),
+                                                       isA(StubDomainEvent.class),
+                                                       Matchers.<byte[]>any(),
+                                                       same(entityManager));
+
+        reset(eventEntryStore);
+        when(eventEntryStore.fetchBatch(anyString(), any(AggregateIdentifier.class), anyInt(), anyInt(),
+                                        any(EntityManager.class)))
+                .thenReturn(asList(new XStreamEventSerializer().serialize(new StubDomainEvent())));
+        when(eventEntryStore.loadLastSnapshotEvent(anyString(), any(AggregateIdentifier.class),
+                                                   any(EntityManager.class)))
+                .thenReturn(null);
+
+        testSubject.readEvents("test", new StringAggregateIdentifier("1"));
+
+        verify(eventEntryStore).fetchBatch("test", new StringAggregateIdentifier("1"), 0, 100, entityManager);
+        verify(eventEntryStore).loadLastSnapshotEvent("test", new StringAggregateIdentifier("1"), entityManager);
     }
 
     private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {

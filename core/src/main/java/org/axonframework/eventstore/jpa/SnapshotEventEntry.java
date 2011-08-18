@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.eventstore.EventSerializer;
 
 import javax.persistence.Entity;
 
@@ -27,8 +26,7 @@ import javax.persistence.Entity;
  * @author Allard Buijze
  * @since 0.5
  */
-@Entity
-class SnapshotEventEntry extends AbstractEventEntry {
+@Entity class SnapshotEventEntry extends AbstractEventEntry {
 
     /**
      * Default constructor, as required by JPA specification. Do not use directly!
@@ -40,11 +38,11 @@ class SnapshotEventEntry extends AbstractEventEntry {
      * Initialize a snapshot event entry using given <code>type</code>, <code>event</code> and
      * <code>eventSerializer</code>.
      *
-     * @param type            The type of the aggregate the snapshot event belongs to.
-     * @param event           The actual snapshot event
-     * @param eventSerializer The serializer that must be used to serialize the snapshot event for storage
+     * @param type      The type of the aggregate the snapshot event belongs to.
+     * @param event     The actual snapshot event
+     * @param serialize The serialized representation of the snapshot event
      */
-    public SnapshotEventEntry(String type, DomainEvent event, EventSerializer eventSerializer) {
-        super(type, event, eventSerializer);
+    public SnapshotEventEntry(String type, DomainEvent event, byte[] serialize) {
+        super(type, event, serialize);
     }
 }

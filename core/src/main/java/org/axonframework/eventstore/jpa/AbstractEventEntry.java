@@ -58,13 +58,13 @@ abstract class AbstractEventEntry {
      *
      * @param type            The type identifier of the aggregate root the event belongs to
      * @param event           The event to store in the eventstore
-     * @param eventSerializer The serialize to serialize the event with
+     * @param serializedEvent The serialized version of the Event
      */
-    protected AbstractEventEntry(String type, DomainEvent event, EventSerializer eventSerializer) {
+    protected AbstractEventEntry(String type, DomainEvent event, byte[] serializedEvent) {
         this.type = type;
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
-        this.serializedEvent = eventSerializer.serialize(event);
+        this.serializedEvent = serializedEvent;
         this.timeStamp = event.getTimestamp().toString();
     }
 

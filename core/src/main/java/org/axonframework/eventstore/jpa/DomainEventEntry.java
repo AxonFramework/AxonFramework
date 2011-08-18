@@ -17,7 +17,6 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.eventstore.EventSerializer;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -49,9 +48,9 @@ public class DomainEventEntry extends AbstractEventEntry {
      *
      * @param type            The type identifier of the aggregate root the event belongs to
      * @param event           The event to store in the eventstore
-     * @param eventSerializer The serialize to serialize the event with
+     * @param serializedEvent The serialized version of the Event
      */
-    public DomainEventEntry(String type, DomainEvent event, EventSerializer eventSerializer) {
-        super(type, event, eventSerializer);
+    public DomainEventEntry(String type, DomainEvent event, byte[] serializedEvent) {
+        super(type, event, serializedEvent);
     }
 }

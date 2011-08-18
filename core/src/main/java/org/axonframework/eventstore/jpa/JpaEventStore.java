@@ -63,25 +63,54 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     private int batchSize = DEFAULT_BATCH_SIZE;
     private static final int DEFAULT_MAX_SNAPSHOTS_ARCHIVED = 1;
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
+    private final EventEntryStore eventEntryStore;
 
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
     /**
      * Initialize a JpaEventStore using an {@link org.axonframework.eventstore.XStreamEventSerializer}, which
-     * serializes
-     * events as XML.
+     * serializes events as XML and the default Event Entry store.
+     * <p/>
+     * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
+     * SnapshotEventEntry}.
      */
     public JpaEventStore() {
-        this(new XStreamEventSerializer());
+        this(new XStreamEventSerializer(), new DefaultEventEntryStore());
     }
 
     /**
-     * Initialize a JpaEventStore which serializes events using the given {@link org.axonframework.eventstore.EventSerializer}.
+     * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and the default
+     * Event Entry store.
+     * <p/>
+     * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
+     * SnapshotEventEntry}.
      *
      * @param eventSerializer The serializer to (de)serialize domain events with.
      */
     public JpaEventStore(EventSerializer eventSerializer) {
+        this(eventSerializer, new DefaultEventEntryStore());
+    }
+
+    /**
+     * Initialize a JpaEventStore using the given <code>eventEntryStore</code> and an {@link
+     * org.axonframework.eventstore.XStreamEventSerializer}, which serializes events as XML.
+     *
+     * @param eventEntryStore The instance providing persistence logic for Domain Event entries
+     */
+    public JpaEventStore(EventEntryStore eventEntryStore) {
+        this(new XStreamEventSerializer(), eventEntryStore);
+    }
+
+    /**
+     * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and stores the
+     * events in the database using the given <code>eventEntryStore</code>.
+     *
+     * @param eventSerializer The serializer to (de)serialize domain events with.
+     * @param eventEntryStore The instance providing persistence logic for Domain Event entries
+     */
+    public JpaEventStore(EventSerializer eventSerializer, EventEntryStore eventEntryStore) {
         this.eventSerializer = eventSerializer;
+        this.eventEntryStore = eventEntryStore;
     }
 
     /**
@@ -93,8 +122,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         try {
             while (events.hasNext()) {
                 event = events.next();
-                DomainEventEntry entry = new DomainEventEntry(type, event, eventSerializer);
-                entityManager.persist(entry);
+                eventEntryStore.persistEvent(type, event, eventSerializer.serialize(event), entityManager);
             }
         } catch (RuntimeException exception) {
             if (persistenceExceptionResolver != null
@@ -115,12 +143,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     @Override
     public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
         long snapshotSequenceNumber = -1;
-        SnapshotEventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
+        byte[] lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(type, identifier, entityManager);
         DomainEvent snapshotEvent = null;
         if (lastSnapshotEvent != null) {
             try {
-                snapshotEvent = lastSnapshotEvent.getDomainEvent(eventSerializer);
-                snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
+                snapshotEvent = eventSerializer.deserialize(lastSnapshotEvent);
+                snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
             } catch (RuntimeException ex) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
@@ -129,7 +157,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             }
         }
 
-        List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1);
+        List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1, batchSize);
         if (snapshotEvent != null) {
             events.add(0, snapshotEvent);
         }
@@ -140,40 +168,18 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
-        List<byte[]> entries = (List<byte[]>) entityManager.createQuery(
-                "SELECT e.serializedEvent "
-                        + "FROM DomainEventEntry e "
-                        + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
-                        + "ORDER BY e.sequenceNumber ASC")
-                                                           .setParameter("id",
-                                                                         identifier.asString())
-                                                           .setParameter("type", type)
-                                                           .setParameter("seq", firstSequenceNumber)
-                                                           .setMaxResults(batchSize)
-                                                           .getResultList();
+    private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber,
+                                         int batchSize) {
+        List<byte[]> entries = eventEntryStore.fetchBatch(type,
+                                                          identifier,
+                                                          firstSequenceNumber,
+                                                          batchSize,
+                                                          entityManager);
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
         for (byte[] entry : entries) {
             events.add(eventSerializer.deserialize(entry));
         }
         return events;
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private SnapshotEventEntry loadLastSnapshotEvent(String type, AggregateIdentifier identifier) {
-        List<SnapshotEventEntry> entries = entityManager.createQuery(
-                "SELECT e FROM SnapshotEventEntry e "
-                        + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
-                        + "ORDER BY e.sequenceNumber DESC")
-                                                        .setParameter("id", identifier.asString())
-                                                        .setParameter("type", type)
-                                                        .setMaxResults(1)
-                                                        .setFirstResult(0)
-                                                        .getResultList();
-        if (entries.size() < 1) {
-            return null;
-        }
-        return entries.get(0);
     }
 
     /**
@@ -186,54 +192,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
         // Persist snapshot before pruning redundant archived ones, in order to prevent snapshot misses when reloading
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
-        entityManager.persist(new SnapshotEventEntry(type, snapshotEvent, eventSerializer));
+        eventEntryStore.persistSnapshot(type, snapshotEvent, eventSerializer.serialize(snapshotEvent), entityManager);
 
         if (maxSnapshotsArchived > 0) {
-            pruneSnapshots(type, snapshotEvent);
+            eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived, entityManager);
         }
-    }
-
-    /**
-     * Prunes snapshots which are considered redundant because they fall outside of the range of maximum snapshots to
-     * archive.
-     *
-     * @param type                    the type of the aggregate for which to prune snapshots
-     * @param mostRecentSnapshotEvent the last appended snapshot event
-     */
-    private void pruneSnapshots(String type, DomainEvent mostRecentSnapshotEvent) {
-        Iterator<Long> redundantSnapshots = findRedundantSnapshots(type, mostRecentSnapshotEvent);
-        if (redundantSnapshots.hasNext()) {
-            Long sequenceOfFirstSnapshotToPrune = redundantSnapshots.next();
-            entityManager.createQuery("DELETE FROM SnapshotEventEntry e "
-                                              + "WHERE e.type = :type "
-                                              + "AND e.aggregateIdentifier = :aggregateIdentifier "
-                                              + "AND e.sequenceNumber <= :sequenceOfFirstSnapshotToPrune")
-                         .setParameter("type", type)
-                         .setParameter("aggregateIdentifier",
-                                       mostRecentSnapshotEvent.getAggregateIdentifier().asString())
-                         .setParameter("sequenceOfFirstSnapshotToPrune", sequenceOfFirstSnapshotToPrune)
-                         .executeUpdate();
-        }
-    }
-
-    /**
-     * Finds the first of redundant snapshots, returned as an iterator for convenience purposes.
-     *
-     * @param type          the type of the aggregate for which to find redundant snapshots
-     * @param snapshotEvent the last appended snapshot event
-     * @return an iterator over the snapshots found
-     */
-    @SuppressWarnings({"unchecked"})
-    private Iterator<Long> findRedundantSnapshots(String type, DomainEvent snapshotEvent) {
-        return entityManager.createQuery(
-                "SELECT e.sequenceNumber FROM SnapshotEventEntry e "
-                        + "WHERE e.type = :type AND e.aggregateIdentifier = :aggregateIdentifier "
-                        + "ORDER BY e.sequenceNumber DESC")
-                            .setParameter("type", type)
-                            .setParameter("aggregateIdentifier", snapshotEvent.getAggregateIdentifier().asString())
-                            .setFirstResult(maxSnapshotsArchived)
-                            .setMaxResults(1)
-                            .getResultList().iterator();
     }
 
     @Override
@@ -242,7 +205,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         List<byte[]> batch;
         boolean shouldContinue = true;
         while (shouldContinue) {
-            batch = fetchBatch(first);
+            batch = eventEntryStore.fetchBatch(first, batchSize, entityManager);
             for (byte[] entry : batch) {
                 visitor.doWithEvent(eventSerializer.deserialize(entry));
             }
@@ -251,18 +214,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         }
     }
 
-    @SuppressWarnings({"unchecked"})
-    private List<byte[]> fetchBatch(int startPosition) {
-        return entityManager.createQuery(
-                "SELECT e.serializedEvent FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
-                                       .setFirstResult(startPosition)
-                                       .setMaxResults(batchSize)
-                                       .getResultList();
-    }
-
     /**
-     * Sets the EntityManager for this EventStore to use. This EntityManager must be assigned to a persistence context
-     * that contains the {@link DomainEventEntry} as one of the managed entity types.
+     * Sets the EntityManager for this EventStore to use.
      *
      * @param entityManager the EntityManager to use.
      */
@@ -352,7 +305,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             DomainEvent nextEvent = next;
             if (!currentBatch.hasNext() && currentBatchSize >= batchSize) {
                 logger.debug("Fetching new batch for Aggregate [{}]", id.asString());
-                currentBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1).iterator();
+                currentBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1, JpaEventStore.this.batchSize)
+                        .iterator();
             }
             next = currentBatch.hasNext() ? currentBatch.next() : null;
             return nextEvent;
