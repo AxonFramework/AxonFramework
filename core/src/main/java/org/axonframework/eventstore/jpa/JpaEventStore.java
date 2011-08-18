@@ -239,12 +239,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     @Override
     public void visitEvents(EventVisitor visitor) {
         int first = 0;
-        List<DomainEventEntry> batch;
+        List<byte[]> batch;
         boolean shouldContinue = true;
         while (shouldContinue) {
             batch = fetchBatch(first);
-            for (DomainEventEntry entry : batch) {
-                visitor.doWithEvent(entry.getDomainEvent(eventSerializer));
+            for (byte[] entry : batch) {
+                visitor.doWithEvent(eventSerializer.deserialize(entry));
             }
             shouldContinue = (batch.size() >= batchSize);
             first += batchSize;
@@ -252,15 +252,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEventEntry> fetchBatch(int startPosition) {
-        List resultList = entityManager.createQuery(
-                "SELECT e FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
+    private List<byte[]> fetchBatch(int startPosition) {
+        return entityManager.createQuery(
+                "SELECT e.serializedEvent FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
                                        .setFirstResult(startPosition)
                                        .setMaxResults(batchSize)
                                        .getResultList();
-        entityManager.flush();
-        entityManager.clear();
-        return resultList;
     }
 
     /**
