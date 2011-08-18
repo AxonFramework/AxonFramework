@@ -50,31 +50,80 @@
                 the specific types of Command they can handle. See <xref
                     linkend="configuring-command-bus"/>.</para>
         </note>
-        <para><emphasis role="bold">Annotation support</emphasis></para>
-        <para>More often than not, a command handler will need to process several types of closely
-            related commands. With Axon's annotation support you can use any POJO as command
-            handler. Just add the <code>@CommandHandler</code> annotation to your methods to turn
-            them into a command handler. These methods should declare the command to process as the
-            first parameter. They may take an optional second parameter, which is the
-                <code>UnitOfWork</code> for that command (see <xref linkend="unit-of-work"/>). Note
-            that for each command type, there may only be one handler! This restriction counts for
-            all handlers registered to the same command bus.</para>
-        <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your annotated
-            class into a <code>CommandHandler</code>. The adapter also takes a
-                <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on the
-            adapter to subscribe all the annotated handlers to the command bus using the correct
-            command type.</para>
-        <note>
-            <para>If you use Spring, you can add the <code>&lt;axon:annotation-config/></code>
-                element to your application context. It will turn any bean with
-                    <code>@CommandHandler</code> annotated methods into a command handler. They will
-                also be automatically subscribed to the <code>CommandBus</code>. In combination with
-                Spring's classpath scanning, this will automatically subscribe any command handler
-                in your application.</para>
-            <para>Note that you need to be careful when mixing manual wrapping and the use of
-                annotation-config element. This might result in command handler being subscribed
-                twice.</para>
-        </note>
+        <simplesect>
+            <title>Annotation support</title>
+            <para>More often than not, a command handler will need to process several types of
+                closely related commands. With Axon's annotation support you can use any POJO as
+                command handler. Just add the <code>@CommandHandler</code> annotation to your
+                methods to turn them into a command handler. These methods should declare the
+                command to process as the first parameter. They may take an optional second
+                parameter, which is the <code>UnitOfWork</code> for that command (see <xref
+                    linkend="unit-of-work"/>). Note that for each command type, there may only be
+                one handler! This restriction counts for all handlers registered to the same command
+                bus.</para>
+            <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
+                annotated class into a <code>CommandHandler</code>. The adapter also takes a
+                    <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on the
+                adapter to subscribe all the annotated handlers to the command bus using the correct
+                command type.</para>
+            <note>
+                <para>If you use Spring, you can add the <code>&lt;axon:annotation-config/></code>
+                    element to your application context. It will turn any bean with
+                        <code>@CommandHandler</code> annotated methods into a command handler. They
+                    will also be automatically subscribed to the <code>CommandBus</code>. In
+                    combination with Spring's classpath scanning, this will automatically subscribe
+                    any command handler in your application.</para>
+                <para>Note that you need to be careful when mixing manual wrapping and the use of
+                    annotation-config element. This might result in command handler being subscribed
+                    twice.</para>
+            </note>
+        </simplesect>
+        <simplesect>
+            <title><code>AggregateAnnotationCommandHandler</code></title>
+            <para>It is not unlikely that most command handler operations have an identical
+                structure: they load an Aggregate from a repository and call a method on the
+                returned aggregate using values from the command as parameter. If that is the case,
+                you might benefit from a generic command handler: the
+                    <code>AggregateAnnotationCommandHandler</code>. This command handler uses
+                    <code>@CommandHandler</code> annotations on the aggregate's methods to identify
+                which methods need to be invoked for an incoming command. If the
+                    <code>@CommandHandler</code> annotation is placed on a constructor, that command
+                will cause a new Aggregate instance to be created.</para>
+            <para>The <code>AggregateAnnotationCommandHandler</code> still needs to know which
+                aggregate instance (identified by it's unique Aggregate Identifier) to load and
+                which version to expect. By default, the
+                    <code>AggregateAnnotationCommandHandler</code> uses annotations on the command
+                object to find this information. The <code>@TargetAggregateIdentifier</code>
+                annotation must be put on a field or getter method to indicate where the identifier
+                of the target Aggregate can be found. Similarly, the
+                    <code>@TargetAggregateVersion</code> may used to indicate the expected
+                version.</para>
+            <para>The <code>@TargetAggregateIdentifier</code> annotation can be placed on a field or
+                a method. The latter case will use the return value of a method invocation (without
+                parameters) as the value to use. If this value is an instance of
+                    <code>AggregateIdentifier</code>, it will be directly used. If it is a
+                    <code>java.util.UUID</code>, it will be wrapped in a
+                    <code>UUIDAggregateIdentifier</code>. Any other object will have its
+                    <code>toString()</code> value wrapped in a
+                    <code>StringAggregateIdentifier</code>.</para>
+            <para>If you prefer not to use annotations, the behavior can be overridden by supplying
+                a custom <code>CommandTargetResolver</code>. This class should return the
+                    <code>AggregateIdentifier</code> and expected version (if any) based on a given
+                command.</para>
+            <para>
+                <note>
+                    <title>Creating new Aggregate Instances</title>
+                    <para>When the <code>@CommandHandler</code> annotation is placed on an
+                        Aggregate's constructor, the respective command will create a new instance
+                        of that aggregte and add it to the repository. Those commands do not require
+                        to target a specific aggregate instance. That wouldn't make sense, since the
+                        instance is yet to be created. Therefore, those commands do not require any
+                            <code>@TargetAggregateIdentifier</code> or
+                            <code>@TargetAggregateVersion</code> annotations, nor will a custom
+                            <code>CommandTargetResolver</code> be invoked for these commands.</para>
+                </note>
+            </para>
+        </simplesect>
     </sect1>
     <sect1>
         <title>Dispatching commands</title>

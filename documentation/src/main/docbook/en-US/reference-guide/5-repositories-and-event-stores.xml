@@ -25,8 +25,7 @@
         interface. This interface prescribes three methods: <code>load(identifier, version)</code>,
             <code>load(identifier)</code> and <code>add(aggregate)</code>. The <code>load</code>
         methods allows you to load aggregates from the repository. The optional <code>version</code>
-        parameter is used to detect concurrent modifications (see <xref
-            linkend="conflict-resolution"/>). <code>add</code> is used to register newly created
+        parameter is used to detect concurrent modifications (see <xref linkend="conflict-resolution"/>). <code>add</code> is used to register newly created
         aggregates in the repository.</para>
         <para>Depending on your underlying persistence storage and auditing needs, there are a
         number of base implementations that provide basic functionality needed by most repositories.
@@ -118,24 +117,16 @@
                 <title>
                     <code>EventSourcingRepository</code>
                 </title>
-                <para>The abstract
-                    <code>EventSourcingRepository</code>
-                    implementation provides the
-                    basic functionality needed by any event sourcing repository in the
-                    AxonFramework. It depends on an <code>EventStore</code>, which abstracts the
-                    actual storage mechanism for the events. See <xref linkend="implementing-an-eventstore"/>.
-                </para>
-                <para>The EventSourcingRepository has two abstract methods:
-                    <code>getTypeIdentifier()</code>
-                    and
-                    <code>instantiateAggregate(identifier, firstDomainEvent)</code>. The first should return a value that is passed
-                    to the event store that provides information about the type of aggregate
-                    the events relate to. A good starting point to use as return value is the simple
-                    name of a class (i.e. the fully qualified class name withouth the package name).
-                    The second method requires you to create an uninitialized instance of the
-                    aggregate using the given identifier. The repository will initialize this
-                    instance with the events obtained from the event store.
-                </para>
+                <para>The <code>EventSourcingRepository</code> implementation provides the basic
+                functionality needed by any event sourcing repository in the AxonFramework. It
+                depends on an <code>EventStore</code> (see <xref linkend="implementing-an-eventstore"/>), which abstracts the actual storage
+                mechanism for the events and an <code>AggregateFactory</code>, which is reponsible
+                for creating uninitialized aggregate instances. </para>
+            <para>The AggregateFactory specifies which aggregate needs to be created and how. Once
+                an aggregate has been created, the <code>EventSourcingRepository</code> can
+                initialize is using the Events it loaded from the Event Store. Axon Framework comes
+                with a number of AggregateFactory implementations that you may use. If they do not
+                suffice, it is very easy to create your own implementation.</para>
             </simplesect>
             <simplesect>
                 <title><code>CachingEventSourcingRepository</code></title>
@@ -155,29 +146,49 @@
             </note>
             </simplesect>
             <simplesect>
-            <title><code>GenericEventSourcingRepository</code></title>
-            <para>The <code>GenericEventSourcingRepository</code> is a special
-                    <code>EventSourcingRepository</code> implementation that can act as a repository
-                for any type of Event Sourced Aggregate Root. There is however, a convention that
-                these <code>EventSourcedAggregateRoot</code> classes must adhere to: the type must
+            <title><code>GenericAggregateFactory</code></title>
+            <para>The <code>GenericAggregateFactory</code> is a special
+                    <code>AggregateFactory</code> implementation that can be used for any type of
+                Event Sourced Aggregate Root. There is however, a convention that these
+                    <code>EventSourcedAggregateRoot</code> classes must adhere to: the type must
                 declare an accessible constructor accepting an <code>AggregateIdentifier</code> as
                 single parameter. This constructor may not perform any initialization on the
                 aggregate, other than setting the identifier.</para>
-            <para>In many cases, this generic repository will suffice. If not, you can always choose
-                to extend any of the other event sourcing repository implementations.</para>
+            <para>The GenericAggregateFactory is suitable for most scenarios where aggregates do not
+                need special injection of non-serializable resources.</para>
         </simplesect>
         <simplesect>
-            <title><code>SpringPrototypeEventSourcingRepository</code></title>
+            <title><code>SpringPrototypeAggregateFactory</code></title>
             <para>Depending on your architectural choices, it might be useful to inject dependencies
                 into your aggregates using Spring. You could, for example, inject query repositories
                 into your aggregate to ensure the existance (or inexistance) of certain
                 values.</para>
             <para>To inject dependencies into your aggregates, you need to configure a prototype
                 bean of your aggregate root in the Spring context that also defines the
-                    <code>SpringPrototypeEventSourcingRepository</code>. Instead of creating regular
+                    <code>SpringPrototypeAggregateFactory</code>. Instead of creating regular
                 instances of using a constructor, it uses the Spring Application Context to
                 instantiate your aggregates. This will also inject any dependencies in your
                 aggregate.</para>
+        </simplesect>
+        <simplesect>
+            <title>Implementing your own <code>AggregateFactory</code></title>
+            <para>In some cases, the <code>GenericAggregateFactory</code> just doesn't deliver what
+                you need. For example, you could have an abstract aggregate type with multiple
+                implementations for different scenarios (e.g. <code>PublicUserAccount</code> and
+                    <code>BackOfficeAccount</code> both extending an <code>Account</code>). Instead
+                of creating different repositories for each of the aggregates, you could use a
+                single repository, and configure an AggregateFactory that is aware of the different
+                implementations.</para>
+            <para>The AggregateFactory must specify the aggregate type identifier. This is a String
+                that the Event Store needs to figure out which events belong to which type of
+                aggregate. Typically, this name is deducted from the abstract super-aggregate. In
+                the given example that could be: Account.</para>
+            <para>The bulk of the work the Aggregate Factory does is creating uninitialized
+                Aggregate instances. It must do so using a given aggregate identifier and the first
+                Event from the stream. Usually, this Event is a creation event which contains hints
+                about the expected type of aggregate. You can use this information to choose an
+                implementation and invoke its constructor. Make sure no Events are applied by that
+                constructor; the aggregate must be uninitialized. </para>
         </simplesect>
         <simplesect>
             <title><code>HybridJpaRepository</code></title>
@@ -217,12 +228,12 @@
                 <title><code>JpaEventStore</code></title>
                 <para>The <code>JpaEventStore</code> stores events in a JPA-compatible data source.
                 Unlike the file system version, the <code>JPAEventStore</code> supports
-                transactions. The JPA event store can also load events based on their
-                timestamps.</para>
-                <para>To use the <code>JpaEventStore</code>, you must have the
-                    <code>javax.persistence</code> annotations on your classpath. Furthermore, you
-                should configure your persistence context (defined in
-                    <code>META-INF/persistence.xml</code> file) to contain the classes
+                transactions. The JPA Event Store stores events in so called entries. These entries
+                contain the serialized form of an event, as well as some fields where meta-data is
+                stored for fast lookup of these entries. To use the <code>JpaEventStore</code>, you
+                must have the <code>javax.persistence</code> annotations on your classpath. </para>
+            <para>By default, the event store needs you  to configure your persistence context
+                (defined in <code>META-INF/persistence.xml</code> file) to contain the classes
                     <code>org.axonframework.eventstore.jpa.DomainEventEntry</code> and
                     <code>org.axonframework.eventstore.jpa.SnapshotEventEntry</code>. </para>
                 <para>Below is an example configuration of a persistence context configuration: </para>
@@ -270,6 +281,31 @@
                     from the Database driver are thrown as-is.</para>
             </note>
             </simplesect>
+        <simplesect>
+            <title>Customizing the Event storage</title>
+            <para>By default, the JPA Event Store stores entries in <code>DomainEventEntry</code>
+                and <code>SnapshotEventEntry</code> entities. While still will suffice in many
+                cases, you might encounter a situation where the meta-data provided by these
+                entities is not enough. Or you might want to store events of different aggregate
+                types in different tables.</para>
+            <para>If that is the case, you may provide your own implementation of
+                    <code>EventEntryStore</code> in the JPA Event Store's constructor. You will need
+                to provide implementations of methods that load and store serialized events. Check
+                the API Documentation of the <code>EventEntryStore</code> class for implementation requirements.<warning>
+                    <title>Memory consumption warning</title>
+                    <para>Note that persistence providers, such as Hibernate, use a first-level
+                        cache on their EntityManager implementation. Typically, this means that all
+                        entities used or returned in queries are attached to the EntityManager. They
+                        are only cleared when the surrounding transaction is committed or an
+                        explicit "clear" in performed inside the transaction.</para>
+                    <para>To work around this issue, make sure to exclusively query the serialized
+                        form (the <code>byte[]</code>) of events. Do not fetch the entire entity
+                        object. Alternatively, call <code>EntityManager.flush()</code> and
+                            <code>EntityManager.clear()</code> after fetching a batch of events.
+                        Failure to do so might result in <code>OutOfMemoryException</code>s when
+                        loading large streams of events.</para>
+                </warning></para>
+        </simplesect>
             <simplesect>
             <title>Implementing your own event store</title>
             <para>If you have specific requirements for an event store, it is quite easy to
@@ -286,8 +322,7 @@
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Domain Event to prepare it for storage.
                 By default, Axon uses the <code>XStreamEventSerializer</code>, which uses XStream
-                (see <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>) to
+                (see <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>) to
                 serialize Domain Events into XML and vice versa. XStream is very fast and is more
                 flexible than Java Serialization. Furthermore, the result of XStream serialization
                 is human readable. Quite useful for logging and debugging purposes.</para>
@@ -314,8 +349,7 @@
             <para>The <code>EventUpcaster</code> is responsible for transforming old events into the
                 last revision. Upcasters typically work on an intermediate representation of the
                 Event. In the case of the <code>XStreamEventSerializater</code>, this intermediate
-                representation is dom4j (see <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://dom4j.sourceforge.net/">http://dom4j.sourceforge.net/</link>),
+                representation is dom4j (see <link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://dom4j.sourceforge.net/">http://dom4j.sourceforge.net/</link>),
                 an easy to use java XML library that integrates nicely with XStream. The
                     <code>EventUpcaster</code> can modify the XML structure of the event so that it
                 matches the new definition.</para>
