@@ -73,20 +73,20 @@ public abstract class ApplicationEvent extends EventBase {
     }
 
     /**
-     * Returns the type of the instance that reported this event. Unlike the source, this value will survive
-     * serialization. If the source was <code>null</code>, this method will return <code>Object.class</code>.
+     * Returns the type of the instance that reported this event. Like the source, this value will not survive
+     * serialization. If the source was <code>null</code> or this instance is deserialized, this method will return
+     * <code>Object.class</code>.
      *
      * @return the type of the instance that reported this event
      */
     public Class getSourceType() {
-        return sourceType;
+        return sourceType == null ? Object.class : sourceType;
     }
 
     /**
      * Returns the description of the instance that reported this event. The description is set to the value returned
-     * by
-     * <code>source.toString()</code>. Unlike the source itself, this value will survive serialization. If the source
-     * was <code>null</code>, this method will return <code>[unknown source]</code>.
+     * by <code>source.toString()</code>. Unlike the source itself, this value will survive serialization. If the
+     * source was <code>null</code>, this method will return <code>[unknown source]</code>.
      *
      * @return the description of the instance that reported this event
      */
