@@ -49,7 +49,7 @@ public class ApplicationEventTest {
         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
         MyApplicationEvent serializedEvent = (MyApplicationEvent) ois.readObject();
         assertNull(serializedEvent.getSource());
-        assertNull(serializedEvent.getSourceType());
+        assertEquals(Object.class, serializedEvent.getSourceType());
         assertEquals(toString(), serializedEvent.getSourceDescription());
     }
 
@@ -68,8 +68,11 @@ public class ApplicationEventTest {
         ByteArrayInputStream bis = new ByteArrayInputStream(Base64.decodeBase64(encodedEvent));
         ObjectInputStream ois = new ObjectInputStream(bis);
         MyApplicationEvent event = (MyApplicationEvent) ois.readObject();
+
         assertNotNull(event);
-        assertNull(event.getSourceType());
+        assertEquals(Object.class, event.getSourceType());
+        assertNull(event.getSource());
+        assertNotNull(event.getSourceDescription());
     }
 
     @Test
@@ -78,8 +81,11 @@ public class ApplicationEventTest {
         ByteArrayInputStream bis = new ByteArrayInputStream(Base64.decodeBase64(encodedEvent));
         ObjectInputStream ois = new ObjectInputStream(bis);
         MyApplicationEvent event = (MyApplicationEvent) ois.readObject();
+
         assertNotNull(event);
-        assertNull(event.getSourceType());
+        assertEquals(Object.class, event.getSourceType());
+        assertNull(event.getSource());
+        assertNotNull(event.getSourceDescription());
     }
 
     @Test
@@ -93,7 +99,7 @@ public class ApplicationEventTest {
         MyApplicationEvent event = (MyApplicationEvent) new GenericXStreamSerializer().deserialize(bis);
 
         assertNotNull(event);
-        assertNull(event.getSourceType());
+        assertEquals(Object.class, event.getSourceType());
         assertNull(event.getSource());
         assertNotNull(event.getSourceDescription());
     }
@@ -106,7 +112,7 @@ public class ApplicationEventTest {
         MyApplicationEvent event = (MyApplicationEvent) new GenericXStreamSerializer().deserialize(bis);
 
         assertNotNull(event);
-        assertNull(event.getSourceType());
+        assertEquals(Object.class, event.getSourceType());
         assertNull(event.getSource());
         assertNotNull(event.getSourceDescription());
     }
