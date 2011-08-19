@@ -16,10 +16,6 @@
 
 package org.axonframework.domain;
 
-import org.joda.time.DateTime;
-
-import java.util.UUID;
-
 /**
  * Base class for all Domain Events. This class contains the basic behavior expected from any event to be processed by
  * event sourcing engines and aggregates.
@@ -49,21 +45,6 @@ public abstract class DomainEvent extends EventBase {
 
     /**
      * Initialize the domain event. Will set the current time stamp and generate a random event identifier. Use this
-     * constructor when using the {@link org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#apply(DomainEvent)}
-     * method. The <code>sequenceNumber</code> and <code>aggregateIdentifier</code> are automatically set to the
-     * correct
-     * values for that aggregate.
-     * <p/>
-     * If you do not use the {@link org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#apply(DomainEvent)}
-     * method, but need the <code>sequenceNumber</code> and <code>aggregateIdentifier</code> to be set to specific
-     * values, use the {@link DomainEvent#DomainEvent(long, AggregateIdentifier)} constructor.
-     */
-    protected DomainEvent(long eventRevision) {
-        super(eventRevision);
-    }
-
-    /**
-     * Initialize the domain event. Will set the current time stamp and generate a random event identifier. Use this
      * constructor when you need the <code>sequenceNumber</code> and <code>aggregateIdentifier</code> to be set to
      * specific values.
      * <p/>
@@ -78,20 +59,6 @@ public abstract class DomainEvent extends EventBase {
      */
     protected DomainEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
         super();
-        this.sequenceNumber = sequenceNumber;
-        this.aggregateIdentifier = aggregateIdentifier;
-    }
-
-    /**
-     * @param identifier
-     * @param timestamp
-     * @param eventRevision
-     * @param sequenceNumber
-     * @param aggregateIdentifier
-     */
-    protected DomainEvent(UUID identifier, DateTime timestamp, long eventRevision, Long sequenceNumber,
-                          AggregateIdentifier aggregateIdentifier) {
-        super(identifier, timestamp, eventRevision);
         this.sequenceNumber = sequenceNumber;
         this.aggregateIdentifier = aggregateIdentifier;
     }
