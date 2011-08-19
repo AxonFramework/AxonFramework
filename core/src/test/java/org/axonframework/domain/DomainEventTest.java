@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.axonframework.domain;
 
+import org.apache.commons.codec.binary.Base64;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
 
@@ -126,6 +127,16 @@ public class DomainEventTest {
     }
 
     @Test
+    public void testSerialization_pre_v1_2() throws IOException, ClassNotFoundException {
+        String encodedEvent = "rO0ABXNyAChvcmcuYXhvbmZyYW1ld29yay5kb21haW4uU3R1YkRvbWFpbkV2ZW50C5VVQ6Wrk+YCAAB4cgAkb3JnLmF4b25mcmFtZXdvcmsuZG9tYWluLkRvbWFpbkV2ZW50dUIXKIlmJMUCAAJMABNhZ2dyZWdhdGVJZGVudGlmaWVydAAuTG9yZy9heG9uZnJhbWV3b3JrL2RvbWFpbi9BZ2dyZWdhdGVJZGVudGlmaWVyO0wADnNlcXVlbmNlTnVtYmVydAAQTGphdmEvbGFuZy9Mb25nO3hyACJvcmcuYXhvbmZyYW1ld29yay5kb21haW4uRXZlbnRCYXNlc/AiSXvH+XgCAAJKAA1ldmVudFJldmlzaW9uTAAIbWV0YURhdGF0AC9Mb3JnL2F4b25mcmFtZXdvcmsvZG9tYWluL011dGFibGVFdmVudE1ldGFEYXRhO3hwAAAAAAAAAABzcgAtb3JnLmF4b25mcmFtZXdvcmsuZG9tYWluLk11dGFibGVFdmVudE1ldGFEYXRhWFQhM718LV8CAAFMAAZ2YWx1ZXN0AA9MamF2YS91dGlsL01hcDt4cHNyABFqYXZhLnV0aWwuSGFzaE1hcAUH2sHDFmDRAwACRgAKbG9hZEZhY3RvckkACXRocmVzaG9sZHhwP0AAAAAAAAx3CAAAABAAAAACdAAKX3RpbWVzdGFtcHNyABZvcmcuam9kYS50aW1lLkRhdGVUaW1luDx4ZGpb3fkCAAB4cgAfb3JnLmpvZGEudGltZS5iYXNlLkJhc2VEYXRlVGltZf//+eFPXS6jAgACSgAHaU1pbGxpc0wAC2lDaHJvbm9sb2d5dAAaTG9yZy9qb2RhL3RpbWUvQ2hyb25vbG9neTt4cAAAATHhGnDec3IAJ29yZy5qb2RhLnRpbWUuY2hyb25vLklTT0Nocm9ub2xvZ3kkU3R1YqnIEWZxN1AnAwAAeHBzcgAfb3JnLmpvZGEudGltZS5EYXRlVGltZVpvbmUkU3R1YqYvAZp8MhrjAwAAeHB3DwANRXVyb3BlL0Jlcmxpbnh4dAALX2lkZW50aWZpZXJzcgAOamF2YS51dGlsLlVVSUS8mQP3mG2FLwIAAkoADGxlYXN0U2lnQml0c0oAC21vc3RTaWdCaXRzeHCY56byHC785l9j5+K9OE6BeHBw";
+        ByteArrayInputStream bis = new ByteArrayInputStream(Base64.decodeBase64(encodedEvent));
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        DomainEvent event = (DomainEvent) ois.readObject();
+
+        assertNotNull(event);
+    }
+
+    @Test
     public void testHashCode() {
         DomainEvent event = new StubDomainEvent();
         int hashCode1 = event.hashCode();
@@ -136,5 +147,4 @@ public class DomainEventTest {
         event.setSequenceNumber(1);
         assertEquals(hashCode1, event.hashCode());
     }
-
 }

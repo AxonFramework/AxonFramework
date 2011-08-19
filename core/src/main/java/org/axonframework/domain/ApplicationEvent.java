@@ -16,14 +16,15 @@
 
 package org.axonframework.domain;
 
+import org.joda.time.DateTime;
+
 /**
  * Represents an event that does not represent a state change of an application but does have functional meaning to the
  * application.
  * <p/>
  * This implementation will maintain a loose reference to the source of the event. However, this source will not be
  * serialized with the event. This means the source will not be available after deserialization. Instead, you can
- * access
- * the {@link #getSourceType() source type} and {@link #getSourceDescription() source description}.
+ * access the {@link #getSourceType() source type} and {@link #getSourceDescription() source description}.
  * <p/>
  * <em>Note</em>: Do not confuse the type of reference used by this class with Java's weak reference. The reference
  * maintained by this event <em>will</em> prevent the garbage collector from cleaning up the source instance. However,
@@ -39,6 +40,7 @@ package org.axonframework.domain;
 public abstract class ApplicationEvent extends EventBase {
 
     private static final long serialVersionUID = 2630109999914494776L;
+    private static final String UNKNOWN_SOURCE = "[unknown source]";
 
     private final transient Object source;
     private final transient Class sourceType;
@@ -57,14 +59,31 @@ public abstract class ApplicationEvent extends EventBase {
             this.sourceType = source.getClass();
             this.sourceDescription = source.toString();
         } else {
-            this.sourceDescription = "[unknown source]";
+            this.sourceDescription = UNKNOWN_SOURCE;
             this.sourceType = Object.class;
         }
     }
 
     /**
-     * Returns the instance that reported this event. Will return null if no source was specified or if this event has
-     * been serialized.
+     * Initializes the event using given parameters. This constructor is intended for the reconstruction of exsisting
+     * events (e.g. during deserialization).
+     *
+     * @param identifier        The identifier of the event
+     * @param timestamp         The original creation timestamp
+     * @param eventRevision     The revision of the event type
+     * @param sourceDescription The description of the source. If <code>null</code>, will default to "[unknown
+     *                          source]".
+     */
+    protected ApplicationEvent(String identifier, DateTime timestamp, long eventRevision, String sourceDescription) {
+        super(identifier, timestamp, eventRevision);
+        this.sourceDescription = sourceDescription == null ? UNKNOWN_SOURCE : sourceDescription;
+        this.source = null;
+        this.sourceType = Object.class;
+    }
+
+    /**
+     * Returns the instance that reported this event. Will return <code>null</code> if no source was specified or if
+     * this event has been serialized.
      *
      * @return the source of the event, if available.
      */

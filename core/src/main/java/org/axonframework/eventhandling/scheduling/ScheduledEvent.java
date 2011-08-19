@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -51,6 +51,23 @@ public abstract class ScheduledEvent extends ApplicationEvent {
     public ScheduledEvent(Object source, DateTime timestamp) {
         super(source);
         addMetaData(SCHEDULED_TIME_KEY, timestamp);
+    }
+
+    /**
+     * Initializes the event using given parameters. This constructor is intended for the reconstruction of exsisting
+     * events (e.g. during deserialization).
+     *
+     * @param identifier        The identifier of the event
+     * @param timestamp         The original creation timestamp
+     * @param eventRevision     The revision of the event type
+     * @param sourceDescription The description of the source. If <code>null</code>, will default to "[unknown
+     *                          source]".
+     * @param triggerDateTime   The timestamp the event is scheduled for triggering
+     */
+    protected ScheduledEvent(String identifier, DateTime timestamp, long eventRevision, String sourceDescription,
+                             DateTime triggerDateTime) {
+        super(identifier, timestamp, eventRevision, sourceDescription);
+        addMetaData(SCHEDULED_TIME_KEY, triggerDateTime);
     }
 
     /**

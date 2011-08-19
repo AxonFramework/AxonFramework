@@ -16,6 +16,8 @@
 
 package org.axonframework.domain;
 
+import org.joda.time.DateTime;
+
 /**
  * Base class for all Domain Events. This class contains the basic behavior expected from any event to be processed by
  * event sourcing engines and aggregates.
@@ -25,6 +27,8 @@ package org.axonframework.domain;
  */
 public abstract class DomainEvent extends EventBase {
 
+    private static final long serialVersionUID = 8449341313771775173L;
+
     private volatile Long sequenceNumber;
     private volatile AggregateIdentifier aggregateIdentifier;
 
@@ -32,8 +36,10 @@ public abstract class DomainEvent extends EventBase {
      * Initialize the domain event. Will set the current time stamp and generate a random event identifier. Use this
      * constructor when using the {@link org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#apply(DomainEvent)}
      * method. The <code>sequenceNumber</code> and <code>aggregateIdentifier</code> are automatically set to the
-     * correct
-     * values for that aggregate.
+     * correct values for that aggregate.
+     * <p/>
+     * This constructor sets the event revision to <code>0</code>. When a structural change is made to an event type,
+     * the eventRevision should be changed by invoking the {@link #DomainEvent(long)}.
      * <p/>
      * If you do not use the {@link org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#apply(DomainEvent)}
      * method, but need the <code>sequenceNumber</code> and <code>aggregateIdentifier</code> to be set to specific
@@ -41,6 +47,26 @@ public abstract class DomainEvent extends EventBase {
      */
     protected DomainEvent() {
         super();
+    }
+
+    /**
+     * Initialize the domain event using the given <code>eventRevision</code>. The event revision allows Event
+     * Serializers to detect which upcasters it needs to run when deserializing. Each time a structural change is made
+     * to an event type, the eventRevision should be changed accordingly.
+     * <p/>
+     * Will set the current time stamp and generate a random event identifier. Use this constructor when using the
+     * {@link org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#apply(DomainEvent)} method. The
+     * <code>sequenceNumber</code> and <code>aggregateIdentifier</code> are automatically set to the correct values for
+     * that aggregate.
+     * <p/>
+     * If you do not use the {@link org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#apply(DomainEvent)}
+     * method, but need the <code>sequenceNumber</code> and <code>aggregateIdentifier</code> to be set to specific
+     * values, use the {@link DomainEvent#DomainEvent(long, AggregateIdentifier)} constructor.
+     *
+     * @param eventRevision The revision number of this event type
+     */
+    protected DomainEvent(long eventRevision) {
+        super(eventRevision);
     }
 
     /**
@@ -59,6 +85,23 @@ public abstract class DomainEvent extends EventBase {
      */
     protected DomainEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
         super();
+        this.sequenceNumber = sequenceNumber;
+        this.aggregateIdentifier = aggregateIdentifier;
+    }
+
+    /**
+     * Initialize the domain event using given parameters. This constructor is intended for reconstruction of events
+     * (e.g. by deserialization).
+     *
+     * @param eventIdentifier     The event's unique identifier
+     * @param creationTimeStamp   The creation timestamp
+     * @param eventRevision       The revision of the event type
+     * @param sequenceNumber      The sequence number
+     * @param aggregateIdentifier The identifier of the aggregate that generated this event
+     */
+    protected DomainEvent(String eventIdentifier, DateTime creationTimeStamp, long eventRevision, long sequenceNumber,
+                          AggregateIdentifier aggregateIdentifier) {
+        super(eventIdentifier, creationTimeStamp, eventRevision);
         this.sequenceNumber = sequenceNumber;
         this.aggregateIdentifier = aggregateIdentifier;
     }

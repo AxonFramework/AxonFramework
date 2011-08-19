@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,9 +45,23 @@ public class MutableEventMetaData implements Serializable, EventMetaData {
      * @param timestamp       The timestamp of the creation of the event
      * @param eventIdentifier The identifier of the event
      */
-    public MutableEventMetaData(DateTime timestamp, UUID eventIdentifier) {
+    public MutableEventMetaData(DateTime timestamp, String eventIdentifier) {
         values.put(IDENTIFIER_KEY, eventIdentifier);
         values.put(TIMESTAMP_KEY, timestamp);
+    }
+
+    /**
+     * Create a meta-data instance with the given <code>timestamp</code> and <code>eventIdentifier</code> as initial
+     * values.
+     *
+     * @param timestamp       The timestamp of the creation of the event
+     * @param eventIdentifier The identifier of the event
+     * @deprecated Hard-coded dependency on UUID type is deprecated for performance reasons. Use {@link
+     *             #MutableEventMetaData(org.joda.time.DateTime, String)} instead.
+     */
+    @Deprecated
+    public MutableEventMetaData(DateTime timestamp, UUID eventIdentifier) {
+        this(timestamp, eventIdentifier.toString());
     }
 
     /**
@@ -66,8 +80,8 @@ public class MutableEventMetaData implements Serializable, EventMetaData {
     }
 
     @Override
-    public UUID getEventIdentifier() {
-        return (UUID) values.get(IDENTIFIER_KEY);
+    public String getEventIdentifier() {
+        return values.get(IDENTIFIER_KEY).toString();
     }
 
     @Override

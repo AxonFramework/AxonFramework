@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,21 @@
 
 package org.axonframework.domain;
 
+import org.joda.time.DateTime;
+
 /**
  * System events are a special type of application event. They notify the application of a state change of an
  * application component.
  * <p/>
- * In addition to the information provided by the {@link ApplicationEvent}, system events also provide information about
- * the exception that caused the event.
+ * In addition to the information provided by the {@link ApplicationEvent}, system events also provide information
+ * about the exception that caused the event.
  *
  * @author Allard Buijze
  * @since 0.4
  */
 public abstract class SystemEvent extends ApplicationEvent {
+
+    private static final long serialVersionUID = 5636156978533165290L;
 
     private final Throwable cause;
 
@@ -36,8 +40,7 @@ public abstract class SystemEvent extends ApplicationEvent {
      * @param source The instance that reported this event. May be <code>null</code>.
      */
     protected SystemEvent(Object source) {
-        super(source);
-        cause = null;
+        this(source, null);
     }
 
     /**
@@ -49,6 +52,37 @@ public abstract class SystemEvent extends ApplicationEvent {
     protected SystemEvent(Object source, Throwable cause) {
         super(source);
         this.cause = cause;
+    }
+
+    /**
+     * Initializes the event using given parameters. This constructor is intended for the reconstruction of exsisting
+     * events (e.g. during deserialization).
+     *
+     * @param identifier        The identifier of the event
+     * @param timestamp         The original creation timestamp
+     * @param eventRevision     The revision of the event type
+     * @param sourceDescription The description of the source. If <code>null</code>, will default to "[unknown
+     *                          source]".
+     * @param cause             The cause exception if this event represents an error
+     */
+    protected SystemEvent(String identifier, DateTime timestamp, long eventRevision, String sourceDescription,
+                          Throwable cause) {
+        super(identifier, timestamp, eventRevision, sourceDescription);
+        this.cause = cause;
+    }
+
+    /**
+     * Initializes the event using given parameters. This constructor is intended for the reconstruction of exsisting
+     * events (e.g. during deserialization).
+     *
+     * @param identifier        The identifier of the event
+     * @param timestamp         The original creation timestamp
+     * @param eventRevision     The revision of the event type
+     * @param sourceDescription The description of the source. If <code>null</code>, will default to "[unknown
+     *                          source]".
+     */
+    protected SystemEvent(String identifier, DateTime timestamp, long eventRevision, String sourceDescription) {
+        this(identifier, timestamp, eventRevision, sourceDescription, null);
     }
 
     /**

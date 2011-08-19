@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,17 +36,43 @@ public abstract class EventBase implements Event {
 
     /**
      * Initialize a new event. This constructor will set the event identifier to a random UUID and the timestamp to the
-     * current date and time.
+     * current date and time. The revision of this event defaults to 0.
      */
     protected EventBase() {
-        metaData = new MutableEventMetaData(new DateTime(), UUID.randomUUID());
+        this(0);
+    }
+
+    /**
+     * Constructs a newly created event with the given <code>eventRevision</code> number. The timestamp is set to the
+     * current date and time (including time zone) and a unique identifier is generated.
+     * <p/>
+     * This constructor is <em>not</em> intended for the reconstruction of existing events (e.g. during
+     * deserialization). In that case, consider using {@link #EventBase(String, org.joda.time.DateTime, long)} instead.
+     *
+     * @param eventRevision The revision of the event type
+     */
+    protected EventBase(long eventRevision) {
+        this(UUID.randomUUID().toString(), new DateTime(), eventRevision);
+    }
+
+    /**
+     * Initializes the event with given parameters. This constructor is intended to reconstruct an existing event (e.g.
+     * during deserialization).
+     *
+     * @param identifier    The event identifier
+     * @param timestamp     The original creation timestamp
+     * @param eventRevision The revision of the event type
+     */
+    protected EventBase(String identifier, DateTime timestamp, long eventRevision) {
+        metaData = new MutableEventMetaData(timestamp, identifier);
+        this.eventRevision = eventRevision;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public UUID getEventIdentifier() {
+    public String getEventIdentifier() {
         return metaData.getEventIdentifier();
     }
 
@@ -120,12 +146,14 @@ public abstract class EventBase implements Event {
 
     /**
      * Sets the revision of the implementing event definition. Revision numbers are use by {@link
-     * org.axonframework.eventstore.EventUpcaster UpCasters} to decide which transformations to apply when deserializing
-     * an event. Revision numbers only need to be supplied if the structure has been changed in such a way that the
-     * event serializer cannot deserialize it without help from an UpCaster.
+     * org.axonframework.eventstore.EventUpcaster UpCasters} to decide which transformations to apply when
+     * deserializing an event. Revision numbers only need to be supplied if the structure has been changed in such a
+     * way that the event serializer cannot deserialize it without help from an UpCaster.
      *
      * @param eventRevision The revision of the event definition
+     * @deprecated Set event revision in the constructor instead
      */
+    @Deprecated
     protected void setEventRevision(long eventRevision) {
         this.eventRevision = eventRevision;
     }

@@ -54,7 +54,7 @@ public class DomainEventEntryTest {
         when(mockDomainEvent.getAggregateIdentifier()).thenReturn(aggregateIdentifier);
         when(mockDomainEvent.getSequenceNumber()).thenReturn(2L);
         when(mockDomainEvent.getTimestamp()).thenReturn(timestamp);
-        when(mockDomainEvent.getEventIdentifier()).thenReturn(eventIdentifier);
+        when(mockDomainEvent.getEventIdentifier()).thenReturn(eventIdentifier.toString());
 
         DomainEventEntry actualResult = new DomainEventEntry("test", mockDomainEvent,
                                                              mockSerializer.serialize(mockDomainEvent));
