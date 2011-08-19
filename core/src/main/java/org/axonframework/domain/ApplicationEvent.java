@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ package org.axonframework.domain;
  * application.
  * <p/>
  * This implementation will maintain a loose reference to the source of the event. However, this source will not be
- * serialized with the event. This means the source will not be available after deserialization. Instead, you can access
+ * serialized with the event. This means the source will not be available after deserialization. Instead, you can
+ * access
  * the {@link #getSourceType() source type} and {@link #getSourceDescription() source description}.
  * <p/>
  * <em>Note</em>: Do not confuse the type of reference used by this class with Java's weak reference. The reference
@@ -37,8 +38,10 @@ package org.axonframework.domain;
  */
 public abstract class ApplicationEvent extends EventBase {
 
+    private static final long serialVersionUID = 2630109999914494776L;
+
     private final transient Object source;
-    private final Class sourceType;
+    private final transient Class sourceType;
     private final String sourceDescription;
 
     /**
@@ -80,7 +83,8 @@ public abstract class ApplicationEvent extends EventBase {
     }
 
     /**
-     * Returns the description of the instance that reported this event. The description is set to the value returned by
+     * Returns the description of the instance that reported this event. The description is set to the value returned
+     * by
      * <code>source.toString()</code>. Unlike the source itself, this value will survive serialization. If the source
      * was <code>null</code>, this method will return <code>[unknown source]</code>.
      *
