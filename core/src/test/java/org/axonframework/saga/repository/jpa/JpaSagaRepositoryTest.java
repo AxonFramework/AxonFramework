@@ -200,6 +200,7 @@ public class JpaSagaRepositoryTest {
         SagaEntry entry = entityManager.find(SagaEntry.class, identifier);
         MyTestSaga actualSaga = (MyTestSaga) entry.getSaga(new XStreamSagaSerializer());
         assertNotSame(loaded, actualSaga);
+        assertEquals(loaded.getSagaIdentifier(), actualSaga.getSagaIdentifier());
         assertEquals(1, actualSaga.counter);
     }
 
