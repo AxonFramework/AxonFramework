@@ -19,7 +19,6 @@ package org.axonframework.domain;
 import org.joda.time.DateTime;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * Base class for all types of events. Contains the event identifier and timestamp.
@@ -30,6 +29,7 @@ import java.util.UUID;
 public abstract class EventBase implements Event {
 
     private static final long serialVersionUID = 8354215007776930168L;
+    private static final IdentifierFactory IDENTIFIER_FACTORY = IdentifierFactory.getInstance();
 
     private final MutableEventMetaData metaData;
     private long eventRevision;
@@ -52,7 +52,7 @@ public abstract class EventBase implements Event {
      * @param eventRevision The revision of the event type
      */
     protected EventBase(long eventRevision) {
-        this(UUID.randomUUID().toString(), new DateTime(), eventRevision);
+        this(IDENTIFIER_FACTORY.generateIdentifier(), new DateTime(), eventRevision);
     }
 
     /**

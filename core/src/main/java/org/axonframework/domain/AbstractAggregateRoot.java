@@ -35,6 +35,7 @@ import javax.persistence.Version;
 public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
+    private static final IdentifierFactory IDENTIFIER_FACTORY = IdentifierFactory.getInstance();
 
     @Transient
     private EventContainer eventContainer;
@@ -56,7 +57,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * Initializes the aggregate root using a random aggregate identifier.
      */
     protected AbstractAggregateRoot() {
-        this(new UUIDAggregateIdentifier());
+        this(new StringAggregateIdentifier(IDENTIFIER_FACTORY.generateIdentifier()));
     }
 
     /**
