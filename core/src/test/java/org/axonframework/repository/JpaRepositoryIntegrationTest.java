@@ -64,6 +64,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         eventBus.subscribe(this);
     }
 
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testStoreAndLoadNewAggregate() {
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
@@ -73,8 +74,11 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
         entityManager.flush();
         entityManager.clear();
-        List results = entityManager.createQuery("SELECT a FROM JpaAggregate a").getResultList();
+        List<JpaAggregate> results = entityManager.createQuery("SELECT a FROM JpaAggregate a").getResultList();
         assertEquals(1, results.size());
+        JpaAggregate aggregate = results.get(0);
+        assertEquals(originalAggregate.getIdentifier(), aggregate.getIdentifier());
+        assertEquals(0, aggregate.getUncommittedEventCount());
 
         uow = DefaultUnitOfWork.startAndGet();
         JpaAggregate storedAggregate = repository.load(originalAggregate.getIdentifier());
