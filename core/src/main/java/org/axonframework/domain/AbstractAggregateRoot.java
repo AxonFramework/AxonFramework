@@ -17,6 +17,7 @@
 package org.axonframework.domain;
 
 import java.io.Serializable;
+import java.util.Collection;
 import javax.persistence.Basic;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
@@ -47,11 +48,11 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     private String id;
 
     @Basic(optional = true)
-    private volatile Long lastEventSequenceNumber;
+    private Long lastEventSequenceNumber;
 
     @SuppressWarnings({"UnusedDeclaration"})
     @Version
-    private volatile Long version;
+    private Long version;
 
     /**
      * Initializes the aggregate root using a random aggregate identifier.
@@ -104,7 +105,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     @Override
     public DomainEventStream getUncommittedEvents() {
         if (eventContainer == null) {
-            return new SimpleDomainEventStream();
+            return SimpleDomainEventStream.emptyStream();
         }
         return eventContainer.getEventStream();
     }
@@ -136,6 +137,16 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     @Override
     public int getUncommittedEventCount() {
         return eventContainer != null ? eventContainer.size() : 0;
+    }
+
+    /**
+     * Appends all the uncommitted events to the given <code>collection</code>. This method is a high-performance
+     * alternative to {@link #getUncommittedEvents()}.
+     *
+     * @param collection the collection to append uncommitted events to
+     */
+    public void appendUncommittedEventsTo(Collection<DomainEvent> collection) {
+        collection.addAll(eventContainer.getEventList());
     }
 
     /**

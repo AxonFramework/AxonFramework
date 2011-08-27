@@ -69,7 +69,7 @@ public class SimpleEventBus implements EventBus {
             logger.debug("EventListener {} unsubscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener {} not removed. It was already unsubscribed",
-                    eventListener.getClass().getSimpleName());
+                        eventListener.getClass().getSimpleName());
         }
     }
 
@@ -84,7 +84,7 @@ public class SimpleEventBus implements EventBus {
             logger.debug("EventListener [{}] subscribed successfully", eventListener.getClass().getSimpleName());
         } else {
             logger.info("EventListener [{}] not added. It was already subscribed",
-                    eventListener.getClass().getSimpleName());
+                        eventListener.getClass().getSimpleName());
         }
     }
 
@@ -102,12 +102,13 @@ public class SimpleEventBus implements EventBus {
     @Override
     public void publish(Event event) {
         statistics.recordPublishedEvent();
-
-        for (EventListener listener : listeners) {
-            logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                    event.getClass().getSimpleName(),
-                    listener.getClass().getSimpleName());
-            listener.handle(event);
+        if (listeners != null && !listeners.isEmpty()) {
+            for (EventListener listener : listeners) {
+                logger.debug("Dispatching Event [{}] to EventListener [{}]",
+                             event.getClass().getSimpleName(),
+                             listener.getClass().getSimpleName());
+                listener.handle(event);
+            }
         }
     }
 }

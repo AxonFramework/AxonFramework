@@ -20,6 +20,7 @@ import org.axonframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -159,7 +160,12 @@ class EventContainer implements Serializable {
         return lastSequenceNumber + 1;
     }
 
+    /**
+     * Returns an unmodifiable version of the backing list of events.
+     *
+     * @return a list containing the events in this container
+     */
     public List<DomainEvent> getEventList() {
-        return new ArrayList<DomainEvent>(events);
+        return Collections.unmodifiableList(events);
     }
 }

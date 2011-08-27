@@ -46,6 +46,9 @@ public class Handler {
         this.parameterType = parameterTypes[0];
         this.optionalParameter = parameterTypes.length > 1;
         this.declaringClass = method.getDeclaringClass();
+        if (!method.isAccessible()) {
+            doPrivileged(new MethodAccessibilityCallback(method));
+        }
     }
 
     /**
@@ -99,10 +102,6 @@ public class Handler {
      */
     public Object invoke(Object target, Object parameter, Object secondHandlerParameter)
             throws IllegalAccessException, InvocationTargetException {
-        if (!method.isAccessible()) {
-            doPrivileged(new MethodAccessibilityCallback(method));
-        }
-
         Object retVal;
         if (hasOptionalParameter()) {
             retVal = getMethod().invoke(target, parameter, secondHandlerParameter);

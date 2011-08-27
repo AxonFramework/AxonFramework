@@ -112,9 +112,12 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
 
     private void handleRecursively(DomainEvent event) {
         handle(event);
-        for (AbstractEventSourcedEntity entity : getChildEntities()) {
-            entity.registerAggregateRoot(this);
-            entity.handleRecursively(event);
+        Collection<AbstractEventSourcedEntity> childEntities = getChildEntities();
+        if (childEntities != null) {
+            for (AbstractEventSourcedEntity entity : childEntities) {
+                entity.registerAggregateRoot(this);
+                entity.handleRecursively(event);
+            }
         }
     }
 
@@ -126,6 +129,9 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * <p/>
      * It will look for entities: <ul><li> directly referenced in a field;<li> inside fields containing an {@link
      * Iterable};<li>inside both they keys and the values of fields containing a {@link java.util.Map}</ul>
+     * <p/>
+     * This method may be overridden by subclasses. A <code>null</code> may be returned if this entity does not have
+     * any child entities.
      *
      * @return a list of event sourced entities contained in this aggregate
      */

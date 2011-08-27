@@ -18,6 +18,8 @@ package org.axonframework.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * Abstract class to support implementations that need to invoke methods based on an annotation.
@@ -28,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 public abstract class AbstractHandlerInvoker extends AbstractHandlerInspector {
 
     private final Object target;
+    private final Map<Class<?>, Handler> handlerCache = new WeakHashMap<Class<?>, Handler>();
 
     /**
      * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
@@ -68,7 +71,11 @@ public abstract class AbstractHandlerInvoker extends AbstractHandlerInspector {
      */
     protected Object invokeHandlerMethod(Object parameter, Object secondHandlerParameter)
             throws InvocationTargetException, IllegalAccessException {
-        final Handler m = findHandlerMethod(parameter.getClass());
+        Handler m = handlerCache.get(parameter.getClass());
+        if (m == null) {
+            m = findHandlerMethod(parameter.getClass());
+            handlerCache.put(parameter.getClass(), m);
+        }
         if (m == null) {
             // event listener doesn't support this type of event
             return onNoMethodFound(parameter.getClass());

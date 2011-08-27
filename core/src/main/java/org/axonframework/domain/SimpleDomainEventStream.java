@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,8 @@
 package org.axonframework.domain;
 
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Collection;
+import java.util.NoSuchElementException;
 
 /**
  * Creates a DomainEventStream that streams the contents of a list.
@@ -27,8 +28,10 @@ import java.util.Iterator;
  */
 public class SimpleDomainEventStream implements DomainEventStream {
 
-    private final Iterator<? extends DomainEvent> iterator;
-    private volatile DomainEvent peeked;
+    private static final DomainEventStream EMPTY_STREAM = new SimpleDomainEventStream();
+
+    private int nextIndex;
+    private final DomainEvent[] events;
 
     /**
      * Initialize the event stream using the given List of DomainEvent and aggregate identifier.
@@ -36,8 +39,8 @@ public class SimpleDomainEventStream implements DomainEventStream {
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if the given list is empty
      */
-    public SimpleDomainEventStream(Iterable<? extends DomainEvent> events) {
-        this.iterator = events.iterator();
+    public SimpleDomainEventStream(Collection<? extends DomainEvent> events) {
+        this(events.toArray(new DomainEvent[events.size()]));
     }
 
     /**
@@ -49,7 +52,7 @@ public class SimpleDomainEventStream implements DomainEventStream {
      * @throws IllegalArgumentException if no events are supplied
      */
     public SimpleDomainEventStream(DomainEvent... events) {
-        this(Arrays.asList(events));
+        this.events = Arrays.copyOfRange(events, 0, events.length);
     }
 
     /**
@@ -57,7 +60,7 @@ public class SimpleDomainEventStream implements DomainEventStream {
      */
     @Override
     public boolean hasNext() {
-        return peeked != null || iterator.hasNext();
+        return events.length > nextIndex;
     }
 
     /**
@@ -68,12 +71,10 @@ public class SimpleDomainEventStream implements DomainEventStream {
      */
     @Override
     public DomainEvent next() {
-        if (peeked != null) {
-            DomainEvent returnValue = peeked;
-            peeked = null;
-            return returnValue;
+        if (!hasNext()) {
+            throw new NoSuchElementException("Trying to peek beyond the limits of this stream.");
         }
-        return iterator.next();
+        return events[nextIndex++];
     }
 
     /**
@@ -84,10 +85,28 @@ public class SimpleDomainEventStream implements DomainEventStream {
      */
     @Override
     public DomainEvent peek() {
-        if (peeked != null) {
-            return peeked;
+        if (!hasNext()) {
+            throw new NoSuchElementException("Trying to peek beyond the limits of this stream.");
         }
-        peeked = iterator.next();
-        return peeked;
+        return events[nextIndex];
+    }
+
+    /**
+     * Append the contents of this stream to the given <code>collection</code>. This includes all events that have
+     * already been read from the stream.
+     *
+     * @param collection the collection to append the events to.
+     */
+    public void appendTo(Collection<DomainEvent> collection) {
+        collection.addAll(Arrays.asList(events));
+    }
+
+    /**
+     * Creates an empty stream. For performance reasons, this method always returns the same instance.
+     *
+     * @return en empty DomainEventStream
+     */
+    public static DomainEventStream emptyStream() {
+        return EMPTY_STREAM;
     }
 }
