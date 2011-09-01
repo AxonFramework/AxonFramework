@@ -93,6 +93,7 @@
             <modules>
                 <module>incubator/dcb</module>
                 <module>incubator/redis</module>
+                <module>incubator/disruptor-commandbus</module>
             </modules>
         </profile>
     </profiles>

@@ -20,6 +20,8 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 import static org.mockito.Mockito.*;
@@ -61,6 +63,11 @@ public class DataSourceMock implements DataSource {
     @Override
     public int getLoginTimeout() throws SQLException {
         throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    // @Override removed, new in Java 7
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
