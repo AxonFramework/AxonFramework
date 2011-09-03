@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
-  ~ Copyright (c) 2010. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,88 +22,109 @@
         queries. Although this separation is very simple on itself, it provides a number of very
         powerful features when combined with other patterns. Axon provides the building block that
         make it easier to implement the different patterns that can be used in combination with
-        CQRS.</para>
+        CQRS.
+    </para>
     <para>The diagram below shows an example of an extended layout of a CQRS-based event driven
         architecture. The UI component, displayed on the left, interacts with the rest of the
         application in two ways: it sends commands to the application (shown in the top section),
-        and it queries the application for information (shown in the bottom section). </para>
+        and it queries the application for information (shown in the bottom section).
+    </para>
     <figure>
         <title>Architecture overview of a CQRS application</title>
         <mediaobject>
             <imageobject role="fo">
-                <imagedata align="center" format="png"
-                    fileref="detailed-architecture-overview-hires.png" width="15cm"/>
+                <imagedata align="center" format="svg"
+                           fileref="detailed-architecture-overview.svg" width="15cm"/>
             </imageobject>
             <imageobject role="html">
                 <imagedata format="png" fileref="detailed-architecture-overview.png"/>
             </imageobject>
         </mediaobject>
     </figure>
-    <para><emphasis role="bold">Command Handling</emphasis>
+    <para>
+        <emphasis role="bold">Command Handling</emphasis>
     </para>
     <para>Commands are represented by simple and straightforward objects that contain all data
         necessary for a command handler to execute it. Typically, a command expresses some intent by
         its name. In Java terms, that means the class name is used to figure out what needs to be
-        done, and the fields of the command provide the information required to do it.</para>
+        done, and the fields of the command provide the information required to do it.
+    </para>
     <para>The Command Bus receives commands and routes them to the Command Handlers. Each command
         handler responds to a specific type of command and executes logic based on the contents of
         the command. In some cases, however, you would also want to execute logic regardless of the
-        actual type of command, such as validation, logging or authorization.</para>
+        actual type of command, such as validation, logging or authorization.
+    </para>
     <para>Axon provides building blocks to help you implement a command handling infrastructure with
-        these features. These building blocks are thoroughly described in <xref
-            linkend="command-handling"/>.</para>
-    
-    <para><emphasis role="bold">Domain Modeling</emphasis></para>
+        these features. These building blocks are thoroughly described in<xref
+                linkend="command-handling"/>.
+    </para>
+
+    <para>
+        <emphasis role="bold">Domain Modeling</emphasis>
+    </para>
     <para>The command handler retrieves domain objects (Aggregates) from a repository and executes
         methods on them to change their state. These aggregates typically contain the actual
         business logic and are therefore responsible for guarding their own invariants. The state
         changes of aggregates result in the generation of Domain Events. Both the Domain Events and
         the Aggregates form the domain model. Axon provides supporting classes to help you build a
-        domain model. They are described in <xref linkend="domain-modeling"/>.</para>
-    <para><emphasis role="bold">Repositories and Event Stores</emphasis></para>
+        domain model. They are described in<xref linkend="domain-modeling"/>.
+    </para>
+    <para>
+        <emphasis role="bold">Repositories and Event Stores</emphasis>
+    </para>
     <para>Repositories are responsible for providing access to aggregates. Typically, these
         repositories are optimized for lookup of an aggregate by its unique identifier only. Some
         repositories will store the state of the aggregate itself (using Object Relational Mapping,
         for example), while other store the state changes that the aggregate has gone through in an
         Event Store. The repository is also responsible for persisting the changes made to
-        aggregates in its backing storage.</para>
+        aggregates in its backing storage.
+    </para>
     <para>Axon provides support for both the direct way of persisting aggregates (using
         object-relational-mapping, for example) and for event sourcing. More about repositories and
-        event stores can be found in <xref linkend="repositories-and-event-stores"/>.</para>
-    
-        <para><emphasis role="bold">Event Processing</emphasis></para>
-    
+        event stores can be found in<xref linkend="repositories-and-event-stores"/>.
+    </para>
+
+    <para>
+        <emphasis role="bold">Event Processing</emphasis>
+    </para>
+
     <para>The event bus dispatches events to all interested event listeners. This can either be done
         synchronously or asynchronously. Asynchronous event dispatching allows the command execution
         to return and hand over control to the user, while the events are being dispatched and
         processed in the background. Not having to wait for event processing to complete makes an
         application more responsive. Synchronous event processing, on the other hand, is simpler and
         is a sensible default. Synchronous processing also allows several event listeners to process
-        events within the same transaction.</para>
+        events within the same transaction.
+    </para>
     <para>Event listeners receive events and handle them. Some handlers will update data sources
         used for querying while others send messages to external systems. As you might notice, the
         command handlers are completely unaware of the components that are interested in the changes
         they make. This means that it is very non-intrusive to extend the application with new
         functionality. All you need to do is add another event listener. The events loosely couple
-        all components in your application together.</para>
+        all components in your application together.
+    </para>
     <para>In some cases, event processing requires new commands to be sent to the application. An
         example of this is when an order is received. This could mean the customer's account should
         be debited with the amount of the purchase, and shipping must be told to prepare a shipment
         of the purchased goods. In many applications, logic will become more complicated than this:
         what if the customer didn't pay in time? Will you send the shipment right away, or await
         payment first? The saga is the CQRS concept responsible for managing these complex business
-        transactions.</para>
-    <para>The building blocks related to event handling and dispatching are explained in <xref
-            linkend="event-processing"/>.</para>
+        transactions.
+    </para>
+    <para>The building blocks related to event handling and dispatching are explained in<xref
+            linkend="event-processing"/>.
+    </para>
     <simplesect>
         <title>Querying for data</title>
         <para>The thin data layer in between the user interface and the data sources provides a
             clearly defined interface to the actual query implementation used. This data layer
             typically returns read-only DTO objects containing query results. The contents of these
             DTO's are typically driven by the needs of the User Interface. In most cases, they map
-            directly to a specific view in the UI (also referred to as table-per-view).</para>
+            directly to a specific view in the UI (also referred to as table-per-view).
+        </para>
         <para>Axon does not provide any building blocks for this part of the application. The main
             reason is that this is very straightforward and doesn't differ from the layered
-            architecture.</para>
+            architecture.
+        </para>
     </simplesect>
 </chapter>
