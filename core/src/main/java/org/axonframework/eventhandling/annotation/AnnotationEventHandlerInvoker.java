@@ -23,12 +23,16 @@ import org.axonframework.eventhandling.UnsupportedHandlerMethodException;
 import org.axonframework.util.AbstractHandlerInvoker;
 import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Utility class that supports invocation of specific handler methods for a given event. See {@link EventHandler} for
@@ -39,6 +43,8 @@ import java.util.Iterator;
  * @since 0.1
  */
 public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
+
+    private static final Logger logger = LoggerFactory.getLogger(AnnotationEventHandlerInvoker.class);
 
     /**
      * Initialize an event handler invoker that invokes handlers on the given <code>target</code>.
@@ -123,12 +129,13 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
     }
 
     private void validateEventHandlerMethods(Object target) {
+        Map<Class<?>, Method> handledEvents = new HashMap<Class<?>, Method>();
         for (Method m : ReflectionUtils.methodsOf(target.getClass())) {
-            validate(m);
+            validate(m, handledEvents);
         }
     }
 
-    private void validate(Method method) {
+    private void validate(Method method, Map<Class<?>, Method> handledEvents) {
         if (method.isAnnotationPresent(EventHandler.class)) {
             if (method.getParameterTypes().length > 2 || method.getParameterTypes().length < 1) {
                 throw new UnsupportedHandlerMethodException(String.format(
@@ -167,6 +174,14 @@ public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
                             method.getName()),
                                                                 method);
                 }
+            }
+            Method previous = handledEvents.put(method.getParameterTypes()[0], method);
+            if (previous != null && previous.getDeclaringClass().equals(method.getDeclaringClass())) {
+                throw new UnsupportedHandlerMethodException(String.format(
+                        "Event Handling class %s contains two methods that handle the same event type: [%s] and [%s]",
+                        method.getDeclaringClass().getSimpleName(),
+                        method.getName(),
+                        previous.getName()), method);
             }
         }
     }

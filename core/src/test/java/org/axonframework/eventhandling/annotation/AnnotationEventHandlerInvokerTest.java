@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,8 +98,7 @@ public class AnnotationEventHandlerInvokerTest {
         try {
             new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
-        }
-        catch (UnsupportedHandlerMethodException e) {
+        } catch (UnsupportedHandlerMethodException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
             assertEquals("notARealHandler", e.getViolatingMethod().getName());
         }
@@ -111,8 +110,7 @@ public class AnnotationEventHandlerInvokerTest {
         try {
             new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
-        }
-        catch (UnsupportedHandlerMethodException e) {
+        } catch (UnsupportedHandlerMethodException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
             assertEquals("notARealHandler", e.getViolatingMethod().getName());
         }
@@ -129,8 +127,7 @@ public class AnnotationEventHandlerInvokerTest {
         try {
             new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
-        }
-        catch (UnsupportedHandlerMethodException e) {
+        } catch (UnsupportedHandlerMethodException e) {
             assertTrue(e.getMessage().contains("conflict"));
             assertEquals("handle", e.getViolatingMethod().getName());
         }
@@ -142,10 +139,22 @@ public class AnnotationEventHandlerInvokerTest {
         try {
             new AnnotationEventHandlerInvoker(handler);
             fail("Expected an UnsupportedHandlerMethodException");
-        }
-        catch (UnsupportedHandlerMethodException e) {
+        } catch (UnsupportedHandlerMethodException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
             assertEquals("notARealHandler", e.getViolatingMethod().getName());
+        }
+    }
+
+    @Test
+    public void testValidateEventHandler_DuplicateHandler() {
+        DuplicateHandlerMethod handler = new DuplicateHandlerMethod();
+        try {
+            new AnnotationEventHandlerInvoker(handler);
+            fail("Expected an UnsupportedHandlerMethodException");
+        } catch (UnsupportedHandlerMethodException e) {
+            assertTrue(e.getMessage().contains("otherHandler"));
+            assertTrue(e.getMessage().contains("oneHandler"));
+            assertTrue(e.getMessage().contains("DuplicateHandlerMethod"));
         }
     }
 
@@ -236,7 +245,6 @@ public class AnnotationEventHandlerInvokerTest {
             afterTransactionCount++;
             throw new Exception("Mock");
         }
-
     }
 
     private static class IllegalEventHandler extends SecondSubclass {
@@ -245,7 +253,6 @@ public class AnnotationEventHandlerInvokerTest {
         public void notARealHandler(StubEventTwo event, TransactionStatus transactionStatus,
                                     String thisParameterMakesItIncompatible) {
         }
-
     }
 
     private static class ASecondIllegalEventHandler extends SecondSubclass {
@@ -253,7 +260,6 @@ public class AnnotationEventHandlerInvokerTest {
         @EventHandler
         public void notARealHandler(StubEventTwo event, String thisParameterMakesItIncompatible) {
         }
-
     }
 
     private static class AnotherIllegalEventHandler extends SecondSubclass {
@@ -261,7 +267,17 @@ public class AnnotationEventHandlerInvokerTest {
         @EventHandler
         public void notARealHandler(String thisParameterMakesItIncompatible) {
         }
+    }
 
+    private static class DuplicateHandlerMethod {
+
+        @EventHandler
+        public void oneHandler(StubEventOne event) {
+        }
+
+        @EventHandler
+        public void otherHandler(StubEventOne event) {
+        }
     }
 
     private static class StubEventOne extends StubDomainEvent {
