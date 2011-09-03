@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,13 @@ import java.lang.annotation.Target;
  * Annotation to be placed on methods that can handle events.
  * <p/>
  * Annotated methods must comply to a few simple rules: <ul> <li>The method must accept 1 or 2 parameter
- * parameters<li>The first parameter must be a subtype of {@link org.axonframework.domain.DomainEvent} <li>If specified,
- * the second parameter must be of type {@link org.axonframework.eventhandling.TransactionStatus}<li>Return values are
- * allowed, but are ignored by dispatchers <li>Exceptions are highly discouraged, and are likely to be caught and
- * ignored by the dispatchers </ul>
+ * parameters<li>The first parameter must be a subtype of {@link org.axonframework.domain.DomainEvent} <li>If
+ * specified, the second parameter must be of type {@link org.axonframework.eventhandling.TransactionStatus}<li>Return
+ * values are allowed, but are ignored by dispatchers <li>Exceptions are highly discouraged, and are likely to be
+ * caught and ignored by the dispatchers </ul>
  * <p/>
- * For each event, only a single annotated method will be invoked. This method is resolved in the following order <ol>
+ * For each event, only a single method will be invoked per object instance with annotated methods. This method is
+ * resolved in the following order: <ol>
  * <li>First, the event handler methods of the actual class (at runtime) are searched <li>If a method is found with a
  * parameter that the domain event can be assigned to, it is marked as eligible <li>After a class  has been evaluated
  * (but before any super class), the most specific event handler method is called. That means that if an event handler
