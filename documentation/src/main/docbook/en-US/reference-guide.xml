@@ -67,5 +67,5 @@
     <xi:include href="reference-guide/7-sagas.xml"/>
     <xi:include href="reference-guide/8-testing.xml"/>
     <xi:include href="reference-guide/9-using-spring.xml"/>
-    <!--<xi:include href="reference-guide/10-monitoring.xml"/>-->
+    <xi:include href="reference-guide/10-performance-tuning.xml"/>
 </book>
