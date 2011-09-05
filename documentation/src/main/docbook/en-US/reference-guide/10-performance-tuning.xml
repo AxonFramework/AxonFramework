@@ -70,8 +70,7 @@
             of events after which a snapshot will be created, while other applications require a
             time-based snapshotting interval. Whatever way you choose for your application, make
             sure snapshotting is in place if you have long-living aggregates.</para>
-        <para>See <xref xmlns:xlink="http://www.w3.org/1999/xlink" linkend="using-snapshot-events"/>
-            for more about snapshotting.</para>
+        <para>See <xref linkend="using-snapshot-events"/> for more about snapshotting.</para>
     </sect1>
     <sect1>
         <title>Aggregate performance</title>
@@ -89,21 +88,6 @@
                 method and return the collection of child entities yourself. If an entity is a leaf
                 node (i.e. has no child entities), you may either return an empty collection or
                     <code>null</code>.</para>
-        </simplesect>
-        <simplesect>
-            <title>Use custom identifiers</title>
-            <para>The Axon Framework uses an <code>IdentifierFactory</code> to generate all the
-                identifiers, whether they are for Events or Aggregates. The default
-                    <code>IdentifierFactory</code> uses randomly generated
-                    <code>java.util.UUID</code> based identifiers. Although they are very safe to
-                use, the process to generate them doesn't excell in performance.</para>
-            <para>IdentifierFactory in an abstract factory that uses ServiceLoader to find the
-                implementation to use. This means you can create your own implementation of the
-                factory and put the name of the implementation in a file called
-                    "<code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>".
-                Java's ServiceLoader mechanism will detect that file an attempt to create an
-                instance of the class named inside. Just make sure your implementation is thread
-                safe.</para>
         </simplesect>
     </sect1>
     <sect1>
@@ -139,5 +123,41 @@
             reconstruction based on existing data: <code>DomainEvent(String eventIdentifier,
                 DateTime creationTimeStamp, long eventRevision, long sequenceNumber,
                 AggregateIdentifier aggregateIdentifier)</code>.</para>
+    </sect1>
+    <sect1>
+        <title>Custom Identifier generation</title>
+        <para>The Axon Framework uses an <code>IdentifierFactory</code> to generate all the
+            identifiers, whether they are for Events or Aggregates. The default
+                <code>IdentifierFactory</code> uses randomly generated <code>java.util.UUID</code>
+            based identifiers. Although they are very safe to use, the process to generate them
+            doesn't excell in performance.</para>
+        <para>IdentifierFactory is an abstract factory that uses Java's ServiceLoader (since Java 6)
+            mechanism to find the implementation to use. This means you can create your own
+            implementation of the factory and put the name of the implementation in a file called
+                "<code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>". Java's
+            ServiceLoader mechanism will detect that file and attempt to create an instance of the
+            class named inside.</para>
+        <para>There are a few requirements for the <code>IdentifierFactory</code>. The
+            implementation must<itemizedlist>
+                <listitem>
+                    <para>have its fully qualified class name as the contents of the
+                            <code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>
+                        file on the classpath,</para>
+                </listitem>
+                <listitem>
+                    <para>have an accessible zero-argument constructor,</para>
+                </listitem>
+                <listitem>
+                    <para>extend <code>IdentifierFactory</code>,</para>
+                </listitem>
+                <listitem>
+                    <para>be accessible by the context classloader of the application or by the
+                        classloader that loaded the <code>IdentifierFactory</code> class, and
+                        must</para>
+                </listitem>
+                <listitem>
+                    <para>be thread-safe.</para>
+                </listitem>
+            </itemizedlist></para>
     </sect1>
 </chapter>
