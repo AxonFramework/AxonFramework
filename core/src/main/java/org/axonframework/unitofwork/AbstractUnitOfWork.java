@@ -73,7 +73,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     private void performCleanup() {
         for (AbstractUnitOfWork uow : innerUnitsOfWork) {
-            uow.notifyListenersCleanup();
+            uow.performCleanup();
         }
         notifyListenersCleanup();
     }
