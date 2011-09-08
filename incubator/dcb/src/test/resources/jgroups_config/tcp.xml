@@ -58,7 +58,7 @@
          oob_thread_pool.rejection_policy="discard"/>
 
     <TCPPING timeout="3000"
-             initial_hosts="${jgroups.tcpping.initial_hosts:10.0.0.2[7800],10.0.0.2[7801]}"
+             initial_hosts="${jgroups.tcpping.initial_hosts:10.10.1.132[7800],10.10.1.132[7801]}"
              port_range="1"
              num_initial_members="2"/>
     <MERGE2 min_interval="10000"

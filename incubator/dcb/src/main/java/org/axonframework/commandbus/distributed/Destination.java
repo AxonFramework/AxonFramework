@@ -14,28 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.distributed.commandbus;
+package org.axonframework.commandbus.distributed;
 
-import java.io.Serializable;
+import org.axonframework.commandhandling.CommandCallback;
 
 /**
  * @author Allard Buijze
  */
-class JoinMessage implements Serializable {
+public interface Destination {
 
-    private final int segmentCount;
-    private final String segmentId;
+    void send(Object command);
 
-    JoinMessage(int segmentCount, String segmentId) {
-        this.segmentCount = segmentCount;
-        this.segmentId = segmentId;
-    }
+    <R> void send(Object command, CommandCallback<R> callback);
 
-    public int getSegmentCount() {
-        return segmentCount;
-    }
-
-    public String getSegmentId() {
-        return segmentId;
-    }
+    boolean isAvailable();
 }

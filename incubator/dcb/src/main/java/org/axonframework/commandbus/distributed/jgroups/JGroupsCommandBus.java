@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.distributed.commandbus;
+package org.axonframework.commandbus.distributed.jgroups;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author Allard Buijze
  */
-public class DistributedCommandBus {
+public class JGroupsCommandBus {
 
     private final JChannel channel;
     private volatile Ring hashRing;
@@ -54,7 +54,7 @@ public class DistributedCommandBus {
     private final String segmentId;
     private final JoinCondition joinedCondition = new JoinCondition();
 
-    public DistributedCommandBus(final JChannel channel) {
+    public JGroupsCommandBus(final JChannel channel) {
         this.channel = channel;
         this.segmentId = UUID.randomUUID().toString();
     }

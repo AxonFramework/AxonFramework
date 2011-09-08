@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.distributed.commandbus;
+package org.axonframework.commandbus.distributed.jgroups;
 
 import org.jgroups.ChannelClosedException;
 import org.jgroups.ChannelNotConnectedException;
@@ -26,16 +26,16 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
-public class DistributedCommandBusRunner {
+public class JGroupsCommandBusRunner {
 
-    private static DistributedCommandBus dcb;
+    private static JGroupsCommandBus dcb;
     private static final int MESSAGE_COUNT = 1000;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.net.preferIPv4Stack", "true");
         JChannel channel = new JChannel("jgroups_config/tcp.xml");
         channel.connect("testing");
-        dcb = new DistributedCommandBus(channel);
+        dcb = new JGroupsCommandBus(channel);
         dcb.subscribe();
         System.out.println("Subscribed to group. Ready to join.");
         Scanner scanner = new Scanner(System.in);
