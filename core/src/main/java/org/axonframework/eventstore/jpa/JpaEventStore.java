@@ -25,7 +25,9 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +60,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     private EntityManager entityManager;
 
-    private final EventSerializer eventSerializer;
+    private final Serializer<? super DomainEvent> eventSerializer;
     private static final int DEFAULT_BATCH_SIZE = 100;
     private int batchSize = DEFAULT_BATCH_SIZE;
     private static final int DEFAULT_MAX_SNAPSHOTS_ARCHIVED = 1;
@@ -86,8 +88,23 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * SnapshotEventEntry}.
      *
      * @param eventSerializer The serializer to (de)serialize domain events with.
+     * @deprecated Use {@link #JpaEventStore(org.axonframework.serializer.Serializer)} instead
      */
+    @Deprecated
     public JpaEventStore(EventSerializer eventSerializer) {
+        this(new LegacyEventSerializerWrapper(eventSerializer), new DefaultEventEntryStore());
+    }
+
+    /**
+     * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and the default
+     * Event Entry store.
+     * <p/>
+     * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
+     * SnapshotEventEntry}.
+     *
+     * @param eventSerializer The serializer to (de)serialize domain events with.
+     */
+    public JpaEventStore(Serializer<? super DomainEvent> eventSerializer) {
         this(eventSerializer, new DefaultEventEntryStore());
     }
 
@@ -108,7 +125,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * @param eventSerializer The serializer to (de)serialize domain events with.
      * @param eventEntryStore The instance providing persistence logic for Domain Event entries
      */
-    public JpaEventStore(EventSerializer eventSerializer, EventEntryStore eventEntryStore) {
+    public JpaEventStore(Serializer<? super DomainEvent> eventSerializer, EventEntryStore eventEntryStore) {
         this.eventSerializer = eventSerializer;
         this.eventEntryStore = eventEntryStore;
     }
@@ -147,7 +164,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         DomainEvent snapshotEvent = null;
         if (lastSnapshotEvent != null) {
             try {
-                snapshotEvent = eventSerializer.deserialize(lastSnapshotEvent);
+                snapshotEvent = (DomainEvent) eventSerializer.deserialize(lastSnapshotEvent);
                 snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
             } catch (RuntimeException ex) {
                 logger.warn("Error while reading snapshot event entry. "
@@ -177,7 +194,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                                           entityManager);
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
         for (byte[] entry : entries) {
-            events.add(eventSerializer.deserialize(entry));
+            events.add((DomainEvent) eventSerializer.deserialize(entry));
         }
         return events;
     }
@@ -207,7 +224,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         while (shouldContinue) {
             batch = eventEntryStore.fetchBatch(first, batchSize, entityManager);
             for (byte[] entry : batch) {
-                visitor.doWithEvent(eventSerializer.deserialize(entry));
+                visitor.doWithEvent((DomainEvent) eventSerializer.deserialize(entry));
             }
             shouldContinue = (batch.size() >= batchSize);
             first += batchSize;

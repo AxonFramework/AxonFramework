@@ -162,11 +162,11 @@
                 <xsd:attribute name="event-serializer" use="optional" type="xsd:string">
                     <xsd:annotation>
                         <xsd:documentation>Reference to an event serializer to use with this event store. Defaults to
-                            an org.axonframework.eventstore.XStreamEventSerializer
+                            an XStream based serializer.
                         </xsd:documentation>
                         <xsd:appinfo>
                             <tool:annotation kind="ref">
-                                <tool:expected-type type="org.axonframework.eventstore.EventSerializer"/>
+                                <tool:expected-type type="org.axonframework.serializer.Serializer"/>
                             </tool:annotation>
                         </xsd:appinfo>
                     </xsd:annotation>

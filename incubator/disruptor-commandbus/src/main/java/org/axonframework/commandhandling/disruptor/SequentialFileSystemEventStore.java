@@ -1,11 +1,27 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.serializer.Serializer;
 
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
@@ -25,9 +41,9 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
 
     private static final String FILE_NAME = "/tmp/trader-event.txt";
     private final ObjectOutputStream os;
-    private EventSerializer eventSerializer;
+    private Serializer<? super DomainEvent> eventSerializer;
 
-    public SequentialFileSystemEventStore(EventSerializer eventSerializer) {
+    public SequentialFileSystemEventStore(Serializer<? super DomainEvent> eventSerializer) {
         this.eventSerializer = eventSerializer;
         try {
             os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(FILE_NAME),
@@ -73,7 +89,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                     ois.readInt();
                     byte[] serializedEvent = ois.readUTF().getBytes();
                     if (type.equals(actualType) && identifier.asString().equals(actualIdentifier)) {
-                        DomainEvent domainEvent = eventSerializer.deserialize(serializedEvent);
+                        DomainEvent domainEvent = (DomainEvent) eventSerializer.deserialize(serializedEvent);
                         domainEvents.add(domainEvent);
                     }
                 } catch (EOFException e) {

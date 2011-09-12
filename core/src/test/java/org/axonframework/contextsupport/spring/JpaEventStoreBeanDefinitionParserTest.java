@@ -16,8 +16,8 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.jpa.JpaEventStore;
+import org.axonframework.serializer.Serializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
@@ -43,7 +43,7 @@ public class JpaEventStoreBeanDefinitionParserTest {
         BeanDefinition definition = beanFactory.getBeanDefinition("eventStore");
         assertNotNull("BeanDefinition not created", definition);
         assertEquals("Wrong bean class", JpaEventStore.class.getName(), definition.getBeanClassName());
-        ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, EventSerializer.class);
+        ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, Serializer.class);
         assertNotNull("Event serializer reference is wrong", reference);
         RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
         assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());

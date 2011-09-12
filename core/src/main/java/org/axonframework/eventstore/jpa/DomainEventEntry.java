@@ -24,8 +24,8 @@ import javax.persistence.UniqueConstraint;
 
 /**
  * JPA compliant wrapper around a DomainEvent. It wraps a DomainEvent by extracting some of the information needed to
- * base searched on, and stores the {@link DomainEvent} itself as a serialized object using am {@link
- * org.axonframework.eventstore.EventSerializer}
+ * base searched on, and stores the {@link DomainEvent} itself as a serialized object using an {@link
+ * org.axonframework.serializer.Serializer}
  *
  * @author Allard Buijze
  * @since 0.5

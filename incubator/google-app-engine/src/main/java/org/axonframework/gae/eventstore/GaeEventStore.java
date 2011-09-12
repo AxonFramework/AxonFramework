@@ -32,6 +32,8 @@ import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
+import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,16 +47,21 @@ import java.util.List;
 public class GaeEventStore implements SnapshotEventStore {
     private static final Logger logger = LoggerFactory.getLogger(GaeEventStore.class);
 
-    private final EventSerializer eventSerializer;
+    private final Serializer<? super DomainEvent> eventSerializer;
     private final DatastoreService datastoreService;
 
+    @Deprecated
     public GaeEventStore(EventSerializer eventSerializer) {
-        this.eventSerializer = eventSerializer;
-        this.datastoreService = DatastoreServiceFactory.getDatastoreService();
+        this(new LegacyEventSerializerWrapper(eventSerializer));
     }
 
     public GaeEventStore() {
         this(new XStreamEventSerializer());
+    }
+
+    public GaeEventStore(Serializer<? super DomainEvent> eventSerializer) {
+        this.eventSerializer = eventSerializer;
+        this.datastoreService = DatastoreServiceFactory.getDatastoreService();
     }
 
     public void appendEvents(String type, DomainEventStream events) {
@@ -115,7 +122,7 @@ public class GaeEventStore implements SnapshotEventStore {
         List<DomainEvent> events = new ArrayList<DomainEvent>(entities.size());
         for (Entity entity : entities) {
             byte[] bytes = ((Text) entity.getProperty("serializedEvent")).getValue().getBytes(EventEntry.UTF8);
-            events.add(eventSerializer.deserialize(bytes));
+            events.add((DomainEvent) eventSerializer.deserialize(bytes));
         }
         return events;
     }

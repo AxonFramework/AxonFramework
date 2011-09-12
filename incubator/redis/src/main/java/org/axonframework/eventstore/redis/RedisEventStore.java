@@ -21,7 +21,9 @@ import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.Serializer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.PipelineBlock;
 
@@ -32,7 +34,7 @@ import java.nio.charset.Charset;
  */
 public class RedisEventStore implements EventStore {
 
-    private EventSerializer eventSerializer;
+    private Serializer<? super DomainEvent> eventSerializer;
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private RedisConnectionProvider redisConnectionProvider;
 
@@ -82,8 +84,13 @@ public class RedisEventStore implements EventStore {
         throw new UnsupportedOperationException("Method not yet implemented");
     }
 
+    @Deprecated
     public void setEventSerializer(EventSerializer eventSerializer) {
-        this.eventSerializer = eventSerializer;
+        this.eventSerializer = new LegacyEventSerializerWrapper(eventSerializer);
+    }
+
+    public void setEventSerializer(Serializer<? super DomainEvent> serializer) {
+        this.eventSerializer = serializer;
     }
 
     public void setRedisConnectionProvider(RedisConnectionProvider redisConnectionProvider) {

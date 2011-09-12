@@ -25,11 +25,11 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.Serializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
@@ -38,6 +38,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -138,10 +141,20 @@ public class JpaEventStoreTest {
             domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
         }
         testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
-        final EventSerializer serializer = new EventSerializer() {
+        final Serializer<DomainEvent> serializer = new Serializer<DomainEvent>() {
+            @Override
+            public void serialize(DomainEvent object, OutputStream outputStream) throws IOException {
+                throw new UnsupportedOperationException("Not implemented yet");
+            }
+
             @Override
             public byte[] serialize(DomainEvent event) {
                 return "this ain't gonna work!".getBytes();
+            }
+
+            @Override
+            public DomainEvent deserialize(InputStream inputStream) throws IOException {
+                throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override

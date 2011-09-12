@@ -19,7 +19,7 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
-import org.axonframework.eventstore.EventSerializer;
+import org.axonframework.serializer.Serializer;
 import org.joda.time.DateTime;
 import org.junit.*;
 
@@ -34,13 +34,13 @@ import static org.mockito.Mockito.*;
 public class DomainEventEntryTest {
 
     private DomainEvent mockDomainEvent;
-    private EventSerializer mockSerializer;
+    private Serializer<DomainEvent> mockSerializer;
     private byte[] mockBytes = new byte[0];
 
     @Before
     public void setUp() {
         mockDomainEvent = mock(DomainEvent.class);
-        mockSerializer = mock(EventSerializer.class);
+        mockSerializer = mock(Serializer.class);
         when(mockSerializer.serialize(mockDomainEvent)).thenReturn(mockBytes);
         when(mockSerializer.deserialize(mockBytes)).thenReturn(mockDomainEvent);
     }

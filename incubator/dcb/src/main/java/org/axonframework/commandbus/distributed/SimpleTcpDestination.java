@@ -19,8 +19,6 @@ package org.axonframework.commandbus.distributed;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.serializer.Serializer;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
@@ -68,7 +66,7 @@ public class SimpleTcpDestination implements Destination {
             int length = dataIn.readInt();
             byte[] serializedResponse = new byte[length];
             dataIn.readFully(serializedResponse);
-            Object response = serializer.deserialize(new ByteArrayInputStream(serializedResponse));
+            Object response = serializer.deserialize(serializedResponse);
             if (response instanceof Throwable) {
                 callback.onFailure((Throwable) response);
             } else {
@@ -80,9 +78,7 @@ public class SimpleTcpDestination implements Destination {
     }
 
     private byte[] serialize(Object command) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        serializer.serialize(command, baos);
-        return baos.toByteArray();
+        return serializer.serialize(command);
     }
 
     @Override

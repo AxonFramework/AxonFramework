@@ -19,7 +19,7 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.eventstore.EventSerializer;
+import org.axonframework.serializer.Serializer;
 import org.joda.time.DateTime;
 
 import javax.persistence.Basic;
@@ -80,8 +80,8 @@ abstract class AbstractEventEntry {
      * @param eventSerializer The EventSerializer to deserialize the DomainEvent with.
      * @return The deserialized domain event
      */
-    public DomainEvent getDomainEvent(EventSerializer eventSerializer) {
-        return eventSerializer.deserialize(serializedEvent);
+    public DomainEvent getDomainEvent(Serializer<? super DomainEvent> eventSerializer) {
+        return (DomainEvent) eventSerializer.deserialize(serializedEvent);
     }
 
     /**

@@ -19,16 +19,19 @@ package org.axonframework.eventstore;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.EventBase;
-import org.axonframework.serializer.GenericXStreamSerializer;
+import org.axonframework.domain.Event;
+import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.SerializationException;
 import org.dom4j.Document;
 import org.dom4j.io.STAXEventReader;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,24 +39,25 @@ import javax.xml.stream.XMLStreamException;
 
 /**
  * Implementation of the serializer that uses XStream as underlying serialization mechanism. Events are serialized to
- * XML.
+ * XML. This Serializer wraps a generic XStreamSerializer. In addition to the {@link XStreamSerializer}, this
+ * implementation allows for an upcasting mechanism (see {@link EventUpcaster}.
+ * <p/>
+ * The downside of this implementation compared to the XStreamSerializer is that it is limited to Events.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class XStreamEventSerializer implements EventSerializer {
+public class XStreamEventSerializer implements Serializer<Event> {
 
-    private final GenericXStreamSerializer genericXStreamSerializer;
-    private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
+    private final XStreamSerializer delegate;
     private final List<EventUpcaster<Document>> upcasters = new ArrayList<EventUpcaster<Document>>();
-    private final Charset charset;
 
     /**
      * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
      * encoding.
      */
     public XStreamEventSerializer() {
-        this(DEFAULT_CHARSET_NAME);
+        delegate = new XStreamSerializer();
     }
 
     /**
@@ -63,7 +67,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @param xStream XStream instance to use
      */
     public XStreamEventSerializer(XStream xStream) {
-        this(DEFAULT_CHARSET_NAME, xStream);
+        delegate = new XStreamSerializer(xStream);
     }
 
     /**
@@ -74,7 +78,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @param charsetName The name of the character set to use.
      */
     public XStreamEventSerializer(String charsetName) {
-        this(Charset.forName(charsetName));
+        delegate = new XStreamSerializer(Charset.forName(charsetName));
     }
 
     /**
@@ -85,51 +89,76 @@ public class XStreamEventSerializer implements EventSerializer {
      * @param charset The character set to use.
      */
     public XStreamEventSerializer(Charset charset) {
-        this(charset, null);
+        delegate = new XStreamSerializer(charset);
     }
 
     /**
      * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given
-     * character
-     * set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
+     * character set.
      *
      * @param charset         The character set to use.
      * @param providedXStream XStream instance to use
      */
     public XStreamEventSerializer(Charset charset, XStream providedXStream) {
-        this.charset = charset;
         if (providedXStream != null) {
-            genericXStreamSerializer = new GenericXStreamSerializer(charset, providedXStream);
+            delegate = new XStreamSerializer(charset, providedXStream);
         } else {
-            genericXStreamSerializer = new GenericXStreamSerializer(charset);
+            delegate = new XStreamSerializer(charset);
         }
-        XStream xStream = genericXStreamSerializer.getXStream();
-        xStream.useAttributeFor(EventBase.class, "eventRevision");
+    }
+
+    /**
+     * Initializes an XStreamEventSerializer with the given <code>delegate</code> to perform the actual serialization
+     * logic.
+     *
+     * @param delegate The (generic) serializer to perform actual serialization with
+     */
+    public XStreamEventSerializer(XStreamSerializer delegate) {
+        this.delegate = delegate;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public byte[] serialize(DomainEvent event) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        genericXStreamSerializer.serialize(event, baos);
-        return baos.toByteArray();
+    public byte[] serialize(Event event) {
+        return delegate.serialize(event);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public DomainEvent deserialize(byte[] serializedEvent) {
+    public void serialize(Event object, OutputStream outputStream) {
+        delegate.serialize(object, outputStream);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Event deserialize(byte[] serializedEvent) {
+        try {
+            return deserialize(new ByteArrayInputStream(serializedEvent));
+        } catch (IOException e) {
+            throw new SerializationException(
+                    "The impossible has happened: a ByteArrayInputStream throwing an IO Exception", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Event deserialize(InputStream inputStream) throws IOException {
         if (upcasters.isEmpty()) {
-            return (DomainEvent) genericXStreamSerializer.deserialize(new ByteArrayInputStream(serializedEvent));
+            return (DomainEvent) delegate.deserialize(inputStream);
         } else {
-            Document document = readDocument(serializedEvent);
+            Document document = readDocument(inputStream);
             for (EventUpcaster<Document> upcaster : upcasters) {
                 document = upcaster.upcast(document);
             }
-            return (DomainEvent) genericXStreamSerializer.deserialize(new Dom4JReader(document));
+            return (Event) delegate.deserialize(new Dom4JReader(document));
         }
     }
 
@@ -145,9 +174,24 @@ public class XStreamEventSerializer implements EventSerializer {
      * @return a Dom4J Document representation of the event
      */
     protected Document readDocument(byte[] serializedEvent) {
+        return readDocument(new ByteArrayInputStream(serializedEvent));
+    }
+
+
+    /**
+     * Reads the event from the given <code>stream</code> into a Dom4J document. The default implementation uses a StAX
+     * reader.
+     * <p/>
+     * This method can be safely overridden to alter the deserialization mechanism. Make sure to use the correct
+     * charset (using {@link #getCharset()}) when converting characters to bytes and vice versa.
+     *
+     * @param stream The stream containing the serialized event
+     * @return a Dom4J Document representation of the event
+     */
+    protected Document readDocument(InputStream stream) {
         try {
             STAXEventReader reader = new STAXEventReader();
-            return reader.readDocument(new InputStreamReader(new ByteArrayInputStream(serializedEvent), charset));
+            return reader.readDocument(new InputStreamReader(stream, delegate.getCharset()));
         } catch (XMLStreamException e) {
             throw new SerializationException("Exception while preprocessing events", e);
         }
@@ -161,7 +205,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see XStream#alias(String, Class)
      */
     public void addAlias(String name, Class type) {
-        genericXStreamSerializer.addAlias(name, type);
+        delegate.addAlias(name, type);
     }
 
     /**
@@ -176,7 +220,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see XStream#aliasPackage(String, String)
      */
     public void addPackageAlias(String alias, String pkgName) {
-        genericXStreamSerializer.addPackageAlias(alias, pkgName);
+        delegate.addPackageAlias(alias, pkgName);
     }
 
     /**
@@ -188,7 +232,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see XStream#aliasField(String, Class, String)
      */
     public void addFieldAlias(String alias, Class definedIn, String fieldName) {
-        genericXStreamSerializer.addFieldAlias(alias, definedIn, fieldName);
+        delegate.addFieldAlias(alias, definedIn, fieldName);
     }
 
     /**
@@ -200,7 +244,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
-        return genericXStreamSerializer.getXStream();
+        return delegate.getXStream();
     }
 
     /**
@@ -209,7 +253,7 @@ public class XStreamEventSerializer implements EventSerializer {
      * @return the character set used to serialize XML to bytes and vice versa
      */
     public Charset getCharset() {
-        return charset;
+        return delegate.getCharset();
     }
 
     /**

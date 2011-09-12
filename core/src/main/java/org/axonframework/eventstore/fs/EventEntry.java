@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.fs;
 
 import org.axonframework.domain.DomainEvent;
-import org.axonframework.eventstore.EventSerializer;
+import org.axonframework.serializer.Serializer;
 
 import java.util.Arrays;
 
@@ -47,17 +47,17 @@ class EventEntry {
     }
 
     /**
-     * Deserialize the event usign the given <code>eventSerializer</code>.
+     * Deserialize the event using the given <code>serializer</code>.
      *
-     * @param eventSerializer the event serializer that can deserialize the event in this entry
+     * @param serializer the serializer that can deserialize the event in this entry
      * @return the deserialized domain event
      */
-    public DomainEvent deserialize(EventSerializer eventSerializer) {
-        return eventSerializer.deserialize(serializedEvent);
+    public DomainEvent deserialize(Serializer<?> serializer) {
+        return (DomainEvent) serializer.deserialize(serializedEvent);
     }
 
     /**
-     * Returns the sequence number of the event in this entry
+     * Returns the sequence number of the event in this entry.
      *
      * @return the sequence number of the event in this entry
      */

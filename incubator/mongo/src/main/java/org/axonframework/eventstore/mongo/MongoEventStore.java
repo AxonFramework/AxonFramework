@@ -31,6 +31,8 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
+import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +60,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     private static final int EVENT_VISITOR_BATCH_SIZE = 50;
 
     private final MongoTemplate mongoTemplate;
-    private final EventSerializer eventSerializer;
+    private final Serializer<? super DomainEvent> eventSerializer;
     private final AtomicBoolean indexesAssured = new AtomicBoolean(false);
 
     /**
@@ -67,8 +69,21 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
      *
      * @param eventSerializer Your own EventSerializer
      * @param mongo           Mongo instance to obtain the database and the collections.
+     * @deprecated Use {@link #MongoEventStore(org.axonframework.serializer.Serializer, com.mongodb.Mongo)} instead.
      */
+    @Deprecated
     public MongoEventStore(EventSerializer eventSerializer, Mongo mongo) {
+        this(new LegacyEventSerializerWrapper(eventSerializer), mongo);
+    }
+
+    /**
+     * Constructor that accepts an EventSerializer, the MongoTemplate and a string containing the testContext. The
+     * TestContext can be Null. Provide true in case of the test context.
+     *
+     * @param eventSerializer Your own EventSerializer
+     * @param mongo           Mongo instance to obtain the database and the collections.
+     */
+    public MongoEventStore(Serializer<? super DomainEvent> eventSerializer, Mongo mongo) {
         this.eventSerializer = eventSerializer;
         this.mongoTemplate = new MongoTemplate(mongo);
     }
@@ -164,7 +179,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         List<DomainEvent> events = new ArrayList<DomainEvent>(dbCursor.size());
         while (dbCursor.hasNext()) {
             String nextItem = (String) dbCursor.next().get(EventEntry.SERIALIZED_EVENT_PROPERTY);
-            DomainEvent deserialize = eventSerializer.deserialize(nextItem.getBytes(UTF8));
+            DomainEvent deserialize = (DomainEvent) eventSerializer.deserialize(nextItem.getBytes(UTF8));
             events.add(deserialize);
         }
         return events;

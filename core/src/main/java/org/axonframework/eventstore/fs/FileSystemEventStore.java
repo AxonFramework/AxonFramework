@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,8 @@ import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
+import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +45,8 @@ import static org.axonframework.eventstore.fs.EventSerializationUtils.*;
 
 /**
  * Implementation of the {@link org.axonframework.eventstore.EventStore} that serializes objects using XStream and
- * writes them to files to disk. Each aggregate is represented by a single file, where each event of that aggregate is a
+ * writes them to files to disk. Each aggregate is represented by a single file, where each event of that aggregate is
+ * a
  * line in that file. Events are serialized to XML format, making them readable for both user and machine.
  * <p/>
  * Use {@link #setBaseDir(java.io.File)} to specify the directory where event files should be stored.
@@ -58,7 +61,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemEventStore.class);
 
-    private final EventSerializer eventSerializer;
+    private final Serializer<? super DomainEvent> eventSerializer;
     private EventFileResolver eventFileResolver;
 
     /**
@@ -74,9 +77,21 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      * provided <code>eventSerializer </code>.
      *
      * @param eventSerializer The serializer to serialize DomainEvents with
+     * @deprecated Use {@link #FileSystemEventStore(org.axonframework.serializer.Serializer)} instead
      */
-    public FileSystemEventStore(EventSerializer eventSerializer) {
-        this.eventSerializer = eventSerializer;
+    @Deprecated
+    public FileSystemEventStore(final EventSerializer eventSerializer) {
+        this(new LegacyEventSerializerWrapper(eventSerializer));
+    }
+
+    /**
+     * Initialize the FileSystemEventStore using the given <code>serializer</code>. The serializer must be capable of
+     * serializing at least DomainEvents.
+     *
+     * @param serializer The serializer capable of serializing (at least) DomainEvents
+     */
+    public FileSystemEventStore(Serializer<? super DomainEvent> serializer) {
+        this.eventSerializer = serializer;
     }
 
     /**
@@ -234,14 +249,14 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
     }
 
     /**
-     * DomainEventStream implementation that reads DomainEvents from an inputItream. Entries in the input stream must be
-     * formatted as described by {@link EventSerializationUtils}
+     * DomainEventStream implementation that reads DomainEvents from an inputItream. Entries in the input stream must
+     * be formatted as described by {@link EventSerializationUtils}
      */
     private static class BufferedReaderDomainEventStream implements DomainEventStream {
 
         private DomainEvent next;
         private final InputStream inputStream;
-        private final EventSerializer serializer;
+        private final Serializer<? super DomainEvent> serializer;
 
         /**
          * Initialize a BufferedReaderDomainEventStream using the given <code>inputStream</code> and
@@ -258,7 +273,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
          * @param inputStream The inputStream providing serialized DomainEvents
          * @param serializer  The serializer to deserialize the DomainEvents
          */
-        public BufferedReaderDomainEventStream(InputStream inputStream, EventSerializer serializer) {
+        public BufferedReaderDomainEventStream(InputStream inputStream, Serializer<? super DomainEvent> serializer) {
             this.inputStream = new BufferedInputStream(inputStream);
             this.serializer = serializer;
             this.next = doReadNext();
