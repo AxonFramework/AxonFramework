@@ -300,15 +300,10 @@
             types of aggregates, but it is not a requirement.
         </para>
         <para>Axon provides two implementations of event stores, both are capable of storing all
-            domain events (those that extend the
-            <code>DomainEvent</code>
-            class). These event stores
-            use an
-            <code>EventSerializer</code>
-            to serialize and deserialize the event. By default,
-            Axon provides an implementation of the Event Serializer that serializes events to XML:
-            the<code>XStreamEventSerializer</code>.
-        </para>
+            domain events (those that extend the <code>DomainEvent</code> class). These event stores
+            use a <code>Serializer</code> to serialize and deserialize the event. By default, Axon
+            provides an implementation of the Event Serializer that serializes events to XML: the
+                <code>XStreamEventSerializer</code>. </para>
         <simplesect>
             <title>
                 <code>FileSystemEventStore</code>
@@ -330,19 +325,12 @@
             <title>
                 <code>JpaEventStore</code>
             </title>
-            <para>The
-                <code>JpaEventStore</code>
-                stores events in a JPA-compatible data source.
-                Unlike the file system version, the
-                <code>JPAEventStore</code>
-                supports
+            <para>The <code>JpaEventStore</code> stores events in a JPA-compatible data source.
+                Unlike the file system version, the <code>JPAEventStore</code> supports
                 transactions. The JPA Event Store stores events in so called entries. These entries
                 contain the serialized form of an event, as well as some fields where meta-data is
-                stored for fast lookup of these entries. To use the<code>JpaEventStore</code>, you
-                must have the
-                <code>javax.persistence</code>
-                annotations on your classpath.
-            </para>
+                stored for fast lookup of these entries. To use the <code>JpaEventStore</code>, you
+                must have the <code>javax.persistence</code> annotations on your classpath. </para>
             <para>By default, the event store needs you to configure your persistence context
                 (defined in
                 <code>META-INF/persistence.xml</code>
@@ -463,13 +451,12 @@
         <simplesect>
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Domain Event to prepare it for storage.
-                By default, Axon uses the<code>XStreamEventSerializer</code>, which uses XStream
-                (see<link xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/">
-                    xstream.codehaus.org</link>) to
+                By default, Axon uses the <code>XStreamEventSerializer</code>, which uses XStream
+                    (see<link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://xstream.codehaus.org/"> xstream.codehaus.org</link>) to
                 serialize Domain Events into XML and vice versa. XStream is very fast and is more
                 flexible than Java Serialization. Furthermore, the result of XStream serialization
-                is human readable. Quite useful for logging and debugging purposes.
-            </para>
+                is human readable. Quite useful for logging and debugging purposes. </para>
             <para>The XStreamEventSerializer can be configured. You can define aliases it should use
                 for certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
@@ -478,9 +465,8 @@
                     xstream.codehaus.org</link>.
             </para>
             <para>You may also implement your own Event Serializer, simply by creating a class that
-                implements<code>EventSerializer</code>, and configuring the Event Store to use that
-                implementation instead of the default.
-            </para>
+                implements <code>Serializer</code>, and configuring the Event Store to use that
+                implementation instead of the default. </para>
         </simplesect>
         <simplesect>
             <title>Changing the definition of Events</title>
@@ -617,16 +603,11 @@
                 streamed to the extracted aggregate instance.
             </para>
             <note>
-                <para>Do make sure that the
-                    <code>EventSerializer</code>
-                    instance you use (which
-                    defaults to the<code>XStreamEventSerializer</code>) is capable of serializing
-                    your aggregate. The
-                    <code>XStreamEventSerializer</code>
-                    requires you to use
-                    either a Sun JVM, or your aggregate must either have an accessible default
-                    constructor or be serializable.
-                </para>
+                <para>Do make sure that the <code>Serializer</code> instance you use (which defaults
+                    to the <code>XStreamEventSerializer</code>) is capable of serializing your
+                    aggregate. The <code>XStreamEventSerializer</code> requires you to use either a
+                    Sun JVM, or your aggregate must either have an accessible default constructor or
+                    implement the <code>Serializable</code> interface.</para>
             </note>
             <para>The AbstractSnapshotter provides a basic set of properties that allow you to tweak
                 the way snapshots are created:
