@@ -16,7 +16,7 @@
 
 package org.axonframework.util;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.AccessibleObject;
 import java.security.PrivilegedAction;
 
 /**
@@ -25,16 +25,16 @@ import java.security.PrivilegedAction;
  * @author Allard Buijze
  * @since 0.5
  */
-public class MethodAccessibilityCallback implements PrivilegedAction<Object> {
+public class MemberAccessibilityCallback implements PrivilegedAction<Object> {
 
-    private final Method method;
+    private final AccessibleObject method;
 
     /**
      * Initialize the callback to make the given <code>method</code> accessible for reflection.
      *
      * @param method The method to make accessible
      */
-    public MethodAccessibilityCallback(Method method) {
+    public MemberAccessibilityCallback(AccessibleObject method) {
         this.method = method;
     }
 

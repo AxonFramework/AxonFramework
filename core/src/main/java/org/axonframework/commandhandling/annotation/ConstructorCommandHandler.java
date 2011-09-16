@@ -22,6 +22,8 @@ import org.axonframework.unitofwork.UnitOfWork;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import static org.axonframework.util.ReflectionUtils.ensureAccessible;
+
 /**
  * Command Handler that creates a new aggregate instance by invoking that aggregate's constructor.
  *
@@ -63,6 +65,7 @@ class ConstructorCommandHandler<T extends AggregateRoot> {
      */
     public T invoke(Object command, UnitOfWork unitOfWork)
             throws InvocationTargetException, IllegalAccessException, InstantiationException {
+        ensureAccessible(constructor);
         if (optionalParameter) {
             return constructor.newInstance(command, unitOfWork);
         } else {

@@ -17,7 +17,9 @@
 package org.axonframework.util;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -104,54 +106,43 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Makes the given field accessible via reflection if it is not the case already.
+     * Makes the given <code>member</code> accessible via reflection if it is not the case already.
      *
-     * @param field The field to make accessible
-     * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
+     * @param member The member (field, method, constructor, etc) to make accessible
+     * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
-    public static void ensureAccessible(Field field) {
-        if (!isAccessible(field)) {
-            doPrivileged(new FieldAccessibilityCallback(field));
+    public static void ensureAccessible(AccessibleObject member) {
+        if (!isAccessible(member)) {
+            doPrivileged(new MemberAccessibilityCallback(member));
         }
     }
 
     /**
-     * Makes the given method accessible via reflection if it is not the case already.
+     * Indicates whether the given <code>member</code> is accessible. It does so by checking whether the member is
+     * non-final and public, or made accessible via reflection.
      *
-     * @param method The method to make accessible
-     * @throws IllegalStateException if the method is not accessible and the security manager doesn't allow it to be
-     *                               made accessible
+     * @param member The member (field, method, constructor, etc) to check for accessibility
+     * @return <code>true</code> if the member is accessible, otherwise <code>false</code>.
      */
-    public static void ensureAccessible(Method method) {
-        if (!isAccessible(method)) {
-            doPrivileged(new MethodAccessibilityCallback(method));
-        }
+    public static boolean isAccessible(AccessibleObject member) {
+        return member.isAccessible() || (Member.class.isInstance(member) && isNonFinalPublicMember((Member) member));
     }
 
     /**
-     * Indicates whether the given field is accessible. It does so by checking whether the field is non-final and
-     * public, or made accessible via reflection.
+     * Checks whether the given <code>member</code> is public and non-final. These members do no need to be set
+     * accessible using reflection.
      *
-     * @param field The field to check for accessibility
-     * @return <code>true</code> if the field is accessible, otherwise <code>false</code>.
-     */
-    public static boolean isAccessible(Field field) {
-        return field.isAccessible() || (Modifier.isPublic(field.getModifiers())
-                && Modifier.isPublic(field.getDeclaringClass().getModifiers())
-                && !Modifier.isFinal(field.getModifiers()));
-    }
-
-    /**
-     * Indicates whether the given method is accessible. It does so by checking whether the method is public, or made
-     * accessible via reflection.
+     * @param member The member to check
+     * @return <code>true</code> if the member is public and non-final, otherwise <code>false</code>.
      *
-     * @param method The method to check for accessibility
-     * @return <code>true</code> if the method is accessible, otherwise <code>false</code>.
+     * @see #isAccessible(java.lang.reflect.AccessibleObject)
+     * @see #ensureAccessible(java.lang.reflect.AccessibleObject) 
      */
-    public static boolean isAccessible(Method method) {
-        return method.isAccessible() || (Modifier.isPublic(method.getModifiers())
-                && Modifier.isPublic(method.getDeclaringClass().getModifiers()));
+    public static boolean isNonFinalPublicMember(Member member) {
+        return (Modifier.isPublic(member.getModifiers())
+                && Modifier.isPublic(member.getDeclaringClass().getModifiers())
+                && !Modifier.isFinal(member.getModifiers()));
     }
 
     /**

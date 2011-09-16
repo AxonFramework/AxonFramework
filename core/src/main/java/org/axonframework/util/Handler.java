@@ -47,7 +47,7 @@ public class Handler {
         this.optionalParameter = parameterTypes.length > 1;
         this.declaringClass = method.getDeclaringClass();
         if (!method.isAccessible()) {
-            doPrivileged(new MethodAccessibilityCallback(method));
+            doPrivileged(new MemberAccessibilityCallback(method));
         }
     }
 
