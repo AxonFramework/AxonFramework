@@ -43,15 +43,15 @@ public class SequenceMatcher<T> extends ListMatcher<T> {
      *
      * @param matchers The matchers that must match against at least one item in the list.
      */
-    public SequenceMatcher(Matcher<T>... matchers) {
+    public SequenceMatcher(Matcher<? extends T>... matchers) {
         super(matchers);
     }
 
     @Override
     public boolean matchesList(List<?> items) {
         Iterator<?> itemIterator = items.iterator();
-        Iterator<Matcher<T>> matcherIterator = getMatchers().iterator();
-        Matcher<T> currentMatcher = null;
+        Iterator<Matcher<? extends T>> matcherIterator = getMatchers().iterator();
+        Matcher<? extends T> currentMatcher = null;
         if (matcherIterator.hasNext()) {
             currentMatcher = matcherIterator.next();
         }

@@ -68,7 +68,7 @@ public abstract class Matchers {
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
-    public static <T> SequenceMatcher<T> sequenceOf(Matcher<T>... matchers) {
+    public static <T> SequenceMatcher<T> sequenceOf(Matcher<? extends T>... matchers) {
         return new SequenceMatcher<T>(matchers);
     }
 
