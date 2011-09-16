@@ -43,7 +43,7 @@ public class ExactSequenceMatcher<T> extends ListMatcher<T> {
      *
      * @param matchers The matchers that must match against at least one Event in the list.
      */
-    public ExactSequenceMatcher(Matcher<T>... matchers) {
+    public ExactSequenceMatcher(Matcher<? extends T>... matchers) {
         super(matchers);
     }
 

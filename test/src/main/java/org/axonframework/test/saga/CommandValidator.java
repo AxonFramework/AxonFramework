@@ -91,7 +91,7 @@ class CommandValidator {
      *
      * @param matcher The matcher validating the actual commands
      */
-    public void assertDispatchedMatching(Matcher<List<?>> matcher) {
+    public void assertDispatchedMatching(Matcher<?> matcher) {
         if (!matcher.matches(commandBus.getDispatchedCommands())) {
             Description expectedDescription = new StringDescription();
             Description actualDescription = new StringDescription();

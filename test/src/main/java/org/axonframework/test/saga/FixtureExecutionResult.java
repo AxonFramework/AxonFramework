@@ -153,7 +153,7 @@ public interface FixtureExecutionResult {
      * @param matcher The matcher that describes the expected list of commands
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<List<?>> matcher);
+    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher);
 
     /**
      * Assert that no events are scheduled for publication. This means that either no events were scheduled at all, all

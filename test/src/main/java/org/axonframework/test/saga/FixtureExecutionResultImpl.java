@@ -131,7 +131,7 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<List<?>> matcher) {
+    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher) {
         commandValidator.assertDispatchedMatching(matcher);
         return this;
     }
