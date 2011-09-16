@@ -17,6 +17,9 @@
 package org.axonframework.eventhandling;
 
 /**
+ * The ClusterSelector defines the mechanism that assigns each of the subscribed listeners to a Cluster instance. The
+ * selector does *not* need to subscribe the listener to that cluster.
+ * <p/>
  * <em>Thread safety note:</em> The implementation is expected to be thread safe.
  *
  * @author Allard Buijze
