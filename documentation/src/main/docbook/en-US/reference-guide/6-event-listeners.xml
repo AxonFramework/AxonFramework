@@ -23,13 +23,80 @@
     <sect1 xml:id="event-bus">
         <title>Event Bus</title>
         <para>The <code>EventBus</code> is the mechanism that dispatches events to the subscribed
-            event listeners. Axon Framework provides an implementation of the event bus:
-                <code>SimpleEventBus</code>. The <code>SimpleEventBus</code> manages subscribed
-                <code>EventListeners</code> and forwards all incoming events to all subscribed
-            listeners. This means that Event Listeners must be explicitly registered with the Event
-            Bus in order for them to receive events. The registration process of the
-                <code>SimpleEventBus</code> is thread safe. Listeners may register and unregister
-            for events at any time.</para>
+            event listeners. Axon Framework provides two implementation of the event bus:
+                <code>SimpleEventBus</code> and <code>ClusteringEventBus</code>. Both
+            implementations manages subscribed <code>EventListeners</code> and forward all incoming
+            events to all subscribed listeners. This means that Event Listeners must be explicitly
+            registered with the Event Bus in order for them to receive events. The registration
+            process is thread safe. Listeners may register and unregister for events at any
+            time.</para>
+        <sect2>
+            <title>Simple Event Bus</title>
+            <para>The <code>SimpleEventBus</code> is, as the name suggests, a very basic
+                implementation of the <code>EventBus</code> interface. It just dispatches each
+                incoming <code>Event</code> to each of the subscribed <code>EventListeners</code>
+                sequentiall. If an EventListener throws an <code>Exception</code>, dispatching stops
+                and the exception is propagated to the component publising the
+                <code>Event</code>.</para>
+            <para>The <code>SimpleEventBus</code> is suitable for most cases where dispatching is
+                only done locally, in a single JVM. Once you application requires
+                    <code>Events</code> to be published across multiple JVMs, you could consider
+                using the <code>ClusteringEventBus</code> instead.</para>
+        </sect2>
+        <sect2>
+            <title>Clustering Event Bus</title>
+            <para>The <code>ClusteringEventsBus</code> allows application developers to bundle
+                    <code>EventListener</code>s into <code>Cluster</code>s based on their properties
+                and non-funcitonal requirements. The ClusteringEventBus is also more capable to deal
+                with Events being dispatched among different machines.</para>
+            <para>The ClusteringEventsBus contains two mechanisms: the <code>ClusterSelector</code>,
+                which selects a <code>Cluster</code> instance for each of the registered
+                    <code>EventListener</code>s, and the <code>EventBusTerminal</code>, which is
+                responsible for dispatching Events to each of the relevant clusters.</para>
+            <note>
+                <title>Background: Axon Terminal</title>
+                <para>In the nervous system, an Axon (one of the components of a Neuron) transports
+                    electrical signals. These Neurons are interconnected in very complex
+                    arrangements. The Axon Terminal is responsible for transmitting these signals
+                    from one Neuron to another.</para>
+                <para>More information: <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="www.wikipedia.org/wiki/Axon_terminal"
+                        >www.wikipedia.org/wiki/Axon_terminal</link>.</para>
+            </note>
+            <simplesect>
+                <title><code>ClusterSelector</code></title>
+                <para>The primary responsibility of the <code>ClusterSelector</code> is to, as the
+                    name suggests, select a cluster for each Event Listener that subscribes to the
+                    Event Bus. By default, all Event Listeners are placed in a single Cluster
+                    instance, which dispatches events to its members sequentially and in the calling
+                    thread (similar to how the <code>SimpleEventBus</code> works). By providing a
+                    custom implementation, you can arrange the Event Listeners into different
+                    Cluster instances to suit the requirements of your architecture.</para>
+                <para>At this moment, there is a single implementation of the <code>Cluster</code>
+                    interface: <code>SimpleCluster</code>. This implementation calls each
+                    EventListener sequentially in teh calling thread. By adding information in the
+                    Meta Data of a cluster, the selector can provide hints to the Terminal about the
+                    expected behavior.</para>
+            </simplesect>
+            <simplesect>
+                <title><code>EventBusTerminal</code></title>
+                <para>The <code>EventBusTerminal</code> forms the bridge between the events being
+                    dispatched and the Clusters inside the Event Bus. The terminal is aware of any
+                    remoting technologies used, such as JMS, AMQP, etc. The default implementation
+                    dispatches published events to each of the (local) clusters using the publishing
+                    thread. This means that with the default terminal, and the default
+                        <code>ClusterSelector</code>, the behavior of the
+                        <code>ClusteringEventBus</code> is exactly the same as that of the
+                        <code>SimpleEventBus</code>.</para>
+                <para>In a typical AMQP based configuration, the <code>EventBusTerminal</code> would
+                    send published events to an Exchange. For each cluster, a Queue would be
+                    connected to that exchange. The <code>EventBusTerminal</code> will create a
+                    consumer for each cluster, which reads from its related Queue and forwards each
+                    message to that cluster. Event Listeners in a distributed environment where at
+                    most one instance should receive an Events should be placed in a separate
+                    cluster, which competes with the other instances on a single Queue.</para>
+            </simplesect>
+        </sect2>
     </sect1>
     <sect1 xml:id="event-listeners">
         <title>Event Listeners</title>
