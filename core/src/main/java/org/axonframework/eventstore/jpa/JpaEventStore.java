@@ -174,7 +174,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             }
         }
 
-        List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1, batchSize);
+        List<DomainEvent> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1);
         if (snapshotEvent != null) {
             events.add(0, snapshotEvent);
         }
@@ -185,13 +185,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber,
-                                         int batchSize) {
-        List<byte[]> entries = eventEntryStore.fetchBatch(type,
-                                                          identifier,
-                                                          firstSequenceNumber,
-                                                          batchSize,
-                                                          entityManager);
+    private List<DomainEvent> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
+        List<byte[]> entries = eventEntryStore.fetchBatch(type, identifier, firstSequenceNumber,
+                                                          batchSize, entityManager);
         List<DomainEvent> events = new ArrayList<DomainEvent>(entries.size());
         for (byte[] entry : entries) {
             events.add((DomainEvent) eventSerializer.deserialize(entry));
@@ -322,8 +318,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             DomainEvent nextEvent = next;
             if (!currentBatch.hasNext() && currentBatchSize >= batchSize) {
                 logger.debug("Fetching new batch for Aggregate [{}]", id.asString());
-                currentBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1, JpaEventStore.this.batchSize)
-                        .iterator();
+                currentBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1).iterator();
             }
             next = currentBatch.hasNext() ? currentBatch.next() : null;
             return nextEvent;

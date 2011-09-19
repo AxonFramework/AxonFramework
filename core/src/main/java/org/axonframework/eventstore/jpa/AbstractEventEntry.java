@@ -22,6 +22,7 @@ import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.serializer.Serializer;
 import org.joda.time.DateTime;
 
+import java.util.Arrays;
 import javax.persistence.Basic;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -64,7 +65,7 @@ abstract class AbstractEventEntry {
         this.type = type;
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
-        this.serializedEvent = serializedEvent;
+        this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
         this.timeStamp = event.getTimestamp().toString();
     }
 

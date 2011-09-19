@@ -19,7 +19,6 @@ package org.axonframework.gae.commandhandling;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventListenerProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +36,6 @@ public class SimpleEventBusWithoutStatistics implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBusWithoutStatistics.class);
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
-
-    /**
-     * Initializes the SimpleEventBus.
-     */
-    public SimpleEventBusWithoutStatistics() {
-    }
 
     /**
      * {@inheritDoc}
@@ -68,14 +61,6 @@ public class SimpleEventBusWithoutStatistics implements EventBus {
             logger.info("EventListener [{}] not added. It was already subscribed",
                         eventListener.getClass().getSimpleName());
         }
-    }
-
-    private Object getActualListenerFrom(EventListener eventListener) {
-        Object listener = eventListener;
-        while (listener instanceof EventListenerProxy) {
-            listener = ((EventListenerProxy) listener).getTarget();
-        }
-        return listener;
     }
 
     /**

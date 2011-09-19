@@ -23,8 +23,6 @@ import org.axonframework.eventhandling.UnsupportedHandlerMethodException;
 import org.axonframework.util.AbstractHandlerInvoker;
 import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.ReflectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -43,8 +41,6 @@ import java.util.Map;
  * @since 0.1
  */
 public class AnnotationEventHandlerInvoker extends AbstractHandlerInvoker {
-
-    private static final Logger logger = LoggerFactory.getLogger(AnnotationEventHandlerInvoker.class);
 
     /**
      * Initialize an event handler invoker that invokes handlers on the given <code>target</code>.

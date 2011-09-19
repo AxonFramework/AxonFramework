@@ -37,7 +37,7 @@ class EventContainer implements Serializable {
 
     private static final long serialVersionUID = -39816393359395878L;
 
-    private final ArrayList<DomainEvent> events = new ArrayList<DomainEvent>();
+    private final List<DomainEvent> events = new ArrayList<DomainEvent>();
     private final AggregateIdentifier aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
     private transient Long lastSequenceNumber;
@@ -153,11 +153,11 @@ class EventContainer implements Serializable {
     }
 
     private long newSequenceNumber() {
-        Long lastSequenceNumber = getLastSequenceNumber();
-        if (lastSequenceNumber == null) {
+        Long currentSequenceNumber = getLastSequenceNumber();
+        if (currentSequenceNumber == null) {
             return 0;
         }
-        return lastSequenceNumber + 1;
+        return currentSequenceNumber + 1;
     }
 
     /**

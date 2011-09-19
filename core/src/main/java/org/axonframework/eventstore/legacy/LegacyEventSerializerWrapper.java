@@ -36,9 +36,9 @@ public class LegacyEventSerializerWrapper implements Serializer<DomainEvent> {
     private final EventSerializer eventSerializer;
 
     /**
-     * Initialize a wrapper for the
+     * Initialize a wrapper for the given <code>eventSerializer</code>.
      *
-     * @param eventSerializer
+     * @param eventSerializer the eventSerializer to delegate requests to
      */
     public LegacyEventSerializerWrapper(EventSerializer eventSerializer) {
         this.eventSerializer = eventSerializer;
