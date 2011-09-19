@@ -185,7 +185,7 @@
             <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-core</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
 </dependency>]]></programlisting>
             <para>Most of the features provided by the Axon Framework are optional and require
                 additional dependencies. We have chosen not to add these dependencies by default, as
@@ -200,7 +200,7 @@
                 <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-integration</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.integration</groupId>
@@ -246,10 +246,9 @@
                 </listitem>
                 <listitem>
                     <para>If you know of any other way you think you can help us, do not hesitate to
-                        send a message to the Axon Framework mailinglist: <link
-                            xmlns:ns1="http://www.w3.org/1999/xlink"
-                            ns1:href="mailto:axonframework@googlegroups.com"
-                            >axonframework@googlegroups.com</link>.</para>
+                        send a message to the <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="mailto:axonframework@googlegroups.com"
+                            >Axon Framework mailinglist</link>.</para>
                 </listitem>
             </itemizedlist></para>
     </sect1>

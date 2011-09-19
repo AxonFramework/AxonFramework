@@ -335,9 +335,9 @@
                 (defined in
                 <code>META-INF/persistence.xml</code>
                 file) to contain the classes
-                <code>org.axonframework.eventstore.jpa.DomainEventEntry</code>
+                <code>DomainEventEntry</code>
                 and
-                <code>org.axonframework.eventstore.jpa.SnapshotEventEntry</code>.
+                <code>SnapshotEventEntry</code> (both in the <code>org.axonframework.eventstore.jpa</code> package).
             </para>
             <para>Below is an example configuration of a persistence context configuration:</para>
             <programlistingco>
@@ -417,15 +417,11 @@
                         explicit "clear" in performed inside the transaction.
                     </para>
                     <para>To work around this issue, make sure to exclusively query the serialized
-                        form (the<code>byte[]</code>) of events. Do not fetch the entire entity
-                        object. Alternatively, call
-                        <code>EntityManager.flush()</code>
-                        and
-                        <code>EntityManager.clear()</code>
-                        after fetching a batch of events.
-                        Failure to do so might result in<code>OutOfMemoryException</code>s when
-                        loading large streams of events.
-                    </para>
+                        form (the <code>byte[]</code>) of events. Do not fetch the entire entity
+                        object. Alternatively, call <code>EntityManager.flush()</code> and
+                            <code>EntityManager.clear()</code> after fetching a batch of events.
+                        Failure to do so might result in <code>OutOfMemoryException</code>s when
+                        loading large streams of events. </para>
                 </warning>
             </para>
         </simplesect>
@@ -433,19 +429,12 @@
             <title>Implementing your own event store</title>
             <para>If you have specific requirements for an event store, it is quite easy to
                 implement one using different underlying data sources. Reading and appending events
-                is done using a<code>DomainEventStream</code>, which is quite similar to iterator
-                implementations.
-            </para>
+                is done using a <code>DomainEventStream</code>, which is quite similar to iterator
+                implementations. </para>
             <tip>
-                <para>The
-                    <code>SimpleDomainEventStream</code>
-                    class will make the contents of a
-                    sequence (
-                    <code>List</code>
-                    or<code>array</code>) of
-                    <code>DomainEvent</code>
-                    instances accessible as event stream.
-                </para>
+                <para>The <code>SimpleDomainEventStream</code> class will make the contents of a
+                    sequence ( <code>List</code> or <code>array</code>) of <code>DomainEvent</code>
+                    instances accessible as event stream. </para>
             </tip>
         </simplesect>
         <simplesect>
@@ -454,9 +443,9 @@
                 By default, Axon uses the <code>XStreamEventSerializer</code>, which uses XStream
                     (see<link xmlns:ns1="http://www.w3.org/1999/xlink"
                     ns1:href="http://xstream.codehaus.org/"> xstream.codehaus.org</link>) to
-                serialize Domain Events into XML and vice versa. XStream is very fast and is more
-                flexible than Java Serialization. Furthermore, the result of XStream serialization
-                is human readable. Quite useful for logging and debugging purposes. </para>
+                serialize Domain Events into XML and vice versa. XStream is reasonably fast and is
+                more flexible than Java Serialization. Furthermore, the result of XStream
+                serialization is human readable. Quite useful for logging and debugging purposes. </para>
             <para>The XStreamEventSerializer can be configured. You can define aliases it should use
                 for certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
@@ -482,21 +471,16 @@
                 of events. A class file for an Event only needs to support the latest revision. When
                 old revisions are deserialized, they can be "upcasted" to the newer revision. The
                 revision number of an Event is provided to the constructor on the abstract event
-                classes.
-            </para>
-            <para>The
-                <code>EventUpcaster</code>
-                is responsible for transforming old events into the
+                classes.  The revision of an event is passed as a parameter in the constructor of
+                    <code>DomainEvent</code>.</para>
+            <para>The <code>EventUpcaster</code> is responsible for transforming old events into the
                 last revision. Upcasters typically work on an intermediate representation of the
-                Event. In the case of the<code>XStreamEventSerializater</code>, this intermediate
+                Event. In the case of the <code>XStreamEventSerializater</code>, this intermediate
                 representation is dom4j (see<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                                                  ns1:href="http://dom4j.sourceforge.net/">
-                    http://dom4j.sourceforge.net/</link>),
+                    ns1:href="http://dom4j.sourceforge.net/"> http://dom4j.sourceforge.net/</link>),
                 an easy to use java XML library that integrates nicely with XStream. The
-                <code>EventUpcaster</code>
-                can modify the XML structure of the event so that it
-                matches the new definition.
-            </para>
+                    <code>EventUpcaster</code> can modify the XML structure of the event so that it
+                matches the new definition. </para>
         </simplesect>
     </sect1>
     <sect1 xml:id="using-snapshot-events">
@@ -735,20 +719,20 @@
             <para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
-                    // ... code omitted for brevity
+    // ... code omitted for brevity
 
-                    @EventHandler
-                    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
-                    // ...
-                    }
+    @EventHandler
+    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
+        // ...
+    }
 
-                    @EventHandler
-                    protected void applySnapshot(MySnapshotEvent event) {
-                    // the snapshot event should contain all relevant state
-                    this.someState = event.someState;
-                    this.otherState = event.otherState;
-                    }
-                    }
+    @EventHandler
+    protected void applySnapshot(MySnapshotEvent event) {
+        // the snapshot event should contain all relevant state
+        this.someState = event.someState;
+        this.otherState = event.otherState;
+    }
+}
                 </programlisting>
             </para>
             <para>There is one type of snapshot event that is treated differently: the
@@ -813,25 +797,15 @@
             Sourcing Repositories offer support for more advanced conflict detection, as decribed in
             the paragraph above.
         </para>
-        <para>To enable advanced conflict detection, configure a
-            <code>ConflictResolver</code>
-            on
-            the<code>EventSourcingRepository</code>. This
-            <code>ConflictResolver</code>
-            is
+        <para>To enable advanced conflict detection, configure a <code>ConflictResolver</code> on
+            the <code>EventSourcingRepository</code>. This <code>ConflictResolver</code> is
             responsible for detecting conflicting modifications, based on the events representing
             these changes. Detecting these conflicts is a matter of comparing the two lists of
-            DomainEvents provided in the
-            <code>resolveConflicts</code>
-            method declared on the
-            <code>ConflictResolver</code>. If such a conflict is found, a
-            <code>ConflictingModificationException</code>
-            (or better, a more explicit and
-            explanatory subclass of it) must be thrown. If the
-            <code>ConflictResolver</code>
-            returns
+            DomainEvents provided in the <code>resolveConflicts</code> method declared on the
+                <code>ConflictResolver</code>. If such a conflict is found, a
+                <code>ConflictingModificationException</code> (or better, a more explicit and
+            explanatory subclass of it) must be thrown. If the <code>ConflictResolver</code> returns
             normally, the events are persisted, effectively meaning that the concurrent changes have
-            been merged.
-        </para>
+            been merged. </para>
     </sect1>
 </chapter>

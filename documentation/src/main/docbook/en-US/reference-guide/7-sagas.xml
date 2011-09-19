@@ -341,10 +341,10 @@
                     Context.</para>
                 <programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
                    saga-repository="sagaRepository" event-bus="eventBus">
-	&lt;axon:types>
-		fully.qualified.ClassName,
-    another.fq.ClassName
-	&lt;/axon:types>
+    &lt;axon:types>
+        fully.qualified.ClassName,
+        another.fq.ClassName
+    &lt;/axon:types>
 &lt;/axon:saga-manager></programlisting>
             </simplesect>
             <simplesect>
@@ -373,14 +373,14 @@
                     by adding the <code>executor</code> and optionally the
                         <code>transaction-manager</code> attributes to the <code>saga-manager</code>
                     element, as shown below.
-                    <programlisting language="java">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
+                    <programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
                    saga-repository="sagaRepository" event-bus="eventBus"
                    executor="myThreadPool" transaction-manager="txManager">
-	&lt;axon:types>
-		fully.qualified.ClassName,
+    &lt;axon:types>
+        fully.qualified.ClassName,
         another.fq.ClassName
-	&lt;/axon:types>
-	&lt;/axon:saga-manager></programlisting>The
+    &lt;/axon:types>
+&lt;/axon:saga-manager></programlisting>The
                     transaction-manager should point to a <code>PlatformTransactionManager</code>,
                     Spring's interface for transaction managers. Generally you can use the same
                     transaction manager as the other components in your application (e.g.

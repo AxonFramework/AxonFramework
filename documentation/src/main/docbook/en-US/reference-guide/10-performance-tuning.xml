@@ -23,6 +23,39 @@
         frequently and concurrently. For the extra performance and stability, you're better off
         tweaking the configuration to suit your specific needs. </para>
     <sect1>
+        <title>Database Indexes</title>
+        <para>If you have generated the tables automatically using your JPA implementation (e.g.
+            Hibernate), you probably do not have all the right indexes set on your tables. Different
+            usages of the Event Store require different indexes to be set for optimal performance.
+            This list explains which fields are used for the different types of queries by the
+            default <code>EventEntryStore</code> implementation:</para>
+        <itemizedlist>
+            <listitem>
+                <para>Normal operational use (storing and loading events): </para>
+                <para>Table 'DomainEventEntry', columns <code>type</code>,
+                        <code>aggregateIdentifier</code> and <code>sequenceNumber</code> (unique
+                    index)</para>
+            </listitem>
+            <listitem>
+                <para>Snapshotting:</para>
+                <para>Table 'SnapshotEventEntry', columns <code>type</code>,
+                        <code>aggregateIdentifier</code> and <code>sequenceNumber</code> (optionally
+                    a unique index)</para>
+            </listitem>
+            <listitem>
+                <para>Replaying the Event Store contents</para>
+                <para>Table 'DomainEventEntry', column <code>timestamp</code> (optionally also
+                        <code>sequenceNumber</code>)</para>
+            </listitem>
+            <listitem>
+                <para>Sagas</para>
+                <para>Table 'AssociationValueEntry', columns <code>associationKey</code> and
+                        <code>sagaId</code>,</para>
+                <para>Table 'SagaEntry', column <code>sagaId</code> (unique index)</para>
+            </listitem>
+        </itemizedlist>
+    </sect1>
+    <sect1>
         <title>Caching</title>
         <para>A well designed command handling module should pose no problems when implementing
             caching. Especially when using Event Sourcing, loading an aggregate from an Event Store
