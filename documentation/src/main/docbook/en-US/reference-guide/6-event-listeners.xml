@@ -47,7 +47,7 @@
             <title>Clustering Event Bus</title>
             <para>The <code>ClusteringEventsBus</code> allows application developers to bundle
                     <code>EventListener</code>s into <code>Cluster</code>s based on their properties
-                and non-funcitonal requirements. The ClusteringEventBus is also more capable to deal
+                and non-functional requirements. The ClusteringEventBus is also more capable to deal
                 with Events being dispatched among different machines.</para>
             <para>The ClusteringEventsBus contains two mechanisms: the <code>ClusterSelector</code>,
                 which selects a <code>Cluster</code> instance for each of the registered
