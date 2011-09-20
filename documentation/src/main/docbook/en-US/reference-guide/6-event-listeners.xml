@@ -74,7 +74,7 @@
                     Cluster instances to suit the requirements of your architecture.</para>
                 <para>At this moment, there is a single implementation of the <code>Cluster</code>
                     interface: <code>SimpleCluster</code>. This implementation calls each
-                    EventListener sequentially in teh calling thread. By adding information in the
+                    EventListener sequentially in the calling thread. By adding information in the
                     Meta Data of a cluster, the selector can provide hints to the Terminal about the
                     expected behavior.</para>
             </simplesect>
