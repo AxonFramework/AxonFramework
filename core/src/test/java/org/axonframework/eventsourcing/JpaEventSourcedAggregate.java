@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.AggregateDeletedEvent;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.StubDomainEvent;
 
@@ -28,6 +29,7 @@ import javax.persistence.Entity;
 @Entity
 public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot {
 
+    private static final long serialVersionUID = -7774899863711655258L;
     @Basic
     private long counter;
 
@@ -38,5 +40,15 @@ public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot 
     @Override
     protected void handle(DomainEvent event) {
         counter++;
+    }
+
+    public void delete() {
+        apply(new MyAggregateDeletedEvent());
+    }
+
+    public static class MyAggregateDeletedEvent extends DomainEvent implements AggregateDeletedEvent {
+
+
+        private static final long serialVersionUID = 2996583157371670395L;
     }
 }

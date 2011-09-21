@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventstore.EventStore;
@@ -112,6 +113,41 @@ public class HybridJpaRepositoryTest {
         entityManager.clear();
 
         assertNotNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
+    }
+
+    @Test
+    public void testDeleteAggregate() {
+        repository.setEventStore(eventStore);
+        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate();
+        aggregate.increaseCounter();
+        aggregate.delete();
+        repository.add(aggregate);
+        CurrentUnitOfWork.commit();
+
+        entityManager.flush();
+        entityManager.clear();
+
+        verify(eventStore).appendEvents(eq("JpaEventSourcedAggregate"), streamContaining(2L));
+        verify(eventListener).handle(isA(StubDomainEvent.class));
+        verify(eventListener).handle(isA(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
+        assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
+    }
+
+    @Test
+    public void testDeleteAggregate_NoEventStore() {
+        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate();
+        aggregate.increaseCounter();
+        aggregate.delete();
+        repository.add(aggregate);
+        CurrentUnitOfWork.commit();
+
+        verify(eventListener).handle(isA(StubDomainEvent.class));
+        verify(eventListener).handle(isA(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
     }
 
     @Test

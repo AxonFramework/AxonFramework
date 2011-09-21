@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,7 +48,8 @@ public class HybridJpaRepository<T extends EventSourcedAggregateRoot> extends Ge
     }
 
     /**
-     * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> without locking. The
+     * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> without locking.
+     * The
      * events are appended to the event store under the given <code>aggregateTypeIdentifier</code>.
      *
      * @param aggregateType           The type of aggregate stored in this repository.
@@ -81,6 +82,14 @@ public class HybridJpaRepository<T extends EventSourcedAggregateRoot> extends Ge
                                LockingStrategy lockingStrategy) {
         super(aggregateType, lockingStrategy);
         this.aggregateTypeIdentifier = aggregateTypeIdentifier;
+    }
+
+    @Override
+    protected void doDeleteWithLock(T aggregate) {
+        if (eventStore != null) {
+            eventStore.appendEvents(getTypeIdentifier(), aggregate.getUncommittedEvents());
+        }
+        super.doDeleteWithLock(aggregate);
     }
 
     @Override
