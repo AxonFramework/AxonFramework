@@ -27,6 +27,7 @@ import org.axonframework.saga.repository.XStreamSagaSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,11 +61,11 @@ public class JpaSagaRepositoryTest {
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
         entityManager.createQuery("DELETE FROM AssociationValueEntry");
-        repository.initialize();
         repository.setSerializer(new XStreamSagaSerializer());
         serializer = new XStreamSagaSerializer();
     }
 
+    @DirtiesContext
     @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaFound() {
         MyTestSaga testSaga = new MyTestSaga("test1");
@@ -81,6 +82,7 @@ public class JpaSagaRepositoryTest {
         assertEquals(MyTestSaga.class, actual.iterator().next().getClass());
     }
 
+    @DirtiesContext
     @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_NoSagaFound() {
         MyTestSaga testSaga = new MyTestSaga("test1");
@@ -98,6 +100,7 @@ public class JpaSagaRepositoryTest {
     }
 
     @Test
+    @DirtiesContext
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaDeleted() {
         MyTestSaga testSaga = new MyTestSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
@@ -114,6 +117,7 @@ public class JpaSagaRepositoryTest {
         assertTrue("Didn't expect any sagas", actual.isEmpty());
     }
 
+    @DirtiesContext
     @Test
     public void testAddAndLoadSaga_ByIdentifier() {
         String identifier = UUID.randomUUID().toString();
@@ -125,6 +129,7 @@ public class JpaSagaRepositoryTest {
         assertNotNull(entityManager.find(SagaEntry.class, identifier));
     }
 
+    @DirtiesContext
     @Test
     public void testAddAndLoadSaga_ByAssociationValue() {
         String identifier = UUID.randomUUID().toString();
@@ -140,6 +145,7 @@ public class JpaSagaRepositoryTest {
     }
 
     @Test
+    @DirtiesContext
     public void testAddAndLoadSaga_MultipleHitsByAssociationValue() {
         String identifier1 = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
@@ -173,6 +179,7 @@ public class JpaSagaRepositoryTest {
     }
 
     @Test
+    @DirtiesContext
     public void testAddAndLoadSaga_AssociateValueAfterStorage() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
@@ -186,6 +193,7 @@ public class JpaSagaRepositoryTest {
         assertNotNull(entityManager.find(SagaEntry.class, identifier));
     }
 
+    @DirtiesContext
     @Test
     public void testLoadUncachedSaga_ByIdentifier() {
         repository.setSerializer(new XStreamSagaSerializer());
@@ -197,6 +205,7 @@ public class JpaSagaRepositoryTest {
         assertEquals(identifier, loaded.getSagaIdentifier());
     }
 
+    @DirtiesContext
     @Test
     public void testLoadUncachedSaga_ByAssociationValue() {
         String identifier = UUID.randomUUID().toString();
@@ -205,7 +214,6 @@ public class JpaSagaRepositoryTest {
         entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value"), serializer));
         entityManager.flush();
         entityManager.clear();
-        repository.initialize();
         Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
         assertEquals(1, loaded.size());
         MyTestSaga loadedSaga = loaded.iterator().next();
@@ -219,6 +227,7 @@ public class JpaSagaRepositoryTest {
         repository.load(MyTestSaga.class, "123456");
     }
 
+    @DirtiesContext
     @Test
     public void testLoadSaga_AssociationValueRemoved() {
         String identifier = UUID.randomUUID().toString();
@@ -228,13 +237,13 @@ public class JpaSagaRepositoryTest {
         entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value"), serializer));
         entityManager.flush();
         entityManager.clear();
-        repository.initialize();
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.removeAssociationValue("key", "value");
         Set<MyTestSaga> found = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
         assertEquals(0, found.size());
     }
 
+    @DirtiesContext
     @Test
     public void testSaveSaga() {
         String identifier = UUID.randomUUID().toString();
@@ -252,6 +261,7 @@ public class JpaSagaRepositoryTest {
         assertEquals(1, actualSaga.counter);
     }
 
+    @DirtiesContext
     @Test
     public void testEndSaga() {
         String identifier = UUID.randomUUID().toString();
@@ -266,6 +276,7 @@ public class JpaSagaRepositoryTest {
         assertNull(entityManager.find(SagaEntry.class, identifier));
     }
 
+    @DirtiesContext
     @Test(expected = SagaStorageException.class)
     public void testStoreAssociationValue_NotSerializable() {
         String identifier = UUID.randomUUID().toString();

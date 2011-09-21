@@ -21,11 +21,12 @@ import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
+import org.axonframework.saga.repository.AssociationValueMap;
 import org.axonframework.saga.repository.JavaSagaSerializer;
 import org.axonframework.saga.repository.SagaSerializer;
 
 import java.util.List;
-import javax.annotation.PostConstruct;
+import java.util.Set;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -46,12 +47,37 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     private ResourceInjector injector;
     private SagaSerializer serializer;
     private volatile boolean useExplicitFlush = true;
+    private volatile boolean initialized = false;
 
     /**
      * Initializes a Saga Repository with a <code>JavaSagaSerializer</code>.
      */
     public JpaSagaRepository() {
         serializer = new JavaSagaSerializer();
+    }
+
+    @Override
+    public <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValues) {
+        if (!initialized) {
+            initialize();
+        }
+        return super.find(type, associationValues);
+    }
+
+    @Override
+    public void add(Saga saga) {
+        if (!initialized) {
+            initialize();
+        }
+        super.add(saga);
+    }
+
+    @Override
+    public void commit(Saga saga) {
+        if (!initialized) {
+            initialize();
+        }
+        super.commit(saga);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -138,15 +164,25 @@ public class JpaSagaRepository extends AbstractSagaRepository {
      * result in Saga instance not being found based on their <code>AssociationValue</code>s.
      */
     @SuppressWarnings({"unchecked"})
-    @PostConstruct
-    public void initialize() {
-        List<AssociationValueEntry> entries =
-                entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae").getResultList();
-        getAssociationValueMap().clear();
-        for (AssociationValueEntry entry : entries) {
-            AssociationValue associationValue = entry.getAssociationValue(serializer);
-            getAssociationValueMap().add(associationValue, entry.getSagaIdentifier());
+    private synchronized void initialize() {
+        if (!initialized) {
+            List<AssociationValueEntry> entries =
+                    entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae").getResultList();
+            getAssociationValueMap().clear();
+            for (AssociationValueEntry entry : entries) {
+                AssociationValue associationValue = entry.getAssociationValue(serializer);
+                getAssociationValueMap().add(associationValue, entry.getSagaIdentifier());
+            }
+            initialized = true;
         }
+    }
+
+    /*
+     * Overridden for test purposes
+     */
+    @Override
+    protected AssociationValueMap getAssociationValueMap() {
+        return super.getAssociationValueMap();
     }
 
     /**
