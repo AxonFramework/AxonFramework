@@ -20,12 +20,12 @@
     <parent>
         <artifactId>axon-addressbook-flexui</artifactId>
         <groupId>org.axonframework.samples</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>1.2</version>
     </parent>
 
     <groupId>org.axonframework.samples</groupId>
     <artifactId>axon-addressbook-flexui-war</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <name>Axon Address Book Sample - Flex ui war</name>
     <packaging>war</packaging>
 
