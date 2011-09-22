@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>axon</artifactId>
@@ -31,16 +32,12 @@
     <name>Axon - MongoDB integration</name>
     <description>The mongo integration of Axon. This project contains the mongo event store.</description>
 
-    <properties>
-        <axon.version>${project.parent.version}</axon.version>
-    </properties>
-
     <dependencies>
         <!-- Axon dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-core</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Mongo dependencies -->
@@ -81,7 +78,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-integrationtests</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
