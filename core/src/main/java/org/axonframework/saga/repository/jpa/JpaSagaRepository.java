@@ -21,7 +21,6 @@ import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
-import org.axonframework.saga.repository.AssociationValueMap;
 import org.axonframework.saga.repository.JavaSagaSerializer;
 import org.axonframework.saga.repository.SagaSerializer;
 
@@ -175,14 +174,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
             }
             initialized = true;
         }
-    }
-
-    /*
-     * Overridden for test purposes
-     */
-    @Override
-    protected AssociationValueMap getAssociationValueMap() {
-        return super.getAssociationValueMap();
     }
 
     /**
