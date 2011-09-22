@@ -142,7 +142,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
                     String.format("An error occurred while trying to open the event file "
                                           + "for aggregate type [%s] with identifier [%s]",
                                   type,
-                                  identifier.toString()), e);
+                                  identifier.asString()), e);
         }
     }
 
@@ -221,7 +221,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
                             "The skip operation did not actually skip the expected amount of bytes. "
                                     + "The event log of aggregate of type {} and identifier {} might be corrupt.",
                             type,
-                            identifier.toString());
+                            identifier.asString());
                 }
             } finally {
                 IOUtils.closeQuietly(snapshotFileInputStream);

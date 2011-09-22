@@ -63,7 +63,7 @@ abstract class AbstractEventEntry {
      */
     protected AbstractEventEntry(String type, DomainEvent event, byte[] serializedEvent) {
         this.type = type;
-        this.aggregateIdentifier = event.getAggregateIdentifier().toString();
+        this.aggregateIdentifier = event.getAggregateIdentifier().asString();
         this.sequenceNumber = event.getSequenceNumber();
         this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
         this.timeStamp = event.getTimestamp().toString();

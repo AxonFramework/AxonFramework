@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class ContactListener {
         logger.debug("Received and event with name {} and identifier {}", event.getName(), event.getEventIdentifier());
         ContactDTO contactDTO = new ContactDTO();
         contactDTO.setName(event.getName());
-        contactDTO.setUuid(event.getAggregateIdentifier().toString());
+        contactDTO.setUuid(event.getAggregateIdentifier().asString());
         producer.sendContactUpdate(contactDTO);
     }
 
@@ -54,10 +54,12 @@ public class ContactListener {
 
     @EventHandler
     public void handleContactNameChangedEvent(ContactNameChangedEvent event) {
-        logger.debug("Received and event with new name {} and identifier {}", event.getNewName(), event.getEventIdentifier());
+        logger.debug("Received and event with new name {} and identifier {}",
+                     event.getNewName(),
+                     event.getEventIdentifier());
         ContactDTO contactDTO = new ContactDTO();
         contactDTO.setName(event.getNewName());
-        contactDTO.setUuid(event.getAggregateIdentifier().toString());
+        contactDTO.setUuid(event.getAggregateIdentifier().asString());
         producer.sendContactUpdate(contactDTO);
     }
 

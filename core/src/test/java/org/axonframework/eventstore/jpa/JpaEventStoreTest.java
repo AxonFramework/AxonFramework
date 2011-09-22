@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
@@ -69,10 +70,13 @@ public class JpaEventStoreTest {
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
+    private AggregateIdentifier mockAggregateIdentifier;
 
     @Before
     public void setUp() {
-        aggregate1 = new StubAggregateRoot();
+        mockAggregateIdentifier = mock(AggregateIdentifier.class);
+        when(mockAggregateIdentifier.asString()).thenReturn(UUID.randomUUID().toString());
+        aggregate1 = new StubAggregateRoot(mockAggregateIdentifier);
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
         }
@@ -82,6 +86,11 @@ public class JpaEventStoreTest {
         aggregate2.changeState();
         aggregate2.changeState();
         entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
+    }
+
+    @After
+    public void tearDown() {
+        verify(mockAggregateIdentifier, never()).toString();
     }
 
     @Test
@@ -334,6 +343,13 @@ public class JpaEventStoreTest {
     }
 
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
+
+        private StubAggregateRoot() {
+        }
+
+        private StubAggregateRoot(AggregateIdentifier identifier) {
+            super(identifier);
+        }
 
         public void changeState() {
             apply(new StubStateChangedEvent());
