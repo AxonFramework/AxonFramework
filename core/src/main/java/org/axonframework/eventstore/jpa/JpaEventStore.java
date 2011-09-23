@@ -19,13 +19,11 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStoreManagement;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
-import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
@@ -78,21 +76,6 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      */
     public JpaEventStore() {
         this(new XStreamEventSerializer(), new DefaultEventEntryStore());
-    }
-
-    /**
-     * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and the default
-     * Event Entry store.
-     * <p/>
-     * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
-     * SnapshotEventEntry}.
-     *
-     * @param eventSerializer The serializer to (de)serialize domain events with.
-     * @deprecated Use {@link #JpaEventStore(org.axonframework.serializer.Serializer)} instead
-     */
-    @Deprecated
-    public JpaEventStore(EventSerializer eventSerializer) {
-        this(new LegacyEventSerializerWrapper(eventSerializer), new DefaultEventEntryStore());
     }
 
     /**

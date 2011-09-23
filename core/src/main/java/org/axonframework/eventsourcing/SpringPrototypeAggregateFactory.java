@@ -53,6 +53,12 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
         return typeIdentifier;
     }
 
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public Class<T> getAggregateType() {
+        return (Class<T>) applicationContext.getType(prototypeBeanName);
+    }
+
     /**
      * Sets the name of the prototype bean this repository serves. Note that the the bean should have the prototype
      * scope and have a constructor that takes a single UUID argument.

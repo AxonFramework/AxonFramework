@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ package org.axonframework.eventstore;
  * changed formats (XStream, for example, will allow for some changes by using aliases), the Upcaster will allow you to
  * configure more complex structural transformations.
  *
- * @author Allard Buijze
  * @param <T> The data format that this upcaster uses to represent the event
+ * @author Allard Buijze
  * @since 0.7
  */
 public interface EventUpcaster<T> {
@@ -38,12 +38,11 @@ public interface EventUpcaster<T> {
     Class<T> getSupportedRepresentation();
 
     /**
-     * Upcast the given <code>event</code> to make it parsable by the EventSerializer. Implementations may alter the
+     * Upcast the given <code>event</code> to make it parsable by the Serializer. Implementations may alter the
      * given <code>event</code>, and return a reference to the same instance.
      *
      * @param event The serialized event. This instance may have been processed by other upcasters.
      * @return The instance to use for further upcasting or deserialization
      */
     T upcast(T event);
-
 }

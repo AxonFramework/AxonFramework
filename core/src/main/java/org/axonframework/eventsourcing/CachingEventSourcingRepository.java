@@ -41,16 +41,6 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
     private Cache cache = DEFAULT_CACHE;
 
     /**
-     * Initializes a repository with a pessimistic locking strategy. Optimistic locking is not compatible with caching.
-     *
-     * @deprecated Use {@link #CachingEventSourcingRepository(AggregateFactory)} instead.
-     */
-    @Deprecated
-    protected CachingEventSourcingRepository() {
-        super(LockingStrategy.PESSIMISTIC);
-    }
-
-    /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
      * Optimistic locking is not compatible with caching.
      *

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.GenericEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.LockingStrategy;
@@ -98,7 +98,7 @@ public class SynchronousLoopbackTest {
     }
 
     protected void initializeRepository(LockingStrategy lockingStrategy) {
-        GenericEventSourcingRepository<CountingAggregate> repository = new GenericEventSourcingRepository<CountingAggregate>(
+        EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<CountingAggregate>(
                 CountingAggregate.class,
                 lockingStrategy);
         repository.setEventBus(eventBus);

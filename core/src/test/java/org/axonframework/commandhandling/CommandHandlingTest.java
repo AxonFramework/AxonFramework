@@ -23,7 +23,7 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.GenericEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -41,14 +41,14 @@ import static org.mockito.Mockito.*;
  */
 public class CommandHandlingTest {
 
-    private GenericEventSourcingRepository<StubAggregate> repository;
+    private EventSourcingRepository<StubAggregate> repository;
     private AggregateIdentifier aggregateIdentifier;
     private EventBus mockEventBus;
     private EventStore mockEventStore;
 
     @Before
     public void setUp() {
-        repository = new GenericEventSourcingRepository<StubAggregate>(StubAggregate.class);
+        repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class);
         mockEventBus = mock(EventBus.class);
         mockEventStore = new StubEventStore();
         repository.setEventBus(mockEventBus);

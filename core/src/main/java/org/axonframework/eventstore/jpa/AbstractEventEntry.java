@@ -78,7 +78,7 @@ abstract class AbstractEventEntry {
     /**
      * Reconstructs the DomainEvent using the given <code>eventSerializer</code>.
      *
-     * @param eventSerializer The EventSerializer to deserialize the DomainEvent with.
+     * @param eventSerializer The Serializer to deserialize the DomainEvent with.
      * @return The deserialized domain event
      */
     public DomainEvent getDomainEvent(Serializer<? super DomainEvent> eventSerializer) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import org.axonframework.domain.DomainEvent;
 /**
  * Interface describing objects capable of creating instances of aggregates to be initialized with an event stream.
  *
- * @author Allard Buijze
  * @param <T> The type of aggregate this factory creates
+ * @author Allard Buijze
  * @since 0.6
  */
 public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
@@ -43,8 +43,8 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
     T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent);
 
     /**
-     * Returns the type identifier for this aggregate factory. The type identifier is used by the EventStore to organize
-     * data related to the same type of aggregate.
+     * Returns the type identifier for this aggregate factory. The type identifier is used by the EventStore to
+     * organize data related to the same type of aggregate.
      * <p/>
      * Tip: in most cases, the simple class name would be a good start.
      *
@@ -52,4 +52,11 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
      */
     String getTypeIdentifier();
 
+    /**
+     * Returns the class of the aggregate returned by this factory. If this factory supports polymorphism, the class
+     * returned is the common parent of all possible aggregate types.
+     *
+     * @return the class of the aggregate returned by this factory
+     */
+    Class<T> getAggregateType();
 }

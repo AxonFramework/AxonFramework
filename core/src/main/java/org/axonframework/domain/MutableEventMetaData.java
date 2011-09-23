@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Implementation of EventMetaData that allows values to be set, as well as read.
@@ -48,20 +47,6 @@ public class MutableEventMetaData implements Serializable, EventMetaData {
     public MutableEventMetaData(DateTime timestamp, String eventIdentifier) {
         values.put(IDENTIFIER_KEY, eventIdentifier);
         values.put(TIMESTAMP_KEY, timestamp);
-    }
-
-    /**
-     * Create a meta-data instance with the given <code>timestamp</code> and <code>eventIdentifier</code> as initial
-     * values.
-     *
-     * @param timestamp       The timestamp of the creation of the event
-     * @param eventIdentifier The identifier of the event
-     * @deprecated Hard-coded dependency on UUID type is deprecated for performance reasons. Use {@link
-     *             #MutableEventMetaData(org.joda.time.DateTime, String)} instead.
-     */
-    @Deprecated
-    public MutableEventMetaData(DateTime timestamp, UUID eventIdentifier) {
-        this(timestamp, eventIdentifier.toString());
     }
 
     /**

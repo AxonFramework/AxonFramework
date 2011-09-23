@@ -77,7 +77,7 @@ public class EventEntry {
     }
 
     /**
-     * Returns the actual DomainEvent from the EventEntry using the provided EventSerializer
+     * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
      * @return The actual DomainEvent
@@ -87,7 +87,7 @@ public class EventEntry {
     }
 
     /**
-     * getter for the sequence number of the event
+     * getter for the sequence number of the event.
      *
      * @return long representing the sequence number of the event
      */
@@ -96,7 +96,7 @@ public class EventEntry {
     }
 
     /**
-     * getter for the aggregate identifier
+     * getter for the aggregate identifier.
      *
      * @return AggregateIdentifier for this EventEntry
      */

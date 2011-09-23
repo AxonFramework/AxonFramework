@@ -29,7 +29,7 @@ import java.lang.reflect.Modifier;
  * constructor may not perform any initialization on the aggregate, other than setting the identifier.
  * <p/>
  * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
- * GenericEventSourcingRepository will try to make it accessible.
+ * GenericAggregateFactory will try to make it accessible.
  *
  * @param <T> The type of aggregate this factory creates
  * @author Allard Buijze
@@ -37,22 +37,24 @@ import java.lang.reflect.Modifier;
  */
 public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implements AggregateFactory<T> {
 
-    private final String aggregateType;
+    private final String typeIdentifier;
     private final Constructor<T> constructor;
+    private final Class<T> aggregateType;
 
     /**
      * Initialize the AggregateFactory for creating instances of the given <code>aggregateType</code>.
      *
      * @param aggregateType The type of aggregate this factory creates instances of.
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     *                                        settings prevent the GenericEventSourcingRepository from calling the
+     *                                        settings prevent the GenericAggregateFactory from calling the
      *                                        constructor.
      */
     public GenericAggregateFactory(Class<T> aggregateType) {
         Assert.isTrue(EventSourcedAggregateRoot.class.isAssignableFrom(aggregateType),
                       "The given aggregateType must be a subtype of EventSourcedAggregateRoot");
         Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
-        this.aggregateType = aggregateType.getSimpleName();
+        this.aggregateType = aggregateType;
+        this.typeIdentifier = aggregateType.getSimpleName();
         try {
             this.constructor = aggregateType.getDeclaredConstructor(AggregateIdentifier.class);
             if (!constructor.isAccessible()) {
@@ -61,7 +63,7 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
         } catch (NoSuchMethodException e) {
             throw new IncompatibleAggregateException(String.format(
                     "The aggregate [%s] does not have a suitable constructor. "
-                            + "See Javadoc of GenericEventSourcingRepository for more information.",
+                            + "See Javadoc of GenericAggregateFactory for more information.",
                     aggregateType.getSimpleName()), e);
         }
     }
@@ -74,7 +76,7 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
      * is retrieved from the snapshot, instead of creating a new -blank- instance.
      *
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     *                                        settings prevent the GenericEventSourcingRepository from calling the
+     *                                        settings prevent the GenericAggregateFactory from calling the
      *                                        constructor.
      */
     @SuppressWarnings({"unchecked"})
@@ -96,6 +98,11 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
 
     @Override
     public String getTypeIdentifier() {
+        return typeIdentifier;
+    }
+
+    @Override
+    public Class<T> getAggregateType() {
         return aggregateType;
     }
 }

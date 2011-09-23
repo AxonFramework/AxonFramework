@@ -204,5 +204,10 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         public String getTypeIdentifier() {
             return "test";
         }
+
+        @Override
+        public Class<SimpleAggregateRoot> getAggregateType() {
+            return SimpleAggregateRoot.class;
+        }
     }
 }

@@ -28,11 +28,9 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
-import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +47,6 @@ public class GaeEventStore implements SnapshotEventStore {
 
     private final Serializer<? super DomainEvent> eventSerializer;
     private final DatastoreService datastoreService;
-
-    @Deprecated
-    public GaeEventStore(EventSerializer eventSerializer) {
-        this(new LegacyEventSerializerWrapper(eventSerializer));
-    }
 
     public GaeEventStore() {
         this(new XStreamEventSerializer());

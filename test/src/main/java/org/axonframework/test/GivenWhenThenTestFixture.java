@@ -30,7 +30,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.monitoring.jmx.JmxConfiguration;
@@ -80,9 +79,8 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createGenericRepository(
-            Class<T> aggregateClass) {
-        registerRepository(new GenericEventSourcingRepository<T>(aggregateClass));
+    public <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createRepository(Class<T> aggregateClass) {
+        registerRepository(new EventSourcingRepository<T>(aggregateClass));
         return (EventSourcingRepository<T>) repository;
     }
 

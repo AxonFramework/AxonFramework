@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,17 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
 import com.thoughtworks.xstream.io.binary.BinaryStreamReader;
 import com.thoughtworks.xstream.io.binary.BinaryStreamWriter;
-import org.axonframework.serializer.GenericXStreamSerializer;
-import org.junit.Test;
+import org.axonframework.serializer.XStreamSerializer;
+import org.junit.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -39,7 +42,7 @@ public class JavaSerializationTest {
     @Test
     public void testSerialize_XStreamWithBinaryOutput() {
         XStream xstream = new XStream();
-        GenericXStreamSerializer serializer = new GenericXStreamSerializer(UTF8, xstream);
+        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
         aggregateRoot.doSomething();
@@ -57,7 +60,7 @@ public class JavaSerializationTest {
     @Test
     public void testSerialize_XStreamWithPureJavaReflectionProvider() {
         XStream xstream = new XStream(new PureJavaReflectionProvider());
-        GenericXStreamSerializer serializer = new GenericXStreamSerializer(UTF8, xstream);
+        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
         aggregateRoot.doSomething();
@@ -75,7 +78,7 @@ public class JavaSerializationTest {
     @Test
     public void testSerialize_XStreamWithDefaultReflectionProvider() {
         XStream xstream = new XStream();
-        GenericXStreamSerializer serializer = new GenericXStreamSerializer(UTF8, xstream);
+        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
         aggregateRoot.doSomething();

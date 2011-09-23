@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package org.axonframework.domain;
 
-import org.axonframework.serializer.GenericXStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.axonframework.serializer.XStreamSerializer;
+import org.junit.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,7 +46,7 @@ public class AbstractAggregateRootTest {
 
     @Test
     public void testSerializability_GenericXStreamSerializer() throws UnsupportedEncodingException {
-        GenericXStreamSerializer serializer = new GenericXStreamSerializer();
+        XStreamSerializer serializer = new XStreamSerializer();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         serializer.serialize(testSubject, baos);
 
@@ -67,7 +66,7 @@ public class AbstractAggregateRootTest {
     }
 
     private AggregateRoot deserialized(ByteArrayOutputStream baos) {
-        GenericXStreamSerializer serializer = new GenericXStreamSerializer();
+        XStreamSerializer serializer = new XStreamSerializer();
         return (AggregateRoot) serializer.deserialize(new ByteArrayInputStream(baos.toByteArray()));
     }
 

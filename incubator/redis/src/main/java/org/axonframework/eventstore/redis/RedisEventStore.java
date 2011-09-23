@@ -19,9 +19,7 @@ package org.axonframework.eventstore.redis;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
 import redis.clients.jedis.Jedis;
@@ -82,11 +80,6 @@ public class RedisEventStore implements EventStore {
     @Override
     public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
         throw new UnsupportedOperationException("Method not yet implemented");
-    }
-
-    @Deprecated
-    public void setEventSerializer(EventSerializer eventSerializer) {
-        this.eventSerializer = new LegacyEventSerializerWrapper(eventSerializer);
     }
 
     public void setEventSerializer(Serializer<? super DomainEvent> serializer) {

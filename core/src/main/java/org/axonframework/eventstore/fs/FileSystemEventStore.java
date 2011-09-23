@@ -21,13 +21,11 @@ import org.apache.commons.io.input.CountingInputStream;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.eventstore.EventSerializer;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.XStreamEventSerializer;
-import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,18 +68,6 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      */
     public FileSystemEventStore() {
         this.eventSerializer = new XStreamEventSerializer();
-    }
-
-    /**
-     * Customized initialization of the event store. The actual serialization and deserialization is delegated to the
-     * provided <code>eventSerializer </code>.
-     *
-     * @param eventSerializer The serializer to serialize DomainEvents with
-     * @deprecated Use {@link #FileSystemEventStore(org.axonframework.serializer.Serializer)} instead
-     */
-    @Deprecated
-    public FileSystemEventStore(final EventSerializer eventSerializer) {
-        this(new LegacyEventSerializerWrapper(eventSerializer));
     }
 
     /**

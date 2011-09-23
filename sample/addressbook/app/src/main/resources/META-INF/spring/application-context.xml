@@ -87,7 +87,7 @@
 
     <!--
         <bean id="contactRepository"
-              class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
+              class="org.axonframework.eventsourcing.EventSourcingRepository">
             <constructor-arg value="org.axonframework.sample.app.command.Contact"/>
             <property name="eventBus" ref="eventBus"/>
             <property name="eventStore" ref="eventStore"/>

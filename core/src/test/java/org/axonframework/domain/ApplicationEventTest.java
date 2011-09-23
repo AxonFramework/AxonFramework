@@ -17,7 +17,7 @@
 package org.axonframework.domain;
 
 import org.apache.commons.codec.binary.Base64;
-import org.axonframework.serializer.GenericXStreamSerializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
@@ -91,12 +91,12 @@ public class ApplicationEventTest {
     @Test
     public void testDeserializeApplicationEvent_v1_2_XStreamSerializer() throws IOException, ClassNotFoundException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new GenericXStreamSerializer().serialize(new MyApplicationEvent(this), baos);
+        new XStreamSerializer().serialize(new MyApplicationEvent(this), baos);
         System.out.println(new String(baos.toByteArray(), "UTF-8"));
 
         String encodedEvent = "<axon.domain.ApplicationEventTest_-MyApplicationEvent><metaData><values><entry><string>_timestamp</string><dateTime>2011-08-19T09:22:06.235+02:00</dateTime></entry><entry><string>_identifier</string><uuid>f61e8267-0c1e-43e3-807f-23c1d59f0913</uuid></entry></values></metaData><eventRevision>0</eventRevision><sourceDescription>org.axonframework.domain.ApplicationEventTest@a210b5b</sourceDescription></axon.domain.ApplicationEventTest_-MyApplicationEvent>";
         ByteArrayInputStream bis = new ByteArrayInputStream(encodedEvent.getBytes("UTF-8"));
-        MyApplicationEvent event = (MyApplicationEvent) new GenericXStreamSerializer().deserialize(bis);
+        MyApplicationEvent event = (MyApplicationEvent) new XStreamSerializer().deserialize(bis);
 
         assertNotNull(event);
         assertEquals(Object.class, event.getSourceType());
@@ -109,7 +109,7 @@ public class ApplicationEventTest {
             throws IOException, ClassNotFoundException {
         String encodedEvent = "<axon.domain.ApplicationEventTest_-MyApplicationEvent><metaData><values><entry><string>_timestamp</string><dateTime>2011-08-19T09:22:40.947+02:00</dateTime></entry><entry><string>_identifier</string><uuid>6a401ee2-8bce-43f1-8a26-345c9cbf9fdc</uuid></entry></values></metaData><eventRevision>0</eventRevision><sourceType>org.axonframework.domain.AClassThatDoesNotExist</sourceType><sourceDescription>org.axonframework.domain.ApplicationEventTest@2e5bbd6</sourceDescription></axon.domain.ApplicationEventTest_-MyApplicationEvent>";
         ByteArrayInputStream bis = new ByteArrayInputStream(encodedEvent.getBytes("UTF-8"));
-        MyApplicationEvent event = (MyApplicationEvent) new GenericXStreamSerializer().deserialize(bis);
+        MyApplicationEvent event = (MyApplicationEvent) new XStreamSerializer().deserialize(bis);
 
         assertNotNull(event);
         assertEquals(Object.class, event.getSourceType());

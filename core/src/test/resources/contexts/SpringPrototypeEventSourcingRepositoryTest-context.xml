@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -19,15 +19,23 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <bean id="repositoryOne" class="org.axonframework.eventsourcing.SpringPrototypeEventSourcingRepository">
-        <property name="prototypeBeanName" value="myStubAggregate"/>
+    <bean id="repositoryOne" class="org.axonframework.eventsourcing.EventSourcingRepository">
+        <constructor-arg>
+            <bean class="org.axonframework.eventsourcing.SpringPrototypeAggregateFactory">
+                <property name="prototypeBeanName" value="myStubAggregate"/>
+            </bean>
+        </constructor-arg>
         <property name="eventBus" ref="eventBus"/>
         <property name="eventStore" ref="eventStore"/>
     </bean>
 
-    <bean id="repositoryTwo" class="org.axonframework.eventsourcing.SpringPrototypeEventSourcingRepository">
-        <property name="prototypeBeanName" value="myStubAggregate"/>
-        <property name="typeIdentifier" value="anotherTypeIdentifier"/>
+    <bean id="repositoryTwo" class="org.axonframework.eventsourcing.EventSourcingRepository">
+        <constructor-arg>
+            <bean class="org.axonframework.eventsourcing.SpringPrototypeAggregateFactory">
+                <property name="prototypeBeanName" value="myStubAggregate"/>
+                <property name="typeIdentifier" value="anotherTypeIdentifier"/>
+            </bean>
+        </constructor-arg>
         <property name="eventBus" ref="eventBus"/>
         <property name="eventStore" ref="eventStore"/>
     </bean>

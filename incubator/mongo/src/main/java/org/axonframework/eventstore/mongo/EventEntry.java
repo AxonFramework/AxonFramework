@@ -106,7 +106,7 @@ class EventEntry {
     }
 
     /**
-     * Returns the actual DomainEvent from the EventEntry using the provided EventSerializer.
+     * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
      * @return The actual DomainEvent
@@ -140,12 +140,12 @@ class EventEntry {
      */
     public DBObject asDBObject() {
         return BasicDBObjectBuilder.start()
-                .add(AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                .add(SEQUENCE_NUMBER_PROPERTY, sequenceNumber)
-                .add(SERIALIZED_EVENT_PROPERTY, serializedEvent)
-                .add(TIME_STAMP_PROPERTY, timeStamp)
-                .add(AGGREGATE_TYPE_PROPERTY, aggregateType)
-                .get();
+                                   .add(AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
+                                   .add(SEQUENCE_NUMBER_PROPERTY, sequenceNumber)
+                                   .add(SERIALIZED_EVENT_PROPERTY, serializedEvent)
+                                   .add(TIME_STAMP_PROPERTY, timeStamp)
+                                   .add(AGGREGATE_TYPE_PROPERTY, aggregateType)
+                                   .get();
     }
 
     /**
@@ -158,10 +158,10 @@ class EventEntry {
      */
     public static DBObject forAggregate(String type, String aggregateIdentifier, long firstSequenceNumber) {
         return BasicDBObjectBuilder.start()
-                .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
-                        firstSequenceNumber))
-                .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
-                .get();
+                                   .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
+                                   .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
+                                                                                               firstSequenceNumber))
+                                   .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
+                                   .get();
     }
 }

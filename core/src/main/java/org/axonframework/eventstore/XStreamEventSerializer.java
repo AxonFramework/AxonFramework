@@ -53,7 +53,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
     private final List<EventUpcaster<Document>> upcasters = new ArrayList<EventUpcaster<Document>>();
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
+     * Initialize an XStreamEventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
      * encoding.
      */
     public XStreamEventSerializer() {
@@ -61,7 +61,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
+     * Initialize an XStreamEventSerializer that uses XStream to serialize Events. The bytes are returned using UTF-8
      * encoding.
      *
      * @param xStream XStream instance to use
@@ -71,7 +71,8 @@ public class XStreamEventSerializer implements Serializer<Event> {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using thy character
+     * Initialize an XStreamEventSerializer that uses XStream to serialize Events. The bytes are returned using thy
+     * character
      * set with the given name. If the character set is not supported by the JVM an UnsupportedCharsetException is
      * thrown.
      *
@@ -82,7 +83,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given
+     * Initialize an XStreamEventSerializer that uses XStream to serialize Events. The bytes are returned using given
      * character
      * set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
      *
@@ -93,7 +94,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
     }
 
     /**
-     * Initialize an EventSerializer that uses XStream to serialize Events. The bytes are returned using given
+     * Initialize an XStreamEventSerializer that uses XStream to serialize Events. The bytes are returned using given
      * character set.
      *
      * @param charset         The character set to use.

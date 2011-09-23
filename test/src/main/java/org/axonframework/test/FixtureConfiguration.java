@@ -34,7 +34,7 @@ import java.util.List;
  * <p/>
  * In the preparation stage, you should register all components required for your test, mainly the command handler. A
  * typical command handler will require a repository. The test fixture can create a generic repository using the {@link
- * #createGenericRepository(Class)} method. Alternatively, you can register your own repository using the {@link
+ * #createRepository(Class)} method. Alternatively, you can register your own repository using the {@link
  * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)} method. Registering the repository
  * will
  * cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by the
@@ -48,7 +48,7 @@ import java.util.List;
  *     public void setUp() {
  *         fixture = Fixtures.newGivenWhenThenFixture();
  *         MyCommandHandler commandHandler = new MyCommandHandler();
- *         commandHandler.setRepository(fixture.<strong>createGenericRepository(MyAggregate.class)</strong>);
+ *         commandHandler.setRepository(fixture.<strong>createRepository(MyAggregate.class)</strong>);
  *         fixture.<strong>registerAnnotatedCommandHandler(commandHandler)</strong>;
  *     }
  * <br/>      {@code @}Test
@@ -83,9 +83,9 @@ public interface FixtureConfiguration {
      * @param <T>            The type of the aggregate to create the repository for
      * @return The generic repository, which has been registered with the fixture
      *
-     * @see org.axonframework.eventsourcing.GenericEventSourcingRepository
+     * @see org.axonframework.eventsourcing.EventSourcingRepository
      */
-    <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createGenericRepository(Class<T> aggregateClass);
+    <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createRepository(Class<T> aggregateClass);
 
     /**
      * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository will be wired

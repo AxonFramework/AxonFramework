@@ -59,32 +59,15 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     private final AggregateFactory<T> aggregateFactory;
 
     /**
-     * Initializes a repository with the default locking strategy.
-     *
-     * @see org.axonframework.repository.LockingRepository#LockingRepository()
-     * @deprecated This constructor will be removed in future releases. Use {@link
-     *             #EventSourcingRepository(AggregateFactory)} instead.
+     * @param aggregateType
      */
-    @Deprecated
-    protected EventSourcingRepository() {
-        aggregateFactory = null;
+    public EventSourcingRepository(final Class<T> aggregateType) {
+        this(new GenericAggregateFactory<T>(aggregateType));
     }
 
     /**
-     * Initialize a repository with the given locking strategy.
-     *
-     * @param lockingStrategy the locking strategy to apply to this
-     * @deprecated This constructor will be removed in future release. Use {@link
-     *             #EventSourcingRepository(AggregateFactory, org.axonframework.repository.LockingStrategy)} instead.
-     */
-    @Deprecated
-    protected EventSourcingRepository(final LockingStrategy lockingStrategy) {
-        super(lockingStrategy);
-        aggregateFactory = null;
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy.
+     * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
+     * aggregate instances.
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @see org.axonframework.repository.LockingRepository#LockingRepository()
@@ -103,6 +86,18 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
                                    final LockingStrategy lockingStrategy) {
         super(lockingStrategy);
         this.aggregateFactory = aggregateFactory;
+    }
+
+    /**
+     * Initialize a repository with the given locking strategy, using a GenericAggregateFactory to create new aggregate
+     * instances.
+     *
+     * @param aggregateType   The type of aggregate to store in this repository
+     * @param lockingStrategy the locking strategy to apply to this
+     */
+    public EventSourcingRepository(final Class<T> aggregateType,
+                                   final LockingStrategy lockingStrategy) {
+        this(new GenericAggregateFactory<T>(aggregateType), lockingStrategy);
     }
 
     /**
@@ -180,54 +175,15 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         return unseenEvents;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation is aware of the AggregateSnapshot type events. When <code>firstEvent</code> is an instance
-     * of {@link AggregateSnapshot}, the aggregate is extracted from the event. Otherwise, aggregate creation is
-     * delegated to the abstract {@link #instantiateAggregate(org.axonframework.domain.AggregateIdentifier,
-     * org.axonframework.domain.DomainEvent)} method.
-     */
-    @Deprecated
     @SuppressWarnings({"unchecked"})
-    protected T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
+    private T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
         T aggregate;
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
         } else {
-            aggregate = instantiateAggregate(aggregateIdentifier, firstEvent);
+            aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         }
         return aggregate;
-    }
-
-    /**
-     * Instantiate the aggregate using the given aggregate identifier and first event. The first event of the event
-     * stream is passed to allow the repository to identify the actual implementation type of the aggregate to create.
-     * The first event can be either the event that created the aggregate or, when using event sourcing, a snapshot
-     * event. In either case, the event should be designed, such that these events contain enough information to deduct
-     * the actual aggregate type.
-     * <p/>
-     * Note that aggregate state should <strong>*not*</strong> be initialized by this method. That means, no events
-     * should be applied by a call to this method. The first event is passed to allow the implementation to base the
-     * exact type of aggregate to instantiate on that event.
-     *
-     * @param aggregateIdentifier the aggregate identifier of the aggregate to instantiate
-     * @param firstEvent          The first event in the event stream. This is either the event generated during
-     *                            creation of the aggregate, or a snapshot event
-     * @return an aggregate ready for initialization using a DomainEventStream.
-     *
-     * @deprecated Explicit use of this method is deprecated. Instead of overriding this method, use the{@link
-     *             #EventSourcingRepository(AggregateFactory)} or {@link #EventSourcingRepository(AggregateFactory,
-     *             org.axonframework.repository.LockingStrategy)} constructor to indicate how an aggregate should be
-     *             created.
-     */
-    @Deprecated
-    protected T instantiateAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
-        if (aggregateFactory == null) {
-            throw new IllegalStateException("Either an aggregate factory must be configured (recommended), "
-                                                    + "or the instantiateAggregate() method must be overridden.");
-        }
-        return aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
     }
 
     /**
