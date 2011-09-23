@@ -56,7 +56,7 @@ class RepositoryContentValidator {
      * @param associationKey   The key of the association
      * @param associationValue The value of the association
      */
-    public void assertAssociationPresent(String associationKey, Object associationValue) {
+    public void assertAssociationPresent(String associationKey, String associationValue) {
         Set<? extends AbstractAnnotatedSaga> associatedSagas =
                 sagaRepository.find(sagaType, Collections.singleton(new AssociationValue(associationKey,
                                                                                          associationValue)));
@@ -75,7 +75,7 @@ class RepositoryContentValidator {
      * @param associationKey   The key of the association
      * @param associationValue The value of the association
      */
-    public void assertNoAssociationPresent(String associationKey, Object associationValue) {
+    public void assertNoAssociationPresent(String associationKey, String associationValue) {
         Set<? extends AbstractAnnotatedSaga> associatedSagas =
                 sagaRepository.find(sagaType, Collections.singleton(new AssociationValue(associationKey,
                                                                                          associationValue)));

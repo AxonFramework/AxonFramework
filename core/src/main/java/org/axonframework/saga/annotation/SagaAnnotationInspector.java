@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.Event;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.util.AbstractHandlerInspector;
@@ -65,7 +66,10 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
                 ? associationProperty
                 : handlerAnnotation.keyName();
         Object associationValue = getPropertyValue(event, associationProperty);
-        AssociationValue association = new AssociationValue(associationKey, associationValue);
+        if (associationValue instanceof AggregateIdentifier) {
+            associationValue = ((AggregateIdentifier) associationValue).asString();
+        }
+        AssociationValue association = new AssociationValue(associationKey, associationValue.toString());
         return new HandlerConfiguration(creationPolicy(startAnnotation),
                                         handlerMethod,
                                         endAnnotation != null,

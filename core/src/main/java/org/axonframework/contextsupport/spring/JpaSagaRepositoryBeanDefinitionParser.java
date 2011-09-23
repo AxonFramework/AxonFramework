@@ -16,9 +16,9 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.saga.repository.XStreamSagaSerializer;
 import org.axonframework.saga.repository.jpa.JpaSagaRepository;
 import org.axonframework.saga.spring.SpringResourceInjector;
+import org.axonframework.serializer.XStreamSerializer;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
@@ -54,7 +54,7 @@ public class JpaSagaRepositoryBeanDefinitionParser extends AbstractBeanDefinitio
                                                 element.getAttribute(SAGA_SERIALIZER_ATTRIBUTE));
         } else {
             GenericBeanDefinition defaultSerializer = new GenericBeanDefinition();
-            defaultSerializer.setBeanClass(XStreamSagaSerializer.class);
+            defaultSerializer.setBeanClass(XStreamSerializer.class);
             beanDefinition.addPropertyValue(SAGA_SERIALIZER_PROPERTY, defaultSerializer);
         }
     }

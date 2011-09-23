@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.Event;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
@@ -115,8 +116,30 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      * @param key   The key of the association value to associate this saga with.
      * @param value The value of the association value to associate this saga with.
      */
-    protected void associateWith(String key, Object value) {
+    protected void associateWith(String key, String value) {
         associationValues.add(new AssociationValue(key, value));
+    }
+
+    /**
+     * Registers a AssociationValue with the given saga. When the saga is committed, it can be found using the
+     * registered property.
+     *
+     * @param key   The key of the association value to associate this saga with.
+     * @param value The value of the association value to associate this saga with.
+     */
+    protected void associateWith(String key, Number value) {
+        associateWith(key, value.toString());
+    }
+
+    /**
+     * Registers a AssociationValue with the given saga. When the saga is committed, it can be found using the
+     * registered property.
+     *
+     * @param key   The key of the association value to associate this saga with.
+     * @param value The value of the association value to associate this saga with.
+     */
+    protected void associateWith(String key, AggregateIdentifier value) {
+        associateWith(key, value.asString());
     }
 
     /**
@@ -136,7 +159,29 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      * @param key   The key of the association value to remove from this saga.
      * @param value The value of the association value to remove from this saga.
      */
-    protected void removeAssociationWith(String key, Object value) {
+    protected void removeAssociationWith(String key, String value) {
         associationValues.remove(new AssociationValue(key, value));
+    }
+
+    /**
+     * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
+     * given association value. If the given saga wasn't associated with given values, nothing happens.
+     *
+     * @param key   The key of the association value to remove from this saga.
+     * @param value The value of the association value to remove from this saga.
+     */
+    protected void removeAssociationWith(String key, Number value) {
+        removeAssociationWith(key, value.toString());
+    }
+
+    /**
+     * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
+     * given association value. If the given saga wasn't associated with given values, nothing happens.
+     *
+     * @param key   The key of the association value to remove from this saga.
+     * @param value The value of the association value to remove from this saga.
+     */
+    protected void removeAssociationWith(String key, AggregateIdentifier value) {
+        removeAssociationWith(key, value.asString());
     }
 }

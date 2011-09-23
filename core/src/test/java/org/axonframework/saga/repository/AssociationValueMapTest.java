@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,14 @@
 package org.axonframework.saga.repository;
 
 import org.axonframework.saga.AssociationValue;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -45,47 +43,37 @@ public class AssociationValueMapTest {
         assertTrue(testSubject.isEmpty());
 
         Object anObject = new Object();
-        testSubject.add(av(anObject), "1");
-        testSubject.add(av(anObject), "1");
+        testSubject.add(av("1"), "1");
+        testSubject.add(av("1"), "1");
         assertEquals("Wrong count after adding an object twice", 1, testSubject.size());
-        testSubject.add(av(new Object()), "1");
+        testSubject.add(av("2"), "1");
         assertEquals("Wrong count after adding two objects", 2, testSubject.size());
-        testSubject.add(av(new FixedHashAndToString(1, "a")), "1");
-        testSubject.add(av(new FixedHashAndToString(1, "a")), "1");
-        assertEquals("Wrong count after adding equal objects", 3, testSubject.size());
-        testSubject.add(av(new FixedHashAndToString(1, "b")), "1");
-        assertEquals("Wrong count after adding two FixedHash instances", 4, testSubject.size());
-        testSubject.add(av(new FixedHashAndToString(2, "a")), "1");
-        testSubject.add(av(new FixedHashAndToString(3, "a")), "1");
-        assertEquals("Wrong count after adding two FixedHash instances", 6, testSubject.size());
         testSubject.add(av("a"), "1");
         testSubject.add(av("a"), "1");
-        assertEquals("Wrong count after adding two identical Strings", 7, testSubject.size());
+        assertEquals("Wrong count after adding two identical Strings", 3, testSubject.size());
         testSubject.add(av("b"), "1");
-        assertEquals("Wrong count after adding two identical Strings", 8, testSubject.size());
+        assertEquals("Wrong count after adding two identical Strings", 4, testSubject.size());
 
         testSubject.add(av("a"), "2");
-        assertEquals("Wrong count after adding two identical Strings for different saga", 9, testSubject.size());
+        assertEquals("Wrong count after adding two identical Strings for different saga", 5, testSubject.size());
         assertEquals(2, testSubject.findSagas(av("a")).size());
     }
 
     @Test
     public void testRemoveItems() {
         testStoreVarietyOfItems();
-        assertEquals("Wrong initial item count", 9, testSubject.size());
+        assertEquals("Wrong initial item count", 5, testSubject.size());
         testSubject.remove(av("a"), "1");
-        assertEquals("Wrong item count", 8, testSubject.size());
+        assertEquals("Wrong item count", 4, testSubject.size());
         testSubject.remove(av("a"), "2");
-        assertEquals("Wrong item count", 7, testSubject.size());
-        testSubject.remove(av(new FixedHashAndToString(1, "a")), "1");
-        assertEquals("Wrong item count", 6, testSubject.size());
+        assertEquals("Wrong item count", 3, testSubject.size());
 
         testSubject.clear();
         assertTrue(testSubject.isEmpty());
         assertEquals("Wrong item count", 0, testSubject.size());
     }
 
-    private AssociationValue av(Object value) {
+    private AssociationValue av(String value) {
         return new AssociationValue("key", value);
     }
 
@@ -108,27 +96,6 @@ public class AssociationValueMapTest {
             Set<String> actualResult = testSubject.findSagas(item);
             assertEquals("Failure on item: " + usedAssociations.indexOf(item), 1, actualResult.size());
             assertEquals(item.getKey(), actualResult.iterator().next());
-        }
-    }
-
-    private static class FixedHashAndToString {
-
-        private final int hash;
-        private final String toString;
-
-        private FixedHashAndToString(int hash, String toString) {
-            this.hash = hash;
-            this.toString = toString;
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
-
-        @Override
-        public int hashCode() {
-            return hash;
         }
     }
 }

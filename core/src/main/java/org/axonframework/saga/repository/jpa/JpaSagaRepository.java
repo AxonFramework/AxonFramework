@@ -21,8 +21,8 @@ import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
-import org.axonframework.saga.repository.JavaSagaSerializer;
-import org.axonframework.saga.repository.SagaSerializer;
+import org.axonframework.serializer.JavaSerializer;
+import org.axonframework.serializer.Serializer;
 
 import java.util.List;
 import java.util.Set;
@@ -44,15 +44,15 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     private EntityManager entityManager;
     private ResourceInjector injector;
-    private SagaSerializer serializer;
+    private Serializer<? super Saga> serializer;
     private volatile boolean useExplicitFlush = true;
     private volatile boolean initialized = false;
 
     /**
-     * Initializes a Saga Repository with a <code>JavaSagaSerializer</code>.
+     * Initializes a Saga Repository with a <code>JavaSerializer</code>.
      */
     public JpaSagaRepository() {
-        serializer = new JavaSagaSerializer();
+        serializer = new JavaSerializer();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
                                                                        .setParameter("sagaId", sagaIdentifier)
                                                                        .getResultList();
         for (AssociationValueEntry entry : potentialCandidates) {
-            if (associationValue.getValue().equals(entry.getAssociationValue(serializer).getValue())) {
+            if (associationValue.getValue().equals(entry.getAssociationValue().getValue())) {
                 entityManager.remove(entry);
             }
         }
@@ -101,7 +101,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void storeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
-        entityManager.persist(new AssociationValueEntry(sagaIdentifier, associationValue, serializer));
+        entityManager.persist(new AssociationValueEntry(sagaIdentifier, associationValue));
         if (useExplicitFlush) {
             entityManager.flush();
         }
@@ -169,7 +169,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
                     entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae").getResultList();
             getAssociationValueMap().clear();
             for (AssociationValueEntry entry : entries) {
-                AssociationValue associationValue = entry.getAssociationValue(serializer);
+                AssociationValue associationValue = entry.getAssociationValue();
                 getAssociationValueMap().add(associationValue, entry.getSagaIdentifier());
             }
             initialized = true;
@@ -198,11 +198,11 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     }
 
     /**
-     * Sets the SagaSerializer instance to serialize Sagas with. Defaults to the JavaSagaSerializer.
+     * Sets the Serializer instance to serialize Sagas with. Defaults to the XStream Serializer.
      *
-     * @param serializer the SagaSerializer instance to serialize Sagas with
+     * @param serializer the Serializer instance to serialize Sagas with
      */
-    public void setSerializer(SagaSerializer serializer) {
+    public void setSerializer(Serializer<? super Saga> serializer) {
         this.serializer = serializer;
     }
 

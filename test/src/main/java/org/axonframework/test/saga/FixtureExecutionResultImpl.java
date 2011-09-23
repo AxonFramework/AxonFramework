@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
@@ -78,16 +79,35 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectAssociationWith(String associationKey, Object associationValue) {
+    public FixtureExecutionResult expectAssociationWith(String associationKey, String associationValue) {
         repositoryContentValidator.assertAssociationPresent(associationKey, associationValue);
         return this;
     }
 
     @Override
-    public FixtureExecutionResult expectNoAssociationWith(String associationKey, Object associationValue) {
-        repositoryContentValidator.assertNoAssociationPresent(associationKey,
-                                                              associationValue);
+    public FixtureExecutionResult expectAssociationWith(String associationKey, AggregateIdentifier associationValue) {
+        return expectAssociationWith(associationKey, associationValue.asString());
+    }
+
+    @Override
+    public FixtureExecutionResult expectAssociationWith(String associationKey, Number associationValue) {
+        return expectAssociationWith(associationKey, associationValue.toString());
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoAssociationWith(String associationKey, String associationValue) {
+        repositoryContentValidator.assertNoAssociationPresent(associationKey, associationValue);
         return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoAssociationWith(String associationKey, AggregateIdentifier associationValue) {
+        return expectNoAssociationWith(associationKey, associationValue.asString());
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoAssociationWith(String associationKey, Number associationValue) {
+        return expectNoAssociationWith(associationKey, associationValue.toString());
     }
 
     @Override

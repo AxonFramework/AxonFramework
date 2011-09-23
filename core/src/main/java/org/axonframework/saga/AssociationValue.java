@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,7 @@ public class AssociationValue implements Serializable {
     private static final long serialVersionUID = 3573690125021875389L;
 
     private final String propertyKey;
-    private final Object propertyValue;
+    private final String propertyValue;
 
     /**
      * Creates a Association Value instance with the given <code>key</code> and <code>value</code>.
@@ -45,7 +45,8 @@ public class AssociationValue implements Serializable {
      * @param value The value corresponding to the key of the association. It is highly recommended to only use
      *              serializable values.
      */
-    public AssociationValue(String key, Object value) {
+    public AssociationValue(String key, String value) {
+        Assert.notNull(key, "Cannot associate a Saga with a null key");
         Assert.notNull(value, "Cannot associate a Saga with a null value");
         this.propertyKey = key;
         this.propertyValue = value;
@@ -65,7 +66,7 @@ public class AssociationValue implements Serializable {
      *
      * @return the value of this association. Never <code>null</code>.
      */
-    public Object getValue() {
+    public String getValue() {
         return propertyValue;
     }
 

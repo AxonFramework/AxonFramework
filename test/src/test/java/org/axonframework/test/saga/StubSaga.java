@@ -102,12 +102,12 @@ public class StubSaga extends AbstractAnnotatedSaga {
     }
 
     @Override
-    public void associateWith(String key, Object value) {
+    public void associateWith(String key, String value) {
         super.associateWith(key, value);
     }
 
     @Override
-    public void removeAssociationWith(String key, Object value) {
+    public void removeAssociationWith(String key, String value) {
         super.removeAssociationWith(key, value);
     }
 

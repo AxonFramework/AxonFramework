@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
 package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.repository.SagaSerializer;
+import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -46,7 +46,7 @@ public class SagaEntry {
      * @param saga       The saga to store
      * @param serializer The serialization mechanism to convert the Saga to a byte stream
      */
-    public SagaEntry(Saga saga, SagaSerializer serializer) {
+    public SagaEntry(Saga saga, Serializer<? super Saga> serializer) {
         this.sagaId = saga.getSagaIdentifier();
         this.serializedSaga = serializer.serialize(saga);
     }
@@ -57,8 +57,8 @@ public class SagaEntry {
      * @param serializer The serializer to decode the Saga
      * @return the Saga instance stored in this entry
      */
-    public Saga getSaga(SagaSerializer serializer) {
-        return serializer.deserialize(serializedSaga);
+    public Saga getSaga(Serializer<? super Saga> serializer) {
+        return (Saga) serializer.deserialize(serializedSaga);
     }
 
     /**
@@ -73,7 +73,7 @@ public class SagaEntry {
     /**
      * Constructor required by JPA. Do not use.
      *
-     * @see #SagaEntry(org.axonframework.saga.Saga, org.axonframework.saga.repository.SagaSerializer)
+     * @see #SagaEntry(org.axonframework.saga.Saga, org.axonframework.serializer.Serializer)
      */
     protected SagaEntry() {
         // required by JPA

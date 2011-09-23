@@ -36,7 +36,7 @@
             <bean class="org.axonframework.saga.spring.SpringResourceInjector"/>
         </property>
         <property name="serializer">
-            <bean class="org.axonframework.saga.repository.XStreamSagaSerializer"/>
+            <bean class="org.axonframework.serializer.XStreamSerializer"/>
         </property>
         <property name="useExplicitFlush" value="true"/>
     </bean>

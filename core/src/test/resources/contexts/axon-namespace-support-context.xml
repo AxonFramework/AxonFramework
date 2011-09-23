@@ -59,7 +59,7 @@
     <axon:jpa-saga-repository id="allDefinedSagaRepository" resource-injector="mockResourceInjector"
                               use-explicit-flush="false" saga-serializer="sagaSerializer"/>
 
-    <bean id="sagaSerializer" class="org.axonframework.saga.repository.XStreamSagaSerializer"/>
+    <bean id="sagaSerializer" class="org.axonframework.serializer.XStreamSerializer"/>
 
     <bean id="commandTargetResolver" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.commandhandling.CommandTargetResolver"/>

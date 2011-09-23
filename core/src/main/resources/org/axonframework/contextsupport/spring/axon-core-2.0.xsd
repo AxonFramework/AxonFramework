@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2010-2011. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xsd:schema xmlns="http://www.axonframework.org/schema/core"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tool="http://www.springframework.org/schema/tool"
+            targetNamespace="http://www.axonframework.org/schema/core"
+            xmlns:beans="http://www.springframework.org/schema/beans"
+            elementFormDefault="qualified">
+
+    <xsd:import namespace="http://www.springframework.org/schema/beans"
+                schemaLocation="http://www.springframework.org/schema/beans/spring-beans.xsd"/>
+    <xsd:import namespace="http://www.springframework.org/schema/tool"
+                schemaLocation="http://www.springframework.org/schema/tool/spring-tool.xsd"/>
+
+    <!-- ================================== -->
+    <!-- ==== eventBus ==================== -->
+    <!-- ================================== -->
+    <xsd:element name="event-bus">
+        <xsd:annotation>
+            <xsd:documentation>
+                Spring context schema extension for the definition
+                of an EventBus instance.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventhandling.SimpleEventBus"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attribute name="register-mbeans" type="xsd:boolean" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>Indicate whether the mbeans should be registered or not. By default they
+                                are registered.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- ==== commandBus ================== -->
+    <!-- ================================== -->
+    <xsd:element name="command-bus">
+        <xsd:annotation>
+            <xsd:documentation>
+                Spring context schema extension for the definition
+                of a CommandBus instance.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.commandhandling.SimpleCommandBus"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:sequence>
+                        <xsd:element name="interceptors" type="beans:listOrSetType"
+                                     minOccurs="0" maxOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>A list of interceptors to be registered with
+                                    the command bus.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:sequence>
+                    <xsd:attribute name="register-mbeans" type="xsd:boolean" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>Indicate whether the mbeans should be registered or not. By default they
+                                are registered.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- == Annotation-based configuration= -->
+    <!-- ================================== -->
+    <xsd:element name="annotation-config">
+        <xsd:annotation>
+            <xsd:documentation>This element activates annotation-based
+                configuration of event handling and command processing in the Axon
+                framework. All beans with @CommandHandler or @EventHandler annotations will be configured to receive
+                commands from the command bus and events from the event bus, respectively.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports
+                            type="org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor"/>
+                    <tool:exports
+                            type="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:attribute name="command-bus" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation>Explicitly select a command bus to use. If left
+                        blank, a command bus will be selected from the context.
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="org.axonframework.commandhandling.CommandBus"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="executor" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation>Select an executor to use for the event
+                        handlers.
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="java.util.concurrent.Executor"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="event-bus" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation>Explicitly select an event bus to use. If left
+                        blank, an event bus will be selected from the context.
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="eventStoreType">
+        <xsd:complexContent>
+            <xsd:extension base="beans:identifiedType">
+                <xsd:attribute name="event-serializer" use="optional" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>Reference to an event serializer to use with this event store. Defaults to
+                            an XStream based serializer.
+                        </xsd:documentation>
+                        <xsd:appinfo>
+                            <tool:annotation kind="ref">
+                                <tool:expected-type type="org.axonframework.serializer.Serializer"/>
+                            </tool:annotation>
+                        </xsd:appinfo>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <!-- ================================== -->
+    <!-- ===== filesystem-event-store ===== -->
+    <!-- ================================== -->
+    <xsd:element name="filesystem-event-store">
+        <xsd:annotation>
+            <xsd:documentation>Spring context schema extension for the definition of an EvenStore instance that stores
+                events in files on the filesystem.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventstore.fs.FileSystemEventStore"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="eventStoreType">
+                    <xsd:attribute name="base-dir" use="required" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>The base directory for this event store.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- ======== jpa-event-store ========= -->
+    <!-- ================================== -->
+    <xsd:element name="jpa-event-store">
+        <xsd:annotation>
+            <xsd:documentation>Spring context schema extension for the definition
+                of an EvenStore instance.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventstore.jpa.JpaEventStore"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="eventStoreType">
+                    <xsd:attribute name="data-source" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Data Source that provides access to the backing database. This data
+                                source is used to detect database type, and define which error codes represent
+                                concurrency related errors.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="javax.sql.DataSource"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="persistence-exception-resolver" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Sets the persistence exception resolver to use to detect concurrency
+                                related errors in database generated exceptions.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.axonframework.eventstore.jpa.PersistenceExceptionResolver"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="max-snapshots-archived" use="optional" type="xsd:integer">
+                        <xsd:annotation>
+                            <xsd:documentation>Sets the maximum number of snapshots to archive for an aggregate.
+                                The EventStore will keep at most this number of snapshots per aggregate. Defaults to 1.
+                                A value less than 1 disables pruning.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="batch-size" use="optional" type="xsd:integer">
+                        <xsd:annotation>
+                            <xsd:documentation>Sets the number of events that should be read at each database access.
+                                When more than this number of events must be read to rebuild an aggregate's state, the
+                                events are read in batches of this size. Defaults to 100.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- == repository ==================== -->
+    <!-- ================================== -->
+
+    <xsd:element name="event-sourcing-repository">
+        <xsd:annotation>
+            <xsd:documentation>Spring context schema extension for the definition of a Repository instance.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventsourcing.EventSourcingRepository"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:all>
+                        <xsd:element name="snapshotter-trigger" type="snapshotterTriggerType" minOccurs="0"
+                                     maxOccurs="1">
+                            <xsd:annotation>
+                                <xsd:appinfo>
+                                    <tool:annotation>
+                                        <tool:exports
+                                                type="org.axonframework.eventsourcing.EventCountSnapshotterTrigger"/>
+                                    </tool:annotation>
+                                </xsd:appinfo>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="event-processors" type="beans:listOrSetType" minOccurs="0" maxOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>A list of processors that get access to raw event data as it read or
+                                    written to the event stream.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:all>
+                    <xsd:attribute name="aggregate-type" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>The fully qualified class name of the AggregateRoot type that this
+                                repository will store.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="locking-strategy" use="optional" default="PESSIMISTIC">
+                        <xsd:annotation>
+                            <xsd:documentation>The locking strategy used by this repository (default: PESSIMISTIC).
+                            </xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="OPTIMISTIC"/>
+                                <xsd:enumeration value="PESSIMISTIC"/>
+                                <xsd:enumeration value="NO_LOCKING"/>
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="event-store" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the EventStore used by this repository.</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventstore.EventStore"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="event-bus" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the EventBus used by this repository.</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="conflict-resolver" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the ConflictResolver used by this repository.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventsourcing.ConflictResolver"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="cache-ref" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the cache that stores aggregates.</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="net.sf.jsr107cache.Cache"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="snapshotterTriggerType">
+        <xsd:complexContent>
+            <xsd:extension base="beans:identifiedType">
+                <xsd:attribute name="event-count-threshold" use="required" type="xsd:positiveInteger">
+                    <xsd:annotation>
+                        <xsd:documentation>The amount of events that will trigger a snapshot to
+                            be created. More specifically, if the framework detects that more
+                            than the given amount of events would needed to recreate the current
+                            state of an aggregate, it triggers the creation of a snapshot.
+                        </xsd:documentation>
+                        <xsd:appinfo>
+                            <tool:annotation>
+                                <tool:exports type="org.axonframework.eventsourcing.SnapshotterTrigger"/>
+                            </tool:annotation>
+                        </xsd:appinfo>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="snapshotter-ref" use="required" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            The snapshotter to trigger when the number of events exceeds the
+                            threshold.
+                        </xsd:documentation>
+                        <xsd:appinfo>
+                            <tool:annotation kind="ref">
+                                <tool:expected-type type="org.axonframework.eventsourcing.Snapshotter"/>
+                            </tool:annotation>
+                        </xsd:appinfo>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <!-- ================================== -->
+    <!-- == saga manager ================== -->
+    <!-- ================================== -->
+
+    <xsd:element name="saga-manager">
+        <xsd:annotation>
+            <xsd:documentation>Definition of the saga manager</xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.saga.annotation.AnnotatedSagaManager"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:all>
+                        <xsd:element name="types" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>A comma separated list of fully qualified class names of the sagas
+                                    this manager should manage.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:all>
+                    <xsd:attribute name="saga-factory" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the saga factory to use. Defaults to the GenericSagaFactory,
+                                which requires a default (no-arg) constructor.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.SagaFactory"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the resource injector to inject required resources in saga
+                                instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
+                                the Spring Application Context.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="event-bus" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the resource injector to inject required resources in saga
+                                instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
+                                the Spring Application Context.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="saga-repository" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the saga repository to use. Defaults to an in-memory saga
+                                repository. Note that sagas will not survive an application restart when using these
+                                defaults.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.SagaRepository"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="transaction-manager" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the PlatformTransactionManager that manages the transactions
+                                while reading, processing and persisting Sagas. Is ignored unless used in combination
+                                with the executor property.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.springframework.transaction.PlatformTransactionManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="executor" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to an Executor (e.g. TaskExecutor) instance that provides the
+                                threads to process the incoming Events in. If an executor is provided, all event
+                                handling is done asynchronously using this executor.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="java.util.concurrent.Executor"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- == jpa saga repository =========== -->
+    <!-- ================================== -->
+
+    <xsd:element name="jpa-saga-repository">
+        <xsd:annotation>
+            <xsd:documentation>Definition of a Saga Repository that uses JPA to persist Sagas and Association Values.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the resource injector that provides the resources to Saga
+                                instances. Defaults to a resource injector that uses autowiring on Saga instances.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="saga-serializer" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the serializer that converts Sagas and Association Values
+                                into bytes and vice-versa. Defaults to an XStream based Serializer.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.serializer.Serializer"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="use-explicit-flush" use="optional" type="xsd:boolean" default="true">
+                        <xsd:annotation>
+                            <xsd:documentation>Indicates whether the repository should perform an explicit
+                                EntityManager.flush() when changes are made. Defaults to true.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- == snapshotter =================== -->
+    <!-- ================================== -->
+
+    <xsd:element name="snapshotter">
+        <xsd:annotation>
+            <xsd:documentation>Configures a snapshotter that writes snapshots to the given event-store. Optionally,
+                an executor may be provided to execute snapshotting asynchronously. Added in Axon 1.1.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventsourcing.SpringAggregateSnapshotter"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attribute name="event-store" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>Explicitly sets a specific event store to send snapshots to. The given
+                                event store must implement SnapshotEventStore.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventstore.EventStore"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="executor" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>Select an executor to use for the snapshot creation and persistence
+                                process.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="java.util.concurrent.Executor"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="transaction-manager" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>Sets the transaction manager to use. Only needed if the context contains
+                                more than one transaction manager and a transaction is needed to persist the snapshots.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.springframework.transaction.PlatformTransactionManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- ================================== -->
+    <!-- == aggregate command handler====== -->
+    <!-- ================================== -->
+
+    <xsd:element name="aggregate-command-handler">
+        <xsd:annotation>
+            <xsd:documentation>Configures a snapshotter that writes snapshots to the given event-store. Optionally,
+                an executor may be provided to execute snapshotting asynchronously. Added in Axon 1.1.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports
+                            type="org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <!-- specify attributes -->
+                    <xsd:attribute name="aggregate-type" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>The fully qualified class name of the AggregateRoot type that this
+                                handler will accepts commands for.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="repository" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>The repository providing instances of the aggregates</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.repository.Repository"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="command-bus" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>The command bus to register the command handlers with</xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.commandhandling.CommandBus"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="command-target-resolver" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>The strategy for resolving the targeted aggregate for a given command.
+                                Defaults to an annotation based target resolution strategy, where the
+                                @TargetAggregateIdentifier and @TargetAggregateVersion mark the method or field that
+                                returns the identifier and expected aggregate version, respectively.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.commandhandling.CommandTargetResolver"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

@@ -21,9 +21,8 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaStorageException;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.repository.XStreamSagaSerializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,15 +53,15 @@ public class JpaSagaRepositoryTest {
 
     @PersistenceContext
     private EntityManager entityManager;
-    private XStreamSagaSerializer serializer;
+    private XStreamSerializer serializer;
 
     @Before
     public void setUp() {
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
         entityManager.createQuery("DELETE FROM AssociationValueEntry");
-        repository.setSerializer(new XStreamSagaSerializer());
-        serializer = new XStreamSagaSerializer();
+        serializer = new XStreamSerializer();
+        repository.setSerializer(serializer);
     }
 
     @DirtiesContext
@@ -196,10 +195,10 @@ public class JpaSagaRepositoryTest {
     @DirtiesContext
     @Test
     public void testLoadUncachedSaga_ByIdentifier() {
-        repository.setSerializer(new XStreamSagaSerializer());
+        repository.setSerializer(new XStreamSerializer());
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
-        entityManager.persist(new SagaEntry(saga, new XStreamSagaSerializer()));
+        entityManager.persist(new SagaEntry(saga, new XStreamSerializer()));
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         assertNotSame(saga, loaded);
         assertEquals(identifier, loaded.getSagaIdentifier());
@@ -211,7 +210,7 @@ public class JpaSagaRepositoryTest {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
         entityManager.persist(new SagaEntry(saga, serializer));
-        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value"), serializer));
+        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value")));
         entityManager.flush();
         entityManager.clear();
         Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
@@ -234,7 +233,7 @@ public class JpaSagaRepositoryTest {
         MyTestSaga saga = new MyTestSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
         entityManager.persist(new SagaEntry(saga, serializer));
-        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value"), serializer));
+        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value")));
         entityManager.flush();
         entityManager.clear();
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
@@ -248,7 +247,7 @@ public class JpaSagaRepositoryTest {
     public void testSaveSaga() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
-        entityManager.persist(new SagaEntry(saga, new XStreamSagaSerializer()));
+        entityManager.persist(new SagaEntry(saga, new XStreamSerializer()));
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.counter = 1;
         repository.commit(loaded);
@@ -256,7 +255,7 @@ public class JpaSagaRepositoryTest {
         entityManager.clear();
 
         SagaEntry entry = entityManager.find(SagaEntry.class, identifier);
-        MyTestSaga actualSaga = (MyTestSaga) entry.getSaga(new XStreamSagaSerializer());
+        MyTestSaga actualSaga = (MyTestSaga) entry.getSaga(new XStreamSerializer());
         assertNotSame(loaded, actualSaga);
         assertEquals(1, actualSaga.counter);
     }
@@ -266,7 +265,7 @@ public class JpaSagaRepositoryTest {
     public void testEndSaga() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
-        entityManager.persist(new SagaEntry(saga, new XStreamSagaSerializer()));
+        entityManager.persist(new SagaEntry(saga, new XStreamSerializer()));
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.end();
         repository.commit(loaded);
@@ -274,15 +273,6 @@ public class JpaSagaRepositoryTest {
         entityManager.clear();
 
         assertNull(entityManager.find(SagaEntry.class, identifier));
-    }
-
-    @DirtiesContext
-    @Test(expected = SagaStorageException.class)
-    public void testStoreAssociationValue_NotSerializable() {
-        String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
-        saga.registerAssociationValue(new AssociationValue("key", new Object()));
-        repository.add(saga);
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
