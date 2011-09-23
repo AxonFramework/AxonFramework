@@ -44,8 +44,25 @@ public class AssociationValue implements Serializable {
      * @param key   The key of the Association Value. Usually indicates where the value comes from.
      * @param value The value corresponding to the key of the association. It is highly recommended to only use
      *              serializable values.
+     * @deprecated The storage of arbitrary objects is deprecated. Use {@link #AssociationValue(String, String)}
+     *             instead.
      */
+    @Deprecated
     public AssociationValue(String key, Object value) {
+        Assert.notNull(value, "Cannot associate a Saga with a null value");
+        this.propertyKey = key;
+        this.propertyValue = value;
+    }
+
+    /**
+     * Creates a Association Value instance with the given <code>key</code> and <code>value</code>.
+     *
+     * @param key   The key of the Association Value. Usually indicates where the value comes from.
+     * @param value The value corresponding to the key of the association. It is highly recommended to only use
+     *              serializable values.
+     */
+    public AssociationValue(String key, String value) {
+        Assert.notNull(key, "Cannot associate a Saga with a null key");
         Assert.notNull(value, "Cannot associate a Saga with a null value");
         this.propertyKey = key;
         this.propertyValue = value;
@@ -62,6 +79,8 @@ public class AssociationValue implements Serializable {
 
     /**
      * Returns the value of this association.
+     * <p/>
+     * Note: future versions of Axon will return a String here.
      *
      * @return the value of this association. Never <code>null</code>.
      */

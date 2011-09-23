@@ -16,11 +16,14 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.Event;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.util.AbstractHandlerInspector;
 import org.axonframework.util.AxonConfigurationException;
 import org.axonframework.util.Handler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -35,6 +38,9 @@ import java.util.Locale;
  * @since 0.7
  */
 class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractHandlerInspector {
+
+    private static final Logger logger = LoggerFactory.getLogger(SagaAnnotationInspector.class);
+    private static volatile boolean deprecatedWarningGiven = false;
 
     /**
      * Initialize the inspector.
@@ -65,6 +71,18 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
                 ? associationProperty
                 : handlerAnnotation.keyName();
         Object associationValue = getPropertyValue(event, associationProperty);
+        if (!deprecatedWarningGiven
+                && !String.class.isInstance(associationValue)
+                && !AggregateIdentifier.class.isInstance(associationValue)
+                && !Number.class.isInstance(associationValue)
+                && !associationValue.getClass().isPrimitive()) {
+            logger.warn("****************************************************");
+            logger.warn("WARNING! Use of deprecated feature: In future versions of Axon only numbers (Integer, Long), "
+                                + "Strings, primitive types and AggregateIdentifier instances "
+                                + "are accepted as association value.");
+            logger.warn("****************************************************");
+            deprecatedWarningGiven = true;
+        }
         AssociationValue association = new AssociationValue(associationKey, associationValue);
         return new HandlerConfiguration(creationPolicy(startAnnotation),
                                         handlerMethod,
