@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,8 @@ import static org.junit.Assert.*;
 
 /**
  * Rather extensive test that shows the existence of <a href="http://code.google.com/p/axonframework/issues/detail?id=204">issue
- * #204</a>. This bug causes application to hang when using triply nested unit of work. The cleanup callbacks in the 3rd
+ * #204</a>. This bug causes application to hang when using triply nested unit of work. The cleanup callbacks in the
+ * 3rd
  * level of the hierarchy wasn't called, causing reentrant locks to stay active.
  * <p/>
  * This test does nesting to up to 4 levels, with 2 units of work on the same (second) level.
@@ -70,6 +72,13 @@ public class TripleUnitOfWorkNestingTest {
     private static AggregateIdentifier aggregateBIdentifier = new StringAggregateIdentifier("B");
 
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
+
+    @Before
+    public void setUp() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
 
     @Test
     public void testLoopbackScenario() throws InterruptedException {
@@ -117,7 +126,6 @@ public class TripleUnitOfWorkNestingTest {
         public void handle(Object objectCommand) {
             aggregateBRepository.load(aggregateBIdentifier).doSomething();
         }
-
     }
 
     public static class LoopbackSaga {
