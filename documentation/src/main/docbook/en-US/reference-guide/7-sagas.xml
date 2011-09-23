@@ -410,9 +410,9 @@
                 <title><code>JpaSagaRepository</code></title>
                 <para>The <code>JpaSagaRepository</code> uses JPA to store the state and Association
                     Values of Sagas. Saga's do no need any JPA annotations; Axon will serialize the
-                    sagas using a <code>SagaSerializer</code> (comparable to Event serialization,
-                    you can use either a <code>JavaSagaSerializer</code> or an
-                        <code>XStreamSagaSerializer</code>). Although Sagas are persisted and may be
+                    sagas using a <code>Serializer</code> (similar to Event serialization,
+                    you can use either a <code>JavaSerializer</code> or an
+                        <code>XStreamSerializer</code>). Although Sagas are persisted and may be
                     garbage collected when not used, the Association Values are kept in memory. The
                     memory footprint of these values is generally quite small and should no be a
                     problem. These values are reconstructed after a JVM restart, without loss of
@@ -424,7 +424,7 @@
                     longer referenced, the Garbage Collector may clean them up. When the Saga is
                     needed, a new instance is automatically created.</para>
                 <para>The JpaSagaRepository is configured with a JPA <code>EntityManager</code>, a
-                        <code>ResourceInjector</code> and a <code>SagaSerializer</code>. Optionally,
+                        <code>ResourceInjector</code> and a <code>Serializer</code>. Optionally,
                     you can choose whether to explicitly flush the <code>EntityManager</code> after
                     each operation. This will ensure that data is sent to the database, even before
                     a transaction is committed. the default is to use explicit flushes.</para>
