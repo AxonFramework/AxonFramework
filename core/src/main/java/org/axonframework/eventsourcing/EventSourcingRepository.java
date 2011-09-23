@@ -59,15 +59,19 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     private final AggregateFactory<T> aggregateFactory;
 
     /**
-     * @param aggregateType
+     * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
+     * aggregate instances of given <code>aggregateType</code>.
+     *
+     * @param aggregateType The type of aggregate stored in this repository
+     * @see org.axonframework.repository.LockingRepository#LockingRepository()
      */
     public EventSourcingRepository(final Class<T> aggregateType) {
         this(new GenericAggregateFactory<T>(aggregateType));
     }
 
     /**
-     * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
-     * aggregate instances.
+     * Initializes a repository with the default locking strategy, using the given <code>aggregateFactory</code> to
+     * create new aggregate instances.
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @see org.axonframework.repository.LockingRepository#LockingRepository()
