@@ -63,8 +63,8 @@ class EventEntry {
     /**
      * Mongo object representing the index Events in Mongo.
      */
-    public static final BasicDBObject INDEX = new BasicDBObject(AGGREGATE_IDENTIFIER_PROPERTY, 1)
-            .append(SERIALIZED_EVENT_PROPERTY, 1);
+    public static final BasicDBObject UNIQUE_INDEX = new BasicDBObject(AGGREGATE_IDENTIFIER_PROPERTY, 1)
+            .append(AGGREGATE_TYPE_PROPERTY, 1).append(SEQUENCE_NUMBER_PROPERTY, 1);
 
     /**
      * Charset used for the serialization is usually UTF-8, which is presented by this constant.
@@ -140,12 +140,12 @@ class EventEntry {
      */
     public DBObject asDBObject() {
         return BasicDBObjectBuilder.start()
-                                   .add(AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                                   .add(SEQUENCE_NUMBER_PROPERTY, sequenceNumber)
-                                   .add(SERIALIZED_EVENT_PROPERTY, serializedEvent)
-                                   .add(TIME_STAMP_PROPERTY, timeStamp)
-                                   .add(AGGREGATE_TYPE_PROPERTY, aggregateType)
-                                   .get();
+                .add(AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
+                .add(SEQUENCE_NUMBER_PROPERTY, sequenceNumber)
+                .add(SERIALIZED_EVENT_PROPERTY, serializedEvent)
+                .add(TIME_STAMP_PROPERTY, timeStamp)
+                .add(AGGREGATE_TYPE_PROPERTY, aggregateType)
+                .get();
     }
 
     /**
@@ -158,10 +158,10 @@ class EventEntry {
      */
     public static DBObject forAggregate(String type, String aggregateIdentifier, long firstSequenceNumber) {
         return BasicDBObjectBuilder.start()
-                                   .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                                   .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
-                                                                                               firstSequenceNumber))
-                                   .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
-                                   .get();
+                .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
+                .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
+                        firstSequenceNumber))
+                .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
+                .get();
     }
 }
