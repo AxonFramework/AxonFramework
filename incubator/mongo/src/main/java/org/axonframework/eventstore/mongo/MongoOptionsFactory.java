@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 /**
  * <p>Factory class used to create a <code>MongoOptions</code> instance. The instance makes use of the defaults as
  * provided by the MongoOptions class. The moment you set a valid value, that value is used to create the options
- * object</p>
+ * object.</p>
  *
  * @author Jettro Coenradie
  * @since 0.7

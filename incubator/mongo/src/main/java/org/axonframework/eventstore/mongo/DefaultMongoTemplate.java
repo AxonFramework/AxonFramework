@@ -21,13 +21,11 @@ import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
 
 /**
- * Helper class for interacting with the MongoDB instance containing the axon event store data. You can use the helper
- * to get access to the MongoDB database and obtain references to the collection required by axon.
- * <p/>
- * By configuring this object, you can change the name of the database as well as the names of the collections that are
- * used.
+ * <p>Default implementation for the {@see MongoTemplate}. This implementation requires access to the configured
  *
  * @author Jettro Coenradie
+ * @{see Mongo} object. You can influence the names of the collections used to store the events as well as the
+ * snapshot events.</p>
  * @since 0.7
  */
 public class DefaultMongoTemplate implements MongoTemplate {
@@ -67,9 +65,7 @@ public class DefaultMongoTemplate implements MongoTemplate {
     }
 
     /**
-     * Returns the database for the axon event store.
-     *
-     * @return The axon event store database
+     * {@inheritDoc}
      */
     @Override
     public DB database() {
