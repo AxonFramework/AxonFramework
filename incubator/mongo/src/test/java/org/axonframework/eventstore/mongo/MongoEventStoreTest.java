@@ -57,7 +57,7 @@ public class MongoEventStoreTest {
 
     private MongoEventStore eventStore;
     private Mongo mongo;
-    private MongoTemplate mongoTemplate;
+    private DefaultMongoTemplate mongoTemplate;
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
@@ -74,7 +74,7 @@ public class MongoEventStoreTest {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
-        mongoTemplate = new MongoTemplate(mongo);
+        mongoTemplate = new DefaultMongoTemplate(mongo);
         mongoTemplate.database().dropDatabase();
         aggregate1 = new StubAggregateRoot();
         for (int t = 0; t < 10; t++) {

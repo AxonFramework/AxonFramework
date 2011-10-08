@@ -30,7 +30,7 @@ import com.mongodb.Mongo;
  * @author Jettro Coenradie
  * @since 0.7
  */
-public class MongoTemplate {
+public class DefaultMongoTemplate implements MongoTemplate {
 
     private static final String DEFAULT_DOMAINEVENTS_COLLECTION = "domainevents";
     private static final String DEFAULT_SNAPSHOTEVENTS_COLLECTION = "snapshotevents";
@@ -46,24 +46,22 @@ public class MongoTemplate {
      *
      * @param mongoDb The actual connection to a MongoDB instance
      */
-    public MongoTemplate(Mongo mongoDb) {
+    public DefaultMongoTemplate(Mongo mongoDb) {
         this.mongoDb = mongoDb;
     }
 
     /**
-     * Returns a reference to the collection containing the domain events.
-     *
-     * @return DBCollection containing the domain events
+     * {@inheritDoc}
      */
+    @Override
     public DBCollection domainEventCollection() {
         return database().getCollection(domainEventsCollectionName);
     }
 
     /**
-     * Returtns a reference to the collection containing the snapshot events.
-     *
-     * @return DBCollection containing the snapshot events
+     * {@inheritDoc}
      */
+    @Override
     public DBCollection snapshotEventCollection() {
         return database().getCollection(snapshotEventsCollectionName);
     }
@@ -73,6 +71,7 @@ public class MongoTemplate {
      *
      * @return The axon event store database
      */
+    @Override
     public DB database() {
         return mongoDb.getDB(databaseName);
     }
