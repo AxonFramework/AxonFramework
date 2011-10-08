@@ -22,11 +22,15 @@
 
     <!-- Axon Event store -->
     <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore" lazy-init="true">
-        <constructor-arg ref="mongoDb"/>
+        <constructor-arg ref="mongoTemplate"/>
     </bean>
 
 
     <!-- Infrastructure Mongo -->
+    <bean id="mongoTemplate" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
+        <constructor-arg ref="mongoDb"/>
+    </bean>
+
     <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongoInstance"
           lazy-init="true"/>
 
