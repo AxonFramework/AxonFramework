@@ -161,7 +161,7 @@ public class EventSourcingRepositoryTest {
         verify(conflictResolver).resolveConflicts(Arrays.asList(appliedEvent), Arrays.asList(event2, event3));
     }
 
-    @Test(expected = ConflictingAggregateVersionException.class)
+    @Test
     public void testLoadWithConflictingChanges_NoConflictResolverSet() {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         DomainEvent event2 = new StubDomainEvent(identifier, 2);
@@ -171,7 +171,14 @@ public class EventSourcingRepositoryTest {
                                             event2,
                                             event3));
 
-        testSubject.load(identifier, 1L);
+        try {
+            testSubject.load(identifier, 1L);
+            fail("Expected ConflictingAggregateVersionException");
+        } catch (ConflictingAggregateVersionException e) {
+            assertEquals(identifier, e.getAggregateIdentifier());
+            assertEquals(1L, e.getExpectedVersion());
+            assertEquals(3L, e.getActualVersion());
+        }
     }
 
     @Test
