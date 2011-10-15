@@ -30,8 +30,7 @@ import org.slf4j.LoggerFactory;
  * <p/>
  * The LockingRepository can be initialized with two strategies: <ul><li><em>Optimistic Locking</em> strategy: This
  * strategy performs better than the pessimistic one, but you will only discover a concurrency issue at the time a
- * thread tries to save an aggregate. If another thread has saved the same aggregate earlier (but after the first
- * thread
+ * thread tries to save an aggregate. If another thread has saved the same aggregate earlier (but after the first thread
  * loaded its copy), an exception is thrown. The only way to recover from this exception is to load the aggregate from
  * the repository again, replay all actions on it and save it. <li><em>Pessimistic Locking</em> strategy (default):
  * Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before the aggregate is
@@ -99,7 +98,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
             super.add(aggregate);
             CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
         } catch (RuntimeException ex) {
-            logger.info("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
+            logger.debug("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregate.getIdentifier());
             throw ex;
         }
@@ -120,7 +119,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
             CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
             return aggregate;
         } catch (RuntimeException ex) {
-            logger.info("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
+            logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
             lockManager.releaseLock(aggregateIdentifier);
             throw ex;
         }
