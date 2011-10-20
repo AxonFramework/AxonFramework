@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
 
 /**
- * Convenience super type for entities (other than aggregate roots) that have their event handler methods annotated with
+ * Convenience super type for entities (other than aggregate roots) that have their event handler methods annotated
+ * with
  * the {@link org.axonframework.eventhandling.annotation.EventHandler} annotation.
  * <p/>
  * Note that each entity receive <strong>all</strong> events applied in the entire aggregate. Entities are responsible
@@ -32,7 +33,11 @@ import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
  */
 public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity {
 
-    private final AnnotationEventHandlerInvoker eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
+    private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
+
+    protected AbstractAnnotatedEntity() {
+        this.eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
+    }
 
     /**
      * Calls the appropriate {@link org.axonframework.eventhandling.annotation.EventHandler} annotated handler with the
@@ -43,7 +48,10 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
      */
     @Override
     protected void handle(DomainEvent event) {
+        // some deserialization mechanisms don't use the default constructor to initialize a class.
+        if (eventHandlerInvoker == null) {
+            eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
+        }
         eventHandlerInvoker.invokeEventHandlerMethod(event);
     }
-
 }
