@@ -221,8 +221,7 @@
         <connection>scm:svn:http://axonframework.googlecode.com/svn/branches/axon-1.2</connection>
         <developerConnection>scm:svn:https://axonframework.googlecode.com/svn/branches/axon-1.2</developerConnection>
         <url>http://code.google.com/p/axonframework/source/browse/branches/axon-1.2</url>
-
->>>>>>> .merge-right.r1812    </scm>
+    </scm>
 
     <developers>
         <developer>
