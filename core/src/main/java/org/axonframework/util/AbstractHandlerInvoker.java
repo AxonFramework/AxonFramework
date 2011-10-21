@@ -30,7 +30,7 @@ import java.util.WeakHashMap;
 public abstract class AbstractHandlerInvoker extends AbstractHandlerInspector {
 
     private final Object target;
-    private final Map<Class<?>, Handler> handlerCache = new WeakHashMap<Class<?>, Handler>();
+    private Map<Class<?>, Handler> handlerCache = new WeakHashMap<Class<?>, Handler>();
 
     /**
      * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
@@ -71,6 +71,7 @@ public abstract class AbstractHandlerInvoker extends AbstractHandlerInspector {
      */
     protected Object invokeHandlerMethod(Object parameter, Object secondHandlerParameter)
             throws InvocationTargetException, IllegalAccessException {
+        ensureCacheInitialized();
         Handler m = handlerCache.get(parameter.getClass());
         if (m == null) {
             m = findHandlerMethod(parameter.getClass());
@@ -87,6 +88,19 @@ public abstract class AbstractHandlerInvoker extends AbstractHandlerInspector {
             return Void.TYPE;
         }
         return retVal;
+    }
+
+    /**
+     * Makes sure the handlerCache is properly initialized.
+     * <p/>
+     * See <a href="http://code.google.com/p/axonframework/issues/detail?id=215">issue #215</a>. Aggregates serialized
+     * in version 1.1 serialized the invoker, but didn't have a
+     * handlerCache. To circumvent this problem, the cache must be lazily initialized.
+     */
+    private void ensureCacheInitialized() {
+        if (handlerCache == null) {
+            handlerCache = new WeakHashMap<Class<?>, Handler>();
+        }
     }
 
     /**
