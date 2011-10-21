@@ -210,7 +210,7 @@
             <para>The <code>RollbackOnAllExceptionsConfiguration</code>, which is the default, will
                 cause a rollback on any exception (or error). The other is the
                     <code>RollbackOnUncheckedExceptionConfiguration</code>, which will commit the
-                Unit of Work on unchecked exceptions (those not extending
+                Unit of Work on checked exceptions (those not extending
                     <code>RuntimeException</code>) while still performing a rollback on Errors and
                 Runtime Exceptions.</para>
         </simplesect>
