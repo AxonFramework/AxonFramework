@@ -44,8 +44,8 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>sources/src/main</sourceDirectory>
-        <testSourceDirectory>sources/src/test</testSourceDirectory>
+        <sourceDirectory>remote-sources/src/main</sourceDirectory>
+        <testSourceDirectory>remote-sources/src/test</testSourceDirectory>
         <plugins>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
