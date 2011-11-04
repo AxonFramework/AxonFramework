@@ -44,10 +44,11 @@ public class AsyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBea
     @Override
     protected void registerSpecificProperties(Element element, ParserContext parserContext,
                                               GenericBeanDefinition sagaManagerDefinition) {
-        parseTransactionManagerAttribute(element, sagaManagerDefinition.getPropertyValues());
-        parseExecutorAttribute(element, sagaManagerDefinition.getPropertyValues());
-        parseProcessorCountAttribute(element, sagaManagerDefinition.getPropertyValues());
-        parseBufferSizeAttribute(element, sagaManagerDefinition.getPropertyValues());
+        Element asyncElement = (Element) element.getElementsByTagName("axon:async").item(0);
+        parseTransactionManagerAttribute(asyncElement, sagaManagerDefinition.getPropertyValues());
+        parseExecutorAttribute(asyncElement, sagaManagerDefinition.getPropertyValues());
+        parseProcessorCountAttribute(asyncElement, sagaManagerDefinition.getPropertyValues());
+        parseBufferSizeAttribute(asyncElement, sagaManagerDefinition.getPropertyValues());
         sagaManagerDefinition.setInitMethodName("start");
         sagaManagerDefinition.setDestroyMethodName("stop");
     }

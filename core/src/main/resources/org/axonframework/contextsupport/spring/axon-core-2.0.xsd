@@ -408,136 +408,140 @@
     <!-- == saga manager ================== -->
     <!-- ================================== -->
 
-    <xsd:complexType name="saga-manager-type">
-        <xsd:complexContent>
-            <xsd:extension base="beans:identifiedType">
-                <xsd:all>
-                    <xsd:element name="types" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>A comma separated list of fully qualified class names of the sagas
-                                this manager should manage.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:element>
-                </xsd:all>
-                <xsd:attribute name="saga-factory" use="optional" type="xsd:string">
-                    <xsd:annotation>
-                        <xsd:documentation>Reference to the saga factory to use. Defaults to the GenericSagaFactory,
-                            which requires a default (no-arg) constructor.
-                        </xsd:documentation>
-                        <xsd:appinfo>
-                            <tool:annotation kind="ref">
-                                <tool:expected-type type="org.axonframework.saga.SagaFactory"/>
-                            </tool:annotation>
-                        </xsd:appinfo>
-                    </xsd:annotation>
-                </xsd:attribute>
-                <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
-                    <xsd:annotation>
-                        <xsd:documentation>Reference to the resource injector to inject required resources in saga
-                            instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
-                            the Spring Application Context.
-                        </xsd:documentation>
-                        <xsd:appinfo>
-                            <tool:annotation kind="ref">
-                                <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
-                            </tool:annotation>
-                        </xsd:appinfo>
-                    </xsd:annotation>
-                </xsd:attribute>
-                <xsd:attribute name="event-bus" use="optional" type="xsd:string">
-                    <xsd:annotation>
-                        <xsd:documentation>Reference to the resource injector to inject required resources in saga
-                            instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
-                            the Spring Application Context.
-                        </xsd:documentation>
-                        <xsd:appinfo>
-                            <tool:annotation kind="ref">
-                                <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
-                            </tool:annotation>
-                        </xsd:appinfo>
-                    </xsd:annotation>
-                </xsd:attribute>
-                <xsd:attribute name="saga-repository" use="optional" type="xsd:string">
-                    <xsd:annotation>
-                        <xsd:documentation>Reference to the saga repository to use. Defaults to an in-memory saga
-                            repository. Note that sagas will not survive an application restart when using these
-                            defaults.
-                        </xsd:documentation>
-                        <xsd:appinfo>
-                            <tool:annotation kind="ref">
-                                <tool:expected-type type="org.axonframework.saga.SagaRepository"/>
-                            </tool:annotation>
-                        </xsd:appinfo>
-                    </xsd:annotation>
-                </xsd:attribute>
-            </xsd:extension>
-        </xsd:complexContent>
-    </xsd:complexType>
-
-    <xsd:element name="saga-manager" type="saga-manager-type">
+    <xsd:element name="saga-manager">
         <xsd:annotation>
             <xsd:documentation>Definition of the synchronous saga manager</xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.saga.annotation.AnnotatedSagaManager"/>
-                </tool:annotation>
-            </xsd:appinfo>
-        </xsd:annotation>
-    </xsd:element>
-
-    <xsd:element name="async-saga-manager">
-        <xsd:annotation>
-            <xsd:documentation>Definition of the asynchronous saga manager</xsd:documentation>
-            <xsd:appinfo>
-                <tool:annotation>
-                    <tool:exports type="org.axonframework.saga.annotation.AsyncAnnotatedSagaManager"/>
+                    <tool:exports type="org.axonframework.saga.annotation.SagaManager"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
-                <xsd:extension base="saga-manager-type">
-                    <xsd:attribute name="transaction-manager" use="optional" type="xsd:string">
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:all>
+                        <xsd:element name="async" minOccurs="0" maxOccurs="1" form="qualified">
+                            <xsd:annotation>
+                                <xsd:documentation>Indicates that the SagaManager must process incoming events
+                                    asynchronously. This tag allows additional properties related to asynchronous
+                                    processing to be set.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                            <xsd:complexType>
+                                <xsd:attribute name="transaction-manager" use="optional" type="xsd:string">
+                                    <xsd:annotation>
+                                        <xsd:documentation>Reference to the PlatformTransactionManager that manages the
+                                            transactions
+                                            while reading, processing and persisting Sagas. Is ignored unless used in
+                                            combination
+                                            with the executor property.
+                                        </xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type
+                                                        type="org.springframework.transaction.PlatformTransactionManager"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="executor" use="optional" type="xsd:string">
+                                    <xsd:annotation>
+                                        <xsd:documentation>Reference to an Executor (e.g. TaskExecutor) instance that
+                                            provides the
+                                            threads to process the incoming Events in. If an executor is provided, all
+                                            event
+                                            handling is done asynchronously using this executor.
+                                        </xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type type="java.util.concurrent.Executor"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="buffer-size" use="optional" type="xsd:integer">
+                                    <xsd:annotation>
+                                        <xsd:documentation>The size of the processing buffer. This equals to the number
+                                            of
+                                            events
+                                            that may be awaiting processing before the input is blocked. Defaults to
+                                            512.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="processor-count" use="optional" type="xsd:integer">
+                                    <xsd:annotation>
+                                        <xsd:documentation>The number of the processors (threads) that will process
+                                            incoming
+                                            events.
+                                            Make sure that the given executor is capable of concurrently running this
+                                            number
+                                            of
+                                            processors. Defaults to 1.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                            </xsd:complexType>
+                        </xsd:element>
+                        <xsd:element name="types" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>A comma separated list of fully qualified class names of the sagas
+                                    this manager should manage.
+                                </xsd:documentation>
+                            </xsd:annotation>
+
+                        </xsd:element>
+                    </xsd:all>
+                    <xsd:attribute name="saga-factory" use="optional" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Reference to the PlatformTransactionManager that manages the transactions
-                                while reading, processing and persisting Sagas. Is ignored unless used in combination
-                                with the executor property.
+                            <xsd:documentation>Reference to the saga factory to use. Defaults to the GenericSagaFactory,
+                                which requires a default (no-arg) constructor.
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type
-                                            type="org.springframework.transaction.PlatformTransactionManager"/>
+                                    <tool:expected-type type="org.axonframework.saga.SagaFactory"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="executor" use="optional" type="xsd:string">
+                    <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Reference to an Executor (e.g. TaskExecutor) instance that provides the
-                                threads to process the incoming Events in. If an executor is provided, all event
-                                handling is done asynchronously using this executor.
+                            <xsd:documentation>Reference to the resource injector to inject required resources in saga
+                                instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
+                                the Spring Application Context.
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="java.util.concurrent.Executor"/>
+                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="buffer-size" use="optional" type="xsd:integer">
+                    <xsd:attribute name="event-bus" use="optional" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>The size of the processing buffer. This equals to the number of events
-                                that may be awaiting processing before the input is blocked. Defaults to 512.
+                            <xsd:documentation>Reference to the resource injector to inject required resources in saga
+                                instances. Defaults to a SpringSagaResourceInjector, which autowires sagas using
+                                the Spring Application Context.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="processor-count" use="optional" type="xsd:integer">
+                    <xsd:attribute name="saga-repository" use="optional" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>The number of the processors (threads) that will process incoming events.
-                                Make sure that the given executor is capable of concurrently running this number of
-                                processors. Defaults to 1.
+                            <xsd:documentation>Reference to the saga repository to use. Defaults to an in-memory saga
+                                repository. Note that sagas will not survive an application restart when using these
+                                defaults.
                             </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.saga.SagaRepository"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>

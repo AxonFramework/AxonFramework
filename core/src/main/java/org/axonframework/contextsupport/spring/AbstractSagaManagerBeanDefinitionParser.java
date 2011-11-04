@@ -8,7 +8,6 @@ import org.axonframework.saga.spring.SpringResourceInjector;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
@@ -19,7 +18,7 @@ import org.w3c.dom.Element;
  * @author Allard Buijze
  * @since 2.0
  */
-public abstract class AbstractSagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParser {
+public abstract class AbstractSagaManagerBeanDefinitionParser {
 
     private Object resourceInjector;
     private static final String RESOURCE_INJECTOR_ATTRIBUTE = "resource-injector";
@@ -27,7 +26,6 @@ public abstract class AbstractSagaManagerBeanDefinitionParser extends AbstractBe
     private static final String EVENT_BUS_ATTRIBUTE = "event-bus";
     private static final String SAGA_FACTORY_ATTRIBUTE = "saga-factory";
 
-    @Override
     protected final AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition sagaManagerDefinition = new GenericBeanDefinition();
         sagaManagerDefinition.setBeanClass(getBeanClass());

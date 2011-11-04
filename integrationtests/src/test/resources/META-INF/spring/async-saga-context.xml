@@ -24,12 +24,12 @@
 
     <context:annotation-config/>
 
-    <axon:async-saga-manager id="sagaManager" event-bus="eventBus" saga-repository="jpaSagaRepository"
-                             transaction-manager="transactionManager">
+    <axon:saga-manager id="sagaManager" event-bus="eventBus" saga-repository="jpaSagaRepository">
+        <axon:async transaction-manager="transactionManager"/>
         <axon:types>
             org.axonframework.integrationtests.saga.AsyncSaga
         </axon:types>
-    </axon:async-saga-manager>
+    </axon:saga-manager>
 
     <bean id="jpaSagaRepository" class="org.axonframework.saga.repository.jpa.JpaSagaRepository">
         <property name="resourceInjector">
