@@ -371,10 +371,10 @@
     &lt;property name="eventBus" ref="eventBus"/>
     &lt;property name="eventStore" ref="eventStore"/>
 &lt;/bean></programlisting></para>
-        <para>In many cases, you can use the <code>GenericEventSourcingRepository</code>. Below is
+        <para>In many cases, you can use the <code>EventSourcingRepository</code>. Below is
             an example of XML application context configuration to wire such a repository.</para>
         <para>
-            <programlisting language="xml">&lt;bean id="myRepository" class="org.axonframework.eventsourcing.GenericEventSourcingRepository">
+            <programlisting language="xml">&lt;bean id="myRepository" class="org.axonframework.eventsourcing.EventSourcingRepository">
     &lt;constructor-arg value="fully.qualified.class.Name"/>
     &lt;property name="eventBus" ref="eventBus"/>
     &lt;property name="eventStore" ref="eventStore"/>
