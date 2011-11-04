@@ -66,12 +66,12 @@ public class VirtualSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
-    protected void storeAssociationValue(AssociationValue newAssociationValue, String sagaIdentifier) {
+    protected void storeAssociationValue(AssociationValue newAssociationValue, String sagaType, String sagaIdentifier) {
         // we don't need this
     }
 
     @Override
-    protected void removeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
+    protected void removeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
         // we don't need this
     }
 

@@ -36,6 +36,6 @@ public class NoSuchSagaException extends AxonNonTransientException {
      * @param sagaIdentifier The identifier of the Saga that could not be found
      */
     public NoSuchSagaException(Class<?> type, String sagaIdentifier) {
-        super(String.format("Saga of type %s and identifier %s not found", type, sagaIdentifier));
+        super(String.format("Saga of type %s and identifier %s not found", type.getName(), sagaIdentifier));
     }
 }

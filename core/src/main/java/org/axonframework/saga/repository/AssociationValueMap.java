@@ -53,12 +53,13 @@ public class AssociationValueMap {
     /**
      * Returns the identifiers of the Sagas that have been associated with the given <code>associationValue</code>.
      *
+     * @param sagaType         The type of the associated Saga
      * @param associationValue The associationValue to find Sagas for
      * @return A set of Saga identifiers
      */
-    public Set<String> findSagas(AssociationValue associationValue) {
+    public Set<String> findSagas(String sagaType, AssociationValue associationValue) {
         Set<String> identifiers = new HashSet<String>();
-        for (SagaAssociationValue item : mappings.tailSet(new SagaAssociationValue(associationValue, null))) {
+        for (SagaAssociationValue item : mappings.tailSet(new SagaAssociationValue(associationValue, sagaType, null))) {
             if (!item.getKey().equals(associationValue.getKey())) {
                 // we've had all relevant items
                 break;
@@ -74,20 +75,22 @@ public class AssociationValueMap {
      * Adds an association between the given <code>associationValue</code> and <code>sagaIdentifier</code>.
      *
      * @param associationValue The association value associated with the Saga
+     * @param sagaType         The type of the associated Saga
      * @param sagaIdentifier   The identifier of the associated Saga
      */
-    public void add(AssociationValue associationValue, String sagaIdentifier) {
-        mappings.add(new SagaAssociationValue(associationValue, sagaIdentifier));
+    public void add(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
+        mappings.add(new SagaAssociationValue(associationValue, sagaType, sagaIdentifier));
     }
 
     /**
      * Removes an association between the given <code>associationValue</code> and <code>sagaIdentifier</code>.
      *
      * @param associationValue The association value associated with the Saga
+     * @param sagaType         The type of the associated Saga
      * @param sagaIdentifier   The identifier of the associated Saga
      */
-    public void remove(AssociationValue associationValue, String sagaIdentifier) {
-        mappings.remove(new SagaAssociationValue(associationValue, sagaIdentifier));
+    public void remove(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
+        mappings.remove(new SagaAssociationValue(associationValue, sagaType, sagaIdentifier));
     }
 
     /**
@@ -100,10 +103,12 @@ public class AssociationValueMap {
     private static final class SagaAssociationValue {
 
         private final AssociationValue associationValue;
+        private final String sagaType;
         private final String sagaIdentifier;
 
-        private SagaAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
+        private SagaAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
             this.associationValue = associationValue;
+            this.sagaType = sagaType;
             this.sagaIdentifier = sagaIdentifier;
         }
 
@@ -122,6 +127,10 @@ public class AssociationValueMap {
         public Object getValue() {
             return associationValue.getValue();
         }
+
+        public String getSagaType() {
+            return sagaType;
+        }
     }
 
     /**
@@ -134,7 +143,8 @@ public class AssociationValueMap {
     }
 
     /**
-     * Returns an approximation of the size of this map. Due to the concurrent nature of this map, size cannot return an
+     * Returns an approximation of the size of this map. Due to the concurrent nature of this map, size cannot return
+     * an
      * accurate value.
      * <p/>
      * This is not a constant-time operation. The backing store of this map requires full traversal of elements to
@@ -167,6 +177,15 @@ public class AssociationValueMap {
                         value = o1.getValue().toString().compareTo(o2.getValue().toString());
                     }
                 }
+            }
+
+            if (value == 0 && !nullSafeEquals(o1.getSagaType(), o2.getSagaType())) {
+                if (o1.getSagaType() == null) {
+                    return -1;
+                } else if (o2.getSagaType() == null) {
+                    return 1;
+                }
+                return o1.getSagaType().compareTo(o2.getSagaType());
             }
 
             if (value == 0 && !nullSafeEquals(o1.getSagaIdentifier(), o2.getSagaIdentifier())) {

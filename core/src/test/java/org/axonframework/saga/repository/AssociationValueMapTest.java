@@ -43,30 +43,31 @@ public class AssociationValueMapTest {
         assertTrue(testSubject.isEmpty());
 
         Object anObject = new Object();
-        testSubject.add(av("1"), "1");
-        testSubject.add(av("1"), "1");
+        testSubject.add(av("1"), "T", "1");
+        testSubject.add(av("1"), "T", "1");
         assertEquals("Wrong count after adding an object twice", 1, testSubject.size());
-        testSubject.add(av("2"), "1");
+        testSubject.add(av("2"), "T", "1");
         assertEquals("Wrong count after adding two objects", 2, testSubject.size());
-        testSubject.add(av("a"), "1");
-        testSubject.add(av("a"), "1");
+        testSubject.add(av("a"), "T", "1");
+        testSubject.add(av("a"), "T", "1");
         assertEquals("Wrong count after adding two identical Strings", 3, testSubject.size());
-        testSubject.add(av("b"), "1");
+        testSubject.add(av("b"), "T", "1");
         assertEquals("Wrong count after adding two identical Strings", 4, testSubject.size());
 
-        testSubject.add(av("a"), "2");
-        assertEquals("Wrong count after adding two identical Strings for different saga", 5, testSubject.size());
-        assertEquals(2, testSubject.findSagas(av("a")).size());
+        testSubject.add(av("a"), "T", "2");
+        testSubject.add(av("a"), "Y", "2");
+        assertEquals("Wrong count after adding two identical Strings for different saga", 6, testSubject.size());
+        assertEquals(2, testSubject.findSagas("T", av("a")).size());
     }
 
     @Test
     public void testRemoveItems() {
         testStoreVarietyOfItems();
-        assertEquals("Wrong initial item count", 5, testSubject.size());
-        testSubject.remove(av("a"), "1");
+        assertEquals("Wrong initial item count", 6, testSubject.size());
+        testSubject.remove(av("a"), "T", "1");
+        assertEquals("Wrong item count", 5, testSubject.size());
+        testSubject.remove(av("a"), "T", "2");
         assertEquals("Wrong item count", 4, testSubject.size());
-        testSubject.remove(av("a"), "2");
-        assertEquals("Wrong item count", 3, testSubject.size());
 
         testSubject.clear();
         assertTrue(testSubject.isEmpty());
@@ -87,13 +88,13 @@ public class AssociationValueMapTest {
                 if (usedAssociations.size() < 1000) {
                     usedAssociations.add(associationValue);
                 }
-                testSubject.add(associationValue, key);
+                testSubject.add(associationValue, "type", key);
             }
         }
 
         assertEquals(10000, testSubject.size());
         for (AssociationValue item : usedAssociations) {
-            Set<String> actualResult = testSubject.findSagas(item);
+            Set<String> actualResult = testSubject.findSagas("type", item);
             assertEquals("Failure on item: " + usedAssociations.indexOf(item), 1, actualResult.size());
             assertEquals(item.getKey(), actualResult.iterator().next());
         }

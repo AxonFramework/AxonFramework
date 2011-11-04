@@ -43,7 +43,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
         Set<String> sagaIdentifiers = new HashSet<String>();
         Set<T> result = new HashSet<T>();
         for (AssociationValue associationValue : associationValues) {
-            Set<String> identifiers = associationValueMap.findSagas(associationValue);
+            Set<String> identifiers = associationValueMap.findSagas(typeOf(type), associationValue);
             if (identifiers != null) {
                 sagaIdentifiers.addAll(identifiers);
             }
@@ -71,7 +71,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
             cachedSaga = sagaCache.put(storedSaga);
             if (isSameInstance(cachedSaga, storedSaga)) {
                 cachedSaga.getAssociationValues().addChangeListener(
-                        new AssociationValueChangeListener(cachedSaga.getSagaIdentifier()));
+                        new AssociationValueChangeListener(typeOf(cachedSaga), cachedSaga.getSagaIdentifier()));
             }
         }
         if (!type.isInstance(cachedSaga)) {
@@ -85,12 +85,21 @@ public abstract class AbstractSagaRepository implements SagaRepository {
         Saga cachedSaga = sagaCache.put(saga);
         if (isSameInstance(cachedSaga, saga)) {
             for (AssociationValue av : saga.getAssociationValues()) {
-                associationValueMap.add(av, saga.getSagaIdentifier());
-                storeAssociationValue(av, saga.getSagaIdentifier());
+                associationValueMap.add(av, typeOf(saga), saga.getSagaIdentifier());
+                storeAssociationValue(av, typeOf(saga), saga.getSagaIdentifier());
             }
-            saga.getAssociationValues().addChangeListener(new AssociationValueChangeListener(saga.getSagaIdentifier()));
+            saga.getAssociationValues().addChangeListener(
+                    new AssociationValueChangeListener(typeOf(saga), saga.getSagaIdentifier()));
             storeSaga(saga);
         }
+    }
+
+    private String typeOf(Saga saga) {
+        return typeOf(saga.getClass());
+    }
+
+    private String typeOf(Class<? extends Saga> sagaClass) {
+        return sagaClass.getSimpleName();
     }
 
     /**
@@ -111,7 +120,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
     public void commit(Saga saga) {
         if (!saga.isActive()) {
             for (AssociationValue associationValue : saga.getAssociationValues()) {
-                associationValueMap.remove(associationValue, saga.getSagaIdentifier());
+                associationValueMap.remove(associationValue, typeOf(saga), saga.getSagaIdentifier());
             }
             deleteSaga(saga);
         } else {
@@ -161,18 +170,22 @@ public abstract class AbstractSagaRepository implements SagaRepository {
      * Store the given <code>associationValue</code>, which has been associated with given <code>sagaIdentifier</code>.
      *
      * @param associationValue The association value to store
+     * @param sagaType         Type type of saga the association value belongs to
      * @param sagaIdentifier   The saga related to the association value
      */
-    protected abstract void storeAssociationValue(AssociationValue associationValue, String sagaIdentifier);
+    protected abstract void storeAssociationValue(AssociationValue associationValue,
+                                                  String sagaType, String sagaIdentifier);
 
     /**
      * Removes the association value that has been associated with Saga, identified with the given
      * <code>sagaIdentifier</code>.
      *
      * @param associationValue The value to remove as association value for the given saga
+     * @param sagaType         The type of the Saga to remove the association from
      * @param sagaIdentifier   The identifier of the Saga to remove the association from
      */
-    protected abstract void removeAssociationValue(AssociationValue associationValue, String sagaIdentifier);
+    protected abstract void removeAssociationValue(AssociationValue associationValue,
+                                                   String sagaType, String sagaIdentifier);
 
     /**
      * Returns the AssociationValueMap containing the mappings of AssociationValue to Saga.
@@ -202,23 +215,25 @@ public abstract class AbstractSagaRepository implements SagaRepository {
 
     private class AssociationValueChangeListener implements AssociationValues.ChangeListener {
 
+        private final String sagaType;
         private final String sagaIdentifier;
 
-        public AssociationValueChangeListener(String sagaIdentifier) {
+        public AssociationValueChangeListener(String sagaType, String sagaIdentifier) {
+            this.sagaType = sagaType;
             this.sagaIdentifier = sagaIdentifier;
         }
 
         @Override
         public void onAssociationValueAdded(AssociationValue newAssociationValue) {
-            associationValueMap.add(newAssociationValue, sagaIdentifier);
-            storeAssociationValue(newAssociationValue, sagaIdentifier);
+            associationValueMap.add(newAssociationValue, sagaType, sagaIdentifier);
+            storeAssociationValue(newAssociationValue, sagaType, sagaIdentifier);
         }
 
         @SuppressWarnings({"unchecked"})
         @Override
         public void onAssociationValueRemoved(AssociationValue associationValue) {
-            associationValueMap.remove(associationValue, sagaIdentifier);
-            removeAssociationValue(associationValue, sagaIdentifier);
+            associationValueMap.remove(associationValue, sagaType, sagaIdentifier);
+            removeAssociationValue(associationValue, sagaType, sagaIdentifier);
         }
     }
 }

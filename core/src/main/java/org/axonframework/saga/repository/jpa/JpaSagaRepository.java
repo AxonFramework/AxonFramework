@@ -81,12 +81,15 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    protected void removeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
+    protected void removeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
         List<AssociationValueEntry> potentialCandidates = entityManager.createQuery(
                 "SELECT ae FROM AssociationValueEntry ae "
-                        + "WHERE ae.associationKey = :associationKey AND ae.sagaId = :sagaId")
+                        + "WHERE ae.associationKey = :associationKey "
+                        + "AND ae.sagaType = :sagaType "
+                        + "AND  ae.sagaId = :sagaId")
                                                                        .setParameter("associationKey",
                                                                                      associationValue.getKey())
+                                                                       .setParameter("sagaType", sagaType)
                                                                        .setParameter("sagaId", sagaIdentifier)
                                                                        .getResultList();
         for (AssociationValueEntry entry : potentialCandidates) {
@@ -100,8 +103,8 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
-    protected void storeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
-        entityManager.persist(new AssociationValueEntry(sagaIdentifier, associationValue));
+    protected void storeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
+        entityManager.persist(new AssociationValueEntry(sagaType, sagaIdentifier, associationValue));
         if (useExplicitFlush) {
             entityManager.flush();
         }
@@ -170,7 +173,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
             getAssociationValueMap().clear();
             for (AssociationValueEntry entry : entries) {
                 AssociationValue associationValue = entry.getAssociationValue();
-                getAssociationValueMap().add(associationValue, entry.getSagaIdentifier());
+                getAssociationValueMap().add(associationValue, entry.getSagaType(), entry.getSagaIdentifier());
             }
             initialized = true;
         }

@@ -210,7 +210,8 @@ public class JpaSagaRepositoryTest {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
         entityManager.persist(new SagaEntry(saga, serializer));
-        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value")));
+        entityManager.persist(new AssociationValueEntry("MyTestSaga", identifier, new AssociationValue("key",
+                                                                                                       "value")));
         entityManager.flush();
         entityManager.clear();
         Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
@@ -233,7 +234,8 @@ public class JpaSagaRepositoryTest {
         MyTestSaga saga = new MyTestSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
         entityManager.persist(new SagaEntry(saga, serializer));
-        entityManager.persist(new AssociationValueEntry(identifier, new AssociationValue("key", "value")));
+        entityManager.persist(new AssociationValueEntry("MyTestSaga", identifier, new AssociationValue("key",
+                                                                                                       "value")));
         entityManager.flush();
         entityManager.clear();
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);

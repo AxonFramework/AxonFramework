@@ -45,14 +45,19 @@ public class AssociationValueEntry {
     @Basic
     private String associationValue;
 
+    @Basic
+    private String sagaType;
+
     /**
      * Initialize a new AssociationValueEntry for a saga with given <code>sagaIdentifier</code> and
      * <code>associationValue</code>.
      *
+     * @param sagaType         The type of Saga this association value belongs to
      * @param sagaIdentifier   The identifier of the saga
      * @param associationValue The association value for the saga
      */
-    public AssociationValueEntry(String sagaIdentifier, AssociationValue associationValue) {
+    public AssociationValueEntry(String sagaType, String sagaIdentifier, AssociationValue associationValue) {
+        this.sagaType = sagaType;
         this.sagaId = sagaIdentifier;
         this.associationKey = associationValue.getKey();
         this.associationValue = associationValue.getValue();
@@ -83,6 +88,14 @@ public class AssociationValueEntry {
         return sagaId;
     }
 
+    /**
+     * Returns the type (fully qualified class name) of the Saga this association value belongs to
+     *
+     * @return the type (fully qualified class name) of the Saga
+     */
+    public String getSagaType() {
+        return sagaType;
+    }
 
     /**
      * The unique identifier of this entry.
