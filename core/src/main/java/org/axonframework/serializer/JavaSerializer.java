@@ -88,7 +88,7 @@ public class JavaSerializer implements Serializer<Object> {
         try {
             return (Saga) deserialize(new ByteArrayInputStream(serializedSaga));
         } catch (IOException e) {
-            throw new SerializationException("An exception occurred while trying to deserialize a stored Saga", e);
+            throw new SerializationException("An exception occurred while trying to deserialize an object", e);
         }
     }
 }

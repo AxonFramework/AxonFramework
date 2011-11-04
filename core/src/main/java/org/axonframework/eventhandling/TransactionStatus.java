@@ -17,7 +17,8 @@
 package org.axonframework.eventhandling;
 
 /**
- * Provides details about the current status of an event handling transaction. This method is typically accessed through
+ * Provides details about the current status of an event handling transaction. This method is typically accessed
+ * through
  * the {@link TransactionManager#beforeTransaction(TransactionStatus) beforeTransaction} and {@link
  * TransactionManager#afterTransaction(TransactionStatus) afterTransaction} methods on {@link TransactionManager}, but
  * may also be obtained through the static {@link TransactionStatus#current()} method.
@@ -43,8 +44,7 @@ public class TransactionStatus {
     /**
      * Initialize a TransactionStatus instance with default settings.
      */
-    protected TransactionStatus() {
-        // construction limited to this package
+    public TransactionStatus() {
     }
 
     /**
@@ -166,10 +166,12 @@ public class TransactionStatus {
      * RETRY_TRANSACTION} policy. If a rollback on the underlying data source only rolls back the last modification,
      * choose {@link RetryPolicy#RETRY_LAST_EVENT RETRY_LAST_EVENT}.
      * <p/>
-     * If failed events should be ignored altogether, choose the {@link RetryPolicy#SKIP_FAILED_EVENT SKIP_FAILED_EVENT}
+     * If failed events should be ignored altogether, choose the {@link RetryPolicy#SKIP_FAILED_EVENT
+     * SKIP_FAILED_EVENT}
      * policy.
      * <p/>
-     * These policies may be set in both the <code>beforeTransaction()</code> and <code>afterTransaction</code> methods.
+     * These policies may be set in both the <code>beforeTransaction()</code> and <code>afterTransaction</code>
+     * methods.
      * The latter would allow you to change policy based on the exact type of exception encountered.
      *
      * @param retryPolicy the retry policy to apply when a transaction fails.

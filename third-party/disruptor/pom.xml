@@ -25,7 +25,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.axonframework.com.lmax</groupId>
-    <artifactId>disruptor-axon</artifactId>
+    <artifactId>disruptor</artifactId>
     <name>LMAX Disruptor - Redistributed</name>
 
     <dependencies>

@@ -22,6 +22,7 @@ import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
+import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
@@ -36,8 +37,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.concurrent.TimeUnit;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -56,12 +62,25 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     @Qualifier("mockTransactionManager")
     private PlatformTransactionManager tm;
     @Autowired
+    @Qualifier("transactionManager")
+    private PlatformTransactionManager transactionManager;
+    @Autowired
     private ThreadPoolTaskExecutor te;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
 
     @Before
     public void startup() {
         reset(sagaFactory, tm);
+        new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                entityManager.createQuery("DELETE FROM SagaEntry se").executeUpdate();
+                entityManager.createQuery("DELETE FROM AssociationValueEntry se").executeUpdate();
+            }
+        });
     }
 
     @Test
@@ -119,20 +138,21 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     @Test
     @DirtiesContext
     public void testAsyncTransactionalSagaManagerWiring() throws InterruptedException {
-
         // this part should prove correct autowiring of the saga manager
-        SagaManager sagaManager = beanFactory.getBean("asyncTransactionalSagaManager", SagaManager.class);
+        AsyncAnnotatedSagaManager sagaManager = beanFactory.getBean("asyncTransactionalSagaManager",
+                                                                    AsyncAnnotatedSagaManager.class);
         assertNotNull(sagaManager);
 
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
         sagaManager.handle(new StubDomainEvent(new UUIDAggregateIdentifier()));
-        Thread.sleep(250);
-        te.shutdown();
-        te.getThreadPoolExecutor().awaitTermination(2, TimeUnit.SECONDS);
-        verify(sagaFactory).createSaga(StubSaga.class);
-        verify(tm, atLeastOnce()).getTransaction(isA(TransactionDefinition.class));
+        sagaManager.unsubscribe();
+        verify(sagaFactory).createSaga(eq(StubSaga.class));
+        sagaManager.stop();
+
+        assertEquals("Saga was never stored in the saga repository",
+                     1L, entityManager.createQuery("SELECT count(se) FROM SagaEntry se").getSingleResult());
     }
 
     @Test

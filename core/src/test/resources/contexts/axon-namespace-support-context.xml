@@ -19,7 +19,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:axon="http://www.axonframework.org/schema/core"
        xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
-       xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-1.2.xsd
+       xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd
                            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
                            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
@@ -36,14 +36,15 @@
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
 
-    <axon:saga-manager id="asyncSagaManager" saga-factory="sagaFactory" executor="taskExecutor">
+    <axon:async-saga-manager id="asyncSagaManager" saga-factory="sagaFactory" executor="taskExecutor">
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
-    </axon:saga-manager>
+    </axon:async-saga-manager>
 
-    <axon:saga-manager id="asyncTransactionalSagaManager" saga-repository="allDefinedSagaRepository"
-                       saga-factory="sagaFactory" executor="taskExecutor" transaction-manager="mockTransactionManager">
+    <axon:async-saga-manager id="asyncTransactionalSagaManager" saga-repository="allDefinedSagaRepository"
+                             saga-factory="sagaFactory" buffer-size="32" processor-count="1" executor="taskExecutor"
+                             transaction-manager="transactionManager">
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
-    </axon:saga-manager>
+    </axon:async-saga-manager>
 
     <axon:aggregate-command-handler id="aggregateCommandHandlerWithoutTargetResolver"
                                     aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"
@@ -149,8 +150,8 @@
 
     <bean id="taskExecutor"
           class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
-        <property name="corePoolSize" value="2"/>
-        <property name="maxPoolSize" value="5"/>
+        <property name="corePoolSize" value="10"/>
+        <property name="maxPoolSize" value="15"/>
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 

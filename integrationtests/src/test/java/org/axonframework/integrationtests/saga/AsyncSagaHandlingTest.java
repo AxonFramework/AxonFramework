@@ -20,11 +20,11 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
 import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -37,8 +37,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
 
@@ -56,11 +56,13 @@ public class AsyncSagaHandlingTest {
     private EventBus eventBus;
 
     @Autowired
+    private AsyncAnnotatedSagaManager sagaManager;
+
+    @Autowired
     private AbstractSagaRepository sagaRepository;
 
-    @Qualifier("executor")
-    @Autowired
-    private ExecutorService executor;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Before
     public void setUp() {
@@ -79,9 +81,7 @@ public class AsyncSagaHandlingTest {
                                                      aggregateIdentifiers.get(t % aggregateIdentifiers.size()),
                                                      "message" + (t / aggregateIdentifiers.size())));
         }
-
-        executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.MINUTES);
+        sagaManager.stop();
         sagaRepository.purgeCache();
 
         for (AggregateIdentifier id : aggregateIdentifiers) {
@@ -101,9 +101,7 @@ public class AsyncSagaHandlingTest {
                                                               newAssociation.toString()));
             currentAssociation = newAssociation;
         }
-
-        executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.MINUTES);
+        sagaManager.stop();
         Set<AsyncSaga> result = sagaRepository.find(AsyncSaga.class, Collections.singleton(new AssociationValue(
                 "currentAssociation",
                 currentAssociation.toString())));

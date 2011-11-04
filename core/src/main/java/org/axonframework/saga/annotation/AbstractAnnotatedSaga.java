@@ -18,6 +18,7 @@ package org.axonframework.saga.annotation;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.Event;
+import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
@@ -45,7 +46,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      * Initialize the saga with a random identifier. The identifier used is a randomly generated {@link UUID}.
      */
     protected AbstractAnnotatedSaga() {
-        this(UUID.randomUUID().toString());
+        this(IdentifierFactory.getInstance().generateIdentifier());
     }
 
     /**

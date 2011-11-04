@@ -29,6 +29,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.axonframework.com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${spring.version}</version>
