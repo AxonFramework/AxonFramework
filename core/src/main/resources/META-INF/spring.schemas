@@ -1,4 +1,5 @@
 http\://www.axonframework.org/schema/axon-core-1.0.xsd=org/axonframework/contextsupport/spring/axon-core-1.0.xsd
 http\://www.axonframework.org/schema/axon-core-1.1.xsd=org/axonframework/contextsupport/spring/axon-core-1.1.xsd
 http\://www.axonframework.org/schema/axon-core-1.2.xsd=org/axonframework/contextsupport/spring/axon-core-1.2.xsd
-http\://www.axonframework.org/schema/axon-core.xsd=org/axonframework/contextsupport/spring/axon-core-1.2.xsd
+http\://www.axonframework.org/schema/axon-core-1.3.xsd=org/axonframework/contextsupport/spring/axon-core-1.3.xsd
+http\://www.axonframework.org/schema/axon-core.xsd=org/axonframework/contextsupport/spring/axon-core-1.3.xsd

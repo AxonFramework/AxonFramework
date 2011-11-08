@@ -17,6 +17,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventstore.jpa.JpaEventStore;
+import org.axonframework.util.jpa.ContainerManagedEntityManagerProvider;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -43,6 +44,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
     private static final String PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE = "persistence-exception-resolver";
     private static final String MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE = "max-snapshots-archived";
     private static final String BATCH_SIZE_ATTRIBUTE = "batch-size";
+    private static final String ENTITY_MANAGER_PROVIDER = "entity-manager-provider";
 
     /**
      * {@inheritDoc}
@@ -57,6 +59,13 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
      */
     @Override
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+        if (element.hasAttribute(ENTITY_MANAGER_PROVIDER)) {
+            builder.addConstructorArgReference(element.getAttribute(ENTITY_MANAGER_PROVIDER));
+        } else {
+            builder.addConstructorArgValue(
+                    BeanDefinitionBuilder.genericBeanDefinition(ContainerManagedEntityManagerProvider.class)
+                                         .getBeanDefinition());
+        }
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {
             builder.addConstructorArgReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
         }

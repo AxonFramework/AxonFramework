@@ -30,6 +30,7 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.util.jpa.SimpleEntityManagerProvider;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
@@ -311,8 +312,7 @@ public class JpaEventStoreTest {
     @Test
     public void testCustomEventEntryStore() {
         EventEntryStore eventEntryStore = mock(EventEntryStore.class);
-        testSubject = new JpaEventStore(eventEntryStore);
-        testSubject.setEntityManager(entityManager);
+        testSubject = new JpaEventStore(new SimpleEntityManagerProvider(entityManager), eventEntryStore);
         testSubject.appendEvents("test", new SimpleDomainEventStream(new StubDomainEvent(), new StubDomainEvent()));
         verify(eventEntryStore, times(2)).persistEvent(eq("test"),
                                                        isA(StubDomainEvent.class),

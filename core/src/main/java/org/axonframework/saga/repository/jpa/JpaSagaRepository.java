@@ -23,12 +23,12 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.saga.repository.JavaSagaSerializer;
 import org.axonframework.saga.repository.SagaSerializer;
+import org.axonframework.util.jpa.EntityManagerProvider;
 
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 /**
  * JPA implementation of the Saga Repository. It uses an {@link EntityManager} to persist the actual saga in a backing
@@ -42,7 +42,7 @@ import javax.persistence.PersistenceContext;
  */
 public class JpaSagaRepository extends AbstractSagaRepository {
 
-    private EntityManager entityManager;
+    private final EntityManagerProvider entityManagerProvider;
     private ResourceInjector injector;
     private SagaSerializer serializer;
     private volatile boolean useExplicitFlush = true;
@@ -50,8 +50,11 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     /**
      * Initializes a Saga Repository with a <code>JavaSagaSerializer</code>.
+     *
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      */
-    public JpaSagaRepository() {
+    public JpaSagaRepository(EntityManagerProvider entityManagerProvider) {
+        this.entityManagerProvider = entityManagerProvider;
         serializer = new JavaSagaSerializer();
     }
 
@@ -82,6 +85,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @SuppressWarnings({"unchecked"})
     @Override
     protected void removeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         List<AssociationValueEntry> potentialCandidates = entityManager.createQuery(
                 "SELECT ae FROM AssociationValueEntry ae "
                         + "WHERE ae.associationKey = :associationKey AND ae.sagaId = :sagaId")
@@ -101,6 +105,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void storeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         entityManager.persist(new AssociationValueEntry(sagaIdentifier, associationValue, serializer));
         if (useExplicitFlush) {
             entityManager.flush();
@@ -109,6 +114,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected <T extends Saga> T loadSaga(Class<T> type, String sagaId) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         SagaEntry entry = entityManager.find(SagaEntry.class, sagaId);
         if (entry == null) {
             throw new NoSuchSagaException(type, sagaId);
@@ -126,6 +132,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void deleteSaga(Saga saga) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         entityManager.flush();
         entityManager.createQuery("DELETE FROM SagaEntry se WHERE se.sagaId = :sagaId")
                      .setParameter("sagaId", saga.getSagaIdentifier())
@@ -137,6 +144,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void updateSaga(Saga saga) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         byte[] serializedSaga = serializer.serialize(saga);
         int updates = entityManager.createQuery(
                 "UPDATE SagaEntry se SET se.serializedSaga = :serializedSaga WHERE se.sagaId = :sagaId")
@@ -152,6 +160,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void storeSaga(Saga saga) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         entityManager.persist(new SagaEntry(saga, serializer));
         if (useExplicitFlush) {
             entityManager.flush();
@@ -164,6 +173,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
      */
     @SuppressWarnings({"unchecked"})
     private synchronized void initialize() {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         if (!initialized) {
             List<AssociationValueEntry> entries =
                     entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae").getResultList();
@@ -185,16 +195,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Resource
     public void setResourceInjector(ResourceInjector resourceInjector) {
         this.injector = resourceInjector;
-    }
-
-    /**
-     * Sets the EntityManager that takes care of the actual storage of the Saga entries.
-     *
-     * @param entityManager the EntityManager that takes care of the actual storage of the Saga entries
-     */
-    @PersistenceContext
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
     }
 
     /**

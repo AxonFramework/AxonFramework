@@ -21,6 +21,7 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.util.jpa.SimpleEntityManagerProvider;
 import org.junit.*;
 
 import javax.persistence.EntityManager;
@@ -41,8 +42,8 @@ public class GenericJpaRepositoryTest {
     @Before
     public void setUp() {
         mockEntityManager = mock(EntityManager.class);
-        testSubject = new GenericJpaRepository<StubJpaAggregate>(StubJpaAggregate.class);
-        testSubject.setEntityManager(mockEntityManager);
+        testSubject = new GenericJpaRepository<StubJpaAggregate>(new SimpleEntityManagerProvider(mockEntityManager),
+                                                                 StubJpaAggregate.class);
         DefaultUnitOfWork.startAndGet();
         aggregateId = new StringAggregateIdentifier("123");
         aggregate = new StubJpaAggregate(aggregateId);
