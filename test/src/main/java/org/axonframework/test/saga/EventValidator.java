@@ -20,8 +20,6 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.test.AxonAssertionError;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -96,22 +94,5 @@ class EventValidator implements EventListener {
             matchers.add(equalTo(event));
         }
         return matchers.toArray(new Matcher[matchers.size()]);
-    }
-
-    private Matcher<?> messageWithPayload(final Matcher<Object> matcher) {
-        return new BaseMatcher<Object>() {
-            @Override
-            public boolean matches(Object item) {
-                return EventMessage.class.isInstance(item)
-                        && matcher.matches(((EventMessage) item).getPayload());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("EventMessage with payload [");
-                matcher.describeTo(description);
-                description.appendText("]");
-            }
-        };
     }
 }
