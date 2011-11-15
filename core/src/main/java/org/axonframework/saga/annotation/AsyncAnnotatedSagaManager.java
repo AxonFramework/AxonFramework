@@ -63,7 +63,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     private Executor executor = Executors.newCachedThreadPool();
 
     private SagaRepository sagaRepository = new InMemorySagaRepository();
-    private SagaFactory sagaFactory = new GenericSagaFactory();
+    private volatile SagaFactory sagaFactory = new GenericSagaFactory();
     private TransactionManager transactionManager = new NoTransactionManager();
     private int processorCount = DEFAULT_PROCESSOR_COUNT;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
