@@ -81,6 +81,12 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         return score.compareTo(o.score);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof AbstractMessageHandler)
+                && ((AbstractMessageHandler) obj).score.equals(score);
+    }
+
     /**
      * Finds ParameterResolvers for the given Member details. The returning array contains as many elements as the
      * given <code>parameterTypes</code>, where each ParameterResolver corresponds with the parameter type at the same
