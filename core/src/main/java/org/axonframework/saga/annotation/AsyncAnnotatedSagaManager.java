@@ -57,7 +57,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
 
     private final SagaAnnotationInspector[] sagaAnnotationInspectors;
     private final EventBus eventBus;
-    private Disruptor<AsyncSagaProcessingEvent> disruptor;
+    private volatile Disruptor<AsyncSagaProcessingEvent> disruptor;
 
     private boolean shutdownExecutorOnStop = true;
     private Executor executor = Executors.newCachedThreadPool();
@@ -192,7 +192,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      * @param executor the executor that provides the threads for the processors
      * @see #setProcessorCount(int)
      */
-    public void setExecutor(Executor executor) {
+    public synchronized void setExecutor(Executor executor) {
         Assert.state(disruptor == null, "Cannot set executor after SagaManager has started");
         this.shutdownExecutorOnStop = false;
         this.executor = executor;
@@ -206,7 +206,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      *
      * @param sagaRepository the saga repository to store and load Sagas from
      */
-    public void setSagaRepository(SagaRepository sagaRepository) {
+    public synchronized void setSagaRepository(SagaRepository sagaRepository) {
         Assert.state(disruptor == null, "Cannot set sagaRepository when SagaManager has started");
         this.sagaRepository = sagaRepository;
     }
@@ -219,7 +219,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      *
      * @param sagaFactory the SagaFactory responsible for creating new Saga instances
      */
-    public void setSagaFactory(SagaFactory sagaFactory) {
+    public synchronized void setSagaFactory(SagaFactory sagaFactory) {
         Assert.state(disruptor == null, "Cannot set sagaFactory when SagaManager has started");
         this.sagaFactory = sagaFactory;
     }
@@ -234,7 +234,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      * @param transactionManager the TransactionManager used to manage any transactions required by the underlying
      *                           storage mechanism.
      */
-    public void setTransactionManager(TransactionManager transactionManager) {
+    public synchronized void setTransactionManager(TransactionManager transactionManager) {
         Assert.state(disruptor == null, "Cannot set transactionManager when SagaManager has started");
         this.transactionManager = transactionManager;
     }
@@ -248,7 +248,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      *
      * @param processorCount the number of processors (threads) to process events with
      */
-    public void setProcessorCount(int processorCount) {
+    public synchronized void setProcessorCount(int processorCount) {
         Assert.state(disruptor == null, "Cannot set processorCount when SagaManager has started");
         this.processorCount = processorCount;
     }
@@ -263,7 +263,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      *
      * @param bufferSize The size of the processing buffer. Must be a power of 2.
      */
-    public void setBufferSize(int bufferSize) {
+    public synchronized void setBufferSize(int bufferSize) {
         Assert.isTrue(Integer.bitCount(bufferSize) == 1, "The buffer size must be a power of 2");
         Assert.state(disruptor == null, "Cannot set bufferSize when SagaManager has started");
         this.bufferSize = bufferSize;
@@ -276,7 +276,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      *
      * @param waitStrategy the WaitStrategy to use when event processors need to wait for incoming events
      */
-    public void setWaitStrategy(WaitStrategy waitStrategy) {
+    public synchronized void setWaitStrategy(WaitStrategy waitStrategy) {
         Assert.state(disruptor == null, "Cannot set waitStrategy when SagaManager has started");
         this.waitStrategy = waitStrategy;
     }
