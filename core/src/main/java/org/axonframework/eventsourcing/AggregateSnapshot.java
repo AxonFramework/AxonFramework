@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.joda.time.DateTime;
 
@@ -42,28 +43,39 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
      * @throws IllegalArgumentException if the aggregate contains uncommitted modifications
      */
     public AggregateSnapshot(T aggregate) {
-        this(aggregate, new DateTime());
+        this(aggregate, MetaData.emptyInstance());
     }
 
     /**
-     * Initialize a new AggregateSnapshot for the given <code>aggregate</code> and <code>timestamp</code>. Note that
-     * the
-     * aggregate may not contain uncommitted modifications.
-     * <p/>
-     * This constructor may be used to reconstruct an snapshot event created earlier.
+     * Initialize a new AggregateSnapshot for the given <code>aggregate</code> and <code>metaData</code>. Note that
+     * the aggregate may not contain uncommitted modifications.
      *
      * @param aggregate The aggregate containing the state to capture in the snapshot
-     * @param timestamp the time at which the snapshot was created
+     * @param metaData  The meta data to assign to this snapshot
      * @throws IllegalArgumentException if the aggregate contains uncommitted modifications
      */
-    public AggregateSnapshot(T aggregate, DateTime timestamp) {
+    public AggregateSnapshot(T aggregate, MetaData metaData) {
         if (aggregate.getUncommittedEventCount() != 0) {
             throw new IllegalArgumentException("Aggregate may not have uncommitted modifications");
         }
         this.aggregate = aggregate;
-        this.timestamp = timestamp;
-        this.metaData = MetaData.emptyInstance();
+        this.timestamp = new DateTime();
+        this.metaData = metaData;
         this.eventIdentifier = getAggregateIdentifier().asString() + "@" + getSequenceNumber();
+    }
+
+    /**
+     * Copy constructor used to created new a new Snapshot instance based on another one. All data, except MetaData is
+     * copied.
+     *
+     * @param snapshot The snapshot message to copy
+     * @param metaData The MetaData for the new snapshot
+     */
+    protected AggregateSnapshot(AggregateSnapshot<T> snapshot, MetaData metaData) {
+        this.aggregate = snapshot.getAggregate();
+        this.timestamp = snapshot.getTimestamp();
+        this.eventIdentifier = snapshot.getEventIdentifier();
+        this.metaData = metaData;
     }
 
     /**
@@ -108,5 +120,10 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
     @Override
     public Class getPayloadType() {
         return aggregate.getClass();
+    }
+
+    @Override
+    public DomainEventMessage<T> withMetaData(MetaData metaData) {
+        return new AggregateSnapshot<T>(this, metaData);
     }
 }

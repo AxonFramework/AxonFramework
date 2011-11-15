@@ -7,7 +7,7 @@ package org.axonframework.domain;
  * @author Allard Buijze
  * @since 2.0
  */
-public interface Message {
+public interface Message<T> {
     /**
      * Returns the meta data for this event. This meta data is a collection of key-value pairs, where the key is a
      * String, and the value is a serializable object.
@@ -21,7 +21,7 @@ public interface Message {
      *
      * @return the payload of this Event
      */
-    Object getPayload();
+    T getPayload();
 
     /**
      * Returns the class name of the payload, as defined by {@link Class#getName()}.
@@ -34,4 +34,16 @@ public interface Message {
      * @see Class#getName()
      */
     Class getPayloadType();
+
+    /**
+     * Returns a copy of this Message with the given <code>metaData</code>. The payload remains unchanged.
+     * <p/>
+     * While the implementation returned may be different than the implementation of <code>this</code>, implementations
+     * must take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent
+     * errors further downstream.
+     *
+     * @param metaData The new MetaData for the Message
+     * @return a copy of this message with the given MetaData
+     */
+    Message<T> withMetaData(MetaData metaData);
 }

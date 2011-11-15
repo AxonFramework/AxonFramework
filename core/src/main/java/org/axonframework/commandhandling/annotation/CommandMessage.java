@@ -32,4 +32,9 @@ public class CommandMessage implements Message {
     public Class getPayloadType() {
         return command.getClass();
     }
+
+    @Override
+    public Message withMetaData(MetaData metaData) {
+        throw new UnsupportedOperationException("Not supported for commands, yet");
+    }
 }

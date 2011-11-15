@@ -17,7 +17,10 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.repository.Repository;
+import org.axonframework.unitofwork.UnitOfWork;
 
 /**
  * @author Allard Buijze
@@ -25,6 +28,7 @@ import org.axonframework.repository.Repository;
 public class StubAggregateCommandHandler {
 
     private Repository<StubAggregate> repository;
+    private EventBus eventBus;
 
     @CommandHandler
     public void handleStubAggregateCreated(CreateStubAggregateCommand command) {
@@ -34,6 +38,15 @@ public class StubAggregateCommandHandler {
     @CommandHandler
     public void handleStubAggregateUpdated(UpdateStubAggregateCommand command) {
         StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
+        aggregate.makeAChange();
+    }
+
+    @CommandHandler
+    public void handleStubAggregateUpdatedWithExtraEvent(UpdateStubAggregateWithExtraEventCommand command,
+                                                         UnitOfWork unitOfWork) {
+        StubAggregate aggregate = repository.load(command.getAggregateId());
+        aggregate.makeAChange();
+        unitOfWork.publishEvent(new GenericEventMessage<MyEvent>(new MyEvent()), eventBus);
         aggregate.makeAChange();
     }
 
@@ -51,5 +64,9 @@ public class StubAggregateCommandHandler {
 
     public void setRepository(Repository<StubAggregate> repository) {
         this.repository = repository;
+    }
+
+    public void setEventBus(EventBus eventBus) {
+        this.eventBus = eventBus;
     }
 }

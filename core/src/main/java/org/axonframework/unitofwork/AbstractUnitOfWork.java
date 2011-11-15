@@ -225,6 +225,11 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private class CommitOnOuterCommitTask implements UnitOfWorkListener {
 
         @Override
+        public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
+            return event;
+        }
+
+        @Override
         public void afterCommit() {
             performInnerCommit();
         }

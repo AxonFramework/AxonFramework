@@ -16,7 +16,6 @@
 
 package org.axonframework.auditing;
 
-import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -35,6 +34,5 @@ public interface AuditDataProvider {
      * @param command The command being dispatched
      * @return a map containing key-value pairs of relevant information to include in audit logs.
      */
-    Map<String, Serializable> provideAuditDataFor(Object command);
-
+    Map<String, Object> provideAuditDataFor(Object command);
 }

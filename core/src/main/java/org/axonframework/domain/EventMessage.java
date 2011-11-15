@@ -29,7 +29,7 @@ import java.io.Serializable;
  * @see DomainEventMessage
  * @since 2.0
  */
-public interface EventMessage<T> extends Message, Serializable {
+public interface EventMessage<T> extends Message<T>, Serializable {
 
     /**
      * Returns the identifier of this event. The identifier is used to define the uniqueness of an event. Two events
@@ -50,4 +50,14 @@ public interface EventMessage<T> extends Message, Serializable {
      * @return the timestamp of this event.
      */
     DateTime getTimestamp();
+
+    /**
+     * Returns a copy of this EventMessage with the given <code>metaData</code>. The payload, {@link #getTimestamp()
+     * Timestamp} and {@link #getEventIdentifier() EventIdentifier} remain unchanged.
+     *
+     * @param metaData The new MetaData for the Message
+     * @return a copy of this message with the given MetaData
+     */
+    @Override
+    EventMessage<T> withMetaData(MetaData metaData);
 }

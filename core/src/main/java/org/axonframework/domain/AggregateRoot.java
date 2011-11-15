@@ -33,7 +33,10 @@ public interface AggregateRoot {
     AggregateIdentifier getIdentifier();
 
     /**
-     * Clears the events currently marked as "uncommitted".
+     * Clears the events currently marked as "uncommitted" and clears any known EventRegistrationCallbacks (see {@link
+     * #registerEventRegistrationCallback(EventRegistrationCallback)}).
+     *
+     * @see org.axonframework.domain.EventContainer#commit()
      */
     void commitEvents();
 
@@ -77,4 +80,6 @@ public interface AggregateRoot {
      * @return <code>true</code> if this aggregate was marked as deleted, otherwise <code>false</code>.
      */
     boolean isDeleted();
+
+    void registerEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback);
 }

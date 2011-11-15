@@ -56,7 +56,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
         if (aggregate.getVersion() != null) {
             throw new IllegalArgumentException("Only newly created (unpersisted) aggregates may be added.");
         }
-        CurrentUnitOfWork.get().registerAggregate(aggregate, saveAggregateCallback);
+        CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
     }
 
     /**
@@ -69,7 +69,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     public T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
         T aggregate = doLoad(aggregateIdentifier, expectedVersion);
         validateOnLoad(aggregate, expectedVersion);
-        return CurrentUnitOfWork.get().registerAggregate(aggregate, saveAggregateCallback);
+        return CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
     }
 
     /**
@@ -145,14 +145,12 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
 
         @Override
         public void save(final T aggregate) {
-            DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
             if (aggregate.isDeleted()) {
                 doDelete(aggregate);
             } else {
                 doSave(aggregate);
             }
             aggregate.commitEvents();
-            dispatchUncommittedEvents(uncommittedEvents);
         }
 
         private void dispatchUncommittedEvents(DomainEventStream uncommittedEvents) {

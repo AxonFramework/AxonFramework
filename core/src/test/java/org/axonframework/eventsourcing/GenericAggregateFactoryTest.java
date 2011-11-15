@@ -20,7 +20,6 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.UUIDAggregateIdentifier;
-import org.joda.time.DateTime;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -58,7 +57,7 @@ public class GenericAggregateFactoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         aggregate.commitEvents();
-        AggregateSnapshot<StubAggregate> snapshot = new AggregateSnapshot<StubAggregate>(aggregate, new DateTime());
+        AggregateSnapshot<StubAggregate> snapshot = new AggregateSnapshot<StubAggregate>(aggregate);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<StubAggregate>(StubAggregate.class);
         assertEquals("StubAggregate", factory.getTypeIdentifier());
         assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshot));

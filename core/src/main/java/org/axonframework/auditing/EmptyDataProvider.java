@@ -16,7 +16,6 @@
 
 package org.axonframework.auditing;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
@@ -39,8 +38,7 @@ public class EmptyDataProvider implements AuditDataProvider {
      * This implementation returns an empty map.
      */
     @Override
-    public Map<String, Serializable> provideAuditDataFor(Object command) {
+    public Map<String, Object> provideAuditDataFor(Object command) {
         return Collections.emptyMap();
     }
-
 }

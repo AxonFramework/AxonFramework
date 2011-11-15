@@ -19,13 +19,13 @@ package org.axonframework.auditing;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,7 +54,7 @@ public class AuditingInterceptorTest {
         testSubject.setAuditLogger(mockAuditLogger);
 
         when(mockAuditDataProvider.provideAuditDataFor(any(Object.class)))
-                .thenReturn(Collections.singletonMap("key", (Serializable) "value"));
+                .thenReturn(Collections.singletonMap("key", (Object) "value"));
     }
 
     @After
@@ -70,16 +70,17 @@ public class AuditingInterceptorTest {
                 .thenReturn("Return value");
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
-        aggregate.doSomething();
-        aggregate.doSomething();
-        uow.registerAggregate(aggregate, mock(SaveAggregateCallback.class));
+        uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
         Object result = testSubject.handle("Command!", uow, mockInterceptorChain);
+        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
+
+        aggregate.doSomething();
+        aggregate.doSomething();
 
         assertEquals("Return value", result);
-        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
         uow.commit();
 
-        verify(mockAuditDataProvider, times(1)).provideAuditDataFor("Command!");
+        verify(mockAuditDataProvider, atLeast(1)).provideAuditDataFor("Command!");
         verify(mockAuditLogger, times(1)).logSuccessful(eq("Command!"), any(Object.class), any(List.class));
         DomainEventMessage eventFromAggregate = aggregate.getUncommittedEvents().next();
         assertEquals("value", eventFromAggregate.getMetaData().get("key"));
@@ -95,7 +96,7 @@ public class AuditingInterceptorTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         aggregate.doSomething();
-        uow.registerAggregate(aggregate, mock(SaveAggregateCallback.class));
+        uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
         try {
             testSubject.handle("Command!", uow, mockInterceptorChain);
         } catch (RuntimeException e) {

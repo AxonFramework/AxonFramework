@@ -24,16 +24,21 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Container for events related to a single aggregate. All events added to this container will automatically be
- * assigned
- * the aggregate identifier and a sequence number.
+ * Container for events related to a single aggregate. The container will wrap registered event (payload) and
+ * metadata in an DomainEventMessage and automatically assign the aggregate identifier and the next sequence number.
+ * <p/>
+ * The EventContainer also takes care of the invocation of EventRegistrationCallbacks once events are registered with
+ * this aggregate for publication.
+ * <p/>
+ * This implementation is <em>not</em> thread safe and should only be used with proper locking in place. Generally,
+ * only a single thread will be modifying an aggregate at any given time.
  *
  * @author Allard Buijze
  * @see DomainEventMessage
  * @see org.axonframework.domain.AbstractAggregateRoot
  * @since 0.1
  */
-class EventContainer implements Serializable {
+public class EventContainer implements Serializable {
 
     private static final long serialVersionUID = -39816393359395878L;
 
@@ -41,6 +46,7 @@ class EventContainer implements Serializable {
     private final AggregateIdentifier aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
     private transient Long lastSequenceNumber;
+    private transient List<EventRegistrationCallback> registrationCallbacks;
 
     /**
      * Initialize an EventContainer for an aggregate with the given <code>aggregateIdentifier</code>. This identifier
@@ -67,6 +73,11 @@ class EventContainer implements Serializable {
         DomainEventMessage<T> event = new GenericDomainEventMessage<T>(aggregateIdentifier,
                                                                        newSequenceNumber(),
                                                                        metaData, payload);
+        if (registrationCallbacks != null) {
+            for (EventRegistrationCallback callback : registrationCallbacks) {
+                event = callback.onRegisteredEvent(event);
+            }
+        }
         lastSequenceNumber = event.getSequenceNumber();
         events.add(event);
         return event;
@@ -131,6 +142,9 @@ class EventContainer implements Serializable {
     public void commit() {
         lastCommittedSequenceNumber = getLastSequenceNumber();
         events.clear();
+        if (registrationCallbacks != null) {
+            registrationCallbacks.clear();
+        }
     }
 
     /**
@@ -157,5 +171,12 @@ class EventContainer implements Serializable {
      */
     public List<DomainEventMessage> getEventList() {
         return Collections.unmodifiableList(events);
+    }
+
+    public void registerEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
+        if (registrationCallbacks == null) {
+            this.registrationCallbacks = new ArrayList<EventRegistrationCallback>();
+        }
+        this.registrationCallbacks.add(eventRegistrationCallback);
     }
 }

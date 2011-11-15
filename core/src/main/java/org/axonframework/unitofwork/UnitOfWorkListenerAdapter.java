@@ -35,6 +35,14 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
      * {@inheritDoc}
      */
     @Override
+    public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
+        return event;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
     }
 

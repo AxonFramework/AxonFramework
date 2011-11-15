@@ -40,4 +40,16 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      * @return the identifier of the Aggregate that generated this DomainEvent
      */
     AggregateIdentifier getAggregateIdentifier();
+
+    /**
+     * Returns a copy of this DomainEventMessage with the given <code>metaData</code>. The payload, {@link
+     * #getTimestamp()
+     * Timestamp} and {@link #getEventIdentifier() EventIdentifier}, as well as the {@link #getAggregateIdentifier()
+     * Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain unchanged.
+     *
+     * @param metaData The new MetaData for the Message
+     * @return a copy of this message with the given MetaData
+     */
+    @Override
+    DomainEventMessage<T> withMetaData(MetaData metaData);
 }

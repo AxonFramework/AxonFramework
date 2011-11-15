@@ -18,6 +18,7 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotterTrigger;
@@ -95,6 +96,11 @@ public class RepositoryBeanDefinitionParserTest {
          */
         @Override
         public boolean isDeleted() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public void registerEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

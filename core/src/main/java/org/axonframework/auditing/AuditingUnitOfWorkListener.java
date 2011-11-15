@@ -17,14 +17,9 @@
 package org.axonframework.auditing;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.MetaData;
 import org.axonframework.unitofwork.UnitOfWorkListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +33,6 @@ import java.util.Set;
  * @since 0.7
  */
 public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
-
-    private static final Logger logger = LoggerFactory.getLogger(AuditingUnitOfWorkListener.class);
 
     private final AuditDataProvider auditDataProvider;
     private final AuditLogger auditLogger;
@@ -73,31 +66,16 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     }
 
     @Override
+    public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
+        Map<String, Object> auditData = auditDataProvider.provideAuditDataFor(command);
+        if (!auditData.isEmpty()) {
+            event = event.withMetaData(event.getMetaData().mergedWith(auditData));
+        }
+        return event;
+    }
+
+    @Override
     public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
-        Map<String, Serializable> auditData = auditDataProvider.provideAuditDataFor(command);
-        recordedEvents.addAll(collectEvents(aggregateRoots));
-        recordedEvents.addAll(events);
-        injectAuditData(auditData);
-    }
-
-    private List<EventMessage> collectEvents(Set<AggregateRoot> aggregateRoots) {
-        List<EventMessage> events = new ArrayList<EventMessage>();
-        for (AggregateRoot aggregateRoot : aggregateRoots) {
-            DomainEventStream domainEventStream = aggregateRoot.getUncommittedEvents();
-            while (domainEventStream.hasNext()) {
-                events.add(domainEventStream.next());
-            }
-        }
-        return events;
-    }
-
-    private void injectAuditData(Map<String, Serializable> auditData) {
-        for (EventMessage event : recordedEvents) {
-            MetaData eventMetaData = event.getMetaData();
-            for (Map.Entry<String, Serializable> entry : auditData.entrySet()) {
-                eventMetaData.put(entry.getKey(), entry.getValue());
-            }
-        }
     }
 
     @Override

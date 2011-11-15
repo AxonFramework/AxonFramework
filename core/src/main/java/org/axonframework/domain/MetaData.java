@@ -32,7 +32,7 @@ import java.util.Set;
  */
 public class MetaData implements Map<String, Object>, Serializable {
 
-    //    private static final MetaData EMPTY_META_DATA = new MetaData();
+    private static final MetaData EMPTY_META_DATA = new MetaData();
     private final Map<String, Object> values = new HashMap<String, Object>();
 
     /**
@@ -41,9 +41,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @return an empty MetaData instance
      */
     public static MetaData emptyInstance() {
-        // TODO (see Issue #220): Once MetaData is immutable, return a singleton.
-//        return EMPTY_META_DATA;
-        return new MetaData();
+        return EMPTY_META_DATA;
     }
 
     private MetaData() {
@@ -56,7 +54,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      *
      * @param items the items to populate the MetaData with
      */
-    public MetaData(Map<String, Object> items) {
+    public MetaData(Map<String, ?> items) {
         values.putAll(items);
     }
 
@@ -66,14 +64,13 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
+     * <strong>This operation is not supported.</strong>
+     * <p/>
      * {@inheritDoc}
-     *
-     * @deprecated Future versions will refuse modifying MetaData in an existing Message instance
      */
-    @Deprecated
     @Override
     public Object put(String key, Object value) {
-        return values.put(key, value);
+        throw new UnsupportedOperationException("Event meta-data is immutable.");
     }
 
     /**
@@ -162,5 +159,25 @@ public class MetaData implements Map<String, Object>, Serializable {
     @Override
     public int hashCode() {
         return values.hashCode();
+    }
+
+    public MetaData mergedWith(Map<String, Object> auditData) {
+        if (auditData.isEmpty()) {
+            return this;
+        }
+        Map<String, Object> merged = new HashMap<String, Object>(values);
+        merged.putAll(auditData);
+        return new MetaData(merged);
+    }
+
+    public MetaData withoutKeys(Set<String> keys) {
+        if (keys.isEmpty()) {
+            return this;
+        }
+        Map<String, ?> modified = new HashMap<String, Object>(values);
+        for (String key : keys) {
+            modified.remove(key);
+        }
+        return new MetaData(modified);
     }
 }

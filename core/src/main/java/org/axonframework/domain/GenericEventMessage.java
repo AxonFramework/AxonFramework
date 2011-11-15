@@ -55,20 +55,34 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * @param payload The payload for the message
      */
     public GenericEventMessage(T payload) {
-        this(MetaData.emptyInstance(), payload);
+        this(payload, MetaData.emptyInstance());
     }
 
     /**
      * Creates a GenericEventMessage with given <code>payload</code> and given <code>metaData</code>.
      *
-     * @param metaData The MetaData for the EventMessage
      * @param payload  The payload of the EventMessage
+     * @param metaData The MetaData for the EventMessage
      */
-    public GenericEventMessage(MetaData metaData, T payload) {
+    public GenericEventMessage(T payload, MetaData metaData) {
         this.metaData = metaData != null ? metaData : MetaData.emptyInstance();
         this.timestamp = new DateTime();
         this.payload = payload;
         this.eventIdentifier = IdentifierFactory.getInstance().generateIdentifier();
+    }
+
+    /**
+     * Copy constructor that allows creation of a new GenericEventMessage with modified metaData. All information
+     * from the <code>original</code> is copied, except for the metaData.
+     *
+     * @param original The original message
+     * @param metaData The MetaData for the new message
+     */
+    protected GenericEventMessage(GenericEventMessage<T> original, MetaData metaData) {
+        this.metaData = metaData;
+        this.timestamp = original.getTimestamp();
+        this.payload = original.getPayload();
+        this.eventIdentifier = original.getEventIdentifier();
     }
 
     /**
@@ -80,7 +94,7 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * @param payload  The payload of the EventMessage
      */
     public GenericEventMessage(Map<String, Object> metaData, T payload) {
-        this(new MetaData(metaData), payload);
+        this(payload, new MetaData(metaData));
     }
 
     @Override
@@ -106,6 +120,14 @@ public class GenericEventMessage<T> implements EventMessage<T> {
     @Override
     public Class getPayloadType() {
         return payload.getClass();
+    }
+
+    @Override
+    public EventMessage<T> withMetaData(MetaData metaData) {
+        if (getMetaData().equals(metaData)) {
+            return this;
+        }
+        return new GenericEventMessage<T>(this, metaData);
     }
 
     @Override

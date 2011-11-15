@@ -172,6 +172,7 @@ public class LockingRepositoryTest {
         testSubject = new InMemoryLockingRepository(lockManager);
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
+        EventBus eventBus = mock(EventBus.class);
 
         DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
@@ -186,12 +187,14 @@ public class LockingRepositoryTest {
 
         // this tricks the UnitOfWork to save this aggregate, without loading it.
         DefaultUnitOfWork.startAndGet();
-        CurrentUnitOfWork.get().registerAggregate(loadedAggregate, new SaveAggregateCallback<StubAggregate>() {
-            @Override
-            public void save(StubAggregate aggregate) {
-                testSubject.doSave(aggregate);
-            }
-        });
+        CurrentUnitOfWork.get().registerAggregate(loadedAggregate,
+                                                  eventBus,
+                                                  new SaveAggregateCallback<StubAggregate>() {
+                                                      @Override
+                                                      public void save(StubAggregate aggregate) {
+                                                          testSubject.doSave(aggregate);
+                                                      }
+                                                  });
         loadedAggregate.doSomething();
         try {
             CurrentUnitOfWork.commit();

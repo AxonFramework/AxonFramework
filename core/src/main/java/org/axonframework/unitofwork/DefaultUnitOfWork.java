@@ -18,7 +18,10 @@ package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventhandling.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +92,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public <T extends AggregateRoot> T registerAggregate(T aggregate,
+    public <T extends AggregateRoot> T registerAggregate(T aggregate, final EventBus eventBus,
                                                          SaveAggregateCallback<T> callback) {
         T similarAggregate = (T) findSimilarAggregate(aggregate.getClass(), aggregate.getIdentifier());
         if (similarAggregate != null) {
@@ -102,7 +105,30 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
             return similarAggregate;
         }
         registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, callback));
+
+        // register any events already available as uncommitted in the aggregate
+        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
+        while (uncommittedEvents != null && uncommittedEvents.hasNext()) {
+            CurrentUnitOfWork.get().publishEvent(uncommittedEvents.next(), eventBus);
+        }
+
+        // listen for new events registered in the aggregate
+        aggregate.registerEventRegistrationCallback(new EventRegistrationCallback() {
+            @Override
+            public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
+                event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);
+                doPublish(event, eventBus);
+                return event;
+            }
+        });
         return aggregate;
+    }
+
+    private <T> EventMessage<T> invokeEventRegistrationListeners(EventMessage<T> event) {
+        for (UnitOfWorkListener listener : listeners) {
+            event = listener.onEventRegistered(event);
+        }
+        return event;
     }
 
     @SuppressWarnings({"unchecked"})
@@ -124,6 +150,10 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         listeners.add(listener);
     }
 
+    private void doPublish(EventMessage event, EventBus eventBus) {
+        eventsToPublish.add(new EventEntry(event, eventBus));
+    }
+
     @Override
     public void publishEvent(EventMessage event, EventBus eventBus) {
         if (logger.isDebugEnabled()) {
@@ -131,7 +161,8 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
                          event.getClass().getName(),
                          eventBus.getClass().getName());
         }
-        eventsToPublish.add(new EventEntry(event, eventBus));
+        event = invokeEventRegistrationListeners(event);
+        doPublish(event, eventBus);
     }
 
     @Override

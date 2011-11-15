@@ -129,12 +129,12 @@ public class DefaultUnitOfWorkTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 DefaultUnitOfWork uow = new DefaultUnitOfWork();
                 uow.start();
-                uow.registerAggregate(mockAggregateRoot, callback);
+                uow.registerAggregate(mockAggregateRoot, mockEventBus, callback);
                 uow.commit();
                 return null;
             }
         }).when(listener1).handle(event1);
-        testSubject.registerAggregate(mockAggregateRoot, callback);
+        testSubject.registerAggregate(mockAggregateRoot, mockEventBus, callback);
         testSubject.commit();
 
         InOrder inOrder = inOrder(listener1, listener2, callback);
@@ -169,7 +169,7 @@ public class DefaultUnitOfWorkTest {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
         doThrow(new RuntimeException("Mock")).when(callback).save(isA(AggregateRoot.class));
         testSubject.registerListener(mockListener);
-        testSubject.registerAggregate(mockAggregateRoot, callback);
+        testSubject.registerAggregate(mockAggregateRoot, mockEventBus, callback);
         testSubject.start();
         try {
             testSubject.commit();
@@ -188,6 +188,9 @@ public class DefaultUnitOfWorkTest {
     @Test
     public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnDispatchEvents() {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
+        when(mockListener.onEventRegistered(Matchers.<EventMessage<Object>>any()))
+                .thenAnswer(new ReturnFirstParameterAnswer());
+
         doThrow(new RuntimeException("Mock")).when(mockEventBus).publish(isA(EventMessage.class));
         testSubject.start();
         testSubject.registerListener(mockListener);
@@ -275,6 +278,13 @@ public class DefaultUnitOfWorkTest {
         inOrder.verify(outerListener).onRollback(null);
         inOrder.verify(innerListener).onCleanup();
         inOrder.verify(outerListener).onCleanup();
+    }
+
+    private static class ReturnFirstParameterAnswer implements Answer<Object> {
+        @Override
+        public Object answer(InvocationOnMock invocation) throws Throwable {
+            return invocation.getArguments()[0];
+        }
     }
 
     private class PublishEvent implements Answer {

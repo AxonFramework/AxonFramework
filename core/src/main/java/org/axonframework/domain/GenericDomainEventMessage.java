@@ -52,9 +52,22 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      */
     public GenericDomainEventMessage(AggregateIdentifier aggregateIdentifier, long sequenceNumber,
                                      MetaData metaData, T payload) {
-        super(metaData, payload);
+        super(payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
+    }
+
+    /**
+     * Copy constructor that allows creation of a new GenericDomainEventMessage with modified metaData. All information
+     * from the <code>original</code> is copied, except for the metaData.
+     *
+     * @param original The original message
+     * @param metaData The MetaData for the new message
+     */
+    protected GenericDomainEventMessage(GenericDomainEventMessage<T> original, MetaData metaData) {
+        super(original, metaData);
+        this.aggregateIdentifier = original.getAggregateIdentifier();
+        this.sequenceNumber = original.getSequenceNumber();
     }
 
     @Override
@@ -65,6 +78,14 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     @Override
     public AggregateIdentifier getAggregateIdentifier() {
         return aggregateIdentifier;
+    }
+
+    @Override
+    public DomainEventMessage<T> withMetaData(MetaData metaData) {
+        if (getMetaData().equals(metaData)) {
+            return this;
+        }
+        return new GenericDomainEventMessage<T>(this, metaData);
     }
 
     public String toString() {
