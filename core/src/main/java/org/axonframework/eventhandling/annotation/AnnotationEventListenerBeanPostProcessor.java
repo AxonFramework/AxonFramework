@@ -16,10 +16,10 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.AbstractAnnotationHandlerBeanPostProcessor;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.util.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -76,8 +76,8 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
             Map<String, EventBus> beans = getApplicationContext().getBeansOfType(EventBus.class);
             if (beans.size() != 1) {
                 throw new IllegalStateException("If no specific EventBus is provided, the application context must "
-                        + "contain exactly one bean of type EventBus. The current application context has: "
-                        + beans.size());
+                                                        + "contain exactly one bean of type EventBus. The current application context has: "
+                                                        + beans.size());
             }
             this.eventBus = beans.entrySet().iterator().next().getValue();
         }

@@ -16,7 +16,7 @@
 
 package org.axonframework.integration.eventbus;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.springframework.integration.core.MessageHandler;
@@ -74,8 +74,8 @@ public class SpringIntegrationEventBus implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void publish(Event event) {
-        channel.send(new GenericMessage<Event>(event));
+    public void publish(EventMessage event) {
+        channel.send(new GenericMessage<Object>(event.getPayload(), event.getMetaData()));
     }
 
     /**

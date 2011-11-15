@@ -16,7 +16,6 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.domain.DomainEvent;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
@@ -29,7 +28,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
 
     @StartSaga(forceNew = true)
     @SagaEventHandler(associationProperty = "aggregateIdentifier")
-    public void handleAll(DomainEvent event) {
+    public void handleAll(SimpleEvent event) {
         // do nothing
     }
 }

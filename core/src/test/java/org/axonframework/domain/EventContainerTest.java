@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,10 +25,12 @@ import static org.junit.Assert.*;
  */
 public class EventContainerTest {
 
+    private MetaData metaData = MetaData.emptyInstance();
+    private String aggregateType = "type";
+
     @Test
     public void testAddEvent_IdAndSequenceNumberInitialized() {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
-        StubDomainEvent domainEvent = new StubDomainEvent();
 
         EventContainer eventContainer = new EventContainer(identifier);
         assertEquals(identifier, eventContainer.getAggregateIdentifier());
@@ -37,9 +39,10 @@ public class EventContainerTest {
         assertEquals(0, eventContainer.size());
         assertFalse(eventContainer.getEventStream().hasNext());
 
-        eventContainer.addEvent(domainEvent);
+        eventContainer.addEvent(metaData, new Object());
 
         assertEquals(1, eventContainer.size());
+        DomainEventMessage domainEvent = eventContainer.getEventList().get(0);
         assertEquals(new Long(12), domainEvent.getSequenceNumber());
         assertEquals(identifier, domainEvent.getAggregateIdentifier());
         assertTrue(eventContainer.getEventStream().hasNext());
@@ -47,37 +50,5 @@ public class EventContainerTest {
         eventContainer.commit();
 
         assertEquals(0, eventContainer.size());
-    }
-
-    @Test
-    public void testAddEventWithId_IdConflictsWithContainerId() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
-        StubDomainEvent domainEvent = new StubDomainEvent(identifier);
-
-        EventContainer eventContainer = new EventContainer(new UUIDAggregateIdentifier());
-        eventContainer.initializeSequenceNumber(11L);
-
-        try {
-            eventContainer.addEvent(domainEvent);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().toLowerCase().contains("identifier"));
-            assertTrue(e.getMessage().toLowerCase().contains("match"));
-        }
-    }
-
-    @Test
-    public void testAddEvent_SequenceNumberInitialized() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
-        StubDomainEvent domainEvent = new StubDomainEvent(identifier);
-        StubDomainEvent domainEvent2 = new StubDomainEvent(identifier);
-        domainEvent.setSequenceNumber(123);
-
-        EventContainer eventContainer = new EventContainer(identifier);
-
-        eventContainer.addEvent(domainEvent);
-        eventContainer.addEvent(domainEvent2);
-
-        assertEquals(new Long(124), domainEvent2.getSequenceNumber());
     }
 }

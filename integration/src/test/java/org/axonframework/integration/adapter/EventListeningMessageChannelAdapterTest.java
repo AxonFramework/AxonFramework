@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
@@ -47,7 +48,7 @@ public class EventListeningMessageChannelAdapterTest {
     @Test
     public void testMessageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
-        testSubject.handle(event);
+        testSubject.handle(new GenericEventMessage<StubDomainEvent>(event));
 
         verify(mockChannel).send(messageWithPayload(event));
     }
@@ -64,8 +65,12 @@ public class EventListeningMessageChannelAdapterTest {
     public void testFilterBlocksEvents() throws Exception {
         when(mockFilter.accept(isA(Class.class))).thenReturn(false);
         testSubject = new EventListeningMessageChannelAdapter(mockEventBus, mockChannel, mockFilter);
-        testSubject.handle(new StubDomainEvent());
-        verify(mockEventBus, never()).publish(isA(Event.class));
+        testSubject.handle(newDomainEvent());
+        verify(mockEventBus, never()).publish(isA(EventMessage.class));
+    }
+
+    private EventMessage<String> newDomainEvent() {
+        return new GenericEventMessage<String>("Mock");
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {

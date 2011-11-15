@@ -19,9 +19,9 @@ package org.axonframework.repository;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
@@ -87,12 +87,12 @@ public class CachingEventSourcingRepositoryTest {
 
         DefaultUnitOfWork.startAndGet();
         DomainEventStream events = mockEventStore.readEvents("mock", aggregate1.getIdentifier());
-        List<Event> eventList = new ArrayList<Event>();
+        List<EventMessage> eventList = new ArrayList<EventMessage>();
         while (events.hasNext()) {
             eventList.add(events.next());
         }
         assertEquals(2, eventList.size());
-        verify(mockEventBus, times(2)).publish(isA(DomainEvent.class));
+        verify(mockEventBus, times(2)).publish(isA(EventMessage.class));
         cache.clear();
 
         reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
@@ -128,7 +128,7 @@ public class CachingEventSourcingRepositoryTest {
     private static class StubAggregateFactory implements AggregateFactory<StubAggregate> {
 
         @Override
-        public StubAggregate createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
+        public StubAggregate createAggregate(AggregateIdentifier aggregateIdentifier, DomainEventMessage firstEvent) {
             return new StubAggregate(aggregateIdentifier);
         }
 
@@ -145,16 +145,16 @@ public class CachingEventSourcingRepositoryTest {
 
     private class InMemoryEventStore implements EventStore {
 
-        private Map<AggregateIdentifier, List<DomainEvent>> store = new HashMap<AggregateIdentifier, List<DomainEvent>>();
+        private Map<AggregateIdentifier, List<DomainEventMessage>> store = new HashMap<AggregateIdentifier, List<DomainEventMessage>>();
 
         @Override
         public void appendEvents(String identifier, DomainEventStream events) {
             while (events.hasNext()) {
-                DomainEvent next = events.next();
+                DomainEventMessage next = events.next();
                 if (!store.containsKey(next.getAggregateIdentifier())) {
-                    store.put(next.getAggregateIdentifier(), new ArrayList<DomainEvent>());
+                    store.put(next.getAggregateIdentifier(), new ArrayList<DomainEventMessage>());
                 }
-                List<DomainEvent> eventList = store.get(next.getAggregateIdentifier());
+                List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
                 eventList.add(next);
             }
         }

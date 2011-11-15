@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.serializer.Serializer;
 import org.joda.time.DateTime;
@@ -61,7 +61,7 @@ abstract class AbstractEventEntry {
      * @param event           The event to store in the eventstore
      * @param serializedEvent The serialized version of the Event
      */
-    protected AbstractEventEntry(String type, DomainEvent event, byte[] serializedEvent) {
+    protected AbstractEventEntry(String type, DomainEventMessage event, byte[] serializedEvent) {
         this.type = type;
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
         this.sequenceNumber = event.getSequenceNumber();
@@ -81,8 +81,8 @@ abstract class AbstractEventEntry {
      * @param eventSerializer The Serializer to deserialize the DomainEvent with.
      * @return The deserialized domain event
      */
-    public DomainEvent getDomainEvent(Serializer<? super DomainEvent> eventSerializer) {
-        return (DomainEvent) eventSerializer.deserialize(serializedEvent);
+    public DomainEventMessage getDomainEvent(Serializer<? super DomainEventMessage> eventSerializer) {
+        return (DomainEventMessage) eventSerializer.deserialize(serializedEvent);
     }
 
     /**

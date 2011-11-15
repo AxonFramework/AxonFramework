@@ -16,15 +16,15 @@
 
 package org.axonframework.test.utils;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.util.ReflectionUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static org.axonframework.util.ReflectionUtils.methodsOf;
+import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
  * Resource injector that uses setter methods to inject resources. All methods starting with "set" are evaluated. If

@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.junit.*;
 
@@ -69,7 +69,7 @@ public class GenericSagaFactoryTest {
         }
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
         }
 
         @Override
@@ -97,7 +97,7 @@ public class GenericSagaFactoryTest {
         }
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
         }
 
         @Override
@@ -122,7 +122,7 @@ public class GenericSagaFactoryTest {
         }
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
         }
 
         @Override

@@ -19,8 +19,6 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -62,7 +60,7 @@ import java.util.List;
  * </pre>
  * </code>
  * <p/>
- * Providing the "given" events using the {@link #given(org.axonframework.domain.DomainEvent...)} or {@link
+ * Providing the "given" events using the {@link #given(org.axonframework.domain.DomainEventMessage...)} or {@link
  * #given(java.util.List) given(List&lt;DomainEvent&gt;)} methods must be the last operation in the configuration
  * stage.
  * <p/>
@@ -128,21 +126,7 @@ public interface FixtureConfiguration {
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
      */
-    TestExecutor given(DomainEvent... domainEvents);
-
-    /**
-     * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
-     * store when an aggregate is loaded. This method will read the events from the event stream, possibly (and
-     * probably) moving the pointer to the end of the stream. Further reading from the stream will therefore not result
-     * in events being available.
-     * <p/>
-     * Note that the aggregate identifier and the sequence number do not have to be set on these events. The fixture
-     * will automatically set those.
-     *
-     * @param domainEvents the domain events the event store should return
-     * @return a TestExecutor instance that can execute the test with this configuration
-     */
-    TestExecutor given(DomainEventStream domainEvents);
+    TestExecutor given(Object... domainEvents);
 
     /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
@@ -154,7 +138,7 @@ public interface FixtureConfiguration {
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
      */
-    TestExecutor given(List<DomainEvent> domainEvents);
+    TestExecutor given(List<?> domainEvents);
 
     /**
      * Returns the identifier of the aggregate that this fixture prepares. When commands need to load an aggregate

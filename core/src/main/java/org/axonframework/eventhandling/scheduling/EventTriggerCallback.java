@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.domain.EventMessage;
 
 /**
  * Callback interface that is invoked before and after a scheduled event is published.
@@ -31,7 +31,7 @@ public interface EventTriggerCallback {
      *
      * @param event The event about to be published
      */
-    void beforePublication(ApplicationEvent event);
+    void beforePublication(EventMessage event);
 
     /**
      * Invoked after the publication of a scheduled event has been executed successfully.

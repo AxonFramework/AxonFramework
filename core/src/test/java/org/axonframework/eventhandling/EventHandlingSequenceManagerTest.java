@@ -16,7 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.junit.*;
 
@@ -64,7 +65,8 @@ public class EventHandlingSequenceManagerTest {
             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
         countdownLatch = new CountDownLatch(1000);
         for (int t = 0; t < 1000; t++) {
-            testSubject.handle(new StubDomainEvent());
+            GenericEventMessage<StubDomainEvent> event = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
+            testSubject.handle(event);
         }
         assertTrue("Processing took too long.", countdownLatch.await(10, TimeUnit.SECONDS));
 
@@ -81,7 +83,7 @@ public class EventHandlingSequenceManagerTest {
     public void testDispatchFullConcurrentEvents() throws InterruptedException {
         FullConcurrentEventListener eventListener = new FullConcurrentEventListener();
         testSubject = new AsynchronousEventHandlerWrapper(eventListener, new FullConcurrencyPolicy(), executorService);
-        StubDomainEvent event = new StubDomainEvent();
+        GenericEventMessage<StubDomainEvent> event = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         for (int t = 0; t < 1000; t++) {
             testSubject.handle(event);
         }
@@ -96,10 +98,10 @@ public class EventHandlingSequenceManagerTest {
     /**
      * Very useless implementation of SequencingPolicy that is the fastest way to display a memory leak
      */
-    private class FullRandomPolicy implements SequencingPolicy<Event> {
+    private class FullRandomPolicy implements SequencingPolicy<EventMessage> {
 
         @Override
-        public Object getSequenceIdentifierFor(Event event) {
+        public Object getSequenceIdentifierFor(EventMessage event) {
             return event.getEventIdentifier();
         }
     }
@@ -107,7 +109,7 @@ public class EventHandlingSequenceManagerTest {
     private class StubEventListener implements EventListener {
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             countdownLatch.countDown();
         }
     }
@@ -119,7 +121,7 @@ public class EventHandlingSequenceManagerTest {
         private AtomicInteger totalTransactionCounter = new AtomicInteger(0);
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             eventCounter.incrementAndGet();
         }
 

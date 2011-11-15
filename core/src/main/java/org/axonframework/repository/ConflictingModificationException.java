@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Root of a hierarchy of exceptions indicating the detection of conflicting concurrent modifications. These conflicts
@@ -50,5 +50,4 @@ public class ConflictingModificationException extends AxonNonTransientException 
     public ConflictingModificationException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

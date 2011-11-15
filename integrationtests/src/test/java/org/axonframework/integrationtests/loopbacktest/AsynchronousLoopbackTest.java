@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.loopbacktest;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.junit.*;
@@ -65,7 +65,7 @@ public class AsynchronousLoopbackTest {
         }
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             synchronized (lock) {
                 int remaining = eventsRemaining.decrementAndGet();
                 if (remaining <= 0) {

@@ -17,7 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
@@ -72,14 +72,14 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     }
 
     @Override
-    public final void handle(Event event) {
+    public final void handle(EventMessage event) {
         if (eventHandlerInvoker == null) {
             eventHandlerInvoker = new SagaEventHandlerInvoker(this);
         }
         doHandle(event);
     }
 
-    private void doHandle(Event event) {
+    private void doHandle(EventMessage event) {
         if (isActive) {
             eventHandlerInvoker.invokeSagaEventHandlerMethod(event);
             if (eventHandlerInvoker.isEndingEvent(event)) {

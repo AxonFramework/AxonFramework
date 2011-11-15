@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.util.AxonException;
+import org.axonframework.common.AxonException;
 
 /**
  * Wrapper for exceptions that occurred while calling an @BeforeTransaction or @AfterTransaction annotated method. This

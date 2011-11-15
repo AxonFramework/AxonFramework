@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,9 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.ApplicationEvent;
+/**
+ * @author Allard Buijze
+ */
+class MyApplicationEvent {
 
-/** @author Allard Buijze */
-class MyApplicationEvent extends ApplicationEvent {
-
-    private static final long serialVersionUID = 8291016745540119918L;
-
-    public MyApplicationEvent(Object source) {
-        super(source);
-    }
 }

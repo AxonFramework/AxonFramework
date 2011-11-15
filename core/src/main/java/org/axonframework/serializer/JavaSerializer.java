@@ -16,8 +16,7 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.saga.Saga;
-import org.axonframework.util.SerializationException;
+import org.axonframework.common.SerializationException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,9 +48,7 @@ public class JavaSerializer implements Serializer<Object> {
                 oos.flush();
             }
         } catch (IOException e) {
-            throw new SerializationException(
-                    "An exception occurred while trying to serialize a Saga or Association Value for storage",
-                    e);
+            throw new SerializationException("An exception occurred writing serialized data to the output stream", e);
         }
     }
 
@@ -67,7 +64,7 @@ public class JavaSerializer implements Serializer<Object> {
             ois = new ObjectInputStream(inputStream);
             return ois.readObject();
         } catch (ClassNotFoundException e) {
-            throw new SerializationException("An exception occurred while trying to deserialize a stored Saga", e);
+            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         }
     }
 
@@ -76,19 +73,19 @@ public class JavaSerializer implements Serializer<Object> {
         try {
             serialize(instance, baos);
         } catch (IOException e) {
-            throw new SerializationException(
-                    "An exception occurred while trying to serialize a Saga or Association Value for storage",
-                    e);
+            throw new SerializationException("The theoretically impossible has just happened: "
+                                                     + "An IOException while writing to a ByteArrayOutputStream.", e);
         }
         return baos.toByteArray();
     }
 
     @Override
-    public Saga deserialize(byte[] serializedSaga) {
+    public Object deserialize(byte[] serializedSaga) {
         try {
-            return (Saga) deserialize(new ByteArrayInputStream(serializedSaga));
+            return deserialize(new ByteArrayInputStream(serializedSaga));
         } catch (IOException e) {
-            throw new SerializationException("An exception occurred while trying to deserialize an object", e);
+            throw new SerializationException("The theoretically impossible has just happened: "
+                                                     + "An IOException while reading to a ByteArrayInputStream.", e);
         }
     }
 }

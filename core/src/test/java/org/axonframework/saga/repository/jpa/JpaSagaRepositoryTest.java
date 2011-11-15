@@ -16,7 +16,7 @@
 
 package org.axonframework.saga.repository.jpa;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.NoSuchSagaException;
@@ -37,7 +37,7 @@ import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.axonframework.util.TestUtils.setOf;
+import static org.axonframework.common.TestUtils.setOf;
 import static org.junit.Assert.*;
 
 /**
@@ -329,7 +329,7 @@ public class JpaSagaRepositoryTest {
         }
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

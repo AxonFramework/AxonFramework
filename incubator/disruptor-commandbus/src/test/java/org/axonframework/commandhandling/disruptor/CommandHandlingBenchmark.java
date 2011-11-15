@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
@@ -45,7 +45,8 @@ public class CommandHandlingBenchmark {
         CommandBus cb = new SimpleCommandBus();
 
         InMemoryEventStore eventStore = new InMemoryEventStore();
-        eventStore.appendInitialEvent("test", new SimpleDomainEventStream(new SomeEvent(0, aggregateIdentifier)));
+        eventStore.appendInitialEvent("test", new SimpleDomainEventStream(new GenericDomainEventMessage<SomeEvent>(
+                aggregateIdentifier, 0, new SomeEvent())));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
         Repository<MyAggregate> repository = new Repository<MyAggregate>() {
@@ -98,15 +99,8 @@ public class CommandHandlingBenchmark {
         }
     }
 
-    private static class SomeEvent extends DomainEvent {
+    private static class SomeEvent {
 
-        protected SomeEvent() {
-            super();
-        }
-
-        protected SomeEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
-            super(sequenceNumber, aggregateIdentifier);
-        }
     }
 
     private static class MyCommandHandler implements CommandHandler<String> {

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Indicates that the given events stream could not be stored or read due to an underlying exception.

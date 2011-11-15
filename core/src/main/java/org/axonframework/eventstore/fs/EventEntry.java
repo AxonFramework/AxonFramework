@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.Serializer;
 
 import java.util.Arrays;
@@ -52,8 +52,8 @@ class EventEntry {
      * @param serializer the serializer that can deserialize the event in this entry
      * @return the deserialized domain event
      */
-    public DomainEvent deserialize(Serializer<?> serializer) {
-        return (DomainEvent) serializer.deserialize(serializedEvent);
+    public DomainEventMessage deserialize(Serializer<?> serializer) {
+        return (DomainEventMessage) serializer.deserialize(serializedEvent);
     }
 
     /**

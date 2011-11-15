@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -156,14 +156,14 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         }
 
         @Override
-        public DomainEvent next() {
-            DomainEvent next = delegate.next();
+        public DomainEventMessage next() {
+            DomainEventMessage next = delegate.next();
             counter.incrementAndGet();
             return next;
         }
 
         @Override
-        public DomainEvent peek() {
+        public DomainEventMessage peek() {
             return delegate.peek();
         }
 

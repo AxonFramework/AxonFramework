@@ -17,7 +17,7 @@
 package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 
 /**
@@ -119,5 +119,5 @@ public interface UnitOfWork {
      * @param event    The event to be published on the event bus
      * @param eventBus The event bus on which to publish the event
      */
-    void publishEvent(Event event, EventBus eventBus);
+    void publishEvent(EventMessage event, EventBus eventBus);
 }

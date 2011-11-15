@@ -17,7 +17,6 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.ApplicationEvent;
 import org.joda.time.DateTime;
 
 /**
@@ -45,8 +44,7 @@ public interface FixtureConfiguration {
     /**
      * Use this method to indicate that an aggregate with given identifier published certain events.
      * <p/>
-     * Can be chained to build natural sentences:<br/>
-     * <code>andThenAggregate(someIdentifier).published(someEvents)</code>
+     * Can be chained to build natural sentences:<br/> <code>andThenAggregate(someIdentifier).published(someEvents)</code>
      *
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
@@ -54,17 +52,18 @@ public interface FixtureConfiguration {
     GivenAggregateEventPublisher givenAggregate(AggregateIdentifier aggregateIdentifier);
 
     /**
-     * Indicates that the given <code>applicationEvent</code> has been published in the past. This event is sent to
-     * the associated sagas.
+     * Indicates that the given <code>applicationEvent</code> has been published in the past. This event is sent to the
+     * associated sagas.
      *
-     * @param applicationEvent The event to publish
+     * @param event The event to publish
      * @return an object that allows chaining of more given state
      */
-    ContinuedGivenState givenAPublished(ApplicationEvent applicationEvent);
+    ContinuedGivenState givenAPublished(Object event);
 
     /**
      * Returns the time as "known" by the fixture. This is the time at which the fixture was created, plus the amount
-     * of time the fixture was told to simulate a "wait".
+     * of
+     * time the fixture was told to simulate a "wait".
      * <p/>
      * This time can be used to predict calculations that the saga may have made based on timestamps from the events it
      * received.

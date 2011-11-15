@@ -39,7 +39,7 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     @EventHandler
     @Override
-    protected void handle(DomainEvent event) {
+    protected void handle(DomainEventMessage event) {
         invocationCount++;
     }
 
@@ -47,11 +47,13 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
         return invocationCount;
     }
 
-    public DomainEvent createSnapshotEvent() {
-        return new StubDomainEvent(getIdentifier(), 5);
+    public DomainEventMessage createSnapshotEvent() {
+        return new GenericDomainEventMessage<StubDomainEvent>(getIdentifier(), (long) 5,
+                                                              MetaData.emptyInstance(), new StubDomainEvent());
     }
 
     public void delete() {
-        apply(new StubAggregateDeletedEvent());
+        apply(new StubDomainEvent());
+        markDeleted();
     }
 }

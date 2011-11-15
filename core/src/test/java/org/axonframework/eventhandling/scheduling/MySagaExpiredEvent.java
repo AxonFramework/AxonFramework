@@ -16,19 +16,17 @@
 
 package org.axonframework.eventhandling.scheduling;
 
-import org.axonframework.saga.Saga;
-import org.joda.time.Duration;
+import java.io.Serializable;
 
 /**
  * @author Allard Buijze
  */
-public class MySagaExpiredEvent extends ScheduledEvent {
+public class MySagaExpiredEvent implements Serializable {
 
     private static final long serialVersionUID = 131758935012163469L;
     private final String association;
 
-    public MySagaExpiredEvent(Saga source, int scheduleDuration, String association) {
-        super(source, new Duration(scheduleDuration));
+    public MySagaExpiredEvent(String association) {
         this.association = association;
     }
 

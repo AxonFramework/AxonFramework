@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.util.AxonConfigurationException;
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.*;
 import org.mockito.*;
 

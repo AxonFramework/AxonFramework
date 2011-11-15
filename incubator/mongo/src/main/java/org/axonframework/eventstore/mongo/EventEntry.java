@@ -20,7 +20,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.serializer.Serializer;
 
@@ -84,7 +84,7 @@ class EventEntry {
      * @param event           The actual DomainEvent to store
      * @param eventSerializer Serializer to use for the event to store
      */
-    EventEntry(String aggregateType, DomainEvent event, Serializer<? super DomainEvent> eventSerializer) {
+    EventEntry(String aggregateType, DomainEventMessage event, Serializer<? super DomainEventMessage> eventSerializer) {
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
         this.sequenceNumber = event.getSequenceNumber();
@@ -111,8 +111,8 @@ class EventEntry {
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
      * @return The actual DomainEvent
      */
-    public DomainEvent getDomainEvent(Serializer<? super DomainEvent> eventSerializer) {
-        return (DomainEvent) eventSerializer.deserialize(serializedEvent.getBytes(UTF8));
+    public DomainEventMessage getDomainEvent(Serializer<? super DomainEventMessage> eventSerializer) {
+        return (DomainEventMessage) eventSerializer.deserialize(serializedEvent.getBytes(UTF8));
     }
 
     /**

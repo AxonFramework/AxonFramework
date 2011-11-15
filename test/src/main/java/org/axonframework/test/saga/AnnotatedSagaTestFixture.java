@@ -17,9 +17,8 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.ApplicationEvent;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.GenericSagaFactory;
@@ -28,7 +27,6 @@ import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.utils.AutowiredResourceInjector;
-import org.axonframework.test.utils.DomainEventUtils;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
@@ -82,7 +80,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     @Override
     public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
         fixtureExecutionResult.startRecording();
-        for (Event event : eventScheduler.advanceTime(elapsedTime)) {
+        for (EventMessage event : eventScheduler.advanceTime(elapsedTime)) {
             sagaManager.handle(event);
         }
         return fixtureExecutionResult;
@@ -91,7 +89,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     @Override
     public FixtureExecutionResult whenTimeAdvancesTo(DateTime newDateTime) {
         fixtureExecutionResult.startRecording();
-        for (Event event : eventScheduler.advanceTime(newDateTime)) {
+        for (EventMessage event : eventScheduler.advanceTime(newDateTime)) {
             sagaManager.handle(event);
         }
         return fixtureExecutionResult;
@@ -108,8 +106,8 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public ContinuedGivenState givenAPublished(ApplicationEvent applicationEvent) {
-        sagaManager.handle(applicationEvent);
+    public ContinuedGivenState givenAPublished(Object event) {
+        sagaManager.handle(new GenericEventMessage<Object>(event));
         return this;
     }
 
@@ -119,8 +117,8 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public ContinuedGivenState andThenAPublished(ApplicationEvent applicationEvent) {
-        sagaManager.handle(applicationEvent);
+    public ContinuedGivenState andThenAPublished(Object event) {
+        sagaManager.handle(new GenericEventMessage<Object>(event));
         return this;
     }
 
@@ -131,9 +129,9 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public FixtureExecutionResult whenPublishingA(ApplicationEvent applicationEvent) {
+    public FixtureExecutionResult whenPublishingA(Object event) {
         fixtureExecutionResult.startRecording();
-        sagaManager.handle(applicationEvent);
+        sagaManager.handle(new GenericEventMessage<Object>(event));
         return fixtureExecutionResult;
     }
 
@@ -160,24 +158,22 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         }
 
         @Override
-        public ContinuedGivenState published(DomainEvent... events) {
+        public ContinuedGivenState published(Object... events) {
             publish(events);
             return AnnotatedSagaTestFixture.this;
         }
 
         @Override
-        public FixtureExecutionResult publishes(DomainEvent event) {
+        public FixtureExecutionResult publishes(Object event) {
             publish(event);
             return fixtureExecutionResult;
         }
 
-        private void publish(DomainEvent... events) {
+        private void publish(Object... events) {
             DateTimeUtils.setCurrentMillisFixed(currentTime().getMillis());
             try {
-                for (DomainEvent event : events) {
-                    DomainEventUtils.setAggregateIdentifier(event, aggregateIdentifier);
-                    DomainEventUtils.setSequenceNumber(event, sequenceCounter.getAndIncrement());
-                    sagaManager.handle(event);
+                for (Object event : events) {
+                    sagaManager.handle(new GenericEventMessage<Object>(event));
                 }
             } finally {
                 DateTimeUtils.setCurrentMillisSystem();

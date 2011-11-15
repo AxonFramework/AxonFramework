@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.scheduling.SimpleTimingSaga;
@@ -43,7 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.util.TestUtils.setOf;
+import static org.axonframework.common.TestUtils.setOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -99,7 +100,7 @@ public class QuartzSagaTimerIntegrationTest {
                 .execute(new TransactionCallback<SimpleTimingSaga>() {
                     @Override
                     public SimpleTimingSaga doInTransaction(TransactionStatus status) {
-                        eventBus.publish(new StartingEvent(this, randomAssociationValue));
+                        eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(randomAssociationValue)));
                         Set<SimpleTimingSaga> actualResult =
                                 repository.find(SimpleTimingSaga.class,
                                                 setOf(new AssociationValue("association",

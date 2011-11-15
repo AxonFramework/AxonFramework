@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,23 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.MetaData;
+import org.joda.time.DateTime;
 
 /**
  * Snapshot event that captures the entire aggregate. The motivation is that the aggregate contains all relevant state.
  *
- * @author Allard Buijze
  * @param <T> The type of aggregate this snapshot captures
+ * @author Allard Buijze
  * @since 0.6
  */
-public class AggregateSnapshot<T extends EventSourcedAggregateRoot> extends DomainEvent {
-
-    private static final long serialVersionUID = -4553033098609759034L;
+public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements Snapshot<T> {
 
     private final T aggregate;
+    private final String eventIdentifier;
+    private final MetaData metaData;
+    private final DateTime timestamp;
 
     /**
      * Initialize a new AggregateSnapshot for the given <code>aggregate</code>. Note that the aggregate may not contain
@@ -39,11 +42,28 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> extends Doma
      * @throws IllegalArgumentException if the aggregate contains uncommitted modifications
      */
     public AggregateSnapshot(T aggregate) {
-        super(aggregate.getVersion(), aggregate.getIdentifier());
+        this(aggregate, new DateTime());
+    }
+
+    /**
+     * Initialize a new AggregateSnapshot for the given <code>aggregate</code> and <code>timestamp</code>. Note that
+     * the
+     * aggregate may not contain uncommitted modifications.
+     * <p/>
+     * This constructor may be used to reconstruct an snapshot event created earlier.
+     *
+     * @param aggregate The aggregate containing the state to capture in the snapshot
+     * @param timestamp the time at which the snapshot was created
+     * @throws IllegalArgumentException if the aggregate contains uncommitted modifications
+     */
+    public AggregateSnapshot(T aggregate, DateTime timestamp) {
         if (aggregate.getUncommittedEventCount() != 0) {
             throw new IllegalArgumentException("Aggregate may not have uncommitted modifications");
         }
         this.aggregate = aggregate;
+        this.timestamp = timestamp;
+        this.metaData = MetaData.emptyInstance();
+        this.eventIdentifier = getAggregateIdentifier().asString() + "@" + getSequenceNumber();
     }
 
     /**
@@ -53,5 +73,40 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> extends Doma
      */
     public T getAggregate() {
         return aggregate;
+    }
+
+    @Override
+    public Long getSequenceNumber() {
+        return aggregate.getVersion();
+    }
+
+    @Override
+    public AggregateIdentifier getAggregateIdentifier() {
+        return aggregate.getIdentifier();
+    }
+
+    @Override
+    public String getEventIdentifier() {
+        return eventIdentifier;
+    }
+
+    @Override
+    public DateTime getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    public MetaData getMetaData() {
+        return metaData;
+    }
+
+    @Override
+    public T getPayload() {
+        return aggregate;
+    }
+
+    @Override
+    public Class getPayloadType() {
+        return aggregate.getClass();
     }
 }

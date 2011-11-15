@@ -49,8 +49,7 @@ public class HybridJpaRepository<T extends EventSourcedAggregateRoot> extends Ge
 
     /**
      * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> without locking.
-     * The
-     * events are appended to the event store under the given <code>aggregateTypeIdentifier</code>.
+     * The events are appended to the event store under the given <code>aggregateTypeIdentifier</code>.
      *
      * @param aggregateType           The type of aggregate stored in this repository.
      * @param aggregateTypeIdentifier The type identifier to store events with

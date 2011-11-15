@@ -16,19 +16,18 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TransactionManager;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 /**
- * Simple SagaManager implementation. This implementation requires the Event that should cause new Saga's to be created,
+ * Simple SagaManager implementation. This implementation requires the Event that should cause new Saga's to be
+ * created,
  * to be registered using {@link #setEventsToAlwaysCreateNewSagasFor(java.util.List)} and {@link
  * #setEventsToOptionallyCreateNewSagasFor(java.util.List)}.
  *
@@ -39,8 +38,8 @@ public class SimpleSagaManager extends AbstractSagaManager {
 
     private final AssociationValueResolver associationValueResolver;
 
-    private List<Class<? extends Event>> eventsToAlwaysCreateNewSagasFor = Collections.emptyList();
-    private List<Class<? extends Event>> eventsToOptionallyCreateNewSagasFor = Collections.emptyList();
+    private List<Class<?>> eventsToAlwaysCreateNewSagasFor = Collections.emptyList();
+    private List<Class<?>> eventsToOptionallyCreateNewSagasFor = Collections.emptyList();
     private Class<? extends Saga> sagaType;
 
     /**
@@ -76,33 +75,13 @@ public class SimpleSagaManager extends AbstractSagaManager {
         this.associationValueResolver = associationValueResolver;
     }
 
-    /**
-     * Initialize the AnnotatedSagaManager using the given resources. Saga lookup and processing is done asynchronously
-     * using the given <code>executor</code> and <code>transactionManager</code>.
-     *
-     * @param sagaType                 The type of Saga managed by this SagaManager
-     * @param sagaRepository           The repository providing access to the Saga instances
-     * @param associationValueResolver The instance providing AssociationValues for incoming Events
-     * @param sagaFactory              The factory creating new instances of a Saga
-     * @param eventBus                 The event bus publishing the events
-     * @param executor                 The executor providing the threads to process events in
-     * @param transactionManager       The transaction manager that manages transactions around event processing
-     */
-    public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
-                             AssociationValueResolver associationValueResolver, SagaFactory sagaFactory,
-                             EventBus eventBus, Executor executor, TransactionManager transactionManager) {
-        super(eventBus, sagaRepository, sagaFactory, executor, transactionManager);
-        this.sagaType = sagaType;
-        this.associationValueResolver = associationValueResolver;
-    }
-
     @Override
-    protected Set<Saga> findSagas(Event event) {
+    protected Set<Saga> findSagas(EventMessage event) {
         Set<AssociationValue> associationValue = associationValueResolver.extractAssociationValue(event);
         Set<Saga> sagas = new HashSet<Saga>();
         sagas.addAll(getSagaRepository().find(sagaType, associationValue));
-        if (sagas.isEmpty() && isAssignableClassIn(event.getClass(), eventsToOptionallyCreateNewSagasFor)
-                || isAssignableClassIn(event.getClass(), eventsToAlwaysCreateNewSagasFor)) {
+        if (sagas.isEmpty() && isAssignableClassIn(event.getPayloadType(), eventsToOptionallyCreateNewSagasFor)
+                || isAssignableClassIn(event.getPayloadType(), eventsToAlwaysCreateNewSagasFor)) {
             Saga saga = createSaga(sagaType);
             sagas.add(saga);
             getSagaRepository().add(saga);
@@ -110,8 +89,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
         return sagas;
     }
 
-    private boolean isAssignableClassIn(Class<? extends Event> aClass,
-                                        Collection<Class<? extends Event>> classCollection) {
+    private boolean isAssignableClassIn(Class<?> aClass, Collection<Class<?>> classCollection) {
         for (Class clazz : classCollection) {
             if (clazz.isAssignableFrom(aClass)) {
                 return true;
@@ -126,7 +104,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
      * @param events the types of Events that should cause the creation of a new Saga instance, even if one already
      *               exists
      */
-    public void setEventsToAlwaysCreateNewSagasFor(List<Class<? extends Event>> events) {
+    public void setEventsToAlwaysCreateNewSagasFor(List<Class<?>> events) {
         this.eventsToAlwaysCreateNewSagasFor = events;
     }
 
@@ -136,7 +114,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
      * @param events the types of Events that should cause the creation of a new Saga instance if one does not already
      *               exist
      */
-    public void setEventsToOptionallyCreateNewSagasFor(List<Class<? extends Event>> events) {
+    public void setEventsToOptionallyCreateNewSagasFor(List<Class<?>> events) {
         this.eventsToOptionallyCreateNewSagasFor = events;
     }
 }

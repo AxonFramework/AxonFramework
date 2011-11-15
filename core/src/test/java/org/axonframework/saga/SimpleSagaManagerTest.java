@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,8 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.junit.*;
 
@@ -36,7 +35,7 @@ public class SimpleSagaManagerTest {
 
     private SimpleSagaManager testSubject;
     private SagaRepository repository;
-    private Event event = new StubDomainEvent();
+    private EventMessage event = new GenericEventMessage<Object>(new Object());
     private Saga saga1;
     private Saga sagaFromFactory;
     private Set<Saga> sagasFromRepository;
@@ -67,7 +66,7 @@ public class SimpleSagaManagerTest {
 
     @Test
     public void testSagaAlwaysCreatedOnEvent() {
-        testSubject.setEventsToAlwaysCreateNewSagasFor(Arrays.<Class<? extends Event>>asList(DomainEvent.class));
+        testSubject.setEventsToAlwaysCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
         Set<Saga> actualResult = testSubject.findSagas(event);
         assertEquals(2, actualResult.size());
         assertTrue(actualResult.contains(saga1));
@@ -76,7 +75,7 @@ public class SimpleSagaManagerTest {
 
     @Test
     public void testSagaOptionallyCreatedOnEvent_SagasExist() {
-        testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<? extends Event>>asList(DomainEvent.class));
+        testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
         Set<Saga> actualResult = testSubject.findSagas(event);
         assertEquals(1, actualResult.size());
         assertTrue(actualResult.contains(saga1));
@@ -86,7 +85,7 @@ public class SimpleSagaManagerTest {
     @Test
     public void testSagaOptionallyCreatedOnEvent_NoSagaFound() {
         sagasFromRepository.clear();
-        testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<? extends Event>>asList(DomainEvent.class));
+        testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
         Set<Saga> actualResult = testSubject.findSagas(event);
         assertEquals(1, actualResult.size());
         assertFalse(actualResult.contains(saga1));
@@ -102,7 +101,7 @@ public class SimpleSagaManagerTest {
 
     @Test
     public void testAllSagasAreInvoked() {
-        Event event = new StubDomainEvent();
+        EventMessage event = new GenericEventMessage<Object>(new Object());
         Set<Saga> sagas = new HashSet<Saga>();
         final Saga saga1 = mock(Saga.class);
         final Saga saga2 = mock(Saga.class);

@@ -16,8 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.util.AxonNonTransientException;
 
 /**
  * Exception indicating that the an aggregate could not be found in the repository.

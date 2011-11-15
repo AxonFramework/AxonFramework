@@ -16,11 +16,11 @@
 
 package org.axonframework.saga.repository.inmemory;
 
+import org.axonframework.common.CollectionUtils;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
-import org.axonframework.util.CollectionUtils;
 
 import java.io.Serializable;
 import java.util.Comparator;

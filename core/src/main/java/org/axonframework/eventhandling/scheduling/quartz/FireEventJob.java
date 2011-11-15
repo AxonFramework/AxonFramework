@@ -16,8 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.domain.ApplicationEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
 import org.quartz.Job;
@@ -40,7 +39,7 @@ public class FireEventJob implements Job {
     /**
      * The key used to locate the event in the JobExecutionContext.
      */
-    public static final String EVENT_KEY = Event.class.getName();
+    public static final String EVENT_KEY = EventMessage.class.getName();
 
     /**
      * The key used to locate the Event Bus in the scheduler context.
@@ -54,7 +53,7 @@ public class FireEventJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         logger.debug("Starting job to publish a scheduled event");
-        ApplicationEvent event = (ApplicationEvent) context.getJobDetail().getJobDataMap().get(EVENT_KEY);
+        EventMessage event = (EventMessage) context.getJobDetail().getJobDataMap().get(EVENT_KEY);
         try {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
             EventTriggerCallback eventTriggerCallback = (EventTriggerCallback) context.getScheduler().getContext().get(

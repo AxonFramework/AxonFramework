@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
@@ -84,7 +84,7 @@ public class CommandHandlingTest {
      */
     public static class StubEventStore implements EventStore {
 
-        private List<DomainEvent> storedEvents = new LinkedList<DomainEvent>();
+        private List<DomainEventMessage> storedEvents = new LinkedList<DomainEventMessage>();
 
         @Override
         public void appendEvents(String type, DomainEventStream events) {
@@ -95,7 +95,7 @@ public class CommandHandlingTest {
 
         @Override
         public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
-            return new SimpleDomainEventStream(new ArrayList<DomainEvent>(storedEvents));
+            return new SimpleDomainEventStream(new ArrayList<DomainEventMessage>(storedEvents));
         }
     }
 }

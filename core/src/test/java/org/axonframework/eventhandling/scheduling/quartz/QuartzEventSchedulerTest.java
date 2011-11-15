@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.domain.ApplicationEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.Saga;
@@ -76,33 +76,33 @@ public class QuartzEventSchedulerTest {
                 latch.countDown();
                 return null;
             }
-        }).when(eventBus).publish(isA(Event.class));
+        }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent(mockSaga));
+        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
-        verify(eventBus).publish(isA(StubEvent.class));
+        verify(eventBus).publish(isA(EventMessage.class));
     }
 
     @Test
     public void testCancelJob() throws SchedulerException, InterruptedException {
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(1000), new StubEvent(mockSaga));
+        ScheduleToken token = testSubject.schedule(new Duration(1000), newStubEvent());
         assertEquals(1, scheduler.getJobNames(GROUP_ID).length);
         testSubject.cancelSchedule(token);
         assertEquals(0, scheduler.getJobNames(GROUP_ID).length);
         scheduler.shutdown(true);
-        verify(eventBus, never()).publish(isA(Event.class));
+        verify(eventBus, never()).publish(isA(EventMessage.class));
     }
 
-    private class StubEvent extends ApplicationEvent {
+    private EventMessage newStubEvent() {
+        return new GenericEventMessage<StubEvent>(new StubEvent());
+    }
 
-        public StubEvent(Saga source) {
-            super(source);
-        }
+    private class StubEvent {
 
     }
 }

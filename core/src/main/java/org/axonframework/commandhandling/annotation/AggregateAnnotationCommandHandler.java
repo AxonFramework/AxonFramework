@@ -20,11 +20,11 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
+import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.util.Handler;
-import org.axonframework.util.Subscribable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +47,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     private final AggregateCommandHandlerInspector<T> inspector;
     private final Repository<T> repository;
 
-    private final Map<Class, CommandHandler> registeredCommandHandlers = new HashMap<Class, CommandHandler>();
+    private final Map<Class<Object>, CommandHandler<Object>> registeredCommandHandlers = new HashMap<Class<Object>, CommandHandler<Object>>();
     private final CommandTargetResolver commandTargetResolver;
 
     /**
@@ -83,28 +83,29 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     @Override
     @PreDestroy
     public synchronized void unsubscribe() {
-        for (Map.Entry<Class, CommandHandler> handlerEntry : registeredCommandHandlers.entrySet()) {
+        for (Map.Entry<Class<Object>, CommandHandler<Object>> handlerEntry : registeredCommandHandlers.entrySet()) {
             commandBus.unsubscribe(handlerEntry.getKey(), handlerEntry.getValue());
         }
     }
 
     @PostConstruct
+    @SuppressWarnings({"unchecked"})
     @Override
     public synchronized void subscribe() {
-        for (final Handler commandHandler : inspector.getHandlers()) {
+        for (final MethodMessageHandler commandHandler : inspector.getHandlers()) {
             CommandHandler<Object> handler = new CommandHandler<Object>() {
                 @Override
                 public Object handle(Object command, UnitOfWork unitOfWork) throws Throwable {
                     T aggregate = loadAggregate(command);
-                    return commandHandler.invoke(aggregate, command, unitOfWork);
+                    return commandHandler.invoke(aggregate, new CommandMessage(command));
                 }
             };
-            commandBus.subscribe(commandHandler.getParameterType(), handler);
-            registeredCommandHandlers.put(commandHandler.getParameterType(), handler);
+            commandBus.subscribe(commandHandler.getPayloadType(), handler);
+            registeredCommandHandlers.put(commandHandler.getPayloadType(), handler);
         }
 
-        for (final ConstructorCommandHandler<T> handler : inspector.getConstructorHandlers()) {
-            commandBus.subscribe(handler.getCommandType(), new AnnotatedConstructorCommandHandler(handler));
+        for (final ConstructorCommandMessageHandler<T> handler : inspector.getConstructorHandlers()) {
+            commandBus.subscribe(handler.getPayloadType(), new AnnotatedConstructorCommandHandler(handler));
         }
     }
 
@@ -114,15 +115,15 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     }
 
     private class AnnotatedConstructorCommandHandler implements CommandHandler<Object> {
-        private final ConstructorCommandHandler<T> handler;
+        private final ConstructorCommandMessageHandler<T> handler;
 
-        public AnnotatedConstructorCommandHandler(ConstructorCommandHandler<T> handler) {
+        public AnnotatedConstructorCommandHandler(ConstructorCommandMessageHandler<T> handler) {
             this.handler = handler;
         }
 
         @Override
         public Object handle(Object command, UnitOfWork unitOfWork) throws Throwable {
-            repository.add(handler.invoke(command, unitOfWork));
+            repository.add(handler.invoke(null, new CommandMessage(command)));
             return Void.TYPE;
         }
     }

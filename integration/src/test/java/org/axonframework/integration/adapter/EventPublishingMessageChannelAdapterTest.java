@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.axonframework.integration.adapter;
 
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
@@ -46,12 +47,7 @@ public class EventPublishingMessageChannelAdapterTest {
         StubDomainEvent event = new StubDomainEvent();
         testSubject.handleMessage(new GenericMessage<Object>(event));
 
-        verify(mockEventBus).publish(event);
-    }
-
-    @Test(expected = MessageRejectedException.class)
-    public void testNonEventMessageRefused() {
-        testSubject.handleMessage(new GenericMessage<Object>(new Object()));
+        verify(mockEventBus).publish(isA(EventMessage.class));
     }
 
     @SuppressWarnings({"unchecked"})

@@ -66,7 +66,8 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
     }
 
     /**
-     * Initialize a scheduler using the given <code>executor</code>. The <code>eventQueue</code> is the queue from which
+     * Initialize a scheduler using the given <code>executor</code>. The <code>eventQueue</code> is the queue from
+     * which
      * the scheduler should obtain it's events. This queue must be thread safe, as it can be used simultaneously by
      * multiple threads.
      *
@@ -135,7 +136,7 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
             try {
                 if (retryAfter <= System.currentTimeMillis()) {
                     executor.execute(this);
-                    logger.info("Processing of event listener yielded.");
+                    logger.debug("Processing of event listener yielded.");
                 } else {
                     long waitTimeRemaining = retryAfter - System.currentTimeMillis();
                     boolean executionScheduled = scheduleDelayedExecution(waitTimeRemaining);
@@ -157,8 +158,8 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
 
     private boolean scheduleDelayedExecution(long waitTimeRemaining) {
         if (executor instanceof ScheduledExecutorService) {
-            logger.info("Executor supports delayed executing. Rescheduling for processing in {} millis",
-                        waitTimeRemaining);
+            logger.debug("Executor supports delayed executing. Rescheduling for processing in {} millis",
+                         waitTimeRemaining);
             ((ScheduledExecutorService) executor).schedule(this, waitTimeRemaining, TimeUnit.MILLISECONDS);
             return true;
         }

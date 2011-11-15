@@ -16,6 +16,7 @@
 
 package org.axonframework.integration.eventbus;
 
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
@@ -91,7 +92,7 @@ public class SpringIntegrationEventBusTest {
     public void testPublishEvent() {
         StubDomainEvent event = new StubDomainEvent();
 
-        testSubject.publish(event);
+        testSubject.publish(new GenericEventMessage<StubDomainEvent>(event));
 
         verify(mockChannel).send(messageContainingEvent(event));
     }

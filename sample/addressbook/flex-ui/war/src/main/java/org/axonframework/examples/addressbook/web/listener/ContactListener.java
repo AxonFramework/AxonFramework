@@ -39,27 +39,25 @@ public class ContactListener {
 
     @EventHandler
     public void handleContactCreatedEvent(ContactCreatedEvent event) {
-        logger.debug("Received and event with name {} and identifier {}", event.getName(), event.getEventIdentifier());
+        logger.debug("Received an event of type {}", event.getClass().getSimpleName());
         ContactDTO contactDTO = new ContactDTO();
         contactDTO.setName(event.getName());
-        contactDTO.setUuid(event.getAggregateIdentifier().asString());
+        contactDTO.setUuid(event.getContactId());
         producer.sendContactUpdate(contactDTO);
     }
 
     @EventHandler
     public void handleContactRemovedEvent(ContactDeletedEvent event) {
-        RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(event.getContactIdentifier().toString());
+        RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(event.getContactId());
         producer.sendRemovedUpdate(removedDTO);
     }
 
     @EventHandler
     public void handleContactNameChangedEvent(ContactNameChangedEvent event) {
-        logger.debug("Received and event with new name {} and identifier {}",
-                     event.getNewName(),
-                     event.getEventIdentifier());
+        logger.debug("Received an event of type {}", event.getClass().getSimpleName());
         ContactDTO contactDTO = new ContactDTO();
         contactDTO.setName(event.getNewName());
-        contactDTO.setUuid(event.getAggregateIdentifier().asString());
+        contactDTO.setUuid(event.getContactId());
         producer.sendContactUpdate(contactDTO);
     }
 

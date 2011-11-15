@@ -20,7 +20,7 @@ import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -71,7 +71,7 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
     public void createSnapshot(String typeIdentifier, String aggregateIdentifier) {
         DomainEventStream eventStream =
                 eventStore.readEvents(typeIdentifier, new StringAggregateIdentifier(aggregateIdentifier));
-        DomainEvent snapshotEvent = createSnapshot(typeIdentifier, eventStream);
+        DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, eventStream);
         if (snapshotEvent != null) {
             eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
         }
@@ -86,10 +86,10 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         }
     }
 
-    private DomainEvent createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
+    private DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
 
-        DomainEvent firstEvent = eventStream.peek();
+        DomainEventMessage firstEvent = eventStream.peek();
         AggregateIdentifier aggregateIdentifier = firstEvent.getAggregateIdentifier();
 
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);

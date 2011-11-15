@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 
@@ -27,7 +27,7 @@ import javax.persistence.MappedSuperclass;
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
  * org.axonframework.eventhandling.annotation.EventHandler} annotation.
  * <p/>
- * Implementations can call the {@link #apply(DomainEvent)} method to have an event applied. S *
+ * Implementations can call the {@link #apply(Object)} method to have an event applied. *
  *
  * @author Allard Buijze
  * @see org.axonframework.eventhandling.annotation.EventHandler
@@ -65,7 +65,7 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
      * @see org.axonframework.eventhandling.annotation.EventHandler
      */
     @Override
-    protected synchronized void handle(DomainEvent event) {
+    protected void handle(DomainEventMessage event) {
         if (eventHandlerInvoker == null) {
             eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
         }

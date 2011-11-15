@@ -24,11 +24,13 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.XppDriver;
+import org.axonframework.common.SerializationException;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.EventBase;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
-import org.axonframework.util.SerializationException;
 import org.joda.time.DateTime;
 
 import java.io.ByteArrayInputStream;
@@ -54,6 +56,7 @@ import java.util.UUID;
  * @since 1.2
  */
 public class XStreamSerializer implements Serializer<Object> {
+
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
 
     private final XStream xStream;
@@ -110,19 +113,20 @@ public class XStreamSerializer implements Serializer<Object> {
         xStream.alias("uuid-id", UUIDAggregateIdentifier.class);
         xStream.alias("aggregate-id", StringAggregateIdentifier.class);
         xStream.alias("string-id", StringAggregateIdentifier.class);
+        xStream.alias("domain-event", GenericDomainEventMessage.class);
+        xStream.alias("event", GenericEventMessage.class);
 
         // for backward compatibility
         xStream.alias("localDateTime", DateTime.class);
         xStream.alias("dateTime", DateTime.class);
         xStream.alias("uuid", UUID.class);
-        xStream.useAttributeFor(EventBase.class, "eventRevision");
+        xStream.useAttributeFor("eventRevision", EventMessage.class);
     }
 
     /**
      * Serialize the given <code>object</code> to Compact XML (see {@link com.thoughtworks.xstream.io.xml.CompactWriter})
-     * and write the bytes to the
-     * given <code>outputStream</code>. Bytes are written using the character set provided during initialization of the
-     * serializer.
+     * and write the bytes to the given <code>outputStream</code>. Bytes are written using the character set provided
+     * during initialization of the serializer.
      *
      * @param object       The object to serialize.
      * @param outputStream The stream to write bytes to

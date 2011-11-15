@@ -16,13 +16,13 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.common.Assert;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.eventhandling.scheduling.ScheduledEvent;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.util.Assert;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.quartz.JobDetail;
@@ -53,18 +53,16 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private EventTriggerCallback eventTriggerCallback;
 
     @Override
-    public ScheduleToken schedule(DateTime triggerDateTime, ApplicationEvent event) {
+    public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
         Assert.state(initialized, "Scheduler is not yet initialized");
-        Object owner = event.getSource();
-        String jobIdentifier = JOB_NAME_PREFIX + event.getEventIdentifier().toString();
+        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getEventIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
             JobDetail jobDetail = new JobDetail(jobIdentifier, groupIdentifier, FireEventJob.class);
-            jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, event);
-            jobDetail.setDescription(String.format("%s, scheduled by %s.",
-                                                   event.getClass().getName(),
-                                                   owner.toString()));
-            scheduler.scheduleJob(jobDetail, new SimpleTrigger(event.getEventIdentifier().toString(),
+            jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, eventMessage);
+            jobDetail.setDescription(String.format("%s", eventMessage.getPayloadType().getName()));
+            scheduler.scheduleJob(jobDetail, new SimpleTrigger(eventMessage.getEventIdentifier(),
                                                                triggerDateTime.toDate()));
         } catch (SchedulerException e) {
             throw new SchedulingException("An error occurred while setting a timer for a saga", e);
@@ -73,13 +71,8 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     @Override
-    public ScheduleToken schedule(Duration triggerDuration, ApplicationEvent event) {
+    public ScheduleToken schedule(Duration triggerDuration, Object event) {
         return schedule(new DateTime().plus(triggerDuration), event);
-    }
-
-    @Override
-    public ScheduleToken schedule(ScheduledEvent event) {
-        return schedule(event.getScheduledTime(), event);
     }
 
     @Override

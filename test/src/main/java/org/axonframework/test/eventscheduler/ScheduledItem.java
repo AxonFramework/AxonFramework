@@ -16,7 +16,7 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.domain.EventMessage;
 import org.joda.time.DateTime;
 
 /**
@@ -39,5 +39,5 @@ public interface ScheduledItem {
      *
      * @return the Event scheduled for publication
      */
-    ApplicationEvent getEvent();
+    EventMessage getEvent();
 }

@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 
 import java.util.List;
@@ -39,10 +39,10 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();
 
     @Override
-    protected DomainEvent createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
+    protected DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
 
-        DomainEvent firstEvent = eventStream.peek();
+        DomainEventMessage firstEvent = eventStream.peek();
         AggregateIdentifier aggregateIdentifier = firstEvent.getAggregateIdentifier();
         EventSourcedAggregateRoot aggregate;
         if (firstEvent instanceof AggregateSnapshot) {

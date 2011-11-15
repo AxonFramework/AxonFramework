@@ -18,8 +18,8 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.common.AbstractAnnotationHandlerBeanPostProcessor;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.util.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;

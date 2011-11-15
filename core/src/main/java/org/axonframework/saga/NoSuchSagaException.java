@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Exception indicating that the specified Saga could not be found.

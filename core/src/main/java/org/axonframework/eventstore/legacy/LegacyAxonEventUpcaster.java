@@ -19,8 +19,12 @@ package org.axonframework.eventstore.legacy;
 import org.axonframework.eventstore.EventUpcaster;
 import org.dom4j.Document;
 import org.dom4j.Element;
+import org.dom4j.tree.DefaultDocument;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Event preprocessor that upcasts events serialized by the XStreamEventSerializer in versions 0.6 and prior of
@@ -59,7 +63,38 @@ public class LegacyAxonEventUpcaster implements EventUpcaster<Document> {
                 }
             }
         }
-        return event;
+        Document document = new DefaultDocument();
+        Element newRoot = document.addElement("domain-event");
+        Element payload = newRoot.addElement("payload");
+        payload.addAttribute("class", rootNode.getName().replaceAll("\\_\\-", "\\$"));
+        Set<String> forbiddenPayloadElements = new HashSet<String>(Arrays.asList("metaData",
+                                                                                 "aggregateIdentifier",
+                                                                                 "sequenceNumber",
+                                                                                 "timestamp"));
+        for (Object node : rootNode.elements()) {
+            Element element = (Element) node;
+            if (!forbiddenPayloadElements.contains(element.getName())) {
+                payload.add(element.createCopy());
+            } else {
+                newRoot.add(element.createCopy());
+            }
+        }
+        newRoot.addElement("timestamp").addText(extractMetaDataValue(newRoot, "_timestamp"));
+        newRoot.addElement("eventIdentifier").addText(extractMetaDataValue(newRoot, "_identifier"));
+        payload.addAttribute("eventRevision", rootNode.attribute("eventRevision").getValue());
+        return document;
+    }
+
+    private String extractMetaDataValue(Element newRoot, String metaDataKey) {
+        for (Object entry : newRoot.element("metaData").element("values").elements()) {
+            Element element = (Element) entry;
+            String key = element.elementTextTrim("string");
+            if (metaDataKey.equals(key)) {
+                element.detach();
+                return (element.node(1).getText());
+            }
+        }
+        return null;
     }
 
     private void addMetaDataEntry(Element metaData, String key, String value, String keyType) {

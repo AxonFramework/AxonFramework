@@ -16,7 +16,7 @@
 
 package org.axonframework.commandbus.distributed;
 
-import org.axonframework.util.AxonTransientException;
+import org.axonframework.common.AxonTransientException;
 
 /**
  * @author Allard Buijze

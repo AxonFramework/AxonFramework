@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation.postprocessor;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +29,7 @@ public class TransactionalListener implements SomeMeaninglessInterface {
     private int invocations;
 
     @EventHandler
-    public void handleEvent(DomainEvent event) {
+    public void handleEvent(EventMessage event) {
         this.invocations++;
     }
 

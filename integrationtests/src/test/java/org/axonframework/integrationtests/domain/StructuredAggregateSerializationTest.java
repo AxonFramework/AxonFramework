@@ -40,7 +40,6 @@ public class StructuredAggregateSerializationTest {
         aggregateRoot.commitEvents();
         XStreamSerializer serializer = new XStreamSerializer();
         byte[] serialized = serializer.serialize(aggregateRoot);
-        System.out.println(new String(serialized, "UTF-8").length());
         StructuredAggregateRoot deserializedAggregate = (StructuredAggregateRoot) serializer.deserialize(serialized);
 
         deserializedAggregate.invoke();

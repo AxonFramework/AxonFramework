@@ -16,7 +16,7 @@
 
 package org.axonframework.domain;
 
-import org.axonframework.util.Assert;
+import org.axonframework.common.Assert;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ import java.util.List;
  * the aggregate identifier and a sequence number.
  *
  * @author Allard Buijze
- * @see org.axonframework.domain.DomainEvent
+ * @see DomainEventMessage
  * @see org.axonframework.domain.AbstractAggregateRoot
  * @since 0.1
  */
@@ -37,7 +37,7 @@ class EventContainer implements Serializable {
 
     private static final long serialVersionUID = -39816393359395878L;
 
-    private final List<DomainEvent> events = new ArrayList<DomainEvent>();
+    private final List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
     private final AggregateIdentifier aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
     private transient Long lastSequenceNumber;
@@ -59,27 +59,17 @@ class EventContainer implements Serializable {
      * aggregate assigned yet. If an event has a sequence number assigned, it must follow directly upon the sequence
      * number of the event that was previously added.
      *
-     * @param event the event to add to this container
+     * @param metaData the metaData of the event to add to this containr
+     * @param payload  the payload of the event to add to this container
+     * @return the DomainEventMessage added to the container
      */
-    public void addEvent(DomainEvent event) {
-        Assert.isTrue(event.getSequenceNumber() == null
-                              || getLastSequenceNumber() == null
-                              || event.getSequenceNumber().equals(getLastSequenceNumber() + 1),
-                      "The given event's sequence number is discontinuous");
-
-        Assert.isTrue(event.getAggregateIdentifier() == null
-                              || aggregateIdentifier.equals(event.getAggregateIdentifier()),
-                      "The Identifier of the event does not match the Identifier of the EventContainer");
-
-        if (event.getAggregateIdentifier() == null) {
-            event.setAggregateIdentifier(aggregateIdentifier);
-        }
-
-        if (event.getSequenceNumber() == null) {
-            event.setSequenceNumber(newSequenceNumber());
-        }
+    public <T> DomainEventMessage<T> addEvent(MetaData metaData, T payload) {
+        DomainEventMessage<T> event = new GenericDomainEventMessage<T>(aggregateIdentifier,
+                                                                       newSequenceNumber(),
+                                                                       metaData, payload);
         lastSequenceNumber = event.getSequenceNumber();
         events.add(event);
+        return event;
     }
 
     /**
@@ -165,7 +155,7 @@ class EventContainer implements Serializable {
      *
      * @return a list containing the events in this container
      */
-    public List<DomainEvent> getEventList() {
+    public List<DomainEventMessage> getEventList() {
         return Collections.unmodifiableList(events);
     }
 }

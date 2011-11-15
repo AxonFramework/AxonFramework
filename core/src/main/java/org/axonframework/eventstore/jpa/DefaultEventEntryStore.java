@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 
 import java.util.Iterator;
 import java.util.List;
@@ -35,7 +35,7 @@ import javax.persistence.EntityManager;
 class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
-    public void persistEvent(String aggregateType, DomainEvent event, byte[] serializedEvent,
+    public void persistEvent(String aggregateType, DomainEventMessage event, byte[] serializedEvent,
                              EntityManager entityManager) {
         entityManager.persist(new DomainEventEntry(aggregateType, event, serializedEvent));
     }
@@ -70,13 +70,13 @@ class DefaultEventEntryStore implements EventEntryStore {
     }
 
     @Override
-    public void persistSnapshot(String type, DomainEvent snapshotEvent, byte[] serializedEvent,
+    public void persistSnapshot(String type, DomainEventMessage snapshotEvent, byte[] serializedEvent,
                                 EntityManager entityManager) {
         entityManager.persist(new SnapshotEventEntry(type, snapshotEvent, serializedEvent));
     }
 
     @Override
-    public void pruneSnapshots(String type, DomainEvent mostRecentSnapshotEvent, int maxSnapshotsArchived,
+    public void pruneSnapshots(String type, DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived,
                                EntityManager entityManager) {
         Iterator<Long> redundantSnapshots = findRedundantSnapshots(type, mostRecentSnapshotEvent,
                                                                    maxSnapshotsArchived, entityManager);
@@ -104,7 +104,8 @@ class DefaultEventEntryStore implements EventEntryStore {
      * @return an iterator over the snapshots found
      */
     @SuppressWarnings({"unchecked"})
-    private Iterator<Long> findRedundantSnapshots(String type, DomainEvent snapshotEvent, int maxSnapshotsArchived,
+    private Iterator<Long> findRedundantSnapshots(String type, DomainEventMessage snapshotEvent,
+                                                  int maxSnapshotsArchived,
                                                   EntityManager entityManager) {
         return entityManager.createQuery(
                 "SELECT e.sequenceNumber FROM SnapshotEventEntry e "

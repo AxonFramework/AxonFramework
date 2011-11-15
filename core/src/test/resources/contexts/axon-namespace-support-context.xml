@@ -30,7 +30,7 @@
     <import resource="classpath:/META-INF/spring/db-context.xml"/>
     <import resource="classpath:/META-INF/spring/test-context.xml"/>
 
-    <axon:annotation-config command-bus="commandBus-embedded-ref" executor="taskExecutor"/>
+    <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 
     <axon:saga-manager id="sagaManager" saga-factory="sagaFactory">
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>

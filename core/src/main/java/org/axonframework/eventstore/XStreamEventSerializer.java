@@ -18,12 +18,11 @@ package org.axonframework.eventstore;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.SerializationException;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.XStreamSerializer;
-import org.axonframework.util.AxonConfigurationException;
-import org.axonframework.util.SerializationException;
 import org.dom4j.Document;
 import org.dom4j.io.STAXEventReader;
 
@@ -47,7 +46,7 @@ import javax.xml.stream.XMLStreamException;
  * @author Allard Buijze
  * @since 0.5
  */
-public class XStreamEventSerializer implements Serializer<Event> {
+public class XStreamEventSerializer implements Serializer<Object> {
 
     private final XStreamSerializer delegate;
     private final List<EventUpcaster<Document>> upcasters = new ArrayList<EventUpcaster<Document>>();
@@ -72,9 +71,8 @@ public class XStreamEventSerializer implements Serializer<Event> {
 
     /**
      * Initialize an XStreamEventSerializer that uses XStream to serialize Events. The bytes are returned using thy
-     * character
-     * set with the given name. If the character set is not supported by the JVM an UnsupportedCharsetException is
-     * thrown.
+     * character set with the given name. If the character set is not supported by the JVM an
+     * UnsupportedCharsetException is thrown.
      *
      * @param charsetName The name of the character set to use.
      */
@@ -84,8 +82,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
 
     /**
      * Initialize an XStreamEventSerializer that uses XStream to serialize Events. The bytes are returned using given
-     * character
-     * set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
+     * character set. If the character set is not supported by the JVM an UnsupportedCharsetException is thrown.
      *
      * @param charset The character set to use.
      */
@@ -122,7 +119,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
      * {@inheritDoc}
      */
     @Override
-    public byte[] serialize(Event event) {
+    public byte[] serialize(Object event) {
         return delegate.serialize(event);
     }
 
@@ -130,7 +127,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
      * {@inheritDoc}
      */
     @Override
-    public void serialize(Event object, OutputStream outputStream) {
+    public void serialize(Object object, OutputStream outputStream) {
         delegate.serialize(object, outputStream);
     }
 
@@ -138,7 +135,7 @@ public class XStreamEventSerializer implements Serializer<Event> {
      * {@inheritDoc}
      */
     @Override
-    public Event deserialize(byte[] serializedEvent) {
+    public Object deserialize(byte[] serializedEvent) {
         try {
             return deserialize(new ByteArrayInputStream(serializedEvent));
         } catch (IOException e) {
@@ -151,15 +148,15 @@ public class XStreamEventSerializer implements Serializer<Event> {
      * {@inheritDoc}
      */
     @Override
-    public Event deserialize(InputStream inputStream) throws IOException {
+    public Object deserialize(InputStream inputStream) throws IOException {
         if (upcasters.isEmpty()) {
-            return (DomainEvent) delegate.deserialize(inputStream);
+            return delegate.deserialize(inputStream);
         } else {
             Document document = readDocument(inputStream);
             for (EventUpcaster<Document> upcaster : upcasters) {
                 document = upcaster.upcast(document);
             }
-            return (Event) delegate.deserialize(new Dom4JReader(document));
+            return (EventMessage) delegate.deserialize(new Dom4JReader(document));
         }
     }
 
@@ -178,13 +175,13 @@ public class XStreamEventSerializer implements Serializer<Event> {
         return readDocument(new ByteArrayInputStream(serializedEvent));
     }
 
-
     /**
      * Reads the event from the given <code>stream</code> into a Dom4J document. The default implementation uses a StAX
      * reader.
      * <p/>
      * This method can be safely overridden to alter the deserialization mechanism. Make sure to use the correct
-     * charset (using {@link #getCharset()}) when converting characters to bytes and vice versa.
+     * charset
+     * (using {@link #getCharset()}) when converting characters to bytes and vice versa.
      *
      * @param stream The stream containing the serialized event
      * @return a Dom4J Document representation of the event

@@ -16,10 +16,10 @@
 
 package org.axonframework.saga.repository.concurrent;
 
+import org.axonframework.common.CollectionUtils;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
-import org.axonframework.util.CollectionUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

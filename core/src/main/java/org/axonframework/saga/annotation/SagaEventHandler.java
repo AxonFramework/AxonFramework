@@ -25,8 +25,10 @@ import java.lang.annotation.Target;
 /**
  * Method-level annotation indicating that the annotated method i an event handler method for the saga instance.
  * <p/>
- * Annotated methods must comply to a few simple rules: <ul> <li>The method must accept 1 parameter: a subtype of {@link
- * org.axonframework.domain.Event} <li>Return values are allowed, but are ignored<li>Exceptions are highly discouraged,
+ * Annotated methods must comply to a few simple rules: <ul> <li>The method must accept 1 parameter: a subtype of
+ * {@link
+ * org.axonframework.domain.EventMessage} <li>Return values are allowed, but are ignored<li>Exceptions are highly
+ * discouraged,
  * and are likely to be caught and ignored by the dispatchers </ul>
  * <p/>
  * For each event, only a single annotated method will be invoked. This method is resolved in the following order <ol>

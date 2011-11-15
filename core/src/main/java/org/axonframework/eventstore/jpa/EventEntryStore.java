@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -41,7 +41,7 @@ public interface EventEntryStore {
      * @param serializedEvent The serialized version of the event
      * @param entityManager   The entity manager providing access to the data store
      */
-    void persistEvent(String aggregateType, DomainEvent event,
+    void persistEvent(String aggregateType, DomainEventMessage event,
                       byte[] serializedEvent, EntityManager entityManager);
 
     /**
@@ -97,7 +97,7 @@ public interface EventEntryStore {
      * @param maxSnapshotsArchived    the number of snapshots that may remain archived
      * @param entityManager           the entityManager providing access to the data store
      */
-    void pruneSnapshots(String type, DomainEvent mostRecentSnapshotEvent, int maxSnapshotsArchived,
+    void pruneSnapshots(String type, DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived,
                         EntityManager entityManager);
 
     /**
@@ -111,6 +111,6 @@ public interface EventEntryStore {
      * @param serializedEvent The serialized version of the event
      * @param entityManager   The entity manager providing access to the data store
      */
-    void persistSnapshot(String aggregateType, DomainEvent snapshotEvent, byte[] serializedEvent,
+    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent, byte[] serializedEvent,
                          EntityManager entityManager);
 }

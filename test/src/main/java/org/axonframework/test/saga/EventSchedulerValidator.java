@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.eventscheduler.ScheduledItem;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
@@ -54,9 +53,9 @@ class EventSchedulerValidator {
      * @param duration The delay expected before the event is published
      * @param matcher  The matcher that must match with the event scheduled at the given time
      */
-    public void assertScheduledEvent(Duration duration, Matcher<? extends ApplicationEvent> matcher) {
+    public void assertScheduledEventMatching(Duration duration, Matcher<?> matcher) {
         DateTime targetTime = eventScheduler.getCurrentDateTime().plus(duration);
-        assertScheduledEvent(targetTime, matcher);
+        assertScheduledEventMatching(targetTime, matcher);
     }
 
     /**
@@ -66,8 +65,8 @@ class EventSchedulerValidator {
      * @param scheduledTime the time at which the event should be published
      * @param matcher       The matcher that must match with the event scheduled at the given time
      */
-    public void assertScheduledEvent(DateTime scheduledTime,
-                                     Matcher<? extends ApplicationEvent> matcher) {
+    public void assertScheduledEventMatching(DateTime scheduledTime,
+                                             Matcher<?> matcher) {
 
         List<ScheduledItem> schedule = eventScheduler.getScheduledItems();
         for (ScheduledItem item : schedule) {

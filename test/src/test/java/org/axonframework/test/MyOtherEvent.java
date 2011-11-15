@@ -16,15 +16,9 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class MyOtherEvent extends DomainEvent {
+public class MyOtherEvent {
 
-    private static final long serialVersionUID = 7157370425417821865L;
-
-    public MyOtherEvent() {
-    }
 }

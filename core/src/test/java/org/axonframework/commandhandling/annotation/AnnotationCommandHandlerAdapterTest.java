@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
@@ -44,6 +45,12 @@ public class AnnotationCommandHandlerAdapterTest {
         mockTarget = new MyCommandHandler();
         testSubject = new AnnotationCommandHandlerAdapter(mockTarget, mockBus);
         mockUnitOfWork = mock(UnitOfWork.class);
+        CurrentUnitOfWork.set(mockUnitOfWork);
+    }
+
+    @After
+    public void tearDown() {
+        CurrentUnitOfWork.clear(mockUnitOfWork);
     }
 
     @Test

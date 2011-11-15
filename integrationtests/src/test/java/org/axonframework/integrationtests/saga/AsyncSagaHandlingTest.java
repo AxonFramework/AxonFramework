@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.saga;
 
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.AssociationValue;
@@ -77,9 +78,9 @@ public class AsyncSagaHandlingTest {
     @DirtiesContext
     public void testInvokeRandomEvents() throws InterruptedException {
         for (int t = 0; t < EVENTS_PER_SAGA * aggregateIdentifiers.size(); t++) {
-            eventBus.publish(new SagaTriggeringEvent(t,
-                                                     aggregateIdentifiers.get(t % aggregateIdentifiers.size()),
-                                                     "message" + (t / aggregateIdentifiers.size())));
+            eventBus.publish(new GenericEventMessage<SagaTriggeringEvent>(new SagaTriggeringEvent(
+                    aggregateIdentifiers.get(t % aggregateIdentifiers.size()),
+                    "message" + (t / aggregateIdentifiers.size()))));
         }
         sagaManager.stop();
         sagaRepository.purgeCache();
@@ -93,12 +94,13 @@ public class AsyncSagaHandlingTest {
     @Test
     public void testAssociationProcessingOrder() throws InterruptedException {
         UUID currentAssociation = UUID.randomUUID();
-        eventBus.publish(new SagaTriggeringEvent(0, new UUIDAggregateIdentifier(currentAssociation), "message"));
+        eventBus.publish(new GenericEventMessage<SagaTriggeringEvent>(new SagaTriggeringEvent(new UUIDAggregateIdentifier(
+                currentAssociation), "message")));
         for (int t = 0; t < EVENTS_PER_SAGA; t++) {
             UUID newAssociation = UUID.randomUUID();
-            eventBus.publish(new SagaAssociationChangingEvent(this,
-                                                              currentAssociation.toString(),
-                                                              newAssociation.toString()));
+            eventBus.publish(new GenericEventMessage<SagaAssociationChangingEvent>(new SagaAssociationChangingEvent(
+                    currentAssociation.toString(),
+                    newAssociation.toString())));
             currentAssociation = newAssociation;
         }
         sagaManager.stop();

@@ -16,16 +16,16 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 /**
- * JPA compliant wrapper around a DomainEvent. It wraps a DomainEvent by extracting some of the information needed to
- * base searched on, and stores the {@link DomainEvent} itself as a serialized object using an {@link
- * org.axonframework.serializer.Serializer}
+ * JPA compliant wrapper around a DomainEvent. It stores a DomainEvent by extracting some of the information needed to
+ * base searches on, and stores the {@link org.axonframework.domain.DomainEventMessage} itself as a serialized object
+ * using an {@link org.axonframework.serializer.Serializer}
  *
  * @author Allard Buijze
  * @since 0.5
@@ -50,7 +50,7 @@ public class DomainEventEntry extends AbstractEventEntry {
      * @param event           The event to store in the eventstore
      * @param serializedEvent The serialized version of the Event
      */
-    public DomainEventEntry(String type, DomainEvent event, byte[] serializedEvent) {
+    public DomainEventEntry(String type, DomainEventMessage event, byte[] serializedEvent) {
         super(type, event, serializedEvent);
     }
 }

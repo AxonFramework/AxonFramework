@@ -17,8 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.ApplicationEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -102,7 +101,6 @@ public interface FixtureExecutionResult {
      */
     FixtureExecutionResult expectNoAssociationWith(String associationKey, AggregateIdentifier associationValue);
 
-
     /**
      * Asserts that an event matching the given <code>matcher</code> has been scheduled to be published after the given
      * <code>duration</code>.
@@ -111,7 +109,7 @@ public interface FixtureExecutionResult {
      * @param matcher  A matcher defining the event expected to be published
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(Duration duration, Matcher<? extends ApplicationEvent> matcher);
+    FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? extends EventMessage> matcher);
 
     /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication after the given
@@ -120,11 +118,11 @@ public interface FixtureExecutionResult {
      * Note that the source attribute of the application event is ignored when comparing events. Events are compared
      * using an "equals" check on all fields in the events.
      *
-     * @param duration         The time to wait before the event should be published
-     * @param applicationEvent The expected event
+     * @param duration The time to wait before the event should be published
+     * @param event    The expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(Duration duration, ApplicationEvent applicationEvent);
+    FixtureExecutionResult expectScheduledEvent(Duration duration, Object event);
 
     /**
      * Asserts that an event of the given <code>eventType</code> has been scheduled for publication after the given
@@ -134,7 +132,7 @@ public interface FixtureExecutionResult {
      * @param eventType The type of the expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(Duration duration, Class<? extends ApplicationEvent> eventType);
+    FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType);
 
     /**
      * Asserts that an event matching the given <code>matcher</code> has been scheduled to be published at the given
@@ -147,7 +145,7 @@ public interface FixtureExecutionResult {
      * @param matcher       A matcher defining the event expected to be published
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, Matcher<? extends ApplicationEvent> matcher);
+    FixtureExecutionResult expectScheduledEventMatching(DateTime scheduledTime, Matcher<?> matcher);
 
     /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication at the given
@@ -159,11 +157,11 @@ public interface FixtureExecutionResult {
      * Note that the source attribute of the application event is ignored when comparing events. Events are compared
      * using an "equals" check on all fields in the events.
      *
-     * @param scheduledTime    The time at which the event should be published
-     * @param applicationEvent The expected event
+     * @param scheduledTime The time at which the event should be published
+     * @param event         The expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, ApplicationEvent applicationEvent);
+    FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, Object event);
 
     /**
      * Asserts that an event of the given <code>eventType</code> has been scheduled for publication at the given
@@ -176,12 +174,12 @@ public interface FixtureExecutionResult {
      * @param eventType     The type of the expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, Class<? extends ApplicationEvent> eventType);
+    FixtureExecutionResult expectScheduledEventOfType(DateTime scheduledTime, Class<?> eventType);
 
     /**
      * Asserts that the given commands have been dispatched in exactly the order given. The command objects are
-     * compared using the equals method. Only commands as a result of the event in the "when" stage of the fixture are
-     * compared.
+     * compared
+     * using the equals method. Only commands as a result of the event in the "when" stage of the fixture are compared.
      *
      * @param commands The expected commands
      * @return the FixtureExecutionResult for method chaining
@@ -212,7 +210,7 @@ public interface FixtureExecutionResult {
      * @param matcher The matcher that defines the expected list of published events.
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectPublishedEvents(Matcher<List<? extends Event>> matcher);
+    FixtureExecutionResult expectPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher);
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given <code>expected</code>
@@ -222,5 +220,5 @@ public interface FixtureExecutionResult {
      * @param expected The sequence of events expected to be published by the Saga
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectPublishedEvents(Event... expected);
+    FixtureExecutionResult expectPublishedEvents(Object... expected);
 }

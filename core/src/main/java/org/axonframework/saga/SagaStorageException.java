@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.util.AxonTransientException;
+import org.axonframework.common.AxonTransientException;
 
 /**
  * Exception indicating that an error has occurred while storing a Saga.

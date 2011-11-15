@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,15 @@ package org.axonframework.sample.app.command;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.sample.app.api.*;
+import org.axonframework.sample.app.api.Address;
+import org.axonframework.sample.app.api.AddressAddedEvent;
+import org.axonframework.sample.app.api.AddressChangedEvent;
+import org.axonframework.sample.app.api.AddressRegisteredEvent;
+import org.axonframework.sample.app.api.AddressRemovedEvent;
+import org.axonframework.sample.app.api.AddressType;
+import org.axonframework.sample.app.api.ContactCreatedEvent;
+import org.axonframework.sample.app.api.ContactDeletedEvent;
+import org.axonframework.sample.app.api.ContactNameChangedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +44,7 @@ class Contact extends AbstractAnnotatedAggregateRoot {
 
     public Contact(AggregateIdentifier identifier, String name) {
         super(identifier);
-        apply(new ContactCreatedEvent(name));
+        apply(new ContactCreatedEvent(identifier.asString(), name));
     }
 
     public Contact(AggregateIdentifier identifier) {
@@ -52,9 +60,9 @@ class Contact extends AbstractAnnotatedAggregateRoot {
      */
     public void registerAddress(AddressType type, Address address) {
         if (addresses.containsKey(type)) {
-            apply(new AddressChangedEvent(type, address));
+            apply(new AddressChangedEvent(id(), type, address));
         } else {
-            apply(new AddressAddedEvent(type, address));
+            apply(new AddressAddedEvent(id(), type, address));
         }
     }
 
@@ -65,7 +73,7 @@ class Contact extends AbstractAnnotatedAggregateRoot {
      */
     public void removeAddress(AddressType type) {
         if (addresses.containsKey(type)) {
-            apply(new AddressRemovedEvent(type));
+            apply(new AddressRemovedEvent(id(), type));
         }
     }
 
@@ -75,11 +83,11 @@ class Contact extends AbstractAnnotatedAggregateRoot {
      * @param name String containing the new name
      */
     public void changeName(String name) {
-        apply(new ContactNameChangedEvent(name));
+        apply(new ContactNameChangedEvent(id(), name));
     }
 
     public void delete() {
-        apply(new ContactDeletedEvent());
+        apply(new ContactDeletedEvent(id()));
     }
 
     @EventHandler

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.domain.Event;
-
 /**
  * @author Allard Buijze
  * @since 0.4
@@ -28,7 +26,7 @@ class NoFilter implements EventFilter {
      * {@inheritDoc}
      */
     @Override
-    public boolean accept(Class<? extends Event> eventType) {
+    public boolean accept(Class<?> payloadType) {
         return true;
     }
 }

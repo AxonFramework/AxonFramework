@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListener;
 
 /**
@@ -38,5 +38,5 @@ public interface SagaManager extends EventListener {
      * @param event the event to handle
      */
     @Override
-    void handle(Event event);
+    void handle(EventMessage event);
 }

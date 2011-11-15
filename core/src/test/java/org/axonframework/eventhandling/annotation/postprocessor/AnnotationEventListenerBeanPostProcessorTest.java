@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.annotation.postprocessor;
 
 import net.sf.cglib.proxy.Enhancer;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
@@ -60,17 +60,6 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     }
 
     @Test
-    public void testAdapt_WithExecutor() {
-        StubExecutor mockExecutor = new StubExecutor();
-        testSubject.setExecutor(mockExecutor);
-
-        EventListener actualResult = (EventListener) testSubject.postProcessAfterInitialization(new AsyncHandler(),
-                                                                                                "beanName");
-        actualResult.handle(new StubDomainEvent());
-        assertEquals(1, mockExecutor.invocationCounter);
-    }
-
-    @Test
     public void testEventBusIsNotAutowiredWhenProvided() throws Exception {
 
         testSubject.afterPropertiesSet();
@@ -102,7 +91,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         EventListener eventListener = (EventListener) postProcessedBean;
         SyncEventListener annotatedEventListener = (SyncEventListener) postProcessedBean;
         StubDomainEvent domainEvent = new StubDomainEvent();
-        eventListener.handle(domainEvent);
+        eventListener.handle(new GenericEventMessage<StubDomainEvent>(domainEvent));
 
         assertEquals(1, annotatedEventListener.getInvocationCount());
     }
@@ -127,9 +116,9 @@ public class AnnotationEventListenerBeanPostProcessorTest {
 
         EventListener eventListener = (EventListener) postProcessedBean;
         SyncEventListener annotatedEventListener = (SyncEventListener) postProcessedBean;
-        DomainEvent domainEvent = new FailingEvent();
+        FailingEvent domainEvent = new FailingEvent();
         try {
-            eventListener.handle(domainEvent);
+            eventListener.handle(new GenericEventMessage<FailingEvent>(domainEvent));
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             assertEquals("Don't like this event", e.getMessage());
@@ -174,12 +163,12 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     public static class RealEventListener implements EventListener {
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             // not relevant
         }
 
         @EventHandler
-        public void handleEvent(Event event) {
+        public void handleEvent(Object event) {
 
         }
     }
@@ -189,7 +178,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         private int invocationCount;
 
         @EventHandler
-        public void handleEvent(Event event) {
+        public void handleEvent(Object event) {
             invocationCount++;
         }
 
@@ -203,7 +192,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         }
     }
 
-    public static class FailingEvent extends DomainEvent {
+    public static class FailingEvent {
 
     }
 
@@ -221,7 +210,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     public static class AsyncHandler {
 
         @EventHandler
-        public void handleEvent(Event event) {
+        public void handleEvent(EventMessage event) {
         }
     }
 }

@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -41,9 +41,9 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
 
     private static final String FILE_NAME = "/tmp/trader-event.txt";
     private final ObjectOutputStream os;
-    private Serializer<? super DomainEvent> eventSerializer;
+    private Serializer<? super DomainEventMessage> eventSerializer;
 
-    public SequentialFileSystemEventStore(Serializer<? super DomainEvent> eventSerializer) {
+    public SequentialFileSystemEventStore(Serializer<? super DomainEventMessage> eventSerializer) {
         this.eventSerializer = eventSerializer;
         try {
             os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(FILE_NAME),
@@ -59,7 +59,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
     public void appendEvents(String type, DomainEventStream events) {
         try {
             while (events.hasNext()) {
-                DomainEvent event = events.next();
+                DomainEventMessage event = events.next();
                 os.writeUTF(type);
                 os.writeUTF(event.getAggregateIdentifier().asString());
                 byte[] serialized = eventSerializer.serialize(event);
@@ -73,7 +73,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
 
     @Override
     public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
-        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
         ObjectInputStream ois;
         try {
             os.flush();
@@ -89,7 +89,8 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                     ois.readInt();
                     byte[] serializedEvent = ois.readUTF().getBytes();
                     if (type.equals(actualType) && identifier.asString().equals(actualIdentifier)) {
-                        DomainEvent domainEvent = (DomainEvent) eventSerializer.deserialize(serializedEvent);
+                        DomainEventMessage domainEvent = (DomainEventMessage) eventSerializer.deserialize(
+                                serializedEvent);
                         domainEvents.add(domainEvent);
                     }
                 } catch (EOFException e) {
@@ -109,7 +110,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
     }
 
     @Override
-    public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
+    public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         // ignored for the moment.
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class StubAggregateCreatedEvent extends DomainEvent {
+public class StubAggregateCreatedEvent {
 
     public StubAggregateCreatedEvent() {
     }

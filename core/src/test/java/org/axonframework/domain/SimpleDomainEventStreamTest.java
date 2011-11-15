@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,13 @@ public class SimpleDomainEventStreamTest {
 
     @Test
     public void testPeek() {
-        StubDomainEvent event1 = new StubDomainEvent();
-        StubDomainEvent event2 = new StubDomainEvent();
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+                                                                          MetaData.emptyInstance(), "Mock contents");
+        DomainEventMessage event2 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+                                                                          MetaData.emptyInstance(), "Mock contents");
         SimpleDomainEventStream testSubject = new SimpleDomainEventStream(event1, event2);
         assertSame(event1, testSubject.peek());
         assertSame(event1, testSubject.peek());
-
     }
 
     @Test
@@ -51,8 +52,10 @@ public class SimpleDomainEventStreamTest {
 
     @Test
     public void testNextAndHasNext() {
-        StubDomainEvent event1 = new StubDomainEvent();
-        StubDomainEvent event2 = new StubDomainEvent();
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+                                                                          MetaData.emptyInstance(), "Mock contents");
+        DomainEventMessage event2 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+                                                                          MetaData.emptyInstance(), "Mock contents");
         SimpleDomainEventStream testSubject = new SimpleDomainEventStream(event1, event2);
         assertTrue(testSubject.hasNext());
         assertSame(event1, testSubject.next());
@@ -63,10 +66,10 @@ public class SimpleDomainEventStreamTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testNext_ReadBeyondEnd() {
-        StubDomainEvent event1 = new StubDomainEvent();
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+                                                                          MetaData.emptyInstance(), "Mock contents");
         SimpleDomainEventStream testSubject = new SimpleDomainEventStream(event1);
         testSubject.next();
         testSubject.next();
     }
-
 }

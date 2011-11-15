@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
-import org.axonframework.domain.ApplicationEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.Saga;
@@ -68,12 +68,12 @@ public class SimpleEventSchedulerTest {
                 latch.countDown();
                 return null;
             }
-        }).when(eventBus).publish(isA(Event.class));
+        }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        testSubject.schedule(new Duration(30), new StubEvent(mockSaga));
+        testSubject.schedule(new Duration(30), new Object());
         latch.await(1, TimeUnit.SECONDS);
-        verify(eventBus).publish(isA(StubEvent.class));
+        verify(eventBus).publish(isA(EventMessage.class));
     }
 
     @Test
@@ -85,11 +85,11 @@ public class SimpleEventSchedulerTest {
                 latch.countDown();
                 return null;
             }
-        }).when(eventBus).publish(isA(Event.class));
+        }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        StubEvent event1 = new StubEvent(mockSaga);
-        StubEvent event2 = new StubEvent(mockSaga);
+        EventMessage<Object> event1 = createEvent();
+        EventMessage<Object> event2 = createEvent();
         ScheduleToken token1 = testSubject.schedule(new Duration(100), event1);
         testSubject.schedule(new Duration(120), event2);
         testSubject.cancelSchedule(token1);
@@ -101,12 +101,7 @@ public class SimpleEventSchedulerTest {
                                                                                                     TimeUnit.SECONDS));
     }
 
-    private class StubEvent extends ApplicationEvent {
-
-        private static final long serialVersionUID = -5645522252409070738L;
-
-        public StubEvent(Saga source) {
-            super(source);
-        }
+    private EventMessage<Object> createEvent() {
+        return new GenericEventMessage<Object>(new Object());
     }
 }

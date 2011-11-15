@@ -17,7 +17,8 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.axonframework.saga.SagaFactory;
@@ -70,7 +71,6 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     @PersistenceContext
     private EntityManager entityManager;
 
-
     @Before
     public void startup() {
         reset(sagaFactory, tm);
@@ -88,12 +88,6 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         BeanDefinition eventListenerDefinition = beanFactory.getBeanDefinition(
                 "__axon-annotation-event-listener-bean-post-processor");
         assertNotNull("Event listener bean post processor not defined", eventListenerDefinition);
-        PropertyValue executorValue = eventListenerDefinition.getPropertyValues().getPropertyValue("executor");
-        assertNotNull("Executor not defined", executorValue);
-        Object value = executorValue.getValue();
-        assertTrue("Wrong property value", RuntimeBeanReference.class.isInstance(value));
-        RuntimeBeanReference beanReference = (RuntimeBeanReference) value;
-        assertEquals("taskExecutor", beanReference.getBeanName());
         assertNull("Event bus should not be defined explicitly",
                    eventListenerDefinition.getPropertyValues().getPropertyValue("eventBus"));
 
@@ -105,11 +99,11 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         BeanDefinition commandHandlerDefinition = beanFactory.getBeanDefinition(
                 "__axon-annotation-command-handler-bean-post-processor");
         assertNotNull("Event listener bean post processor not defined", commandHandlerDefinition);
-        executorValue = commandHandlerDefinition.getPropertyValues().getPropertyValue("commandBus");
-        assertNotNull("Executor not defined", executorValue);
-        value = executorValue.getValue();
+        PropertyValue propertyValue = commandHandlerDefinition.getPropertyValues().getPropertyValue("commandBus");
+        assertNotNull("Executor not defined", propertyValue);
+        Object value = propertyValue.getValue();
         assertTrue("Wrong property value", RuntimeBeanReference.class.isInstance(value));
-        beanReference = (RuntimeBeanReference) value;
+        RuntimeBeanReference beanReference = (RuntimeBeanReference) value;
         assertEquals("commandBus-embedded-ref", beanReference.getBeanName());
         assertNull("Event bus should not be defined explicitly",
                    commandHandlerDefinition.getPropertyValues().getPropertyValue("eventBus"));
@@ -130,7 +124,10 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        sagaManager.handle(new StubDomainEvent(new UUIDAggregateIdentifier()));
+        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
+                                                                      MetaData.emptyInstance(), new SimpleEvent(
+                identifier)));
 
         verify(sagaFactory).createSaga(StubSaga.class);
     }
@@ -146,7 +143,10 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        sagaManager.handle(new StubDomainEvent(new UUIDAggregateIdentifier()));
+        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
+                                                                      MetaData.emptyInstance(), new SimpleEvent(
+                identifier)));
         sagaManager.unsubscribe();
         verify(sagaFactory).createSaga(eq(StubSaga.class));
         sagaManager.stop();
@@ -167,7 +167,10 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        sagaManager.handle(new StubDomainEvent(new UUIDAggregateIdentifier()));
+        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
+                                                                      MetaData.emptyInstance(), new SimpleEvent(
+                identifier)));
         Thread.sleep(250);
         te.shutdown();
         te.getThreadPoolExecutor().awaitTermination(2, TimeUnit.SECONDS);

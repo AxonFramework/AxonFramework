@@ -16,15 +16,13 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.common.Subscribable;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TransactionManager;
-import org.axonframework.util.Subscribable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.Executor;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -62,27 +60,8 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         this.executionWrapper = new SynchronousSagaExecutionWrapper();
     }
 
-    /**
-     * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code> which handles
-     * the saga lookup and invocation asynchronously using the given <code>executor</code> and
-     * <code>transactionManager</code>.
-     *
-     * @param eventBus           The event bus providing the events to route to sagas.
-     * @param sagaRepository     The repository providing the saga instances.
-     * @param sagaFactory        The factory providing new saga instances
-     * @param executor           The executor providing the threads to process events in
-     * @param transactionManager The transaction manager that manages transactions around event processing
-     */
-    public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory,
-                               Executor executor, TransactionManager transactionManager) {
-        this.eventBus = eventBus;
-        this.sagaRepository = sagaRepository;
-        this.sagaFactory = sagaFactory;
-        this.executionWrapper = new AsynchronousSagaExecutor(executor, transactionManager);
-    }
-
     @Override
-    public void handle(final Event event) {
+    public void handle(final EventMessage event) {
         executionWrapper.scheduleLookupTask(new SagaLookupAndInvocationTask(event));
     }
 
@@ -98,7 +77,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         return sagaFactory.createSaga(sagaType);
     }
 
-    private void invokeSagaHandler(Event event, Saga saga) {
+    private void invokeSagaHandler(EventMessage event, Saga saga) {
         if (!saga.isActive()) {
             return;
         }
@@ -125,7 +104,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * @param event The event to find relevant Sagas for
      * @return The Set of relevant Sagas
      */
-    protected abstract Set<Saga> findSagas(Event event);
+    protected abstract Set<Saga> findSagas(EventMessage event);
 
     /**
      * Commits the given <code>saga</code> to the registered repository.
@@ -194,9 +173,9 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private class SagaInvocationTask implements Runnable {
         private final Saga saga;
-        private final Event event;
+        private final EventMessage event;
 
-        public SagaInvocationTask(Saga saga, Event event) {
+        public SagaInvocationTask(Saga saga, EventMessage event) {
             this.saga = saga;
             this.event = event;
         }
@@ -216,9 +195,9 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     }
 
     private class SagaLookupAndInvocationTask implements Runnable {
-        private final Event event;
+        private final EventMessage event;
 
-        public SagaLookupAndInvocationTask(Event event) {
+        public SagaLookupAndInvocationTask(EventMessage event) {
             this.event = event;
         }
 

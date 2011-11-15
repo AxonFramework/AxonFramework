@@ -22,7 +22,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.serializer.Serializer;
 
@@ -58,7 +58,7 @@ public class EventEntry {
      * @param event           The actual DomainEvent to store
      * @param eventSerializer Serializer to use for the event to store
      */
-    EventEntry(String aggregateType, DomainEvent event, Serializer<? super DomainEvent> eventSerializer) {
+    EventEntry(String aggregateType, DomainEventMessage event, Serializer<? super DomainEventMessage> eventSerializer) {
         this.eventIdentifier = event.getEventIdentifier().toString();
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
@@ -82,8 +82,8 @@ public class EventEntry {
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
      * @return The actual DomainEvent
      */
-    public DomainEvent getDomainEvent(Serializer<? super DomainEvent> eventSerializer) {
-        return (DomainEvent) eventSerializer.deserialize(serializedEvent.getBytes(UTF8));
+    public DomainEventMessage getDomainEvent(Serializer<? super DomainEventMessage> eventSerializer) {
+        return (DomainEventMessage) eventSerializer.deserialize(serializedEvent.getBytes(UTF8));
     }
 
     /**

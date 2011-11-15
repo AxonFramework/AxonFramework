@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 
 /**
  * Interface describing an event store that is able to store snapshot events. Implementations must also take the stored
@@ -35,14 +35,10 @@ public interface SnapshotEventStore extends EventStore {
      * domain
      * event that is included in the snapshot.
      * <p/>
-     * Note that the aggregate identifier and sequence number must be set on the DomainEvent. See {@link
-     * org.axonframework.domain.DomainEvent#DomainEvent(long, org.axonframework.domain.AggregateIdentifier)}.
-     * <p/>
      * Implementations may choose to prune snapshots upon appending a new snapshot, in order to minimize storage space.
      *
      * @param type          The type of aggregate the event belongs to
      * @param snapshotEvent The event summarizing one or more domain events for a specific aggregate.
-     * @see org.axonframework.domain.DomainEvent#DomainEvent(long, org.axonframework.domain.AggregateIdentifier))
      */
-    void appendSnapshotEvent(String type, DomainEvent snapshotEvent);
+    void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent);
 }

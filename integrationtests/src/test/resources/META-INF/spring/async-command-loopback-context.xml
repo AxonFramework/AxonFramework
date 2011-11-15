@@ -17,7 +17,7 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
                            http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
     <axon:annotation-config executor="asyncExecutor"/>
@@ -29,7 +29,8 @@
 
     <axon:command-bus id="commandBus"/>
     <axon:event-bus id="eventBus"/>
-    <axon:filesystem-event-store id="eventStore" base-dir="file:${java.io.tmpdir}/eventStore"/>
+    <bean id="eventStore"
+          class="org.axonframework.integrationtests.loopbacktest.synchronous.SynchronousLoopbackTest$InMemoryEventStore"/>
 
     <axon:event-sourcing-repository id="messageRepository"
                                     event-store="eventStore"

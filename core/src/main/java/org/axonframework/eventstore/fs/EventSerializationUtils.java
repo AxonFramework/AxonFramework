@@ -16,8 +16,8 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.util.io.BinaryEntryInputStream;
-import org.axonframework.util.io.BinaryEntryOutputStream;
+import org.axonframework.common.io.BinaryEntryInputStream;
+import org.axonframework.common.io.BinaryEntryOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +104,8 @@ abstract class EventSerializationUtils {
     /**
      * Reads the last snapshot event entry from the input stream. The input stream should contain entries of domain
      * events using three components. The first is the size of the serialized event in bytes, the second is the offset
-     * to use when reading events from the regular stream and the third is the actual bytes of the serialized event. All
+     * to use when reading events from the regular stream and the third is the actual bytes of the serialized event.
+     * All
      * components must be separated by at least one whitespace character (see {@link Character#isWhitespace(int)}.
      * <p/>
      * The offset is the number of bytes that may be skipped when reading from the event log, when using the snapshot
@@ -133,8 +134,10 @@ abstract class EventSerializationUtils {
     }
 
     /**
-     * Writes a snapshot event entry to the output stream. The entry consists of three components. The first is the size
-     * of the serialized event in bytes, the second is the offset to use when reading events from the regular stream and
+     * Writes a snapshot event entry to the output stream. The entry consists of three components. The first is the
+     * size
+     * of the serialized event in bytes, the second is the offset to use when reading events from the regular stream
+     * and
      * the third is the actual bytes of the serialized event. All components are separated by a whitespace character
      * (see {@link Character#isWhitespace(int)}. After the entry, a newline character is written.
      * <p/>

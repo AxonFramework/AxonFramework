@@ -17,8 +17,9 @@
 package org.axonframework.eventstore.fs;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
@@ -57,26 +58,34 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testSaveStreamAndReadBackIn() {
-        StubDomainEvent event1 = new StubDomainEvent(aggregateIdentifier, 0);
-        StubDomainEvent event2 = new StubDomainEvent(aggregateIdentifier, 1);
-        StubDomainEvent event3 = new StubDomainEvent(aggregateIdentifier, 2);
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                0,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                1,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                2,
+                new StubDomainEvent());
         DomainEventStream stream = new SimpleDomainEventStream(event1, event2, event3);
         eventStore.appendEvents("test", stream);
 
         DomainEventStream eventStream = eventStore.readEvents("test", aggregateIdentifier);
-        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage<?>> domainEvents = new ArrayList<DomainEventMessage<?>>();
         while (eventStream.hasNext()) {
             domainEvents.add(eventStream.next());
         }
-        assertEquals(event1, domainEvents.get(0));
-        assertEquals(event2, domainEvents.get(1));
-        assertEquals(event3, domainEvents.get(2));
+        assertEquals(event1.getEventIdentifier(), domainEvents.get(0).getEventIdentifier());
+        assertEquals(event2.getEventIdentifier(), domainEvents.get(1).getEventIdentifier());
+        assertEquals(event3.getEventIdentifier(), domainEvents.get(2).getEventIdentifier());
     }
 
     @Test
     // Issue #25: XStreamFileSystemEventStore fails when event data contains newline character
     public void testSaveStreamAndReadBackIn_NewLineInEvent() {
-        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
         String description = "This is a description with a \n newline character and weird chars éçè\u6324.";
         StringBuilder stringBuilder = new StringBuilder(description);
         for (int i = 0; i < 100; i++) {
@@ -84,20 +93,27 @@ public class FileSystemEventStoreTest {
                     "Some more text to make this event really long. It should not be a problem for the event serializer.");
         }
         description = stringBuilder.toString();
-        MyStubDomainEvent event1 = new MyStubDomainEvent(aggregateId, 0, description);
-        StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
+        GenericDomainEventMessage<MyStubDomainEvent> event1 = new GenericDomainEventMessage<MyStubDomainEvent>(
+                aggregateIdentifier,
+                0,
+                new MyStubDomainEvent(description));
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                1,
+                new StubDomainEvent());
+
         DomainEventStream stream = new SimpleDomainEventStream(event1, event2);
         eventStore.appendEvents("test", stream);
 
-        DomainEventStream eventStream = eventStore.readEvents("test", aggregateId);
-        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        DomainEventStream eventStream = eventStore.readEvents("test", aggregateIdentifier);
+        List<DomainEventMessage<? extends Object>> domainEvents = new ArrayList<DomainEventMessage<? extends Object>>();
         while (eventStream.hasNext()) {
             domainEvents.add(eventStream.next());
         }
-        MyStubDomainEvent actualEvent1 = (MyStubDomainEvent) domainEvents.get(0);
-        assertEquals(event1, actualEvent1);
+        MyStubDomainEvent actualEvent1 = (MyStubDomainEvent) domainEvents.get(0).getPayload();
         assertEquals(description, actualEvent1.getDescription());
-        assertEquals(event2, domainEvents.get(1));
+        assertEquals(event2.getPayloadType(), domainEvents.get(1).getPayloadType());
+        assertEquals(event2.getEventIdentifier(), domainEvents.get(1).getEventIdentifier());
     }
 
     @Test
@@ -130,9 +146,18 @@ public class FileSystemEventStoreTest {
                 .thenThrow(exception);
         eventStore.setEventFileResolver(mockEventFileResolver);
 
-        StubDomainEvent event1 = new StubDomainEvent(aggregateId, 0);
-        StubDomainEvent event2 = new StubDomainEvent(aggregateId, 1);
-        StubDomainEvent event3 = new StubDomainEvent(aggregateId, 2);
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                0,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                1,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                2,
+                new StubDomainEvent());
         DomainEventStream stream = new SimpleDomainEventStream(event1, event2, event3);
 
         try {
@@ -147,16 +172,29 @@ public class FileSystemEventStoreTest {
     public void testAppendSnapShot() {
         AtomicInteger counter = new AtomicInteger(0);
 
+        GenericDomainEventMessage<StubDomainEvent> snapshot1 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                4,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> snapshot2 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                9,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> snapshot3 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                14,
+                new StubDomainEvent());
+
         writeEvents(counter, 5);
-        eventStore.appendSnapshotEvent("snapshotting", new StubDomainEvent(aggregateIdentifier, 4));
+        eventStore.appendSnapshotEvent("snapshotting", snapshot1);
         writeEvents(counter, 5);
-        eventStore.appendSnapshotEvent("snapshotting", new StubDomainEvent(aggregateIdentifier, 9));
+        eventStore.appendSnapshotEvent("snapshotting", snapshot2);
         writeEvents(counter, 5);
-        eventStore.appendSnapshotEvent("snapshotting", new StubDomainEvent(aggregateIdentifier, 14));
+        eventStore.appendSnapshotEvent("snapshotting", snapshot3);
         writeEvents(counter, 2);
 
         DomainEventStream eventStream = eventStore.readEvents("snapshotting", aggregateIdentifier);
-        List<DomainEvent> actualEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage<? extends Object>> actualEvents = new ArrayList<DomainEventMessage<? extends Object>>();
         while (eventStream.hasNext()) {
             actualEvents.add(eventStream.next());
         }
@@ -165,9 +203,13 @@ public class FileSystemEventStoreTest {
     }
 
     private void writeEvents(AtomicInteger counter, int numberOfEvents) {
-        List<DomainEvent> events = new ArrayList<DomainEvent>();
+        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
         for (int t = 0; t < numberOfEvents; t++) {
-            events.add(new StubDomainEvent(aggregateIdentifier, counter.getAndIncrement()));
+            GenericDomainEventMessage<StubDomainEvent> event = new GenericDomainEventMessage<StubDomainEvent>(
+                    aggregateIdentifier,
+                    counter.getAndIncrement(),
+                    new StubDomainEvent());
+            events.add(event);
         }
         eventStore.appendEvents("snapshotting", new SimpleDomainEventStream(events));
     }
@@ -177,9 +219,7 @@ public class FileSystemEventStoreTest {
         private static final long serialVersionUID = -7959231436742664073L;
         private final String description;
 
-        public MyStubDomainEvent(AggregateIdentifier aggregateId, int sequenceNumber,
-                                 String description) {
-            super(aggregateId, sequenceNumber);
+        public MyStubDomainEvent(String description) {
             this.description = description;
         }
 

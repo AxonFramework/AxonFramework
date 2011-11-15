@@ -17,15 +17,18 @@
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.Mongo;
-import org.axonframework.domain.*;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +39,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
@@ -96,14 +98,14 @@ public class MongoEventStoreTest {
         // we store some more events to make sure only correct events are retrieved
         eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
         DomainEventStream events = eventStore.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEvent> actualEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
         Long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
-            DomainEvent event = events.next();
+            DomainEventMessage event = events.next();
             actualEvents.add(event);
             assertEquals("Events are read back in in the wrong order",
-                    expectedSequenceNumber,
-                    event.getSequenceNumber());
+                         expectedSequenceNumber,
+                         event.getSequenceNumber());
             expectedSequenceNumber++;
         }
         assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
@@ -119,7 +121,7 @@ public class MongoEventStoreTest {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = eventStore.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -139,14 +141,15 @@ public class MongoEventStoreTest {
         eventStore.appendEvents("type2", new SimpleDomainEventStream(createDomainEvents(23)));
 
         eventStore.visitEvents(eventVisitor);
-        verify(eventVisitor, times(100)).doWithEvent(isA(DomainEvent.class));
+        verify(eventVisitor, times(100)).doWithEvent(isA(DomainEventMessage.class));
     }
 
-    private List<StubStateChangedEvent> createDomainEvents(int numberOfEvents) {
-        List<StubStateChangedEvent> events = new ArrayList<StubStateChangedEvent>();
+    private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
+        List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<DomainEventMessage<StubStateChangedEvent>>();
         final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         for (int t = 0; t < numberOfEvents; t++) {
-            events.add(new StubStateChangedEvent(t, aggregateIdentifier));
+            events.add(new GenericDomainEventMessage<StubStateChangedEvent>(
+                    aggregateIdentifier, t, null, new StubStateChangedEvent()));
         }
         return events;
     }
@@ -161,20 +164,17 @@ public class MongoEventStoreTest {
         public void handleStateChange(StubStateChangedEvent event) {
         }
 
-        public DomainEvent createSnapshotEvent() {
-            return new StubStateChangedEvent(getVersion(), getIdentifier());
+        public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
+            return new GenericDomainEventMessage<StubStateChangedEvent>(
+                    getIdentifier(), getVersion(), null, new StubStateChangedEvent());
         }
     }
 
-    private static class StubStateChangedEvent extends DomainEvent {
+    private static class StubStateChangedEvent {
 
         private static final long serialVersionUID = 3459228620192273869L;
 
         private StubStateChangedEvent() {
-        }
-
-        private StubStateChangedEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
-            super(sequenceNumber, aggregateIdentifier);
         }
     }
 }

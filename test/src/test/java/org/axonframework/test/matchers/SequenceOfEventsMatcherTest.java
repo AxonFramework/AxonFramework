@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -35,15 +35,15 @@ import static org.mockito.Mockito.*;
  */
 public class SequenceOfEventsMatcherTest {
 
-    private Matcher<Event> mockMatcher1;
-    private Matcher<Event> mockMatcher2;
-    private Matcher<Event> mockMatcher3;
+    private Matcher<EventMessage> mockMatcher1;
+    private Matcher<EventMessage> mockMatcher2;
+    private Matcher<EventMessage> mockMatcher3;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
     private StubEvent stubEvent3;
     private StubEvent stubEvent4;
     private StubEvent stubEvent5;
-    private SequenceMatcher<Event> testSubject;
+    private SequenceMatcher<EventMessage> testSubject;
 
     @SuppressWarnings({"unchecked"})
     @Before

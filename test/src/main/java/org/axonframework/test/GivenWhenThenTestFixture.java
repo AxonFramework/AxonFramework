@@ -21,9 +21,10 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
@@ -59,11 +60,12 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private AggregateIdentifier aggregateIdentifier;
     private EventStore eventStore;
 
-    private Collection<DomainEvent> givenEvents;
+    private Collection<DomainEventMessage> givenEvents;
 
-    private Deque<DomainEvent> storedEvents;
-    private List<Event> publishedEvents;
+    private Deque<DomainEventMessage> storedEvents;
+    private List<EventMessage> publishedEvents;
     private long sequenceNumber = 0;
+    private String typeIdentifier;
 
     /**
      * Initializes a new given-when-then style test fixture.
@@ -87,6 +89,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     @Override
     public FixtureConfiguration registerRepository(EventSourcingRepository<?> eventSourcingRepository) {
         this.repository = eventSourcingRepository;
+        this.typeIdentifier = repository.getTypeIdentifier();
         eventSourcingRepository.setEventBus(eventBus);
         eventSourcingRepository.setEventStore(eventStore);
         return this;
@@ -109,27 +112,20 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     @Override
-    public TestExecutor given(DomainEvent... domainEvents) {
+    public TestExecutor given(Object... domainEvents) {
         return given(Arrays.asList(domainEvents));
     }
 
     @Override
-    public TestExecutor given(DomainEventStream domainEvents) {
-        List<DomainEvent> eventList = new ArrayList<DomainEvent>();
-        while (domainEvents.hasNext()) {
-            eventList.add(domainEvents.next());
-        }
-        return given(eventList);
-    }
-
-    @Override
-    public TestExecutor given(List<DomainEvent> domainEvents) {
+    public TestExecutor given(List<?> domainEvents) {
         clearGivenWhenState();
-        for (DomainEvent event : domainEvents) {
-            setByReflection(DomainEvent.class, "aggregateIdentifier", event, aggregateIdentifier);
-            setByReflection(DomainEvent.class, "sequenceNumber", event, sequenceNumber++);
+        for (Object event : domainEvents) {
+            this.givenEvents.add(new GenericDomainEventMessage<Object>(
+                    aggregateIdentifier,
+                    sequenceNumber++,
+                    null,
+                    event));
         }
-        this.givenEvents.addAll(domainEvents);
         return this;
     }
 
@@ -142,9 +138,9 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     private void clearGivenWhenState() {
-        storedEvents = new LinkedList<DomainEvent>();
-        publishedEvents = new ArrayList<Event>();
-        givenEvents = new ArrayList<DomainEvent>();
+        storedEvents = new LinkedList<DomainEventMessage>();
+        publishedEvents = new ArrayList<EventMessage>();
+        givenEvents = new ArrayList<DomainEventMessage>();
         sequenceNumber = 0;
     }
 
@@ -178,7 +174,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         return repository;
     }
 
-    private void setByReflection(Class<?> eventClass, String fieldName, DomainEvent event, Serializable value) {
+    private void setByReflection(Class<?> eventClass, String fieldName, DomainEventMessage event, Serializable value) {
         try {
             Field field = eventClass.getDeclaredField(fieldName);
             field.setAccessible(true);
@@ -193,9 +189,9 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         @Override
         public void appendEvents(String type, DomainEventStream events) {
             while (events.hasNext()) {
-                DomainEvent next = events.next();
+                DomainEventMessage next = events.next();
                 if (!storedEvents.isEmpty()) {
-                    DomainEvent lastEvent = storedEvents.peekLast();
+                    DomainEventMessage lastEvent = storedEvents.peekLast();
                     if (!lastEvent.getAggregateIdentifier().equals(next.getAggregateIdentifier())) {
                         throw new EventStoreException("Writing events for an unexpected aggregate. This could "
                                                               + "indicate that a wrong aggregate is being triggered.");
@@ -227,7 +223,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private class RecordingEventBus implements EventBus {
 
         @Override
-        public void publish(Event event) {
+        public void publish(EventMessage event) {
             publishedEvents.add(event);
         }
 

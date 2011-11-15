@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
@@ -27,7 +27,7 @@ import org.hamcrest.Description;
  * @author Allard Buijze
  * @since 1.1
  */
-public class NullOrVoidMatcher extends BaseMatcher<Event> {
+public class NullOrVoidMatcher extends BaseMatcher<EventMessage> {
 
     @Override
     public boolean matches(Object item) {

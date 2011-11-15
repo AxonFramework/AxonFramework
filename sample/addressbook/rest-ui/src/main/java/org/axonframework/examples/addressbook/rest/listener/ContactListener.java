@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,19 +40,19 @@ public class ContactListener {
     @EventHandler
     public void handleContactCreatedEvent(ContactCreatedEvent event) {
         logger.debug("Received a contact created event with name {} and identifier {}",
-                event.getName(), event.getEventIdentifier());
+                     event.getName(), event.getContactId());
         ContactEntry value = new ContactEntry();
         value.setName(event.getName());
-        value.setIdentifier(event.getContactIdentifier());
+        value.setIdentifier(event.getContactId());
         Message<ContactEntry> message = new Message<ContactEntry>("contact-created", value);
         publisher.publish(message);
     }
 
     @EventHandler
     public void handleContactRemovedEvent(ContactDeletedEvent event) {
-        logger.debug("Contact removed event with identifier {}", event.getContactIdentifier());
+        logger.debug("Contact removed event with identifier {}", event.getContactId());
         ContactEntry value = new ContactEntry();
-        value.setIdentifier(event.getContactIdentifier());
+        value.setIdentifier(event.getContactId());
         Message<ContactEntry> message = new Message<ContactEntry>("contact-removed", value);
         publisher.publish(message);
     }
@@ -60,9 +60,9 @@ public class ContactListener {
     @EventHandler
     public void handleContactNameChangedEvent(ContactNameChangedEvent event) {
         logger.debug("Received a contact name changed event with new name {} and identifier {}",
-                event.getNewName(), event.getEventIdentifier());
+                     event.getNewName(), event.getContactId());
         ContactEntry value = new ContactEntry();
-        value.setIdentifier(event.getContactIdentifier());
+        value.setIdentifier(event.getContactId());
         value.setName(event.getNewName());
         Message<ContactEntry> message = new Message<ContactEntry>("contact-changed", value);
         publisher.publish(message);

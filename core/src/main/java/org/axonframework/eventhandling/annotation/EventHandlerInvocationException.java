@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.util.AxonException;
+import org.axonframework.common.AxonException;
 
 /**
  * EventHandlerInvocationException is a runtime exception that wraps an exception thrown by an invoked event handler.

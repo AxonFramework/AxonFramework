@@ -17,8 +17,8 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -66,7 +66,7 @@ public class LockingRepositoryTest {
         CurrentUnitOfWork.commit();
 
         verify(lockManager).obtainLock(aggregate.getIdentifier());
-        verify(mockEventBus).publish(isA(DomainEvent.class));
+        verify(mockEventBus).publish(isA(DomainEventMessage.class));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class LockingRepositoryTest {
 
         InOrder inOrder = inOrder(lockManager);
         inOrder.verify(lockManager, atLeastOnce()).validateLock(loadedAggregate);
-        verify(mockEventBus, times(2)).publish(any(DomainEvent.class));
+        verify(mockEventBus, times(2)).publish(any(DomainEventMessage.class));
         inOrder.verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
     }
 
@@ -111,7 +111,7 @@ public class LockingRepositoryTest {
 
         CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
+            public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
                 throw new RuntimeException("Mock Exception");
             }
         });
@@ -150,7 +150,7 @@ public class LockingRepositoryTest {
 
         CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
+            public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
                 throw new RuntimeException("Mock Exception");
             }
         });

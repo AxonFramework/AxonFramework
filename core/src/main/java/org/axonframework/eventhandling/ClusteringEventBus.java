@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 import java.util.HashSet;
 import java.util.List;
@@ -85,7 +85,7 @@ public class ClusteringEventBus implements EventBus {
     }
 
     @Override
-    public void publish(Event event) {
+    public void publish(EventMessage event) {
         terminal.publish(event);
     }
 
@@ -112,7 +112,7 @@ public class ClusteringEventBus implements EventBus {
         private List<Cluster> clusters = new CopyOnWriteArrayList<Cluster>();
 
         @Override
-        public void publish(Event event) {
+        public void publish(EventMessage event) {
             for (Cluster cluster : clusters) {
                 cluster.publish(event);
             }

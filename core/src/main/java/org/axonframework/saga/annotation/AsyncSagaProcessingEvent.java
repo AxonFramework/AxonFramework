@@ -17,7 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.EventFactory;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 
@@ -29,17 +29,17 @@ import org.axonframework.saga.Saga;
  */
 class AsyncSagaProcessingEvent {
 
-    private Event publishedEvent;
+    private EventMessage publishedEvent;
     private HandlerConfiguration handler;
     private Class<? extends AbstractAnnotatedSaga> sagaType;
     private AbstractAnnotatedSaga newSaga;
     final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
 
-    public Event getPublishedEvent() {
+    public EventMessage getPublishedEvent() {
         return publishedEvent;
     }
 
-    public void setPublishedEvent(Event publishedEvent) {
+    public void setPublishedEvent(EventMessage publishedEvent) {
         this.publishedEvent = publishedEvent;
     }
 

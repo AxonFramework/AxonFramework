@@ -16,7 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.AssociationValue;
@@ -72,7 +72,7 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     }
 
     @Override
-    protected Set<Saga> findSagas(Event event) {
+    protected Set<Saga> findSagas(EventMessage event) {
         Set<Saga> sagasFound = new HashSet<Saga>();
         for (SagaAnnotationInspector<? extends AbstractAnnotatedSaga> entry : managedSagaTypes) {
             sagasFound.addAll(findSagas(event, entry));
@@ -80,7 +80,8 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
         return sagasFound;
     }
 
-    private <T extends AbstractAnnotatedSaga> Set<T> findSagas(Event event, SagaAnnotationInspector<T> inspector) {
+    private <T extends AbstractAnnotatedSaga> Set<T> findSagas(EventMessage event,
+                                                               SagaAnnotationInspector<T> inspector) {
         HandlerConfiguration configuration = inspector.findHandlerConfiguration(event);
         if (!configuration.isHandlerAvailable()) {
             return Collections.emptySet();

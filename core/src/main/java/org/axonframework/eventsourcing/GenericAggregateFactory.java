@@ -16,9 +16,9 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.util.Assert;
+import org.axonframework.domain.DomainEventMessage;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -81,7 +81,7 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
+    public T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEventMessage firstEvent) {
         T aggregate;
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();

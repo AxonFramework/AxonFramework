@@ -46,7 +46,7 @@ public interface DomainEventStream {
      *
      * @return the next event in the stream.
      */
-    DomainEvent next();
+    DomainEventMessage next();
 
     /**
      * Returns the next events in the stream, if available, without moving the pointer forward. Hence, a call to {@link
@@ -59,5 +59,5 @@ public interface DomainEventStream {
      *
      * @return the next event in the stream.
      */
-    DomainEvent peek();
+    DomainEventMessage peek();
 }

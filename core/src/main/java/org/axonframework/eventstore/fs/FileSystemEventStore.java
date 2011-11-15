@@ -19,7 +19,7 @@ package org.axonframework.eventstore.fs;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CountingInputStream;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
@@ -59,7 +59,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemEventStore.class);
 
-    private final Serializer<? super DomainEvent> eventSerializer;
+    private final Serializer<? super DomainEventMessage> eventSerializer;
     private EventFileResolver eventFileResolver;
 
     /**
@@ -76,7 +76,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      *
      * @param serializer The serializer capable of serializing (at least) DomainEvents
      */
-    public FileSystemEventStore(Serializer<? super DomainEvent> serializer) {
+    public FileSystemEventStore(Serializer<? super DomainEventMessage> serializer) {
         this.eventSerializer = serializer;
     }
 
@@ -93,7 +93,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         }
         OutputStream out = null;
         try {
-            DomainEvent next = eventsToStore.next();
+            DomainEventMessage next = eventsToStore.next();
             out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
             do {
                 byte[] bytes = eventSerializer.serialize(next);
@@ -138,7 +138,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      * @throws EventStoreException when an error occurs while reading or writing to the event logs.
      */
     @Override
-    public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
+    public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         AggregateIdentifier aggregateIdentifier = snapshotEvent.getAggregateIdentifier();
         OutputStream fileOutputStream = null;
         try {
@@ -240,9 +240,9 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      */
     private static class BufferedReaderDomainEventStream implements DomainEventStream {
 
-        private DomainEvent next;
+        private DomainEventMessage next;
         private final InputStream inputStream;
-        private final Serializer<? super DomainEvent> serializer;
+        private final Serializer<? super DomainEventMessage> serializer;
 
         /**
          * Initialize a BufferedReaderDomainEventStream using the given <code>inputStream</code> and
@@ -259,7 +259,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
          * @param inputStream The inputStream providing serialized DomainEvents
          * @param serializer  The serializer to deserialize the DomainEvents
          */
-        public BufferedReaderDomainEventStream(InputStream inputStream, Serializer<? super DomainEvent> serializer) {
+        public BufferedReaderDomainEventStream(InputStream inputStream,
+                                               Serializer<? super DomainEventMessage> serializer) {
             this.inputStream = new BufferedInputStream(inputStream);
             this.serializer = serializer;
             this.next = doReadNext();
@@ -277,18 +278,18 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
          * {@inheritDoc}
          */
         @Override
-        public DomainEvent next() {
-            DomainEvent toReturn = next;
+        public DomainEventMessage next() {
+            DomainEventMessage toReturn = next;
             next = doReadNext();
             return toReturn;
         }
 
         @Override
-        public DomainEvent peek() {
+        public DomainEventMessage peek() {
             return next;
         }
 
-        private DomainEvent doReadNext() {
+        private DomainEventMessage doReadNext() {
             try {
                 EventEntry serializedEvent = readEventEntry(inputStream);
                 if (serializedEvent == null) {

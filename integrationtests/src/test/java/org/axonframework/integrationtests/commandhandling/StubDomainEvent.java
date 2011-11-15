@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,12 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-
 import java.io.Serializable;
 
 /**
  * @author Allard Buijze
  */
-public class StubDomainEvent extends DomainEvent implements Serializable {
+public class StubDomainEvent implements Serializable {
 
-    private static final long serialVersionUID = 834667054977749990L;
 
-    public StubDomainEvent(AggregateIdentifier aggregateIdentifier, long sequenceNumber) {
-        super(sequenceNumber, aggregateIdentifier);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("StubDomainEvent aggregate [");
-        sb.append(getAggregateIdentifier());
-        sb.append("] sequenceNo [");
-        sb.append(getSequenceNumber());
-        sb.append("]");
-        return sb.toString();
-    }
 }

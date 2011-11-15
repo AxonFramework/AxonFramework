@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 import java.util.concurrent.Executor;
 
@@ -27,7 +27,8 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.3
  */
-public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrapper<Event> implements EventListenerProxy {
+public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrapper<EventMessage<?>>
+        implements EventListenerProxy {
 
     private final EventListener eventListener;
 
@@ -42,7 +43,7 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
      * @param executor           The executor that processes the events
      */
     public AsynchronousEventHandlerWrapper(EventListener eventListener, TransactionManager transactionManager,
-                                           SequencingPolicy<? super Event> sequencingPolicy,
+                                           SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
                                            Executor executor) {
         super(executor, transactionManager, sequencingPolicy);
         this.eventListener = eventListener;
@@ -61,8 +62,7 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
      *      java.util.concurrent.Executor)
      */
     public AsynchronousEventHandlerWrapper(EventListener eventListener,
-                                           SequencingPolicy<? super Event> sequencingPolicy,
-                                           Executor executor) {
+                                           SequencingPolicy<? super EventMessage> sequencingPolicy, Executor executor) {
         super(executor, sequencingPolicy);
         this.eventListener = eventListener;
     }
@@ -73,7 +73,7 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
      * @param event The event to schedule
      */
     @Override
-    public void handle(Event event) {
+    public void handle(EventMessage event) {
         schedule(event);
     }
 
@@ -83,7 +83,7 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
     }
 
     @Override
-    protected void doHandle(Event event) {
+    protected void doHandle(EventMessage<?> event) {
         eventListener.handle(event);
     }
 }

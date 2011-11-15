@@ -16,10 +16,11 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.util.AxonTransientException;
+import org.axonframework.common.AxonTransientException;
 
 /**
- * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying the
+ * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying
+ * the
  * same aggregate.
  *
  * @author Allard Buijze

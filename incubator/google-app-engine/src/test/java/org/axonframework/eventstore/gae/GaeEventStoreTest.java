@@ -1,20 +1,38 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventstore.gae;
 
-import com.google.appengine.api.datastore.*;
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.FetchOptions;
+import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -23,8 +41,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author Jettro Coenradie
@@ -32,6 +49,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:applicationContext-eventstore-test.xml"})
 public class GaeEventStoreTest {
+
     private final LocalServiceTestHelper helper =
             new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
 
@@ -59,7 +77,6 @@ public class GaeEventStoreTest {
         aggregate2.changeState();
         aggregate2.changeState();
         aggregate2.changeState();
-
     }
 
     @After
@@ -74,15 +91,16 @@ public class GaeEventStoreTest {
         Query query = createCountQuery("test");
         PreparedQuery preparedQuery = datastoreService.prepare(query);
 
-        assertEquals((long) aggregate1.getUncommittedEventCount(), preparedQuery.countEntities(FetchOptions.Builder.withDefaults()));
+        assertEquals((long) aggregate1.getUncommittedEventCount(), preparedQuery.countEntities(FetchOptions.Builder
+                                                                                                       .withDefaults()));
 
         // we store some more events to make sure only correct events are retrieved
         eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
 
         DomainEventStream events = eventStore.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEvent> actualEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage<?>> actualEvents = new ArrayList<DomainEventMessage<? extends Object>>();
         while (events.hasNext()) {
-            DomainEvent event = events.next();
+            DomainEventMessage<?> event = events.next();
             actualEvents.add(event);
         }
         assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
@@ -98,7 +116,7 @@ public class GaeEventStoreTest {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = eventStore.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage<? extends Object>> domainEvents = new ArrayList<DomainEventMessage<? extends Object>>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -125,21 +143,19 @@ public class GaeEventStoreTest {
         public void handleStateChange(StubStateChangedEvent event) {
         }
 
-        public DomainEvent createSnapshotEvent() {
-            return new StubStateChangedEvent(getVersion(), getIdentifier());
+        public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
+            return new GenericDomainEventMessage<StubStateChangedEvent>(
+                    getIdentifier(),
+                    getVersion(),
+                    new StubStateChangedEvent());
         }
     }
 
-    private static class StubStateChangedEvent extends DomainEvent {
+    private static class StubStateChangedEvent {
 
         private static final long serialVersionUID = 3459228620192273869L;
 
         private StubStateChangedEvent() {
         }
-
-        private StubStateChangedEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
-            super(sequenceNumber, aggregateIdentifier);
-        }
     }
-
 }

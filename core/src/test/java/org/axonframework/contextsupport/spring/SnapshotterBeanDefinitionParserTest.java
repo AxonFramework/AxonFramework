@@ -16,10 +16,10 @@
 
 package org.axonframework.contextsupport.spring;
 
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.eventsourcing.AbstractSnapshotter;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.SpringAggregateSnapshotter;
-import org.axonframework.util.DirectExecutor;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;

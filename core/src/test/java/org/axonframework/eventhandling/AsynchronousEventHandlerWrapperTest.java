@@ -17,8 +17,9 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
@@ -69,13 +70,13 @@ public class AsynchronousEventHandlerWrapperTest {
         finish.await();
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
-        BlockingQueue<Event> actualEventOrder = mockEventListener.events;
+        BlockingQueue<EventMessage<?>> actualEventOrder = mockEventListener.events;
         assertEquals("Expected all events to be dispatched", eventsPerGroup * groupIds.length, actualEventOrder.size());
 
         for (AggregateIdentifier groupId : groupIds) {
             long lastFromGroup = -1;
-            for (Event event : actualEventOrder) {
-                DomainEvent domainEvent = (DomainEvent) event;
+            for (EventMessage event : actualEventOrder) {
+                DomainEventMessage domainEvent = (DomainEventMessage) event;
                 if (groupId.equals(domainEvent.getAggregateIdentifier())) {
                     assertEquals("Expected all events of same aggregate to be handled sequentially",
                                  ++lastFromGroup,
@@ -88,16 +89,16 @@ public class AsynchronousEventHandlerWrapperTest {
     private AggregateIdentifier startEventDispatcher(final CountDownLatch waitToStart, final CountDownLatch waitToEnd,
                                                      int eventCount) {
         AggregateIdentifier id = new UUIDAggregateIdentifier();
-        final List<Event> events = new LinkedList<Event>();
+        final List<EventMessage<StubDomainEvent>> events = new LinkedList<EventMessage<StubDomainEvent>>();
         for (int t = 0; t < eventCount; t++) {
-            events.add(new StubDomainEvent(id, t));
+            events.add(new GenericDomainEventMessage<StubDomainEvent>(id, t, new StubDomainEvent()));
         }
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     waitToStart.await();
-                    for (Event event : events) {
+                    for (EventMessage event : events) {
                         testSubject.handle(event);
                     }
                 } catch (InterruptedException e) {
@@ -113,10 +114,11 @@ public class AsynchronousEventHandlerWrapperTest {
 
     private static class StubEventListener implements EventListener {
 
-        private final BlockingQueue<Event> events = new ArrayBlockingQueue<Event>(10000);
+        private final BlockingQueue<EventMessage<? extends Object>> events = new ArrayBlockingQueue<EventMessage<? extends Object>>(
+                10000);
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             events.add(event);
         }
     }

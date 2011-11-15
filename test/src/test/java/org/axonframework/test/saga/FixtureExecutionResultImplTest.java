@@ -16,10 +16,9 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.Event;
-import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.scheduling.ScheduledEvent;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
@@ -30,6 +29,7 @@ import org.joda.time.Duration;
 import org.junit.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -42,6 +42,7 @@ public class FixtureExecutionResultImplTest {
     private StubEventScheduler eventScheduler;
     private InMemorySagaRepository sagaRepository;
     private TimerTriggeredEvent applicationEvent;
+    private String identifier;
 
     @Before
     public void setUp() throws Exception {
@@ -52,7 +53,8 @@ public class FixtureExecutionResultImplTest {
         testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,
                                                      commandBus, StubSaga.class);
         testSubject.startRecording();
-        applicationEvent = new TimerTriggeredEvent(this, new UUIDAggregateIdentifier());
+        identifier = UUID.randomUUID().toString();
+        applicationEvent = new TimerTriggeredEvent(identifier);
     }
 
     @Test
@@ -60,10 +62,10 @@ public class FixtureExecutionResultImplTest {
         testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,
                                                      commandBus, StubSaga.class);
         commandBus.dispatch("First");
-        eventBus.publish(new TriggerSagaStartEvent());
+        eventBus.publish(new GenericEventMessage<TriggerSagaStartEvent>(new TriggerSagaStartEvent(identifier)));
         testSubject.startRecording();
-        TriggerSagaEndEvent endEvent = new TriggerSagaEndEvent();
-        eventBus.publish(endEvent);
+        TriggerSagaEndEvent endEvent = new TriggerSagaEndEvent(identifier);
+        eventBus.publish(new GenericEventMessage<TriggerSagaEndEvent>(endEvent));
         commandBus.dispatch("Second");
 
         testSubject.expectPublishedEvents(endEvent);
@@ -72,23 +74,24 @@ public class FixtureExecutionResultImplTest {
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectPublishedEvents_WrongCount() {
-        eventBus.publish(new TriggerSagaEndEvent());
+        eventBus.publish(new GenericEventMessage<TriggerSagaEndEvent>(new TriggerSagaEndEvent(identifier)));
 
-        testSubject.expectPublishedEvents(new TriggerSagaEndEvent(), new TriggerExistingSagaEvent());
+        testSubject.expectPublishedEvents(new TriggerSagaEndEvent(identifier),
+                                          new TriggerExistingSagaEvent(identifier));
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectPublishedEvents_WrongType() {
-        eventBus.publish(new TriggerSagaEndEvent());
+        eventBus.publish(new GenericEventMessage<TriggerSagaEndEvent>(new TriggerSagaEndEvent(identifier)));
 
-        testSubject.expectPublishedEvents(new TriggerExistingSagaEvent());
+        testSubject.expectPublishedEvents(new TriggerExistingSagaEvent(identifier));
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectPublishedEvents_FailedMatcher() {
-        eventBus.publish(new TriggerSagaEndEvent());
+        eventBus.publish(new GenericEventMessage<TriggerSagaEndEvent>(new TriggerSagaEndEvent(identifier)));
 
-        testSubject.expectPublishedEvents(new FailingMatcher<Event>());
+        testSubject.expectPublishedEvents(new FailingMatcher<EventMessage>());
     }
 
     @Test(expected = AxonAssertionError.class)
@@ -116,8 +119,8 @@ public class FixtureExecutionResultImplTest {
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectNoScheduledEvents_EventIsScheduled() {
-        eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+        eventScheduler.schedule(Duration.standardSeconds(1), new GenericEventMessage<TimerTriggeredEvent>(
+                applicationEvent));
         testSubject.expectNoScheduledEvents();
     }
 
@@ -128,42 +131,43 @@ public class FixtureExecutionResultImplTest {
 
     @Test
     public void testExpectNoScheduledEvents_ScheduledEventIsTriggered() {
-        eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+        eventScheduler.schedule(Duration.standardSeconds(1), new GenericEventMessage<TimerTriggeredEvent>(
+                applicationEvent));
         eventScheduler.advanceToNextTrigger();
         testSubject.expectNoScheduledEvents();
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectScheduledEvent_WrongDateTime() {
-        eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+        eventScheduler.schedule(Duration.standardSeconds(1), new GenericEventMessage<TimerTriggeredEvent>(
+                applicationEvent));
         eventScheduler.advanceTime(new Duration(500));
         testSubject.expectScheduledEvent(Duration.standardSeconds(1), applicationEvent);
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectScheduledEvent_WrongClass() {
-        eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+        eventScheduler.schedule(Duration.standardSeconds(1), new GenericEventMessage<TimerTriggeredEvent>(
+                applicationEvent));
         eventScheduler.advanceTime(new Duration(500));
-        testSubject.expectScheduledEvent(Duration.standardSeconds(1), ScheduledEvent.class);
+        testSubject.expectScheduledEventOfType(Duration.standardSeconds(1), Object.class);
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectScheduledEvent_WrongEvent() {
         eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+                                new GenericEventMessage<TimerTriggeredEvent>(applicationEvent));
         eventScheduler.advanceTime(new Duration(500));
         testSubject.expectScheduledEvent(Duration.standardSeconds(1),
-                                         new TimerTriggeredEvent(this, new UUIDAggregateIdentifier()));
+                                         new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(
+                                                 "unexpected")));
     }
 
     @SuppressWarnings({"unchecked"})
     @Test(expected = AxonAssertionError.class)
     public void testExpectScheduledEvent_FailedMatcher() {
-        eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+        eventScheduler.schedule(Duration.standardSeconds(1), new GenericEventMessage<TimerTriggeredEvent>(
+                applicationEvent));
         eventScheduler.advanceTime(new Duration(500));
         testSubject.expectScheduledEvent(Duration.standardSeconds(1),
                                          new FailingMatcher());
@@ -171,8 +175,8 @@ public class FixtureExecutionResultImplTest {
 
     @Test
     public void testExpectScheduledEvent_Found() {
-        eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+        eventScheduler.schedule(Duration.standardSeconds(1), new GenericEventMessage<TimerTriggeredEvent>(
+                applicationEvent));
         eventScheduler.advanceTime(new Duration(500));
         testSubject.expectScheduledEvent(new Duration(500), applicationEvent);
     }
@@ -180,11 +184,11 @@ public class FixtureExecutionResultImplTest {
     @Test
     public void testExpectScheduledEvent_FoundInMultipleCandidates() {
         eventScheduler.schedule(Duration.standardSeconds(1),
-                                new TimerTriggeredEvent(this, new UUIDAggregateIdentifier()));
+                                new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent("unexpected1")));
         eventScheduler.schedule(Duration.standardSeconds(1),
-                                applicationEvent);
+                                new GenericEventMessage<TimerTriggeredEvent>(applicationEvent));
         eventScheduler.schedule(Duration.standardSeconds(1),
-                                new TimerTriggeredEvent(this, new UUIDAggregateIdentifier()));
+                                new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent("unexpected2")));
         testSubject.expectScheduledEvent(Duration.standardSeconds(1), applicationEvent);
     }
 
@@ -260,6 +264,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     private class FailingMatcher<T> extends BaseMatcher<List<? extends T>> {
+
         @Override
         public boolean matches(Object item) {
             return false;

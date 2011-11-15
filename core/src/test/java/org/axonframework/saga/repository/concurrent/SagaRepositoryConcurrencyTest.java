@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
 
 package org.axonframework.saga.repository.concurrent;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.junit.*;
@@ -73,14 +74,15 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
                                                                            boolean lastEventMustBeDeletion)
             throws Throwable {
         final CyclicBarrier startCdl = new CyclicBarrier(SAGA_COUNT);
-        final BlockingQueue<Event> eventsToPublish = new ArrayBlockingQueue<Event>(UPDATE_EVENT_COUNT * SAGA_COUNT);
+        final BlockingQueue<EventMessage> eventsToPublish = new ArrayBlockingQueue<EventMessage>(
+                UPDATE_EVENT_COUNT * SAGA_COUNT);
         eventsToPublish.addAll(generateEvents(UPDATE_EVENT_COUNT * SAGA_COUNT));
         final AtomicInteger counter = new AtomicInteger(0);
         List<Thread> threads = prepareThreads(SAGA_COUNT, new Runnable() {
             @Override
             public void run() {
                 String id = Integer.toString(counter.getAndIncrement());
-                eventBus.publish(new CreateEvent(id, this));
+                eventBus.publish(eventWith(new CreateEvent(id)));
                 try {
                     startCdl.await();
                 } catch (InterruptedException e) {
@@ -90,14 +92,14 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
                 }
                 boolean mustContinue = true;
                 while (mustContinue) {
-                    Event item = eventsToPublish.poll();
+                    EventMessage item = eventsToPublish.poll();
                     if (item == null) {
                         mustContinue = false;
                     } else {
                         eventBus.publish(item);
                     }
                 }
-                eventBus.publish(new DeleteEvent(id, this));
+                eventBus.publish(eventWith(new DeleteEvent(id)));
             }
         });
         awaitThreadTermination(threads);
@@ -106,7 +108,7 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
         Set<T> uniqueInstances = new HashSet<T>(deletedSagas);
         assertEquals(SAGA_COUNT, uniqueInstances.size());
         for (T deletedSaga : deletedSagas) {
-            List<Event> events = deletedSaga.getEvents();
+            List<Object> events = deletedSaga.getEvents();
             assertTrue("Wrong number of events", events.size() <= UPDATE_EVENT_COUNT + 2);
             assertTrue("The first event should always be the creation event. Another event might indicate"
                                + "a lack of thread safety", CreateEvent.class.isInstance(events.get(0)));
@@ -114,6 +116,10 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
                 assertTrue("Last should be deletion", DeleteEvent.class.isInstance(events.get(events.size() - 1)));
             }
         }
+    }
+
+    private EventMessage eventWith(Object payload) {
+        return new GenericEventMessage<Object>(payload);
     }
 
     private void awaitThreadTermination(List<Thread> threads) throws Throwable {
@@ -125,11 +131,11 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
         }
     }
 
-    private List<Event> generateEvents(int eventCount) {
-        List<Event> events = new ArrayList<Event>(eventCount);
+    private List<EventMessage> generateEvents(int eventCount) {
+        List<EventMessage> events = new ArrayList<EventMessage>(eventCount);
         for (int t = 0; t < eventCount; t++) {
             String sagaId = Integer.toString(t % SAGA_COUNT);
-            events.add(new UpdateEvent(sagaId, this));
+            events.add(eventWith(new UpdateEvent(sagaId)));
         }
         Collections.shuffle(events);
         return events;

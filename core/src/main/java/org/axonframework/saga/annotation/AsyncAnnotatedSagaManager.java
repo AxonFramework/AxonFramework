@@ -21,7 +21,9 @@ import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
-import org.axonframework.domain.Event;
+import org.axonframework.common.Assert;
+import org.axonframework.common.Subscribable;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.NoTransactionManager;
 import org.axonframework.eventhandling.TransactionManager;
@@ -30,8 +32,6 @@ import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
-import org.axonframework.util.Assert;
-import org.axonframework.util.Subscribable;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -133,7 +133,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public void handle(final Event event) {
+    public void handle(final EventMessage event) {
         for (final SagaAnnotationInspector annotationInspector : sagaAnnotationInspectors) {
             final HandlerConfiguration handler = annotationInspector.findHandlerConfiguration(event);
             if (handler.isHandlerAvailable()) {
@@ -155,12 +155,12 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     }
 
     private static class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
-        private final Event event;
+        private final EventMessage event;
         private final SagaAnnotationInspector annotationInspector;
         private final HandlerConfiguration handler;
         private final AbstractAnnotatedSaga newSagaInstance;
 
-        private SagaProcessingEventTranslator(Event event, SagaAnnotationInspector annotationInspector,
+        private SagaProcessingEventTranslator(EventMessage event, SagaAnnotationInspector annotationInspector,
                                               HandlerConfiguration handler,
                                               AbstractAnnotatedSaga newSagaInstance) {
             this.event = event;

@@ -16,10 +16,9 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class StubEvent extends DomainEvent {
+public class StubEvent {
+
 }

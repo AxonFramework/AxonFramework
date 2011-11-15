@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package org.axonframework.integration.eventbus;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.integration.StubDomainEvent;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.*;
 import org.springframework.integration.message.GenericMessage;
 
@@ -35,11 +37,20 @@ public class MessageHandlerAdapterTest {
         EventListener mockEventListener = mock(EventListener.class);
         MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockEventListener);
 
-        StubDomainEvent payload = new StubDomainEvent();
-        adapter.handleMessage(new GenericMessage<DomainEvent>(payload));
-        adapter.handleMessage(new GenericMessage<DomainEvent>(new StubDomainEvent()));
+        final StubDomainEvent payload = new StubDomainEvent();
+        adapter.handleMessage(new GenericMessage<StubDomainEvent>(payload));
+        adapter.handleMessage(new GenericMessage<StubDomainEvent>(new StubDomainEvent()));
 
-        verify(mockEventListener, times(1)).handle(payload);
+        verify(mockEventListener, times(1)).handle(argThat(new BaseMatcher<EventMessage>() {
+            @Override
+            public boolean matches(Object o) {
+                return ((o instanceof EventMessage) && ((EventMessage) o).getPayload().equals(payload));
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("Event with correct payload");
+            }
+        }));
     }
-
 }

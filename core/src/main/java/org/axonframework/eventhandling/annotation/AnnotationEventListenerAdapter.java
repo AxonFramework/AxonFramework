@@ -16,22 +16,28 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.domain.Event;
-import org.axonframework.eventhandling.*;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FieldAccessibilityCallback;
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.Subscribable;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.AsynchronousEventHandlerWrapper;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.SequencingPolicy;
+import org.axonframework.eventhandling.SequentialPolicy;
 import org.axonframework.eventhandling.TransactionManager;
-import org.axonframework.util.AxonConfigurationException;
-import org.axonframework.util.FieldAccessibilityCallback;
-import org.axonframework.util.ReflectionUtils;
-import org.axonframework.util.Subscribable;
+import org.axonframework.eventhandling.TransactionStatus;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import static java.security.AccessController.doPrivileged;
-import static org.axonframework.util.ReflectionUtils.findAnnotation;
+import static org.axonframework.common.ReflectionUtils.findAnnotation;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
@@ -54,7 +60,8 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     private final Object annotatedEventListener;
 
     /**
-     * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>. When the adapter
+     * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>. When the
+     * adapter
      * subscribes, it will subscribe to the given event bus.
      *
      * @param annotatedEventListener the event listener
@@ -94,7 +101,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * {@inheritDoc}
      */
     @Override
-    public void handle(Event event) {
+    public void handle(EventMessage event) {
         targetEventListener.handle(event);
     }
 
@@ -227,7 +234,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
          * {@inheritDoc}
          */
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             eventHandlerInvoker.invokeEventHandlerMethod(event);
         }
     }

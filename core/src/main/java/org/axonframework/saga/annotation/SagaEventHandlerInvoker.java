@@ -16,10 +16,10 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.domain.Event;
+import org.axonframework.common.annotation.MessageHandlerInvoker;
+import org.axonframework.common.annotation.MethodMessageHandler;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.annotation.EventHandlerInvocationException;
-import org.axonframework.util.AbstractHandlerInvoker;
-import org.axonframework.util.Handler;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -29,7 +29,9 @@ import java.lang.reflect.InvocationTargetException;
  * @author Allard Buijze
  * @since 0.7
  */
-class SagaEventHandlerInvoker extends AbstractHandlerInvoker {
+class SagaEventHandlerInvoker {
+
+    private MessageHandlerInvoker invoker;
 
     /**
      * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
@@ -38,7 +40,7 @@ class SagaEventHandlerInvoker extends AbstractHandlerInvoker {
      * @param target The target to invoke methods on
      */
     public SagaEventHandlerInvoker(Object target) {
-        super(target, SagaEventHandler.class);
+        invoker = new MessageHandlerInvoker(target, SagaEventHandler.class);
     }
 
     /**
@@ -49,8 +51,8 @@ class SagaEventHandlerInvoker extends AbstractHandlerInvoker {
      * @return <code>true</code> if handling the given <code>event</code> should end the lifecycle of the Saga,
      *         <code>false</code> otherwise.
      */
-    public boolean isEndingEvent(Object event) {
-        Handler handler = super.findHandlerMethod(event.getClass());
+    public boolean isEndingEvent(EventMessage event) {
+        MethodMessageHandler handler = invoker.findHandlerMethod(event);
         return handler != null && handler.getMethod().isAnnotationPresent(EndSaga.class);
     }
 
@@ -59,20 +61,13 @@ class SagaEventHandlerInvoker extends AbstractHandlerInvoker {
      *
      * @param event The event to invoke the Event Handler for
      */
-    public void invokeSagaEventHandlerMethod(Event event) {
+    public void invokeSagaEventHandlerMethod(EventMessage event) {
         try {
-            invokeHandlerMethod(event);
+            invoker.invokeHandlerMethod(event);
         } catch (IllegalAccessException e) {
-            throw new UnsupportedOperationException(String.format(
-                    "An error occurred when handling an event of type [%s]",
-                    event.getClass().getSimpleName()), e);
+            throw new EventHandlerInvocationException("Access to the Saga Event handler method was denied.", e);
         } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            }
-            throw new EventHandlerInvocationException(String.format(
-                    "An error occurred when handling an event of type [%s]",
-                    event.getClass().getSimpleName()), e);
+            throw new EventHandlerInvocationException("An exception occurred while invoking the handler method.", e);
         }
     }
 }

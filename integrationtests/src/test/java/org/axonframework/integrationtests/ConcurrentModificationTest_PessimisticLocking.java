@@ -19,8 +19,8 @@ package org.axonframework.integrationtests;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.LoopingCommand;
@@ -115,11 +115,11 @@ public class ConcurrentModificationTest_PessimisticLocking {
 
     private void validateDispatchingOrder() {
         Long expectedSequenceNumber = 0L;
-        for (Event event : registeringEventHandler.getCapturedEvents()) {
-            assertTrue(event instanceof DomainEvent);
+        for (EventMessage event : registeringEventHandler.getCapturedEvents()) {
+            assertTrue(event instanceof DomainEventMessage);
             assertEquals("Events are dispatched in the wrong order!",
                          expectedSequenceNumber,
-                         ((DomainEvent) event).getSequenceNumber());
+                         ((DomainEventMessage) event).getSequenceNumber());
             expectedSequenceNumber++;
         }
     }

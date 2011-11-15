@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,18 @@
 
 package org.axonframework.sample.app.api;
 
-import org.axonframework.domain.AggregateDeletedEvent;
-
 /**
  * @author Allard Buijze
  */
-public class ContactDeletedEvent extends AbstractContactDomainEvent implements AggregateDeletedEvent {
+public class ContactDeletedEvent {
+
+    private final String contactId;
+
+    public ContactDeletedEvent(String contactId) {
+        this.contactId = contactId;
+    }
+
+    public String getContactId() {
+        return contactId;
+    }
 }

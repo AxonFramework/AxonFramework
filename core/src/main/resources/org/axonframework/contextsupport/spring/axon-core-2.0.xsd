@@ -432,10 +432,8 @@
                                 <xsd:attribute name="transaction-manager" use="optional" type="xsd:string">
                                     <xsd:annotation>
                                         <xsd:documentation>Reference to the PlatformTransactionManager that manages the
-                                            transactions
-                                            while reading, processing and persisting Sagas. Is ignored unless used in
-                                            combination
-                                            with the executor property.
+                                            transactions while reading, processing and persisting Sagas. Is ignored
+                                            unless used in combination with the executor property.
                                         </xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
@@ -448,10 +446,8 @@
                                 <xsd:attribute name="executor" use="optional" type="xsd:string">
                                     <xsd:annotation>
                                         <xsd:documentation>Reference to an Executor (e.g. TaskExecutor) instance that
-                                            provides the
-                                            threads to process the incoming Events in. If an executor is provided, all
-                                            event
-                                            handling is done asynchronously using this executor.
+                                            provides the threads to process the incoming Events in. If an executor is
+                                            provided, all event handling is done asynchronously using this executor.
                                         </xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
@@ -463,22 +459,16 @@
                                 <xsd:attribute name="buffer-size" use="optional" type="xsd:integer">
                                     <xsd:annotation>
                                         <xsd:documentation>The size of the processing buffer. This equals to the number
-                                            of
-                                            events
-                                            that may be awaiting processing before the input is blocked. Defaults to
-                                            512.
+                                            of events that may be awaiting processing before the input is blocked.
+                                            Defaults to 512.
                                         </xsd:documentation>
                                     </xsd:annotation>
                                 </xsd:attribute>
                                 <xsd:attribute name="processor-count" use="optional" type="xsd:integer">
                                     <xsd:annotation>
                                         <xsd:documentation>The number of the processors (threads) that will process
-                                            incoming
-                                            events.
-                                            Make sure that the given executor is capable of concurrently running this
-                                            number
-                                            of
-                                            processors. Defaults to 1.
+                                            incoming events. Make sure that the given executor is capable of
+                                            concurrently running this number of processors. Defaults to 1.
                                         </xsd:documentation>
                                     </xsd:annotation>
                                 </xsd:attribute>

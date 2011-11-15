@@ -16,12 +16,12 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.AbstractHandlerInspector;
+import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.util.AbstractHandlerInspector;
-import org.axonframework.util.AxonConfigurationException;
-import org.axonframework.util.Handler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -52,8 +52,8 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
      * @param event The Event to investigate the handler for
      * @return the configuration of the handler, as defined by the annotations.
      */
-    public HandlerConfiguration findHandlerConfiguration(Event event) {
-        Handler handler = findHandlerMethod(event.getClass());
+    public HandlerConfiguration findHandlerConfiguration(EventMessage event) {
+        MethodMessageHandler handler = findHandlerMethod(event);
         if (handler == null) {
             return HandlerConfiguration.noHandler();
         }
@@ -86,16 +86,16 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
         }
     }
 
-    private Object getPropertyValue(Event event, String property) {
+    private Object getPropertyValue(EventMessage event, String property) {
         try {
-            Method m = event.getClass().getMethod("get" + capitalize(property));
-            return m.invoke(event);
+            Method m = event.getPayloadType().getMethod("get" + capitalize(property));
+            return m.invoke(event.getPayload());
         } catch (NoSuchMethodException e) {
-            throw new AxonConfigurationException("", e);
+            throw new AxonConfigurationException(String.format("Cannot find getter for property %s", property), e);
         } catch (InvocationTargetException e) {
-            throw new AxonConfigurationException("", e);
+            throw new AxonConfigurationException(String.format("Error invoking getter for property '%s'", property), e);
         } catch (IllegalAccessException e) {
-            throw new AxonConfigurationException("", e);
+            throw new AxonConfigurationException(String.format("Cannot access getter for property '%s'", property), e);
         }
     }
 

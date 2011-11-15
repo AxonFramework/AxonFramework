@@ -16,10 +16,10 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.eventhandling.scheduling.ScheduledEvent;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.ReadableInstant;
@@ -50,7 +50,8 @@ public class StubEventScheduler implements EventScheduler {
 
     /**
      * Creates an instance of the StubScheduler that uses the current date time as its conceptual "current time".
-     * Unlike the real "current time", the time of the Event Scheduler is fixed.
+     * Unlike
+     * the real "current time", the time of the Event Scheduler is fixed.
      */
     public StubEventScheduler() {
         this(null);
@@ -68,23 +69,18 @@ public class StubEventScheduler implements EventScheduler {
     }
 
     @Override
-    public ScheduleToken schedule(DateTime triggerDateTime, ApplicationEvent event) {
-        StubScheduleToken token = new StubScheduleToken(triggerDateTime, event, counter.getAndIncrement());
+    public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
+        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        StubScheduleToken token = new StubScheduleToken(triggerDateTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);
         return token;
     }
 
     @Override
-    public ScheduleToken schedule(Duration triggerDuration, ApplicationEvent event) {
+    public ScheduleToken schedule(Duration triggerDuration, Object event) {
+        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
         DateTime scheduleTime = currentDateTime.plus(triggerDuration);
-        StubScheduleToken token = new StubScheduleToken(scheduleTime, event, counter.getAndIncrement());
-        scheduledEvents.add(token);
-        return token;
-    }
-
-    @Override
-    public ScheduleToken schedule(ScheduledEvent event) {
-        StubScheduleToken token = new StubScheduleToken(event.getScheduledTime(), event, counter.getAndIncrement());
+        StubScheduleToken token = new StubScheduleToken(scheduleTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);
         return token;
     }
@@ -118,11 +114,12 @@ public class StubEventScheduler implements EventScheduler {
 
     /**
      * Advances the "current time" of the scheduler to the next scheduled Event, and returns that event. In theory,
-     * this may cause "current time" to move backwards.
+     * this
+     * may cause "current time" to move backwards.
      *
      * @return the first event scheduled
      */
-    public ApplicationEvent advanceToNextTrigger() {
+    public EventMessage advanceToNextTrigger() {
         if (scheduledEvents.isEmpty()) {
             throw new NoSuchElementException("There are no scheduled events");
         }
@@ -140,8 +137,8 @@ public class StubEventScheduler implements EventScheduler {
      * @param newDateTime The time to advance the "current time" of the scheduler to
      * @return A list of Events scheduled for publication on or before the new time
      */
-    public List<ApplicationEvent> advanceTime(DateTime newDateTime) {
-        List<ApplicationEvent> triggeredEvents = new ArrayList<ApplicationEvent>();
+    public List<EventMessage> advanceTime(DateTime newDateTime) {
+        List<EventMessage> triggeredEvents = new ArrayList<EventMessage>();
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
             triggeredEvents.add(advanceToNextTrigger());
         }
@@ -158,7 +155,7 @@ public class StubEventScheduler implements EventScheduler {
      * @param duration The amount of time to advance the "current time" of the scheduler with
      * @return A list of Events scheduled for publication on or before the new time
      */
-    public List<ApplicationEvent> advanceTime(Duration duration) {
+    public List<EventMessage> advanceTime(Duration duration) {
         return advanceTime(currentDateTime.plus(duration));
     }
 }

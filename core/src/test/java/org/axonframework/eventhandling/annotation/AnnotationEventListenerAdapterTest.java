@@ -16,11 +16,12 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.domain.Event;
+import org.axonframework.common.DirectExecutor;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SequencingPolicy;
 import org.axonframework.eventhandling.TransactionStatus;
-import org.axonframework.util.DirectExecutor;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -38,7 +39,7 @@ public class AnnotationEventListenerAdapterTest {
 
         TransactionStatus transactionStatus = new TransactionStatus() {
         };
-        StubDomainEvent event = new StubDomainEvent();
+        GenericEventMessage<StubDomainEvent> event = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         adapter.beforeTransaction(transactionStatus);
         adapter.handle(event);
         adapter.afterTransaction(transactionStatus);
@@ -67,7 +68,7 @@ public class AnnotationEventListenerAdapterTest {
 
         TransactionStatus transactionStatus = new TransactionStatus() {
         };
-        StubDomainEvent event = new StubDomainEvent();
+        GenericEventMessage<StubDomainEvent> event = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         adapter.beforeTransaction(transactionStatus);
         adapter.handle(event);
         adapter.afterTransaction(transactionStatus);
@@ -84,7 +85,7 @@ public class AnnotationEventListenerAdapterTest {
 
         TransactionStatus transactionStatus = new TransactionStatus() {
         };
-        StubDomainEvent event = new StubDomainEvent();
+        GenericEventMessage<StubDomainEvent> event = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         adapter.beforeTransaction(transactionStatus);
         adapter.handle(event);
         adapter.afterTransaction(transactionStatus);
@@ -176,7 +177,7 @@ public class AnnotationEventListenerAdapterTest {
     private static class AnnotatedEventHandler {
 
         @EventHandler
-        public void handleEvent(Event event) {
+        public void handleEvent(EventMessage event) {
         }
     }
 
@@ -184,7 +185,7 @@ public class AnnotationEventListenerAdapterTest {
     private static class AsyncAnnotatedEventHandler {
 
         @EventHandler
-        public void handleEvent(Event event) {
+        public void handleEvent(EventMessage event) {
         }
 
         @BeforeTransaction
@@ -202,7 +203,7 @@ public class AnnotationEventListenerAdapterTest {
     private static class AsyncAnnotatedEventHandler_IllegalPolicy {
 
         @EventHandler
-        public void handleEvent(Event event) {
+        public void handleEvent(EventMessage event) {
         }
 
         @BeforeTransaction
@@ -219,7 +220,7 @@ public class AnnotationEventListenerAdapterTest {
     private static class TransactionAwareSyncHandler {
 
         @EventHandler
-        public void handleEvent(Event event) {
+        public void handleEvent(EventMessage event) {
         }
 
         @BeforeTransaction
@@ -233,14 +234,14 @@ public class AnnotationEventListenerAdapterTest {
         }
     }
 
-    private class WrongPolicy implements SequencingPolicy<Event> {
+    private class WrongPolicy implements SequencingPolicy<EventMessage> {
 
         public WrongPolicy(Object anyParameter) {
             // this constructor makes it unsuitable as policy class
         }
 
         @Override
-        public Object getSequenceIdentifierFor(Event event) {
+        public Object getSequenceIdentifierFor(EventMessage event) {
             return null;
         }
     }

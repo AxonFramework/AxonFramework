@@ -17,13 +17,13 @@
 package org.axonframework.test.utils;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.test.FixtureExecutionException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static org.axonframework.util.ReflectionUtils.ensureAccessible;
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
  * Utility class to set aggregate identifiers and sequence numbers on Domain Events. These settings are generally
@@ -42,8 +42,9 @@ public abstract class DomainEventUtils {
 
     static {
         try {
-            identifierSetter = DomainEvent.class.getDeclaredMethod("setAggregateIdentifier", AggregateIdentifier.class);
-            sequenceNumberSetter = DomainEvent.class.getDeclaredMethod("setSequenceNumber", long.class);
+            identifierSetter = DomainEventMessage.class.getDeclaredMethod("setAggregateIdentifier",
+                                                                          AggregateIdentifier.class);
+            sequenceNumberSetter = DomainEventMessage.class.getDeclaredMethod("setSequenceNumber", long.class);
         } catch (NoSuchMethodException e) {
             initializationError = e;
         }
@@ -59,7 +60,7 @@ public abstract class DomainEventUtils {
      * @param event          The event to set the sequence number on
      * @param sequenceNumber The sequence number to set on the event
      */
-    public static void setSequenceNumber(DomainEvent event, long sequenceNumber) {
+    public static void setSequenceNumber(DomainEventMessage event, long sequenceNumber) {
         assertInitialized();
         try {
             ensureAccessible(sequenceNumberSetter);
@@ -78,7 +79,7 @@ public abstract class DomainEventUtils {
      * @param event      The event to set the aggregate identifier on
      * @param identifier The aggregate identifier to set on the event
      */
-    public static void setAggregateIdentifier(DomainEvent event, AggregateIdentifier identifier) {
+    public static void setAggregateIdentifier(DomainEventMessage event, AggregateIdentifier identifier) {
         assertInitialized();
         try {
             ensureAccessible(identifierSetter);

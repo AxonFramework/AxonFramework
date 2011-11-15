@@ -17,23 +17,22 @@
 package org.axonframework.integrationtests.saga;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
 
 /**
  * @author Allard Buijze
  */
-public class SagaTriggeringEvent extends DomainEvent {
+public class SagaTriggeringEvent {
 
-    private static final long serialVersionUID = -3129068088052658674L;
     private final String message;
+    private final String identifier;
 
-    public SagaTriggeringEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier, String message) {
-        super(sequenceNumber, aggregateIdentifier);
+    public SagaTriggeringEvent(AggregateIdentifier aggregateIdentifier, String message) {
+        identifier = aggregateIdentifier.asString();
         this.message = message;
     }
 
     public String getMyId() {
-        return getAggregateIdentifier().asString();
+        return identifier;
     }
 
     public String getMessage() {

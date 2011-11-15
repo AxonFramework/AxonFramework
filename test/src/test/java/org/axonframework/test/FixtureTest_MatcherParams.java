@@ -16,8 +16,7 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.*;
@@ -48,12 +47,12 @@ public class FixtureTest_MatcherParams {
                .given(new MyEvent(1))
                .when(new TestCommand(fixture.getAggregateIdentifier()))
                .expectReturnValue(new DoesMatch())
-               .expectEvents(sequenceOf(new DoesMatch<Event>()));
+               .expectEventsMatching(sequenceOf(new DoesMatch<EventMessage>()));
     }
 
     @Test
     public void testFixture_UnexpectedException() {
-        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),
                                                                fixture.getEventBus());
         try {
@@ -70,7 +69,7 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_UnexpectedReturnValue() {
-        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),
                                                                fixture.getEventBus());
         try {
@@ -89,7 +88,7 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_WrongReturnValue() {
-        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),
                                                                fixture.getEventBus());
         try {
@@ -105,7 +104,7 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_WrongExceptionType() {
-        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),
                                                                fixture.getEventBus());
         try {
@@ -122,7 +121,7 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_ExpectedPublishedSameAsStored() {
-        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),
                                                                fixture.getEventBus());
         try {
@@ -130,7 +129,7 @@ public class FixtureTest_MatcherParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new StrangeCommand(fixture.getAggregateIdentifier()))
-                    .expectEvents(new DoesMatch<List<? extends Event>>());
+                    .expectEvents(new DoesMatch<List<? extends EventMessage>>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("The stored events do not match the published events."));
@@ -141,7 +140,7 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_EventDoesNotMatch() {
-        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),
                                                                fixture.getEventBus());
         try {
@@ -149,10 +148,10 @@ public class FixtureTest_MatcherParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand(fixture.getAggregateIdentifier()))
-                    .expectEvents(new DoesNotMatch<List<? extends Event>>());
+                    .expectEventsMatching(new DoesNotMatch<List<? extends EventMessage>>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("something you can never give me"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("something you can never give me"));
         }
     }
 

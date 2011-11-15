@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -81,8 +81,8 @@ public class AuditingInterceptorTest {
 
         verify(mockAuditDataProvider, times(1)).provideAuditDataFor("Command!");
         verify(mockAuditLogger, times(1)).logSuccessful(eq("Command!"), any(Object.class), any(List.class));
-        DomainEvent eventFromAggregate = aggregate.getUncommittedEvents().next();
-        assertEquals("value", eventFromAggregate.getMetaDataValue("key"));
+        DomainEventMessage eventFromAggregate = aggregate.getUncommittedEvents().next();
+        assertEquals("value", eventFromAggregate.getMetaData().get("key"));
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})

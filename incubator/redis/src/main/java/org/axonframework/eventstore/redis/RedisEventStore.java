@@ -17,13 +17,13 @@
 package org.axonframework.eventstore.redis;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.PipelineBlock;
+import redis.clients.jedis.Transaction;
 
 import java.nio.charset.Charset;
 
@@ -32,14 +32,14 @@ import java.nio.charset.Charset;
  */
 public class RedisEventStore implements EventStore {
 
-    private Serializer<? super DomainEvent> eventSerializer;
+    private Serializer<? super DomainEventMessage> eventSerializer;
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private RedisConnectionProvider redisConnectionProvider;
 
     @Override
     public void appendEvents(String type, final DomainEventStream events) {
         Jedis jedis = redisConnectionProvider.newConnection();
-        DomainEvent firstEvent = events.peek();
+        DomainEventMessage firstEvent = events.peek();
         final byte[] key = (type + "." + firstEvent.getAggregateIdentifier().asString()).getBytes(UTF8);
         jedis.watch(key);
         Long eventCount = jedis.llen(key);
@@ -53,18 +53,17 @@ public class RedisEventStore implements EventStore {
         }
 
         try {
-            jedis.pipelined(new PipelineBlock() {
-                @Override
-                public void execute() {
-                    multi();
-                    while (events.hasNext()) {
-                        DomainEvent domainEvent = events.next();
-
-                        rpush(new String(key, UTF8), new String(eventSerializer.serialize(domainEvent), UTF8));
-                    }
-                    exec();
-                }
-            });
+//            jedis.pipelined(new PipelineBlock() {
+//                @Override
+//                public void execute() {
+            Transaction multi = jedis.multi();
+            while (events.hasNext()) {
+                DomainEventMessage domainEvent = events.next();
+                multi.rpush(new String(key, UTF8), new String(eventSerializer.serialize(domainEvent), UTF8));
+            }
+            multi.exec();
+//                }
+//            });
 //            redis.clients.jedis.Transaction transaction = jedis.multi();
 //            while (events.hasNext()) {
 //                DomainEvent domainEvent = events.next();
@@ -82,7 +81,7 @@ public class RedisEventStore implements EventStore {
         throw new UnsupportedOperationException("Method not yet implemented");
     }
 
-    public void setEventSerializer(Serializer<? super DomainEvent> serializer) {
+    public void setEventSerializer(Serializer<? super DomainEventMessage> serializer) {
         this.eventSerializer = serializer;
     }
 

@@ -56,6 +56,6 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     public void makeALoopingChange() {
-        apply(new LoopingChangeDoneEvent());
+        apply(new LoopingChangeDoneEvent(getIdentifier()));
     }
 }

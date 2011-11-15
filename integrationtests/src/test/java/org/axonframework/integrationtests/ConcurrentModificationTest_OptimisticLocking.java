@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.ProblematicCommand;
@@ -162,9 +162,9 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
         }
         Long expectedSequenceNumber = 0L;
         Map<Long, Long> outOfSyncs = new HashMap<Long, Long>();
-        for (Event event : registeringEventHandler.getCapturedEvents()) {
-            assertTrue(event instanceof DomainEvent);
-            Long actual = ((DomainEvent) event).getSequenceNumber();
+        for (EventMessage event : registeringEventHandler.getCapturedEvents()) {
+            assertTrue(event instanceof DomainEventMessage);
+            Long actual = ((DomainEventMessage) event).getSequenceNumber();
             if (!expectedSequenceNumber.equals(actual)) {
                 outOfSyncs.put(expectedSequenceNumber, actual);
             }

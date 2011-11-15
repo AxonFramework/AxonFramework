@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import static org.axonframework.common.MatcherUtils.isEventWith;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.eq;
@@ -96,7 +97,7 @@ public class HybridJpaRepositoryTest {
         entityManager.clear();
 
         verify(eventStore).appendEvents(eq("JpaEventSourcedAggregate"), streamContaining(1L));
-        verify(eventListener).handle(isA(DomainEvent.class));
+        verify(eventListener).handle(isA(DomainEventMessage.class));
         assertNotNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
     }
 
@@ -107,7 +108,7 @@ public class HybridJpaRepositoryTest {
         repository.add(aggregate);
         CurrentUnitOfWork.commit();
 
-        verify(eventListener).handle(isA(DomainEvent.class));
+        verify(eventListener).handle(isA(DomainEventMessage.class));
 
         entityManager.flush();
         entityManager.clear();
@@ -128,9 +129,9 @@ public class HybridJpaRepositoryTest {
         entityManager.clear();
 
         verify(eventStore).appendEvents(eq("JpaEventSourcedAggregate"), streamContaining(2L));
-        verify(eventListener).handle(isA(StubDomainEvent.class));
-        verify(eventListener).handle(isA(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
         assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
+        verify(eventListener).handle(isEventWith(StubDomainEvent.class));
+        verify(eventListener).handle(isEventWith(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
     }
 
     @Test
@@ -141,8 +142,8 @@ public class HybridJpaRepositoryTest {
         repository.add(aggregate);
         CurrentUnitOfWork.commit();
 
-        verify(eventListener).handle(isA(StubDomainEvent.class));
-        verify(eventListener).handle(isA(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
+        verify(eventListener).handle(isEventWith(StubDomainEvent.class));
+        verify(eventListener).handle(isEventWith(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
 
         entityManager.flush();
         entityManager.clear();

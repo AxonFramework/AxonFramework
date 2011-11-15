@@ -18,8 +18,9 @@ package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
@@ -63,8 +64,8 @@ public class DisruptorCommandBusBenchmark {
         commandBus.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(commandBus);
         final AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("MyID");
-        inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(),
-                                        new SimpleDomainEventStream(new StubDomainEvent(aggregateIdentifier)));
+        inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
+                new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
 
         System.out.println("Press enter to start");
         new Scanner(System.in).nextLine();
@@ -99,7 +100,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        protected void handle(DomainEvent event) {
+        protected void handle(DomainEventMessage event) {
             if (event instanceof StubDomainEvent) {
                 timesDone++;
             }
@@ -113,7 +114,7 @@ public class DisruptorCommandBusBenchmark {
 
     private static class InMemoryEventStore implements EventStore {
 
-        private final Map<String, DomainEvent> storedEvents = new HashMap<String, DomainEvent>();
+        private final Map<String, DomainEventMessage> storedEvents = new HashMap<String, DomainEventMessage>();
         private final CountDownLatch countDownLatch = new CountDownLatch((int) (COMMAND_COUNT + 1L));
 
         @Override
@@ -122,7 +123,7 @@ public class DisruptorCommandBusBenchmark {
                 return;
             }
             String key = events.peek().getAggregateIdentifier().asString();
-            DomainEvent lastEvent = null;
+            DomainEventMessage<? extends Object> lastEvent = null;
             while (events.hasNext()) {
                 countDownLatch.countDown();
                 lastEvent = events.next();
@@ -168,9 +169,6 @@ public class DisruptorCommandBusBenchmark {
         }
     }
 
-    private static class StubDomainEvent extends DomainEvent {
-        public StubDomainEvent(AggregateIdentifier aggregateIdentifier) {
-            super(0, aggregateIdentifier);
-        }
+    private static class StubDomainEvent {
     }
 }

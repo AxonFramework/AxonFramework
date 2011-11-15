@@ -17,7 +17,7 @@
 package org.axonframework.test;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
@@ -38,7 +38,7 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @EventHandler
-    public void handleAll(DomainEvent event) {
+    public void handleAll(DomainEventMessage event) {
         // we don't care about events
     }
 

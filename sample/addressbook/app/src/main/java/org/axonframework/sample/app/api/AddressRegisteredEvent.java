@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package org.axonframework.sample.app.api;
 /**
  * @author Allard Buijze
  */
-public abstract class AddressRegisteredEvent extends AbstractAddressDomainEvent {
+public abstract class AddressRegisteredEvent {
 
+    private final String contactId;
     private final AddressType type;
     private final Address address;
 
-    protected AddressRegisteredEvent(AddressType type, Address address) {
+    protected AddressRegisteredEvent(String contactId, AddressType type, Address address) {
+        this.contactId = contactId;
         this.type = type;
         this.address = address;
     }
@@ -35,5 +37,9 @@ public abstract class AddressRegisteredEvent extends AbstractAddressDomainEvent 
 
     public Address getAddress() {
         return address;
+    }
+
+    public String getContactId() {
+        return contactId;
     }
 }

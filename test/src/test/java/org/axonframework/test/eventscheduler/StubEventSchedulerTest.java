@@ -16,7 +16,8 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.*;
@@ -37,15 +38,15 @@ public class StubEventSchedulerTest {
 
     @Test
     public void testScheduleEvent() {
-        testSubject.schedule(new DateTime().plus(Duration.standardDays(1)), new MockEvent(this));
+        testSubject.schedule(new DateTime().plus(Duration.standardDays(1)), event(new MockEvent()));
         assertEquals(1, testSubject.getScheduledItems().size());
     }
 
-    private static class MockEvent extends ApplicationEvent {
-        private static final long serialVersionUID = 1722699384492136950L;
+    private EventMessage<MockEvent> event(MockEvent mockEvent) {
+        return new GenericEventMessage<MockEvent>(mockEvent);
+    }
 
-        public MockEvent(Object source) {
-            super(source);
-        }
+    private static class MockEvent {
+
     }
 }

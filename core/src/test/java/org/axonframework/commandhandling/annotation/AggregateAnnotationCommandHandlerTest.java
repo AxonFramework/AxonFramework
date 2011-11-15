@@ -19,10 +19,12 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.repository.Repository;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -211,7 +213,10 @@ import static org.mockito.Mockito.*;
     private static class StubCommandAnnotatedAggregate extends AbstractStubCommandAnnotatedAggregate {
 
         @CommandHandler
-        public StubCommandAnnotatedAggregate(CreateCommand createCommand) {
+        public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
+                                             @org.axonframework.common.annotation.MetaData(key = "notExist") String value) {
+            Assert.assertNotNull(unitOfWork);
+            Assert.assertNull(value);
             apply(new StubDomainEvent());
         }
 

@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.common.annotation.AbstractHandlerInspector;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.util.AbstractHandlerInspector;
 
 import java.lang.reflect.Constructor;
 import java.util.LinkedList;
@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class AggregateCommandHandlerInspector<T extends AggregateRoot> extends AbstractHandlerInspector {
 
-    private final List<ConstructorCommandHandler<T>> constructorCommandHandlers = new LinkedList<ConstructorCommandHandler<T>>();
+    private final List<ConstructorCommandMessageHandler<T>> constructorCommandHandlers = new LinkedList<ConstructorCommandMessageHandler<T>>();
 
     /**
      * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the
@@ -46,9 +46,7 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> extends A
         super(targetType, CommandHandler.class);
         for (Constructor constructor : targetType.getConstructors()) {
             if (constructor.isAnnotationPresent(CommandHandler.class)) {
-                Class<?>[] parameters = constructor.getParameterTypes();
-                constructorCommandHandlers.add(
-                        new ConstructorCommandHandler<T>(constructor, parameters[0], parameters.length == 2));
+                constructorCommandHandlers.add(ConstructorCommandMessageHandler.forConstructor(constructor));
             }
         }
     }
@@ -58,7 +56,7 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> extends A
      *
      * @return a list of constructor handlers on the given aggregate type
      */
-    public List<ConstructorCommandHandler<T>> getConstructorHandlers() {
+    public List<ConstructorCommandMessageHandler<T>> getConstructorHandlers() {
         return constructorCommandHandlers;
     }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 
 /**
  * Interface describing an instance of a visitor that receives events for processing.
@@ -31,5 +31,5 @@ public interface EventVisitor {
      *
      * @param domainEvent The loaded event
      */
-    void doWithEvent(DomainEvent domainEvent);
+    void doWithEvent(DomainEventMessage domainEvent);
 }

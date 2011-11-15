@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.springframework.integration.Message;
 import org.springframework.integration.MessageRejectedException;
@@ -60,10 +60,12 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
 
     /**
      * Handles the given <code>message</code>. The message is expected to contain an object of type {@link
-     * org.axonframework.domain.Event} in its payload. If that is not the case, a {@link MessageRejectedException} is
+     * org.axonframework.domain.EventMessage} in its payload. If that is not the case, a {@link
+     * MessageRejectedException} is
      * thrown.
      * <p/>
-     * If the <code>message</code> does contain an {@link Event}, but the filter refuses it, a {@link
+     * If the <code>message</code> does contain an {@link org.axonframework.domain.EventMessage}, but the filter refuses
+     * it, a {@link
      * MessageRejectedException} is also thrown.
      *
      * @param message The message containing the event to publish
@@ -72,14 +74,9 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
     @SuppressWarnings({"unchecked"})
     @Override
     public void handleMessage(Message<?> message) {
-        if (!(message.getPayload() instanceof Event)) {
-            throw new MessageRejectedException(message, String.format(
-                    "The payload of incoming messages must be of type: %s",
-                    Event.class.getName()));
-        }
-        Class<? extends Event> eventType = (Class<? extends Event>) message.getPayload().getClass();
+        Class<?> eventType = message.getPayload().getClass();
         if (filter.accept(eventType)) {
-            eventBus.publish((Event) message.getPayload());
+            eventBus.publish(new GenericEventMessage(message.getHeaders(), message.getPayload()));
         } else {
             throw new MessageRejectedException(message, String.format(
                     "The event of type [%s] was blocked by the filter.",

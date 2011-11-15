@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.SequencingPolicy;
 import org.axonframework.eventhandling.SequentialPolicy;
 
@@ -28,12 +28,14 @@ import java.lang.annotation.Target;
 
 /**
  * <p/>
- * Annotation that marks a class as an Asynchronous EventListener. Postprocessors will detect this bean and wrap it with
+ * Annotation that marks a class as an Asynchronous EventListener. Postprocessors will detect this bean and wrap it
+ * with
  * a suitable AsynchronousEventHandlerWrapper. This type-level annotation allows the definition of the concurrency
  * policy for this EventListener.
  * <p/>
  * This annotation allows the configuration of any {@link #sequencingPolicyClass() arbitrary class}, as long as it
- * implements the {@link org.axonframework.eventhandling.SequencingPolicy} interface. It also needs to have (at least) a
+ * implements the {@link org.axonframework.eventhandling.SequencingPolicy} interface. It also needs to have (at least)
+ * a
  * no-arg constructor.
  *
  * @author Allard Buijze
@@ -48,5 +50,5 @@ public @interface AsynchronousEventListener {
      * Defines the policy type to use for event handling sequencing. The provided class must implement {@link
      * org.axonframework.eventhandling.SequencingPolicy} and provide an accessible no-arg constructor.
      */
-    Class<? extends SequencingPolicy<? super Event>> sequencingPolicyClass() default SequentialPolicy.class;
+    Class<? extends SequencingPolicy<? super EventMessage>> sequencingPolicyClass() default SequentialPolicy.class;
 }

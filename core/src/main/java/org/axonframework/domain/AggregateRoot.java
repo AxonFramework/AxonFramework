@@ -68,8 +68,8 @@ public interface AggregateRoot {
     Long getVersion();
 
     /**
-     * Indicates whether this aggregate has been marked as deleted. When <code>true</code>, it is an instruction
-     * to the repository to remove this instance at an appropriate time.
+     * Indicates whether this aggregate has been marked as deleted. When <code>true</code>, it is an instruction to the
+     * repository to remove this instance at an appropriate time.
      * <p/>
      * Repositories should not return any instances of Aggregates that return <code>true</code> on
      * <code>isDeleted()</code>.

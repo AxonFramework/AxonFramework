@@ -16,7 +16,11 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
@@ -52,7 +56,6 @@ public class XStreamEventSerializerTest {
         assertTrue(actualResult instanceof TestEvent);
         TestEvent actualEvent = (TestEvent) actualResult;
         assertEquals("Henk", actualEvent.getName());
-        assertEquals("someValue", actualEvent.getMetaDataValue("someMetaData"));
     }
 
     @Test(expected = UnsupportedCharsetException.class)
@@ -65,59 +68,44 @@ public class XStreamEventSerializerTest {
         testSubject.addPackageAlias("axondomain", "org.axonframework.domain");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(new UUIDAggregateIdentifier(),
-                                                                      1));
+        byte[] serialized = testSubject.serialize(new GenericDomainEventMessage<StubDomainEvent>(
+                new UUIDAggregateIdentifier(),
+                (long) 1,
+                MetaData.emptyInstance(),
+                new StubDomainEvent()));
         String asString = new String(serialized, "UTF-8");
         assertFalse("Package name found in:" + new String(serialized), asString.contains("org.axonframework.domain"));
-        assertTrue(asString.contains("axondomain"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        DomainEventMessage deserialized = (DomainEventMessage) testSubject.deserialize(serialized);
         assertEquals(new Long(1), deserialized.getSequenceNumber());
+        assertTrue(asString.contains("axondomain"));
     }
 
     @Test
     public void testAlias() throws UnsupportedEncodingException {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(new UUIDAggregateIdentifier(),
-                                                                      1));
+        byte[] serialized = testSubject.serialize(new GenericDomainEventMessage<StubDomainEvent>(
+                new UUIDAggregateIdentifier(),
+                (long) 1,
+                MetaData.emptyInstance(),
+                new StubDomainEvent()));
         String asString = new String(serialized, "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
-        assertTrue(asString.contains("<stub eventRevision=\"0\">"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        assertTrue(asString.contains("<payload class=\"stub\""));
+        DomainEventMessage deserialized = (DomainEventMessage) testSubject.deserialize(serialized);
         assertEquals(new Long(1), deserialized.getSequenceNumber());
     }
 
     @Test
     public void testFieldAlias() throws UnsupportedEncodingException {
-        testSubject.addFieldAlias("aggId", DomainEvent.class, "aggregateIdentifier");
+        testSubject.addFieldAlias("relevantPeriod", TestEvent.class, "period");
 
-        byte[] serialized = testSubject.serialize(new StubDomainEvent(new UUIDAggregateIdentifier(),
-                                                                      1));
+        byte[] serialized = testSubject.serialize(new GenericEventMessage<TestEvent>(new TestEvent("hello")));
         String asString = new String(serialized, "UTF-8");
-        assertFalse(asString.contains("aggregateIdentifier"));
-        assertTrue(asString.contains("<aggId"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
-        assertEquals(new Long(1), deserialized.getSequenceNumber());
-    }
-
-    @Test
-    public void testBackwardsCompatibility() throws UnsupportedEncodingException {
-        byte[] serializedEvent = (
-                "<org.axonframework.eventstore.XStreamEventSerializerTest_-TestEvent eventRevision=\"0\">"
-                        + "<metaData><values>"
-                        + "<entry><string>_timestamp</string><dateTime>2011-08-12T13:09:40.849+02:00</dateTime></entry>"
-                        + "<entry><string>_identifier</string><uuid>5e3cdec7-ad3d-4aeb-8826-34a1bddd4849</uuid></entry>"
-                        + "<entry><string>someMetaData</string><string>someValue</string></entry>"
-                        + "</values></metaData>"
-                        + "<sequenceNumber>0</sequenceNumber>"
-                        + "<aggregateIdentifier>6c14e5dc-d4bc-4fea-bcfc-ecb59855652e</aggregateIdentifier>"
-                        + "<name>Henk</name><date>2011-08-12T00:00:00.000+02:00</date>"
-                        + "<dateTime>2011-08-12T13:09:40.925+02:00</dateTime>"
-                        + "<period>PT0.100S</period>"
-                        + "</org.axonframework.eventstore.XStreamEventSerializerTest_-TestEvent>")
-                .getBytes("UTF-8");
-        TestEvent event = (TestEvent) testSubject.deserialize(serializedEvent);
-        assertNotNull(event.getAggregateIdentifier());
+        assertFalse(asString.contains("period"));
+        assertTrue(asString.contains("<relevantPeriod"));
+        EventMessage<TestEvent> deserialized = (EventMessage<TestEvent>) testSubject.deserialize(serialized);
+        assertNotNull(deserialized.getPayload());
     }
 
     /**
@@ -137,9 +125,11 @@ public class XStreamEventSerializerTest {
                 return event;
             }
         }));
-        byte[] serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
-        assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
+        byte[] serialized = testSubject
+                .serialize(new GenericEventMessage<TestEvent>(new TestEvent(SPECIAL__CHAR__STRING)));
+        GenericEventMessage<TestEvent> deserialized = (GenericEventMessage<TestEvent>) testSubject.deserialize(
+                serialized);
+        assertEquals(SPECIAL__CHAR__STRING, deserialized.getPayload().getName());
     }
 
     /**
@@ -148,9 +138,11 @@ public class XStreamEventSerializerTest {
      */
     @Test
     public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
-        byte[] serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
-        assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
+        byte[] serialized = testSubject
+                .serialize(new GenericEventMessage<TestEvent>(new TestEvent(SPECIAL__CHAR__STRING)));
+        GenericEventMessage<TestEvent> deserialized = (GenericEventMessage<TestEvent>) testSubject.deserialize(
+                serialized);
+        assertEquals(SPECIAL__CHAR__STRING, deserialized.getPayload().getName());
     }
 
     /**
@@ -159,13 +151,16 @@ public class XStreamEventSerializerTest {
      */
     @Test
     public void testSerializeWithCustomAggregateIdentifier() {
-        byte[] serialized = testSubject.serialize(new CustomIdentifierEvent("Some name", new SomeAggregateId("ok")));
-        System.out.println(new String(serialized));
-        CustomIdentifierEvent deserialized = (CustomIdentifierEvent) testSubject.deserialize(serialized);
-        assertEquals("ok", deserialized.getSomeAggregateId().asString());
+        byte[] serialized = testSubject
+                .serialize(new GenericEventMessage<CustomIdentifierEvent>(new CustomIdentifierEvent(
+                        "Some name",
+                        new SomeAggregateId("ok"))));
+        GenericEventMessage<CustomIdentifierEvent> deserialized = (GenericEventMessage<CustomIdentifierEvent>) testSubject
+                .deserialize(serialized);
+        assertEquals("ok", deserialized.getPayload().getSomeAggregateId().asString());
     }
 
-    public static class TestEvent extends DomainEvent {
+    public static class TestEvent {
 
         private static final long serialVersionUID = 1657550542124835062L;
         private String name;
@@ -174,12 +169,10 @@ public class XStreamEventSerializerTest {
         private Period period;
 
         public TestEvent(String name) {
-            super(0, new UUIDAggregateIdentifier());
             this.name = name;
             this.date = new DateMidnight();
             this.dateTime = new DateTime();
             this.period = new Period(100);
-            addMetaData("someMetaData", "someValue");
         }
 
         public String getName() {
@@ -187,7 +180,7 @@ public class XStreamEventSerializerTest {
         }
     }
 
-    public static class CustomIdentifierEvent extends DomainEvent {
+    public static class CustomIdentifierEvent {
 
         private static final long serialVersionUID = 1657550542124835062L;
         private String name;
@@ -197,13 +190,11 @@ public class XStreamEventSerializerTest {
         private SomeAggregateId someAggregateId;
 
         public CustomIdentifierEvent(String name, SomeAggregateId someAggregateId) {
-            super(0, someAggregateId);
             this.name = name;
             this.someAggregateId = someAggregateId;
             this.date = new DateMidnight();
             this.dateTime = new DateTime();
             this.period = new Period(100);
-            addMetaData("someMetaData", "someValue");
         }
 
         public String getName() {

@@ -16,7 +16,7 @@
 
 package org.axonframework.domain;
 
-import org.axonframework.util.Assert;
+import org.axonframework.common.Assert;
 
 /**
  * Aggregate identifier implementation that requires a String as the actual backing identifier value.

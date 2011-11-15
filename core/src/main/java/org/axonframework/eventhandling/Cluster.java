@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 import java.util.Set;
 
@@ -39,7 +39,7 @@ public interface Cluster {
      *
      * @param event The Event to publish in the cluster
      */
-    void publish(Event event);
+    void publish(EventMessage event);
 
     /**
      * Subscribe the given {@code eventListener} to this cluster. If the listener is already subscribed, nothing

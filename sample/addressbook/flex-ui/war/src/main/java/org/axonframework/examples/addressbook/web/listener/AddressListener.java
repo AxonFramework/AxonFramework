@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,17 +41,16 @@ public class AddressListener {
 
     @EventHandler
     public void handleAddressCreatedEvent(AddressRegisteredEvent event) {
-        logger.debug("Received an event with name {} and identifier {}",
-                event.getAggregateIdentifier(), event.getEventIdentifier());
+        logger.debug("Received an event of type {}", event.getClass().getSimpleName());
         AddressDTO addressDTO = AddressDTO.createFrom(
-                event.getAddress(), event.getContactIdentifier(), event.getType());
+                event.getAddress(), event.getContactId(), event.getType());
         producer.sendAddressUpdate(addressDTO);
     }
 
     @EventHandler
     public void handleAddressRemovedEvent(AddressRemovedEvent event) {
         RemovedDTO removedDTO = RemovedDTO.createRemovedFrom(
-                event.getContactIdentifier().toString(), event.getType());
+                event.getContactId(), event.getType());
         producer.sendRemovedUpdate(removedDTO);
     }
 
@@ -59,5 +58,4 @@ public class AddressListener {
     public void setProducer(UpdateMessageProducerForFlex producer) {
         this.producer = producer;
     }
-
 }

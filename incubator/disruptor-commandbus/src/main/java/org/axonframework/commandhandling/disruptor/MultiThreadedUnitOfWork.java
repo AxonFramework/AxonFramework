@@ -17,9 +17,9 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -40,7 +40,7 @@ public class MultiThreadedUnitOfWork implements UnitOfWork {
     private boolean committed;
     private Throwable rollbackReason;
 
-    private final List<DomainEvent> eventsToPublish = new ArrayList<DomainEvent>();
+    private final List<DomainEventMessage> eventsToPublish = new ArrayList<DomainEventMessage>();
     private final Set<EventSourcedAggregateRoot> aggregates = new HashSet<EventSourcedAggregateRoot>();
 
     @Override
@@ -93,11 +93,11 @@ public class MultiThreadedUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public void publishEvent(Event event, EventBus eventBus) {
+    public void publishEvent(EventMessage event, EventBus eventBus) {
         throw new UnsupportedOperationException("Not supported yet!");
     }
 
-    public List<DomainEvent> getEvents() {
+    public List<DomainEventMessage> getEvents() {
         return eventsToPublish;
     }
 }

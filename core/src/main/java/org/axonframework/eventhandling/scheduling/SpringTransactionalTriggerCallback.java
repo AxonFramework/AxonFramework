@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.domain.EventMessage;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -25,8 +25,8 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
- * EventTriggerCallback implementation that starts a Spring-managed transaction prior to sending an event, and
- * commits or rollbacks the transaction after publication success or failure, respectively.
+ * EventTriggerCallback implementation that starts a Spring-managed transaction prior to sending an event, and commits
+ * or rollbacks the transaction after publication success or failure, respectively.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -38,7 +38,7 @@ public class SpringTransactionalTriggerCallback implements EventTriggerCallback,
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
     @Override
-    public void beforePublication(ApplicationEvent event) {
+    public void beforePublication(EventMessage event) {
         transactions.set(transactionManager.getTransaction(transactionDefinition));
     }
 

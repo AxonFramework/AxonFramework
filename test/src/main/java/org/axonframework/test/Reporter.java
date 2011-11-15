@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,8 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
 
@@ -48,8 +48,8 @@ class Reporter {
      * @param publishedEvents The events that were published
      * @param probableCause   An exception that might be the cause of the failure
      */
-    public void reportDifferenceInStoredVsPublished(Collection<DomainEvent> storedEvents,
-                                                    Collection<Event> publishedEvents, Throwable probableCause) {
+    public void reportDifferenceInStoredVsPublished(Collection<DomainEventMessage> storedEvents,
+                                                    Collection<EventMessage> publishedEvents, Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The stored events do not match the published events.");
         appendEventOverview(sb, storedEvents, publishedEvents, "Stored events", "Published events");
@@ -65,7 +65,7 @@ class Reporter {
      * @param expectedEvents The events that were expected
      * @param probableCause  An optional exception that might be the reason for wrong events
      */
-    public void reportWrongEvent(Collection<? extends Event> actualEvents, Collection<? extends Event> expectedEvents,
+    public void reportWrongEvent(Collection<?> actualEvents, Collection<?> expectedEvents,
                                  Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events");
@@ -83,8 +83,7 @@ class Reporter {
      * @param expectation   A Description of what was expected
      * @param probableCause An optional exception that might be the reason for wrong events
      */
-    public void reportWrongEvent(Collection<? extends Event> actualEvents, StringDescription expectation,
-                                 Throwable probableCause) {
+    public void reportWrongEvent(Collection<?> actualEvents, StringDescription expectation, Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events.");
         sb.append("Expected :");
@@ -97,7 +96,7 @@ class Reporter {
         } else {
             sb.append(":");
         }
-        for (Event publishedEvent : actualEvents) {
+        for (Object publishedEvent : actualEvents) {
             sb.append(NEWLINE);
             sb.append(publishedEvent.getClass().getSimpleName());
             sb.append(": ");
@@ -197,7 +196,7 @@ class Reporter {
      * @param actual    The actual value of the field
      * @param expected  The expected value of the field
      */
-    public void reportDifferentEventContents(Class<? extends Event> eventType, Field field, Object actual,
+    public void reportDifferentEventContents(Class<?> eventType, Field field, Object actual,
                                              Object expected) {
         StringBuilder sb = new StringBuilder("One of the events contained different values than expected");
         sb.append(NEWLINE)
@@ -261,18 +260,18 @@ class Reporter {
         }
     }
 
-    private void appendEventOverview(StringBuilder sb, Collection<? extends Event> leftColumnEvents,
-                                     Collection<? extends Event> rightColumnEvents,
+    private void appendEventOverview(StringBuilder sb, Collection<?> leftColumnEvents,
+                                     Collection<?> rightColumnEvents,
                                      String leftColumnName,
                                      String rightColumnName) {
         List<String> actualTypes = new ArrayList<String>(rightColumnEvents.size());
         List<String> expectedTypes = new ArrayList<String>(leftColumnEvents.size());
         int largestExpectedSize = leftColumnName.length();
-        for (Event event : rightColumnEvents) {
-            actualTypes.add(event.getClass().getName());
+        for (Object event : rightColumnEvents) {
+            actualTypes.add(payloadContentType(event));
         }
-        for (Event event : leftColumnEvents) {
-            String simpleName = event.getClass().getName();
+        for (Object event : leftColumnEvents) {
+            String simpleName = payloadContentType(event);
             if (simpleName.length() > largestExpectedSize) {
                 largestExpectedSize = simpleName.length();
             }
@@ -318,6 +317,16 @@ class Reporter {
 
             sb.append(NEWLINE);
         }
+    }
+
+    private String payloadContentType(Object event) {
+        String simpleName;
+        if (EventMessage.class.isInstance(event)) {
+            simpleName = ((EventMessage) event).getPayload().getClass().getName();
+        } else {
+            simpleName = event.getClass().getName();
+        }
+        return simpleName;
     }
 
     private void pad(StringBuilder sb, int currentLength, int targetLength, String character) {

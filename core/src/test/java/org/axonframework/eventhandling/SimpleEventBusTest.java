@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.junit.*;
 
 import static org.mockito.Matchers.isA;
@@ -42,24 +43,28 @@ public class SimpleEventBusTest {
 
     @Test
     public void testEventIsDispatchedToSubscribedListeners() {
-        testSubject.publish(new StubDomainEvent());
+        testSubject.publish(newEvent());
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference
         testSubject.subscribe(listener1);
-        testSubject.publish(new StubDomainEvent());
+        testSubject.publish(newEvent());
         testSubject.subscribe(listener2);
         testSubject.subscribe(listener3);
-        testSubject.publish(new StubDomainEvent());
+        testSubject.publish(newEvent());
         testSubject.unsubscribe(listener1);
-        testSubject.publish(new StubDomainEvent());
+        testSubject.publish(newEvent());
         testSubject.unsubscribe(listener2);
         testSubject.unsubscribe(listener3);
         // unsubscribe a non-subscribed listener should not fail
         testSubject.unsubscribe(listener3);
-        testSubject.publish(new StubDomainEvent());
+        testSubject.publish(newEvent());
 
-        verify(listener1, times(2)).handle(isA(StubDomainEvent.class));
-        verify(listener2, times(2)).handle(isA(StubDomainEvent.class));
-        verify(listener3, times(2)).handle(isA(StubDomainEvent.class));
+        verify(listener1, times(2)).handle(isA(EventMessage.class));
+        verify(listener2, times(2)).handle(isA(EventMessage.class));
+        verify(listener3, times(2)).handle(isA(EventMessage.class));
+    }
+
+    private EventMessage newEvent() {
+        return new GenericEventMessage<Object>(new Object());
     }
 }

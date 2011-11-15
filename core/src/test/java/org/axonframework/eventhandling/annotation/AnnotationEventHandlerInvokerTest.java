@@ -16,15 +16,15 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.common.annotation.MetaData;
+import org.axonframework.common.annotation.UnsupportedHandlerException;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.TransactionStatus;
-import org.axonframework.eventhandling.UnsupportedHandlerMethodException;
 import org.junit.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -43,7 +43,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testInvokeEventHandler_SubClassHasPriority() {
         SecondSubclass secondSubclass = new SecondSubclass();
         testSubject = new AnnotationEventHandlerInvoker(secondSubclass);
-        testSubject.invokeEventHandlerMethod(new StubEventTwo());
+        testSubject.invokeEventHandlerMethod(new GenericEventMessage<StubEventTwo>(new StubEventTwo()));
 
         assertEquals("Method handler 1 shouldn't be invoked. Calls", 0, secondSubclass.invocationCount1);
         assertEquals("Method handler 2 shouldn't be invoked. Calls", 0, secondSubclass.invocationCount2);
@@ -54,7 +54,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testInvokeEventHandler_InterfaceBased() {
         ListeningToInterface handler = new ListeningToInterface();
         testSubject = new AnnotationEventHandlerInvoker(handler);
-        testSubject.invokeEventHandlerMethod(new StubEventTwo());
+        testSubject.invokeEventHandlerMethod(new GenericEventMessage<StubEventTwo>(new StubEventTwo()));
 
         assertEquals("Handler should not have been triggered. Calls", 0, handler.invocationCount2);
         assertEquals("Handler should have been triggered by interface. Calls", 1, handler.invocationCount1);
@@ -69,8 +69,9 @@ public class AnnotationEventHandlerInvokerTest {
     public void testInvokeEventHandler_MostSpecificHandlerInClassChosen() {
         FirstSubclass handler = new FirstSubclass();
         testSubject = new AnnotationEventHandlerInvoker(handler);
-        testSubject.invokeEventHandlerMethod(new StubEventTwo() {/*anonymous subclass*/
-        });
+        testSubject
+                .invokeEventHandlerMethod(new GenericEventMessage<StubEventTwo>(new StubEventTwo() {/*anonymous subclass*/
+                }));
 
         assertEquals(0, handler.invocationCount1);
         assertEquals(1, handler.invocationCount2);
@@ -80,8 +81,9 @@ public class AnnotationEventHandlerInvokerTest {
     public void testInvokeEventHandler_UnknownEventIsIgnored() {
         FirstSubclass handler = new FirstSubclass();
         testSubject = new AnnotationEventHandlerInvoker(handler);
-        testSubject.invokeEventHandlerMethod(new DomainEvent() {/*anonymous subclass*/
-        });
+        testSubject
+                .invokeEventHandlerMethod(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent() {/*anonymous subclass*/
+                }));
 
         assertEquals(0, handler.invocationCount1);
         assertEquals(0, handler.invocationCount2);
@@ -93,12 +95,12 @@ public class AnnotationEventHandlerInvokerTest {
     */
 
     @Test
-    public void testValidateEventHandler_MoreThan3ParameterHandlerIsRejected() {
+    public void testValidateEventHandler_PrimitiveFirstParameterIsRejected() {
         FirstSubclass handler = new IllegalEventHandler();
         try {
             new AnnotationEventHandlerInvoker(handler);
-            fail("Expected an UnsupportedHandlerMethodException");
-        } catch (UnsupportedHandlerMethodException e) {
+            fail("Expected an UnsupportedHandlerException");
+        } catch (UnsupportedHandlerException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
             assertEquals("notARealHandler", e.getViolatingMethod().getName());
         }
@@ -109,8 +111,8 @@ public class AnnotationEventHandlerInvokerTest {
         FirstSubclass handler = new ASecondIllegalEventHandler();
         try {
             new AnnotationEventHandlerInvoker(handler);
-            fail("Expected an UnsupportedHandlerMethodException");
-        } catch (UnsupportedHandlerMethodException e) {
+            fail("Expected an UnsupportedHandlerException");
+        } catch (UnsupportedHandlerException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
             assertEquals("notARealHandler", e.getViolatingMethod().getName());
         }
@@ -126,22 +128,10 @@ public class AnnotationEventHandlerInvokerTest {
         FirstSubclass handler = new EventHandlerWithUnfortunateMethod();
         try {
             new AnnotationEventHandlerInvoker(handler);
-            fail("Expected an UnsupportedHandlerMethodException");
-        } catch (UnsupportedHandlerMethodException e) {
+            fail("Expected an UnsupportedHandlerException");
+        } catch (UnsupportedHandlerException e) {
             assertTrue(e.getMessage().contains("conflict"));
             assertEquals("handle", e.getViolatingMethod().getName());
-        }
-    }
-
-    @Test
-    public void testValidateEventHandler_NonEventParameterIsRejected() {
-        AnotherIllegalEventHandler handler = new AnotherIllegalEventHandler();
-        try {
-            new AnnotationEventHandlerInvoker(handler);
-            fail("Expected an UnsupportedHandlerMethodException");
-        } catch (UnsupportedHandlerMethodException e) {
-            assertTrue(e.getMessage().contains("notARealHandler"));
-            assertEquals("notARealHandler", e.getViolatingMethod().getName());
         }
     }
 
@@ -150,41 +140,12 @@ public class AnnotationEventHandlerInvokerTest {
         DuplicateHandlerMethod handler = new DuplicateHandlerMethod();
         try {
             new AnnotationEventHandlerInvoker(handler);
-            fail("Expected an UnsupportedHandlerMethodException");
-        } catch (UnsupportedHandlerMethodException e) {
-            assertTrue(e.getMessage().contains("otherHandler"));
-            assertTrue(e.getMessage().contains("oneHandler"));
-            assertTrue(e.getMessage().contains("DuplicateHandlerMethod"));
+            fail("Expected an UnsupportedHandlerException");
+        } catch (UnsupportedHandlerException e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("otherHandler"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("oneHandler"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("DuplicateHandlerMethod"));
         }
-    }
-
-    @Test
-    public void testBeforeAndAfterTransactionInvocations_BeforeAndAfterMethodsAvailable() {
-        FirstSubclass handler1 = new SecondSubclass();
-        TransactionStatus status = mock(TransactionStatus.class);
-        testSubject = new AnnotationEventHandlerInvoker(handler1);
-        testSubject.invokeBeforeTransaction(status);
-        try {
-            testSubject.invokeAfterTransaction(status);
-            fail("Expected exception to be propagated");
-        } catch (TransactionMethodExecutionException e) {
-            assertTrue(e.getMessage().contains("afterTransaction"));
-        }
-
-        assertEquals(1, handler1.beforeTransactionCount);
-        assertEquals(1, handler1.afterTransactionCount);
-    }
-
-    @Test
-    public void testBeforeAndAfterTransactionInvocations_OnlyBeforeMethodAvailable() {
-        FirstSubclass handler1 = new FirstSubclass();
-        TransactionStatus status = mock(TransactionStatus.class);
-        testSubject = new AnnotationEventHandlerInvoker(handler1);
-        testSubject.invokeBeforeTransaction(status);
-        testSubject.invokeAfterTransaction(status);
-
-        assertEquals(1, handler1.beforeTransactionCount);
-        assertEquals(0, handler1.afterTransactionCount);
     }
 
     private static class FirstSubclass {
@@ -236,7 +197,8 @@ public class AnnotationEventHandlerInvokerTest {
         protected int invocationCount3;
 
         @EventHandler
-        public void method3(StubEventOne event, TransactionStatus transactionStatus) {
+        public void method3(StubEventOne event,
+                            @MetaData(key = "transactionStatus") TransactionStatus transactionStatus) {
             invocationCount3++;
         }
 
@@ -250,7 +212,7 @@ public class AnnotationEventHandlerInvokerTest {
     private static class IllegalEventHandler extends SecondSubclass {
 
         @EventHandler
-        public void notARealHandler(StubEventTwo event, TransactionStatus transactionStatus,
+        public void notARealHandler(int event, TransactionStatus transactionStatus,
                                     String thisParameterMakesItIncompatible) {
         }
     }
@@ -259,13 +221,6 @@ public class AnnotationEventHandlerInvokerTest {
 
         @EventHandler
         public void notARealHandler(StubEventTwo event, String thisParameterMakesItIncompatible) {
-        }
-    }
-
-    private static class AnotherIllegalEventHandler extends SecondSubclass {
-
-        @EventHandler
-        public void notARealHandler(String thisParameterMakesItIncompatible) {
         }
     }
 
@@ -288,14 +243,14 @@ public class AnnotationEventHandlerInvokerTest {
 
     }
 
-    private static interface SomeInterface extends Event {
+    private static interface SomeInterface {
 
     }
 
     private class EventHandlerWithUnfortunateMethod extends FirstSubclass {
 
         @EventHandler
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
         }
     }
 }

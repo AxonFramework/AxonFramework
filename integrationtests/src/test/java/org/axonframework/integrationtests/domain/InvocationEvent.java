@@ -16,12 +16,10 @@
 
 package org.axonframework.integrationtests.domain;
 
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class InvocationEvent extends DomainEvent {
+public class InvocationEvent {
 
     private final int invocationCount;
 

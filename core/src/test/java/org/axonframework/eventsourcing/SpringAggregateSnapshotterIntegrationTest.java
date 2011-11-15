@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.util.ReflectionUtils;
+import org.axonframework.common.ReflectionUtils;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;

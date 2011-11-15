@@ -17,21 +17,19 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventstore.XStreamEventSerializer;
-import org.axonframework.eventstore.fs.FileSystemEventStore;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
-import org.junit.rules.*;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -46,13 +44,10 @@ import static org.mockito.Mockito.*;
  */
 public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtExceptionHandler {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
-
     private EventSourcingRepository<SimpleAggregateRoot> repository;
     private AggregateIdentifier aggregateIdentifier;
     private EventBus mockEventBus;
-    private FileSystemEventStore eventStore;
+    private EventStore eventStore;
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<Throwable>();
     private List<Thread> startedThreads = new ArrayList<Thread>();
     private static final int CONCURRENT_MODIFIERS = 10;
@@ -77,7 +72,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
                    getSuccessfulModifications() >= 1);
         int expectedEventCount = getSuccessfulModifications() * 2;
         assertTrue("It seems that no events have been published at all", lastSequenceNumber >= 0);
-        verify(mockEventBus, times(expectedEventCount)).publish(isA(DomainEvent.class));
+        verify(mockEventBus, times(expectedEventCount)).publish(isA(DomainEventMessage.class));
     }
 
     private int getSuccessfulModifications() {
@@ -86,8 +81,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository(LockingStrategy strategy) {
         repository = new EventSourcingRepository<SimpleAggregateRoot>(new SimpleAggregateFactory(), strategy);
-        eventStore = new FileSystemEventStore(new XStreamEventSerializer());
-        eventStore.setBaseDir(folder.getRoot());
+        eventStore = new InMemoryEventStore();
         repository.setEventStore(eventStore);
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
@@ -118,12 +112,10 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
             }
         }
 
-        File eventFile = new File(folder.getRoot(), "test/" + aggregateIdentifier.toString() + ".events");
-        assertTrue(eventFile.exists());
-        DomainEventStream committedEvents = eventStore.readEvents("test", aggregateIdentifier);
+        DomainEventStream committedEvents = eventStore.readEvents("SimpleAggregateRoot", aggregateIdentifier);
         long lastSequenceNumber = -1;
         while (committedEvents.hasNext()) {
-            DomainEvent nextEvent = committedEvents.next();
+            DomainEventMessage nextEvent = committedEvents.next();
             assertEquals("Events are not stored sequentially. Most likely due to unlocked concurrent access.",
                          new Long(++lastSequenceNumber),
                          nextEvent.getSequenceNumber());
@@ -189,25 +181,50 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        protected void handle(DomainEvent event) {
+        protected void handle(DomainEventMessage event) {
         }
     }
 
     private static class SimpleAggregateFactory implements AggregateFactory<SimpleAggregateRoot> {
 
         @Override
-        public SimpleAggregateRoot createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
+        public SimpleAggregateRoot createAggregate(AggregateIdentifier aggregateIdentifier,
+                                                   DomainEventMessage firstEvent) {
             return new SimpleAggregateRoot(aggregateIdentifier);
         }
 
         @Override
         public String getTypeIdentifier() {
-            return "test";
+            return "SimpleAggregateRoot";
         }
 
         @Override
         public Class<SimpleAggregateRoot> getAggregateType() {
             return SimpleAggregateRoot.class;
+        }
+    }
+
+    private class InMemoryEventStore implements EventStore {
+
+        private List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+
+        @Override
+        public synchronized void appendEvents(String type, DomainEventStream events) {
+            while (events.hasNext()) {
+                domainEvents.add(events.next());
+            }
+        }
+
+        @Override
+        public synchronized DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+            List<DomainEventMessage> relevant = new ArrayList<DomainEventMessage>();
+            for (DomainEventMessage event : domainEvents) {
+                if (event.getAggregateIdentifier().equals(identifier)) {
+                    relevant.add(event);
+                }
+            }
+
+            return new SimpleDomainEventStream(relevant);
         }
     }
 }

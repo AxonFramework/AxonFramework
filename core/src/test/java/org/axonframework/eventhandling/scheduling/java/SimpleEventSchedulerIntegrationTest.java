@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.SimpleTimingSaga;
 import org.axonframework.eventhandling.scheduling.StartingEvent;
@@ -36,7 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.axonframework.util.TestUtils.setOf;
+import static org.axonframework.common.TestUtils.setOf;
 import static org.junit.Assert.*;
 
 /**
@@ -65,7 +66,7 @@ public class SimpleEventSchedulerIntegrationTest {
                 .execute(new TransactionCallback<SimpleTimingSaga>() {
                     @Override
                     public SimpleTimingSaga doInTransaction(TransactionStatus status) {
-                        eventBus.publish(new StartingEvent(this, randomAssociationValue));
+                        eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(randomAssociationValue)));
                         Set<SimpleTimingSaga> actualResult =
                                 repository.find(SimpleTimingSaga.class,
                                                 setOf(new AssociationValue("association",

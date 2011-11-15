@@ -16,20 +16,9 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class TriggerExceptionWhileHandlingEvent extends DomainEvent {
+public class TriggerExceptionWhileHandlingEvent {
 
-    private static final long serialVersionUID = -4219878130704758362L;
-
-    public TriggerExceptionWhileHandlingEvent() {
-    }
-
-    public TriggerExceptionWhileHandlingEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
-        super(sequenceNumber, aggregateIdentifier);
-    }
 }

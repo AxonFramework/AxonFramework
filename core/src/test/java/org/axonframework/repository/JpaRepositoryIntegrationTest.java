@@ -16,8 +16,8 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -56,11 +56,11 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private List<DomainEvent> capturedEvents;
+    private List<DomainEventMessage> capturedEvents;
 
     @Before
     public void setUp() {
-        capturedEvents = new ArrayList<DomainEvent>();
+        capturedEvents = new ArrayList<DomainEventMessage>();
         eventBus.subscribe(this);
     }
 
@@ -135,9 +135,9 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     }
 
     @Override
-    public void handle(Event event) {
-        if (DomainEvent.class.isInstance(event)) {
-            this.capturedEvents.add((DomainEvent) event);
+    public void handle(EventMessage event) {
+        if (DomainEventMessage.class.isInstance(event)) {
+            this.capturedEvents.add((DomainEventMessage) event);
         }
     }
 }

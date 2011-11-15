@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.conflictresolvers;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventsourcing.ConflictResolver;
 
 import java.util.List;
@@ -36,6 +36,6 @@ public class AcceptAllConflictResolver implements ConflictResolver {
      * This implementation does nothing, hence accepting all unseen changes
      */
     @Override
-    public void resolveConflicts(List<DomainEvent> appliedChanges, List<DomainEvent> committedChanges) {
+    public void resolveConflicts(List<DomainEventMessage> appliedChanges, List<DomainEventMessage> committedChanges) {
     }
 }

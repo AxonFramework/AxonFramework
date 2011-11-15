@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,8 @@ package org.axonframework.auditing;
 
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.Event;
-import org.axonframework.domain.EventMetaData;
-import org.axonframework.domain.MutableEventMetaData;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,13 +44,13 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     private final AuditDataProvider auditDataProvider;
     private final AuditLogger auditLogger;
     private final Object command;
-    private final List<Event> recordedEvents = new ArrayList<Event>();
+    private final List<EventMessage> recordedEvents = new ArrayList<EventMessage>();
     private volatile Object returnValue;
 
     /**
-     * Initialize a listener for the given <code>command</code>. The <code>auditDataProvider</code> is called before the
-     * Unit Of Work is committed to provide the auditing information. The <code>auditLogger</code> is invoked after the
-     * Unit Of Work is successfully committed.
+     * Initialize a listener for the given <code>command</code>. The <code>auditDataProvider</code> is called before
+     * the Unit Of Work is committed to provide the auditing information. The <code>auditLogger</code> is invoked after
+     * the Unit Of Work is successfully committed.
      *
      * @param command           The command being audited
      * @param auditDataProvider The instance providing the information to attach to the events
@@ -74,15 +73,15 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     }
 
     @Override
-    public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
+    public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
         Map<String, Serializable> auditData = auditDataProvider.provideAuditDataFor(command);
         recordedEvents.addAll(collectEvents(aggregateRoots));
         recordedEvents.addAll(events);
         injectAuditData(auditData);
     }
 
-    private List<Event> collectEvents(Set<AggregateRoot> aggregateRoots) {
-        List<Event> events = new ArrayList<Event>();
+    private List<EventMessage> collectEvents(Set<AggregateRoot> aggregateRoots) {
+        List<EventMessage> events = new ArrayList<EventMessage>();
         for (AggregateRoot aggregateRoot : aggregateRoots) {
             DomainEventStream domainEventStream = aggregateRoot.getUncommittedEvents();
             while (domainEventStream.hasNext()) {
@@ -93,17 +92,10 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     }
 
     private void injectAuditData(Map<String, Serializable> auditData) {
-        for (Event event : recordedEvents) {
-            EventMetaData eventMetaData = event.getMetaData();
-            if (!MutableEventMetaData.class.isInstance(eventMetaData)) {
-                logger.warn("Unable to inject meta data into event of type [{}]. "
-                        + "The EventMetaData field does not contain a subclass of MutableEventMetaData.",
-                            event.getClass().getSimpleName());
-            } else {
-                MutableEventMetaData mutableMetaData = ((MutableEventMetaData) eventMetaData);
-                for (Map.Entry<String, Serializable> entry : auditData.entrySet()) {
-                    mutableMetaData.put(entry.getKey(), entry.getValue());
-                }
+        for (EventMessage event : recordedEvents) {
+            MetaData eventMetaData = event.getMetaData();
+            for (Map.Entry<String, Serializable> entry : auditData.entrySet()) {
+                eventMetaData.put(entry.getKey(), entry.getValue());
             }
         }
     }

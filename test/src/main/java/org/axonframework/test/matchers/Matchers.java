@@ -16,9 +16,12 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.Message;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
+
+import java.util.List;
 
 /**
  * Utility class containing static methods to obtain instances of (List) Matchers.
@@ -32,11 +35,42 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches a List of Events where all the given matchers match with at least one of the Events in that list.
+     * Matches a list of EventMessage if a list containing their respective payloads matches the given
+     * <code>matcher</code>.
      *
-     * @param matchers the matchers that should match against one of the items in the List of Events.
-     * @param <T>      The type of event to match against
-     * @return a matcher that matches a number of event-matchers against a list of events
+     * @param matcher The mather to match against the EventMessage payloads
+     * @return a Matcher that matches against the EventMessage payloads
+     */
+    public static Matcher<List<? extends EventMessage>> eventPayloadsMatching(final Matcher<? extends List> matcher) {
+        return new PayloadsMatcher<EventMessage>(EventMessage.class, matcher);
+    }
+
+    /**
+     * Matches a list of Message if a list containing their respective payloads matches the given <code>matcher</code>.
+     *
+     * @param matcher The mather to match against the Message payloads
+     * @return a Matcher that evaluates a Message's payloads
+     */
+    public static Matcher<List<? extends Message>> messagePayloadsMatching(final Matcher<? extends List> matcher) {
+        return new PayloadsMatcher<Message>(Message.class, matcher);
+    }
+
+    /**
+     * Matches a single EventMessage if the given <code>payloadMatcher</code> matches that event's payload.
+     *
+     * @param payloadMatcher THe matcher to match against the EventMessage's payload
+     * @return a Matcher that evaluates a Message's payload.
+     */
+    public static Matcher<? extends EventMessage> eventWithPayload(Matcher<?> payloadMatcher) {
+        return new PayloadMatcher<EventMessage>(payloadMatcher);
+    }
+
+    /**
+     * Matches a List where all the given matchers must match with at least one of the items in that list.
+     *
+     * @param matchers the matchers that should match against one of the items in the List.
+     * @param <T>      The type of object expected in the list
+     * @return a matcher that matches a number of matchers against a list
      */
     @Factory
     public static <T> ListWithAllOfMatcher listWithAllOf(Matcher<T>... matchers) {
@@ -78,7 +112,8 @@ public abstract class Matchers {
      * and so on.
      * <p/>
      * Any excess Events are ignored. If there are excess Matchers, they will be evaluated against <code>null</code>.
-     * To make sure the number of Events matches the number of Matchers, you can append an extra {@link #andNoMore()}
+     * To
+     * make sure the number of Events matches the number of Matchers, you can append an extra {@link #andNoMore()}
      * matcher.
      * <p/>
      * To allow "gaps" of unmatched Events, use {@link #sequenceOf(org.hamcrest.Matcher[])} instead.
@@ -98,27 +133,28 @@ public abstract class Matchers {
      * @return a matcher that matches an empty list of events
      */
     @Factory
-    public static NoEventsMatcher noEvents() {
-        return new NoEventsMatcher();
+    public static EmptyCollectionMatcher noEvents() {
+        return new EmptyCollectionMatcher();
     }
 
     /**
      * Matches against each event of the same runtime type that has all field values equal to the fields in the
-     * expected event. All fields are compared, except for the aggregate identifier and sequence number, as they are
-     * generally not set on the expected event.
+     * expected
+     * event. All fields are compared, except for the aggregate identifier and sequence number, as they are generally
+     * not set on the expected event.
      *
      * @param expected The event with the expected field values
      * @param <T>      The type of event to match against
      * @return a matcher that matches based on the equality of field values
      */
     @Factory
-    public static <T extends Event> EqualEventMatcher<T> equalTo(T expected) {
-        return new EqualEventMatcher<T>(expected);
+    public static <T> EqualFieldsMatcher<T> equalTo(T expected) {
+        return new EqualFieldsMatcher<T>(expected);
     }
 
     /**
-     * Matches against <code>null</code> or <code>void</code>. Can be used to make sure no trailing
-     * events remain when using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
+     * Matches against <code>null</code> or <code>void</code>. Can be used to make sure no trailing events remain when
+     * using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
      *
      * @return a matcher that matches against "nothing".
      */
@@ -128,8 +164,8 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches against <code>null</code> or <code>void</code>. Can be used to make sure no trailing
-     * events remain when using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
+     * Matches against <code>null</code> or <code>void</code>. Can be used to make sure no trailing events remain when
+     * using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
      *
      * @return a matcher that matches against "nothing".
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
@@ -41,7 +43,12 @@ public class AbstractEventSourcedAggregateRootTest {
     public void testInitializeWithEvents() {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         testSubject = new CompositeAggregateRoot(identifier);
-        testSubject.initializeState(new SimpleDomainEventStream(new StubDomainEvent(identifier, 243)));
+        testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
+                identifier,
+                (long) 243,
+                MetaData
+                        .emptyInstance(),
+                "Mock contents")));
 
         assertEquals(identifier, testSubject.getIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());
@@ -104,7 +111,7 @@ public class AbstractEventSourcedAggregateRootTest {
         }
 
         @Override
-        protected void handle(DomainEvent event) {
+        protected void handle(DomainEventMessage event) {
             this.invocationCount++;
             if (childEntity == null) {
                 childEntity = new SimpleEntity();
@@ -140,7 +147,7 @@ public class AbstractEventSourcedAggregateRootTest {
         private int invocationCount;
 
         @Override
-        protected void handle(DomainEvent event) {
+        protected void handle(DomainEventMessage event) {
             this.invocationCount++;
         }
 

@@ -17,9 +17,9 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.util.Assert;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;

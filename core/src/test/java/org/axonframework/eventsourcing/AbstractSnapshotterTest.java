@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,15 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.util.DirectExecutor;
 import org.hamcrest.Matcher;
 import org.junit.*;
 import org.mockito.*;
@@ -43,13 +44,14 @@ public class AbstractSnapshotterTest {
         mockEventStore = mock(SnapshotEventStore.class);
         testSubject = new AbstractSnapshotter() {
             @Override
-            protected DomainEvent createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
+            protected DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
                 AggregateIdentifier aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
                 long lastIdentifier = getLastIdentifierFrom(eventStream);
                 if (lastIdentifier <= 0) {
                     return null;
                 }
-                return new StubDomainEvent(aggregateIdentifier, lastIdentifier);
+                return new GenericDomainEventMessage<String>(aggregateIdentifier, lastIdentifier,
+                                                             MetaData.emptyInstance(), "Mock contents");
             }
         };
         testSubject.setEventStore(mockEventStore);
@@ -61,8 +63,10 @@ public class AbstractSnapshotterTest {
         AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
-                        new StubDomainEvent(aggregateIdentifier, 0),
-                        new StubDomainEvent(aggregateIdentifier, 1)));
+                        new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                                                              MetaData.emptyInstance(), "Mock contents"),
+                        new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                                                              MetaData.emptyInstance(), "Mock contents")));
         testSubject.scheduleSnapshot("test", aggregateIdentifier);
         verify(mockEventStore).appendSnapshotEvent(eq("test"), argThat(event(aggregateIdentifier, 1)));
     }
@@ -72,19 +76,20 @@ public class AbstractSnapshotterTest {
         AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
-                        new StubDomainEvent(aggregateIdentifier, 0)));
+                        new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                                                              MetaData.emptyInstance(), "Mock contents")));
         testSubject.scheduleSnapshot("test", aggregateIdentifier);
-        verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEvent.class));
+        verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEventMessage.class));
     }
 
-    private Matcher<DomainEvent> event(final AggregateIdentifier aggregateIdentifier, final long i) {
-        return new ArgumentMatcher<DomainEvent>() {
+    private Matcher<DomainEventMessage> event(final AggregateIdentifier aggregateIdentifier, final long i) {
+        return new ArgumentMatcher<DomainEventMessage>() {
             @Override
             public boolean matches(Object argument) {
-                if (!(argument instanceof DomainEvent)) {
+                if (!(argument instanceof DomainEventMessage)) {
                     return false;
                 }
-                DomainEvent event = (DomainEvent) argument;
+                DomainEventMessage event = (DomainEventMessage) argument;
                 return aggregateIdentifier.equals(event.getAggregateIdentifier())
                         && event.getSequenceNumber() == i;
             }

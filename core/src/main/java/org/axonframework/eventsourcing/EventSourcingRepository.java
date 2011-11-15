@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
@@ -48,7 +48,6 @@ import javax.annotation.Resource;
  * @see org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot
  * @see org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
  * @see org.axonframework.eventstore.EventStore
- * @see org.axonframework.eventstore.fs.FileSystemEventStore
  * @since 0.1
  */
 public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
@@ -156,7 +155,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         }
 
         final T aggregate = createAggregate(aggregateIdentifier, events.peek());
-        List<DomainEvent> unseenEvents = new ArrayList<DomainEvent>();
+        List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
         aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
         CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
         return aggregate;
@@ -171,8 +170,8 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         return aggregateFactory;
     }
 
-    private List<DomainEvent> asList(DomainEventStream domainEventStream) {
-        List<DomainEvent> unseenEvents = new ArrayList<DomainEvent>();
+    private List<DomainEventMessage> asList(DomainEventStream domainEventStream) {
+        List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
         while (domainEventStream.hasNext()) {
             unseenEvents.add(domainEventStream.next());
         }
@@ -180,7 +179,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     }
 
     @SuppressWarnings({"unchecked"})
-    private T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEvent firstEvent) {
+    private T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEventMessage firstEvent) {
         T aggregate;
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
@@ -207,7 +206,8 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * {@inheritDoc}
      * <p/>
      * This implementation will do nothing if a conflict resolver (See {@link #setConflictResolver(ConflictResolver)}
-     * is set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
+     * is
+     * set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
      */
     @Override
     protected void validateOnLoad(T aggregate, Long expectedVersion) {
@@ -262,15 +262,15 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     private final class ConflictResolvingListener extends UnitOfWorkListenerAdapter {
 
         private final T aggregate;
-        private final List<DomainEvent> unseenEvents;
+        private final List<DomainEventMessage> unseenEvents;
 
-        private ConflictResolvingListener(T aggregate, List<DomainEvent> unseenEvents) {
+        private ConflictResolvingListener(T aggregate, List<DomainEventMessage> unseenEvents) {
             this.aggregate = aggregate;
             this.unseenEvents = unseenEvents;
         }
 
         @Override
-        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
+        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
             if (hasPotentialConflicts()) {
                 conflictResolver.resolveConflicts(asList(aggregate.getUncommittedEvents()), unseenEvents);
             }
@@ -290,11 +290,10 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     private static final class CapturingEventStream implements DomainEventStream {
 
         private final DomainEventStream eventStream;
-        private final List<DomainEvent> unseenEvents;
+        private final List<DomainEventMessage> unseenEvents;
         private final Long expectedVersion;
 
-        private CapturingEventStream(DomainEventStream events,
-                                     List<DomainEvent> unseenEvents,
+        private CapturingEventStream(DomainEventStream events, List<DomainEventMessage> unseenEvents,
                                      Long expectedVersion) {
             eventStream = events;
             this.unseenEvents = unseenEvents;
@@ -307,8 +306,8 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         }
 
         @Override
-        public DomainEvent next() {
-            DomainEvent next = eventStream.next();
+        public DomainEventMessage next() {
+            DomainEventMessage next = eventStream.next();
             if (expectedVersion != null && next.getSequenceNumber() > expectedVersion) {
                 unseenEvents.add(next);
             }
@@ -316,7 +315,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         }
 
         @Override
-        public DomainEvent peek() {
+        public DomainEventMessage peek() {
             return eventStream.peek();
         }
     }

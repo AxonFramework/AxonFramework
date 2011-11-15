@@ -16,11 +16,11 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.util.DirectExecutor;
 
 import java.util.concurrent.Executor;
 import javax.annotation.Resource;
@@ -29,7 +29,7 @@ import javax.annotation.Resource;
  * Abstract implementation of the {@link org.axonframework.eventsourcing.Snapshotter} that uses a task executor to
  * creates snapshots. Actual snapshot creation logic should be provided by a subclass.
  * <p/>
- * By default, this implementations uses a {@link org.axonframework.util.DirectExecutor} to process snapshot taking
+ * By default, this implementations uses a {@link org.axonframework.common.DirectExecutor} to process snapshot taking
  * tasks. In production environments, it is recommended to use asynchronous executors instead.
  *
  * @author Allard Buijze
@@ -58,14 +58,15 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     /**
      * Creates a snapshot event for an aggregate of the given <code>typeIdentifier</code> of which passed events are
-     * available in the given <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is not
+     * available in the given <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is
+     * not
      * necessary or appropriate for the given event stream.
      *
      * @param typeIdentifier The aggregate's type identifier
      * @param eventStream    The event stream containing the aggregate's past events
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
-    protected abstract DomainEvent createSnapshot(String typeIdentifier, DomainEventStream eventStream);
+    protected abstract DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream);
 
     private final class CreateSnapshotTask implements Runnable {
 
@@ -80,7 +81,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         @Override
         public void run() {
             DomainEventStream eventStream = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
-            DomainEvent snapshotEvent = createSnapshot(typeIdentifier, eventStream);
+            DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, eventStream);
             if (snapshotEvent != null) {
                 eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
             }

@@ -18,6 +18,7 @@ package org.axonframework.eventstore.redis;
 
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.XStreamEventSerializer;
@@ -38,13 +39,13 @@ public class RedisEventStoreTest {
 
     @Before
     public void setUp() {
-        jedis = new Jedis("192.168.56.101");
+        jedis = new Jedis("localhost");
         testSubject = new RedisEventStore();
         testSubject.setEventSerializer(new XStreamEventSerializer());
         testSubject.setRedisConnectionProvider(new RedisConnectionProvider() {
             @Override
             public Jedis newConnection() {
-                return new Jedis("192.168.56.101");
+                return new Jedis("localhost");
             }
 
             @Override
@@ -64,12 +65,13 @@ public class RedisEventStoreTest {
         AggregateIdentifier id = new StringAggregateIdentifier("blabla");
         String dbKey = "TEST." + id.asString();
         jedis.del(dbKey);
-        testSubject.appendEvents("TEST", new SimpleDomainEventStream(new StubDomainEvent(id, 0),
-                                                                     new StubDomainEvent(id, 1),
-                                                                     new StubDomainEvent(id, 2),
-                                                                     new StubDomainEvent(id, 3),
-                                                                     new StubDomainEvent(id, 4),
-                                                                     new StubDomainEvent(id, 5)));
+        testSubject.appendEvents("TEST", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<StubDomainEvent>(id, 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(id, 1, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(id, 2, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(id, 3, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(id, 4, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(id, 5, new StubDomainEvent())));
 
         List<String> events = jedis.lrange(dbKey, 0, -1);
         for (String key : events) {

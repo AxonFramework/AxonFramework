@@ -16,20 +16,18 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.ApplicationEvent;
-
 /**
  * @author Allard Buijze
  */
-public class SagaWasTriggeredEvent extends ApplicationEvent {
+public class SagaWasTriggeredEvent {
 
-    private static final long serialVersionUID = 8615210901052783323L;
+    private final StubSaga stubSaga;
 
     public SagaWasTriggeredEvent(StubSaga stubSaga) {
-        super(stubSaga);
+        this.stubSaga = stubSaga;
     }
 
     public StubSaga getTriggeredSaga() {
-        return (StubSaga) getSource();
+        return stubSaga;
     }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 /**
  * Interface describing a mechanism that connects Event Bus clusters. The terminal is responsible for delivering
@@ -36,7 +36,7 @@ public interface EventBusTerminal {
      *
      * @param event the event to publish
      */
-    void publish(Event event);
+    void publish(EventMessage event);
 
     /**
      * Invoked when an Event Listener has been assigned to a cluster that was not yet known to the Event Bus. This

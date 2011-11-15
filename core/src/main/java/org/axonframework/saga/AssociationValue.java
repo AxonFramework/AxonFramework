@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.util.Assert;
+import org.axonframework.common.Assert;
 
 import java.io.Serializable;
 

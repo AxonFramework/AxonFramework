@@ -16,23 +16,18 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.ApplicationEvent;
-
 /**
  * @author Allard Buijze
  */
-public class TimerTriggeredEvent extends ApplicationEvent {
+public class TimerTriggeredEvent {
 
-    private static final long serialVersionUID = 1476052251573200552L;
-    private final AggregateIdentifier aggregateIdentifier;
+    private String identifier;
 
-    protected TimerTriggeredEvent(Object source, AggregateIdentifier aggregateIdentifier) {
-        super(source);
-        this.aggregateIdentifier = aggregateIdentifier;
+    public TimerTriggeredEvent(String identifier) {
+        this.identifier = identifier;
     }
 
-    public AggregateIdentifier getAggregateIdentifier() {
-        return aggregateIdentifier;
+    public String getIdentifier() {
+        return identifier;
     }
 }

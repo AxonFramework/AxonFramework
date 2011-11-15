@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,17 +40,18 @@ import java.util.Map;
 @Component
 @AsynchronousEventListener(sequencingPolicyClass = SequentialPolicy.class)
 public class AddressListener {
+
     private final static Logger logger = LoggerFactory.getLogger(AddressListener.class);
     private Publisher publisher;
     private ContactRepository contactRepository;
 
     @EventHandler
     public void handleAddressCreatedEvent(AddressRegisteredEvent event) {
-        logger.debug("Received a address created event with type {} and identifier {}",
-                event.getType().toString(), event.getEventIdentifier());
-        ContactEntry contactEntry = obtainContactByIdentifier(event.getContactIdentifier());
+        logger.debug("Received a address created event with type {} for contactId {}",
+                     event.getType().toString(), event.getContactId());
+        ContactEntry contactEntry = obtainContactByIdentifier(event.getContactId());
         AddressEntry value = new AddressEntry();
-        value.setIdentifier(event.getContactIdentifier());
+        value.setIdentifier(event.getContactId());
         value.setName(contactEntry.getName());
         value.setAddressType(event.getType());
         value.setStreetAndNumber(event.getAddress().getStreetAndNumber());
@@ -61,8 +62,10 @@ public class AddressListener {
 
     @EventHandler
     public void handleAddressRemovedEvent(AddressRemovedEvent event) {
-        ContactEntry contactEntry = obtainContactByIdentifier(event.getContactIdentifier());
-        logger.debug("Received an address removed event with type {} for contact {}", event.getType(), contactEntry.getIdentifier());
+        ContactEntry contactEntry = obtainContactByIdentifier(event.getContactId());
+        logger.debug("Received an address removed event with type {} for contact {}",
+                     event.getType(),
+                     contactEntry.getIdentifier());
         Map<String, Object> message = new HashMap<String, Object>();
         message.put("contact", contactEntry);
         message.put("addressType", event.getType());

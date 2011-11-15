@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +100,7 @@ public class SimpleEventBus implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void publish(Event event) {
+    public void publish(EventMessage event) {
         statistics.recordPublishedEvent();
         if (listeners != null && !listeners.isEmpty()) {
             for (EventListener listener : listeners) {

@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.scheduling;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
+import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -37,12 +38,13 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
     private transient EventScheduler timer;
     private volatile boolean triggered = false;
     private transient CountDownLatch latch = new CountDownLatch(1);
-    private static final int SCHEDULE_DURATION = 1000;
+    private static final Duration SCHEDULE_DURATION = new Duration(10);
 
     @StartSaga
     @SagaEventHandler(associationProperty = "association")
     public void handle(StartingEvent event) {
-        timer.schedule(new MySagaExpiredEvent(this, SCHEDULE_DURATION, event.getAssociation()));
+        timer.schedule(SCHEDULE_DURATION,
+                       new MySagaExpiredEvent(event.getAssociation()));
     }
 
     @SagaEventHandler(associationProperty = "association")

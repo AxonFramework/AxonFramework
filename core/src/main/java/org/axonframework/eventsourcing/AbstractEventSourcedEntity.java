@@ -16,8 +16,9 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.util.ReflectionUtils;
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
 
 import java.util.Collection;
 
@@ -72,7 +73,7 @@ public abstract class AbstractEventSourcedEntity {
      *
      * @param event The event to handle
      */
-    void handleRecursively(DomainEvent event) {
+    void handleRecursively(DomainEventMessage event) {
         handle(event);
         Collection<AbstractEventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
@@ -90,17 +91,31 @@ public abstract class AbstractEventSourcedEntity {
      *
      * @param event The event to handle
      */
-    protected abstract void handle(DomainEvent event);
+    protected abstract void handle(DomainEventMessage event);
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(DomainEvent)} event handler method} for processing.
+     * the {@link #handle(org.axonframework.domain.DomainEventMessage)} event handler method} for processing.
      * <p/>
-     * Note that all entities part of the aggregate that this entity is part of are notified of the event.
+     * The event is applied on all entities part of this aggregate.
      *
-     * @param event The event to apply
+     * @param event The payload of the event to apply
      */
-    protected void apply(DomainEvent event) {
-        aggregateRoot.apply(event);
+    protected void apply(Object event) {
+        apply(event, MetaData.emptyInstance());
+    }
+
+    /**
+     * Apply the provided event and attaching the given <code>metaData</code>. Applying events means they are added to
+     * the uncommitted event queue and forwarded to the {@link #handle(org.axonframework.domain.DomainEventMessage)}
+     * event handler method} for processing.
+     * <p/>
+     * The event is applied on all entities part of this aggregate.
+     *
+     * @param event    The payload of the event to apply
+     * @param metaData any meta-data that must be registered with the Event
+     */
+    protected void apply(Object event, MetaData metaData) {
+        aggregateRoot.apply(event, metaData);
     }
 }

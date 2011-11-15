@@ -16,8 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.DomainEvent;
-
 /**
  * Interface to an object that publishes events on behalf of an aggregate. The sequence number on the events must be
  * exactly sequential per aggregate.
@@ -26,12 +24,14 @@ import org.axonframework.domain.DomainEvent;
  * @since 1.1
  */
 public interface WhenAggregateEventPublisher {
+
     /**
      * Register the given <code>event</code> to be published on behalf of an aggregate. Activity caused by this event
-     * on the CommandBus and EventBus is monitored and can be checked in the FixtureExecutionResult.
+     * on
+     * the CommandBus and EventBus is monitored and can be checked in the FixtureExecutionResult.
      *
      * @param event The event published by the aggregate
      * @return a reference to the test results for the validation  phase
      */
-    FixtureExecutionResult publishes(DomainEvent event);
+    FixtureExecutionResult publishes(Object event);
 }

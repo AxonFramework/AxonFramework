@@ -16,7 +16,7 @@
 
 package org.axonframework.gae.commandhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.slf4j.Logger;
@@ -67,7 +67,7 @@ public class SimpleEventBusWithoutStatistics implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void publish(Event event) {
+    public void publish(EventMessage event) {
 
         for (EventListener listener : listeners) {
             logger.debug("Dispatching Event [{}] to EventListener [{}]",

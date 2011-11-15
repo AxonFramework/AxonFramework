@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation.postprocessor;
 
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.junit.*;
@@ -65,14 +65,14 @@ public class AnnotationEventListenerBeanPostProcessorTest_DoubleAnnotated {
     @Test
     public void testInitializeProxiedInstance() {
         assertNotNull(transactionalListener);
-        eventBus.publish(new StubDomainEvent());
+        eventBus.publish(new GenericEventMessage<Object>(new Object()));
 
         verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
         verify(mockTransactionManager).commit(isA(TransactionStatus.class));
         assertEquals(1, transactionalListener.getInvocations());
 
         assertTrue("Bean doesn't implemment EventListener", EventListener.class.isInstance(transactionalListener));
-        ((EventListener) transactionalListener).handle(new StubDomainEvent());
+        ((EventListener) transactionalListener).handle(new GenericEventMessage<Object>(new Object()));
         assertEquals(2, transactionalListener.getInvocations());
     }
 }

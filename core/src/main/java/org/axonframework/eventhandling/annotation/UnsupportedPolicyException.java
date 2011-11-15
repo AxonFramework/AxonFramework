@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.util.AxonConfigurationException;
+import org.axonframework.common.AxonConfigurationException;
 
 /**
  * Exception indicating that a given {@link org.axonframework.eventhandling.SequencingPolicy} could not be initialized.

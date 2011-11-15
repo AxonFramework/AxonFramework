@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Exception indicating that no suitable handler could be found for the given command.
@@ -36,5 +36,4 @@ public class NoHandlerForCommandException extends AxonNonTransientException {
     public NoHandlerForCommandException(String message) {
         super(message);
     }
-
 }

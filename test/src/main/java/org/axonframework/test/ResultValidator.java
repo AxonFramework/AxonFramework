@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.hamcrest.Matcher;
 
 import java.util.List;
@@ -27,7 +26,8 @@ import java.util.List;
  * The underlying fixture expects a test to have been executed succesfully using a {@link
  * org.axonframework.test.TestExecutor}.
  * <p/>
- * There are several things to validate:<ul><li>the published events,<li>the stored events, and<li>the command handler's
+ * There are several things to validate:<ul><li>the published events,<li>the stored events, and<li>the command
+ * handler's
  * execution result, which is one of <ul><li>a regular return value,<li>a <code>void</code> return value, or<li>an
  * exception.</ul></ul>
  *
@@ -39,8 +39,7 @@ public interface ResultValidator {
     /**
      * Expect the given set of events to have been stored and published. Note that this assertion will fail if events
      * were published but not saved. If you expect events (e.g. Application Events) to have been dispatched, use the
-     * {@link #expectPublishedEvents(org.axonframework.domain.Event...)} and {@link
-     * #expectStoredEvents(org.axonframework.domain.DomainEvent...)} methods instead.
+     * {@link #expectPublishedEvents(Object...)} and {@link #expectStoredEvents(Object...)} methods instead.
      * <p/>
      * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
      * means that all assigned values on the events' fields should have a proper equals implementation.
@@ -50,10 +49,11 @@ public interface ResultValidator {
      * @param expectedEvents The expected events, in the exact order they are expected to be dispatched and stored.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEvents(DomainEvent... expectedEvents);
+    ResultValidator expectEvents(Object... expectedEvents);
 
     /**
-     * Expect the published events to match the given <code>matcher</code>. Note that this assertion will fail if events
+     * Expect the published events to match the given <code>matcher</code>. Note that this assertion will fail if
+     * events
      * were published but not saved.
      * <p/>
      * Note: if no events were published or stored, the matcher receives an empty List.
@@ -61,11 +61,11 @@ public interface ResultValidator {
      * @param matcher The matcher to match with the actually published events
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEvents(Matcher<List<? extends Event>> matcher);
+    ResultValidator expectEventsMatching(Matcher<List<? extends EventMessage>> matcher);
 
     /**
      * Expect the given set of events to have been published on the events bus. If you expect the same events to be
-     * stored, too, consider using the {@link #expectEvents(org.axonframework.domain.DomainEvent...)} instead.
+     * stored, too, consider using the {@link #expectEvents(Object...)} instead.
      * <p/>
      * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
      * means that all assigned values on the events' fields should have a proper equals implementation.
@@ -76,7 +76,7 @@ public interface ResultValidator {
      * @param expectedEvents The expected events, in the exact order they are expected to be dispatched.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectPublishedEvents(Event... expectedEvents);
+    ResultValidator expectPublishedEvents(Object... expectedEvents);
 
     /**
      * Expect the list of published event to match the given <code>matcher</code>. This method will only take into
@@ -88,11 +88,11 @@ public interface ResultValidator {
      * @param matcher The matcher which validates the actual list of published events.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectPublishedEvents(Matcher<List<? extends Event>> matcher);
+    ResultValidator expectPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher);
 
     /**
      * Expect the given set of events to have been stored in the event store. If you expect the same events to be
-     * published, too, consider using the {@link #expectEvents(org.axonframework.domain.DomainEvent...)} instead.
+     * published, too, consider using the {@link #expectEvents(Object...)} instead.
      * <p/>
      * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
      * means that all assigned values on the events' fields should have a proper equals implementation.
@@ -103,19 +103,18 @@ public interface ResultValidator {
      * @param expectedEvents The expected events, in the exact order they are expected to be stored.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectStoredEvents(DomainEvent... expectedEvents);
+    ResultValidator expectStoredEvents(Object... expectedEvents);
 
     /**
-     * Expect the list of stored event to match the given <code>matcher</code>. This method will only take into
-     * account the events that have been stored. Stored events that have not been stored in the event store are
-     * ignored.
+     * Expect the list of stored event to match the given <code>matcher</code>. This method will only take into account
+     * the events that have been stored. Stored events that have not been stored in the event store are ignored.
      * <p/>
      * Note: if no events were stored, the matcher receives an empty List.
      *
      * @param matcher The matcher which validates the actual list of stored events.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectStoredEvents(Matcher<List<? extends DomainEvent>> matcher);
+    ResultValidator expectStoredEventsMatching(Matcher<List<? extends EventMessage>> matcher);
 
     /**
      * Expect the command handler to return the given <code>expectedReturnValue</code> after execution. The actual and

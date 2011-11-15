@@ -16,7 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -58,7 +59,7 @@ public class SimpleClusterTest {
     @Test
     public void testPublishEvent() {
         testSubject.subscribe(eventListener);
-        StubDomainEvent event = new StubDomainEvent();
+        EventMessage event = new GenericEventMessage<Object>(new Object());
         testSubject.publish(event);
 
         verify(eventListener).handle(event);

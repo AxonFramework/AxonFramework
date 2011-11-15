@@ -16,14 +16,15 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.util.DirectExecutor;
 import org.junit.*;
 
 import java.util.Arrays;
@@ -54,9 +55,12 @@ public class AggregateSnapshotterTest {
     @Test
     public void testCreateSnapshot() {
         AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
-        StubDomainEvent firstEvent = new StubDomainEvent(aggregateIdentifier, 0);
+        DomainEventMessage firstEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                                                                              MetaData.emptyInstance(),
+                                                                              "Mock contents");
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
         EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);
+        when(aggregate.getIdentifier()).thenReturn(aggregateIdentifier);
         when(mockAggregateFactory.createAggregate(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
         AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", eventStream);
@@ -72,17 +76,20 @@ public class AggregateSnapshotterTest {
         aggregate.doSomething();
         aggregate.commitEvents();
 
-        DomainEvent firstEvent = new AggregateSnapshot<StubAggregate>(aggregate);
-        StubDomainEvent secondEvent = new StubDomainEvent(aggregateIdentifier, 0);
-        SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent, secondEvent);
+        Snapshot<StubAggregate> first = new AggregateSnapshot<StubAggregate>(aggregate);
+        DomainEventMessage secondEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                                                                               MetaData.emptyInstance(),
+                                                                               "Mock contents");
+        SimpleDomainEventStream eventStream = new SimpleDomainEventStream(first, secondEvent);
 
-        when(mockAggregateFactory.createAggregate(any(AggregateIdentifier.class), any(DomainEvent.class)))
+        when(mockAggregateFactory.createAggregate(any(AggregateIdentifier.class), any(DomainEventMessage.class)))
                 .thenThrow(new AssertionError("This invocation is not expected. When an aggregate snapshot is read, "
                                                       + "the aggregate should be extracted from there."));
 
         AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", eventStream);
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getAggregate());
 
-        verify(mockAggregateFactory, never()).createAggregate(any(AggregateIdentifier.class), any(DomainEvent.class));
+        verify(mockAggregateFactory, never()).createAggregate(any(AggregateIdentifier.class),
+                                                              any(DomainEventMessage.class));
     }
 }

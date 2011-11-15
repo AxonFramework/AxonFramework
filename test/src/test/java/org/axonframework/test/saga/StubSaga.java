@@ -17,7 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
@@ -33,49 +33,51 @@ import java.util.List;
  * @author Allard Buijze
  */
 public class StubSaga extends AbstractAnnotatedSaga {
+
     private transient CommandBus commandBus;
     private transient EventBus eventBus;
     private transient EventScheduler scheduler;
-    private List<Event> handledEvents = new ArrayList<Event>();
+    private List<Object> handledEvents = new ArrayList<Object>();
 
     @StartSaga
-    @SagaEventHandler(associationProperty = "aggregateIdentifier")
+    @SagaEventHandler(associationProperty = "identifier")
     public void handleSagaStart(TriggerSagaStartEvent event) {
         handledEvents.add(event);
-        scheduler.schedule(Duration.standardMinutes(10), new TimerTriggeredEvent(this, event.getAggregateIdentifier()));
+        scheduler.schedule(Duration.standardMinutes(10),
+                           new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @StartSaga(forceNew = true)
-    @SagaEventHandler(associationProperty = "aggregateIdentifier")
+    @SagaEventHandler(associationProperty = "identifier")
     public void handleForcedSagaStart(ForceTriggerSagaStartEvent event) {
         handledEvents.add(event);
-        scheduler.schedule(Duration.standardMinutes(10), new TimerTriggeredEvent(this, event.getAggregateIdentifier()));
+        scheduler.schedule(Duration.standardMinutes(10),
+                           new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
-    @SagaEventHandler(associationProperty = "aggregateIdentifier")
+    @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event) {
         handledEvents.add(event);
-        eventBus.publish(new SagaWasTriggeredEvent(this));
+        eventBus.publish(new GenericEventMessage<SagaWasTriggeredEvent>(new SagaWasTriggeredEvent(this)));
     }
 
     @EndSaga
-    @SagaEventHandler(associationProperty = "aggregateIdentifier")
+    @SagaEventHandler(associationProperty = "identifier")
     public void handleEndEvent(TriggerSagaEndEvent event) {
         handledEvents.add(event);
     }
 
-    @SagaEventHandler(associationProperty = "aggregateIdentifier")
+    @SagaEventHandler(associationProperty = "identifier")
     public void handleFalseEvent(TriggerExceptionWhileHandlingEvent event) {
         handledEvents.add(event);
         throw new RuntimeException("This is a mock exception");
     }
 
-    @SagaEventHandler(associationProperty = "aggregateIdentifier")
+    @SagaEventHandler(associationProperty = "identifier")
     public void handleTriggerEvent(TimerTriggeredEvent event) {
         handledEvents.add(event);
         commandBus.dispatch("Say hi!");
     }
-
 
     public EventBus getEventBus() {
         return eventBus;

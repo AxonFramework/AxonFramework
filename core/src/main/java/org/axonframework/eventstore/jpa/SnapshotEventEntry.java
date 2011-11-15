@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 
 import javax.persistence.Entity;
 
@@ -42,7 +42,7 @@ import javax.persistence.Entity;
      * @param event     The actual snapshot event
      * @param serialize The serialized representation of the snapshot event
      */
-    public SnapshotEventEntry(String type, DomainEvent event, byte[] serialize) {
+    public SnapshotEventEntry(String type, DomainEventMessage event, byte[] serialize) {
         super(type, event, serialize);
     }
 }

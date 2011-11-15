@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Exception indicating that an aggregate was not compatible with the requirements of the {@link

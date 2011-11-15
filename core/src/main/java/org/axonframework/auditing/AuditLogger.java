@@ -16,7 +16,7 @@
 
 package org.axonframework.auditing;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 import java.util.List;
 
@@ -38,7 +38,7 @@ public interface AuditLogger {
      * @param returnValue The return value of the command handler
      * @param events      The events that were generated during command handling
      */
-    void logSuccessful(Object command, Object returnValue, List<Event> events);
+    void logSuccessful(Object command, Object returnValue, List<EventMessage> events);
 
     /**
      * Writes a failure entry to the audit logs. The given list of events may contain events. In that case, these event
@@ -52,5 +52,5 @@ public interface AuditLogger {
      *                     exception
      * @param events       any events staged for storage or publishing
      */
-    void logFailed(Object command, Throwable failureCause, List<Event> events);
+    void logFailed(Object command, Throwable failureCause, List<EventMessage> events);
 }

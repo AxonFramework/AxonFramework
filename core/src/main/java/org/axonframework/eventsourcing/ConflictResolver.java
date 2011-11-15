@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 
 import java.util.List;
 
@@ -41,5 +41,5 @@ public interface ConflictResolver {
      * @throws org.axonframework.repository.ConflictingModificationException
      *          if any conflicting changes are detected
      */
-    void resolveConflicts(List<DomainEvent> appliedChanges, List<DomainEvent> committedChanges);
+    void resolveConflicts(List<DomainEventMessage> appliedChanges, List<DomainEventMessage> committedChanges);
 }

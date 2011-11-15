@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,21 @@ package org.axonframework.sample.app.api;
 /**
  * @author Allard Buijze
  */
-public class ContactCreatedEvent extends AbstractContactDomainEvent {
+public class ContactCreatedEvent {
 
+    private final String contactId;
     private final String name;
 
-    public ContactCreatedEvent(String name) {
+    public ContactCreatedEvent(String contactId, String name) {
+        this.contactId = contactId;
         this.name = name;
     }
 
     public String getName() {
         return name;
+    }
+
+    public String getContactId() {
+        return contactId;
     }
 }

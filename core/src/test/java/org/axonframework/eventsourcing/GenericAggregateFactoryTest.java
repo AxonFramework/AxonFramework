@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.joda.time.DateTime;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -41,8 +42,7 @@ public class GenericAggregateFactoryTest {
         try {
             repository.createAggregate(new UUIDAggregateIdentifier(), null);
             fail("Expected IncompatibleAggregateException");
-        }
-        catch (IncompatibleAggregateException e) {
+        } catch (IncompatibleAggregateException e) {
             // we got it
         }
     }
@@ -58,7 +58,7 @@ public class GenericAggregateFactoryTest {
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         aggregate.commitEvents();
-        AggregateSnapshot<StubAggregate> snapshot = new AggregateSnapshot<StubAggregate>(aggregate);
+        AggregateSnapshot<StubAggregate> snapshot = new AggregateSnapshot<StubAggregate>(aggregate, new DateTime());
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<StubAggregate>(StubAggregate.class);
         assertEquals("StubAggregate", factory.getTypeIdentifier());
         assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshot));
@@ -67,7 +67,7 @@ public class GenericAggregateFactoryTest {
     private static class UnsuitableAggregate extends AbstractEventSourcedAggregateRoot {
 
         @Override
-        protected void handle(DomainEvent event) {
+        protected void handle(DomainEventMessage event) {
         }
     }
 
@@ -79,8 +79,7 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        protected void handle(DomainEvent event) {
+        protected void handle(DomainEventMessage event) {
         }
     }
-
 }

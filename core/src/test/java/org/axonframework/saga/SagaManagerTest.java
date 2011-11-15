@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,8 @@
 package org.axonframework.saga;
 
 import org.apache.commons.collections.set.ListOrderedSet;
-import org.axonframework.domain.Event;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.junit.*;
 
@@ -54,7 +54,7 @@ public class SagaManagerTest {
         when(mockSaga3.isActive()).thenReturn(false);
         testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory) {
             @Override
-            protected Set<Saga> findSagas(Event event) {
+            protected Set<Saga> findSagas(EventMessage event) {
                 return setOf(mockSaga1, mockSaga2, mockSaga3);
             }
         };
@@ -70,11 +70,11 @@ public class SagaManagerTest {
 
     @Test
     public void testSagasLoadedAndCommitted() {
-        StubDomainEvent event = new StubDomainEvent();
+        EventMessage event = new GenericEventMessage<Object>(new Object());
         testSubject.handle(event);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
-        verify(mockSaga3, never()).handle(isA(Event.class));
+        verify(mockSaga3, never()).handle(isA(EventMessage.class));
         verify(mockSagaRepository).commit(mockSaga1);
         verify(mockSagaRepository).commit(mockSaga2);
         verify(mockSagaRepository, never()).commit(mockSaga3);
@@ -83,7 +83,7 @@ public class SagaManagerTest {
     @Test
     public void testExceptionPropagated() {
         testSubject.setSuppressExceptions(false);
-        StubDomainEvent event = new StubDomainEvent();
+        EventMessage event = new GenericEventMessage<Object>(new Object());
         doThrow(new RuntimeException("Mock")).when(mockSaga1).handle(event);
         try {
             testSubject.handle(event);
@@ -99,7 +99,7 @@ public class SagaManagerTest {
 
     @Test
     public void testExceptionSuppressed() {
-        StubDomainEvent event = new StubDomainEvent();
+        EventMessage event = new GenericEventMessage<Object>(new Object());
         doThrow(new RuntimeException("Mock")).when(mockSaga1).handle(event);
 
         testSubject.handle(event);

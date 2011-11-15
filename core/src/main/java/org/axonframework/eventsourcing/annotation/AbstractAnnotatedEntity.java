@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
 
@@ -35,6 +35,9 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
 
     private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
 
+    /**
+     * Default constructor.
+     */
     protected AbstractAnnotatedEntity() {
         this.eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
     }
@@ -47,7 +50,7 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
      * @see org.axonframework.eventhandling.annotation.EventHandler
      */
     @Override
-    protected void handle(DomainEvent event) {
+    protected void handle(DomainEventMessage event) {
         // some deserialization mechanisms don't use the default constructor to initialize a class.
         if (eventHandlerInvoker == null) {
             eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);

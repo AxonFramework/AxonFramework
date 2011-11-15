@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Exception indicating that a Command has been refused due to a structural validation failure. Typically, resending

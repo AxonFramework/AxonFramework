@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.springframework.beans.factory.InitializingBean;
@@ -39,7 +39,8 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
     private final EventBus eventBus;
 
     /**
-     * Initialize an adapter to forward messages from the given <code>eventBus</code> to the given <code>channel</code>.
+     * Initialize an adapter to forward messages from the given <code>eventBus</code> to the given
+     * <code>channel</code>.
      * Messages are not filtered; all messages are forwarded to the MessageChannel
      *
      * @param eventBus The event bus to subscribe to.
@@ -52,7 +53,8 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
     }
 
     /**
-     * Initialize an adapter to forward messages from the given <code>eventBus</code> to the given <code>channel</code>.
+     * Initialize an adapter to forward messages from the given <code>eventBus</code> to the given
+     * <code>channel</code>.
      * Messages are filtered using the given <code>filter</code>
      *
      * @param eventBus The event bus to subscribe to.
@@ -80,9 +82,9 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
      * @param event the event to handle
      */
     @Override
-    public void handle(Event event) {
-        if (filter.accept(event.getClass())) {
-            channel.send(new GenericMessage<Event>(event));
+    public void handle(EventMessage event) {
+        if (filter.accept(event.getPayload().getClass())) {
+            channel.send(new GenericMessage<Object>(event.getPayload()));
         }
     }
 }

@@ -17,8 +17,8 @@
 package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.Event;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.junit.*;
@@ -39,8 +39,8 @@ public class DefaultUnitOfWorkTest {
     private DefaultUnitOfWork testSubject;
     private EventBus mockEventBus;
     private AggregateRoot mockAggregateRoot;
-    private Event event1 = new StubDomainEvent(1);
-    private Event event2 = new StubDomainEvent(2);
+    private EventMessage event1 = new GenericEventMessage<Integer>(1);
+    private EventMessage event2 = new GenericEventMessage<Integer>(2);
     private EventListener listener1;
     private EventListener listener2;
     private SaveAggregateCallback callback;
@@ -62,11 +62,11 @@ public class DefaultUnitOfWorkTest {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                listener1.handle((Event) invocation.getArguments()[0]);
-                listener2.handle((Event) invocation.getArguments()[0]);
+                listener1.handle((EventMessage) invocation.getArguments()[0]);
+                listener2.handle((EventMessage) invocation.getArguments()[0]);
                 return null;
             }
-        }).when(mockEventBus).publish(isA(Event.class));
+        }).when(mockEventBus).publish(isA(EventMessage.class));
     }
 
     @After
@@ -148,7 +148,7 @@ public class DefaultUnitOfWorkTest {
     public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnPrepareCommit() {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
         doThrow(new RuntimeException("Mock")).when(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class),
-                                                                                 anyListOf(Event.class));
+                                                                                 anyListOf(EventMessage.class));
         testSubject.registerListener(mockListener);
         testSubject.start();
         try {
@@ -178,7 +178,7 @@ public class DefaultUnitOfWorkTest {
             assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
-        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
         verify(mockListener).onRollback(isA(RuntimeException.class));
         verify(mockListener, never()).afterCommit();
         verify(mockListener).onCleanup();
@@ -188,10 +188,10 @@ public class DefaultUnitOfWorkTest {
     @Test
     public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnDispatchEvents() {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        doThrow(new RuntimeException("Mock")).when(mockEventBus).publish(isA(Event.class));
+        doThrow(new RuntimeException("Mock")).when(mockEventBus).publish(isA(EventMessage.class));
         testSubject.start();
         testSubject.registerListener(mockListener);
-        testSubject.publishEvent(new StubDomainEvent(), mockEventBus);
+        testSubject.publishEvent(new GenericEventMessage<Object>(new Object()), mockEventBus);
         try {
             testSubject.commit();
             fail("Expected exception");
@@ -205,7 +205,7 @@ public class DefaultUnitOfWorkTest {
             assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
-        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
         verify(mockListener).onRollback(isA(RuntimeException.class));
         verify(mockListener, never()).afterCommit();
         verify(mockListener).onCleanup();
@@ -266,10 +266,10 @@ public class DefaultUnitOfWorkTest {
         verify(innerListener, never()).afterCommit();
         verify(innerListener, never()).onCleanup();
         outer.rollback();
-        verify(outerListener, never()).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+        verify(outerListener, never()).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
 
         InOrder inOrder = inOrder(innerListener, outerListener);
-        inOrder.verify(innerListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
+        inOrder.verify(innerListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
 
         inOrder.verify(innerListener).onRollback(null);
         inOrder.verify(outerListener).onRollback(null);
@@ -279,9 +279,9 @@ public class DefaultUnitOfWorkTest {
 
     private class PublishEvent implements Answer {
 
-        private final Event event;
+        private final EventMessage event;
 
-        private PublishEvent(Event event) {
+        private PublishEvent(EventMessage event) {
             this.event = event;
         }
 

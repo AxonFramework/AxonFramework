@@ -17,14 +17,15 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.ApplicationEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.axonframework.test.matchers.Matchers;
 import org.hamcrest.CoreMatchers;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.*;
 
-import static org.axonframework.test.matchers.Matchers.noEvents;
+import static org.axonframework.test.matchers.Matchers.*;
+import static org.hamcrest.CoreMatchers.any;
 
 /**
  * @author Allard Buijze
@@ -36,23 +37,30 @@ public class AnnotatedSagaTest {
         AggregateIdentifier aggregate1 = new UUIDAggregateIdentifier();
         AggregateIdentifier aggregate2 = new UUIDAggregateIdentifier();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-        fixture.givenAggregate(aggregate1).published(new TriggerSagaStartEvent(),
-                                                     new TriggerExistingSagaEvent())
-               .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent())
+        FixtureExecutionResult validator = fixture.givenAggregate(aggregate1).published(new TriggerSagaStartEvent(
+                aggregate1.asString()),
+                                                                                        new TriggerExistingSagaEvent(
+                                                                                                aggregate1.asString()))
+                                                  .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(
+                        aggregate2.asString()))
 
-               .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent())
+                                                  .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(
+                        aggregate1.asString()));
 
-               .expectActiveSagas(1)
-               .expectAssociationWith("aggregateIdentifier", aggregate2)
-               .expectNoAssociationWith("aggregateIdentifier", aggregate1)
-               .expectScheduledEvent(Duration.standardMinutes(10), TimerTriggeredEvent.class)
-               .expectScheduledEvent(Duration.standardMinutes(10), CoreMatchers.any(TimerTriggeredEvent.class))
-               .expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(null, aggregate1))
-               .expectScheduledEvent(fixture.currentTime().plusMinutes(10), TimerTriggeredEvent.class)
-               .expectScheduledEvent(fixture.currentTime().plusMinutes(10), CoreMatchers.any(TimerTriggeredEvent.class))
-               .expectScheduledEvent(fixture.currentTime().plusMinutes(10), new TimerTriggeredEvent(null, aggregate1))
-               .expectDispatchedCommandsEqualTo()
-               .expectPublishedEvents(noEvents());
+        validator.expectActiveSagas(1);
+        validator.expectAssociationWith("identifier", aggregate2);
+        validator.expectNoAssociationWith("identifier", aggregate1);
+        validator.expectScheduledEventOfType(Duration.standardMinutes(10), TimerTriggeredEvent.class);
+        validator.expectScheduledEventMatching(Duration.standardMinutes(10), eventWithPayload(CoreMatchers.any(
+                TimerTriggeredEvent.class)));
+        validator.expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(aggregate1.asString()));
+        validator.expectScheduledEventOfType(fixture.currentTime().plusMinutes(10), TimerTriggeredEvent.class);
+        validator.expectScheduledEventMatching(fixture.currentTime().plusMinutes(10),
+                                               eventWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
+        validator.expectScheduledEvent(fixture.currentTime().plusMinutes(10), new TimerTriggeredEvent(aggregate1
+                                                                                                              .asString()));
+        validator.expectDispatchedCommandsEqualTo();
+        validator.expectPublishedEventsMatching(noEvents());
     }
 
     @Test
@@ -60,14 +68,14 @@ public class AnnotatedSagaTest {
         AggregateIdentifier aggregate1 = new UUIDAggregateIdentifier();
         AggregateIdentifier aggregate2 = new UUIDAggregateIdentifier();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-        fixture.givenAPublished(new TimerTriggeredEvent("Fake source", new UUIDAggregateIdentifier()))
-               .andThenAPublished(new TimerTriggeredEvent("Another source", new UUIDAggregateIdentifier()))
+        fixture.givenAPublished(new TimerTriggeredEvent(new UUIDAggregateIdentifier().asString()))
+               .andThenAPublished(new TimerTriggeredEvent(new UUIDAggregateIdentifier().asString()))
 
-               .whenPublishingA(new TimerTriggeredEvent("Yet another source", new UUIDAggregateIdentifier()))
+               .whenPublishingA(new TimerTriggeredEvent(new UUIDAggregateIdentifier().asString()))
 
                .expectActiveSagas(0)
-               .expectNoAssociationWith("aggregateIdentifier", aggregate2)
-               .expectNoAssociationWith("aggregateIdentifier", aggregate1)
+               .expectNoAssociationWith("identifier", aggregate2)
+               .expectNoAssociationWith("identifier", aggregate1)
                .expectNoScheduledEvents()
                .expectDispatchedCommandsEqualTo()
                .expectPublishedEvents();
@@ -78,16 +86,20 @@ public class AnnotatedSagaTest {
         AggregateIdentifier aggregate1 = new UUIDAggregateIdentifier();
         AggregateIdentifier aggregate2 = new UUIDAggregateIdentifier();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-        fixture.givenAggregate(aggregate1).published(new TriggerSagaStartEvent(),
-                                                     new TriggerExistingSagaEvent())
-               .whenAggregate(aggregate1).publishes(new TriggerExistingSagaEvent())
+        FixtureExecutionResult validator = fixture.givenAggregate(aggregate1).published(new TriggerSagaStartEvent(
+                aggregate1.asString()),
+                                                                                        new TriggerExistingSagaEvent(
+                                                                                                aggregate1.asString()))
+                                                  .whenAggregate(aggregate1).publishes(new TriggerExistingSagaEvent(
+                        aggregate1.asString()));
 
-               .expectActiveSagas(1)
-               .expectAssociationWith("aggregateIdentifier", aggregate1)
-               .expectNoAssociationWith("aggregateIdentifier", aggregate2)
-               .expectScheduledEvent(Duration.standardMinutes(10), CoreMatchers.any(ApplicationEvent.class))
-               .expectDispatchedCommandsEqualTo()
-               .expectPublishedEvents(new SagaWasTriggeredEvent(null));
+        validator.expectActiveSagas(1);
+        validator.expectAssociationWith("identifier", aggregate1);
+        validator.expectNoAssociationWith("identifier", aggregate2);
+        validator.expectScheduledEventMatching(Duration.standardMinutes(10),
+                                               Matchers.eventWithPayload(CoreMatchers.any(Object.class)));
+        validator.expectDispatchedCommandsEqualTo();
+        validator.expectPublishedEventsMatching(listWithAllOf(eventWithPayload(any(SagaWasTriggeredEvent.class))));
     }
 
     @Test
@@ -96,17 +108,17 @@ public class AnnotatedSagaTest {
         AggregateIdentifier identifier2 = new UUIDAggregateIdentifier();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
 
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent())
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent())
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.asString()))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.asString()))
 
                .whenTimeElapses(Duration.standardMinutes(35))
 
                .expectActiveSagas(1)
-               .expectAssociationWith("aggregateIdentifier", identifier)
-               .expectNoAssociationWith("aggregateIdentifier", identifier2)
+               .expectAssociationWith("identifier", identifier)
+               .expectNoAssociationWith("identifier", identifier2)
                .expectNoScheduledEvents()
                .expectDispatchedCommandsEqualTo("Say hi!")
-               .expectPublishedEvents(noEvents());
+               .expectPublishedEventsMatching(noEvents());
     }
 
     @Test
@@ -115,14 +127,14 @@ public class AnnotatedSagaTest {
         AggregateIdentifier identifier2 = new UUIDAggregateIdentifier();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
 
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent())
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent())
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.asString()))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.asString()))
 
                .whenTimeAdvancesTo(new DateTime().plus(Duration.standardDays(1)))
 
                .expectActiveSagas(1)
-               .expectAssociationWith("aggregateIdentifier", identifier)
-               .expectNoAssociationWith("aggregateIdentifier", identifier2)
+               .expectAssociationWith("identifier", identifier)
+               .expectNoAssociationWith("identifier", identifier2)
                .expectNoScheduledEvents()
                .expectDispatchedCommandsEqualTo("Say hi!");
     }

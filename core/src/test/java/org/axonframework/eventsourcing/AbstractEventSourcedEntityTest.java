@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -37,11 +40,16 @@ public class AbstractEventSourcedEntityTest {
 
     @Test
     public void testRecursivelyApplyEvent() {
-        testSubject.handleRecursively(new StubDomainEvent());
+        testSubject.handleRecursively(domainEvent(new StubDomainEvent()));
         assertEquals(1, testSubject.invocationCount);
-        testSubject.handleRecursively(new StubDomainEvent());
+        testSubject.handleRecursively(domainEvent(new StubDomainEvent()));
         assertEquals(2, testSubject.invocationCount);
         assertEquals(1, testSubject.child.invocationCount);
+    }
+
+    private DomainEventMessage domainEvent(StubDomainEvent stubDomainEvent) {
+        return new GenericDomainEventMessage<StubDomainEvent>(new UUIDAggregateIdentifier(), (long) 0,
+                                                              MetaData.emptyInstance(), stubDomainEvent);
     }
 
     @Test
@@ -50,7 +58,7 @@ public class AbstractEventSourcedEntityTest {
         testSubject.registerAggregateRoot(aggregateRoot);
         StubDomainEvent event = new StubDomainEvent();
         testSubject.apply(event);
-        verify(aggregateRoot).apply(event);
+        verify(aggregateRoot).apply(event, MetaData.emptyInstance());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -74,7 +82,7 @@ public class AbstractEventSourcedEntityTest {
         private StubEntity child;
 
         @Override
-        protected void handle(DomainEvent event) {
+        protected void handle(DomainEventMessage event) {
             if (invocationCount == 1 && child == null) {
                 child = new StubEntity();
             }

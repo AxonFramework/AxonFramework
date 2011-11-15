@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.apache.commons.io.IOUtils;
-import org.axonframework.util.AxonConfigurationException;
+import org.axonframework.common.AxonConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

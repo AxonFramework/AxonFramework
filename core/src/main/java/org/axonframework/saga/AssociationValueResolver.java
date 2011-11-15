@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 import java.util.Set;
 
@@ -36,6 +36,5 @@ public interface AssociationValueResolver {
      * @param event The event to extract Association Values from
      * @return The Association Values extracted from the Event. Never <code>null</code>.
      */
-    Set<AssociationValue> extractAssociationValue(Event event);
-
+    Set<AssociationValue> extractAssociationValue(EventMessage event);
 }

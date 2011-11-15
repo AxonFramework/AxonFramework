@@ -16,25 +16,11 @@
 
 package org.axonframework.eventhandling.scheduling;
 
-import org.axonframework.domain.ApplicationEvent;
+public class StartingEvent {
 
-/**
- * @author Allard Buijze
- */
-public class StartingEvent extends ApplicationEvent {
-
-    private static final long serialVersionUID = -6273851928820885751L;
     private final String association;
 
-    /**
-     * Initialize an application event with the given <code>source</code>. Source may be null. In that case, the source
-     * type and source description will be set to <code>Object.class</code> and <code>[unknown source]</code>
-     * respectively.
-     *
-     * @param source the instance that reported this event. If any.
-     */
-    public StartingEvent(Object source, String association) {
-        super(source);
+    public StartingEvent(String association) {
         this.association = association;
     }
 

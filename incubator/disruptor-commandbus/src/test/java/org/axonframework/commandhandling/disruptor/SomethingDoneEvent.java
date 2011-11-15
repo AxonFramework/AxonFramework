@@ -16,10 +16,8 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class SomethingDoneEvent extends DomainEvent {
+public class SomethingDoneEvent {
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.AssociationValue;
@@ -29,7 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static org.axonframework.util.TestUtils.setOf;
+import static org.axonframework.common.TestUtils.setOf;
 import static org.junit.Assert.*;
 
 /**
@@ -48,22 +48,22 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testCreationPolicy_NoneExists() {
-        manager.handle(new StartingEvent("123"));
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     public void testCreationPolicy_OneAlreadyExists() {
-        manager.handle(new StartingEvent("123"));
-        manager.handle(new StartingEvent("123"));
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     public void testCreationPolicy_CreationForced() {
         StartingEvent startingEvent = new StartingEvent("123");
-        manager.handle(startingEvent);
-        manager.handle(new ForcingStartEvent("123"));
+        manager.handle(new GenericEventMessage<StartingEvent>(startingEvent));
+        manager.handle(new GenericEventMessage<ForcingStartEvent>(new ForcingStartEvent("123")));
         Set<MyTestSaga> sagas = repositoryContents("123");
         assertEquals(2, sagas.size());
         for (MyTestSaga saga : sagas) {
@@ -76,37 +76,37 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testCreationPolicy_SagaNotCreated() {
-        manager.handle(new MiddleEvent("123"));
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("123")));
         assertEquals(0, repositoryContents("123").size());
     }
 
     @Test
     public void testLifecycle_DestroyedOnEnd() {
-        manager.handle(new StartingEvent("12"));
-        manager.handle(new StartingEvent("23"));
-        manager.handle(new MiddleEvent("12"));
-        manager.handle(new MiddleEvent("23"));
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("12")));
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("23")));
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("12")));
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23")));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("23").size());
-        manager.handle(new EndingEvent("12"));
+        manager.handle(new GenericEventMessage<EndingEvent>(new EndingEvent("12")));
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
-        manager.handle(new EndingEvent("23"));
+        manager.handle(new GenericEventMessage<EndingEvent>(new EndingEvent("23")));
         assertEquals(0, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
     }
 
     @Test
     public void testLifeCycle_ExistingInstanceIgnoresEvent() {
-        manager.handle(new StartingEvent("12"));
-        manager.handle(new StubDomainEvent());
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("12")));
+        manager.handle(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("12").iterator().next().getCapturedEvents().size());
     }
 
     @Test
     public void testLifeCycle_IgnoredEventDoesNotCreateInstance() {
-        manager.handle(new StubDomainEvent());
+        manager.handle(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
     }
 
@@ -116,7 +116,7 @@ public class AnnotatedSagaManagerTest {
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
 
-        private List<Event> capturedEvents = new LinkedList<Event>();
+        private List<Object> capturedEvents = new LinkedList<Object>();
         private static final long serialVersionUID = -1562911263884220240L;
 
         @StartSaga
@@ -142,12 +142,12 @@ public class AnnotatedSagaManagerTest {
             capturedEvents.add(event);
         }
 
-        public List<Event> getCapturedEvents() {
+        public List<Object> getCapturedEvents() {
             return capturedEvents;
         }
     }
 
-    public static abstract class MyIdentifierEvent extends StubDomainEvent {
+    public static abstract class MyIdentifierEvent {
 
         private String myIdentifier;
 

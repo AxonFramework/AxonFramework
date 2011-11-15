@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
@@ -31,8 +34,13 @@ public class FullConcurrencyPolicyTest {
     public void testSequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
-        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier())));
-        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier())));
-        assertNull(testSubject.getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier())));
+    }
+
+    private DomainEventMessage newStubDomainEvent(AggregateIdentifier aggregateIdentifier) {
+        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0,
+                                                     MetaData.emptyInstance(), new Object());
     }
 }

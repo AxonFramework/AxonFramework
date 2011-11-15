@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.junit.*;
 import org.mockito.*;
 
@@ -47,7 +47,7 @@ public class ClusteringEventBusTest {
         eventBus.subscribe(listener1);
         eventBus.subscribe(listener2);
 
-        eventBus.publish(new StubDomainEvent());
+        eventBus.publish(new GenericEventMessage<Object>(new Object()));
 
         assertEquals(1, listener1.getReceivedEvents().size());
         assertEquals(1, listener2.getReceivedEvents().size());
@@ -61,15 +61,15 @@ public class ClusteringEventBusTest {
 
         eventBus.subscribe(mockEventListener);
 
-        eventBus.publish(new StubDomainEvent());
+        eventBus.publish(new GenericEventMessage<Object>(new Object()));
 
-        verify(mockTerminal).publish(isA(StubDomainEvent.class));
-        verify(mockEventListener, never()).handle(Matchers.<Event>any());
+        verify(mockTerminal).publish(isA(EventMessage.class));
+        verify(mockEventListener, never()).handle(Matchers.<EventMessage>any());
     }
 
     private class RecordingClusteredEventListener implements EventListener {
 
-        private final List<Event> receivedEvents = new ArrayList<Event>();
+        private final List<EventMessage> receivedEvents = new ArrayList<EventMessage>();
         private final String clusterName;
 
         public RecordingClusteredEventListener(String clusterName) {
@@ -77,11 +77,11 @@ public class ClusteringEventBusTest {
         }
 
         @Override
-        public void handle(Event event) {
+        public void handle(EventMessage event) {
             receivedEvents.add(event);
         }
 
-        public List<Event> getReceivedEvents() {
+        public List<EventMessage> getReceivedEvents() {
             return receivedEvents;
         }
     }

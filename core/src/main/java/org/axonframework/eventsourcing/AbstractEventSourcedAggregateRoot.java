@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.Assert;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.domain.AbstractAggregateRoot;
-import org.axonframework.domain.AggregateDeletedEvent;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.util.Assert;
-import org.axonframework.util.ReflectionUtils;
+import org.axonframework.domain.MetaData;
 
 import java.util.Collection;
 import javax.persistence.MappedSuperclass;
@@ -60,32 +60,20 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation is aware of two special types of <code>DomainEvents</code>: The
-     * <code>AggregateDeletedEvent</code>, which indicates that the aggregate is deleted and the
-     * <code>AggregateSnapshot</code>, which is a snapshot event, containing the actual aggregate inside.
-     * <p/>
-     * When an <code>AggregateDeletedEvent</code> is encountered, a <code>AggregateDeletedException</code> is thrown,
-     * unless there are events following the <code>AggregateDeletedEvent</code>. This could be the case when an event
-     * is
-     * added to the stream as a correction to an earlier event.
+     * This implementation is aware of a special type of <code>DomainEvents</code>: the <code>AggregateSnapshot</code>,
+     * which is a snapshot event, containing the actual aggregate inside.
      * <p/>
      * <code>AggregateSnapshot</code> events are used to initialize the aggregate with the correct version ({@link
      * #getVersion()}).
      *
-     * @throws IllegalStateException     if this aggregate was already initialized.
-     * @throws AggregateDeletedException if the event stream contains an event of type {@link AggregateDeletedEvent}
-     *                                   (or
-     *                                   subtype).
+     * @throws IllegalStateException if this aggregate was already initialized.
      */
     @Override
     public void initializeState(DomainEventStream domainEventStream) {
         Assert.state(getUncommittedEventCount() == 0, "Aggregate is already initialized");
         long lastSequenceNumber = -1;
         while (domainEventStream.hasNext()) {
-            DomainEvent event = domainEventStream.next();
-            if (event instanceof AggregateDeletedEvent) {
-                throw new AggregateDeletedException(event.getAggregateIdentifier());
-            }
+            DomainEventMessage event = domainEventStream.next();
             lastSequenceNumber = event.getSequenceNumber();
             if (!(event instanceof AggregateSnapshot)) {
                 handleRecursively(event);
@@ -96,21 +84,31 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(DomainEvent)} event handler method} for processing.
+     * the {@link #handle(org.axonframework.domain.DomainEventMessage)} event handler method} for processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *
-     * @param event The event to apply
+     * @param eventPayload The payload of the event to apply
      */
-    protected void apply(DomainEvent event) {
-        registerEvent(event);
-        handleRecursively(event);
-        if (event instanceof AggregateDeletedEvent) {
-            markDeleted();
-        }
+    protected void apply(Object eventPayload) {
+        apply(eventPayload, MetaData.emptyInstance());
     }
 
-    private void handleRecursively(DomainEvent event) {
+    /**
+     * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
+     * the {@link #handle(org.axonframework.domain.DomainEventMessage)} event handler method} for processing.
+     * <p/>
+     * The event is applied on all entities part of this aggregate.
+     *
+     * @param eventPayload The payload of the event to apply
+     * @param metaData     any meta-data that must be registered with the Event
+     */
+    protected void apply(Object eventPayload, MetaData metaData) {
+        DomainEventMessage event = registerEvent(metaData, eventPayload);
+        handleRecursively(event);
+    }
+
+    private void handleRecursively(DomainEventMessage event) {
         handle(event);
         Collection<AbstractEventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
@@ -131,7 +129,8 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * Iterable};<li>inside both they keys and the values of fields containing a {@link java.util.Map}</ul>
      * <p/>
      * This method may be overridden by subclasses. A <code>null</code> may be returned if this entity does not have
-     * any child entities.
+     * any
+     * child entities.
      *
      * @return a list of event sourced entities contained in this aggregate
      */
@@ -146,7 +145,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      *
      * @param event The event to handle
      */
-    protected abstract void handle(DomainEvent event);
+    protected abstract void handle(DomainEventMessage event);
 
     @Override
     public Long getVersion() {

@@ -25,7 +25,7 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.datastore.Transaction;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -43,23 +43,24 @@ import java.util.List;
  * @author Jettro Coenradie
  */
 public class GaeEventStore implements SnapshotEventStore {
+
     private static final Logger logger = LoggerFactory.getLogger(GaeEventStore.class);
 
-    private final Serializer<? super DomainEvent> eventSerializer;
+    private final Serializer<? super DomainEventMessage> eventSerializer;
     private final DatastoreService datastoreService;
 
     public GaeEventStore() {
         this(new XStreamEventSerializer());
     }
 
-    public GaeEventStore(Serializer<? super DomainEvent> eventSerializer) {
+    public GaeEventStore(Serializer<? super DomainEventMessage> eventSerializer) {
         this.eventSerializer = eventSerializer;
         this.datastoreService = DatastoreServiceFactory.getDatastoreService();
     }
 
     public void appendEvents(String type, DomainEventStream events) {
         while (events.hasNext()) {
-            DomainEvent event = events.next();
+            DomainEventMessage event = events.next();
             doStoreEvent(type, event);
         }
     }
@@ -71,7 +72,7 @@ public class GaeEventStore implements SnapshotEventStore {
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
-        List<DomainEvent> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
+        List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
             events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
@@ -83,12 +84,12 @@ public class GaeEventStore implements SnapshotEventStore {
         return new SimpleDomainEventStream(events);
     }
 
-    public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
+    public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         String snapshotType = "snapshot_" + type;
         doStoreEvent(snapshotType, snapshotEvent);
     }
 
-    private void doStoreEvent(String type, DomainEvent event) {
+    private void doStoreEvent(String type, DomainEventMessage event) {
         EventEntry entry = new EventEntry(type, event, eventSerializer);
         Transaction transaction = datastoreService.beginTransaction();
         try {
@@ -106,16 +107,16 @@ public class GaeEventStore implements SnapshotEventStore {
         }
     }
 
-    private List<DomainEvent> readEventSegmentInternal(String type, AggregateIdentifier identifier,
-                                                       long firstSequenceNumber) {
+    private List<DomainEventMessage> readEventSegmentInternal(String type, AggregateIdentifier identifier,
+                                                              long firstSequenceNumber) {
         Query query = EventEntry.forAggregate(type, identifier.asString(), firstSequenceNumber);
         PreparedQuery preparedQuery = datastoreService.prepare(query);
         List<Entity> entities = preparedQuery.asList(FetchOptions.Builder.withDefaults());
 
-        List<DomainEvent> events = new ArrayList<DomainEvent>(entities.size());
+        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
         for (Entity entity : entities) {
             byte[] bytes = ((Text) entity.getProperty("serializedEvent")).getValue().getBytes(EventEntry.UTF8);
-            events.add((DomainEvent) eventSerializer.deserialize(bytes));
+            events.add((DomainEventMessage) eventSerializer.deserialize(bytes));
         }
         return events;
     }

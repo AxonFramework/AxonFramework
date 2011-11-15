@@ -16,10 +16,11 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 /**
- * Interface describing an implementation of a Saga. Sagas are instances that handle events and may possibly produce new
+ * Interface describing an implementation of a Saga. Sagas are instances that handle events and may possibly produce
+ * new
  * commands or have other side effects. Typically, Sagas are used to manage long running business transactions.
  * <p/>
  * Multiple instances of a single type of Saga may exist. In that case, each Saga will be managing a different
@@ -53,7 +54,7 @@ public interface Saga {
      *
      * @param event the event to handle
      */
-    void handle(Event event);
+    void handle(EventMessage event);
 
     /**
      * Indicates whether or not this saga is active. A Saga is active when its life cycle has not been ended.

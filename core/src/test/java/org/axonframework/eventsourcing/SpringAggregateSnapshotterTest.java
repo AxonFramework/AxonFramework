@@ -17,10 +17,11 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.hamcrest.BaseMatcher;
@@ -58,7 +59,7 @@ public class SpringAggregateSnapshotterTest {
                 .thenReturn(Collections.<String, AggregateFactory>singletonMap("myFactory", new AggregateFactory() {
                     @Override
                     public EventSourcedAggregateRoot createAggregate(AggregateIdentifier aggregateIdentifier,
-                                                                     DomainEvent firstEvent) {
+                                                                     DomainEventMessage firstEvent) {
                         return new StubAggregate(aggregateIdentifier);
                     }
 
@@ -77,7 +78,8 @@ public class SpringAggregateSnapshotterTest {
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = new UUIDAggregateIdentifier();
 
-        StubDomainEvent event1 = new StubDomainEvent(aggregateIdentifier, 1L);
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(aggregateIdentifier, 1L,
+                                                                          MetaData.emptyInstance(), "Mock contents");
         when(mockEventStore.readEvents("stub", aggregateIdentifier)).thenReturn(new SimpleDomainEventStream(event1));
     }
 
@@ -124,7 +126,7 @@ public class SpringAggregateSnapshotterTest {
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
         doThrow(new RuntimeException("Stub"))
-                .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEvent.class));
+                .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEventMessage.class));
         try {
             testSubject.scheduleSnapshot("stub", aggregateIdentifier);
             fail("Expected exception to be propagated");
@@ -145,7 +147,7 @@ public class SpringAggregateSnapshotterTest {
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
         doThrow(new RuntimeException("Stub"))
-                .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEvent.class));
+                .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEventMessage.class));
         try {
             testSubject.scheduleSnapshot("stub", aggregateIdentifier);
             fail("Expected exception to be propagated");
@@ -158,12 +160,12 @@ public class SpringAggregateSnapshotterTest {
         verify(mockTransactionManager).rollback(existingTransaction);
     }
 
-
-    private DomainEvent eventSequence(final long sequenceNumber) {
-        return argThat(new BaseMatcher<DomainEvent>() {
+    private DomainEventMessage eventSequence(final long sequenceNumber) {
+        return argThat(new BaseMatcher<DomainEventMessage>() {
             @Override
             public boolean matches(Object o) {
-                return o instanceof DomainEvent && ((DomainEvent) o).getSequenceNumber() == sequenceNumber;
+                return o instanceof DomainEventMessage
+                        && ((DomainEventMessage) o).getSequenceNumber() == sequenceNumber;
             }
 
             @Override

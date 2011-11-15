@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling;
 
-import org.axonframework.util.AxonTransientException;
+import org.axonframework.common.AxonTransientException;
 
 /**
  * Exception indicating a problem in the Event Scheduling mechanism.
@@ -46,5 +46,4 @@ public class SchedulingException extends AxonTransientException {
     public SchedulingException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

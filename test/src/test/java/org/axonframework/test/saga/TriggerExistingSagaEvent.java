@@ -16,18 +16,18 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
-
 /**
  * @author Allard Buijze
  */
-public class TriggerExistingSagaEvent extends DomainEvent {
+public class TriggerExistingSagaEvent {
 
-    public TriggerExistingSagaEvent() {
+    private String identifier;
+
+    public TriggerExistingSagaEvent(String identifier) {
+        this.identifier = identifier;
     }
 
-    public TriggerExistingSagaEvent(long sequenceNumber, AggregateIdentifier aggregateIdentifier) {
-        super(sequenceNumber, aggregateIdentifier);
+    public String getIdentifier() {
+        return identifier;
     }
 }

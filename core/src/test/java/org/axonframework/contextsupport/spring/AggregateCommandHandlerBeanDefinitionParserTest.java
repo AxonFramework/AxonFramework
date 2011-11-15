@@ -31,7 +31,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.lang.reflect.Field;
 
-import static org.axonframework.util.ReflectionUtils.ensureAccessible;
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

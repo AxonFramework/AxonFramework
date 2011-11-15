@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.EventBase;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
@@ -34,12 +36,11 @@ public class SequentialPerAggregatePolicyTest {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
         AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
-        Object id1 = testSubject.getSequenceIdentifierFor(new StubDomainEvent(aggregateIdentifier));
-        Object id2 = testSubject.getSequenceIdentifierFor(new StubDomainEvent(aggregateIdentifier));
+        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
+        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id3 = testSubject
-                .getSequenceIdentifierFor(new StubDomainEvent(new UUIDAggregateIdentifier()));
-        Object id4 = testSubject.getSequenceIdentifierFor(new EventBase() {
-        });
+                .getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier()));
+        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<String>("bla"));
 
         assertEquals(id1, id2);
         assertFalse(id1.equals(id3));
@@ -47,4 +48,8 @@ public class SequentialPerAggregatePolicyTest {
         assertNull(id4);
     }
 
+    private DomainEventMessage newStubDomainEvent(AggregateIdentifier aggregateIdentifier) {
+        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0,
+                                                     MetaData.emptyInstance(), new Object());
+    }
 }

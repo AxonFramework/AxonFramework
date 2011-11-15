@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 /**
  * A simple Cluster implementation that invokes each of the members of a cluster when an Event is published. When an
@@ -29,7 +29,7 @@ import org.axonframework.domain.Event;
 public class SimpleCluster extends AbstractCluster {
 
     @Override
-    public void publish(Event event) {
+    public void publish(EventMessage event) {
         for (EventListener eventListener : getMembers()) {
             eventListener.handle(event);
         }

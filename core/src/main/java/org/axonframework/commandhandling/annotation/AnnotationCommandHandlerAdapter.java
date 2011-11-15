@@ -18,10 +18,11 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.MessageHandlerInvoker;
+import org.axonframework.domain.Message;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.util.AbstractHandlerInvoker;
-import org.axonframework.util.ReflectionUtils;
-import org.axonframework.util.Subscribable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,10 +40,11 @@ import javax.annotation.PreDestroy;
  * @see CommandHandler
  * @since 0.5
  */
-public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
+public class AnnotationCommandHandlerAdapter
         implements org.axonframework.commandhandling.CommandHandler<Object>, Subscribable {
 
     private final CommandBus commandBus;
+    private final MessageHandlerInvoker invoker;
 
     /**
      * Initialize the command handler adapter for the given <code>target</code> which is to be subscribed with the
@@ -55,7 +57,7 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
      * @param commandBus The command bus to which the handlers must be subscribed
      */
     public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
-        super(target, CommandHandler.class);
+        this.invoker = new MessageHandlerInvoker(target, CommandHandler.class);
         this.commandBus = commandBus;
     }
 
@@ -73,11 +75,15 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     @Override
     public Object handle(Object command, UnitOfWork unitOfWork) throws Throwable {
         try {
-            return invokeHandlerMethod(command, unitOfWork);
-        } catch (IllegalAccessException e) {
-            throw new UnsupportedOperationException(String.format(
-                    "An error occurred when handling a command of type [%s]",
-                    command.getClass().getSimpleName()), e);
+            return invoker.invokeHandlerMethod(new CommandMessage(command),
+                                               new MessageHandlerInvoker.NoMethodFoundCallback() {
+                                                   @Override
+                                                   public Object onNoMethodFound(Message parameter) {
+                                                       throw new NoHandlerForCommandException(String.format(
+                                                               "No Handler found for a command of type[%s]",
+                                                               parameter.getPayloadType().getSimpleName()));
+                                                   }
+                                               });
         } catch (InvocationTargetException e) {
             throw e.getCause();
         }
@@ -112,17 +118,11 @@ public class AnnotationCommandHandlerAdapter extends AbstractHandlerInvoker
     @SuppressWarnings({"unchecked"})
     private <T> List<Class<? extends T>> findAcceptedHandlerParameters() {
         final List<Class<? extends T>> handlerParameters = new LinkedList<Class<? extends T>>();
-        for (Method m : ReflectionUtils.methodsOf(getTargetType())) {
+        for (Method m : ReflectionUtils.methodsOf(invoker.getTargetType())) {
             if (m.isAnnotationPresent(CommandHandler.class)) {
                 handlerParameters.add((Class<T>) m.getParameterTypes()[0]);
             }
         }
         return handlerParameters;
-    }
-
-    @Override
-    protected Object onNoMethodFound(Class<?> parameterType) {
-        throw new NoHandlerForCommandException(
-                String.format("No Handler found for a command of type[%s]", parameterType.getSimpleName()));
     }
 }

@@ -28,7 +28,7 @@ import java.lang.reflect.Method;
 import java.util.UUID;
 
 import static java.lang.String.format;
-import static org.axonframework.util.ReflectionUtils.*;
+import static org.axonframework.common.ReflectionUtils.*;
 
 /**
  * CommandTargetResolver that uses annotations on the command to identify the methods that provide the

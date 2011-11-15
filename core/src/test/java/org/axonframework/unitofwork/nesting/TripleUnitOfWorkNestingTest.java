@@ -19,8 +19,10 @@ package org.axonframework.unitofwork.nesting;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
@@ -83,9 +85,15 @@ public class TripleUnitOfWorkNestingTest {
     @Test
     public void testLoopbackScenario() throws InterruptedException {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
-        eventStore.appendEvents("AggregateA", new SimpleDomainEventStream(new CreateEvent(aggregateAIdentifier)));
-        eventStore.appendEvents("AggregateB", new SimpleDomainEventStream(new CreateEvent(aggregateBIdentifier)));
+        eventStore.appendEvents("AggregateA", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<CreateEvent>(aggregateAIdentifier, (long) 0,
+                                                           MetaData.emptyInstance(), new CreateEvent())));
+        eventStore.appendEvents("AggregateB", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<CreateEvent>(aggregateBIdentifier, (long) 0,
+                                                           MetaData.emptyInstance(), new CreateEvent())));
         transactionManager.commit(tx);
+        assertEquals(1, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
+        assertEquals(1, toList(eventStore.readEvents("AggregateB", aggregateBIdentifier)).size());
         commandBus.dispatch("hello");
 
         assertEquals(5, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
@@ -99,8 +107,8 @@ public class TripleUnitOfWorkNestingTest {
                    executor.awaitTermination(2, TimeUnit.SECONDS));
     }
 
-    private List<DomainEvent> toList(DomainEventStream eventStream) {
-        List<DomainEvent> events = new ArrayList<DomainEvent>();
+    private List<DomainEventMessage> toList(DomainEventStream eventStream) {
+        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
         while (eventStream.hasNext()) {
             events.add(eventStream.next());
         }
@@ -150,15 +158,15 @@ public class TripleUnitOfWorkNestingTest {
         }
     }
 
-    public static class FirstEvent extends DomainEvent {
+    public static class FirstEvent {
 
     }
 
-    public static class SecondEvent extends DomainEvent {
+    public static class SecondEvent {
 
     }
 
-    public static class ThirdEvent extends DomainEvent {
+    public static class ThirdEvent {
 
     }
 
@@ -190,12 +198,8 @@ public class TripleUnitOfWorkNestingTest {
         }
     }
 
-    private static class CreateEvent extends DomainEvent {
+    private static class CreateEvent {
 
-        public CreateEvent(
-                AggregateIdentifier aggregateBIdentifier) {
-            super(0, aggregateBIdentifier);
-        }
     }
 
     private class SendCommandTask implements Runnable {

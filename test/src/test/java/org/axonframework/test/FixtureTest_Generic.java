@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,7 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
@@ -56,24 +55,23 @@ public class FixtureTest_Generic {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new StubDomainEvent(new UUIDAggregateIdentifier(), 0),
-                new StubDomainEvent(new UUIDAggregateIdentifier(), 1)));
+                new GenericDomainEventMessage<StubDomainEvent>(new UUIDAggregateIdentifier(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(new UUIDAggregateIdentifier(),
+                                                               0,
+                                                               new StubDomainEvent())));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new StubDomainEvent(identifier, 0),
-                new StubDomainEvent(identifier, 1),
-                new StubDomainEvent(identifier, 3)));
+                new GenericDomainEventMessage<StubDomainEvent>(identifier, 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(identifier, 2, new StubDomainEvent())));
     }
 
-    private class StubDomainEvent extends DomainEvent {
-        private static final long serialVersionUID = 123033211453385579L;
+    private class StubDomainEvent {
 
-        public StubDomainEvent(AggregateIdentifier aggregateIdentifier, long sequenceNumber) {
-            super(sequenceNumber, aggregateIdentifier);
+        public StubDomainEvent() {
         }
     }
 }

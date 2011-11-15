@@ -16,12 +16,10 @@
 
 package org.axonframework.integrationtests.saga;
 
-import org.axonframework.domain.ApplicationEvent;
-
 /**
  * @author Allard Buijze
  */
-public class SagaAssociationChangingEvent extends ApplicationEvent {
+public class SagaAssociationChangingEvent {
 
     private final String currentAssociationValue;
     private final String newAssociationValue;
@@ -30,11 +28,8 @@ public class SagaAssociationChangingEvent extends ApplicationEvent {
      * Initialize an application event with the given <code>source</code>. Source may be null. In that case, the source
      * type and source description will be set to <code>Object.class</code> and <code>[unknown source]</code>
      * respectively.
-     *
-     * @param source the instance that reported this event. If any.
      */
-    protected SagaAssociationChangingEvent(Object source, String currentAssociationValue, String newAssociationValue) {
-        super(source);
+    protected SagaAssociationChangingEvent(String currentAssociationValue, String newAssociationValue) {
         this.currentAssociationValue = currentAssociationValue;
         this.newAssociationValue = newAssociationValue;
     }

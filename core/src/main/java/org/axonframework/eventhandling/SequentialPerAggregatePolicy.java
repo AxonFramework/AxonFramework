@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 
 /**
  * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different
@@ -26,15 +26,15 @@ import org.axonframework.domain.Event;
  * @author Allard Buijze
  * @since 0.3
  */
-public class SequentialPerAggregatePolicy implements SequencingPolicy<Event> {
+public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessage> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Object getSequenceIdentifierFor(Event event) {
-        if (DomainEvent.class.isInstance(event)) {
-            return ((DomainEvent) event).getAggregateIdentifier();
+    public Object getSequenceIdentifierFor(EventMessage event) {
+        if (DomainEventMessage.class.isInstance(event)) {
+            return ((DomainEventMessage) event).getAggregateIdentifier();
         }
         return null;
     }

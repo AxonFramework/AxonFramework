@@ -31,7 +31,7 @@ public class SimpleDomainEventStream implements DomainEventStream {
     private static final DomainEventStream EMPTY_STREAM = new SimpleDomainEventStream();
 
     private int nextIndex;
-    private final DomainEvent[] events;
+    private final DomainEventMessage[] events;
 
     /**
      * Initialize the event stream using the given List of DomainEvent and aggregate identifier.
@@ -39,19 +39,19 @@ public class SimpleDomainEventStream implements DomainEventStream {
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if the given list is empty
      */
-    public SimpleDomainEventStream(Collection<? extends DomainEvent> events) {
-        this(events.toArray(new DomainEvent[events.size()]));
+    public SimpleDomainEventStream(Collection<? extends DomainEventMessage> events) {
+        this(events.toArray(new DomainEventMessage[events.size()]));
     }
 
     /**
-     * Initialize the event stream using the given {@link org.axonframework.domain.DomainEvent}s and aggregate
-     * identifier. The aggregate identifier is initialized by reading it from the first event available. Therefore, you
-     * must provide at least one event.
+     * Initialize the event stream using the given {@link DomainEventMessage}s and aggregate identifier. The aggregate
+     * identifier is initialized by reading it from the first event available. Therefore, you must provide at least one
+     * event.
      *
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if no events are supplied
      */
-    public SimpleDomainEventStream(DomainEvent... events) {
+    public SimpleDomainEventStream(DomainEventMessage... events) {
         this.events = Arrays.copyOfRange(events, 0, events.length);
     }
 
@@ -70,7 +70,7 @@ public class SimpleDomainEventStream implements DomainEventStream {
      *          when no items exist after the current pointer in the stream
      */
     @Override
-    public DomainEvent next() {
+    public DomainEventMessage next() {
         if (!hasNext()) {
             throw new NoSuchElementException("Trying to peek beyond the limits of this stream.");
         }
@@ -84,21 +84,11 @@ public class SimpleDomainEventStream implements DomainEventStream {
      *          when no items exist after the current pointer in the stream
      */
     @Override
-    public DomainEvent peek() {
+    public DomainEventMessage peek() {
         if (!hasNext()) {
             throw new NoSuchElementException("Trying to peek beyond the limits of this stream.");
         }
         return events[nextIndex];
-    }
-
-    /**
-     * Append the contents of this stream to the given <code>collection</code>. This includes all events that have
-     * already been read from the stream.
-     *
-     * @param collection the collection to append the events to.
-     */
-    public void appendTo(Collection<DomainEvent> collection) {
-        collection.addAll(Arrays.asList(events));
     }
 
     /**

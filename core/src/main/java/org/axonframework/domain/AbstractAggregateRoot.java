@@ -75,12 +75,25 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     }
 
     /**
+     * Registers an event to be published when the aggregate is saved, containing the given <code>payload</code> and no
+     * (additional) meta-data.
+     *
+     * @param payload the payload of the event to register
+     * @return The Event holding the given <code>payload</code>
+     */
+    protected <T> DomainEventMessage<T> registerEvent(T payload) {
+        return registerEvent(MetaData.emptyInstance(), payload);
+    }
+
+    /**
      * Registers an event to be published when the aggregate is saved.
      *
-     * @param event the event to register
+     * @param metaData The meta data of the event to register
+     * @param payload  the payload of the event to register
+     * @return The Event holding the given <code>payload</code>
      */
-    protected void registerEvent(DomainEvent event) {
-        eventContainer.addEvent(event);
+    protected <T> DomainEventMessage<T> registerEvent(MetaData metaData, T payload) {
+        return eventContainer.addEvent(metaData, payload);
     }
 
     /**
@@ -88,7 +101,8 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * <p/>
      * Note that different Repository implementation may react differently to aggregates marked for deletion.
      * Typically,
-     * Event Sourced Repositories will ignore the marking and expect Events implementing {@link AggregateDeletedEvent}.
+     * Event Sourced Repositories will ignore the marking and expect deletion to be provided as part of Event
+     * information.
      */
     protected void markDeleted() {
         this.deleted = true;
@@ -97,6 +111,16 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     @Override
     public boolean isDeleted() {
         return deleted;
+    }
+
+    /**
+     * Shorthand helper method to easily return the aggregate identifier as a String value. To get the actual
+     * identifier, use {@link #getIdentifier()}.
+     *
+     * @return the String representation of this aggregate's identifier
+     */
+    protected String id() {
+        return getIdentifier().asString();
     }
 
     /**
@@ -145,7 +169,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      *
      * @param collection the collection to append uncommitted events to
      */
-    public void appendUncommittedEventsTo(Collection<DomainEvent> collection) {
+    public void appendUncommittedEventsTo(Collection<DomainEventMessage> collection) {
         collection.addAll(eventContainer.getEventList());
     }
 
@@ -183,7 +207,8 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * loaded from persistent storage.
      * <p/>
      * Subclasses are responsible for invoking this method if they provide their own {@link @PostLoad} annotated
-     * method. Failure to do so will inevitably result in <code>NullPointerException</code>.
+     * method.
+     * Failure to do so will inevitably result in <code>NullPointerException</code>.
      *
      * @see PostLoad
      */

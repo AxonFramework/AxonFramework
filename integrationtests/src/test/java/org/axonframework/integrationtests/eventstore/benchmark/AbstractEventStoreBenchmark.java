@@ -17,7 +17,8 @@
 package org.axonframework.integrationtests.eventstore.benchmark;
 
 import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
@@ -77,9 +78,13 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected int saveAndLoadLargeNumberOfEvents(AggregateIdentifier aggregateId, EventStore eventStore,
                                                  int eventSequence) {
-        List<DomainEvent> events = new ArrayList<DomainEvent>();
+        List<DomainEventMessage<StubDomainEvent>> events = new ArrayList<DomainEventMessage<StubDomainEvent>>();
         for (int t = 0; t < getTransactionSize(); t++) {
-            events.add(new StubDomainEvent(aggregateId, eventSequence++));
+            events.add(new GenericDomainEventMessage<StubDomainEvent>(
+                    aggregateId,
+                    eventSequence++,
+                    null,
+                    new StubDomainEvent()));
         }
         eventStore.appendEvents("benchmark", new SimpleDomainEventStream(events));
         return eventSequence;

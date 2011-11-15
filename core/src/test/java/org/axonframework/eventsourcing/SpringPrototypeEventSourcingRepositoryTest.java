@@ -17,9 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -75,8 +76,11 @@ public class SpringPrototypeEventSourcingRepositoryTest {
                         @Override
                         public Object answer(InvocationOnMock invocation) throws Throwable {
                             return new SimpleDomainEventStream(
-                                    new StubDomainEvent((AggregateIdentifier) invocation.getArguments()[1],
-                                                        0L));
+                                    new GenericDomainEventMessage<String>(
+                                            (AggregateIdentifier) invocation.getArguments()[1],
+                                            0L,
+                                            MetaData.emptyInstance(),
+                                            "Mock contents"));
                         }
                     });
             StubAggregate aggregate1 = repository.load(aggregateIdentifier1, 0L);

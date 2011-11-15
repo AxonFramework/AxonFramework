@@ -16,7 +16,7 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.joda.time.DateTime;
 
@@ -31,7 +31,7 @@ class StubScheduleToken implements ScheduleToken, Comparable<StubScheduleToken>,
     private static final long serialVersionUID = 3763093001261110665L;
 
     private final DateTime scheduleTime;
-    private final ApplicationEvent event;
+    private final EventMessage event;
     private final int counter;
 
     /**
@@ -42,7 +42,7 @@ class StubScheduleToken implements ScheduleToken, Comparable<StubScheduleToken>,
      * @param counter      A counter used for sorting purposes. When two events are scheduled for the same time, the
      *                     counter decides which comes first.
      */
-    StubScheduleToken(DateTime scheduleTime, ApplicationEvent event, int counter) {
+    StubScheduleToken(DateTime scheduleTime, EventMessage event, int counter) {
         this.scheduleTime = scheduleTime;
         this.event = event;
         this.counter = counter;
@@ -54,7 +54,7 @@ class StubScheduleToken implements ScheduleToken, Comparable<StubScheduleToken>,
     }
 
     @Override
-    public ApplicationEvent getEvent() {
+    public EventMessage getEvent() {
         return event;
     }
 

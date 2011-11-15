@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.util.AxonNonTransientException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Exception indicating that an error occurred that prevented successful execution of a matcher. This exception does

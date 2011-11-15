@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.integration.adapter;
 
-import org.axonframework.domain.Event;
-
 /**
  * Interface describing an Event Filter. The Event Filter decides which events may be forwarded by adapters and which
  * should be blocked.
@@ -30,9 +28,8 @@ public interface EventFilter {
     /**
      * Whether or not this filter allows an event of the given type to pass through or not.
      *
-     * @param eventType The actual type of the event.
+     * @param payloadType The actual type of payload in the event.
      * @return <code>true</code> if this event should be forwarded, <code>false</code> otherwise.
      */
-    boolean accept(Class<? extends Event> eventType);
-
+    boolean accept(Class<?> payloadType);
 }

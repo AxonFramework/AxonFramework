@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package org.axonframework.sample.app.api;
  */
 public class AddressChangedEvent extends AddressRegisteredEvent {
 
-    public AddressChangedEvent(AddressType type, Address address) {
-        super(type, address);
+    public AddressChangedEvent(String contactId, AddressType type, Address address) {
+        super(contactId, type, address);
     }
 }

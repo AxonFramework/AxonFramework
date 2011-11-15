@@ -18,7 +18,7 @@ package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +125,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     }
 
     @Override
-    public void publishEvent(Event event, EventBus eventBus) {
+    public void publishEvent(EventMessage event, EventBus eventBus) {
         if (logger.isDebugEnabled()) {
             logger.debug("Staging event for publishing: [{}] on [{}]",
                          event.getClass().getName(),
@@ -201,7 +201,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     @Override
     protected void notifyListenersPrepareCommit() {
         logger.debug("Notifying listeners of commit request");
-        List<Event> events = eventsToPublish();
+        List<EventMessage> events = eventsToPublish();
         for (UnitOfWorkListener listener : listeners) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Notifying listener [{}] of upcoming commit", listener.getClass().getName());
@@ -227,8 +227,8 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         logger.debug("Listeners successfully notified");
     }
 
-    private List<Event> eventsToPublish() {
-        List<Event> events = new ArrayList<Event>(eventsToPublish.size());
+    private List<EventMessage> eventsToPublish() {
+        List<EventMessage> events = new ArrayList<EventMessage>(eventsToPublish.size());
         for (EventEntry entry : eventsToPublish) {
             events.add(entry.event);
         }
@@ -237,10 +237,10 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     private static class EventEntry {
 
-        private final Event event;
+        private final EventMessage event;
         private final EventBus eventBus;
 
-        public EventEntry(Event event, EventBus eventBus) {
+        public EventEntry(EventMessage event, EventBus eventBus) {
             this.event = event;
             this.eventBus = eventBus;
         }

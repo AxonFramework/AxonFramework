@@ -16,13 +16,13 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
-import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.common.Assert;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.eventhandling.scheduling.ScheduledEvent;
-import org.axonframework.util.Assert;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
@@ -83,21 +83,17 @@ public class SimpleEventScheduler implements EventScheduler {
     }
 
     @Override
-    public ScheduleToken schedule(DateTime triggerDateTime, ApplicationEvent event) {
+    public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
         return schedule(new Duration(null, triggerDateTime), event);
     }
 
     @Override
-    public ScheduleToken schedule(Duration triggerDuration, ApplicationEvent event) {
-        ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(event),
+    public ScheduleToken schedule(Duration triggerDuration, Object event) {
+        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
+        ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(eventMessage),
                                                              triggerDuration.getMillis(),
                                                              TimeUnit.MILLISECONDS);
         return new SimpleScheduleToken(future);
-    }
-
-    @Override
-    public ScheduleToken schedule(ScheduledEvent event) {
-        return schedule(event.getScheduledTime(), event);
     }
 
     @Override
@@ -111,9 +107,9 @@ public class SimpleEventScheduler implements EventScheduler {
 
     private class PublishEventTask implements Runnable {
 
-        private final ApplicationEvent event;
+        private final EventMessage event;
 
-        public PublishEventTask(ApplicationEvent event) {
+        public PublishEventTask(EventMessage event) {
             this.event = event;
         }
 
@@ -133,7 +129,7 @@ public class SimpleEventScheduler implements EventScheduler {
     private static class NoOpEventTriggerCallback implements EventTriggerCallback {
 
         @Override
-        public void beforePublication(ApplicationEvent event) {
+        public void beforePublication(EventMessage event) {
         }
 
         @Override

@@ -17,7 +17,7 @@
 package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,7 +240,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         }
 
         @Override
-        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
+        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
         }
 
         @Override

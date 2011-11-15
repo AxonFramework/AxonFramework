@@ -16,11 +16,12 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.matchers.Matchers;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -28,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
-import static org.axonframework.test.matchers.Matchers.equalTo;
+import static org.axonframework.test.matchers.Matchers.*;
 import static org.axonframework.test.saga.DescriptionUtils.describe;
 
 /**
@@ -39,8 +40,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  */
 class EventValidator implements EventListener {
 
-
-    private final List<Event> publishedEvents = new ArrayList<Event>();
+    private final List<EventMessage> publishedEvents = new ArrayList<EventMessage>();
     private final EventBus eventBus;
 
     /**
@@ -57,7 +57,7 @@ class EventValidator implements EventListener {
      *
      * @param matcher The matcher that will validate the actual events
      */
-    public void assertPublishedEvents(Matcher<List<? extends Event>> matcher) {
+    public void assertPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             StringDescription expectedDescription = new StringDescription();
             StringDescription actualDescription = new StringDescription();
@@ -73,12 +73,12 @@ class EventValidator implements EventListener {
      *
      * @param expected the events that must have been published.
      */
-    public void assertPublishedEvents(Event... expected) {
-        assertPublishedEvents(Matchers.exactSequenceOf(createEqualToMatchers(expected)));
+    public void assertPublishedEvents(Object... expected) {
+        assertPublishedEventsMatching(eventPayloadsMatching(exactSequenceOf(createEqualToMatchers(expected))));
     }
 
     @Override
-    public void handle(Event event) {
+    public void handle(EventMessage event) {
         publishedEvents.add(event);
     }
 
@@ -90,11 +90,28 @@ class EventValidator implements EventListener {
     }
 
     @SuppressWarnings({"unchecked"})
-    private Matcher<Event>[] createEqualToMatchers(Event[] expected) {
-        List<Matcher<? extends Event>> matchers = new ArrayList<Matcher<? extends Event>>(expected.length);
-        for (Event event : expected) {
+    private Matcher<Object>[] createEqualToMatchers(Object[] expected) {
+        List<Matcher<?>> matchers = new ArrayList<Matcher<?>>(expected.length);
+        for (Object event : expected) {
             matchers.add(equalTo(event));
         }
         return matchers.toArray(new Matcher[matchers.size()]);
+    }
+
+    private Matcher<?> messageWithPayload(final Matcher<Object> matcher) {
+        return new BaseMatcher<Object>() {
+            @Override
+            public boolean matches(Object item) {
+                return EventMessage.class.isInstance(item)
+                        && matcher.matches(((EventMessage) item).getPayload());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("EventMessage with payload [");
+                matcher.describeTo(description);
+                description.appendText("]");
+            }
+        };
     }
 }

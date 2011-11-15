@@ -16,10 +16,11 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.Event;
+import org.axonframework.domain.EventMessage;
 
 /**
- * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
+ * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can
+ * publish
  * their events. The event bus dispatches event to all subscribed listeners.
  * <p/>
  * Implementations may or may not dispatch the events to event listeners in the dispatching thread.
@@ -36,10 +37,11 @@ public interface EventBus {
      *
      * @param event the event to publish
      */
-    void publish(Event event);
+    void publish(EventMessage event);
 
     /**
-     * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events published
+     * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events
+     * published
      * to this bus.
      *
      * @param eventListener The event listener to subscribe
@@ -47,11 +49,11 @@ public interface EventBus {
     void subscribe(EventListener eventListener);
 
     /**
-     * Unsubscribe the given <code>eventListener</code> to this bus. When unsubscribed, it will no longer receive events
+     * Unsubscribe the given <code>eventListener</code> to this bus. When unsubscribed, it will no longer receive
+     * events
      * published to this bus.
      *
      * @param eventListener The event listener to unsubscribe
      */
     void unsubscribe(EventListener eventListener);
-
 }

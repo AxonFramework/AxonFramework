@@ -17,9 +17,9 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.domain.DomainEvent;
-import org.axonframework.domain.Event;
-import org.axonframework.test.matchers.EqualEventMatcher;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -38,8 +38,8 @@ import static org.hamcrest.CoreMatchers.*;
  */
 class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
 
-    private final Collection<DomainEvent> storedEvents;
-    private final Collection<Event> publishedEvents;
+    private final Collection<DomainEventMessage> storedEvents;
+    private final Collection<EventMessage> publishedEvents;
 
     private Object actualReturnValue;
     private Throwable actualException;
@@ -52,13 +52,13 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
      * @param storedEvents    The events that were stored during command execution
      * @param publishedEvents The events that were published during command execution
      */
-    public ResultValidatorImpl(Collection<DomainEvent> storedEvents, Collection<Event> publishedEvents) {
+    public ResultValidatorImpl(Collection<DomainEventMessage> storedEvents, Collection<EventMessage> publishedEvents) {
         this.storedEvents = storedEvents;
         this.publishedEvents = publishedEvents;
     }
 
     @Override
-    public ResultValidator expectEvents(DomainEvent... expectedEvents) {
+    public ResultValidator expectEvents(Object... expectedEvents) {
         if (publishedEvents.size() != storedEvents.size()) {
             reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
         }
@@ -66,24 +66,24 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     }
 
     @Override
-    public ResultValidator expectEvents(Matcher<List<? extends Event>> matcher) {
+    public ResultValidator expectEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
         if (publishedEvents.size() != storedEvents.size()) {
             reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
         }
 
-        return expectPublishedEvents(matcher);
+        return expectPublishedEventsMatching(matcher);
     }
 
     @Override
-    public ResultValidator expectPublishedEvents(Event... expectedEvents) {
+    public ResultValidator expectPublishedEvents(Object... expectedEvents) {
         if (expectedEvents.length != publishedEvents.size()) {
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
         }
 
-        Iterator<Event> iterator = publishedEvents.iterator();
-        for (Event expectedEvent : expectedEvents) {
-            Event actualEvent = iterator.next();
-            if (!verifyEventEquality(expectedEvent, actualEvent)) {
+        Iterator<EventMessage> iterator = publishedEvents.iterator();
+        for (Object expectedEvent : expectedEvents) {
+            EventMessage actualEvent = iterator.next();
+            if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -91,7 +91,7 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     }
 
     @Override
-    public ResultValidator expectPublishedEvents(Matcher<List<? extends Event>> matcher) {
+    public ResultValidator expectPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
         }
@@ -105,13 +105,13 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     }
 
     @Override
-    public ResultValidator expectStoredEvents(DomainEvent... expectedEvents) {
+    public ResultValidator expectStoredEvents(Object... expectedEvents) {
         if (expectedEvents.length != storedEvents.size()) {
             reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
         }
-        Iterator<DomainEvent> iterator = storedEvents.iterator();
-        for (DomainEvent expectedEvent : expectedEvents) {
-            DomainEvent actualEvent = iterator.next();
+        Iterator<DomainEventMessage> iterator = storedEvents.iterator();
+        for (Object expectedEvent : expectedEvents) {
+            DomainEventMessage actualEvent = iterator.next();
             if (!verifyEventEquality(expectedEvent, actualEvent)) {
                 reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
             }
@@ -120,7 +120,7 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     }
 
     @Override
-    public ResultValidator expectStoredEvents(Matcher<List<? extends DomainEvent>> matcher) {
+    public ResultValidator expectStoredEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
         if (!matcher.matches(storedEvents)) {
             reporter.reportWrongEvent(storedEvents, descriptionOf(matcher), actualException);
         }
@@ -184,11 +184,11 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
         actualException = cause;
     }
 
-    private boolean verifyEventEquality(Event expectedEvent, Event actualEvent) {
+    private boolean verifyEventEquality(Object expectedEvent, Object actualEvent) {
         if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
             return false;
         }
-        EqualEventMatcher<Event> matcher = new EqualEventMatcher<Event>(expectedEvent);
+        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<Object>(expectedEvent);
         if (!matcher.matches(actualEvent)) {
             reporter.reportDifferentEventContents(expectedEvent.getClass(),
                                                   matcher.getFailedField(),
