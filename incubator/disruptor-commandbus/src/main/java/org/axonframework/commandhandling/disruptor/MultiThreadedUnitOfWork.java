@@ -86,7 +86,7 @@ public class MultiThreadedUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public <T extends AggregateRoot> T registerAggregate(T aggregateRoot,
+    public <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
                                                          SaveAggregateCallback<T> saveAggregateCallback) {
         aggregates.add((EventSourcedAggregateRoot) aggregateRoot);
         return aggregateRoot;
