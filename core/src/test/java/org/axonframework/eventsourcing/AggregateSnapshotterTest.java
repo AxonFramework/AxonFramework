@@ -56,8 +56,8 @@ public class AggregateSnapshotterTest {
     public void testCreateSnapshot() {
         AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         DomainEventMessage firstEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                                              MetaData.emptyInstance(),
-                                                                              "Mock contents");
+                                                                              "Mock contents", MetaData.emptyInstance()
+        );
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
         EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);
         when(aggregate.getIdentifier()).thenReturn(aggregateIdentifier);
@@ -78,8 +78,8 @@ public class AggregateSnapshotterTest {
 
         Snapshot<StubAggregate> first = new AggregateSnapshot<StubAggregate>(aggregate);
         DomainEventMessage secondEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                                               MetaData.emptyInstance(),
-                                                                               "Mock contents");
+                                                                               "Mock contents", MetaData.emptyInstance()
+        );
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(first, secondEvent);
 
         when(mockAggregateFactory.createAggregate(any(AggregateIdentifier.class), any(DomainEventMessage.class)))

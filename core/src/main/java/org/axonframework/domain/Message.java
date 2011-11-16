@@ -46,4 +46,13 @@ public interface Message<T> {
      * @return a copy of this message with the given MetaData
      */
     Message<T> withMetaData(MetaData metaData);
+
+    /**
+     * Returns a copy of this EventMessage with it MetaData merged with the given <code>metaData</code>. The payload
+     * remains unchanged.
+     *
+     * @param metaData The MetaData to merge with
+     * @return a copy of this message with the given MetaData
+     */
+    Message<T> andMetaData(MetaData metaData);
 }

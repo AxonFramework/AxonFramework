@@ -126,8 +126,8 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
 
         UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
-                                                                      MetaData.emptyInstance(), new SimpleEvent(
-                identifier)));
+                                                                      new SimpleEvent(
+                                                                              identifier), MetaData.emptyInstance()));
 
         verify(sagaFactory).createSaga(StubSaga.class);
     }
@@ -145,8 +145,8 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
 
         UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
-                                                                      MetaData.emptyInstance(), new SimpleEvent(
-                identifier)));
+                                                                      new SimpleEvent(
+                                                                              identifier), MetaData.emptyInstance()));
         sagaManager.unsubscribe();
         verify(sagaFactory).createSaga(eq(StubSaga.class));
         sagaManager.stop();
@@ -169,8 +169,8 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
 
         UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
-                                                                      MetaData.emptyInstance(), new SimpleEvent(
-                identifier)));
+                                                                      new SimpleEvent(
+                                                                              identifier), MetaData.emptyInstance()));
         Thread.sleep(250);
         te.shutdown();
         te.getThreadPoolExecutor().awaitTermination(2, TimeUnit.SECONDS);

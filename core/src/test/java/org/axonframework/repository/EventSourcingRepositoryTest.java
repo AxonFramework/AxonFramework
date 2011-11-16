@@ -84,9 +84,9 @@ public class EventSourcingRepositoryTest {
     public void testLoadAndSaveAggregate() {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         DomainEventMessage event1 = new GenericDomainEventMessage<String>(identifier, (long) 1,
-                                                                          MetaData.emptyInstance(), "Mock contents");
+                                                                          "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<String>(identifier, (long) 2,
-                                                                          MetaData.emptyInstance(), "Mock contents");
+                                                                          "Mock contents", MetaData.emptyInstance());
         when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(event1, event2));
 
         TestAggregate aggregate = testSubject.load(identifier, null);
@@ -115,7 +115,7 @@ public class EventSourcingRepositoryTest {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         TestAggregate simpleAggregate = new TestAggregate(identifier);
         simpleAggregate.apply(new GenericDomainEventMessage<String>(identifier, (long) 0,
-                                                                    MetaData.emptyInstance(), "Mock contents"));
+                                                                    "Mock contents", MetaData.emptyInstance()));
         simpleAggregate.commitEvents();
         AggregateSnapshot<AbstractEventSourcedAggregateRoot> snapshotEvent =
                 new AggregateSnapshot<AbstractEventSourcedAggregateRoot>(simpleAggregate);
@@ -123,9 +123,9 @@ public class EventSourcingRepositoryTest {
                 .thenReturn(new SimpleDomainEventStream(snapshotEvent, new GenericDomainEventMessage<String>(
                         identifier,
                         (long) 1,
-                        MetaData
-                                .emptyInstance(),
-                        "Mock contents")));
+                        "Mock contents", MetaData
+                        .emptyInstance()
+                )));
         EventSourcedAggregateRoot actual = testSubject.load(identifier, null);
 
         assertSame(simpleAggregate, actual);
@@ -137,13 +137,14 @@ public class EventSourcingRepositoryTest {
         ConflictResolver conflictResolver = mock(ConflictResolver.class);
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         DomainEventMessage event2 = new GenericDomainEventMessage<String>(identifier, (long) 2,
-                                                                          MetaData.emptyInstance(), "Mock contents");
+                                                                          "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event3 = new GenericDomainEventMessage<String>(identifier, (long) 3,
-                                                                          MetaData.emptyInstance(), "Mock contents");
+                                                                          "Mock contents", MetaData.emptyInstance());
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 1,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents"), event2, event3));
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                ), event2, event3));
         testSubject.setConflictResolver(conflictResolver);
         TestAggregate actual = testSubject.load(identifier, 1L);
         verify(conflictResolver, never()).resolveConflicts(anyListOf(DomainEventMessage.class), anyListOf(
@@ -177,13 +178,14 @@ public class EventSourcingRepositoryTest {
     public void testLoadWithConflictingChanges_NoConflictResolverSet() {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         DomainEventMessage event2 = new GenericDomainEventMessage<String>(identifier, (long) 2,
-                                                                          MetaData.emptyInstance(), "Mock contents");
+                                                                          "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event3 = new GenericDomainEventMessage<String>(identifier, (long) 3,
-                                                                          MetaData.emptyInstance(), "Mock contents");
+                                                                          "Mock contents", MetaData.emptyInstance());
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 1,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents"), event2, event3));
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                ), event2, event3));
 
         try {
             testSubject.load(identifier, 1L);
@@ -201,14 +203,17 @@ public class EventSourcingRepositoryTest {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 1,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents"),
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                ),
                                             new GenericDomainEventMessage<String>(identifier, (long) 2,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents"),
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                                            ),
                                             new GenericDomainEventMessage<String>(identifier, (long) 3,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents")));
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                                            )));
         testSubject.setConflictResolver(conflictResolver);
         TestAggregate actual = testSubject.load(identifier, 3L);
         verify(conflictResolver, never()).resolveConflicts(anyListOf(DomainEventMessage.class), anyListOf(
@@ -229,14 +234,17 @@ public class EventSourcingRepositoryTest {
         testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 1,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents"),
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                ),
                                             new GenericDomainEventMessage<String>(identifier, (long) 2,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents"),
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                                            ),
                                             new GenericDomainEventMessage<String>(identifier, (long) 3,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents")));
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                                            )));
         TestAggregate aggregate = testSubject.load(identifier);
         // loading them in...
         InOrder inOrder = Mockito.inOrder(decorator1.lastSpy, decorator2.lastSpy);
@@ -273,8 +281,9 @@ public class EventSourcingRepositoryTest {
         AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 3,
-                                                                                  MetaData.emptyInstance(),
-                                                                                  "Mock contents")));
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                )));
         TestAggregate aggregate = testSubject.load(identifier);
         aggregate.apply(new StubDomainEvent());
         aggregate.apply(new StubDomainEvent());

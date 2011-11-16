@@ -49,7 +49,7 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     public DomainEventMessage createSnapshotEvent() {
         return new GenericDomainEventMessage<StubDomainEvent>(getIdentifier(), (long) 5,
-                                                              MetaData.emptyInstance(), new StubDomainEvent());
+                                                              new StubDomainEvent(), MetaData.emptyInstance());
     }
 
     public void delete() {

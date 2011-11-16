@@ -58,6 +58,15 @@ public class MetaData implements Map<String, Object>, Serializable {
         values.putAll(items);
     }
 
+    public static MetaData from(Map<String, Object> metaData) {
+        if (metaData instanceof MetaData) {
+            return (MetaData) metaData;
+        } else if (metaData == null || metaData.isEmpty()) {
+            return MetaData.emptyInstance();
+        }
+        return new MetaData(metaData);
+    }
+
     @Override
     public Object get(Object key) {
         return values.get(key);

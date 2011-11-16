@@ -198,7 +198,7 @@ public class FileSystemEventStoreTest {
         while (eventStream.hasNext()) {
             actualEvents.add(eventStream.next());
         }
-        assertEquals(new Long(14), actualEvents.get(0).getSequenceNumber());
+        assertEquals(14L, actualEvents.get(0).getSequenceNumber());
         assertEquals(3, actualEvents.size());
     }
 

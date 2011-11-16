@@ -117,7 +117,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         while (committedEvents.hasNext()) {
             DomainEventMessage nextEvent = committedEvents.next();
             assertEquals("Events are not stored sequentially. Most likely due to unlocked concurrent access.",
-                         new Long(++lastSequenceNumber),
+                         ++lastSequenceNumber,
                          nextEvent.getSequenceNumber());
         }
         return lastSequenceNumber;

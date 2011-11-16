@@ -88,7 +88,7 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
     }
 
     @Override
-    public Long getSequenceNumber() {
+    public long getSequenceNumber() {
         return aggregate.getVersion();
     }
 
@@ -125,5 +125,10 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
     @Override
     public DomainEventMessage<T> withMetaData(MetaData metaData) {
         return new AggregateSnapshot<T>(this, metaData);
+    }
+
+    @Override
+    public DomainEventMessage<T> andMetaData(MetaData metaData) {
+        return new AggregateSnapshot<T>(this, getMetaData().mergedWith(metaData));
     }
 }

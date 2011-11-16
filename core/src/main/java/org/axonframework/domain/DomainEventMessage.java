@@ -32,7 +32,7 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      *
      * @return the sequence number of this Event
      */
-    Long getSequenceNumber();
+    long getSequenceNumber();
 
     /**
      * Returns the identifier of the Aggregate that generated this DomainEvent.
@@ -52,4 +52,16 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      */
     @Override
     DomainEventMessage<T> withMetaData(MetaData metaData);
+
+    /**
+     * Returns a copy of this DomainEventMessage with its MetaData merged with the given <code>metaData</code>. The
+     * payload, {@link #getTimestamp() Timestamp} and {@link #getEventIdentifier() EventIdentifier}, as well as the
+     * {@link #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
+     * unchanged.
+     *
+     * @param metaData The MetaData to merge with
+     * @return a copy of this message with the given MetaData
+     */
+    @Override
+    DomainEventMessage<T> andMetaData(MetaData metaData);
 }

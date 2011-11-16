@@ -114,7 +114,7 @@ public class ConcurrentModificationTest_PessimisticLocking {
     }
 
     private void validateDispatchingOrder() {
-        Long expectedSequenceNumber = 0L;
+        long expectedSequenceNumber = 0L;
         for (EventMessage event : registeringEventHandler.getCapturedEvents()) {
             assertTrue(event instanceof DomainEventMessage);
             assertEquals("Events are dispatched in the wrong order!",

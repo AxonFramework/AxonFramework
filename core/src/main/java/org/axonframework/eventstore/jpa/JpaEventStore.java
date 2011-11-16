@@ -131,7 +131,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                 throw new ConcurrencyException(
                         String.format("Concurrent modification detected for Aggregate identifier [%s], sequence: [%s]",
                                       event.getAggregateIdentifier(),
-                                      event.getSequenceNumber().toString()),
+                                      event.getSequenceNumber()),
                         exception);
             }
             throw exception;

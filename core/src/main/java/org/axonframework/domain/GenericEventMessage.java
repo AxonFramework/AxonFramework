@@ -53,6 +53,7 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * Creates a GenericEventMessage with given <code>payload</code>, and an empty MetaData.
      *
      * @param payload The payload for the message
+     * @see #asEventMessage(Object)
      */
     public GenericEventMessage(T payload) {
         this(payload, MetaData.emptyInstance());
@@ -63,9 +64,10 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      *
      * @param payload  The payload of the EventMessage
      * @param metaData The MetaData for the EventMessage
+     * @see #asEventMessage(Object)
      */
-    public GenericEventMessage(T payload, MetaData metaData) {
-        this.metaData = metaData != null ? metaData : MetaData.emptyInstance();
+    public GenericEventMessage(T payload, Map<String, Object> metaData) {
+        this.metaData = MetaData.from(metaData);
         this.timestamp = new DateTime();
         this.payload = payload;
         this.eventIdentifier = IdentifierFactory.getInstance().generateIdentifier();
@@ -78,23 +80,11 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
-    protected GenericEventMessage(GenericEventMessage<T> original, MetaData metaData) {
-        this.metaData = metaData;
+    protected GenericEventMessage(EventMessage<T> original, Map<String, Object> metaData) {
+        this.metaData = MetaData.from(metaData);
         this.timestamp = original.getTimestamp();
         this.payload = original.getPayload();
         this.eventIdentifier = original.getEventIdentifier();
-    }
-
-    /**
-     * Creates a GenericEventMessage with given <code>payload</code> and given <code>metaData</code>. Note that a copy
-     * of the given Map is made. Any modification of the given <code>metaData</code> Map does not influence the
-     * EventMessage's MetaData.
-     *
-     * @param metaData The map providing MetaData for the EventMessage
-     * @param payload  The payload of the EventMessage
-     */
-    public GenericEventMessage(Map<String, Object> metaData, T payload) {
-        this(payload, new MetaData(metaData));
     }
 
     @Override
@@ -123,11 +113,19 @@ public class GenericEventMessage<T> implements EventMessage<T> {
     }
 
     @Override
-    public EventMessage<T> withMetaData(MetaData metaData) {
+    public GenericEventMessage<T> withMetaData(MetaData metaData) {
         if (getMetaData().equals(metaData)) {
             return this;
         }
         return new GenericEventMessage<T>(this, metaData);
+    }
+
+    @Override
+    public GenericEventMessage<T> andMetaData(MetaData metaData) {
+        if (metaData.isEmpty()) {
+            return this;
+        }
+        return new GenericEventMessage<T>(this, getMetaData().mergedWith(metaData));
     }
 
     @Override

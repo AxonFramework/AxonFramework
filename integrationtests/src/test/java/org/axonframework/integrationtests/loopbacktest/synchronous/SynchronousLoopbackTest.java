@@ -71,8 +71,10 @@ public class SynchronousLoopbackTest {
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
         eventStore.appendEvents("CountingAggregate", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<AggregateCreatedEvent>(aggregateIdentifier, 0, null,
-                                                                     new AggregateCreatedEvent(aggregateIdentifier))));
+                new GenericDomainEventMessage<AggregateCreatedEvent>(aggregateIdentifier, 0,
+                                                                     new AggregateCreatedEvent(aggregateIdentifier),
+                                                                     null
+                )));
         reset(eventStore);
 
         reportErrorCallback = new VoidCallback() {
@@ -139,7 +141,7 @@ public class SynchronousLoopbackTest {
             DomainEventMessage next = storedEvents.next();
             if (next.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent event = (CounterChangedEvent) next.getPayload();
-                assertEquals(Long.valueOf(event.getCounter()), next.getSequenceNumber());
+                assertEquals(event.getCounter(), next.getSequenceNumber());
             }
         }
 
@@ -176,7 +178,7 @@ public class SynchronousLoopbackTest {
             DomainEventMessage next = storedEvents.next();
             if (next.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent event = (CounterChangedEvent) next.getPayload();
-                assertEquals(Long.valueOf(event.getCounter()), next.getSequenceNumber());
+                assertEquals(event.getCounter(), next.getSequenceNumber());
             }
         }
 
@@ -215,7 +217,7 @@ public class SynchronousLoopbackTest {
             DomainEventMessage next = storedEvents.next();
             if (next.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent event = (CounterChangedEvent) next.getPayload();
-                assertEquals(Long.valueOf(event.getCounter()), next.getSequenceNumber());
+                assertEquals(event.getCounter(), next.getSequenceNumber());
             }
         }
 
@@ -254,7 +256,7 @@ public class SynchronousLoopbackTest {
             DomainEventMessage next = storedEvents.next();
             if (next.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent event = (CounterChangedEvent) next.getPayload();
-                assertEquals(Long.valueOf(event.getCounter()), next.getSequenceNumber());
+                assertEquals(event.getCounter(), next.getSequenceNumber());
             }
         }
 

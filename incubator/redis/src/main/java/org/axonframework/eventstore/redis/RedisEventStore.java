@@ -44,12 +44,12 @@ public class RedisEventStore implements EventStore {
         jedis.watch(key);
         Long eventCount = jedis.llen(key);
         if ((firstEvent.getSequenceNumber() != 0 && eventCount == null)
-                || !firstEvent.getSequenceNumber().equals(eventCount)) {
+                || firstEvent.getSequenceNumber() != eventCount) {
             jedis.unwatch();
             throw new ConcurrencyException(
                     String.format("Concurrent modification detected for Aggregate identifier [%s], sequence: [%s]",
                                   firstEvent.getAggregateIdentifier(),
-                                  firstEvent.getSequenceNumber().toString()));
+                                  firstEvent.getSequenceNumber()));
         }
 
         try {

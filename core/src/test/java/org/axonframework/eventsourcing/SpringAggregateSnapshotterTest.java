@@ -79,7 +79,7 @@ public class SpringAggregateSnapshotterTest {
         aggregateIdentifier = new UUIDAggregateIdentifier();
 
         DomainEventMessage event1 = new GenericDomainEventMessage<String>(aggregateIdentifier, 1L,
-                                                                          MetaData.emptyInstance(), "Mock contents");
+                                                                          "Mock contents", MetaData.emptyInstance());
         when(mockEventStore.readEvents("stub", aggregateIdentifier)).thenReturn(new SimpleDomainEventStream(event1));
     }
 

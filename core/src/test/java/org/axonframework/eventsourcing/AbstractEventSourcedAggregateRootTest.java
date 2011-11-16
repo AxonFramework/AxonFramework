@@ -46,9 +46,9 @@ public class AbstractEventSourcedAggregateRootTest {
         testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
                 identifier,
                 (long) 243,
-                MetaData
-                        .emptyInstance(),
-                "Mock contents")));
+                "Mock contents", MetaData
+                .emptyInstance()
+        )));
 
         assertEquals(identifier, testSubject.getIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());

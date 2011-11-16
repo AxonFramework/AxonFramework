@@ -105,8 +105,8 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         assertEquals((Long) 1L, aggregate.getVersion());
         assertEquals(0L, aggregate.getUncommittedEventCount());
         assertEquals(2, capturedEvents.size());
-        assertEquals((Long) 0L, capturedEvents.get(0).getSequenceNumber());
-        assertEquals((Long) 1L, capturedEvents.get(1).getSequenceNumber());
+        assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
+        assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
     }
 
     @Test
@@ -128,8 +128,8 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
         assertEquals(0L, aggregate.getUncommittedEventCount());
         assertEquals(2, capturedEvents.size());
-        assertEquals((Long) 0L, capturedEvents.get(0).getSequenceNumber());
-        assertEquals((Long) 1L, capturedEvents.get(1).getSequenceNumber());
+        assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
+        assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
 
         assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier().asString()));
     }

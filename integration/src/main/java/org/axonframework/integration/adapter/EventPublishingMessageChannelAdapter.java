@@ -64,7 +64,8 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
      * MessageRejectedException} is
      * thrown.
      * <p/>
-     * If the <code>message</code> does contain an {@link org.axonframework.domain.EventMessage}, but the filter refuses
+     * If the <code>message</code> does contain an {@link org.axonframework.domain.EventMessage}, but the filter
+     * refuses
      * it, a {@link
      * MessageRejectedException} is also thrown.
      *
@@ -76,7 +77,7 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
     public void handleMessage(Message<?> message) {
         Class<?> eventType = message.getPayload().getClass();
         if (filter.accept(eventType)) {
-            eventBus.publish(new GenericEventMessage(message.getHeaders(), message.getPayload()));
+            eventBus.publish(new GenericEventMessage(message.getPayload(), message.getHeaders()));
         } else {
             throw new MessageRejectedException(message, String.format(
                     "The event of type [%s] was blocked by the filter.",

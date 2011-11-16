@@ -99,7 +99,7 @@ public class MongoEventStoreTest {
         eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
         DomainEventStream events = eventStore.readEvents("test", aggregate1.getIdentifier());
         List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
-        Long expectedSequenceNumber = 0L;
+        long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
             actualEvents.add(event);
@@ -149,7 +149,7 @@ public class MongoEventStoreTest {
         final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<StubStateChangedEvent>(
-                    aggregateIdentifier, t, null, new StubStateChangedEvent()));
+                    aggregateIdentifier, t, new StubStateChangedEvent(), null));
         }
         return events;
     }
@@ -166,7 +166,7 @@ public class MongoEventStoreTest {
 
         public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
             return new GenericDomainEventMessage<StubStateChangedEvent>(
-                    getIdentifier(), getVersion(), null, new StubStateChangedEvent());
+                    getIdentifier(), getVersion(), new StubStateChangedEvent(), null);
         }
     }
 

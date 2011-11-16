@@ -49,7 +49,7 @@ public class AbstractEventSourcedEntityTest {
 
     private DomainEventMessage domainEvent(StubDomainEvent stubDomainEvent) {
         return new GenericDomainEventMessage<StubDomainEvent>(new UUIDAggregateIdentifier(), (long) 0,
-                                                              MetaData.emptyInstance(), stubDomainEvent);
+                                                              stubDomainEvent, MetaData.emptyInstance());
     }
 
     @Test

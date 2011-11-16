@@ -16,6 +16,8 @@
 
 package org.axonframework.domain;
 
+import java.util.Map;
+
 /**
  * Generic implementation of the DomainEventMessage interface. It simply keeps a reference to the payload and MetaData,
  * as well as the aggregate identifier and sequence number.
@@ -38,7 +40,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      */
     public GenericDomainEventMessage(AggregateIdentifier aggregateIdentifier, long sequenceNumber,
                                      T payload) {
-        this(aggregateIdentifier, sequenceNumber, MetaData.emptyInstance(), payload);
+        this(aggregateIdentifier, sequenceNumber, payload, MetaData.emptyInstance());
     }
 
     /**
@@ -47,11 +49,11 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      *
      * @param aggregateIdentifier The identifier of the aggregate generating this message
      * @param sequenceNumber      The message's sequence number
-     * @param metaData            The MetaData to attach to the message
      * @param payload             The application-specific payload of the message
+     * @param metaData            The MetaData to attach to the message
      */
     public GenericDomainEventMessage(AggregateIdentifier aggregateIdentifier, long sequenceNumber,
-                                     MetaData metaData, T payload) {
+                                     T payload, Map<String, Object> metaData) {
         super(payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -64,14 +66,14 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
-    protected GenericDomainEventMessage(GenericDomainEventMessage<T> original, MetaData metaData) {
+    protected GenericDomainEventMessage(GenericDomainEventMessage<T> original, Map<String, Object> metaData) {
         super(original, metaData);
         this.aggregateIdentifier = original.getAggregateIdentifier();
         this.sequenceNumber = original.getSequenceNumber();
     }
 
     @Override
-    public Long getSequenceNumber() {
+    public long getSequenceNumber() {
         return sequenceNumber;
     }
 
@@ -81,11 +83,19 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public DomainEventMessage<T> withMetaData(MetaData metaData) {
+    public GenericDomainEventMessage<T> withMetaData(MetaData metaData) {
         if (getMetaData().equals(metaData)) {
             return this;
         }
         return new GenericDomainEventMessage<T>(this, metaData);
+    }
+
+    @Override
+    public GenericDomainEventMessage<T> andMetaData(MetaData metaData) {
+        if (metaData.isEmpty()) {
+            return this;
+        }
+        return new GenericDomainEventMessage<T>(this, getMetaData().mergedWith(metaData));
     }
 
     public String toString() {

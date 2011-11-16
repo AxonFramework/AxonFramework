@@ -27,7 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * {@link EventBus} implementation that supports clustering of Event Listeners. Clusters are connected using {@link
  * EventBusTerminal EventBus Terminals}, which may either distribute Events locally, or remotely.
  * <p/>
- * The separation of Eventlisteners in clusters allows for a more flexible method of distribution of Events to their
+ * The separation of EventListeners in clusters allows for a more flexible method of distribution of Events to their
  * listeners. Some clusters may be connected using a remote distribution mechanism, while other clusters handle their
  * events asynchronously.
  *

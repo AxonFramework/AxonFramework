@@ -87,10 +87,10 @@ public class TripleUnitOfWorkNestingTest {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
         eventStore.appendEvents("AggregateA", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<CreateEvent>(aggregateAIdentifier, (long) 0,
-                                                           MetaData.emptyInstance(), new CreateEvent())));
+                                                           new CreateEvent(), MetaData.emptyInstance())));
         eventStore.appendEvents("AggregateB", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<CreateEvent>(aggregateBIdentifier, (long) 0,
-                                                           MetaData.emptyInstance(), new CreateEvent())));
+                                                           new CreateEvent(), MetaData.emptyInstance())));
         transactionManager.commit(tx);
         assertEquals(1, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
         assertEquals(1, toList(eventStore.readEvents("AggregateB", aggregateBIdentifier)).size());

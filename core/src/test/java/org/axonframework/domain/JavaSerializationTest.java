@@ -120,6 +120,6 @@ public class JavaSerializationTest {
 
         unmarshalled.doSomething();
 
-        assertEquals((Long) 1L, unmarshalled.getUncommittedEvents().next().getSequenceNumber());
+        assertEquals(1L, unmarshalled.getUncommittedEvents().next().getSequenceNumber());
     }
 }

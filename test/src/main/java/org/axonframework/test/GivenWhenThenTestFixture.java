@@ -123,8 +123,8 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
             this.givenEvents.add(new GenericDomainEventMessage<Object>(
                     aggregateIdentifier,
                     sequenceNumber++,
-                    null,
-                    event));
+                    event, null
+            ));
         }
         return this;
     }

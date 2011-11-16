@@ -83,8 +83,8 @@ public abstract class AbstractEventStoreBenchmark {
             events.add(new GenericDomainEventMessage<StubDomainEvent>(
                     aggregateId,
                     eventSequence++,
-                    null,
-                    new StubDomainEvent()));
+                    new StubDomainEvent(), null
+            ));
         }
         eventStore.appendEvents("benchmark", new SimpleDomainEventStream(events));
         return eventSequence;

@@ -51,7 +51,7 @@ public class AbstractSnapshotterTest {
                     return null;
                 }
                 return new GenericDomainEventMessage<String>(aggregateIdentifier, lastIdentifier,
-                                                             MetaData.emptyInstance(), "Mock contents");
+                                                             "Mock contents", MetaData.emptyInstance());
             }
         };
         testSubject.setEventStore(mockEventStore);
@@ -64,9 +64,9 @@ public class AbstractSnapshotterTest {
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                              MetaData.emptyInstance(), "Mock contents"),
+                                                              "Mock contents", MetaData.emptyInstance()),
                         new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                              MetaData.emptyInstance(), "Mock contents")));
+                                                              "Mock contents", MetaData.emptyInstance())));
         testSubject.scheduleSnapshot("test", aggregateIdentifier);
         verify(mockEventStore).appendSnapshotEvent(eq("test"), argThat(event(aggregateIdentifier, 1)));
     }
@@ -77,7 +77,7 @@ public class AbstractSnapshotterTest {
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                              MetaData.emptyInstance(), "Mock contents")));
+                                                              "Mock contents", MetaData.emptyInstance())));
         testSubject.scheduleSnapshot("test", aggregateIdentifier);
         verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEventMessage.class));
     }

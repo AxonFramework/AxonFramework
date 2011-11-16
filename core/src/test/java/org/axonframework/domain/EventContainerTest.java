@@ -43,7 +43,7 @@ public class EventContainerTest {
 
         assertEquals(1, eventContainer.size());
         DomainEventMessage domainEvent = eventContainer.getEventList().get(0);
-        assertEquals(new Long(12), domainEvent.getSequenceNumber());
+        assertEquals(12L, domainEvent.getSequenceNumber());
         assertEquals(identifier, domainEvent.getAggregateIdentifier());
         assertTrue(eventContainer.getEventStream().hasNext());
 

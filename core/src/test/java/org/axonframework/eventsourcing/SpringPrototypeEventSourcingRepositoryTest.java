@@ -79,8 +79,8 @@ public class SpringPrototypeEventSourcingRepositoryTest {
                                     new GenericDomainEventMessage<String>(
                                             (AggregateIdentifier) invocation.getArguments()[1],
                                             0L,
-                                            MetaData.emptyInstance(),
-                                            "Mock contents"));
+                                            "Mock contents", MetaData.emptyInstance()
+                                    ));
                         }
                     });
             StubAggregate aggregate1 = repository.load(aggregateIdentifier1, 0L);
