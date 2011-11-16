@@ -187,13 +187,21 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectDispatchedCommandsEqualTo(Object... commands);
 
     /**
-     * Asserts that the sagas dispatched commands as defined by the given <code>fixture</code>. Only commands as a
+     * Asserts that the sagas dispatched commands as defined by the given <code>matcher</code>. Only commands as a
      * result of the event in the "when" stage of the fixture are matched.
      *
      * @param matcher The matcher that describes the expected list of commands
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher);
+
+    /**
+     * Asserts that the sagas did not dispatch any commands. Only commands as a result of the event in the "when" stage
+     * of ths fixture are recorded.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoDispatchedCommands();
 
     /**
      * Assert that no events are scheduled for publication. This means that either no events were scheduled at all, all

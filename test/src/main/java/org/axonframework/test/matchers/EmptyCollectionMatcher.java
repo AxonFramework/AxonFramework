@@ -30,6 +30,19 @@ import java.util.List;
  * @since 1.1
  */
 public class EmptyCollectionMatcher extends BaseMatcher<List<? extends EventMessage>> {
+
+    private final String contentDescription;
+
+    /**
+     * Creates a matcher of a list of empty items. The name of the item type (in plural) is passed in the given
+     * <code>contentDescription</code> and will be part of the description of this matcher.
+     *
+     * @param contentDescription The description of the content type of the collection
+     */
+    public EmptyCollectionMatcher(String contentDescription) {
+        this.contentDescription = contentDescription;
+    }
+
     @Override
     public boolean matches(Object item) {
         return item instanceof Collection && ((Collection) item).isEmpty();
@@ -37,6 +50,7 @@ public class EmptyCollectionMatcher extends BaseMatcher<List<? extends EventMess
 
     @Override
     public void describeTo(Description description) {
-        description.appendText("no events");
+        description.appendText("no ");
+        description.appendText(contentDescription);
     }
 }

@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
+import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
@@ -155,6 +156,11 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
     public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher) {
         commandValidator.assertDispatchedMatching(matcher);
         return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoDispatchedCommands() {
+        return expectDispatchedCommandsMatching(Matchers.noCommands());
     }
 
     @Override

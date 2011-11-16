@@ -134,7 +134,17 @@ public abstract class Matchers {
      */
     @Factory
     public static EmptyCollectionMatcher noEvents() {
-        return new EmptyCollectionMatcher();
+        return new EmptyCollectionMatcher("events");
+    }
+
+    /**
+     * Matches an empty List of Commands.
+     *
+     * @return a matcher that matches an empty list of Commands
+     */
+    @Factory
+    public static EmptyCollectionMatcher noCommands() {
+        return new EmptyCollectionMatcher("commands");
     }
 
     /**

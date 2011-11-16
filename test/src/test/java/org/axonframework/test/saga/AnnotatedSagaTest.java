@@ -60,6 +60,7 @@ public class AnnotatedSagaTest {
         validator.expectScheduledEvent(fixture.currentTime().plusMinutes(10), new TimerTriggeredEvent(aggregate1
                                                                                                               .asString()));
         validator.expectDispatchedCommandsEqualTo();
+        validator.expectNoDispatchedCommands();
         validator.expectPublishedEventsMatching(noEvents());
     }
 

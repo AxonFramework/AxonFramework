@@ -113,6 +113,17 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
+    public void testExpectNoDispatchedCommands_Failed() {
+        commandBus.dispatch("First");
+        testSubject.expectNoDispatchedCommands();
+    }
+
+    @Test
+    public void testExpectNoDispatchedCommands() {
+        testSubject.expectNoDispatchedCommands();
+    }
+
+    @Test(expected = AxonAssertionError.class)
     public void testExpectDispatchedCommands_FailedMatcher() {
         testSubject.expectDispatchedCommandsEqualTo(new FailingMatcher<String>());
     }
