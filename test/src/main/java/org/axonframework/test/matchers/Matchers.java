@@ -20,6 +20,8 @@ import org.axonframework.domain.Event;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 
+import java.util.List;
+
 /**
  * Utility class containing static methods to obtain instances of (List) Matchers.
  *
@@ -97,9 +99,20 @@ public abstract class Matchers {
      *
      * @return a matcher that matches an empty list of events
      */
+    @SuppressWarnings({"unchecked"})
     @Factory
-    public static NoEventsMatcher noEvents() {
+    public static Matcher<List<? extends Event>> noEvents() {
         return new NoEventsMatcher();
+    }
+
+    /**
+     * Matches an empty List of Comands.
+     *
+     * @return a matcher that matches an empty list of commands
+     */
+    @Factory
+    public static Matcher<List<?>> noCommands() {
+        return new NoCommandsMatcher();
     }
 
     /**

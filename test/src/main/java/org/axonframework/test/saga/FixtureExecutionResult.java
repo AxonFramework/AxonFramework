@@ -155,6 +155,8 @@ public interface FixtureExecutionResult {
      */
     FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher);
 
+    FixtureExecutionResult expectNoDispatchedCommands();
+
     /**
      * Assert that no events are scheduled for publication. This means that either no events were scheduled at all, all
      * schedules have been cancelled or all scheduled events have been published already.

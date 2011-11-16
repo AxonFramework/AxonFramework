@@ -30,6 +30,7 @@ import org.joda.time.Duration;
 import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
+import static org.axonframework.test.matchers.Matchers.noCommands;
 import static org.hamcrest.CoreMatchers.any;
 
 /**
@@ -134,6 +135,11 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
     public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher) {
         commandValidator.assertDispatchedMatching(matcher);
         return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoDispatchedCommands() {
+        return expectDispatchedCommandsMatching(noCommands());
     }
 
     @Override
