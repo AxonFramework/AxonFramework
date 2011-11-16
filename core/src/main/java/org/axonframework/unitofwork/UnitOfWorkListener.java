@@ -49,9 +49,15 @@ public interface UnitOfWorkListener {
     void onRollback(Throwable failureCause);
 
     /**
-     * @param event
-     * @param <T>
-     * @return
+     * Invoked when an Event is registered for publication when the UnitOfWork is committed. Listeners may alter Event
+     * information by returning a new instance for the event. Note that the Listener must ensure the functional meaning
+     * of the EventMessage does not change. Typically, this is done by only modifying the MetaData on an Event.
+     * <p/>
+     * The simplest implementation simply returns the given <code>event</code>.
+     *
+     * @param event The event about to be registered for publication
+     * @param <T>   The type of payload of the EventMessage
+     * @return the (modified) event to register for publicatino
      */
     <T> EventMessage<T> onEventRegistered(EventMessage<T> event);
 
