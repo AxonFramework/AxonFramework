@@ -97,10 +97,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
 
     @Override
     public FixtureConfiguration registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
-        AnnotationCommandHandlerAdapter commandHandlerAdapter = new AnnotationCommandHandlerAdapter(
-                annotatedCommandHandler,
-                commandBus);
-        commandHandlerAdapter.subscribe();
+        AnnotationCommandHandlerAdapter.subscribe(annotatedCommandHandler, commandBus);
         return this;
     }
 

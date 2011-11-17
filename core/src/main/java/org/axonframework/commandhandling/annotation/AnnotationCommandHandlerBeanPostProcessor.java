@@ -49,9 +49,7 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
 
     @Override
     protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean) {
-        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(bean, commandBus);
-        adapter.subscribe();
-        return adapter;
+        return AnnotationCommandHandlerAdapter.subscribe(bean, commandBus);
     }
 
     /**

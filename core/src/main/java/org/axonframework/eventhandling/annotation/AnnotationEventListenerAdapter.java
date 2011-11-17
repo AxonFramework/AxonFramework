@@ -60,6 +60,36 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     private final Object annotatedEventListener;
 
     /**
+     * Subscribe the given <code>annotatedEventListener</code> to the given <code>eventBus</code>.
+     *
+     * @param annotatedEventListener The annotated event listener
+     * @param eventBus               The event bus to subscribe to
+     * @return an AnnotationEventListenerAdapter that wraps the listener. Can be used to unsubscribe.
+     */
+    public static AnnotationEventListenerAdapter subscribe(Object annotatedEventListener, EventBus eventBus) {
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventListener, eventBus);
+        adapter.subscribe();
+        return adapter;
+    }
+
+    /**
+     * Subscribe the given <code>annotatedEventListener</code> to the given <code>eventBus</code>, using the given
+     * <code>executor</code> if the <code>annotatedEventListener</code> processed events asynchronously.
+     *
+     * @param annotatedEventListener The annotated event listener
+     * @param executor               The executor to use when processing events asynchronously
+     * @param eventBus               The event bus to subscribe to
+     * @return an AnnotationEventListenerAdapter that wraps the listener. Can be used to unsubscribe.
+     */
+    public static AnnotationEventListenerAdapter subscribe(Object annotatedEventListener,
+                                                           Executor executor, EventBus eventBus) {
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventListener, executor,
+                                                                                    eventBus);
+        adapter.subscribe();
+        return adapter;
+    }
+
+    /**
      * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>. When the
      * adapter
      * subscribes, it will subscribe to the given event bus.

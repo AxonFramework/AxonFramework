@@ -47,9 +47,9 @@ import static org.mockito.Mockito.*;
     public void setUp() throws Exception {
         commandBus = spy(new SimpleCommandBus(false));
         mockRepository = mock(Repository.class);
-        testSubject = new AggregateAnnotationCommandHandler<StubCommandAnnotatedAggregate>(
-                StubCommandAnnotatedAggregate.class, mockRepository, commandBus);
-        testSubject.subscribe();
+        testSubject = AggregateAnnotationCommandHandler.subscribe(StubCommandAnnotatedAggregate.class,
+                                                                  mockRepository,
+                                                                  commandBus);
     }
 
     @Test

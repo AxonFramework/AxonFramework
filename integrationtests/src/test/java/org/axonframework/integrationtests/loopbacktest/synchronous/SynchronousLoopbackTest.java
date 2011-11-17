@@ -108,7 +108,7 @@ public class SynchronousLoopbackTest {
         repository.setEventBus(eventBus);
         repository.setEventStore(this.eventStore);
 
-        new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository), commandBus).subscribe();
+        AnnotationCommandHandlerAdapter.subscribe(new CounterCommandHandler(repository), commandBus);
     }
 
     @Test

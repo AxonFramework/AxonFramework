@@ -47,9 +47,22 @@ public class AnnotationCommandHandlerAdapter
     private final MessageHandlerInvoker invoker;
 
     /**
+     * Subscribe the annotated command handler to the given command bus.
+     *
+     * @param annotatedCommandHandler The annotated command handler that is to be subscribed to the command bus
+     * @param commandBus              The command bus that gets the handler's subscription
+     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
+     */
+    public static AnnotationCommandHandlerAdapter subscribe(Object annotatedCommandHandler, CommandBus commandBus) {
+        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(annotatedCommandHandler,
+                                                                                      commandBus);
+        adapter.subscribe();
+        return adapter;
+    }
+
+    /**
      * Initialize the command handler adapter for the given <code>target</code> which is to be subscribed with the
-     * given
-     * <code>commandBus</code>.
+     * given <code>commandBus</code>.
      * <p/>
      * Note that you need to call {@link #subscribe()} to actually subscribe the command handlers to the command bus.
      *

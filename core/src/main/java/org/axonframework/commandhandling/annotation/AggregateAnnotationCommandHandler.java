@@ -51,6 +51,42 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     private final CommandTargetResolver commandTargetResolver;
 
     /**
+     * Subscribe a handler for the given aggregate type to the given command bus.
+     *
+     * @param aggregateType The type of aggregate
+     * @param repository    The repository providing access to aggregate instances
+     * @param commandBus    The command bus to register command handlers to
+     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
+     */
+    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(Class<T> aggregateType,
+                                                                                        Repository<T> repository,
+                                                                                        CommandBus commandBus) {
+        AggregateAnnotationCommandHandler adapter = new AggregateAnnotationCommandHandler<T>(aggregateType,
+                                                                                             repository,
+                                                                                             commandBus);
+        adapter.subscribe();
+        return adapter;
+    }
+
+    /**
+     * Subscribe a handler for the given aggregate type to the given command bus.
+     *
+     * @param aggregateType         The type of aggregate
+     * @param repository            The repository providing access to aggregate instances
+     * @param commandBus            The command bus to register command handlers to
+     * @param commandTargetResolver The target resolution strategy
+     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
+     */
+    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
+            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus,
+            CommandTargetResolver commandTargetResolver) {
+        AggregateAnnotationCommandHandler adapter = new AggregateAnnotationCommandHandler<T>(
+                aggregateType, repository, commandBus, commandTargetResolver);
+        adapter.subscribe();
+        return adapter;
+    }
+
+    /**
      * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, to be
      * registered on the given <code>commandBus</code>.
      *

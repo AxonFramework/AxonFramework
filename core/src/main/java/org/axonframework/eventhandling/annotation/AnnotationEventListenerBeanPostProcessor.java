@@ -53,9 +53,7 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
      */
     @Override
     protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(bean, executor, eventBus);
-        adapter.subscribe();
-        return adapter;
+        return AnnotationEventListenerAdapter.subscribe(bean, executor, eventBus);
     }
 
     @Override
