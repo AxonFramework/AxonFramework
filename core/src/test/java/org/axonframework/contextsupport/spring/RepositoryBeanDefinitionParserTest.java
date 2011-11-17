@@ -100,7 +100,7 @@ public class RepositoryBeanDefinitionParserTest {
         }
 
         @Override
-        public void registerEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
+        public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

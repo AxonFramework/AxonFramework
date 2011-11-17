@@ -32,8 +32,10 @@ import java.util.Set;
  */
 public class MetaData implements Map<String, Object>, Serializable {
 
+    private static final long serialVersionUID = -7892913866303912970L;
     private static final MetaData EMPTY_META_DATA = new MetaData();
-    private final Map<String, Object> values = new HashMap<String, Object>();
+
+    private final Map<String, Object> values;
 
     /**
      * Returns an empty MetaData instance.
@@ -45,6 +47,7 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     private MetaData() {
+        values = Collections.emptyMap();
     }
 
     /**
@@ -55,16 +58,24 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @param items the items to populate the MetaData with
      */
     public MetaData(Map<String, ?> items) {
-        values.putAll(items);
+        values = Collections.unmodifiableMap(new HashMap<String, Object>(items));
     }
 
-    public static MetaData from(Map<String, Object> metaData) {
-        if (metaData instanceof MetaData) {
-            return (MetaData) metaData;
-        } else if (metaData == null || metaData.isEmpty()) {
+    /**
+     * Creates a new MetaData instance from the given <code>metaDataEntries</code>. If <code>metaDataEntries</code> is
+     * already a MetaData instance, it is returned as is. This makes this method more suitable than the {@link
+     * #MetaData(java.util.Map)} copy-constructor.
+     *
+     * @param metaDataEntries the items to populate the MetaData with
+     * @return a MetaData instance with the given <code>metaDataEntries</code> as content
+     */
+    public static MetaData from(Map<String, Object> metaDataEntries) {
+        if (metaDataEntries instanceof MetaData) {
+            return (MetaData) metaDataEntries;
+        } else if (metaDataEntries == null || metaDataEntries.isEmpty()) {
             return MetaData.emptyInstance();
         }
-        return new MetaData(metaData);
+        return new MetaData(metaDataEntries);
     }
 
     @Override
@@ -124,17 +135,17 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     @Override
     public Set<String> keySet() {
-        return Collections.unmodifiableSet(values.keySet());
+        return values.keySet();
     }
 
     @Override
     public Collection<Object> values() {
-        return Collections.unmodifiableCollection(values.values());
+        return values.values();
     }
 
     @Override
     public Set<Entry<String, Object>> entrySet() {
-        return Collections.unmodifiableSet(values.entrySet());
+        return values.entrySet();
     }
 
     @Override
@@ -170,15 +181,32 @@ public class MetaData implements Map<String, Object>, Serializable {
         return values.hashCode();
     }
 
-    public MetaData mergedWith(Map<String, Object> auditData) {
-        if (auditData.isEmpty()) {
+    /**
+     * Returns a MetaData instance containing values of <code>this</code>, combined with the given
+     * <code>additionalEntries</code>. If any entries have identical keys, the values from the
+     * <code>additionalEntries</code> will take precedence.
+     *
+     * @param additionalEntries The additional entries for the new MetaData
+     * @return a MetaData instance containing values of <code>this</code>, combined with the given
+     *         <code>additionalEntries</code>
+     */
+    public MetaData mergedWith(Map<String, Object> additionalEntries) {
+        if (additionalEntries.isEmpty()) {
             return this;
         }
         Map<String, Object> merged = new HashMap<String, Object>(values);
-        merged.putAll(auditData);
+        merged.putAll(additionalEntries);
         return new MetaData(merged);
     }
 
+    /**
+     * Returns a MetaData instance with the items with given <code>keys</code> removed. Keys for which there is no
+     * assigned value are ignored.<br/>
+     * This MetaData instance is not influenced by this operation.
+     *
+     * @param keys The keys of the entries to remove
+     * @return a MetaData instance without the given <code>keys</code>
+     */
     public MetaData withoutKeys(Set<String> keys) {
         if (keys.isEmpty()) {
             return this;

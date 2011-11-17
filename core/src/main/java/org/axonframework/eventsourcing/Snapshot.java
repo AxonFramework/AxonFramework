@@ -22,6 +22,7 @@ import org.axonframework.domain.DomainEventMessage;
  * Interface indicating that the implemented DomainEventMessage represents a Snapshot of an aggregate at a specific
  * moment in time. The payload of the snapshot
  *
+ * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @since 2.0
  */

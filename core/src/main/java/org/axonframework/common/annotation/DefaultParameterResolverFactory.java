@@ -67,7 +67,7 @@ class DefaultParameterResolverFactory extends ParameterResolverFactory {
         }
     }
 
-    private static class MetaDataParameterResolver implements ParameterResolver {
+    private static final class MetaDataParameterResolver implements ParameterResolver {
 
         private static final MetaDataParameterResolver INSTANCE = new MetaDataParameterResolver();
 

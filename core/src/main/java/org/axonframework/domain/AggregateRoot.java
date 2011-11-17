@@ -34,7 +34,7 @@ public interface AggregateRoot {
 
     /**
      * Clears the events currently marked as "uncommitted" and clears any known EventRegistrationCallbacks (see {@link
-     * #registerEventRegistrationCallback(EventRegistrationCallback)}).
+     * #addEventRegistrationCallback(EventRegistrationCallback)}).
      *
      * @see org.axonframework.domain.EventContainer#commit()
      */
@@ -81,5 +81,11 @@ public interface AggregateRoot {
      */
     boolean isDeleted();
 
-    void registerEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback);
+    /**
+     * Adds an EventRegistrationCallback, which is notified when the aggregate registers an Event for publication.
+     * These callbacks are cleared when the aggregate is committed.
+     *
+     * @param eventRegistrationCallback the callback to notify when an event is registered
+     */
+    void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback);
 }

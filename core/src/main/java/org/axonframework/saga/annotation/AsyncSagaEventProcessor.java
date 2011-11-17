@@ -20,7 +20,6 @@ import com.lmax.disruptor.EventHandler;
 import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaRepository;
 
 import java.util.Collections;
@@ -35,24 +34,30 @@ import java.util.TreeMap;
  * @author Allard Buijze
  * @since 2.0
  */
-class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingEvent> {
+final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingEvent> {
 
     private final TransactionManager transactionManager;
     private final SagaRepository sagaRepository;
     private final Map<String, Saga> processedSagas = new TreeMap<String, Saga>();
-    private final SagaFactory sagaFactory;
     private final int processorCount;
     private final int processorId;
     private TransactionStatus transactionStatus;
 
+    /**
+     * Creates the Disruptor Event Handlers for invoking Sagas. The size of the array returned is equal to the given
+     * <code>processorCount</code>.
+     *
+     * @param sagaRepository     The repository which provides access to the Sagas
+     * @param transactionManager The TransactionManager that creates and commits transactions
+     * @param processorCount     The number of processors to create
+     * @return an array containing the Disruptor Event Handlers to invoke Sagas.
+     */
     static EventHandler<AsyncSagaProcessingEvent>[] createInstances(SagaRepository sagaRepository,
-                                                                    SagaFactory sagaFactory,
                                                                     TransactionManager transactionManager,
                                                                     int processorCount) {
         AsyncSagaEventProcessor[] processors = new AsyncSagaEventProcessor[processorCount];
         for (int processorId = 0; processorId < processorCount; processorId++) {
             processors[processorId] = new AsyncSagaEventProcessor(sagaRepository,
-                                                                  sagaFactory,
                                                                   processorCount,
                                                                   processorId,
                                                                   transactionManager);
@@ -60,10 +65,9 @@ class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingEvent> 
         return processors;
     }
 
-    private AsyncSagaEventProcessor(SagaRepository sagaRepository, SagaFactory sagaFactory, int processorCount,
+    private AsyncSagaEventProcessor(SagaRepository sagaRepository, int processorCount,
                                     int processorId, TransactionManager transactionManager) {
         this.sagaRepository = sagaRepository;
-        this.sagaFactory = sagaFactory;
         this.processorCount = processorCount;
         this.processorId = processorId;
         this.transactionManager = transactionManager;
@@ -144,6 +148,6 @@ class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingEvent> 
 
     private boolean ownedByCurrentProcessor(String sagaIdentifier) {
         return processedSagas.containsKey(sagaIdentifier) ||
-                Math.abs(sagaIdentifier.hashCode()) % processorCount == processorId;
+                Math.abs(sagaIdentifier.hashCode() & Integer.MAX_VALUE) % processorCount == processorId;
     }
 }

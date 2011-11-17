@@ -33,24 +33,49 @@ class AsyncSagaProcessingEvent {
     private HandlerConfiguration handler;
     private Class<? extends AbstractAnnotatedSaga> sagaType;
     private AbstractAnnotatedSaga newSaga;
-    final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
+    private final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
 
+    /**
+     * Returns the event that has been published on the EventBus. This is the event that will trigger Sagas.
+     *
+     * @return the event that has been published on the EventBus
+     */
     public EventMessage getPublishedEvent() {
         return publishedEvent;
     }
 
+    /**
+     * Sets the event that has been published on the EventBus. This is the event that will trigger Sagas.
+     *
+     * @param publishedEvent the event that has been published on the EventBus
+     */
     public void setPublishedEvent(EventMessage publishedEvent) {
         this.publishedEvent = publishedEvent;
     }
 
+    /**
+     * Returns the handler that can process the published Event.
+     *
+     * @return the handler that can process the published Event
+     */
     public HandlerConfiguration getHandler() {
         return handler;
     }
 
+    /**
+     * Sets the handler that can process the published Event.
+     *
+     * @param handler the handler that can process the published Event
+     */
     public void setHandler(HandlerConfiguration handler) {
         this.handler = handler;
     }
 
+    /**
+     * Returns the association value based on the handler.
+     *
+     * @return the association value based on the handler
+     */
     public AssociationValue getAssociationValue() {
         if (handler == null) {
             return null;
@@ -58,10 +83,20 @@ class AsyncSagaProcessingEvent {
         return handler.getAssociationValue();
     }
 
+    /**
+     * Returns the type of Saga being processed.
+     *
+     * @return the type of Saga being processed
+     */
     public Class<? extends Saga> getSagaType() {
         return sagaType;
     }
 
+    /**
+     * Sets the type of Saga being processed
+     *
+     * @param sagaType the type of Saga being processed
+     */
     public void setSagaType(Class<? extends AbstractAnnotatedSaga> sagaType) {
         this.sagaType = sagaType;
     }
@@ -91,14 +126,27 @@ class AsyncSagaProcessingEvent {
         return elector.waitForSagaCreationVote(didEventInvocation, processorCount, ownsNewSagaInstance);
     }
 
+    /**
+     * Sets the new Saga instance that should be used when processing an Event that creates a new Saga instance
+     *
+     * @param newSaga the new Saga instance
+     */
     public void setNewSaga(AbstractAnnotatedSaga newSaga) {
         this.newSaga = newSaga;
     }
 
+    /**
+     * Returns the new Saga instance that should be used when processing an Event that creates a new Saga instance
+     *
+     * @return the new Saga instance
+     */
     public AbstractAnnotatedSaga getNewSaga() {
         return newSaga;
     }
 
+    /**
+     * The Factory class for AsyncSagaProcessingEvent instances.
+     */
     static class Factory implements EventFactory<AsyncSagaProcessingEvent> {
         @Override
         public AsyncSagaProcessingEvent newInstance() {

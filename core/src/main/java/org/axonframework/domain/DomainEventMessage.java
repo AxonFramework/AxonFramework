@@ -16,11 +16,14 @@
 
 package org.axonframework.domain;
 
+import java.util.Map;
+
 /**
  * Represents a Message that wrapps a DomainEvent, and Event representing an important change in the Domain. In
  * contrast to a regular EventMessage, a DomainEventMessages contains the identifier of the Aggregate that reported it.
  * The DomainEventMessage's sequence number allows Messages to be placed in their order of generation.
  *
+ * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @since 2.0
  */
@@ -51,7 +54,7 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> withMetaData(MetaData metaData);
+    DomainEventMessage<T> withMetaData(Map<String, Object> metaData);
 
     /**
      * Returns a copy of this DomainEventMessage with its MetaData merged with the given <code>metaData</code>. The
@@ -63,5 +66,5 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> andMetaData(MetaData metaData);
+    DomainEventMessage<T> andMetaData(Map<String, Object> metaData);
 }

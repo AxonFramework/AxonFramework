@@ -26,6 +26,13 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
     private static final String EVENT_BUS_ATTRIBUTE = "event-bus";
     private static final String SAGA_FACTORY_ATTRIBUTE = "saga-factory";
 
+    /**
+     * Parses elements for shared SagaManager logic.
+     *
+     * @param element       The xml element containing the Bean Definition
+     * @param parserContext The context for the parser
+     * @return a BeanDefinition for the bean defined in the element
+     */
     protected final AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition sagaManagerDefinition = new GenericBeanDefinition();
         sagaManagerDefinition.setBeanClass(getBeanClass());

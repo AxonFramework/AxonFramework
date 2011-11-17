@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Fixture for testing Annotated Sagas based on events and time passing. This fixture allows resources to be configured
@@ -142,19 +141,14 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     private AggregateEventPublisherImpl getPublisherFor(AggregateIdentifier aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
-            aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
+            aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl());
         }
         return aggregatePublishers.get(aggregateIdentifier);
     }
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
-        private final AggregateIdentifier aggregateIdentifier;
-        private final AtomicLong sequenceCounter;
-
-        public AggregateEventPublisherImpl(AggregateIdentifier aggregateIdentifier) {
-            this.aggregateIdentifier = aggregateIdentifier;
-            sequenceCounter = new AtomicLong();
+        public AggregateEventPublisherImpl() {
         }
 
         @Override

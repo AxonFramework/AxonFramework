@@ -35,10 +35,19 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
  * @author Allard Buijze
  * @since 1.2
  */
-class ConstructorCommandMessageHandler<T extends AggregateRoot> extends AbstractMessageHandler {
+final class ConstructorCommandMessageHandler<T extends AggregateRoot> extends AbstractMessageHandler {
 
     private final Constructor<T> constructor;
 
+    /**
+     * Creates a ConstructorCommandMessageHandler for the given <code>constructor</code>.
+     *
+     * @param constructor The constructor to wrap as a Handler
+     * @param <T>         The type of Aggregate created by the constructor
+     * @return ConstructorCommandMessageHandler
+     *
+     * @throws UnsupportedHandlerException when the given constructor is not suitable as a Handler
+     */
     public static <T extends AggregateRoot> ConstructorCommandMessageHandler<T> forConstructor(
             Constructor<T> constructor) {
         ParameterResolver[] resolvers = findResolvers(

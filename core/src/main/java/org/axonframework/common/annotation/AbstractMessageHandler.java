@@ -5,6 +5,7 @@ import org.axonframework.domain.Message;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 /**
  * Abstract superclass for annotation based Message handlers. Handlers can be compared with on another to decide upon
@@ -31,10 +32,10 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * @param parameterValueResolvers The resolvers for each of the handlers' parameters
      */
     protected AbstractMessageHandler(Class<?> payloadType, Class<?> declaringClass,
-                                     ParameterResolver[] parameterValueResolvers) {
+                                     ParameterResolver... parameterValueResolvers) {
         score = new Score(payloadType, declaringClass);
         this.payloadType = payloadType;
-        this.parameterValueResolvers = parameterValueResolvers;
+        this.parameterValueResolvers = Arrays.copyOf(parameterValueResolvers, parameterValueResolvers.length);
     }
 
     /**
@@ -130,7 +131,7 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         return parameterValueResolvers;
     }
 
-    private static class Score implements Comparable<Score> {
+    private static final class Score implements Comparable<Score> {
 
         private final int declarationDepth;
         private final int payloadDepth;
@@ -164,6 +165,38 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
             } else {
                 return payloadName.compareTo(o.payloadName);
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Score score = (Score) o;
+
+            if (declarationDepth != score.declarationDepth) {
+                return false;
+            }
+            if (payloadDepth != score.payloadDepth) {
+                return false;
+            }
+            if (!payloadName.equals(score.payloadName)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = declarationDepth;
+            result = 31 * result + payloadDepth;
+            result = 31 * result + payloadName.hashCode();
+            return result;
         }
     }
 }

@@ -79,6 +79,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * (additional) meta-data.
      *
      * @param payload the payload of the event to register
+     * @param <T>     The type of payload
      * @return The Event holding the given <code>payload</code>
      */
     protected <T> DomainEventMessage<T> registerEvent(T payload) {
@@ -90,6 +91,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      *
      * @param metaData The meta data of the event to register
      * @param payload  the payload of the event to register
+     * @param <T>      The type of payload
      * @return The Event holding the given <code>payload</code>
      */
     protected <T> DomainEventMessage<T> registerEvent(MetaData metaData, T payload) {
@@ -114,8 +116,8 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     }
 
     @Override
-    public void registerEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        this.eventContainer.registerEventRegistrationCallback(eventRegistrationCallback);
+    public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
+        this.eventContainer.addEventRegistrationCallback(eventRegistrationCallback);
     }
 
     /**

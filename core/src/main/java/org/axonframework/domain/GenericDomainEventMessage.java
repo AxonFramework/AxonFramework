@@ -22,10 +22,13 @@ import java.util.Map;
  * Generic implementation of the DomainEventMessage interface. It simply keeps a reference to the payload and MetaData,
  * as well as the aggregate identifier and sequence number.
  *
+ * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @since 2.0
  */
 public class GenericDomainEventMessage<T> extends GenericEventMessage<T> implements DomainEventMessage<T> {
+
+    private static final long serialVersionUID = 5751346338145616886L;
 
     private final AggregateIdentifier aggregateIdentifier;
     private final long sequenceNumber;
@@ -83,21 +86,22 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public GenericDomainEventMessage<T> withMetaData(MetaData metaData) {
-        if (getMetaData().equals(metaData)) {
+    public GenericDomainEventMessage<T> withMetaData(Map<String, Object> newMetaDataValues) {
+        if (getMetaData().equals(newMetaDataValues)) {
             return this;
         }
-        return new GenericDomainEventMessage<T>(this, metaData);
+        return new GenericDomainEventMessage<T>(this, newMetaDataValues);
     }
 
     @Override
-    public GenericDomainEventMessage<T> andMetaData(MetaData metaData) {
-        if (metaData.isEmpty()) {
+    public GenericDomainEventMessage<T> andMetaData(Map<String, Object> additionalMetaDataValues) {
+        if (additionalMetaDataValues.isEmpty()) {
             return this;
         }
-        return new GenericDomainEventMessage<T>(this, getMetaData().mergedWith(metaData));
+        return new GenericDomainEventMessage<T>(this, getMetaData().mergedWith(additionalMetaDataValues));
     }
 
+    @Override
     public String toString() {
         return String.format("GenericDomainEventMessage[%s]", getPayload().toString());
     }

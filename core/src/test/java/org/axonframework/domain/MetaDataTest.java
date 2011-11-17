@@ -85,4 +85,20 @@ public class MetaDataTest {
     public void testMetaDataModification_PutAll() {
         new MetaData(Collections.<String, Object>emptyMap()).putAll(Collections.<String, Object>emptyMap());
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testMetaDataModification_KeySet_Remove() {
+        new MetaData(Collections.<String, Object>emptyMap()).keySet().remove("Hello");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testMetaDataModification_Values_Remove() {
+        new MetaData(Collections.<String, Object>emptyMap()).values().remove("Hello");
+    }
+
+    @SuppressWarnings({"SuspiciousMethodCalls"})
+    @Test(expected = UnsupportedOperationException.class)
+    public void testMetaDataModification_EntrySet_Remove() {
+        new MetaData(Collections.<String, Object>emptyMap()).entrySet().remove("Hello");
+    }
 }

@@ -1,9 +1,12 @@
 package org.axonframework.domain;
 
+import java.util.Map;
+
 /**
  * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands and
  * Events.
  *
+ * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @since 2.0
  */
@@ -45,7 +48,7 @@ public interface Message<T> {
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
-    Message<T> withMetaData(MetaData metaData);
+    Message<T> withMetaData(Map<String, Object> metaData);
 
     /**
      * Returns a copy of this EventMessage with it MetaData merged with the given <code>metaData</code>. The payload
@@ -54,5 +57,5 @@ public interface Message<T> {
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
-    Message<T> andMetaData(MetaData metaData);
+    Message<T> andMetaData(Map<String, Object> metaData);
 }

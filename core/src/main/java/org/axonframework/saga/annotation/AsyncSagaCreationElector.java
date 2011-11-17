@@ -16,6 +16,9 @@
 
 package org.axonframework.saga.annotation;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,6 +30,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * @since 2.0
  */
 class AsyncSagaCreationElector {
+
+    private static final Logger logger = LoggerFactory.getLogger(AsyncSagaCreationElector.class);
 
     private final ReentrantLock votingLock = new ReentrantLock();
     private final Condition allVotesCast = votingLock.newCondition();
@@ -55,6 +60,8 @@ class AsyncSagaCreationElector {
                     allVotesCast.await();
                 } catch (InterruptedException e) {
                     // interrupting this process is not supported.
+                    logger.warn("This thread has been interrupted, but the interruption has "
+                                        + "been ignored to prevent loss of information.");
                 }
             }
             if (isSagaOwner) {

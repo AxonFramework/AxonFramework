@@ -19,12 +19,14 @@ package org.axonframework.domain;
 import org.joda.time.DateTime;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Represents a Message wrapping an Event, which is represented by its payload. An Event is a representation of an
  * occurrence of an event (i.e. anything that happened any might be of importance to any other component) in the
  * application. It contains the data relevant for components that need to act based on that event.
  *
+ * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @see DomainEventMessage
  * @since 2.0
@@ -59,7 +61,7 @@ public interface EventMessage<T> extends Message<T>, Serializable {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> withMetaData(MetaData metaData);
+    EventMessage<T> withMetaData(Map<String, Object> metaData);
 
     /**
      * Returns a copy of this EventMessage with it MetaData merged with the given <code>metaData</code>. The payload,
@@ -69,5 +71,5 @@ public interface EventMessage<T> extends Message<T>, Serializable {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> andMetaData(MetaData metaData);
+    EventMessage<T> andMetaData(Map<String, Object> metaData);
 }

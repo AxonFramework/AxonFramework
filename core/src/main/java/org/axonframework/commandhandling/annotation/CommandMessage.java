@@ -3,18 +3,27 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 
+import java.util.Map;
+
 /**
  * Currently an Axon-internal class. The concept of CommandMessage will soon be available in the public API.
  *
+ * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @since 2.0
  * @deprecated Not public yet.
  */
 @Deprecated
-public class CommandMessage implements Message {
-    private final Object command;
+public class CommandMessage<T> implements Message<T> {
 
-    public CommandMessage(Object command) {
+    private final T command;
+
+    /**
+     * Create a CommandMessage with the given <code>command</code> as payload.
+     *
+     * @param command the payload for the Message
+     */
+    public CommandMessage(T command) {
         this.command = command;
     }
 
@@ -24,7 +33,7 @@ public class CommandMessage implements Message {
     }
 
     @Override
-    public Object getPayload() {
+    public T getPayload() {
         return command;
     }
 
@@ -34,12 +43,12 @@ public class CommandMessage implements Message {
     }
 
     @Override
-    public Message withMetaData(MetaData metaData) {
-        throw new UnsupportedOperationException("Not supported for commands, yet");
+    public CommandMessage<T> withMetaData(Map<String, Object> metaData) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
-    public Message andMetaData(MetaData metaData) {
-        throw new UnsupportedOperationException("Not supported for commands, yet");
+    public CommandMessage<T> andMetaData(Map<String, Object> metaData) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

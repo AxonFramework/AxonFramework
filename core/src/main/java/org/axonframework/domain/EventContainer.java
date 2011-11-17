@@ -173,7 +173,13 @@ public class EventContainer implements Serializable {
         return Collections.unmodifiableList(events);
     }
 
-    public void registerEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
+    /**
+     * Adds an EventRegistrationCallback, which is invoked when the aggregate owning this container registers an Event.
+     * These callbacks are cleared when the Events are committed.
+     *
+     * @param eventRegistrationCallback The callback to notify when an Event is registered.
+     */
+    public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
         if (registrationCallbacks == null) {
             this.registrationCallbacks = new ArrayList<EventRegistrationCallback>();
         }

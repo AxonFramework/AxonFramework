@@ -49,6 +49,9 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
      *
      * @param parameter the event to handle
      * @return the return value of the invocation
+     *
+     * @throws IllegalAccessException    when the security manager does not allow the invocation
+     * @throws InvocationTargetException when the handler throws a checked Exception
      */
     public Object invokeHandlerMethod(Message parameter) throws InvocationTargetException, IllegalAccessException {
         return invokeHandlerMethod(parameter, VoidReturningCallback.INSTANCE);
@@ -56,10 +59,14 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
 
     /**
      * Invoke the handler demarcated with the given <code>annotationClass</code> on the target for the given
-     * <code>event</code>.
+     * <code>event</code>. If no suitable handler is found, the given <code>onNoMethodFound</code> callback is invoked.
      *
-     * @param parameter the event to handle
+     * @param parameter       the event to handle
+     * @param onNoMethodFound what to do when no such handler is found.
      * @return the return value of the invocation
+     *
+     * @throws IllegalAccessException    when the security manager does not allow the invocation
+     * @throws InvocationTargetException when the handler throws a checked Exception
      */
     public Object invokeHandlerMethod(Message parameter, NoMethodFoundCallback onNoMethodFound)
             throws InvocationTargetException, IllegalAccessException {
@@ -73,17 +80,6 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
     }
 
     /**
-     * Indicates what needs to happen when no handler is found for a given parameter. The default behavior is to return
-     * {@link Void#TYPE}.
-     *
-     * @param parameterType The type of parameter for which no handler could be found
-     * @return the value to return when no handler method is found. Defaults to {@link Void#TYPE}.
-     */
-    protected Object onNoMethodFound(Class<?> parameterType) {
-        return Void.TYPE;
-    }
-
-    /**
      * Returns the target on which handler methods are invoked.
      *
      * @return the target on which handler methods are invoked
@@ -92,8 +88,18 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
         return target;
     }
 
-    public static interface NoMethodFoundCallback {
+    /**
+     * Callback used in cases where the handler did not find a suitable method to invoke.
+     */
+    public static interface NoMethodFoundCallback<T extends Message> {
 
+        /**
+         * Indicates what needs to happen when no handler is found for a given parameter. The default behavior is to
+         * return {@link Void#TYPE}.
+         *
+         * @param parameter The parameter for which no handler could be found
+         * @return the value to return when no handler method is found. Defaults to {@link Void#TYPE}.
+         */
         Object onNoMethodFound(Message parameter);
     }
 

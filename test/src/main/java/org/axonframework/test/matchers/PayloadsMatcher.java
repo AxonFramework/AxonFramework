@@ -11,6 +11,7 @@ import java.util.List;
 /**
  * Matches a list of Messages if the list of their payloads matches the given matcher..
  *
+ * @param <T> The type of Message the matcher can match against
  * @author Allard Buijze
  * @since 2.0
  */

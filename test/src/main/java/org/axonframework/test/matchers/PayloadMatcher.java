@@ -8,6 +8,7 @@ import org.hamcrest.Matcher;
 /**
  * Matcher that matches any message (e.g. Event, Command) who's payload matches the given matcher.
  *
+ * @param <T> The type of Message the matcher can match against
  * @author Allard Buijze
  * @since 2.0
  */

@@ -96,7 +96,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
             disruptor = new Disruptor<AsyncSagaProcessingEvent>(new AsyncSagaProcessingEvent.Factory(), executor,
                                                                 new MultiThreadedClaimStrategy(bufferSize),
                                                                 waitStrategy);
-            disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository, sagaFactory,
+            disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository,
                                                                                transactionManager, processorCount));
             disruptor.start();
         }
@@ -154,7 +154,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
         }
     }
 
-    private static class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
+    private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
         private final EventMessage event;
         private final SagaAnnotationInspector annotationInspector;
         private final HandlerConfiguration handler;

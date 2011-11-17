@@ -21,6 +21,10 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.joda.time.DateTime;
 
+import java.util.Map;
+
+import static java.lang.String.format;
+
 /**
  * Snapshot event that captures the entire aggregate. The motivation is that the aggregate contains all relevant state.
  *
@@ -30,8 +34,9 @@ import org.joda.time.DateTime;
  */
 public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements Snapshot<T> {
 
+    private static final long serialVersionUID = 745102693163243883L;
+
     private final T aggregate;
-    private final String eventIdentifier;
     private final MetaData metaData;
     private final DateTime timestamp;
 
@@ -61,7 +66,6 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
         this.aggregate = aggregate;
         this.timestamp = new DateTime();
         this.metaData = metaData;
-        this.eventIdentifier = getAggregateIdentifier().asString() + "@" + getSequenceNumber();
     }
 
     /**
@@ -74,7 +78,6 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
     protected AggregateSnapshot(AggregateSnapshot<T> snapshot, MetaData metaData) {
         this.aggregate = snapshot.getAggregate();
         this.timestamp = snapshot.getTimestamp();
-        this.eventIdentifier = snapshot.getEventIdentifier();
         this.metaData = metaData;
     }
 
@@ -99,7 +102,7 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
 
     @Override
     public String getEventIdentifier() {
-        return eventIdentifier;
+        return format("%s@%s", getAggregateIdentifier().asString(), getSequenceNumber());
     }
 
     @Override
@@ -123,12 +126,12 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
     }
 
     @Override
-    public DomainEventMessage<T> withMetaData(MetaData metaData) {
-        return new AggregateSnapshot<T>(this, metaData);
+    public DomainEventMessage<T> withMetaData(Map<String, Object> newMetaDataEntries) {
+        return new AggregateSnapshot<T>(this, MetaData.from(newMetaDataEntries));
     }
 
     @Override
-    public DomainEventMessage<T> andMetaData(MetaData metaData) {
-        return new AggregateSnapshot<T>(this, getMetaData().mergedWith(metaData));
+    public DomainEventMessage<T> andMetaData(Map<String, Object> additionalMetaDataEntries) {
+        return new AggregateSnapshot<T>(this, getMetaData().mergedWith(additionalMetaDataEntries));
     }
 }

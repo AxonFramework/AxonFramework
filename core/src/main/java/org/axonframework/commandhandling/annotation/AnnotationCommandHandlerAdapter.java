@@ -89,14 +89,7 @@ public class AnnotationCommandHandlerAdapter
     public Object handle(Object command, UnitOfWork unitOfWork) throws Throwable {
         try {
             return invoker.invokeHandlerMethod(new CommandMessage(command),
-                                               new MessageHandlerInvoker.NoMethodFoundCallback() {
-                                                   @Override
-                                                   public Object onNoMethodFound(Message parameter) {
-                                                       throw new NoHandlerForCommandException(String.format(
-                                                               "No Handler found for a command of type[%s]",
-                                                               parameter.getPayloadType().getSimpleName()));
-                                                   }
-                                               });
+                                               ErrorReportingNoMethodFoundCallback.INSTANCE);
         } catch (InvocationTargetException e) {
             throw e.getCause();
         }
@@ -137,5 +130,17 @@ public class AnnotationCommandHandlerAdapter
             }
         }
         return handlerParameters;
+    }
+
+    private static class ErrorReportingNoMethodFoundCallback implements MessageHandlerInvoker.NoMethodFoundCallback {
+
+        private static final ErrorReportingNoMethodFoundCallback INSTANCE = new ErrorReportingNoMethodFoundCallback();
+
+        @Override
+        public Object onNoMethodFound(Message parameter) {
+            throw new NoHandlerForCommandException(String.format(
+                    "No Handler found for a command of type[%s]",
+                    parameter.getPayloadType().getSimpleName()));
+        }
     }
 }

@@ -23,10 +23,13 @@ import java.util.Map;
 /**
  * Generic implementation of the EventMessage interface. It simply keeps a reference to the payload and MetaData.
  *
+ * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @since 2.0
  */
 public class GenericEventMessage<T> implements EventMessage<T> {
+
+    private static final long serialVersionUID = -8370948891267874107L;
 
     private final T payload;
     private final String eventIdentifier;
@@ -113,19 +116,19 @@ public class GenericEventMessage<T> implements EventMessage<T> {
     }
 
     @Override
-    public GenericEventMessage<T> withMetaData(MetaData metaData) {
-        if (getMetaData().equals(metaData)) {
+    public GenericEventMessage<T> withMetaData(Map<String, Object> newMetaDataValues) {
+        if (getMetaData().equals(newMetaDataValues)) {
             return this;
         }
-        return new GenericEventMessage<T>(this, metaData);
+        return new GenericEventMessage<T>(this, newMetaDataValues);
     }
 
     @Override
-    public GenericEventMessage<T> andMetaData(MetaData metaData) {
-        if (metaData.isEmpty()) {
+    public GenericEventMessage<T> andMetaData(Map<String, Object> additionalMetaDataValues) {
+        if (additionalMetaDataValues.isEmpty()) {
             return this;
         }
-        return new GenericEventMessage<T>(this, getMetaData().mergedWith(metaData));
+        return new GenericEventMessage<T>(this, getMetaData().mergedWith(additionalMetaDataValues));
     }
 
     @Override

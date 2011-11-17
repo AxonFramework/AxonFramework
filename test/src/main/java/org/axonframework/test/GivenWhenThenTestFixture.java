@@ -36,8 +36,6 @@ import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.axonframework.repository.AggregateNotFoundException;
 
-import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,7 +63,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private Deque<DomainEventMessage> storedEvents;
     private List<EventMessage> publishedEvents;
     private long sequenceNumber = 0;
-    private String typeIdentifier;
 
     /**
      * Initializes a new given-when-then style test fixture.
@@ -89,7 +86,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     @Override
     public FixtureConfiguration registerRepository(EventSourcingRepository<?> eventSourcingRepository) {
         this.repository = eventSourcingRepository;
-        this.typeIdentifier = repository.getTypeIdentifier();
         eventSourcingRepository.setEventBus(eventBus);
         eventSourcingRepository.setEventStore(eventStore);
         return this;
@@ -169,16 +165,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     @Override
     public EventSourcingRepository<?> getRepository() {
         return repository;
-    }
-
-    private void setByReflection(Class<?> eventClass, String fieldName, DomainEventMessage event, Serializable value) {
-        try {
-            Field field = eventClass.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(event, value);
-        } catch (Exception e) {
-            throw new FixtureExecutionException("This test fixture needs to be able to set fields by reflection", e);
-        }
     }
 
     private class RecordingEventStore implements EventStore {

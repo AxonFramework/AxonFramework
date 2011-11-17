@@ -18,6 +18,9 @@ class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParser {
     private final AsyncSagaManagerBeanDefinitionParser async;
     private final SyncSagaManagerBeanDefinitionParser sync;
 
+    /**
+     * Initializes a SagaManagerBeanDefinitionParser.
+     */
     SagaManagerBeanDefinitionParser() {
         async = new AsyncSagaManagerBeanDefinitionParser();
         sync = new SyncSagaManagerBeanDefinitionParser();

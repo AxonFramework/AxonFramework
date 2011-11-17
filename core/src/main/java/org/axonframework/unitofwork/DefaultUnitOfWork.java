@@ -113,7 +113,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         }
 
         // listen for new events registered in the aggregate
-        aggregate.registerEventRegistrationCallback(new EventRegistrationCallback() {
+        aggregate.addEventRegistrationCallback(new EventRegistrationCallback() {
             @Override
             public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
                 event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);

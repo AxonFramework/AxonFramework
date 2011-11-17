@@ -33,10 +33,18 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
  * @author Allard Buijze
  * @since 2.0
  */
-public class MethodMessageHandler extends AbstractMessageHandler {
+public final class MethodMessageHandler extends AbstractMessageHandler {
 
     private final Method method;
 
+    /**
+     * Creates a MethodMessageHandler for the given <code>method</code>.
+     *
+     * @param method The method to create a Handler for
+     * @return The MethodMessageHandler implementation for the given method.
+     *
+     * @throws UnsupportedHandlerException if the given method is not suitable as a Handler
+     */
     public static MethodMessageHandler createFor(Method method) {
         ParameterResolver[] resolvers = findResolvers(
                 method.getAnnotations(),
@@ -100,10 +108,20 @@ public class MethodMessageHandler extends AbstractMessageHandler {
         return returnType;
     }
 
+    /**
+     * Returns the name of the method backing this handler.
+     *
+     * @return the name of the method backing this handler
+     */
     public String getMethodName() {
         return method.getName();
     }
 
+    /**
+     * Returns the Method backing this handler.
+     *
+     * @return the Method backing this handler
+     */
     public Method getMethod() {
         return method;
     }
@@ -111,7 +129,7 @@ public class MethodMessageHandler extends AbstractMessageHandler {
 
     @Override
     public String toString() {
-        return format("EventHandlerMethod %s.%s for payload type %s: %s",
+        return format("HandlerMethod %s.%s for payload type %s: %s",
                       method.getDeclaringClass().getSimpleName(), method.getName(),
                       getPayloadType().getSimpleName(), method.toGenericString());
     }

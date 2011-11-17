@@ -18,8 +18,6 @@ package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
@@ -151,16 +149,6 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
                 doSave(aggregate);
             }
             aggregate.commitEvents();
-        }
-
-        private void dispatchUncommittedEvents(DomainEventStream uncommittedEvents) {
-            while (uncommittedEvents.hasNext()) {
-                DomainEventMessage event = uncommittedEvents.next();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Publishing event [{}] to the UnitOfWork", event.getClass().getSimpleName());
-                }
-                CurrentUnitOfWork.get().publishEvent(event, eventBus);
-            }
         }
     }
 }
