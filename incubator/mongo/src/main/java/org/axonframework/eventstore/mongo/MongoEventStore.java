@@ -16,13 +16,15 @@
 
 package org.axonframework.eventstore.mongo;
 
-import com.mongodb.*;
+import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.*;
-import org.axonframework.eventstore.legacy.LegacyEventSerializerWrapper;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,11 +36,14 @@ import java.util.List;
 import static org.axonframework.eventstore.mongo.EventEntry.UTF8;
 
 /**
- * Implementation of the <code>EventStore</code> based on a MongoDB instance or replica set. Sharding and pairing are
- * not explicitly supported.
+ * <p>Implementation of the <code>EventStore</code> based on a MongoDB instance or replica set. Sharding and pairing are
+ * not explicitly supported.</p>
  * <p/>
- * <strong>Warning:</strong> This implementation is still in progress and may be subject to alterations. The
- * implementation works, but has not been optimized to fully leverage MongoDB's features, yet.
+ * <p>This event store implementation needs a serializer as well as a {@see MongoTemplate} to interact with the
+ * mongo database.</p>
+ * <p/>
+ * <p><strong>Warning:</strong> This implementation is still in progress and may be subject to alterations. The
+ * implementation works, but has not been optimized to fully leverage MongoDB's features, yet.</p>
  *
  * @author Jettro Coenradie
  * @since 0.7
@@ -53,36 +58,23 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     private final Serializer<? super DomainEvent> eventSerializer;
 
     /**
-     * Constructor that accepts an EventSerializer, the MongoTemplate and a string containing the testContext. The
+     * Constructor that accepts a Serializer, the MongoTemplate and a string containing the testContext. The
      * TestContext can be Null. Provide true in case of the test context.
      *
-     * @param eventSerializer Your own EventSerializer
-     * @param mongo           Mongo instance to obtain the database and the collections.
-     * @deprecated Use {@link #MongoEventStore(org.axonframework.serializer.Serializer, com.mongodb.Mongo)} instead.
-     */
-    @Deprecated
-    public MongoEventStore(EventSerializer eventSerializer, Mongo mongo) {
-        this(new LegacyEventSerializerWrapper(eventSerializer), mongo);
-    }
-
-    /**
-     * Constructor that accepts an EventSerializer, the MongoTemplate and a string containing the testContext. The
-     * TestContext can be Null. Provide true in case of the test context.
-     *
-     * @param eventSerializer Your own EventSerializer
+     * @param eventSerializer Your own Serializer
      * @param mongo           Mongo instance to obtain the database and the collections.
      */
-    public MongoEventStore(Serializer<? super DomainEvent> eventSerializer, Mongo mongo) {
+    public MongoEventStore(Serializer<? super DomainEvent> eventSerializer, MongoTemplate mongo) {
         this.eventSerializer = eventSerializer;
-        this.mongoTemplate = new MongoTemplate(mongo);
+        this.mongoTemplate = mongo;
     }
 
     /**
-     * Constructor that uses the default EventSerializer.
+     * Constructor that uses the default Serializer.
      *
-     * @param mongo Mongo instance to obtain the database and the collections.
+     * @param mongo MongoTemplate instance to obtain the database and the collections.
      */
-    public MongoEventStore(Mongo mongo) {
+    public MongoEventStore(MongoTemplate mongo) {
         this(new XStreamEventSerializer(), mongo);
     }
 
@@ -133,6 +125,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     public void appendSnapshotEvent(String type, DomainEvent snapshotEvent) {
         EventEntry snapshotEventEntry = new EventEntry(type, snapshotEvent, eventSerializer);
         mongoTemplate.snapshotEventCollection().insert(snapshotEventEntry.asDBObject());
+        if (logger.isDebugEnabled()) {
+            logger.debug("snapshot event of type {} appended.");
+        }
     }
 
     @Override
@@ -198,40 +193,5 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
             entries.add(new EventEntry(dbObject));
         }
         return entries;
-    }
-
-    /**
-     * Sets the name of the database in which the event store should create the event collections. Defaults to
-     * "axonframework". If no database with the given name exists, it is created.
-     *
-     * @param databaseName the name of the database where events should be stored
-     */
-    public void setDatabaseName(String databaseName) {
-        mongoTemplate.setDatabaseName(databaseName);
-    }
-
-    /**
-     * Sets the name of the collection where this event store should store domain events. Defaults to "domainevents".
-     * <p/>
-     * Note that you should not given this collection the same name as the {@link #setSnapshotEventsCollectionName(String)
-     * snapshot events collection}.
-     *
-     * @param domainEventsCollectionName The name of the collection that stores domain events.
-     */
-    public void setDomainEventsCollectionName(String domainEventsCollectionName) {
-        mongoTemplate.setDomainEventsCollectionName(domainEventsCollectionName);
-    }
-
-    /**
-     * Sets the name of the collection where this event store should store snapshot events. Defaults to
-     * "snapshotevents".
-     * <p/>
-     * Note that you should not given this collection the same name as the {@link #setDomainEventsCollectionName(String)
-     * domain events collection}.
-     *
-     * @param snapshotEventsCollectionName The name of the collection that stores snapshot events.
-     */
-    public void setSnapshotEventsCollectionName(String snapshotEventsCollectionName) {
-        mongoTemplate.setSnapshotEventsCollectionName(snapshotEventsCollectionName);
     }
 }
