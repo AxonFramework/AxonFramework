@@ -23,7 +23,7 @@ public interface MongoTemplate {
     DBCollection domainEventCollection();
 
     /**
-     * Returtns a reference to the collection containing the snapshot events.
+     * Returns a reference to the collection containing the snapshot events.
      *
      * @return DBCollection containing the snapshot events
      */
