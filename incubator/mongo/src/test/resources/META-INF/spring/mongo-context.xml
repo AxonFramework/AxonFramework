@@ -17,14 +17,28 @@
   -->
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.axonframework.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
+
+    <context:annotation-config/>
+    <context:event-bus id="eventBus"/>
+    <context:command-bus id="commandBus"/>
+
+    <bean id="springResourceInjector" class="org.axonframework.saga.spring.SpringResourceInjector"/>
 
     <!-- Axon Event store -->
     <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore" lazy-init="true">
         <constructor-arg ref="mongoTemplate"/>
     </bean>
 
+    <!-- Axon saga's -->
+    <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
+        <constructor-arg ref="sagaMongoTemplate"/>
+    </bean>
+
+    <bean id="sagaMongoTemplate" class="org.axonframework.saga.repository.mongo.DefaultMongoTemplate">
+        <constructor-arg ref="mongoDb"/>
+    </bean>
 
     <!-- Infrastructure Mongo -->
     <bean id="mongoTemplate" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
