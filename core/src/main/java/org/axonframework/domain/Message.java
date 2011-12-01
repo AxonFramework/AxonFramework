@@ -11,6 +11,7 @@ import java.util.Map;
  * @since 2.0
  */
 public interface Message<T> {
+
     /**
      * Returns the meta data for this event. This meta data is a collection of key-value pairs, where the key is a
      * String, and the value is a serializable object.
@@ -27,12 +28,12 @@ public interface Message<T> {
     T getPayload();
 
     /**
-     * Returns the class name of the payload, as defined by {@link Class#getName()}.
+     * Returns the type of the payload.
      * <p/>
-     * Note: the fully qualified class name is returned to prevent class loading problems on machines that might not
-     * have access to this class.
+     * Is semantically equal to <code>getPayload().getClass()</code>, but allows implementations to optimize by using
+     * lazy loading or deserialization.
      *
-     * @return the fully qualified class name of the payload.
+     * @return the type of payload.
      *
      * @see Class#getName()
      */
