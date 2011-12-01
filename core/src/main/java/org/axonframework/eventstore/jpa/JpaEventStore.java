@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -33,8 +34,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 /**
@@ -56,60 +55,64 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaEventStore.class);
 
-    private EntityManager entityManager;
-
-    private final Serializer<? super DomainEventMessage> eventSerializer;
     private static final int DEFAULT_BATCH_SIZE = 100;
-    private int batchSize = DEFAULT_BATCH_SIZE;
     private static final int DEFAULT_MAX_SNAPSHOTS_ARCHIVED = 1;
-    private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
+
+    private final EntityManagerProvider entityManagerProvider;
+    private final Serializer<? super DomainEventMessage> eventSerializer;
     private final EventEntryStore eventEntryStore;
+    private int batchSize = DEFAULT_BATCH_SIZE;
+    private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
 
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
     /**
      * Initialize a JpaEventStore using an {@link org.axonframework.eventstore.XStreamEventSerializer}, which
-     * serializes
-     * events as XML and the default Event Entry store.
-     * <p/>
-     * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
-     * SnapshotEventEntry}.
-     */
-    public JpaEventStore() {
-        this(new XStreamEventSerializer(), new DefaultEventEntryStore());
-    }
-
-    /**
-     * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and the default
-     * Event Entry store.
+     * serializes events as XML and the default Event Entry store.
      * <p/>
      * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
      * SnapshotEventEntry}.
      *
-     * @param eventSerializer The serializer to (de)serialize domain events with.
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      */
-    public JpaEventStore(Serializer<? super DomainEventMessage> eventSerializer) {
-        this(eventSerializer, new DefaultEventEntryStore());
+    public JpaEventStore(EntityManagerProvider entityManagerProvider) {
+        this(entityManagerProvider, new XStreamEventSerializer(), new DefaultEventEntryStore());
     }
 
     /**
      * Initialize a JpaEventStore using the given <code>eventEntryStore</code> and an {@link
      * org.axonframework.eventstore.XStreamEventSerializer}, which serializes events as XML.
      *
-     * @param eventEntryStore The instance providing persistence logic for Domain Event entries
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
+     * @param eventEntryStore       The instance providing persistence logic for Domain Event entries
      */
-    public JpaEventStore(EventEntryStore eventEntryStore) {
-        this(new XStreamEventSerializer(), eventEntryStore);
+    public JpaEventStore(EntityManagerProvider entityManagerProvider, EventEntryStore eventEntryStore) {
+        this(entityManagerProvider, new XStreamEventSerializer(), eventEntryStore);
+    }
+
+    /**
+     * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and stores the
+     * events in the database using the default EventEntryStore.
+     *
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
+     * @param eventSerializer       The serializer to (de)serialize domain events with.
+     */
+    public JpaEventStore(EntityManagerProvider entityManagerProvider,
+                         Serializer<? super DomainEventMessage> eventSerializer) {
+        this(entityManagerProvider, eventSerializer, new DefaultEventEntryStore());
     }
 
     /**
      * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and stores the
      * events in the database using the given <code>eventEntryStore</code>.
      *
-     * @param eventSerializer The serializer to (de)serialize domain events with.
-     * @param eventEntryStore The instance providing persistence logic for Domain Event entries
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
+     * @param eventSerializer       The serializer to (de)serialize domain events with.
+     * @param eventEntryStore       The instance providing persistence logic for Domain Event entries
      */
-    public JpaEventStore(Serializer<? super DomainEventMessage> eventSerializer, EventEntryStore eventEntryStore) {
+    public JpaEventStore(EntityManagerProvider entityManagerProvider,
+                         Serializer<? super DomainEventMessage> eventSerializer, EventEntryStore eventEntryStore) {
+        this.entityManagerProvider = entityManagerProvider;
         this.eventSerializer = eventSerializer;
         this.eventEntryStore = eventEntryStore;
     }
@@ -123,7 +126,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         try {
             while (events.hasNext()) {
                 event = events.next();
-                eventEntryStore.persistEvent(type, event, eventSerializer.serialize(event), entityManager);
+                eventEntryStore.persistEvent(type, event, eventSerializer.serialize(event),
+                                             entityManagerProvider.getEntityManager());
             }
         } catch (RuntimeException exception) {
             if (persistenceExceptionResolver != null
@@ -144,7 +148,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     @Override
     public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
         long snapshotSequenceNumber = -1;
-        byte[] lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(type, identifier, entityManager);
+        byte[] lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(type, identifier,
+                                                                         entityManagerProvider.getEntityManager());
         DomainEventMessage snapshotEvent = null;
         if (lastSnapshotEvent != null) {
             try {
@@ -170,8 +175,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     @SuppressWarnings({"unchecked"})
     private List<DomainEventMessage> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
-        List<byte[]> entries = eventEntryStore.fetchBatch(type, identifier, firstSequenceNumber,
-                                                          batchSize, entityManager);
+        List<byte[]> entries = eventEntryStore.fetchBatch(type, identifier, firstSequenceNumber, batchSize,
+                                                          entityManagerProvider.getEntityManager());
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entries.size());
         for (byte[] entry : entries) {
             events.add((DomainEventMessage) eventSerializer.deserialize(entry));
@@ -189,10 +194,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         // Persist snapshot before pruning redundant archived ones, in order to prevent snapshot misses when reloading
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
-        eventEntryStore.persistSnapshot(type, snapshotEvent, eventSerializer.serialize(snapshotEvent), entityManager);
+        eventEntryStore.persistSnapshot(type, snapshotEvent, eventSerializer.serialize(snapshotEvent),
+                                        entityManagerProvider.getEntityManager());
 
         if (maxSnapshotsArchived > 0) {
-            eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived, entityManager);
+            eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived,
+                                           entityManagerProvider.getEntityManager());
         }
     }
 
@@ -202,23 +209,13 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         List<byte[]> batch;
         boolean shouldContinue = true;
         while (shouldContinue) {
-            batch = eventEntryStore.fetchBatch(first, batchSize, entityManager);
+            batch = eventEntryStore.fetchBatch(first, batchSize, entityManagerProvider.getEntityManager());
             for (byte[] entry : batch) {
                 visitor.doWithEvent((DomainEventMessage) eventSerializer.deserialize(entry));
             }
             shouldContinue = (batch.size() >= batchSize);
             first += batchSize;
         }
-    }
-
-    /**
-     * Sets the EntityManager for this EventStore to use.
-     *
-     * @param entityManager the EntityManager to use.
-     */
-    @PersistenceContext
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
     }
 
     /**

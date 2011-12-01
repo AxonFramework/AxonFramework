@@ -31,15 +31,7 @@
         </axon:types>
     </axon:saga-manager>
 
-    <bean id="jpaSagaRepository" class="org.axonframework.saga.repository.jpa.JpaSagaRepository">
-        <property name="resourceInjector">
-            <bean class="org.axonframework.saga.spring.SpringResourceInjector"/>
-        </property>
-        <property name="serializer">
-            <bean class="org.axonframework.serializer.XStreamSerializer"/>
-        </property>
-        <property name="useExplicitFlush" value="true"/>
-    </bean>
+    <axon:jpa-saga-repository id="jpaSagaRepository" use-explicit-flush="true"/>
 
     <bean class="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
 
@@ -59,7 +51,7 @@
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
+    <axon:jpa-event-store id="eventStore"/>
 
     <bean id="executor" class="org.axonframework.integrationtests.saga.ExecutorServiceFactoryBean">
         <property name="queue" ref="unlimitedQueue"/>

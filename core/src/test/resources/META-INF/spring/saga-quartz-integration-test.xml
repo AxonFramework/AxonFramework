@@ -30,7 +30,7 @@
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-    <bean id="sagaRepository" class="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>
+    <axon:jpa-saga-repository id="sagaRepository"/>
 
     <axon:saga-manager id="sagaManager" saga-repository="sagaRepository" event-bus="eventBus">
         <axon:types>

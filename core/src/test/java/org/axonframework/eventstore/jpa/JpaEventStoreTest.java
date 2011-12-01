@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -312,8 +313,8 @@ public class JpaEventStoreTest {
                 entityManager.createQuery("SELECT e FROM SnapshotEventEntry e "
                                                   + "WHERE e.type = 'type' "
                                                   + "AND e.aggregateIdentifier = :aggregateIdentifier")
-                             .setParameter("aggregateIdentifier", aggregate.getIdentifier().asString())
-                             .getResultList();
+                        .setParameter("aggregateIdentifier", aggregate.getIdentifier().asString())
+                        .getResultList();
         assertEquals("archived snapshot count", 1L, snapshots.size());
         assertEquals("archived snapshot sequence", 1L, snapshots.iterator().next().getSequenceNumber());
     }
@@ -322,8 +323,7 @@ public class JpaEventStoreTest {
     @Test
     public void testCustomEventEntryStore() {
         EventEntryStore eventEntryStore = mock(EventEntryStore.class);
-        testSubject = new JpaEventStore(eventEntryStore);
-        testSubject.setEntityManager(entityManager);
+        testSubject = new JpaEventStore(new SimpleEntityManagerProvider(entityManager), eventEntryStore);
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),

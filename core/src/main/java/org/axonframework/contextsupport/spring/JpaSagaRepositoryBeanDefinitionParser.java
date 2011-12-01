@@ -16,6 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
+import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.saga.repository.jpa.JpaSagaRepository;
 import org.axonframework.saga.spring.SpringResourceInjector;
 import org.axonframework.serializer.XStreamSerializer;
@@ -38,6 +39,7 @@ public class JpaSagaRepositoryBeanDefinitionParser extends AbstractBeanDefinitio
     private static final String EXPLICIT_FLUSH_ATTRIBUTE = "use-explicit-flush";
     private static final String SAGA_SERIALIZER_ATTRIBUTE = "saga-serializer";
     private static final String SAGA_SERIALIZER_PROPERTY = "serializer";
+    private static final String ENTITY_MANAGER_PROVIDER = "entity-manager-provider";
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -45,7 +47,18 @@ public class JpaSagaRepositoryBeanDefinitionParser extends AbstractBeanDefinitio
         parseResourceInjectorAttribute(element, builder);
         parseExplicitFlushAttribute(element, builder);
         parseSagaSerializerAttribute(element, builder);
+        parseEntityManagerProviderAttribute(element, builder);
         return builder.getBeanDefinition();
+    }
+
+    private void parseEntityManagerProviderAttribute(Element element, BeanDefinitionBuilder builder) {
+        if (element.hasAttribute(ENTITY_MANAGER_PROVIDER)) {
+            builder.addConstructorArgReference(element.getAttribute(ENTITY_MANAGER_PROVIDER));
+        } else {
+            builder.addConstructorArgValue(
+                    BeanDefinitionBuilder.genericBeanDefinition(ContainerManagedEntityManagerProvider.class)
+                            .getBeanDefinition());
+        }
     }
 
     private void parseSagaSerializerAttribute(Element element, BeanDefinitionBuilder beanDefinition) {

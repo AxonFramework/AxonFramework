@@ -16,11 +16,11 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 /**
  * Generic repository implementation that stores JPA annotated aggregates. These aggregates must implement {@link
@@ -39,7 +39,7 @@ import javax.persistence.PersistenceContext;
  */
 public class GenericJpaRepository<T extends AggregateRoot> extends LockingRepository<T> {
 
-    private EntityManager entityManager;
+    private final EntityManagerProvider entityManagerProvider;
     private final Class<T> aggregateType;
     private boolean forceFlushOnSave = true;
 
@@ -47,10 +47,11 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      * Initialize a repository for storing aggregates of the given <code>aggregateType</code>. No additional locking
      * will be used.
      *
-     * @param aggregateType the aggregate type this repository manages
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
+     * @param aggregateType         the aggregate type this repository manages
      */
-    public GenericJpaRepository(Class<T> aggregateType) {
-        this(aggregateType, LockingStrategy.NO_LOCKING);
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType) {
+        this(entityManagerProvider, aggregateType, LockingStrategy.NO_LOCKING);
     }
 
     /**
@@ -58,16 +59,20 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      * <code>
      * lockingStrategy</code>.
      *
-     * @param aggregateType   the aggregate type this repository manages
-     * @param lockingStrategy the additional locking strategy for this repository
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
+     * @param aggregateType         the aggregate type this repository manages
+     * @param lockingStrategy       the additional locking strategy for this repository
      */
-    public GenericJpaRepository(Class<T> aggregateType, LockingStrategy lockingStrategy) {
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
+                                LockingStrategy lockingStrategy) {
         super(lockingStrategy);
+        this.entityManagerProvider = entityManagerProvider;
         this.aggregateType = aggregateType;
     }
 
     @Override
     protected void doSaveWithLock(T aggregate) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         entityManager.persist(aggregate);
         if (forceFlushOnSave) {
             entityManager.flush();
@@ -76,6 +81,7 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
 
     @Override
     protected void doDeleteWithLock(T aggregate) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
         entityManager.remove(aggregate);
         if (forceFlushOnSave) {
             entityManager.flush();
@@ -93,17 +99,7 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
 
     @Override
     protected T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
-        return entityManager.find(aggregateType, aggregateIdentifier.asString());
-    }
-
-    /**
-     * Sets the EntityManager this repository should use to access the underlying storage.
-     *
-     * @param entityManager the EntityManager providing access to the underlying storage.
-     */
-    @PersistenceContext
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
+        return entityManagerProvider.getEntityManager().find(aggregateType, aggregateIdentifier.asString());
     }
 
     /**

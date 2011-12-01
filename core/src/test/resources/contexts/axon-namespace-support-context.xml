@@ -60,7 +60,8 @@
                                     command-target-resolver="commandTargetResolver"/>
 
     <axon:jpa-saga-repository id="allDefinedSagaRepository" resource-injector="mockResourceInjector"
-                              use-explicit-flush="false" saga-serializer="sagaSerializer"/>
+                              use-explicit-flush="false" saga-serializer="sagaSerializer"
+                              entity-manager-provider="myEntityManagerProvider"/>
 
     <bean id="sagaSerializer" class="org.axonframework.serializer.XStreamSerializer"/>
 
@@ -116,6 +117,10 @@
 
     <axon:jpa-event-store id="eventStore" data-source="dataSource"
                           event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000"/>
+
+    <axon:jpa-event-store id="eventStore2" data-source="dataSource" entity-manager-provider="myEntityManagerProvider"
+                          event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000"/>
+    <bean id="myEntityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
 
     <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer"/>
 

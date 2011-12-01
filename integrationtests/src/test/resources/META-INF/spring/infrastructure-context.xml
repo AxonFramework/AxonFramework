@@ -41,7 +41,11 @@
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
+    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
+        <constructor-arg>
+            <bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
+        </constructor-arg>
+    </bean>
 
     <bean id="capturingEventHandler" class="org.axonframework.integrationtests.eventhandling.RegisteringEventHandler"/>
     <bean id="loopingEventHandler" class="org.axonframework.integrationtests.eventhandling.LoopingEventHandler"/>
