@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.legacy;
+package org.axonframework.migration.eventstore;
 
-import org.axonframework.eventstore.EventUpcaster;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.serializer.ContentType;
+import org.axonframework.serializer.IntermediateRepresentation;
+import org.axonframework.serializer.SerializedType;
+import org.axonframework.serializer.Upcaster;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.tree.DefaultDocument;
@@ -31,22 +35,27 @@ import java.util.Set;
  * AxonFramework, to the event format supported since 0.7.
  * <p/>
  * This upcaster uses dom4j Document as event representation, which is supported by the {@link
- * org.axonframework.eventstore.XStreamEventSerializer}.
+ * org.axonframework.serializer.XStreamSerializer}.
  *
  * @author Allard Buijze
  * @since 0.7
  */
-public class LegacyAxonEventUpcaster implements EventUpcaster<Document> {
+public class LegacyAxonEventUpcaster implements Upcaster {
 
     @Override
-    public Class<Document> getSupportedRepresentation() {
-        return Document.class;
+    public boolean canUpcast(SerializedType serializedType) {
+        return serializedType.getRevision() < 0;
+    }
+
+    @Override
+    public ContentType expectedContentType() {
+        return ContentType.DOM4J;
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public Document upcast(Document event) {
-        Element rootNode = event.getRootElement();
+    public IntermediateRepresentation upcast(IntermediateRepresentation event) {
+        Element rootNode = ((Document) event.getContents()).getRootElement();
         if (rootNode.attribute("eventRevision") == null) {
             rootNode.addAttribute("eventRevision", "0");
             Element metaData = rootNode.addElement("metaData").addElement("values");
@@ -66,7 +75,8 @@ public class LegacyAxonEventUpcaster implements EventUpcaster<Document> {
         Document document = new DefaultDocument();
         Element newRoot = document.addElement("domain-event");
         Element payload = newRoot.addElement("payload");
-        payload.addAttribute("class", rootNode.getName().replaceAll("\\_\\-", "\\$"));
+        String objectType = rootNode.getName().replaceAll("\\_\\-", "\\$");
+        payload.addAttribute("class", objectType);
         Set<String> forbiddenPayloadElements = new HashSet<String>(Arrays.asList("metaData",
                                                                                  "aggregateIdentifier",
                                                                                  "sequenceNumber",
@@ -81,8 +91,9 @@ public class LegacyAxonEventUpcaster implements EventUpcaster<Document> {
         }
         newRoot.addElement("timestamp").addText(extractMetaDataValue(newRoot, "_timestamp"));
         newRoot.addElement("eventIdentifier").addText(extractMetaDataValue(newRoot, "_identifier"));
-        payload.addAttribute("eventRevision", rootNode.attribute("eventRevision").getValue());
-        return document;
+        String eventRevision = rootNode.attribute("eventRevision").getValue();
+        payload.addAttribute("eventRevision", eventRevision);
+        return new Dom4jRepresentation(document, DomainEventMessage.class.getName(), Integer.parseInt(eventRevision));
     }
 
     private String extractMetaDataValue(Element newRoot, String metaDataKey) {

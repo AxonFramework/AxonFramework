@@ -17,7 +17,9 @@
 package org.axonframework.commandbus.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -32,9 +34,9 @@ import java.net.Socket;
 public class SimpleTcpDestination implements Destination {
 
     private final Socket socket;
-    private final Serializer<Object> serializer;
+    private final Serializer serializer;
 
-    public SimpleTcpDestination(Socket socket, Serializer<Object> serializer) {
+    public SimpleTcpDestination(Socket socket, Serializer serializer) {
         this.socket = socket;
         this.serializer = serializer;
     }
@@ -44,9 +46,11 @@ public class SimpleTcpDestination implements Destination {
         try {
             DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream());
             dataOut.writeUTF("SEND");
-            byte[] serialized = serialize(command);
-            dataOut.writeInt(serialized.length);
-            dataOut.write(serialized);
+            SerializedObject serialized = serialize(command);
+            dataOut.writeUTF(serialized.getType().getName());
+            dataOut.writeInt(serialized.getType().getRevision());
+            dataOut.writeInt(serialized.getData().length);
+            dataOut.write(serialized.getData());
         } catch (IOException e) {
             // TODO: Implement
         }
@@ -59,14 +63,18 @@ public class SimpleTcpDestination implements Destination {
         try {
             dataOut = new DataOutputStream(socket.getOutputStream());
             dataOut.writeUTF("SEND-RECEIVE");
-            byte[] serialized = serialize(command);
-            dataOut.writeInt(serialized.length);
-            dataOut.write(serialized);
+            SerializedObject serialized = serialize(command);
+            dataOut.writeUTF(serialized.getType().getName());
+            dataOut.writeInt(serialized.getType().getRevision());
+            dataOut.writeInt(serialized.getData().length);
+            dataOut.write(serialized.getData());
             DataInput dataIn = new DataInputStream(socket.getInputStream());
+            String type = dataIn.readUTF();
+            int revision = dataIn.readInt();
             int length = dataIn.readInt();
             byte[] serializedResponse = new byte[length];
             dataIn.readFully(serializedResponse);
-            Object response = serializer.deserialize(serializedResponse);
+            Object response = serializer.deserialize(new SimpleSerializedObject(serializedResponse, type, revision));
             if (response instanceof Throwable) {
                 callback.onFailure((Throwable) response);
             } else {
@@ -77,7 +85,7 @@ public class SimpleTcpDestination implements Destination {
         }
     }
 
-    private byte[] serialize(Object command) {
+    private SerializedObject serialize(Object command) {
         return serializer.serialize(command);
     }
 

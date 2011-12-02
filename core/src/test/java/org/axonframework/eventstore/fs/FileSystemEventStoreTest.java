@@ -24,7 +24,7 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 import org.mockito.*;
 
@@ -50,7 +50,7 @@ public class FileSystemEventStoreTest {
 
     @Before
     public void setUp() {
-        eventStore = new FileSystemEventStore(new XStreamEventSerializer());
+        eventStore = new FileSystemEventStore(new XStreamSerializer());
         eventStore.setBaseDir(new File("target/"));
 
         aggregateIdentifier = new UUIDAggregateIdentifier();

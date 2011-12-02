@@ -17,6 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.serializer.SerializedObject;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -43,14 +44,16 @@ public class DomainEventEntry extends AbstractEventEntry {
     }
 
     /**
-     * Initialize a DomainEventEntry for the given <code>event</code>, to be serialized using the given
-     * <code>serializer</code>.
+     * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type            The type identifier of the aggregate root the event belongs to
-     * @param event           The event to store in the eventstore
-     * @param serializedEvent The serialized version of the Event
+     * @param type     The type identifier of the aggregate root the event belongs to
+     * @param event    The event to store in the eventstore
+     * @param payload  The serialized version of the Event
+     * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage event, byte[] serializedEvent) {
-        super(type, event, serializedEvent);
+    public DomainEventEntry(String type, DomainEventMessage event,
+                            SerializedObject payload,
+                            SerializedObject metaData) {
+        super(type, event, payload, metaData);
     }
 }

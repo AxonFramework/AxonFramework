@@ -26,7 +26,6 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventstore.EventStore;
@@ -57,7 +56,7 @@ public class DisruptorCommandBus implements CommandBus, Repository {
     }
 
     public DisruptorCommandBus(int bufferSize, AggregateFactory<?> eventStore, EventStore aggregateFactory,
-                               EventBus eventBus, Serializer<? super DomainEventMessage> eventSerializer) {
+                               EventBus eventBus, Serializer eventSerializer) {
         this(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -68,7 +67,7 @@ public class DisruptorCommandBus implements CommandBus, Repository {
 
     public DisruptorCommandBus(final ThreadFactory threadFactory, int bufferSize, AggregateFactory<?> aggregateFactory,
                                EventStore eventStore,
-                               EventBus eventBus, Serializer<? super DomainEventMessage> eventSerializer) {
+                               EventBus eventBus, Serializer eventSerializer) {
         Executor executor = new Executor() {
             @Override
             public void execute(Runnable command) {

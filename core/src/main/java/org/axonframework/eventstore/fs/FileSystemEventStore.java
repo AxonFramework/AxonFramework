@@ -16,8 +16,8 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CountingInputStream;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -25,8 +25,9 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,15 +60,15 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemEventStore.class);
 
-    private final Serializer<? super DomainEventMessage> eventSerializer;
+    private final Serializer eventSerializer;
     private EventFileResolver eventFileResolver;
 
     /**
      * Basic initialization of the event store. The actual serialization and deserialization is delegated to a {@link
-     * org.axonframework.eventstore.XStreamEventSerializer}
+     * org.axonframework.serializer.XStreamSerializer}
      */
     public FileSystemEventStore() {
-        this.eventSerializer = new XStreamEventSerializer();
+        this.eventSerializer = new XStreamSerializer();
     }
 
     /**
@@ -76,7 +77,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      *
      * @param serializer The serializer capable of serializing (at least) DomainEvents
      */
-    public FileSystemEventStore(Serializer<? super DomainEventMessage> serializer) {
+    public FileSystemEventStore(Serializer serializer) {
         this.eventSerializer = serializer;
     }
 
@@ -96,9 +97,9 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
             DomainEventMessage next = eventsToStore.next();
             out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
             do {
-                byte[] bytes = eventSerializer.serialize(next);
+                SerializedObject serializedObject = eventSerializer.serialize(next);
                 String timeStamp = next.getTimestamp().toString();
-                writeEventEntry(out, next.getSequenceNumber(), timeStamp, bytes);
+                writeEventEntry(out, next.getSequenceNumber(), timeStamp, serializedObject);
                 if (eventsToStore.hasNext()) {
                     next = eventsToStore.next();
                 } else {
@@ -143,15 +144,13 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         OutputStream fileOutputStream = null;
         try {
 
-            byte[] serializedEvent = eventSerializer.serialize(snapshotEvent);
+            SerializedObject serializedEvent = eventSerializer.serialize(snapshotEvent);
 
             long offset = calculateOffset(type, aggregateIdentifier, snapshotEvent.getSequenceNumber());
             long sequenceNumber = snapshotEvent.getSequenceNumber();
             String timeStamp = snapshotEvent.getTimestamp().toString();
-            SnapshotEventEntry snapshotEntry = new SnapshotEventEntry(serializedEvent,
-                                                                      sequenceNumber,
-                                                                      timeStamp,
-                                                                      offset);
+            SnapshotEventEntry snapshotEntry = new SnapshotEventEntry(serializedEvent, sequenceNumber,
+                                                                      timeStamp, offset);
 
             fileOutputStream = eventFileResolver.openSnapshotFileForWriting(type, aggregateIdentifier);
 
@@ -187,7 +186,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         if (snapshotEntry != null) {
             String timeStamp = snapshotEntry.getTimeStamp();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            writeEventEntry(baos, snapshotEntry.getSequenceNumber(), timeStamp, snapshotEntry.getBytes());
+            writeEventEntry(baos, snapshotEntry.getSequenceNumber(), timeStamp, snapshotEntry.getPayload());
             is = new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), eventFileInputStream);
         }
         return new BufferedReaderDomainEventStream(is, eventSerializer);
@@ -242,7 +241,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
 
         private DomainEventMessage next;
         private final InputStream inputStream;
-        private final Serializer<? super DomainEventMessage> serializer;
+        private final Serializer serializer;
 
         /**
          * Initialize a BufferedReaderDomainEventStream using the given <code>inputStream</code> and
@@ -260,7 +259,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
          * @param serializer  The serializer to deserialize the DomainEvents
          */
         public BufferedReaderDomainEventStream(InputStream inputStream,
-                                               Serializer<? super DomainEventMessage> serializer) {
+                                               Serializer serializer) {
             this.inputStream = new BufferedInputStream(inputStream);
             this.serializer = serializer;
             this.next = doReadNext();

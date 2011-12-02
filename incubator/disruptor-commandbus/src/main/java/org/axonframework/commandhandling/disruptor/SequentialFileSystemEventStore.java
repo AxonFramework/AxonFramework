@@ -20,8 +20,13 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.StringAggregateIdentifier;
+import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
+import org.joda.time.DateTime;
 
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
@@ -41,9 +46,9 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
 
     private static final String FILE_NAME = "/tmp/trader-event.txt";
     private final ObjectOutputStream os;
-    private Serializer<? super DomainEventMessage> eventSerializer;
+    private Serializer eventSerializer;
 
-    public SequentialFileSystemEventStore(Serializer<? super DomainEventMessage> eventSerializer) {
+    public SequentialFileSystemEventStore(Serializer eventSerializer) {
         this.eventSerializer = eventSerializer;
         try {
             os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(FILE_NAME),
@@ -60,11 +65,16 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
         try {
             while (events.hasNext()) {
                 DomainEventMessage event = events.next();
+                os.writeUTF(event.getEventIdentifier());
                 os.writeUTF(type);
                 os.writeUTF(event.getAggregateIdentifier().asString());
-                byte[] serialized = eventSerializer.serialize(event);
-                os.writeInt(serialized.length);
-                os.writeUTF(new String(serialized));
+                os.writeLong(event.getSequenceNumber());
+                os.writeUTF(event.getTimestamp().toString());
+                SerializedObject serialized = eventSerializer.serialize(event);
+                os.writeUTF(serialized.getType().getName());
+                os.writeInt(serialized.getType().getRevision());
+                os.writeInt(serialized.getData().length);
+                os.write(serialized.getData());
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -84,14 +94,26 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
         try {
             while (true) {
                 try {
+                    String eventIdentifier = ois.readUTF();
                     String actualType = ois.readUTF();
                     String actualIdentifier = ois.readUTF();
-                    ois.readInt();
-                    byte[] serializedEvent = ois.readUTF().getBytes();
+                    long sequenceNumber = ois.readLong();
+                    String timestamp = ois.readUTF();
+                    String payloadType = ois.readUTF();
+                    int payloadRevision = ois.readInt();
+                    int length = ois.readInt();
+                    byte[] serializedEvent = new byte[length];
+                    ois.readFully(serializedEvent);
                     if (type.equals(actualType) && identifier.asString().equals(actualIdentifier)) {
-                        DomainEventMessage domainEvent = (DomainEventMessage) eventSerializer.deserialize(
-                                serializedEvent);
-                        domainEvents.add(domainEvent);
+                        domainEvents.add(new SerializedDomainEventMessage(
+                                eventIdentifier,
+                                new StringAggregateIdentifier(actualIdentifier),
+                                sequenceNumber,
+                                new DateTime(timestamp),
+                                new SimpleSerializedObject(serializedEvent, payloadType, payloadRevision),
+                                null,
+                                eventSerializer,
+                                eventSerializer));
                     }
                 } catch (EOFException e) {
                     break;

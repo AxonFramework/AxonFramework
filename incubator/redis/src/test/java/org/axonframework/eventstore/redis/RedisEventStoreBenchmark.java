@@ -19,8 +19,8 @@ package org.axonframework.eventstore.redis;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
-import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
+import org.axonframework.serializer.XStreamSerializer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -39,7 +39,7 @@ public class RedisEventStoreBenchmark extends AbstractEventStoreBenchmark {
     @Override
     protected void prepareEventStore() {
         redisEventStore = new RedisEventStore();
-        redisEventStore.setEventSerializer(new XStreamEventSerializer());
+        redisEventStore.setEventSerializer(new XStreamSerializer());
         PooledRedisConnectionProvider redisConnectionProvider = new PooledRedisConnectionProvider();
         redisEventStore.setRedisConnectionProvider(redisConnectionProvider);
         Jedis conn = redisConnectionProvider.newConnection();

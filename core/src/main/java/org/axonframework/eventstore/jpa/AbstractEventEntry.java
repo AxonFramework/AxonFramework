@@ -19,7 +19,12 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StringAggregateIdentifier;
+import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.eventstore.SerializedDomainEventMessage;
+import org.axonframework.serializer.SerializedMetaData;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 
 import java.util.Arrays;
@@ -28,6 +33,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.UniqueConstraint;
 
 /**
  * Data needed by different types of event logs.
@@ -36,11 +42,14 @@ import javax.persistence.MappedSuperclass;
  * @since 0.5
  */
 @MappedSuperclass
-abstract class AbstractEventEntry {
+@UniqueConstraint(columnNames = {"eventIdentifier"})
+abstract class AbstractEventEntry implements SerializedDomainEventData {
 
     @Id
     @GeneratedValue
     private Long id;
+    @Basic
+    private String eventIdentifier;
     @Basic
     private String aggregateIdentifier;
     @Basic
@@ -50,22 +59,34 @@ abstract class AbstractEventEntry {
     @Basic
     private String type;
     @Basic
+    private String payloadType;
+    @Basic
+    private int payloadRevision;
+    @Basic
     @Lob
-    private byte[] serializedEvent;
+    private byte[] metaData;
+    @Basic
+    @Lob
+    private byte[] payload;
 
     /**
-     * Initialize an Event entry for the given <code>event</code>, to be serialized using the given
-     * <code>serializer</code>.
+     * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type            The type identifier of the aggregate root the event belongs to
-     * @param event           The event to store in the eventstore
-     * @param serializedEvent The serialized version of the Event
+     * @param type     The type identifier of the aggregate root the event belongs to
+     * @param event    The event to store in the eventstore
+     * @param payload  The serialized payload of the Event
+     * @param metaData The serialized metaData of the Event
      */
-    protected AbstractEventEntry(String type, DomainEventMessage event, byte[] serializedEvent) {
+    protected AbstractEventEntry(String type, DomainEventMessage event,
+                                 SerializedObject payload, SerializedObject metaData) {
+        this.eventIdentifier = event.getEventIdentifier();
         this.type = type;
+        this.payloadType = payload.getType().getName();
+        this.payloadRevision = payload.getType().getRevision();
+        this.payload = payload.getData();
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
         this.sequenceNumber = event.getSequenceNumber();
-        this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
+        this.metaData = Arrays.copyOf(metaData.getData(), metaData.getData().length);
         this.timeStamp = event.getTimestamp().toString();
     }
 
@@ -81,17 +102,15 @@ abstract class AbstractEventEntry {
      * @param eventSerializer The Serializer to deserialize the DomainEvent with.
      * @return The deserialized domain event
      */
-    public DomainEventMessage getDomainEvent(Serializer<? super DomainEventMessage> eventSerializer) {
-        return (DomainEventMessage) eventSerializer.deserialize(serializedEvent);
-    }
-
-    /**
-     * Returns the unique identifier of this entry. Returns <code>null</code> if the entry has not been persisted.
-     *
-     * @return the unique identifier of this entry
-     */
-    public Long getId() {
-        return id;
+    public DomainEventMessage<?> getDomainEvent(Serializer eventSerializer) {
+        return new SerializedDomainEventMessage<Object>(eventIdentifier,
+                                                        new StringAggregateIdentifier(aggregateIdentifier),
+                                                        sequenceNumber, new DateTime(timeStamp),
+                                                        new SimpleSerializedObject(payload,
+                                                                                   payloadType,
+                                                                                   payloadRevision),
+                                                        new SerializedMetaData(metaData), eventSerializer,
+                                                        eventSerializer);
     }
 
     /**
@@ -128,5 +147,21 @@ abstract class AbstractEventEntry {
      */
     public DateTime getTimestamp() {
         return new DateTime(timeStamp);
+    }
+
+    public String getEventIdentifier() {
+        return eventIdentifier;
+    }
+
+    public String getTimeStamp() {
+        return timeStamp;
+    }
+
+    public SerializedObject getPayload() {
+        return new SimpleSerializedObject(payload, payloadType, payloadRevision);
+    }
+
+    public SerializedObject getMetaData() {
+        return new SerializedMetaData(metaData);
     }
 }

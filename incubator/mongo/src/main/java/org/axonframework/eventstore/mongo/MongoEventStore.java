@@ -28,16 +28,14 @@ import org.axonframework.eventstore.EventStoreManagement;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.PostConstruct;
-
-import static org.axonframework.eventstore.mongo.EventEntry.UTF8;
 
 /**
  * <p>Implementation of the <code>EventStore</code> based on a MongoDB instance or replica set. Sharding and pairing
@@ -57,7 +55,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     private static final int EVENT_VISITOR_BATCH_SIZE = 50;
 
     private final MongoTemplate mongoTemplate;
-    private final Serializer<? super DomainEventMessage> eventSerializer;
+    private final Serializer eventSerializer;
 
     /**
      * Constructor that accepts a Serializer, the MongoTemplate and a string containing the testContext. The
@@ -67,7 +65,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
      * @param eventSerializer Your own Serializer
      * @param mongo           Mongo instance to obtain the database and the collections.
      */
-    public MongoEventStore(Serializer<? super DomainEventMessage> eventSerializer, MongoTemplate mongo) {
+    public MongoEventStore(Serializer eventSerializer, MongoTemplate mongo) {
         this.eventSerializer = eventSerializer;
         this.mongoTemplate = mongo;
     }
@@ -78,7 +76,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
      * @param mongo MongoTemplate instance to obtain the database and the collections.
      */
     public MongoEventStore(MongoTemplate mongo) {
-        this(new XStreamEventSerializer(), mongo);
+        this(new XStreamSerializer(), mongo);
     }
 
     /**
@@ -158,9 +156,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                          .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(dbCursor.size());
         while (dbCursor.hasNext()) {
-            String nextItem = (String) dbCursor.next().get(EventEntry.SERIALIZED_EVENT_PROPERTY);
-            DomainEventMessage deserialize = (DomainEventMessage) eventSerializer.deserialize(nextItem.getBytes(UTF8));
-            events.add(deserialize);
+            events.add(new EventEntry(dbCursor.next()).asDomainEventMessage(eventSerializer));
         }
         return events;
     }

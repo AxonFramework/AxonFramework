@@ -61,7 +61,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         try {
             JobDetail jobDetail = new JobDetail(jobIdentifier, groupIdentifier, FireEventJob.class);
             jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, eventMessage);
-            jobDetail.setDescription(String.format("%s", eventMessage.getPayloadType().getName()));
+            jobDetail.setDescription(eventMessage.getPayloadType().getSimpleName());
             scheduler.scheduleJob(jobDetail, new SimpleTrigger(eventMessage.getEventIdentifier(),
                                                                triggerDateTime.toDate()));
         } catch (SchedulerException e) {

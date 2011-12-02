@@ -20,20 +20,23 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.converters.collections.MapConverter;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
-import com.thoughtworks.xstream.io.xml.XppDriver;
+import com.thoughtworks.xstream.io.xml.Dom4JReader;
+import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.common.SerializationException;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.dom4j.Document;
 import org.joda.time.DateTime;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -41,6 +44,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -55,12 +61,13 @@ import java.util.UUID;
  * @see com.thoughtworks.xstream.XStream
  * @since 1.2
  */
-public class XStreamSerializer implements Serializer<Object> {
+public class XStreamSerializer implements Serializer {
 
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
-
     private final XStream xStream;
     private final Charset charset;
+    private volatile UpcasterChain upcasters;
+    private ConverterFactory converterFactory;
 
     /**
      * Initialize a generic serializer using the UTF-8 character set. A default XStream instance (with {@link
@@ -87,7 +94,7 @@ public class XStreamSerializer implements Serializer<Object> {
      * @param charset The character set to use
      */
     public XStreamSerializer(Charset charset) {
-        this(charset, new XStream(new XppDriver()));
+        this(charset, new XStream());
     }
 
     /**
@@ -98,8 +105,22 @@ public class XStreamSerializer implements Serializer<Object> {
      * @param xStream The XStream instance to use
      */
     public XStreamSerializer(Charset charset, XStream xStream) {
+        this(charset, xStream, new ChainingConverterFactory());
+    }
+
+    /**
+     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The given
+     * <code>converterFactory</code> is used to convert serialized objects for use by Upcasters. The
+     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     *
+     * @param charset          The character set to use
+     * @param xStream          The XStream instance to use
+     * @param converterFactory The factory providing the converter instances for upcasters
+     */
+    public XStreamSerializer(Charset charset, XStream xStream, ConverterFactory converterFactory) {
         this.charset = charset;
         this.xStream = xStream;
+        this.converterFactory = converterFactory;
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.addImmutableType(AggregateIdentifier.class);
@@ -121,6 +142,9 @@ public class XStreamSerializer implements Serializer<Object> {
         xStream.alias("dateTime", DateTime.class);
         xStream.alias("uuid", UUID.class);
         xStream.useAttributeFor("eventRevision", EventMessage.class);
+
+        xStream.alias("meta-data", MetaData.class);
+        xStream.registerConverter(new MetaDataConverter(xStream.getMapper()));
     }
 
     /**
@@ -133,54 +157,71 @@ public class XStreamSerializer implements Serializer<Object> {
      * @see com.thoughtworks.xstream.io.xml.CompactWriter
      */
     @Override
-    public void serialize(Object object, OutputStream outputStream) {
+    public SerializedType serialize(Object object, OutputStream outputStream) {
         xStream.marshal(object, new CompactWriter(new OutputStreamWriter(outputStream, charset)));
-    }
-
-    /**
-     * Serialize the given <code>object</code> and write the bytes to the given <code>writer</code>.
-     *
-     * @param object The object to serialize
-     * @param writer The writer to write the serialized object o
-     */
-    public void serialize(Object object, HierarchicalStreamWriter writer) {
-        xStream.marshal(object, writer);
+        return new SimpleSerializedType(typeIdentifierOf(object.getClass()), revisionOf(object.getClass()));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public byte[] serialize(Object object) {
+    public SerializedObject serialize(Object object) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         serialize(object, baos);
-        return baos.toByteArray();
+        return new SimpleSerializedObject(baos.toByteArray(), typeIdentifierOf(object.getClass()),
+                                          revisionOf(object.getClass()));
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Object deserialize(InputStream inputStream) {
-        return xStream.fromXML(new InputStreamReader(inputStream, charset));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Object deserialize(byte[] bytes) {
-        return xStream.fromXML(new InputStreamReader(new ByteArrayInputStream(bytes), charset));
-    }
-
-    /**
-     * Deserialize the object provided by the given <code>hierarchicalStreamReader</code>.
+     * Returns the revision number for the given <code>type</code>. The default implementation checks for an {@link
+     * Revision @Revision} annotation, and returns <code>0</code> if none was found. This method can be safely
+     * overridden by subclasses.
+     * <p/>
+     * The revision number is used by upcasters to decide whether they need to process a certain serialized event.
+     * Generally, the revision number needs to be increased each time the structure of an event has been changed in an
+     * incompatible manner.
      *
-     * @param hierarchicalStreamReader The reader providing the hierarchical (e.g. xml) data.
-     * @return the deserialized object
+     * @param type The type for which to return the revision number
+     * @return the revision number for the given <code>type</code>
      */
-    public Object deserialize(HierarchicalStreamReader hierarchicalStreamReader) {
-        return xStream.unmarshal(hierarchicalStreamReader);
+    protected int revisionOf(Class<?> type) {
+        Revision revision = type.getAnnotation(Revision.class);
+        return revision == null ? 0 : revision.value();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public Object deserialize(SerializedObject serializedObject) {
+        UpcasterChain currentUpcasterChain = upcasters; // create copy for concurrency reasons
+        IntermediateRepresentation<?> current = new SimpleIntermediateRepresentation<byte[]>(serializedObject.getType(),
+                                                                                             byte[].class,
+                                                                                             serializedObject
+                                                                                                     .getData());
+        if (currentUpcasterChain != null) {
+            current = currentUpcasterChain.upcast(serializedObject);
+        }
+        if ("org.dom4j.Document".equals(current.getContentType().getName())) {
+            return xStream.unmarshal(new Dom4JReader((Document) current.getData()));
+        } else {
+            current = converterFactory.getConverter(current.getContentType(), InputStream.class).convert(current);
+        }
+        return xStream.fromXML(new InputStreamReader((InputStream) current.getData(), charset));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Class classForType(SerializedType type) {
+        UpcasterChain currentUpcasterChain = upcasters; // create copy for concurrency reasons
+        if (currentUpcasterChain != null) {
+            type = currentUpcasterChain.upcast(type);
+        }
+        return xStream.getMapper().realClass(type.getName());
     }
 
     /**
@@ -243,6 +284,35 @@ public class XStreamSerializer implements Serializer<Object> {
     }
 
     /**
+     * Returns the ConverterFactory used by this serialized. The converter factory allows registration of
+     * ContentTypeConverters needed by the upcasters.
+     *
+     * @return the ConverterFactory used by this serialized
+     */
+    public ConverterFactory getConverterFactory() {
+        return converterFactory;
+    }
+
+    private String typeIdentifierOf(Class<?> type) {
+        return xStream.getMapper().serializedClass(type);
+    }
+
+    /**
+     * Sets the upcasters which allow older revisions of serialized objects to be deserialized. Upcasters are evaluated
+     * in the order they are provided in the given List. That means that you should take special precaution when an
+     * upcaster expects another upcaster to have processed an event.
+     * <p/>
+     * Any upcaster that relies on another upcaster doing its work first, should be placed <em>after</em> that other
+     * upcaster in the given list. Thus for any <em>upcaster B</em> that relies on <em>upcaster A</em> to do its work
+     * first, the following must be true: <code>upcasters.indexOf(B) > upcasters.indexOf(A)</code>.
+     *
+     * @param upcasters the upcasters for this serializer.
+     */
+    public void setUpcasters(List<Upcaster> upcasters) {
+        this.upcasters = new UpcasterChain(converterFactory, upcasters);
+    }
+
+    /**
      * XStream Converter to serialize DateTime classes as a String.
      */
     private static final class JodaTimeConverter implements Converter {
@@ -269,6 +339,43 @@ public class XStreamSerializer implements Serializer<Object> {
                 throw new SerializationException(String.format(
                         "An exception occurred while deserializing a Joda Time object: %s",
                         context.getRequiredType().getSimpleName()), e);
+            }
+        }
+    }
+
+    /**
+     * Class that marshals MetaData in the least verbose way.
+     */
+    private static final class MetaDataConverter extends MapConverter {
+
+        public MetaDataConverter(Mapper mapper) {
+            super(mapper);
+        }
+
+        @Override
+        public boolean canConvert(Class type) {
+            return MetaData.class.equals(type);
+        }
+
+        @Override
+        public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+            MetaData metaData = (MetaData) source;
+            if (!metaData.isEmpty()) {
+                super.marshal(new HashMap<String, Object>(metaData), writer, context);
+            }
+        }
+
+        @Override
+        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+            if (!reader.hasMoreChildren()) {
+                return MetaData.emptyInstance();
+            }
+            Map<String, Object> contents = new HashMap<String, Object>();
+            populateMap(reader, context, contents);
+            if (contents.isEmpty()) {
+                return MetaData.emptyInstance();
+            } else {
+                return MetaData.from(contents);
             }
         }
     }

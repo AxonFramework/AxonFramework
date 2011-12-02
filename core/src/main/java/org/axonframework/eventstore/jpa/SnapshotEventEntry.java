@@ -17,6 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.serializer.SerializedObject;
 
 import javax.persistence.Entity;
 
@@ -35,14 +36,16 @@ import javax.persistence.Entity;
     }
 
     /**
-     * Initialize a snapshot event entry using given <code>type</code>, <code>event</code> and
-     * <code>eventSerializer</code>.
+     * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type      The type of the aggregate the snapshot event belongs to.
-     * @param event     The actual snapshot event
-     * @param serialize The serialized representation of the snapshot event
+     * @param type     The type identifier of the aggregate root the event belongs to
+     * @param event    The event to store in the eventstore
+     * @param payload  The serialized version of the Event
+     * @param metaData The serialized metaData of the Event
      */
-    public SnapshotEventEntry(String type, DomainEventMessage event, byte[] serialize) {
-        super(type, event, serialize);
+    public SnapshotEventEntry(String type, DomainEventMessage event,
+                              SerializedObject payload,
+                              SerializedObject metaData) {
+        super(type, event, payload, metaData);
     }
 }

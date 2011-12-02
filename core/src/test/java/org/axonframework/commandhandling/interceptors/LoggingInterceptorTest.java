@@ -99,7 +99,6 @@ public class LoggingInterceptorTest {
         verify(mockLogger).log(any(String.class), eq(Level.INFO),
                                and(contains("[StubCommand]"), contains("[StubResponse]")),
                                any(Throwable.class));
-        verifyNoMoreInteractions(mockLogger);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})

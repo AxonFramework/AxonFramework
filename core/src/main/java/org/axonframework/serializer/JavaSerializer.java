@@ -17,8 +17,10 @@
 package org.axonframework.serializer;
 
 import org.axonframework.common.SerializationException;
+import org.axonframework.common.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,11 +37,13 @@ import java.io.OutputStream;
  * @author Allard Buijze
  * @since 2.0
  */
-public class JavaSerializer implements Serializer<Object> {
+public class JavaSerializer implements Serializer {
+
+    private static final Logger logger = LoggerFactory.getLogger(JavaSerializer.class);
 
     @SuppressWarnings({"NonSerializableObjectPassedToObjectStream"})
     @Override
-    public void serialize(Object object, OutputStream outputStream) throws IOException {
+    public SerializedType serialize(Object object, OutputStream outputStream) throws IOException {
         try {
             ObjectOutputStream oos = new ObjectOutputStream(outputStream);
             try {
@@ -50,25 +54,56 @@ public class JavaSerializer implements Serializer<Object> {
         } catch (IOException e) {
             throw new SerializationException("An exception occurred writing serialized data to the output stream", e);
         }
+        return new SimpleSerializedType(object.getClass().getName(), revisionOf(object.getClass()));
     }
 
     @Override
-    public byte[] serialize(Object instance) {
+    public SerializedObject serialize(Object instance) {
         return serializeObject(instance);
     }
 
     @Override
-    public Object deserialize(InputStream inputStream) throws IOException {
-        ObjectInputStream ois;
+    public Object deserialize(SerializedObject serializedObject) {
+        InputStream stream = serializedObject.getStream();
         try {
-            ois = new ObjectInputStream(inputStream);
-            return ois.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
+            return deserialize(stream);
+        } catch (IOException e) {
+            throw new SerializationException("The theoretically impossible has just happened: "
+                                                     + "An IOException while reading to a ByteArrayInputStream.", e);
+        } finally {
+            IOUtils.closeQuietly(stream);
         }
     }
 
-    private byte[] serializeObject(Object instance) {
+    @Override
+    public Class classForType(SerializedType type) {
+        try {
+            return Class.forName(type.getName());
+        } catch (ClassNotFoundException e) {
+            logger.warn("Could not load class for serialized type [{}] revision {}",
+                        type.getName(), type.getRevision());
+            return null;
+        }
+    }
+
+    /**
+     * Returns the revision number for the given <code>type</code>. The default implementation checks for an {@link
+     * Revision @Revision} annotation, and returns <code>0</code> if none was found. This method can be safely
+     * overridden by subclasses.
+     * <p/>
+     * The revision number is used by upcasters to decide whether they need to process a certain serialized event.
+     * Generally, the revision number needs to be increased each time the structure of an event has been changed in an
+     * incompatible manner.
+     *
+     * @param type The type for which to return the revision number
+     * @return the revision number for the given <code>type</code>
+     */
+    protected int revisionOf(Class<?> type) {
+        Revision revision = type.getAnnotation(Revision.class);
+        return revision == null ? 0 : revision.value();
+    }
+
+    private SerializedObject serializeObject(Object instance) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             serialize(instance, baos);
@@ -76,16 +111,17 @@ public class JavaSerializer implements Serializer<Object> {
             throw new SerializationException("The theoretically impossible has just happened: "
                                                      + "An IOException while writing to a ByteArrayOutputStream.", e);
         }
-        return baos.toByteArray();
+        return new SimpleSerializedObject(baos.toByteArray(), instance.getClass().getName(),
+                                          revisionOf(instance.getClass()));
     }
 
-    @Override
-    public Object deserialize(byte[] serializedSaga) {
+    private Object deserialize(InputStream inputStream) throws IOException {
+        ObjectInputStream ois;
         try {
-            return deserialize(new ByteArrayInputStream(serializedSaga));
-        } catch (IOException e) {
-            throw new SerializationException("The theoretically impossible has just happened: "
-                                                     + "An IOException while reading to a ByteArrayInputStream.", e);
+            ois = new ObjectInputStream(inputStream);
+            return ois.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         }
     }
 }

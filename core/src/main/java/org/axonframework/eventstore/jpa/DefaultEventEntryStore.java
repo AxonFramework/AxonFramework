@@ -18,6 +18,7 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.serializer.SerializedObject;
 
 import java.util.Iterator;
 import java.util.List;
@@ -35,24 +36,25 @@ import javax.persistence.EntityManager;
 class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
-    public void persistEvent(String aggregateType, DomainEventMessage event, byte[] serializedEvent,
-                             EntityManager entityManager) {
-        entityManager.persist(new DomainEventEntry(aggregateType, event, serializedEvent));
+    public void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,
+                             SerializedObject serializedMetaData, EntityManager entityManager) {
+        entityManager.persist(new DomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData));
     }
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public byte[] loadLastSnapshotEvent(String aggregateType, AggregateIdentifier identifier,
-                                        EntityManager entityManager) {
-        List<byte[]> entries = entityManager.createQuery(
-                "SELECT e.serializedEvent FROM SnapshotEventEntry e "
+    public SnapshotEventEntry loadLastSnapshotEvent(String aggregateType, AggregateIdentifier identifier,
+                                                    EntityManager entityManager) {
+        List<SnapshotEventEntry> entries = entityManager.createQuery(
+                "SELECT e "
+                        + "FROM SnapshotEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
                         + "ORDER BY e.sequenceNumber DESC")
-                                            .setParameter("id", identifier.asString())
-                                            .setParameter("type", aggregateType)
-                                            .setMaxResults(1)
-                                            .setFirstResult(0)
-                                            .getResultList();
+                                                        .setParameter("id", identifier.asString())
+                                                        .setParameter("type", aggregateType)
+                                                        .setMaxResults(1)
+                                                        .setFirstResult(0)
+                                                        .getResultList();
         if (entries.size() < 1) {
             return null;
         }
@@ -61,18 +63,20 @@ class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public List<byte[]> fetchBatch(int startPosition, int batchSize, EntityManager entityManager) {
+    public List<DomainEventEntry> fetchBatch(int startPosition, int batchSize, EntityManager entityManager) {
         return entityManager.createQuery(
-                "SELECT e.serializedEvent FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
+                "SELECT e FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
                             .setFirstResult(startPosition)
                             .setMaxResults(batchSize)
                             .getResultList();
     }
 
     @Override
-    public void persistSnapshot(String type, DomainEventMessage snapshotEvent, byte[] serializedEvent,
+    public void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent,
+                                SerializedObject serializedPayload, SerializedObject serializedMetaData,
                                 EntityManager entityManager) {
-        entityManager.persist(new SnapshotEventEntry(type, snapshotEvent, serializedEvent));
+        entityManager.persist(new SnapshotEventEntry(aggregateType, snapshotEvent, serializedPayload,
+                                                     serializedMetaData));
     }
 
     @Override
@@ -120,18 +124,19 @@ class DefaultEventEntryStore implements EventEntryStore {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public List<byte[]> fetchBatch(String aggregateType, AggregateIdentifier identifier, long firstSequenceNumber,
-                                   int batchSize, EntityManager entityManager) {
-        return (List<byte[]>) entityManager.createQuery(
-                "SELECT e.serializedEvent "
+    public List<DomainEventEntry> fetchBatch(String aggregateType, AggregateIdentifier identifier,
+                                             long firstSequenceNumber,
+                                             int batchSize, EntityManager entityManager) {
+        return (List<DomainEventEntry>) entityManager.createQuery(
+                "SELECT e "
                         + "FROM DomainEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
                         + "ORDER BY e.sequenceNumber ASC")
-                                           .setParameter("id",
-                                                         identifier.asString())
-                                           .setParameter("type", aggregateType)
-                                           .setParameter("seq", firstSequenceNumber)
-                                           .setMaxResults(batchSize)
-                                           .getResultList();
+                                                     .setParameter("id",
+                                                                   identifier.asString())
+                                                     .setParameter("type", aggregateType)
+                                                     .setParameter("seq", firstSequenceNumber)
+                                                     .setMaxResults(batchSize)
+                                                     .getResultList();
     }
 }

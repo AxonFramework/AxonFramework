@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.legacy;
+package org.axonframework.migration.eventstore;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventstore.EventUpcaster;
-import org.axonframework.eventstore.XStreamEventSerializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -41,7 +41,7 @@ import static org.junit.Assert.*;
  */
 public class LegacyAxonEventUpcasterTest {
 
-    private XStreamEventSerializer serializer;
+    private XStreamSerializer serializer;
     private static final String AXON_ONE_MESSAGE =
             "<org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest_-TestEvent eventRevision=\"0\">"
                     + "<metaData><values>"
@@ -56,7 +56,7 @@ public class LegacyAxonEventUpcasterTest {
                     + "<period>PT0.100S</period>"
                     + "</org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest_-TestEvent>";
     private static final String AXON_TWO_MESSAGE =
-            "<domain-event><payload eventRevision=\"0\" class=\"org.axonframework.eventstore.legacy.LegacyAxonEventUpcasterTest$TestEvent\">"
+            "<domain-event><payload eventRevision=\"0\" class=\"org.axonframework.migration.eventstore.LegacyAxonEventUpcasterTest$TestEvent\">"
                     + "<name>oldskool</name>"
                     + "<date>2010-09-15T00:00:00.000+02:00</date>"
                     + "<dateTime>2010-09-15T21:43:01.078+02:00</dateTime>"
@@ -96,7 +96,7 @@ public class LegacyAxonEventUpcasterTest {
 
     @Before
     public void setUp() {
-        this.serializer = new XStreamEventSerializer();
+        this.serializer = new XStreamSerializer();
         LegacyAxonEventUpcaster testSubject = new LegacyAxonEventUpcaster();
         serializer.setEventUpcasters(Arrays.<EventUpcaster<Document>>asList(testSubject));
     }

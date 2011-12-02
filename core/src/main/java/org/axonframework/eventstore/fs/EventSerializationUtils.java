@@ -18,6 +18,8 @@ package org.axonframework.eventstore.fs;
 
 import org.axonframework.common.io.BinaryEntryInputStream;
 import org.axonframework.common.io.BinaryEntryOutputStream;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,12 +73,16 @@ abstract class EventSerializationUtils {
 
         int sequenceNumber = (int) in.readNumber();
         String timeStamp = in.readString();
-        byte[] serializedEvent = in.readBytes();
-        if (serializedEvent == null) {
+        String payloadType = in.readString();
+        int eventRevision = (int) in.readNumber();
+        byte[] serializedEventData = in.readBytes();
+        if (serializedEventData == null) {
             logger.warn("Failed to read the required amount of bytes from the underlying stream.");
             return null;
         }
-        return new EventEntry(sequenceNumber, timeStamp, serializedEvent);
+        return new EventEntry(sequenceNumber, timeStamp, new SimpleSerializedObject(serializedEventData,
+                                                                                    payloadType,
+                                                                                    eventRevision));
     }
 
     /**
@@ -92,13 +98,15 @@ abstract class EventSerializationUtils {
      * @throws IOException when an error occurs writing to the output stream.
      */
     public static void writeEventEntry(OutputStream outputStream, long sequenceNumber, String timeStamp,
-                                       byte[] serializedEvent)
+                                       SerializedObject serializedEvent)
             throws IOException {
         BinaryEntryOutputStream out = new BinaryEntryOutputStream(outputStream);
         out.writeNumber(LATEST_ENTRY_VERSION);
         out.writeNumber(sequenceNumber);
         out.writeString(timeStamp);
-        out.writeBytes(serializedEvent);
+        out.writeString(serializedEvent.getType().getName());
+        out.writeNumber(serializedEvent.getType().getRevision());
+        out.writeBytes(serializedEvent.getData());
     }
 
     /**
@@ -157,7 +165,9 @@ abstract class EventSerializationUtils {
         out.writeNumber(snapshotEntry.getSequenceNumber());
         out.writeString(snapshotEntry.getTimeStamp());
         out.writeNumber(snapshotEntry.getOffset());
-        out.writeBytes(snapshotEntry.getBytes());
+        out.writeString(snapshotEntry.getPayload().getType().getName());
+        out.writeNumber(snapshotEntry.getPayload().getType().getRevision());
+        out.writeBytes(snapshotEntry.getPayload().getData());
     }
 
     private static SnapshotEventEntry readNextSnapshotEntry(InputStream inputStream) throws IOException {
@@ -169,7 +179,12 @@ abstract class EventSerializationUtils {
         if (version < 0 || sequenceNumber < 0 || offset < 0) {
             return null;
         }
+        String type = in.readString();
+        int revision = (int) in.readNumber();
         byte[] serializedEvent = in.readBytes();
-        return new SnapshotEventEntry(serializedEvent, sequenceNumber, timeStamp, offset);
+        return new SnapshotEventEntry(new SimpleSerializedObject(serializedEvent, type, revision),
+                                      sequenceNumber,
+                                      timeStamp,
+                                      offset);
     }
 }

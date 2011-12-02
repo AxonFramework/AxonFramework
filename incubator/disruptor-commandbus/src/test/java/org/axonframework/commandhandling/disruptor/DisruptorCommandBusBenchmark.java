@@ -29,8 +29,8 @@ import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.repository.Repository;
+import org.axonframework.serializer.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -60,7 +60,7 @@ public class DisruptorCommandBusBenchmark {
         DisruptorCommandBus commandBus =
                 new DisruptorCommandBus(512, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
                                         inMemoryEventStore,
-                                        eventBus, new XStreamEventSerializer());
+                                        eventBus, new XStreamSerializer());
         commandBus.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(commandBus);
         final AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("MyID");

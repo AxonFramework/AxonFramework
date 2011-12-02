@@ -23,6 +23,7 @@ import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.serializer.JavaSerializer;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 
 import java.util.List;
@@ -44,7 +45,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     private final EntityManagerProvider entityManagerProvider;
     private ResourceInjector injector;
-    private Serializer<? super Saga> serializer;
+    private Serializer serializer;
     private volatile boolean useExplicitFlush = true;
     private volatile boolean initialized = false;
 
@@ -91,11 +92,11 @@ public class JpaSagaRepository extends AbstractSagaRepository {
                         + "WHERE ae.associationKey = :associationKey "
                         + "AND ae.sagaType = :sagaType "
                         + "AND  ae.sagaId = :sagaId")
-                .setParameter("associationKey",
-                              associationValue.getKey())
-                .setParameter("sagaType", sagaType)
-                .setParameter("sagaId", sagaIdentifier)
-                .getResultList();
+                                                                       .setParameter("associationKey",
+                                                                                     associationValue.getKey())
+                                                                       .setParameter("sagaType", sagaType)
+                                                                       .setParameter("sagaId", sagaIdentifier)
+                                                                       .getResultList();
         for (AssociationValueEntry entry : potentialCandidates) {
             if (associationValue.getValue().equals(entry.getAssociationValue().getValue())) {
                 entityManager.remove(entry);
@@ -138,22 +139,26 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         entityManager.flush();
         entityManager.createQuery("DELETE FROM SagaEntry se WHERE se.sagaId = :sagaId")
-                .setParameter("sagaId", saga.getSagaIdentifier())
-                .executeUpdate();
+                     .setParameter("sagaId", saga.getSagaIdentifier())
+                     .executeUpdate();
         entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
-                .setParameter("sagaId", saga.getSagaIdentifier())
-                .executeUpdate();
+                     .setParameter("sagaId", saga.getSagaIdentifier())
+                     .executeUpdate();
     }
 
     @Override
     protected void updateSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        byte[] serializedSaga = serializer.serialize(saga);
+        SerializedObject serializedSaga = serializer.serialize(saga);
         int updates = entityManager.createQuery(
-                "UPDATE SagaEntry se SET se.serializedSaga = :serializedSaga WHERE se.sagaId = :sagaId")
-                .setParameter("sagaId", saga.getSagaIdentifier())
-                .setParameter("serializedSaga", serializedSaga)
-                .executeUpdate();
+                "UPDATE SagaEntry se SET se.serializedSaga = :serializedSaga, se"
+                        + ".sagaType = :sagaType, "
+                        + "se.revision = :revision WHERE se.sagaId = :sagaId")
+                                   .setParameter("sagaId", saga.getSagaIdentifier())
+                                   .setParameter("serializedSaga", serializedSaga.getData())
+                                   .setParameter("sagaType", serializedSaga.getType().getName())
+                                   .setParameter("revision", serializedSaga.getType().getRevision())
+                                   .executeUpdate();
         if (updates == 0) {
             storeSaga(saga);
         } else if (useExplicitFlush) {
@@ -205,7 +210,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
      *
      * @param serializer the Serializer instance to serialize Sagas with
      */
-    public void setSerializer(Serializer<? super Saga> serializer) {
+    public void setSerializer(Serializer serializer) {
         this.serializer = serializer;
     }
 

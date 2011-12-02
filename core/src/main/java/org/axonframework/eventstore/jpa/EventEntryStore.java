@@ -18,6 +18,8 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.serializer.SerializedObject;
 
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -36,13 +38,14 @@ public interface EventEntryStore {
      * <p/>
      * These events should be returned by the <code>fetchBatch(...)</code> methods.
      *
-     * @param aggregateType   The type identifier of the aggregate that generated the event
-     * @param event           The actual event instance. May be used to extract relevant meta data
-     * @param serializedEvent The serialized version of the event
-     * @param entityManager   The entity manager providing access to the data store
+     * @param aggregateType      The type identifier of the aggregate that generated the event
+     * @param event              The actual event instance. May be used to extract relevant meta data
+     * @param serializedPayload  The serialized payload of the event
+     * @param serializedMetaData The serialized MetaData of the event
+     * @param entityManager      The entity manager providing access to the data store
      */
-    void persistEvent(String aggregateType, DomainEventMessage event,
-                      byte[] serializedEvent, EntityManager entityManager);
+    void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,
+                      SerializedObject serializedMetaData, EntityManager entityManager);
 
     /**
      * Load the last known snapshot event for aggregate of given <code>type</code> with given <code>identifier</code>
@@ -53,7 +56,8 @@ public interface EventEntryStore {
      * @param entityManager The entity manager providing access to the data store
      * @return the serialized representation of the last known snapshot event
      */
-    byte[] loadLastSnapshotEvent(String aggregateType, AggregateIdentifier identifier, EntityManager entityManager);
+    SerializedDomainEventData loadLastSnapshotEvent(String aggregateType, AggregateIdentifier identifier,
+                                                    EntityManager entityManager);
 
     /**
      * Fetches a selection (starting at <code>startPosition</code> and including <code>batchSize</code> entries) of
@@ -67,7 +71,7 @@ public interface EventEntryStore {
      * @param entityManager The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    List<byte[]> fetchBatch(int startPosition, int batchSize, EntityManager entityManager);
+    List<? extends SerializedDomainEventData> fetchBatch(int startPosition, int batchSize, EntityManager entityManager);
 
     /**
      * Fetches a selection of events for an aggregate of given <code>type</code> and given <code>identifier</code>
@@ -83,8 +87,9 @@ public interface EventEntryStore {
      * @param entityManager       The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    List<byte[]> fetchBatch(String aggregateType, AggregateIdentifier identifier, long firstSequenceNumber,
-                            int batchSize, EntityManager entityManager);
+    List<? extends SerializedDomainEventData> fetchBatch(String aggregateType, AggregateIdentifier identifier,
+                                                         long firstSequenceNumber, int batchSize,
+                                                         EntityManager entityManager);
 
     /**
      * Removes old snapshots from the storage for an aggregate of given <code>type</code> that generated the given
@@ -106,11 +111,12 @@ public interface EventEntryStore {
      * <p/>
      * These snapshot events should be returned by the <code>loadLastSnapshotEvent(...)</code> methods.
      *
-     * @param aggregateType   The type identifier of the aggregate that generated the event
-     * @param snapshotEvent   The actual snapshot event instance. May be used to extract relevant meta data
-     * @param serializedEvent The serialized version of the event
-     * @param entityManager   The entity manager providing access to the data store
+     * @param aggregateType      The type identifier of the aggregate that generated the event
+     * @param snapshotEvent      The actual snapshot event instance. May be used to extract relevant meta data
+     * @param serializedPayload  The serialized payload of the event
+     * @param serializedMetaData The serialized MetaData of the event
+     * @param entityManager      The entity manager providing access to the data store
      */
-    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent, byte[] serializedEvent,
-                         EntityManager entityManager);
+    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent, SerializedObject serializedPayload,
+                         SerializedObject serializedMetaData, EntityManager entityManager);
 }

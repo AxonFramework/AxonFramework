@@ -18,8 +18,7 @@ package org.axonframework.domain;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
-import com.thoughtworks.xstream.io.binary.BinaryStreamReader;
-import com.thoughtworks.xstream.io.binary.BinaryStreamWriter;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 
@@ -40,24 +39,6 @@ public class JavaSerializationTest {
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
     @Test
-    public void testSerialize_XStreamWithBinaryOutput() {
-        XStream xstream = new XStream();
-        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
-
-        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
-        aggregateRoot.doSomething();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        serializer.serialize(aggregateRoot, new BinaryStreamWriter(baos));
-        String xml = new String(baos.toByteArray(), UTF8);
-        assertNotNull(xml);
-
-        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate)
-                serializer.deserialize(new BinaryStreamReader(new ByteArrayInputStream(baos.toByteArray())));
-
-        validateAggregateCondition(aggregateRoot, unmarshalled);
-    }
-
-    @Test
     public void testSerialize_XStreamWithPureJavaReflectionProvider() {
         XStream xstream = new XStream(new PureJavaReflectionProvider());
         XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
@@ -69,8 +50,8 @@ public class JavaSerializationTest {
         String xml = new String(baos.toByteArray(), UTF8);
         assertNotNull(xml);
 
-        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(new ByteArrayInputStream(
-                baos.toByteArray()));
+        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
+                new SimpleSerializedObject(baos.toByteArray(), "ignored", 0));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }
@@ -87,8 +68,8 @@ public class JavaSerializationTest {
         String xml = new String(baos.toByteArray(), UTF8);
         assertNotNull(xml);
 
-        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(new ByteArrayInputStream(
-                baos.toByteArray()));
+        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
+                new SimpleSerializedObject(baos.toByteArray(), "ignored", 0));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }

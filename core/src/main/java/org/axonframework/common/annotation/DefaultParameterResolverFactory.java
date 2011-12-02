@@ -118,7 +118,7 @@ class DefaultParameterResolverFactory extends ParameterResolverFactory {
 
         @Override
         public boolean matches(Message message) {
-            return payloadType.isAssignableFrom(message.getPayloadType());
+            return message.getPayloadType() != null && payloadType.isAssignableFrom(message.getPayloadType());
         }
     }
 }

@@ -17,9 +17,8 @@
 package org.axonframework.eventstore.fs;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
-
-import java.util.Arrays;
 
 /**
  * Representation of a single (regular) event entry in an aggregate's event log.
@@ -29,7 +28,7 @@ import java.util.Arrays;
  */
 class EventEntry {
 
-    private final byte[] serializedEvent;
+    private final SerializedObject serializedEvent;
     private final long sequenceNumber;
     private final String timeStamp;
 
@@ -40,10 +39,10 @@ class EventEntry {
      * @param timeStamp       The ISO8601 timestamp of the event
      * @param serializedEvent The array containing the serialized domain event
      */
-    public EventEntry(long sequenceNumber, String timeStamp, byte[] serializedEvent) {
+    public EventEntry(long sequenceNumber, String timeStamp, SerializedObject serializedEvent) {
         this.sequenceNumber = sequenceNumber;
         this.timeStamp = timeStamp;
-        this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
+        this.serializedEvent = serializedEvent;
     }
 
     /**
@@ -52,7 +51,7 @@ class EventEntry {
      * @param serializer the serializer that can deserialize the event in this entry
      * @return the deserialized domain event
      */
-    public DomainEventMessage deserialize(Serializer<?> serializer) {
+    public DomainEventMessage deserialize(Serializer serializer) {
         return (DomainEventMessage) serializer.deserialize(serializedEvent);
     }
 

@@ -16,8 +16,6 @@
 
 package org.axonframework.common.io;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -79,7 +77,7 @@ public class BinaryEntryOutputStream {
             }
         }
         out.write(value.getBytes(CHARSET_UTF8));
-        IOUtils.write(" ", out, CHARSET_UTF8);
+        out.write(" ".getBytes(CHARSET_UTF8));
     }
 
     /**
@@ -91,6 +89,6 @@ public class BinaryEntryOutputStream {
     public void writeBytes(byte[] bytes) throws IOException {
         writeNumber(bytes.length);
         out.write(bytes);
-        IOUtils.write("\n", out, CHARSET_UTF8);
+        out.write("\n".getBytes(CHARSET_UTF8));
     }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
-import java.util.Arrays;
+import org.axonframework.serializer.SerializedObject;
 
 /**
  * Represents the relevant information of a snapshot event in regard to the event log. It combines the actual event (in
@@ -27,7 +27,7 @@ import java.util.Arrays;
  */
 class SnapshotEventEntry {
 
-    private final byte[] serializedEvent;
+    private final SerializedObject serializedEvent;
     private final long offset;
     private final long sequenceNumber;
     private final String timeStamp;
@@ -42,10 +42,10 @@ class SnapshotEventEntry {
      * @param timeStamp       The ISO8601 timestamp of the event
      * @param offset          The offset that the event allows in the event log
      */
-    public SnapshotEventEntry(byte[] serializedEvent, long sequenceNumber, String timeStamp, long offset) {
+    public SnapshotEventEntry(SerializedObject serializedEvent, long sequenceNumber, String timeStamp, long offset) {
         this.offset = offset;
         this.timeStamp = timeStamp;
-        this.serializedEvent = Arrays.copyOf(serializedEvent, serializedEvent.length);
+        this.serializedEvent = serializedEvent;
         this.sequenceNumber = sequenceNumber;
     }
 
@@ -54,12 +54,13 @@ class SnapshotEventEntry {
      *
      * @return An InputStream accessing the bytes.
      */
-    public byte[] getBytes() {
+    public SerializedObject getPayload() {
         return serializedEvent;
     }
 
     /**
-     * Returns the sequence number of the snapshot event. This is the sequence number of the last regular event that was
+     * Returns the sequence number of the snapshot event. This is the sequence number of the last regular event that
+     * was
      * included in this snapshot.
      *
      * @return the sequence number of the snapshot event
@@ -74,7 +75,7 @@ class SnapshotEventEntry {
      * @return the size of the serialized object in bytes.
      */
     public int getEventSize() {
-        return serializedEvent.length;
+        return serializedEvent.getData().length;
     }
 
     /**

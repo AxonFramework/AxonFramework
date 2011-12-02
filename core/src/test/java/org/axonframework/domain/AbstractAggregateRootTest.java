@@ -16,10 +16,10 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -67,7 +67,7 @@ public class AbstractAggregateRootTest {
 
     private AggregateRoot deserialized(ByteArrayOutputStream baos) {
         XStreamSerializer serializer = new XStreamSerializer();
-        return (AggregateRoot) serializer.deserialize(new ByteArrayInputStream(baos.toByteArray()));
+        return (AggregateRoot) serializer.deserialize(new SimpleSerializedObject(baos.toByteArray(), "ignored", 0));
     }
 
     @Test

@@ -91,7 +91,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
 
     private boolean isAssignableClassIn(Class<?> aClass, Collection<Class<?>> classCollection) {
         for (Class clazz : classCollection) {
-            if (clazz.isAssignableFrom(aClass)) {
+            if (aClass != null && clazz.isAssignableFrom(aClass)) {
                 return true;
             }
         }

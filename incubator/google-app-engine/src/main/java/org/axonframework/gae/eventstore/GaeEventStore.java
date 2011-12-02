@@ -22,7 +22,6 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
-import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.datastore.Transaction;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
@@ -30,8 +29,8 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +45,14 @@ public class GaeEventStore implements SnapshotEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(GaeEventStore.class);
 
-    private final Serializer<? super DomainEventMessage> eventSerializer;
+    private final Serializer eventSerializer;
     private final DatastoreService datastoreService;
 
     public GaeEventStore() {
-        this(new XStreamEventSerializer());
+        this(new XStreamSerializer());
     }
 
-    public GaeEventStore(Serializer<? super DomainEventMessage> eventSerializer) {
+    public GaeEventStore(Serializer eventSerializer) {
         this.eventSerializer = eventSerializer;
         this.datastoreService = DatastoreServiceFactory.getDatastoreService();
     }
@@ -115,8 +114,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
         for (Entity entity : entities) {
-            byte[] bytes = ((Text) entity.getProperty("serializedEvent")).getValue().getBytes(EventEntry.UTF8);
-            events.add((DomainEventMessage) eventSerializer.deserialize(bytes));
+            events.add(new EventEntry(entity).getDomainEvent(eventSerializer));
         }
         return events;
     }

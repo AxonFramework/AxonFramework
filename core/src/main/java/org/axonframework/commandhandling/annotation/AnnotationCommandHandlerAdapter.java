@@ -137,10 +137,8 @@ public class AnnotationCommandHandlerAdapter
         private static final ErrorReportingNoMethodFoundCallback INSTANCE = new ErrorReportingNoMethodFoundCallback();
 
         @Override
-        public Object onNoMethodFound(Message parameter) {
-            throw new NoHandlerForCommandException(String.format(
-                    "No Handler found for a command of type[%s]",
-                    parameter.getPayloadType().getSimpleName()));
+        public Object onNoMethodFound(Message message) {
+            throw new NoHandlerForCommandException(String.format("No Handler found for 0%s]", message.toString()));
         }
     }
 }

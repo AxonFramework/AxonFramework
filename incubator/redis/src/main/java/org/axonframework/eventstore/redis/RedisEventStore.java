@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
  */
 public class RedisEventStore implements EventStore {
 
-    private Serializer<? super DomainEventMessage> eventSerializer;
+    private Serializer eventSerializer;
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private RedisConnectionProvider redisConnectionProvider;
 
@@ -59,7 +59,7 @@ public class RedisEventStore implements EventStore {
             Transaction multi = jedis.multi();
             while (events.hasNext()) {
                 DomainEventMessage domainEvent = events.next();
-                multi.rpush(new String(key, UTF8), new String(eventSerializer.serialize(domainEvent), UTF8));
+                multi.rpush(new String(key, UTF8), new String(eventSerializer.serialize(domainEvent).getData(), UTF8));
             }
             multi.exec();
 //                }
@@ -81,7 +81,7 @@ public class RedisEventStore implements EventStore {
         throw new UnsupportedOperationException("Method not yet implemented");
     }
 
-    public void setEventSerializer(Serializer<? super DomainEventMessage> serializer) {
+    public void setEventSerializer(Serializer serializer) {
         this.eventSerializer = serializer;
     }
 

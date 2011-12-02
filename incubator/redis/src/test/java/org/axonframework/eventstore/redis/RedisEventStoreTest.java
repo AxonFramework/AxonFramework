@@ -21,8 +21,8 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.eventstore.XStreamEventSerializer;
 import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
+import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -41,7 +41,7 @@ public class RedisEventStoreTest {
     public void setUp() {
         jedis = new Jedis("localhost");
         testSubject = new RedisEventStore();
-        testSubject.setEventSerializer(new XStreamEventSerializer());
+        testSubject.setEventSerializer(new XStreamSerializer());
         testSubject.setRedisConnectionProvider(new RedisConnectionProvider() {
             @Override
             public Jedis newConnection() {

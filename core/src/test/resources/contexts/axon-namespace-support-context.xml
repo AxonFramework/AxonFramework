@@ -124,7 +124,7 @@
 
     <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer"/>
 
-    <bean id="eventSerializer" class="org.axonframework.eventstore.XStreamEventSerializer"/>
+    <bean id="eventSerializer" class="org.axonframework.serializer.XStreamSerializer"/>
 
     <bean id="commandBusInterceptor"
           class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">

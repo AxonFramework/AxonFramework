@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.domain;
 
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 
@@ -39,7 +40,7 @@ public class StructuredAggregateSerializationTest {
         assertEquals(2, aggregateRoot.getEntity().getInvocations());
         aggregateRoot.commitEvents();
         XStreamSerializer serializer = new XStreamSerializer();
-        byte[] serialized = serializer.serialize(aggregateRoot);
+        SerializedObject serialized = serializer.serialize(aggregateRoot);
         StructuredAggregateRoot deserializedAggregate = (StructuredAggregateRoot) serializer.deserialize(serialized);
 
         deserializedAggregate.invoke();

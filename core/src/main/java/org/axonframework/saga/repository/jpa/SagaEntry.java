@@ -17,8 +17,11 @@
 package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.saga.Saga;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
 
+import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
@@ -36,8 +39,13 @@ public class SagaEntry {
     @Id
     private String sagaId;
 
+    @Basic
+    private String sagaType;
+    @Basic
+    private int revision;
     @Lob
     private byte[] serializedSaga;
+
 
     /**
      * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
@@ -46,9 +54,12 @@ public class SagaEntry {
      * @param saga       The saga to store
      * @param serializer The serialization mechanism to convert the Saga to a byte stream
      */
-    public SagaEntry(Saga saga, Serializer<? super Saga> serializer) {
+    public SagaEntry(Saga saga, Serializer serializer) {
         this.sagaId = saga.getSagaIdentifier();
-        this.serializedSaga = serializer.serialize(saga);
+        SerializedObject serialized = serializer.serialize(saga);
+        this.serializedSaga = serialized.getData();
+        this.sagaType = serialized.getType().getName();
+        this.revision = serialized.getType().getRevision();
     }
 
     /**
@@ -57,8 +68,8 @@ public class SagaEntry {
      * @param serializer The serializer to decode the Saga
      * @return the Saga instance stored in this entry
      */
-    public Saga getSaga(Serializer<? super Saga> serializer) {
-        return (Saga) serializer.deserialize(serializedSaga);
+    public Saga getSaga(Serializer serializer) {
+        return (Saga) serializer.deserialize(new SimpleSerializedObject(serializedSaga, sagaType, revision));
     }
 
     /**

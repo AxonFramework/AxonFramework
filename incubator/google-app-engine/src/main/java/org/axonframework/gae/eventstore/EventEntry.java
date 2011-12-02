@@ -24,7 +24,12 @@ import com.google.appengine.api.datastore.Text;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StringAggregateIdentifier;
+import org.axonframework.eventstore.SerializedDomainEventMessage;
+import org.axonframework.serializer.SerializedMetaData;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
+import org.joda.time.DateTime;
 
 import java.nio.charset.Charset;
 
@@ -38,13 +43,19 @@ public class EventEntry {
     private static final String SEQUENCE_NUMBER = "sequenceNumber";
     private static final String SERIALIZED_EVENT = "serializedEvent";
     private static final String TIME_STAMP = "timeStamp";
+    private static final String EVENT_TYPE = "eventType";
+    private static final String EVENT_REVISION = "eventRevision";
+    private static final String META_DATA = "metaData";
 
-    private String eventIdentifier;
-    private String aggregateIdentifier;
-    private long sequenceNumber;
-    private String timeStamp;
-    private String aggregateType;
-    private String serializedEvent;
+    private final String eventIdentifier;
+    private final String aggregateIdentifier;
+    private final long sequenceNumber;
+    private final String timeStamp;
+    private final String aggregateType;
+    private final String serializedEvent;
+    private final int eventRevision;
+    private final String eventType;
+    private final String serializedMetaData;
 
     /**
      * Charset used for the serialization is usually UTF-8, which is presented by this constant
@@ -58,12 +69,16 @@ public class EventEntry {
      * @param event           The actual DomainEvent to store
      * @param eventSerializer Serializer to use for the event to store
      */
-    EventEntry(String aggregateType, DomainEventMessage event, Serializer<? super DomainEventMessage> eventSerializer) {
-        this.eventIdentifier = event.getEventIdentifier().toString();
+    EventEntry(String aggregateType, DomainEventMessage event, Serializer eventSerializer) {
+        this.eventIdentifier = event.getEventIdentifier();
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
         this.sequenceNumber = event.getSequenceNumber();
-        this.serializedEvent = new String(eventSerializer.serialize(event));
+        SerializedObject serializedEvent = eventSerializer.serialize(event.getPayload());
+        this.serializedEvent = new String(serializedEvent.getData(), UTF8);
+        this.eventType = serializedEvent.getType().getName();
+        this.eventRevision = serializedEvent.getType().getRevision();
+        this.serializedMetaData = new String(eventSerializer.serialize(event.getMetaData()).getData(), UTF8);
         this.timeStamp = event.getTimestamp().toString();
     }
 
@@ -74,6 +89,9 @@ public class EventEntry {
         this.sequenceNumber = (Long) entity.getProperty(SEQUENCE_NUMBER);
         this.serializedEvent = ((Text) entity.getProperty(SERIALIZED_EVENT)).getValue();
         this.timeStamp = (String) entity.getProperty(TIME_STAMP);
+        this.eventRevision = Integer.valueOf(entity.getProperty(EVENT_REVISION).toString());
+        this.eventType = (String) entity.getProperty(EVENT_TYPE);
+        this.serializedMetaData = ((Text) entity.getProperty(META_DATA)).getValue();
     }
 
     /**
@@ -82,8 +100,14 @@ public class EventEntry {
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
      * @return The actual DomainEvent
      */
-    public DomainEventMessage getDomainEvent(Serializer<? super DomainEventMessage> eventSerializer) {
-        return (DomainEventMessage) eventSerializer.deserialize(serializedEvent.getBytes(UTF8));
+    public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
+        return new SerializedDomainEventMessage(eventIdentifier, new StringAggregateIdentifier(aggregateIdentifier),
+                                                sequenceNumber, new DateTime(timeStamp),
+                                                new SimpleSerializedObject(serializedEvent.getBytes(UTF8),
+                                                                           eventType, eventRevision),
+                                                new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
+                                                eventSerializer,
+                                                eventSerializer);
     }
 
     /**
@@ -123,7 +147,9 @@ public class EventEntry {
         entity.setProperty(SEQUENCE_NUMBER, sequenceNumber);
         entity.setProperty(TIME_STAMP, timeStamp);
         entity.setProperty(SERIALIZED_EVENT, new Text(serializedEvent));
-
+        entity.setProperty(EVENT_TYPE, eventType);
+        entity.setProperty(EVENT_REVISION, eventRevision);
+        entity.setProperty(META_DATA, new Text(serializedMetaData));
         return entity;
     }
 
