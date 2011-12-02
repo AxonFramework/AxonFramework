@@ -126,7 +126,7 @@
     <sect1>
         <title>Event Serializer tuning</title>
         <para>XStream is very configurable and extensible. If you just use a plain
-                <code>XStreamEventSerializer</code>, there are some quick wins ready to pick up.
+                <code>XStreamSerializer</code>, there are some quick wins ready to pick up.
             XStream allows you to configure aliases for package names and event class names. Aliases
             are typically much shorter (especially if you have long package names), making the
             serialized form of an event smaller. An since we're talking XML, character removed from

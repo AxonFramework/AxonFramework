@@ -303,7 +303,7 @@
             domain events (those that extend the <code>DomainEvent</code> class). These event stores
             use a <code>Serializer</code> to serialize and deserialize the event. By default, Axon
             provides an implementation of the Event Serializer that serializes events to XML: the
-                <code>XStreamEventSerializer</code>. </para>
+                <code>XStreamSerializer</code>. </para>
         <simplesect>
             <title>
                 <code>FileSystemEventStore</code>
@@ -440,13 +440,13 @@
         <simplesect>
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Domain Event to prepare it for storage.
-                By default, Axon uses the <code>XStreamEventSerializer</code>, which uses XStream
+                By default, Axon uses the <code>XStreamSerializer</code>, which uses XStream
                     (see<link xmlns:ns1="http://www.w3.org/1999/xlink"
                     ns1:href="http://xstream.codehaus.org/"> xstream.codehaus.org</link>) to
                 serialize Domain Events into XML and vice versa. XStream is reasonably fast and is
                 more flexible than Java Serialization. Furthermore, the result of XStream
                 serialization is human readable. Quite useful for logging and debugging purposes. </para>
-            <para>The XStreamEventSerializer can be configured. You can define aliases it should use
+            <para>The XStreamSerializer can be configured. You can define aliases it should use
                 for certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
                 change. For more information about aliases, visit the XStream website:<link
@@ -588,8 +588,8 @@
             </para>
             <note>
                 <para>Do make sure that the <code>Serializer</code> instance you use (which defaults
-                    to the <code>XStreamEventSerializer</code>) is capable of serializing your
-                    aggregate. The <code>XStreamEventSerializer</code> requires you to use either a
+                    to the <code>XStreamSerializer</code>) is capable of serializing your
+                    aggregate. The <code>XStreamSerializer</code> requires you to use either a
                     Sun JVM, or your aggregate must either have an accessible default constructor or
                     implement the <code>Serializable</code> interface.</para>
             </note>
