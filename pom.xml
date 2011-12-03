@@ -218,9 +218,9 @@
         </repository>
     </distributionManagement>
     <scm>
-        <connection>scm:svn:http://axonframework.googlecode.com/svn/trunk</connection>
-        <developerConnection>scm:svn:https://axonframework.googlecode.com/svn/trunk</developerConnection>
-        <url>http://code.google.com/p/axonframework/source/browse/tags/trunk</url>
+        <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
+        <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
+        <url>https://github.com/AxonFramework/AxonFramework</url>
     </scm>
 
     <developers>
