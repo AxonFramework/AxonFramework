@@ -1,4 +1,9 @@
 *.iml
 axon.ipr
 axon.iws
-**/target
+incubator/google-app-engine/target/
+incubator/mongo/target/
+core/target/
+integration/target/
+test/target/
+**/target/
