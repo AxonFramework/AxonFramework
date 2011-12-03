@@ -56,12 +56,6 @@
             </modules>
         </profile>
         <profile>
-            <id>with-samples</id>
-            <modules>
-                <module>sample</module>
-            </modules>
-        </profile>
-        <profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>
