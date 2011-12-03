@@ -62,18 +62,6 @@
             </modules>
         </profile>
         <profile>
-            <id>with-thirdparty</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-                <property>
-                    <name>!nothridparty</name>
-                </property>
-            </activation>
-            <modules>
-                <module>third-party/disruptor</module>
-            </modules>
-        </profile>
-        <profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>
