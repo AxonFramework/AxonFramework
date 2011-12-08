@@ -64,6 +64,10 @@ public class MetaDataTest {
         assertFalse(metaData3.equals(metaData1));
         assertFalse(metaData1.equals(new Object()));
         assertFalse(metaData1.equals(null));
+
+        // Map requires that Maps are equal, even if their implementation is different
+        assertEquals(metaData2, metaDataValues);
+        assertEquals(metaDataValues, metaData2);
     }
 
     @Test(expected = UnsupportedOperationException.class)

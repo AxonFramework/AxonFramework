@@ -163,17 +163,13 @@ public class MetaData implements Map<String, Object>, Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!Map.class.isInstance(o)) {
             return false;
         }
 
-        MetaData that = (MetaData) o;
+        Map that = (Map) o;
 
-        if (!values.equals(that.values)) {
-            return false;
-        }
-
-        return true;
+        return values.equals(that);
     }
 
     @Override
