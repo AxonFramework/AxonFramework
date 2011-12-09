@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.CommandMessage;
+import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -70,10 +72,10 @@ public class CommandHandlingBenchmark {
 
 
         int COMMAND_COUNT = 1000 * 1000;
-        cb.dispatch("ready,");
+        cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"));
         long t1 = System.currentTimeMillis();
         for (int t = 0; t < COMMAND_COUNT; t++) {
-            cb.dispatch("go!");
+            cb.dispatch(GenericCommandMessage.asCommandMessage("go!"));
         }
         long t2 = System.currentTimeMillis();
         System.out.println(String.format("Just did %d commands per second", ((COMMAND_COUNT * 1000) / (t2 - t1))));
@@ -112,7 +114,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public Object handle(String command, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
             repository.load(aggregateIdentifier).doSomething();
             return Void.TYPE;
         }

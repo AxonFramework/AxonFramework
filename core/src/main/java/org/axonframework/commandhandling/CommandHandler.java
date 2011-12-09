@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.unitofwork.UnitOfWork;
 
 /**
- * Marks an instance that is capable of handling commands. CommandHandlers need to be subscribed to a {@link CommandBus}
- * in order to receive command of the specified type <code>T</code>.
+ * Marks an instance that is capable of handling commands. CommandHandlers need to be subscribed to a {@link
+ * CommandBus} in order to receive command of the specified type <code>T</code>.
  *
- * @author Allard Buijze
  * @param <T> The type of command this handler can handle
+ * @author Allard Buijze
  * @since 0.5
  */
 public interface CommandHandler<T> {
@@ -31,12 +32,11 @@ public interface CommandHandler<T> {
     /**
      * Handles the given <code>command</code>.
      *
-     * @param command    The command to process.
-     * @param unitOfWork The UnitOfWork the command is processed in
+     * @param commandMessage The message carrying the command to process.
+     * @param unitOfWork     The UnitOfWork the command is processed in
      * @return The result of the command processing, if any.
      *
      * @throws Throwable any exception that occurs during command handling
      */
-    Object handle(T command, UnitOfWork unitOfWork) throws Throwable;
-
+    Object handle(CommandMessage<T> commandMessage, UnitOfWork unitOfWork) throws Throwable;
 }

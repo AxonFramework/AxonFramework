@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;
@@ -61,21 +62,44 @@ class CommandValidator {
      * @param expected The commands expected to have been published on the bus
      */
     public void assertDispatchedEqualTo(Object... expected) {
-        List<Object> actual = commandBus.getDispatchedCommands();
+        List<CommandMessage<?>> actual = commandBus.getDispatchedCommands();
         if (actual.size() != expected.length) {
             throw new AxonAssertionError(format(
                     "Got wrong number of commands dispatched. Expected <%s>, got <%s>",
                     expected.length,
                     actual.size()));
         }
-        Iterator<Object> actualIterator = actual.iterator();
+        Iterator<CommandMessage<?>> actualIterator = actual.iterator();
         Iterator<Object> expectedIterator = Arrays.asList(expected).iterator();
 
         int counter = 0;
         while (actualIterator.hasNext()) {
-            Object actualItem = actualIterator.next();
+            CommandMessage<?> actualItem = actualIterator.next();
             Object expectedItem = expectedIterator.next();
-            if (!expectedItem.equals(actualItem)) {
+            if (expectedItem instanceof CommandMessage) {
+                CommandMessage<?> expectedMessage = (CommandMessage<?>) expectedItem;
+                if (!expectedMessage.getPayloadType().equals(actualItem.getPayloadType())) {
+                    throw new AxonAssertionError(format(
+                            "Unexpected payload type of command at position %s (0-based). Expected <%s>, got <%s>",
+                            counter,
+                            expectedMessage.getPayloadType(),
+                            actualItem.getPayloadType()));
+                }
+                if (!expectedMessage.getPayload().equals(actualItem.getPayload())) {
+                    throw new AxonAssertionError(format(
+                            "Unexpected payload of command at position %s (0-based). Expected <%s>, got <%s>",
+                            counter,
+                            expectedMessage.getPayload(),
+                            actualItem.getPayload()));
+                }
+                if (!expectedMessage.getMetaData().equals(actualItem.getMetaData())) {
+                    throw new AxonAssertionError(format(
+                            "Unexpected Meta Data of command at position %s (0-based). Expected <%s>, got <%s>",
+                            counter,
+                            expectedMessage.getMetaData(),
+                            actualItem.getMetaData()));
+                }
+            } else if (!expectedItem.equals(actualItem.getPayload())) {
                 throw new AxonAssertionError(format(
                         "Unexpected command at position %s (0-based). Expected <%s>, got <%s>",
                         counter,

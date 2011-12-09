@@ -70,7 +70,7 @@ public class EventEntry {
      * @param eventSerializer Serializer to use for the event to store
      */
     EventEntry(String aggregateType, DomainEventMessage event, Serializer eventSerializer) {
-        this.eventIdentifier = event.getEventIdentifier();
+        this.eventIdentifier = event.getIdentifier();
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
         this.sequenceNumber = event.getSequenceNumber();

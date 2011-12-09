@@ -46,6 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 
 /**
@@ -90,7 +91,8 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
         Log4jConfigurer.initLogging("classpath:log4j_silenced.properties");
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
-        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
+        commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)),
+                            NoOpCallback.INSTANCE);
         final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);
         final CountDownLatch starter = new CountDownLatch(1);
 
@@ -106,18 +108,20 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
                         throw new RuntimeException(e);
                     }
                     for (int t = 0; t < COMMAND_PER_THREAD_COUNT; t++) {
-                        commandBus.dispatch(new ProblematicCommand(aggregateId), NoOpCallback.INSTANCE);
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), new VoidCallback() {
-                            @Override
-                            protected void onSuccess() {
-                                successCounter.incrementAndGet();
-                            }
+                        commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
+                                            NoOpCallback.INSTANCE);
+                        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)),
+                                            new VoidCallback() {
+                                                @Override
+                                                protected void onSuccess() {
+                                                    successCounter.incrementAndGet();
+                                                }
 
-                            @Override
-                            public void onFailure(Throwable cause) {
-                                failCounter.incrementAndGet();
-                            }
-                        });
+                                                @Override
+                                                public void onFailure(Throwable cause) {
+                                                    failCounter.incrementAndGet();
+                                                }
+                                            });
                     }
                     cdl.countDown();
                 }
@@ -142,7 +146,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
         logger.info("Results: {} successful, {} failed.", successCounter.get(), failCounter.get());
 
         // to prove that all locks are properly cleared, this command must succeed.
-        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), new VoidCallback() {
+        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)), new VoidCallback() {
             @Override
             protected void onSuccess() {
 

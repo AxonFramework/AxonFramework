@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ public interface TestExecutor {
 
     /**
      * Dispatches the given command to the appropriate command handler and records all activity in the fixture for
-     * result validation.
+     * result validation. If the given <code>command</code> is a {@link org.axonframework.commandhandling.annotation.CommandMessage}
+     * instance, it will be dispatched as-is. Any other object will cause the given <code>command</code> to be wrapped
+     * in a {@code CommandMessage} as its payload.
      *
      * @param command The command to execute
      * @return a ResultValidator that can be used to validate the resulting actions of the command execution

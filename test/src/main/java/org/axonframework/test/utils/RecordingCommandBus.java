@@ -19,6 +19,7 @@ package org.axonframework.test.utils;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandMessage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,15 +37,15 @@ import java.util.Map;
 public class RecordingCommandBus implements CommandBus {
 
     private Map<Class<?>, CommandHandler<?>> subscriptions = new HashMap<Class<?>, CommandHandler<?>>();
-    private List<Object> dispatchedCommands = new ArrayList<Object>();
+    private List<CommandMessage<?>> dispatchedCommands = new ArrayList<CommandMessage<?>>();
 
     @Override
-    public void dispatch(Object command) {
+    public void dispatch(CommandMessage<?> command) {
         dispatchedCommands.add(command);
     }
 
     @Override
-    public <R> void dispatch(Object command, CommandCallback<R> callback) {
+    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         dispatchedCommands.add(command);
     }
 
@@ -111,7 +112,7 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @return a list with all commands that have been dispatched
      */
-    public List<Object> getDispatchedCommands() {
+    public List<CommandMessage<?>> getDispatchedCommands() {
         return dispatchedCommands;
     }
 }

@@ -1,54 +1,30 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.domain.Message;
-import org.axonframework.domain.MetaData;
-
-import java.util.Map;
 
 /**
- * Currently an Axon-internal class. The concept of CommandMessage will soon be available in the public API.
+ * Represents a Message carrying a command as its payload. These messages carry an intention to change application
+ * state.
  *
- * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
  * @since 2.0
- * @deprecated Not public yet.
  */
-@Deprecated
-public class CommandMessage<T> implements Message<T> {
+public interface CommandMessage<T> extends Message<T> {
 
-    private final T command;
-
-    /**
-     * Create a CommandMessage with the given <code>command</code> as payload.
-     *
-     * @param command the payload for the Message
-     */
-    public CommandMessage(T command) {
-        this.command = command;
-    }
-
-    @Override
-    public MetaData getMetaData() {
-        return MetaData.emptyInstance();
-    }
-
-    @Override
-    public T getPayload() {
-        return command;
-    }
-
-    @Override
-    public Class getPayloadType() {
-        return command.getClass();
-    }
-
-    @Override
-    public CommandMessage<T> withMetaData(Map<String, Object> metaData) {
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    @Override
-    public CommandMessage<T> andMetaData(Map<String, Object> metaData) {
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
 }

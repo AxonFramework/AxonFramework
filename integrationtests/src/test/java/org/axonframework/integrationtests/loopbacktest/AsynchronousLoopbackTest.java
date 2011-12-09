@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 
 /**
@@ -50,7 +51,7 @@ public class AsynchronousLoopbackTest {
     public void testAsynchronousLoopBack() throws InterruptedException {
         WaitingEventListener listener = new WaitingEventListener(2);
         eventBus.subscribe(listener);
-        commandBus.dispatch(AsynchronousLoopbackEventHandler.MAGIC_WORDS);
+        commandBus.dispatch(asCommandMessage(AsynchronousLoopbackEventHandler.MAGIC_WORDS));
         listener.waitForEvents(1000);
         assertEquals(0, listener.eventsRemaining.get());
     }

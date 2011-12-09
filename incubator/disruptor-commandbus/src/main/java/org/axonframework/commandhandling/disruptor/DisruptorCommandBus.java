@@ -24,6 +24,7 @@ import com.lmax.disruptor.wizard.DisruptorWizard;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
@@ -91,7 +92,7 @@ public class DisruptorCommandBus implements CommandBus, Repository {
     }
 
     @Override
-    public void dispatch(Object command) {
+    public void dispatch(CommandMessage<?> command) {
         CommandHandlingEntry entry = ringBuffer.nextEvent();
         entry.setCommand(command);
         entry.setAggregateIdentifier(((IdentifiedCommand) command).getAggregateIdentifier());
@@ -99,7 +100,7 @@ public class DisruptorCommandBus implements CommandBus, Repository {
     }
 
     @Override
-    public <R> void dispatch(Object command, CommandCallback<R> callback) {
+    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         throw new UnsupportedOperationException();
     }
 

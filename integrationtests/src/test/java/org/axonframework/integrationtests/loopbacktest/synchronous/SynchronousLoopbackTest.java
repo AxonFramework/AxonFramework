@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.eq;
@@ -121,11 +122,13 @@ public class SynchronousLoopbackTest {
                 if (event.getPayload() instanceof CounterChangedEvent) {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 1),
+                        commandBus.dispatch(asCommandMessage(
+                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 1)),
                                             reportErrorCallback);
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 2),
+                        commandBus.dispatch(asCommandMessage(
+                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 2)),
                                             reportErrorCallback);
                     }
                 }
@@ -133,7 +136,7 @@ public class SynchronousLoopbackTest {
         };
         eventBus.subscribe(el);
 
-        commandBus.dispatch(new ChangeCounterCommand(aggregateIdentifier, 1), reportErrorCallback);
+        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
         DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
@@ -158,11 +161,13 @@ public class SynchronousLoopbackTest {
                 if (event.getPayload() instanceof CounterChangedEvent) {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 1),
+                        commandBus.dispatch(asCommandMessage(
+                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 1)),
                                             reportErrorCallback);
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 2),
+                        commandBus.dispatch(asCommandMessage(
+                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 2)),
                                             reportErrorCallback);
                     }
                 }
@@ -170,7 +175,7 @@ public class SynchronousLoopbackTest {
         };
         eventBus.subscribe(el);
 
-        commandBus.dispatch(new ChangeCounterCommand(aggregateIdentifier, 1), reportErrorCallback);
+        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
         DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
@@ -195,11 +200,15 @@ public class SynchronousLoopbackTest {
                 if (event.getPayload() instanceof CounterChangedEvent) {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 1),
+                        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent
+                                                                                              .getAggregateIdentifier(),
+                                                                                      counterChangedEvent.getCounter()
+                                                                                              + 1)),
                                             reportErrorCallback);
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 2),
+                        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent
+                                                                                              .getAggregateIdentifier(),
+                                                                                      counterChangedEvent.getCounter()
+                                                                                              + 2)),
                                             reportErrorCallback);
                     } else if (counterChangedEvent.getCounter() == 2) {
                         throw new RuntimeException("Mock exception");
@@ -209,7 +218,7 @@ public class SynchronousLoopbackTest {
         };
         eventBus.subscribe(el);
 
-        commandBus.dispatch(new ChangeCounterCommand(aggregateIdentifier, 1), expectErrorCallback);
+        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
         DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
@@ -234,12 +243,14 @@ public class SynchronousLoopbackTest {
                 if (event.getPayload() instanceof CounterChangedEvent) {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 1),
+                        commandBus.dispatch(asCommandMessage(
+                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 1)),
                                             reportErrorCallback);
-                        commandBus.dispatch(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                     counterChangedEvent.getCounter() + 2),
-                                            reportErrorCallback);
+                        commandBus.dispatch(
+                                asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                          counterChangedEvent.getCounter() + 2)),
+                                reportErrorCallback);
                     } else if (counterChangedEvent.getCounter() == 2) {
                         throw new RuntimeException("Mock exception");
                     }
@@ -248,7 +259,7 @@ public class SynchronousLoopbackTest {
         };
         eventBus.subscribe(el);
 
-        commandBus.dispatch(new ChangeCounterCommand(aggregateIdentifier, 1), expectErrorCallback);
+        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
         DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
         assertTrue(storedEvents.hasNext());

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -78,9 +78,9 @@ public class FileSystemEventStoreTest {
         while (eventStream.hasNext()) {
             domainEvents.add(eventStream.next());
         }
-        assertEquals(event1.getEventIdentifier(), domainEvents.get(0).getEventIdentifier());
-        assertEquals(event2.getEventIdentifier(), domainEvents.get(1).getEventIdentifier());
-        assertEquals(event3.getEventIdentifier(), domainEvents.get(2).getEventIdentifier());
+        assertEquals(event1.getIdentifier(), domainEvents.get(0).getIdentifier());
+        assertEquals(event2.getIdentifier(), domainEvents.get(1).getIdentifier());
+        assertEquals(event3.getIdentifier(), domainEvents.get(2).getIdentifier());
     }
 
     @Test
@@ -113,7 +113,7 @@ public class FileSystemEventStoreTest {
         MyStubDomainEvent actualEvent1 = (MyStubDomainEvent) domainEvents.get(0).getPayload();
         assertEquals(description, actualEvent1.getDescription());
         assertEquals(event2.getPayloadType(), domainEvents.get(1).getPayloadType());
-        assertEquals(event2.getEventIdentifier(), domainEvents.get(1).getEventIdentifier());
+        assertEquals(event2.getIdentifier(), domainEvents.get(1).getIdentifier());
     }
 
     @Test

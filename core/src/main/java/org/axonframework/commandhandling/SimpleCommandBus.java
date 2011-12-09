@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -72,7 +73,7 @@ public class SimpleCommandBus implements CommandBus {
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    public void dispatch(Object command) {
+    public void dispatch(CommandMessage<?> command) {
         CommandHandler commandHandler = findCommandHandlerFor(command);
         try {
             doDispatch(command, commandHandler);
@@ -86,7 +87,7 @@ public class SimpleCommandBus implements CommandBus {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public <R> void dispatch(Object command, final CommandCallback<R> callback) {
+    public <R> void dispatch(CommandMessage<?> command, final CommandCallback<R> callback) {
         CommandHandler handler = findCommandHandlerFor(command);
         try {
             Object result = doDispatch(command, handler);
@@ -96,8 +97,8 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
-    private CommandHandler findCommandHandlerFor(Object command) {
-        final CommandHandler handler = subscriptions.get(command.getClass());
+    private CommandHandler findCommandHandlerFor(CommandMessage<?> command) {
+        final CommandHandler handler = subscriptions.get(command.getPayloadType());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
                                                           command.getClass().getSimpleName()));
@@ -105,7 +106,7 @@ public class SimpleCommandBus implements CommandBus {
         return handler;
     }
 
-    private Object doDispatch(Object command, CommandHandler commandHandler) throws Throwable {
+    private Object doDispatch(CommandMessage<?> command, CommandHandler commandHandler) throws Throwable {
         statistics.recordReceivedCommand();
         UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, interceptors);

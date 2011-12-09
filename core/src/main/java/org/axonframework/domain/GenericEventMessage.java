@@ -31,9 +31,9 @@ public class GenericEventMessage<T> implements EventMessage<T> {
 
     private static final long serialVersionUID = -8370948891267874107L;
 
-    private final T payload;
-    private final String eventIdentifier;
+    private final String identifier;
     private final DateTime timestamp;
+    private final T payload;
     private final MetaData metaData;
 
     /**
@@ -73,7 +73,7 @@ public class GenericEventMessage<T> implements EventMessage<T> {
         this.metaData = MetaData.from(metaData);
         this.timestamp = new DateTime();
         this.payload = payload;
-        this.eventIdentifier = IdentifierFactory.getInstance().generateIdentifier();
+        this.identifier = IdentifierFactory.getInstance().generateIdentifier();
     }
 
     /**
@@ -87,12 +87,12 @@ public class GenericEventMessage<T> implements EventMessage<T> {
         this.metaData = MetaData.from(metaData);
         this.timestamp = original.getTimestamp();
         this.payload = original.getPayload();
-        this.eventIdentifier = original.getEventIdentifier();
+        this.identifier = original.getIdentifier();
     }
 
     @Override
-    public String getEventIdentifier() {
-        return eventIdentifier;
+    public String getIdentifier() {
+        return identifier;
     }
 
     @Override

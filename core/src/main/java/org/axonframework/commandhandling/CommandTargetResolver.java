@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.CommandMessage;
+
 /**
  * Interface towards a mechanism that is capable of extracting an Aggregate Identifier and Version form a command that
  * identifies the aggregate instance the command should be invoked on.
@@ -34,5 +36,5 @@ public interface CommandTargetResolver {
      *
      * @throws IllegalArgumentException if the command is not formatted correctly to extract this information
      */
-    VersionedAggregateIdentifier resolveTarget(Object command);
+    VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command);
 }

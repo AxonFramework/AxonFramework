@@ -76,6 +76,9 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     protected void doRollback(Throwable cause) {
+        for (AggregateEntry entry : registeredAggregates.values()) {
+            entry.clear();
+        }
         registeredAggregates.clear();
         eventsToPublish.clear();
         notifyListenersRollback(cause);
@@ -92,8 +95,8 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public <T extends AggregateRoot> T registerAggregate(T aggregate, final EventBus eventBus,
-                                                         SaveAggregateCallback<T> callback) {
+    public <T extends AggregateRoot> T registerAggregate(final T aggregate, final EventBus eventBus,
+                                                         SaveAggregateCallback<T> saveAggregateCallback) {
         T similarAggregate = (T) findSimilarAggregate(aggregate.getClass(), aggregate.getIdentifier());
         if (similarAggregate != null) {
             if (logger.isInfoEnabled()) {
@@ -104,7 +107,10 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
             }
             return similarAggregate;
         }
-        registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, callback));
+        EventRegistrationCallback eventRegistrationCallback = new UoWEventRegistrationCallback(aggregate, eventBus);
+
+        registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, saveAggregateCallback,
+                                                                  eventRegistrationCallback));
 
         // register any events already available as uncommitted in the aggregate
         DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
@@ -113,14 +119,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         }
 
         // listen for new events registered in the aggregate
-        aggregate.addEventRegistrationCallback(new EventRegistrationCallback() {
-            @Override
-            public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
-                event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);
-                doPublish(event, eventBus);
-                return event;
-            }
-        });
+        aggregate.addEventRegistrationCallback(eventRegistrationCallback);
         return aggregate;
     }
 
@@ -285,14 +284,42 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
         private final T aggregateRoot;
         private final SaveAggregateCallback<T> callback;
+        private final EventRegistrationCallback eventRegistrationCallback;
 
-        public AggregateEntry(T aggregateRoot, SaveAggregateCallback<T> callback) {
+        public AggregateEntry(T aggregateRoot, SaveAggregateCallback<T> callback,
+                              EventRegistrationCallback eventRegistrationCallback) {
             this.aggregateRoot = aggregateRoot;
             this.callback = callback;
+            this.eventRegistrationCallback = eventRegistrationCallback;
         }
 
         public void saveAggregate() {
             callback.save(aggregateRoot);
+            clear();
+        }
+
+        public void clear() {
+            aggregateRoot.removeEventRegistrationCallback(eventRegistrationCallback);
+        }
+    }
+
+    private class UoWEventRegistrationCallback implements EventRegistrationCallback {
+
+        private final AggregateRoot aggregate;
+        private final EventBus eventBus;
+
+        public UoWEventRegistrationCallback(AggregateRoot aggregate, EventBus eventBus) {
+            this.aggregate = aggregate;
+            this.eventBus = eventBus;
+        }
+
+        @Override
+        public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
+            if (registeredAggregates.containsKey(aggregate)) {
+                event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);
+                doPublish(event, eventBus);
+            }
+            return event;
         }
     }
 }

@@ -22,6 +22,8 @@ import org.axonframework.integrationtests.commandhandling.LoopingChangeDoneEvent
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+
 /**
  * @author Allard Buijze
  */
@@ -32,7 +34,7 @@ public class LoopingEventHandler {
 
     @EventHandler
     public void handleLoopingEvent(LoopingChangeDoneEvent event) {
-        commandBus.dispatch(new UpdateStubAggregateCommand(event.getAggregateIdentifier()));
+        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(event.getAggregateIdentifier())));
     }
 
     @Autowired

@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.commandhandling.RollbackOnAllExceptionsConfiguration;
+import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
@@ -62,7 +63,7 @@ public class SimpleCommandBusWithoutStatistics implements CommandBus {
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    public void dispatch(Object command) {
+    public void dispatch(CommandMessage<?> command) {
         CommandHandler commandHandler = findCommandHandlerFor(command);
         try {
             doDispatch(command, commandHandler);
@@ -76,7 +77,7 @@ public class SimpleCommandBusWithoutStatistics implements CommandBus {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public <R> void dispatch(Object command, final CommandCallback<R> callback) {
+    public <R> void dispatch(CommandMessage<?> command, final CommandCallback<R> callback) {
         CommandHandler handler = findCommandHandlerFor(command);
         try {
             Object result = doDispatch(command, handler);
@@ -95,7 +96,7 @@ public class SimpleCommandBusWithoutStatistics implements CommandBus {
         return handler;
     }
 
-    private Object doDispatch(Object command, CommandHandler commandHandler) throws Throwable {
+    private Object doDispatch(CommandMessage<?> command, CommandHandler commandHandler) throws Throwable {
         UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, interceptors);
 

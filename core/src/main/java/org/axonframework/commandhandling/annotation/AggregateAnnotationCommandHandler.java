@@ -131,9 +131,9 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         for (final MethodMessageHandler commandHandler : inspector.getHandlers()) {
             CommandHandler<Object> handler = new CommandHandler<Object>() {
                 @Override
-                public Object handle(Object command, UnitOfWork unitOfWork) throws Throwable {
+                public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
                     T aggregate = loadAggregate(command);
-                    return commandHandler.invoke(aggregate, new CommandMessage(command));
+                    return commandHandler.invoke(aggregate, command);
                 }
             };
             commandBus.subscribe(commandHandler.getPayloadType(), handler);
@@ -145,7 +145,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
     }
 
-    private T loadAggregate(Object command) {
+    private T loadAggregate(CommandMessage<?> command) {
         VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
         return repository.load(iv.getIdentifier(), iv.getVersion());
     }
@@ -158,8 +158,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(Object command, UnitOfWork unitOfWork) throws Throwable {
-            repository.add(handler.invoke(null, new CommandMessage(command)));
+        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
+            repository.add(handler.invoke(null, command));
             return Void.TYPE;
         }
     }

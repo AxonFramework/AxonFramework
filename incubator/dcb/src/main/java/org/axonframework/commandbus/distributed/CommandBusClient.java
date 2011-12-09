@@ -19,6 +19,7 @@ package org.axonframework.commandbus.distributed;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandMessage;
 
 /**
  * @author Allard Buijze
@@ -28,12 +29,12 @@ public class CommandBusClient implements CommandBus {
     private DestinationResolver destinationResolver;
 
     @Override
-    public void dispatch(Object command) {
+    public void dispatch(CommandMessage<?> command) {
         destinationResolver.getDestination(command).send(command);
     }
 
     @Override
-    public <R> void dispatch(Object command, CommandCallback<R> callback) {
+    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         destinationResolver.getDestination(command).send(command, callback);
     }
 

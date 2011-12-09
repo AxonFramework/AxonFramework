@@ -56,13 +56,13 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
         Assert.state(initialized, "Scheduler is not yet initialized");
         EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
-        String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getEventIdentifier();
+        String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
             JobDetail jobDetail = new JobDetail(jobIdentifier, groupIdentifier, FireEventJob.class);
             jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, eventMessage);
             jobDetail.setDescription(eventMessage.getPayloadType().getSimpleName());
-            scheduler.scheduleJob(jobDetail, new SimpleTrigger(eventMessage.getEventIdentifier(),
+            scheduler.scheduleJob(jobDetail, new SimpleTrigger(eventMessage.getIdentifier(),
                                                                triggerDateTime.toDate()));
         } catch (SchedulerException e) {
             throw new SchedulingException("An error occurred while setting a timer for a saga", e);

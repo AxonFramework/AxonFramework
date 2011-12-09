@@ -43,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 
 /**
@@ -80,7 +81,7 @@ public class ConcurrentModificationTest_PessimisticLocking {
     public void testConcurrentModifications() throws Exception {
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
-        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
+        commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)), NoOpCallback.INSTANCE);
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         final AtomicLong counter = new AtomicLong(0);
         List<Future<?>> results = new LinkedList<Future<?>>();
@@ -89,9 +90,11 @@ public class ConcurrentModificationTest_PessimisticLocking {
                 @Override
                 public void run() {
                     try {
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
-                        commandBus.dispatch(new ProblematicCommand(aggregateId), NoOpCallback.INSTANCE);
-                        commandBus.dispatch(new LoopingCommand(aggregateId), NoOpCallback.INSTANCE);
+                        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)),
+                                            NoOpCallback.INSTANCE);
+                        commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
+                                            NoOpCallback.INSTANCE);
+                        commandBus.dispatch(asCommandMessage(new LoopingCommand(aggregateId)), NoOpCallback.INSTANCE);
                         counter.incrementAndGet();
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);

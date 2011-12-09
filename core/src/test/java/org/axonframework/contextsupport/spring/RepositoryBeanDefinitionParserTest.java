@@ -104,6 +104,11 @@ public class RepositoryBeanDefinitionParserTest {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
+        @Override
+        public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
         /**
          * {@inheritDoc}
          */

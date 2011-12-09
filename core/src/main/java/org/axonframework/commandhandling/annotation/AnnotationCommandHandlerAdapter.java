@@ -86,10 +86,9 @@ public class AnnotationCommandHandlerAdapter
      * @throws Throwable                    any exception occurring while handling the command
      */
     @Override
-    public Object handle(Object command, UnitOfWork unitOfWork) throws Throwable {
+    public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
         try {
-            return invoker.invokeHandlerMethod(new CommandMessage(command),
-                                               ErrorReportingNoMethodFoundCallback.INSTANCE);
+            return invoker.invokeHandlerMethod(command, ErrorReportingNoMethodFoundCallback.INSTANCE);
         } catch (InvocationTargetException e) {
             throw e.getCause();
         }

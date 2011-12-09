@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.Iterator;
@@ -28,7 +29,7 @@ import java.util.Iterator;
  */
 public class DefaultInterceptorChain implements InterceptorChain {
 
-    private final Object command;
+    private final CommandMessage<?> command;
     private final CommandHandler handler;
     private Iterator<? extends CommandHandlerInterceptor> chain;
     private UnitOfWork unitOfWork;
@@ -42,7 +43,7 @@ public class DefaultInterceptorChain implements InterceptorChain {
      * @param handler    The handler for the command
      * @param chain      The interceptor composing the chain
      */
-    public DefaultInterceptorChain(Object command, UnitOfWork unitOfWork, CommandHandler<?> handler,
+    public DefaultInterceptorChain(CommandMessage<?> command, UnitOfWork unitOfWork, CommandHandler<?> handler,
                                    Iterable<? extends CommandHandlerInterceptor> chain) {
         this.command = command;
         this.handler = handler;
@@ -55,7 +56,7 @@ public class DefaultInterceptorChain implements InterceptorChain {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public Object proceed(Object commandProceedWith) throws Throwable {
+    public Object proceed(CommandMessage<?> commandProceedWith) throws Throwable {
         if (chain.hasNext()) {
             return chain.next().handle(commandProceedWith, unitOfWork, this);
         } else {

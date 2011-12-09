@@ -95,7 +95,7 @@ class EventEntry {
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().asString();
         this.sequenceNumber = event.getSequenceNumber();
-        this.eventIdentifier = event.getEventIdentifier();
+        this.eventIdentifier = event.getIdentifier();
         SerializedObject serializedPayload = eventSerializer.serialize(event.getPayload());
         SerializedObject serializedMetaData = eventSerializer.serialize(event.getMetaData());
         this.serializedPayload = new String(serializedPayload.getData(), UTF8);

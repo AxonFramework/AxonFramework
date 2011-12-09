@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.callbacks;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -36,7 +37,7 @@ public class VoidCallbackTest {
         SimpleCommandBus scb = new SimpleCommandBus();
         AnnotationCommandHandlerAdapter.subscribe(this, scb);
 
-        scb.dispatch("Hello", new VoidCallback() {
+        scb.dispatch(GenericCommandMessage.asCommandMessage("Hello"), new VoidCallback() {
             @Override
             protected void onSuccess() {
                 // what I expected

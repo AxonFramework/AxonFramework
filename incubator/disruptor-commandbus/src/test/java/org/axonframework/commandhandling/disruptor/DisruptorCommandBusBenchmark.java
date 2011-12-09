@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandMessage;
+import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -71,7 +73,8 @@ public class DisruptorCommandBusBenchmark {
         new Scanner(System.in).nextLine();
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
-            StubCommand command = new StubCommand(aggregateIdentifier);
+            CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(new StubCommand(
+                    aggregateIdentifier));
             commandBus.dispatch(command);
         }
         System.out.println("Finished dispatching!");
@@ -159,8 +162,8 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Object handle(StubCommand command, UnitOfWork unitOfWork) throws Throwable {
-            repository.load(command.getAggregateIdentifier()).doSomething();
+        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
+            repository.load(command.getPayload().getAggregateIdentifier()).doSomething();
             return Void.TYPE;
         }
 

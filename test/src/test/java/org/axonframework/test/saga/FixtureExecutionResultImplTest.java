@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -61,12 +62,12 @@ public class FixtureExecutionResultImplTest {
     public void testStartRecording() {
         testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,
                                                      commandBus, StubSaga.class);
-        commandBus.dispatch("First");
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         eventBus.publish(new GenericEventMessage<TriggerSagaStartEvent>(new TriggerSagaStartEvent(identifier)));
         testSubject.startRecording();
         TriggerSagaEndEvent endEvent = new TriggerSagaEndEvent(identifier);
         eventBus.publish(new GenericEventMessage<TriggerSagaEndEvent>(endEvent));
-        commandBus.dispatch("Second");
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
         testSubject.expectPublishedEvents(endEvent);
         testSubject.expectDispatchedCommandsEqualTo("Second");
@@ -96,25 +97,33 @@ public class FixtureExecutionResultImplTest {
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectDispatchedCommands_FailedCount() {
-        commandBus.dispatch("First");
-        commandBus.dispatch("Second");
-        commandBus.dispatch("Third");
-        commandBus.dispatch("Fourth");
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"));
 
         testSubject.expectDispatchedCommandsEqualTo("First", "Second", "Third");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectDispatchedCommands_FailedType() {
-        commandBus.dispatch("First");
-        commandBus.dispatch("Second");
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
         testSubject.expectDispatchedCommandsEqualTo("First", "Third");
     }
 
+    @Test
+    public void testExpectDispatchedCommands() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+
+        testSubject.expectDispatchedCommandsEqualTo("First", "Second");
+    }
+
     @Test(expected = AxonAssertionError.class)
     public void testExpectNoDispatchedCommands_Failed() {
-        commandBus.dispatch("First");
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.expectNoDispatchedCommands();
     }
 

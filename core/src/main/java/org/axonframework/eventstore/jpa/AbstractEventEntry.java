@@ -79,7 +79,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      */
     protected AbstractEventEntry(String type, DomainEventMessage event,
                                  SerializedObject payload, SerializedObject metaData) {
-        this.eventIdentifier = event.getEventIdentifier();
+        this.eventIdentifier = event.getIdentifier();
         this.type = type;
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.domain.Message;
@@ -34,7 +50,7 @@ public class CurrentUnitOfWorkParameterResolverFactoryTest {
     public void testResolveParameterValue() throws Exception {
         DefaultUnitOfWork.startAndGet();
         try {
-            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(CommandMessage.class)));
+            assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(GenericCommandMessage.class)));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }
@@ -42,11 +58,11 @@ public class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     @Test
     public void testMatches() throws Exception {
-        assertFalse(testSubject.matches(mock(CommandMessage.class)));
+        assertFalse(testSubject.matches(mock(GenericCommandMessage.class)));
         DefaultUnitOfWork.startAndGet();
         try {
             assertFalse(testSubject.matches(mock(Message.class)));
-            assertTrue(testSubject.matches(mock(CommandMessage.class)));
+            assertTrue(testSubject.matches(mock(GenericCommandMessage.class)));
         } finally {
             CurrentUnitOfWork.get().rollback();
         }

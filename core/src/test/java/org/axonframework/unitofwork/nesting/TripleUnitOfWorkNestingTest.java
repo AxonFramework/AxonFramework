@@ -18,14 +18,19 @@ package org.axonframework.unitofwork.nesting;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
@@ -42,6 +47,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,7 +65,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"/contexts/triple_uow_nesting_test.xml"})
-public class TripleUnitOfWorkNestingTest {
+public class TripleUnitOfWorkNestingTest implements EventListener {
 
     @Autowired
     private CommandBus commandBus;
@@ -68,15 +74,21 @@ public class TripleUnitOfWorkNestingTest {
     private EventStore eventStore;
 
     @Autowired
+    private EventBus eventBus;
+
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private static AggregateIdentifier aggregateAIdentifier = new StringAggregateIdentifier("A");
     private static AggregateIdentifier aggregateBIdentifier = new StringAggregateIdentifier("B");
 
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
+    private List<EventMessage<?>> handledMessages;
 
     @Before
     public void setUp() throws Exception {
+        eventBus.subscribe(this);
+        handledMessages = new ArrayList<EventMessage<?>>();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -94,7 +106,7 @@ public class TripleUnitOfWorkNestingTest {
         transactionManager.commit(tx);
         assertEquals(1, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
         assertEquals(1, toList(eventStore.readEvents("AggregateB", aggregateBIdentifier)).size());
-        commandBus.dispatch("hello");
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("hello"));
 
         assertEquals(5, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
         assertEquals(2, toList(eventStore.readEvents("AggregateB", aggregateBIdentifier)).size());
@@ -105,6 +117,8 @@ public class TripleUnitOfWorkNestingTest {
         executor.shutdown();
         assertTrue("Commands did not execute in a reasonable time. Are there any unreleased locks remaining?",
                    executor.awaitTermination(2, TimeUnit.SECONDS));
+
+        assertEquals(new HashSet(handledMessages).size(), handledMessages.size());
     }
 
     private List<DomainEventMessage> toList(DomainEventStream eventStream) {
@@ -113,6 +127,11 @@ public class TripleUnitOfWorkNestingTest {
             events.add(eventStream.next());
         }
         return events;
+    }
+
+    @Override
+    public void handle(EventMessage event) {
+        this.handledMessages.add(event);
     }
 
     public static class MyCommandHandler {
@@ -125,13 +144,18 @@ public class TripleUnitOfWorkNestingTest {
         @Qualifier("aggregateBRepository")
         private Repository<AggregateB> aggregateBRepository;
 
+        @Autowired
+        private EventBus eventBus;
+
         @CommandHandler
         public void handle(String stringCommand) {
+            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<String>("Mock"), eventBus);
             aggregateARepository.load(aggregateAIdentifier).doSomething(stringCommand);
         }
 
         @CommandHandler
         public void handle(Object objectCommand) {
+            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<String>("Mock"), eventBus);
             aggregateBRepository.load(aggregateBIdentifier).doSomething();
         }
     }
@@ -143,18 +167,18 @@ public class TripleUnitOfWorkNestingTest {
 
         @EventHandler
         public void handle(FirstEvent event) {
-            commandBus.dispatch(new Object());
-            commandBus.dispatch("first");
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()));
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage("first"));
         }
 
         @EventHandler
         public void handle(SecondEvent event) {
-            commandBus.dispatch("second");
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage("second"));
         }
 
         @EventHandler
         public void handle(ThirdEvent event) {
-            commandBus.dispatch("third");
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage("third"));
         }
     }
 
@@ -206,7 +230,7 @@ public class TripleUnitOfWorkNestingTest {
 
         @Override
         public void run() {
-            commandBus.dispatch("hello");
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage("hello"));
         }
     }
 }

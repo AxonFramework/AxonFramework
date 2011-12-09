@@ -76,7 +76,7 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
             }
         });
         assertNotNull(transactionalHandler);
-        commandBus.dispatch("StringCommand");
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("StringCommand"));
 
         verify(mockTransactionManager).getTransaction(isA(TransactionDefinition.class));
         verify(mockTransactionManager).commit(isA(TransactionStatus.class));
@@ -84,10 +84,10 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
 
         assertTrue("Bean doesn't implemment EventListener",
                    org.axonframework.commandhandling.CommandHandler.class.isInstance(transactionalHandler));
-        ((CommandHandler<Integer>) transactionalHandler).handle(12, null);
+        ((CommandHandler<Integer>) transactionalHandler).handle(GenericCommandMessage.asCommandMessage(12), null);
         assertEquals(2, transactionalHandler.getInvocations());
 
-        commandBus.dispatch(new Object(), new VoidCallback() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), new VoidCallback() {
             @Override
             protected void onSuccess() {
                 fail("Expected a security exception");

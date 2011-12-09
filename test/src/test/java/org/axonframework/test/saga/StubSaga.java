@@ -29,6 +29,8 @@ import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+
 /**
  * @author Allard Buijze
  */
@@ -76,7 +78,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleTriggerEvent(TimerTriggeredEvent event) {
         handledEvents.add(event);
-        commandBus.dispatch("Say hi!");
+        commandBus.dispatch(asCommandMessage("Say hi!"));
     }
 
     public EventBus getEventBus() {

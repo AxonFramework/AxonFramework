@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.CommandMessage;
+
 /**
  * The interceptor chain manages the flow of a command through a chain of interceptors and ultimately to the command
  * handler. Interceptors may continue processing via this chain by calling the {@link #proceed()} or {@link
- * #proceed(Object)} methods. Alternatively, they can block processing by returning without calling either of these
- * methods.
+ * #proceed(org.axonframework.commandhandling.annotation.CommandMessage)} methods. Alternatively, they can block
+ * processing by returning without calling either of these methods.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -45,5 +47,5 @@ public interface InterceptorChain {
      *
      * @throws Throwable any exceptions thrown by interceptors or the command handler
      */
-    Object proceed(Object command) throws Throwable;
+    Object proceed(CommandMessage<?> command) throws Throwable;
 }

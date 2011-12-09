@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.AbstractEvent;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -28,7 +29,7 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
  */
 public class CommandHandlingEntry extends AbstractEvent {
 
-    private Object command;
+    private CommandMessage<?> command;
     private AggregateIdentifier aggregateIdentifier;
     private InterceptorChain interceptorChain;
     private MultiThreadedUnitOfWork unitOfWork;
@@ -39,11 +40,11 @@ public class CommandHandlingEntry extends AbstractEvent {
     private DomainEventStream eventsToStore;
     private DomainEventStream eventsToPublish;
 
-    public Object getCommand() {
+    public CommandMessage<?> getCommand() {
         return command;
     }
 
-    public void setCommand(Object command) {
+    public void setCommand(CommandMessage<?> command) {
         this.command = command;
     }
 

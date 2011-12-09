@@ -63,7 +63,7 @@ import static org.mockito.Mockito.*;
     @Test
     public void testCommandHandlerCreatesAggregateInstance() {
 
-        commandBus.dispatch(new CreateCommand("Hi"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new CreateCommand("Hi")));
         verify(mockRepository).add(isA(StubCommandAnnotatedAggregate.class));
     }
 
@@ -72,18 +72,19 @@ import static org.mockito.Mockito.*;
         StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
         when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
-        commandBus.dispatch(new UpdateCommandWithAnnotatedMethod("abc123"), new CommandCallback<Object>() {
-            @Override
-            public void onSuccess(Object result) {
-                assertEquals("Method works fine", result);
-            }
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    assertEquals("Method works fine", result);
+                                }
 
-            @Override
-            public void onFailure(Throwable cause) {
-                cause.printStackTrace();
-                fail("Did not expect exception");
-            }
-        });
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    cause.printStackTrace();
+                                    fail("Did not expect exception");
+                                }
+                            });
 
         verify(mockRepository).load(aggregateIdentifier, null);
     }
@@ -93,7 +94,8 @@ import static org.mockito.Mockito.*;
         StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
         when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
-        commandBus.dispatch(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L),
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {
@@ -115,7 +117,8 @@ import static org.mockito.Mockito.*;
         StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
         when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
-        commandBus.dispatch(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null),
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {
@@ -137,18 +140,19 @@ import static org.mockito.Mockito.*;
         StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
         when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
-        commandBus.dispatch(new UpdateCommandWithAnnotatedField("abc123"), new CommandCallback<Object>() {
-            @Override
-            public void onSuccess(Object result) {
-                assertEquals("Field works fine", result);
-            }
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    assertEquals("Field works fine", result);
+                                }
 
-            @Override
-            public void onFailure(Throwable cause) {
-                cause.printStackTrace();
-                fail("Did not expect exception");
-            }
-        });
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    cause.printStackTrace();
+                                    fail("Did not expect exception");
+                                }
+                            });
 
         verify(mockRepository).load(aggregateIdentifier, null);
     }
@@ -158,7 +162,8 @@ import static org.mockito.Mockito.*;
         StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
         when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
-        commandBus.dispatch(new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L),
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {
@@ -180,7 +185,8 @@ import static org.mockito.Mockito.*;
         StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
         when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
-        commandBus.dispatch(new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321),
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {

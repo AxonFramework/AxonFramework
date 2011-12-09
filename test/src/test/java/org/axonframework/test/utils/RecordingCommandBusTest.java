@@ -18,10 +18,12 @@ package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandMessage;
+import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -38,8 +40,8 @@ public class RecordingCommandBusTest {
 
     @Test
     public void testPublishCommand() {
-        testSubject.dispatch("First");
-        testSubject.dispatch("Second", new CommandCallback<Object>() {
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object>() {
             @Override
             public void onSuccess(Object result) {
                 fail("Didn't expect callack to be invoked");
@@ -51,14 +53,17 @@ public class RecordingCommandBusTest {
             }
         });
         //noinspection AssertEqualsBetweenInconvertibleTypes
-        assertEquals(Arrays.asList("First", "Second"), testSubject.getDispatchedCommands());
+        List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
+        assertEquals(2, actual.size());
+        assertEquals("First", actual.get(0).getPayload());
+        assertEquals("Second", actual.get(1).getPayload());
     }
 
     @Test
     public void testRegisterHandler() {
         CommandHandler<String> handler = new CommandHandler<String>() {
             @Override
-            public Object handle(String command, UnitOfWork unitOfWork) throws Throwable {
+            public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
                 fail("Did not expect handler to be invoked");
                 return null;
             }

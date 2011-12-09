@@ -65,7 +65,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
         try {
             while (events.hasNext()) {
                 DomainEventMessage event = events.next();
-                os.writeUTF(event.getEventIdentifier());
+                os.writeUTF(event.getIdentifier());
                 os.writeUTF(type);
                 os.writeUTF(event.getAggregateIdentifier().asString());
                 os.writeLong(event.getSequenceNumber());

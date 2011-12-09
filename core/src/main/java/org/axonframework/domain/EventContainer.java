@@ -185,4 +185,11 @@ public class EventContainer implements Serializable {
         }
         this.registrationCallbacks.add(eventRegistrationCallback);
     }
+
+    public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
+        if (registrationCallbacks == null) {
+            return;
+        }
+        this.registrationCallbacks.remove(eventRegistrationCallback);
+    }
 }

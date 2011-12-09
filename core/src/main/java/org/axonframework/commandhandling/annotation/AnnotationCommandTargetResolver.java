@@ -49,7 +49,7 @@ import static org.axonframework.common.ReflectionUtils.*;
 public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 
     @Override
-    public VersionedAggregateIdentifier resolveTarget(Object command) {
+    public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
         AggregateIdentifier aggregateIdentifier;
         Long aggregateVersion;
         try {
@@ -74,32 +74,32 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
     }
 
-    private AggregateIdentifier findIdentifier(Object command)
+    private AggregateIdentifier findIdentifier(CommandMessage<?> command)
             throws InvocationTargetException, IllegalAccessException {
-        for (Method m : methodsOf(command.getClass())) {
+        for (Method m : methodsOf(command.getPayloadType())) {
             if (m.isAnnotationPresent(TargetAggregateIdentifier.class)) {
                 ensureAccessible(m);
-                return convert(m.invoke(command));
+                return convert(m.invoke(command.getPayload()));
             }
         }
-        for (Field f : fieldsOf(command.getClass())) {
+        for (Field f : fieldsOf(command.getPayloadType())) {
             if (f.isAnnotationPresent(TargetAggregateIdentifier.class)) {
-                return convert(getFieldValue(f, command));
+                return convert(getFieldValue(f, command.getPayload()));
             }
         }
         return null;
     }
 
-    private Long findVersion(Object command) throws InvocationTargetException, IllegalAccessException {
-        for (Method m : methodsOf(command.getClass())) {
+    private Long findVersion(CommandMessage<?> command) throws InvocationTargetException, IllegalAccessException {
+        for (Method m : methodsOf(command.getPayloadType())) {
             if (m.isAnnotationPresent(TargetAggregateVersion.class)) {
                 ensureAccessible(m);
-                return asLong(m.invoke(command));
+                return asLong(m.invoke(command.getPayload()));
             }
         }
-        for (Field f : fieldsOf(command.getClass())) {
+        for (Field f : fieldsOf(command.getPayloadType())) {
             if (f.isAnnotationPresent(TargetAggregateVersion.class)) {
-                return asLong(getFieldValue(f, command));
+                return asLong(getFieldValue(f, command.getPayload()));
             }
         }
         return null;

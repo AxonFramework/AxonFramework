@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.CommandMessage;
+
 /**
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
  * unsubscribe to specific types of commands on the command bus. Only a single handler may be subscribed for a single
@@ -27,14 +29,16 @@ package org.axonframework.commandhandling;
 public interface CommandBus {
 
     /**
-     * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>. No
+     * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
+     * No
      * feedback is given about the status of the dispatching process. Implementations may return immediately after
      * asserting a valid handler is registered for the given command.
      *
      * @param command The Command to dispatch
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
+     * @see org.axonframework.commandhandling.annotation.GenericCommandMessage#asCommandMessage(Object)
      */
-    void dispatch(Object command);
+    void dispatch(CommandMessage<?> command);
 
     /**
      * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
@@ -51,8 +55,9 @@ public interface CommandBus {
      * @param callback The callback to invoke when command processing is complete
      * @param <R>      The type of the expected result
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
+     * @see org.axonframework.commandhandling.annotation.GenericCommandMessage#asCommandMessage(Object)
      */
-    <R> void dispatch(Object command, CommandCallback<R> callback);
+    <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback);
 
     /**
      * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>.
@@ -76,5 +81,4 @@ public interface CommandBus {
      * @param <C>         The Type of command
      */
     <C> void unsubscribe(Class<C> commandType, CommandHandler<? super C> handler);
-
 }

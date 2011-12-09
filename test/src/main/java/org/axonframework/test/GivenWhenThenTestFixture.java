@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -126,7 +127,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     @Override
     public ResultValidator when(Object command) {
         ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
-        commandBus.dispatch(command, resultValidator);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(command), resultValidator);
         return resultValidator;
     }
 
