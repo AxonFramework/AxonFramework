@@ -43,7 +43,7 @@ public class EventContainer implements Serializable {
     private static final long serialVersionUID = -39816393359395878L;
 
     private final List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
-    private final AggregateIdentifier aggregateIdentifier;
+    private final Object aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
     private transient Long lastSequenceNumber;
     private transient List<EventRegistrationCallback> registrationCallbacks;
@@ -54,7 +54,7 @@ public class EventContainer implements Serializable {
      *
      * @param aggregateIdentifier the aggregate identifier to assign to this container
      */
-    public EventContainer(AggregateIdentifier aggregateIdentifier) {
+    public EventContainer(Object aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
     }
 
@@ -99,7 +99,7 @@ public class EventContainer implements Serializable {
      *
      * @return the aggregate identifier assigned to this container
      */
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

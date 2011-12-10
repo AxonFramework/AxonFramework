@@ -16,7 +16,6 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -55,7 +54,7 @@ public class RepositoryBeanDefinitionParserTest {
         /**
          *
          */
-        public EventSourcedAggregateRootMock(final AggregateIdentifier identifier) {
+        public EventSourcedAggregateRootMock(final Object identifier) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -63,7 +62,7 @@ public class RepositoryBeanDefinitionParserTest {
          * {@inheritDoc}
          */
         @Override
-        public AggregateIdentifier getIdentifier() {
+        public Object getIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

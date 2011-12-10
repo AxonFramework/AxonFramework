@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * Interface describing instances that are capable of creating snapshot events for aggregates. Although snapshotting
  * is typically an asynchronous process, implementations may to choose to create snapshots in the calling thread.
@@ -35,5 +33,5 @@ public interface Snapshotter {
      * @param typeIdentifier      the type of the aggregate to take the snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
-    void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier);
+    void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier);
 }

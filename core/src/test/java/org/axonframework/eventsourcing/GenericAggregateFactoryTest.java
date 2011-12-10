@@ -16,11 +16,11 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
+
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -36,10 +36,10 @@ public class GenericAggregateFactoryTest {
 
     @Test
     public void testInitializeRepository_ConstructorNotCallable() {
-        GenericAggregateFactory<ExceptionThrowingAggregate> repository =
+        GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<ExceptionThrowingAggregate>(ExceptionThrowingAggregate.class);
         try {
-            repository.createAggregate(new UUIDAggregateIdentifier(), null);
+            factory.createAggregate(UUID.randomUUID(), null);
             fail("Expected IncompatibleAggregateException");
         } catch (IncompatibleAggregateException e) {
             // we got it
@@ -54,7 +54,7 @@ public class GenericAggregateFactoryTest {
 
     @Test
     public void testInitializeFromAggregateSnapshot() {
-        StubAggregate aggregate = new StubAggregate();
+        StubAggregate aggregate = new StubAggregate("stubId");
         aggregate.doSomething();
         aggregate.commitEvents();
         AggregateSnapshot<StubAggregate> snapshot = new AggregateSnapshot<StubAggregate>(aggregate);
@@ -68,17 +68,27 @@ public class GenericAggregateFactoryTest {
         @Override
         protected void handle(DomainEventMessage event) {
         }
+
+        @Override
+        public Object getIdentifier() {
+            return "unsuitableAggregateId";
+        }
     }
 
     private static class ExceptionThrowingAggregate
             extends AbstractEventSourcedAggregateRoot {
 
-        private ExceptionThrowingAggregate(AggregateIdentifier uuid) {
+        private ExceptionThrowingAggregate(Object uuid) {
             throw new RuntimeException("Mock");
         }
 
         @Override
         protected void handle(DomainEventMessage event) {
+        }
+
+        @Override
+        public Object getIdentifier() {
+            throw new UnsupportedOperationException("Not implemented yet");
         }
     }
 }

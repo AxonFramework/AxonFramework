@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -41,7 +40,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private Executor executor = DirectExecutor.INSTANCE;
 
     @Override
-    public void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
+    public void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier) {
         executor.execute(createSnapshotterTask(typeIdentifier, aggregateIdentifier));
     }
 
@@ -52,7 +51,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @return the task containing snapshot creation logic
      */
-    protected Runnable createSnapshotterTask(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
+    protected Runnable createSnapshotterTask(String typeIdentifier, Object aggregateIdentifier) {
         return new CreateSnapshotTask(typeIdentifier, aggregateIdentifier);
     }
 
@@ -71,9 +70,9 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final class CreateSnapshotTask implements Runnable {
 
         private final String typeIdentifier;
-        private final AggregateIdentifier aggregateIdentifier;
+        private final Object aggregateIdentifier;
 
-        private CreateSnapshotTask(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
+        private CreateSnapshotTask(String typeIdentifier, Object aggregateIdentifier) {
             this.typeIdentifier = typeIdentifier;
             this.aggregateIdentifier = aggregateIdentifier;
         }

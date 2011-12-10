@@ -16,19 +16,17 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
- * Structure that holds an AggregateIdentifier and an expected version of an aggregate.
+ * Structure that holds an Aggregate Identifier and an expected version of an aggregate.
  *
  * @author Allard Buijze
  * @since 1.2
  */
-public class VersionedAggregateIdentifier implements AggregateIdentifier {
+public class VersionedAggregateIdentifier {
 
     private static final long serialVersionUID = -5678446021335130329L;
 
-    private final AggregateIdentifier identifier;
+    private final Object identifier;
     private final Long version;
 
     /**
@@ -37,7 +35,7 @@ public class VersionedAggregateIdentifier implements AggregateIdentifier {
      * @param identifier The identifier of the targeted aggregate
      * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant
      */
-    public VersionedAggregateIdentifier(AggregateIdentifier identifier, Long version) {
+    public VersionedAggregateIdentifier(Object identifier, Long version) {
         this.identifier = identifier;
         this.version = version;
     }
@@ -47,7 +45,7 @@ public class VersionedAggregateIdentifier implements AggregateIdentifier {
      *
      * @return the identifier of the targeted Aggregate
      */
-    public AggregateIdentifier getIdentifier() {
+    public Object getIdentifier() {
         return identifier;
     }
 
@@ -58,11 +56,6 @@ public class VersionedAggregateIdentifier implements AggregateIdentifier {
      */
     public Long getVersion() {
         return version;
-    }
-
-    @Override
-    public String asString() {
-        return identifier.asString();
     }
 
     @Override

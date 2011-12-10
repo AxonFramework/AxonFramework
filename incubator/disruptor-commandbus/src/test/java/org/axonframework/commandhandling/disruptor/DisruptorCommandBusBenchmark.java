@@ -19,12 +19,10 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.commandhandling.annotation.GenericCommandMessage;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
@@ -41,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -65,7 +64,7 @@ public class DisruptorCommandBusBenchmark {
                                         eventBus, new XStreamSerializer());
         commandBus.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(commandBus);
-        final AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("MyID");
+        final String aggregateIdentifier = "MyID";
         inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
                 new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
 
@@ -90,12 +89,19 @@ public class DisruptorCommandBusBenchmark {
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
         private int timesDone = 0;
+        private final UUID identifier;
 
         private StubAggregate() {
+            this(UUID.randomUUID());
         }
 
-        private StubAggregate(AggregateIdentifier identifier) {
-            super(identifier);
+        private StubAggregate(UUID identifier) {
+            this.identifier = identifier;
+        }
+
+        @Override
+        public Object getIdentifier() {
+            throw new UnsupportedOperationException("Not implemented yet");
         }
 
         public void doSomething() {
@@ -125,7 +131,7 @@ public class DisruptorCommandBusBenchmark {
             if (!events.hasNext()) {
                 return;
             }
-            String key = events.peek().getAggregateIdentifier().asString();
+            String key = events.peek().getAggregateIdentifier().toString();
             DomainEventMessage<? extends Object> lastEvent = null;
             while (events.hasNext()) {
                 countDownLatch.countDown();
@@ -135,21 +141,21 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
-            return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier.asString())));
+        public DomainEventStream readEvents(String type, Object identifier) {
+            return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier.toString())));
         }
     }
 
     private static class StubCommand implements IdentifiedCommand {
 
-        private AggregateIdentifier agregateIdentifier;
+        private Object agregateIdentifier;
 
-        public StubCommand(AggregateIdentifier agregateIdentifier) {
+        public StubCommand(Object agregateIdentifier) {
             this.agregateIdentifier = agregateIdentifier;
         }
 
         @Override
-        public AggregateIdentifier getAggregateIdentifier() {
+        public Object getAggregateIdentifier() {
             return agregateIdentifier;
         }
     }

@@ -16,11 +16,9 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.serializer.SerializedObject;
@@ -67,7 +65,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                 DomainEventMessage event = events.next();
                 os.writeUTF(event.getIdentifier());
                 os.writeUTF(type);
-                os.writeUTF(event.getAggregateIdentifier().asString());
+                os.writeUTF(event.getAggregateIdentifier().toString());
                 os.writeLong(event.getSequenceNumber());
                 os.writeUTF(event.getTimestamp().toString());
                 SerializedObject serialized = eventSerializer.serialize(event);
@@ -82,7 +80,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
     }
 
     @Override
-    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+    public DomainEventStream readEvents(String type, Object identifier) {
         List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
         ObjectInputStream ois;
         try {
@@ -104,10 +102,10 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                     int length = ois.readInt();
                     byte[] serializedEvent = new byte[length];
                     ois.readFully(serializedEvent);
-                    if (type.equals(actualType) && identifier.asString().equals(actualIdentifier)) {
+                    if (type.equals(actualType) && identifier.toString().equals(actualIdentifier)) {
                         domainEvents.add(new SerializedDomainEventMessage(
                                 eventIdentifier,
-                                new StringAggregateIdentifier(actualIdentifier),
+                                actualIdentifier,
                                 sequenceNumber,
                                 new DateTime(timestamp),
                                 new SimpleSerializedObject(serializedEvent, payloadType, payloadRevision),

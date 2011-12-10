@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
@@ -45,7 +44,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
     private static final long serialVersionUID = -9177715264819287285L;
 
     private final long sequenceNumber;
-    private final AggregateIdentifier aggregateIdentifier;
+    private final Object aggregateIdentifier;
     private final String eventIdentifier;
     private final DateTime timestamp;
     private volatile MetaData metaData;
@@ -84,8 +83,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
      * @param payloadSerializer   The serializer to deserialize the payload data with
      * @param metaDataSerializer  The serializer to deserialize meta data with
      */
-    public SerializedDomainEventMessage(String eventIdentifier, AggregateIdentifier aggregateIdentifier,
-                                        long sequenceNumber,
+    public SerializedDomainEventMessage(String eventIdentifier, Object aggregateIdentifier, long sequenceNumber,
                                         DateTime timestamp, SerializedObject serializedPayload,
                                         SerializedObject serializedMetaData, Serializer payloadSerializer,
                                         Serializer metaDataSerializer) {
@@ -118,7 +116,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
     }
 
     @Override
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

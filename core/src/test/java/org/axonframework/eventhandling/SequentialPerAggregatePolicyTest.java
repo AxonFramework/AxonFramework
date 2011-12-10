@@ -16,13 +16,13 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
+
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -35,11 +35,10 @@ public class SequentialPerAggregatePolicyTest {
     public void testSequentialIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
-        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        Object aggregateIdentifier = UUID.randomUUID();
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
-        Object id3 = testSubject
-                .getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier()));
+        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
         Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<String>("bla"));
 
         assertEquals(id1, id2);
@@ -48,7 +47,7 @@ public class SequentialPerAggregatePolicyTest {
         assertNull(id4);
     }
 
-    private DomainEventMessage newStubDomainEvent(AggregateIdentifier aggregateIdentifier) {
+    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
         return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0,
                                                      new Object(), MetaData.emptyInstance());
     }

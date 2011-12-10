@@ -19,10 +19,8 @@ package org.axonframework.integrationtests;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.ProblematicCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
@@ -42,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -90,7 +89,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
     public void testConcurrentModifications() throws Exception {
         Log4jConfigurer.initLogging("classpath:log4j_silenced.properties");
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
-        final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+        final UUID aggregateId = UUID.randomUUID();
         commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)),
                             NoOpCallback.INSTANCE);
         final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);

@@ -17,13 +17,11 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.hamcrest.Matcher;
 import org.junit.*;
@@ -45,7 +43,7 @@ public class AbstractSnapshotterTest {
         testSubject = new AbstractSnapshotter() {
             @Override
             protected DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
-                AggregateIdentifier aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
+                Object aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
                 long lastIdentifier = getLastIdentifierFrom(eventStream);
                 if (lastIdentifier <= 0) {
                     return null;
@@ -60,7 +58,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot() {
-        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        Object aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
@@ -73,7 +71,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot_SnapshotIsNull() {
-        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        Object aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
@@ -82,7 +80,7 @@ public class AbstractSnapshotterTest {
         verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEventMessage.class));
     }
 
-    private Matcher<DomainEventMessage> event(final AggregateIdentifier aggregateIdentifier, final long i) {
+    private Matcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
         return new ArgumentMatcher<DomainEventMessage>() {
             @Override
             public boolean matches(Object argument) {

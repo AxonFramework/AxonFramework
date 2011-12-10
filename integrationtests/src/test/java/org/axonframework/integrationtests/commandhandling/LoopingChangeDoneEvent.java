@@ -16,20 +16,18 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * @author Allard Buijze
  */
 public class LoopingChangeDoneEvent {
 
-    private final AggregateIdentifier aggregateIdentifier;
+    private final Object aggregateIdentifier;
 
-    public LoopingChangeDoneEvent(AggregateIdentifier aggregateIdentifier) {
+    public LoopingChangeDoneEvent(Object aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
     }
 
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 }

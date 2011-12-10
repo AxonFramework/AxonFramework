@@ -20,7 +20,6 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -103,7 +102,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     }
 
     @Override
-    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+    public DomainEventStream readEvents(String type, Object identifier) {
         long snapshotSequenceNumber = -1;
         EventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
         if (lastSnapshotEvent != null) {
@@ -146,12 +145,11 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         }
     }
 
-    private List<DomainEventMessage> readEventSegmentInternal(String type, AggregateIdentifier identifier,
+    private List<DomainEventMessage> readEventSegmentInternal(String type, Object identifier,
                                                               long firstSequenceNumber) {
 
         DBCursor dbCursor = mongoTemplate.domainEventCollection()
-                                         .find(EventEntry.forAggregate(type,
-                                                                       identifier.asString(),
+                                         .find(EventEntry.forAggregate(type, identifier.toString(),
                                                                        firstSequenceNumber))
                                          .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(dbCursor.size());
@@ -161,9 +159,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         return events;
     }
 
-    private EventEntry loadLastSnapshotEvent(String type, AggregateIdentifier identifier) {
+    private EventEntry loadLastSnapshotEvent(String type, Object identifier) {
         DBObject mongoEntry = BasicDBObjectBuilder.start()
-                                                  .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, identifier.asString())
+                                                  .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, identifier.toString())
                                                   .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
                                                   .get();
         DBCursor dbCursor = mongoTemplate.snapshotEventCollection()

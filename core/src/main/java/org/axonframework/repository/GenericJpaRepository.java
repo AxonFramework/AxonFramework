@@ -17,7 +17,6 @@
 package org.axonframework.repository;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 
 import javax.persistence.EntityManager;
@@ -98,8 +97,8 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
     }
 
     @Override
-    protected T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
-        return entityManagerProvider.getEntityManager().find(aggregateType, aggregateIdentifier.asString());
+    protected T doLoad(Object aggregateIdentifier, Long expectedVersion) {
+        return entityManagerProvider.getEntityManager().find(aggregateType, aggregateIdentifier);
     }
 
     /**

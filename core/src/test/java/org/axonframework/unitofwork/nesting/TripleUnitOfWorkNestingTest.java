@@ -19,7 +19,6 @@ package org.axonframework.unitofwork.nesting;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.annotation.GenericCommandMessage;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -27,7 +26,6 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -79,8 +77,8 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
-    private static AggregateIdentifier aggregateAIdentifier = new StringAggregateIdentifier("A");
-    private static AggregateIdentifier aggregateBIdentifier = new StringAggregateIdentifier("B");
+    private static Object aggregateAIdentifier = "A";
+    private static Object aggregateBIdentifier = "B";
 
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private List<EventMessage<?>> handledMessages;
@@ -196,8 +194,15 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
     public static class AggregateA extends AbstractAnnotatedAggregateRoot {
 
-        public AggregateA(AggregateIdentifier identifier) {
-            super(identifier);
+        private final String identifier;
+
+        public AggregateA(String identifier) {
+            this.identifier = identifier;
+        }
+
+        @Override
+        public Object getIdentifier() {
+            return identifier;
         }
 
         public void doSomething(String stringCommand) {
@@ -213,8 +218,14 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
     public static class AggregateB extends AbstractAnnotatedAggregateRoot {
 
-        public AggregateB(AggregateIdentifier identifier) {
-            super(identifier);
+        private final String identifier;
+
+        public AggregateB(String identifier) {
+            this.identifier = identifier;
+        }
+
+        public String getIdentifier() {
+            return identifier;
         }
 
         public void doSomething() {

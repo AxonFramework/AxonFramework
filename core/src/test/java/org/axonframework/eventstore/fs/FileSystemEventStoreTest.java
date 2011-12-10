@@ -16,13 +16,11 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
@@ -33,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -46,14 +45,14 @@ import static org.mockito.Mockito.*;
 public class FileSystemEventStoreTest {
 
     private FileSystemEventStore eventStore;
-    private AggregateIdentifier aggregateIdentifier;
+    private Object aggregateIdentifier;
 
     @Before
     public void setUp() {
         eventStore = new FileSystemEventStore(new XStreamSerializer());
         eventStore.setBaseDir(new File("target/"));
 
-        aggregateIdentifier = new UUIDAggregateIdentifier();
+        aggregateIdentifier = UUID.randomUUID();
     }
 
     @Test
@@ -120,8 +119,8 @@ public class FileSystemEventStoreTest {
     public void testRead_FileNotReadable() throws IOException {
         EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
         InputStream mockInputStream = mock(InputStream.class);
-        when(mockEventFileResolver.eventFileExists(isA(String.class), isA(AggregateIdentifier.class))).thenReturn(true);
-        when(mockEventFileResolver.openEventFileForReading(isA(String.class), isA(AggregateIdentifier.class)))
+        when(mockEventFileResolver.eventFileExists(isA(String.class), any())).thenReturn(true);
+        when(mockEventFileResolver.openEventFileForReading(isA(String.class), any()))
                 .thenReturn(mockInputStream);
         IOException exception = new IOException("Mock Exception");
         when(mockInputStream.read()).thenThrow(exception);
@@ -130,7 +129,7 @@ public class FileSystemEventStoreTest {
         eventStore.setEventFileResolver(mockEventFileResolver);
 
         try {
-            eventStore.readEvents("test", new UUIDAggregateIdentifier());
+            eventStore.readEvents("test", UUID.randomUUID());
             fail("Expected an exception");
         } catch (EventStoreException e) {
             assertSame(exception, e.getCause());
@@ -139,10 +138,10 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testWrite_FileDoesNotExist() throws IOException {
-        AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+        Object aggregateIdentifier = "aggregateIdentifier";
         IOException exception = new IOException("Mock");
         EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
-        when(mockEventFileResolver.openEventFileForWriting(isA(String.class), isA(AggregateIdentifier.class)))
+        when(mockEventFileResolver.openEventFileForWriting(isA(String.class), isA(Object.class)))
                 .thenThrow(exception);
         eventStore.setEventFileResolver(mockEventFileResolver);
 

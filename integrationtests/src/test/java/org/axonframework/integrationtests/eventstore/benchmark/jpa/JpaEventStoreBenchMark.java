@@ -16,8 +16,6 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark.jpa;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -25,6 +23,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -74,7 +73,7 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
         @Override
         public void run() {
             TransactionTemplate template = new TransactionTemplate(transactionManager);
-            final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+            final UUID aggregateId = UUID.randomUUID();
             // the inner class forces us into a final variable, hence the AtomicInteger
             final AtomicInteger eventSequence = new AtomicInteger(0);
             for (int t = 0; t < getTransactionCount(); t++) {

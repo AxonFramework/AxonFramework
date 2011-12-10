@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -143,7 +142,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      *                                   when an aggregate with the given identifier does not exist
      */
     @Override
-    protected T doLoad(AggregateIdentifier aggregateIdentifier, final Long expectedVersion) {
+    protected T doLoad(Object aggregateIdentifier, final Long expectedVersion) {
         DomainEventStream events;
         try {
             events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
@@ -179,7 +178,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     }
 
     @SuppressWarnings({"unchecked"})
-    private T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEventMessage firstEvent) {
+    private T createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
         T aggregate;
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();

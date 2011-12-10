@@ -21,9 +21,7 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
@@ -72,7 +70,7 @@ public class EventEntry {
     EventEntry(String aggregateType, DomainEventMessage event, Serializer eventSerializer) {
         this.eventIdentifier = event.getIdentifier();
         this.aggregateType = aggregateType;
-        this.aggregateIdentifier = event.getAggregateIdentifier().asString();
+        this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
         SerializedObject serializedEvent = eventSerializer.serialize(event.getPayload());
         this.serializedEvent = new String(serializedEvent.getData(), UTF8);
@@ -101,7 +99,7 @@ public class EventEntry {
      * @return The actual DomainEvent
      */
     public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage(eventIdentifier, new StringAggregateIdentifier(aggregateIdentifier),
+        return new SerializedDomainEventMessage(eventIdentifier, aggregateIdentifier,
                                                 sequenceNumber, new DateTime(timeStamp),
                                                 new SimpleSerializedObject(serializedEvent.getBytes(UTF8),
                                                                            eventType, eventRevision),
@@ -124,8 +122,8 @@ public class EventEntry {
      *
      * @return AggregateIdentifier for this EventEntry
      */
-    public AggregateIdentifier getAggregateIdentifier() {
-        return new StringAggregateIdentifier(aggregateIdentifier);
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 
     public String getAggregateType() {

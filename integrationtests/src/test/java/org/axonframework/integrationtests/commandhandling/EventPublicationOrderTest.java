@@ -23,7 +23,6 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -34,6 +33,8 @@ import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
+
+import java.util.UUID;
 
 import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
 import static org.mockito.Mockito.*;
@@ -64,7 +65,7 @@ public class EventPublicationOrderTest {
 
     @Test
     public void testPublicationOrderIsMaintained_AggregateAdded() {
-        UUIDAggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+        UUID aggregateId = UUID.randomUUID();
         when(eventStore.readEvents("StubAggregate", aggregateId))
                 .thenReturn(new SimpleDomainEventStream(new GenericDomainEventMessage<Object>(aggregateId,
                                                                                               0,

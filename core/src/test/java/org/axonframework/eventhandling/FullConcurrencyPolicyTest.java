@@ -16,12 +16,12 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
+
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -34,12 +34,12 @@ public class FullConcurrencyPolicyTest {
     public void testSequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier())));
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier())));
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(new UUIDAggregateIdentifier())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
     }
 
-    private DomainEventMessage newStubDomainEvent(AggregateIdentifier aggregateIdentifier) {
+    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
         return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0,
                                                      new Object(), MetaData.emptyInstance());
     }

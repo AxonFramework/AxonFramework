@@ -16,12 +16,10 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -33,6 +31,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -69,15 +69,15 @@ public class SpringPrototypeEventSourcingRepositoryTest {
     public void testCreateInstances() {
         try {
             new DefaultUnitOfWork().start();
-            final AggregateIdentifier aggregateIdentifier1 = new UUIDAggregateIdentifier();
-            final AggregateIdentifier aggregateIdentifier2 = new UUIDAggregateIdentifier();
-            when(mockEventStore.readEvents(eq(repository.getTypeIdentifier()), isA(AggregateIdentifier.class)))
+            final UUID aggregateIdentifier1 = UUID.randomUUID();
+            final UUID aggregateIdentifier2 = UUID.randomUUID();
+            when(mockEventStore.readEvents(eq(repository.getTypeIdentifier()), isA(UUID.class)))
                     .thenAnswer(new Answer<Object>() {
                         @Override
                         public Object answer(InvocationOnMock invocation) throws Throwable {
                             return new SimpleDomainEventStream(
                                     new GenericDomainEventMessage<String>(
-                                            (AggregateIdentifier) invocation.getArguments()[1],
+                                            invocation.getArguments()[1],
                                             0L,
                                             "Mock contents", MetaData.emptyInstance()
                                     ));

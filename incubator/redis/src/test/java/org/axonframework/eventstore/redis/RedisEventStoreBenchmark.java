@@ -17,12 +17,12 @@
 package org.axonframework.eventstore.redis;
 
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 import org.axonframework.serializer.XStreamSerializer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+
+import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -56,7 +56,7 @@ public class RedisEventStoreBenchmark extends AbstractEventStoreBenchmark {
 
         @Override
         public void run() {
-            final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+            final UUID aggregateId = UUID.randomUUID();
             int eventSequence = 0;
             for (int t = 0; t < getTransactionCount(); t++) {
                 eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, redisEventStore, eventSequence);

@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
@@ -26,15 +25,16 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 public class StubAggregate extends AbstractAnnotatedAggregateRoot {
 
     private int changeCounter;
+    private final Object identifier;
 
-    static StubAggregate create(AggregateIdentifier identifier) {
+    static StubAggregate create(Object identifier) {
         StubAggregate aggregate = new StubAggregate(identifier);
         aggregate.apply(new StubAggregateCreatedEvent());
         return aggregate;
     }
 
-    StubAggregate(AggregateIdentifier identifier) {
-        super(identifier);
+    StubAggregate(Object identifier) {
+        this.identifier = identifier;
     }
 
     public void makeAChange() {
@@ -43,6 +43,11 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
 
     public void causeTrouble() {
         throw new RuntimeException("That's problematic");
+    }
+
+    @Override
+    public Object getIdentifier() {
+        return identifier;
     }
 
     @EventHandler

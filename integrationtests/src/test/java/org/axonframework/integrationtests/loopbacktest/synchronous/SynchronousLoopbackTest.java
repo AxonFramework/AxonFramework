@@ -22,13 +22,11 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -44,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
@@ -60,14 +59,14 @@ public class SynchronousLoopbackTest {
 
     private CommandBus commandBus;
     private EventBus eventBus;
-    private UUIDAggregateIdentifier aggregateIdentifier;
+    private UUID aggregateIdentifier;
     private EventStore eventStore;
     private VoidCallback reportErrorCallback;
     private CommandCallback<Object> expectErrorCallback;
 
     @Before
     public void setUp() {
-        aggregateIdentifier = new UUIDAggregateIdentifier();
+        aggregateIdentifier = UUID.randomUUID();
         commandBus = new SimpleCommandBus();
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
@@ -123,13 +122,11 @@ public class SynchronousLoopbackTest {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
                         commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)),
-                                            reportErrorCallback);
+                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
                         commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)),
-                                            reportErrorCallback);
+                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 2)), reportErrorCallback);
                     }
                 }
             }
@@ -162,13 +159,11 @@ public class SynchronousLoopbackTest {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
                         commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)),
-                                            reportErrorCallback);
+                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
                         commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)),
-                                            reportErrorCallback);
+                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 2)), reportErrorCallback);
                     }
                 }
             }
@@ -200,15 +195,12 @@ public class SynchronousLoopbackTest {
                 if (event.getPayload() instanceof CounterChangedEvent) {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent
-                                                                                              .getAggregateIdentifier(),
-                                                                                      counterChangedEvent.getCounter()
-                                                                                              + 1)),
-                                            reportErrorCallback);
-                        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent
-                                                                                              .getAggregateIdentifier(),
-                                                                                      counterChangedEvent.getCounter()
-                                                                                              + 2)),
+                        commandBus.dispatch(asCommandMessage(
+                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
+                        commandBus.dispatch(asCommandMessage(
+                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                         counterChangedEvent.getCounter() + 2)),
                                             reportErrorCallback);
                     } else if (counterChangedEvent.getCounter() == 2) {
                         throw new RuntimeException("Mock exception");
@@ -244,11 +236,11 @@ public class SynchronousLoopbackTest {
                     CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                     if (counterChangedEvent.getCounter() == 1) {
                         commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
                                                          counterChangedEvent.getCounter() + 1)),
                                             reportErrorCallback);
                         commandBus.dispatch(
-                                asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                asCommandMessage(new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
                                                                           counterChangedEvent.getCounter() + 2)),
                                 reportErrorCallback);
                     } else if (counterChangedEvent.getCounter() == 2) {
@@ -291,15 +283,15 @@ public class SynchronousLoopbackTest {
 
     private static class ChangeCounterCommand {
 
-        private AggregateIdentifier aggregateId;
+        private UUID aggregateId;
         private int newValue;
 
-        private ChangeCounterCommand(AggregateIdentifier aggregateId, int newValue) {
+        private ChangeCounterCommand(UUID aggregateId, int newValue) {
             this.aggregateId = aggregateId;
             this.newValue = newValue;
         }
 
-        public AggregateIdentifier getAggregateId() {
+        public UUID getAggregateId() {
             return aggregateId;
         }
 
@@ -310,13 +302,13 @@ public class SynchronousLoopbackTest {
 
     private static class AggregateCreatedEvent {
 
-        private final AggregateIdentifier aggregateIdentifier;
+        private final UUID aggregateIdentifier;
 
-        private AggregateCreatedEvent(AggregateIdentifier aggregateIdentifier) {
+        private AggregateCreatedEvent(UUID aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
-        public AggregateIdentifier getAggregateIdentifier() {
+        public UUID getAggregateIdentifier() {
             return aggregateIdentifier;
         }
     }
@@ -326,13 +318,19 @@ public class SynchronousLoopbackTest {
         private static final long serialVersionUID = -2927751585905120260L;
 
         private int counter = 0;
+        private final UUID identifier;
 
-        private CountingAggregate(AggregateIdentifier identifier) {
-            super(identifier);
+        private CountingAggregate(UUID identifier) {
+            this.identifier = identifier;
         }
 
         public void setCounter(int newValue) {
             apply(new CounterChangedEvent(newValue));
+        }
+
+        @Override
+        public UUID getIdentifier() {
+            return identifier;
         }
 
         @EventHandler
@@ -356,7 +354,7 @@ public class SynchronousLoopbackTest {
 
     private static class InMemoryEventStore implements EventStore {
 
-        private Map<AggregateIdentifier, List<DomainEventMessage>> store = new HashMap<AggregateIdentifier, List<DomainEventMessage>>();
+        private Map<Object, List<DomainEventMessage>> store = new HashMap<Object, List<DomainEventMessage>>();
 
         @Override
         public void appendEvents(String identifier, DomainEventStream events) {
@@ -371,7 +369,7 @@ public class SynchronousLoopbackTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+        public DomainEventStream readEvents(String type, Object identifier) {
             List<DomainEventMessage> events = store.get(identifier);
             events = events == null ? new ArrayList<DomainEventMessage>() : events;
             return new SimpleDomainEventStream(events);

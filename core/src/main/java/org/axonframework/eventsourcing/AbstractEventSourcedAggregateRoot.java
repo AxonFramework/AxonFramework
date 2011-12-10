@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.domain.AbstractAggregateRoot;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.MetaData;
@@ -40,22 +39,6 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         implements EventSourcedAggregateRoot {
 
     private static final long serialVersionUID = 5868786029296883724L;
-
-    /**
-     * Initializes the aggregate root using a random aggregate identifier.
-     */
-    protected AbstractEventSourcedAggregateRoot() {
-        super();
-    }
-
-    /**
-     * Initializes the aggregate root using the provided aggregate identifier.
-     *
-     * @param identifier the identifier of this aggregate
-     */
-    protected AbstractEventSourcedAggregateRoot(AggregateIdentifier identifier) {
-        super(identifier);
-    }
 
     /**
      * {@inheritDoc}

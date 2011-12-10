@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -54,7 +53,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
     @Override
-    protected Runnable createSnapshotterTask(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
+    protected Runnable createSnapshotterTask(String typeIdentifier, Object aggregateIdentifier) {
         Runnable command = super.createSnapshotterTask(typeIdentifier, aggregateIdentifier);
         if (transactionManager != null) {
             return new TransactionalRunnableWrapper(command);

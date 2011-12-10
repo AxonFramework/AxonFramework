@@ -16,7 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 
 /**
@@ -47,7 +46,7 @@ public interface Repository<T extends AggregateRoot> {
      *                                    version
      * @see org.axonframework.unitofwork.UnitOfWork
      */
-    T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
+    T load(Object aggregateIdentifier, Long expectedVersion);
 
     /**
      * Load the aggregate with the given unique identifier. No version checks are done when loading an aggregate,
@@ -58,7 +57,7 @@ public interface Repository<T extends AggregateRoot> {
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
-    T load(AggregateIdentifier aggregateIdentifier);
+    T load(Object aggregateIdentifier);
 
     /**
      * Adds the given <code>aggregate</code> to the repository. The version of this aggregate must be <code>null</code>,

@@ -16,7 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StubAggregate;
 
 import java.util.HashMap;
@@ -27,7 +26,7 @@ import java.util.Map;
  */
 public class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
 
-    private Map<AggregateIdentifier, StubAggregate> store = new HashMap<AggregateIdentifier, StubAggregate>();
+    private Map<Object, StubAggregate> store = new HashMap<Object, StubAggregate>();
     private int saveCount;
 
     public InMemoryLockingRepository(LockingStrategy strategy) {
@@ -51,7 +50,7 @@ public class InMemoryLockingRepository extends LockingRepository<StubAggregate> 
     }
 
     @Override
-    protected StubAggregate doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
+    protected StubAggregate doLoad(Object aggregateIdentifier, Long expectedVersion) {
         return store.get(aggregateIdentifier);
     }
 

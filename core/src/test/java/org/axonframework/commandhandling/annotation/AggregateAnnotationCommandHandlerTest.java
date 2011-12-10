@@ -18,9 +18,8 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.repository.Repository;
@@ -69,8 +68,8 @@ import static org.mockito.Mockito.*;
 
     @Test
     public void testCommandHandlerUpdatesAggregateInstance_AnnotatedMethod() {
-        StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
-        when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
+        Object aggregateIdentifier = "abc123";
+        when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
                             new CommandCallback<Object>() {
@@ -91,8 +90,8 @@ import static org.mockito.Mockito.*;
 
     @Test
     public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersion_AnnotatedMethod() {
-        StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
-        when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
+        Object aggregateIdentifier = "abc123";
+        when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                 new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
@@ -114,8 +113,8 @@ import static org.mockito.Mockito.*;
 
     @Test
     public void testCommandHandlerUpdatesAggregateInstanceWithNullVersion_AnnotatedMethod() {
-        StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
-        when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
+        Object aggregateIdentifier = "abc123";
+        when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                 new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
@@ -137,8 +136,8 @@ import static org.mockito.Mockito.*;
 
     @Test
     public void testCommandHandlerUpdatesAggregateInstance_AnnotatedField() {
-        StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
-        when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
+        Object aggregateIdentifier = "abc123";
+        when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
                             new CommandCallback<Object>() {
@@ -159,8 +158,8 @@ import static org.mockito.Mockito.*;
 
     @Test
     public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersion_AnnotatedField() {
-        StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
-        when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
+        Object aggregateIdentifier = "abc123";
+        when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                 new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
@@ -182,8 +181,8 @@ import static org.mockito.Mockito.*;
 
     @Test
     public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersion_AnnotatedIntegerField() {
-        StringAggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("abc123");
-        when(mockRepository.load(any(AggregateIdentifier.class), anyLong()))
+        Object aggregateIdentifier = "abc123";
+        when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                 new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
@@ -205,11 +204,15 @@ import static org.mockito.Mockito.*;
 
     private abstract static class AbstractStubCommandAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
-        public AbstractStubCommandAnnotatedAggregate() {
+        private final Object identifier;
+
+        public AbstractStubCommandAnnotatedAggregate(Object identifier) {
+            this.identifier = identifier;
         }
 
-        public AbstractStubCommandAnnotatedAggregate(StringAggregateIdentifier aggregateIdentifier) {
-            super(aggregateIdentifier);
+        @Override
+        public Object getIdentifier() {
+            return identifier;
         }
 
         @CommandHandler
@@ -221,12 +224,13 @@ import static org.mockito.Mockito.*;
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
                                              @org.axonframework.common.annotation.MetaData(key = "notExist") String value) {
+            super(IdentifierFactory.getInstance().generateIdentifier());
             Assert.assertNotNull(unitOfWork);
             Assert.assertNull(value);
             apply(new StubDomainEvent());
         }
 
-        public StubCommandAnnotatedAggregate(StringAggregateIdentifier aggregateIdentifier) {
+        public StubCommandAnnotatedAggregate(Object aggregateIdentifier) {
             super(aggregateIdentifier);
         }
 

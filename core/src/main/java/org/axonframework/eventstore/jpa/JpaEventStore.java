@@ -17,7 +17,6 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -154,7 +153,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+    public DomainEventStream readEvents(String type, Object identifier) {
         long snapshotSequenceNumber = -1;
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         SerializedDomainEventData lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(type, identifier,
@@ -187,7 +186,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<DomainEventMessage> fetchBatch(String type, AggregateIdentifier identifier, long firstSequenceNumber) {
+    private List<DomainEventMessage> fetchBatch(String type, Object identifier, long firstSequenceNumber) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         List<? extends SerializedDomainEventData> entries = eventEntryStore.fetchBatch(type,
                                                                                        identifier,
@@ -196,7 +195,14 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                                                                        entityManager);
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entries.size());
         for (SerializedDomainEventData entry : entries) {
-            events.add(new SerializedDomainEventMessage(entry, eventSerializer, eventSerializer));
+            events.add(new SerializedDomainEventMessage(entry.getEventIdentifier(),
+                                                        identifier,
+                                                        entry.getSequenceNumber(),
+                                                        entry.getTimestamp(),
+                                                        entry.getPayload(),
+                                                        entry.getMetaData(),
+                                                        eventSerializer,
+                                                        eventSerializer));
         }
         return events;
     }
@@ -295,10 +301,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         private int currentBatchSize;
         private Iterator<DomainEventMessage> currentBatch;
         private DomainEventMessage next;
-        private final AggregateIdentifier id;
+        private final Object id;
         private final String typeId;
 
-        private BatchingDomainEventStream(List<DomainEventMessage> firstBatch, AggregateIdentifier id,
+        private BatchingDomainEventStream(List<DomainEventMessage> firstBatch, Object id,
                                           String typeId) {
             this.id = id;
             this.typeId = typeId;
@@ -318,7 +324,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         public DomainEventMessage next() {
             DomainEventMessage current = next;
             if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
-                logger.debug("Fetching new batch for Aggregate [{}]", id.asString());
+                logger.debug("Fetching new batch for Aggregate [{}]", id);
                 List<DomainEventMessage> newBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1);
                 currentBatchSize = newBatch.size();
                 currentBatch = newBatch.iterator();

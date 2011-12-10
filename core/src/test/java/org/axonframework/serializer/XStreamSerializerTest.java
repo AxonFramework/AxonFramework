@@ -19,9 +19,7 @@ package org.axonframework.serializer;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.dom4j.Document;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
@@ -61,7 +59,7 @@ public class XStreamSerializerTest {
         testSubject.addPackageAlias("axon", "org.axonframework");
 
         SerializedObject serialized = testSubject.serialize(new GenericDomainEventMessage<StubDomainEvent>(
-                new UUIDAggregateIdentifier(),
+                "aggregateIdentifier",
                 (long) 1,
                 new StubDomainEvent(), MetaData.emptyInstance()
         ));
@@ -77,9 +75,7 @@ public class XStreamSerializerTest {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
         SerializedObject serialized = testSubject.serialize(new GenericDomainEventMessage<StubDomainEvent>(
-                new UUIDAggregateIdentifier(),
-                (long) 1,
-                new StubDomainEvent(), MetaData.emptyInstance()
+                "aggregateIdentifier", (long) 1, new StubDomainEvent(), MetaData.emptyInstance()
         ));
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
@@ -161,18 +157,6 @@ public class XStreamSerializerTest {
         assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 
-    /**
-     * Tests the scenario as described in <a href="http://code.google.com/p/axonframework/issues/detail?id=188">issue
-     * #188</a>.
-     */
-    @Test
-    public void testSerializeWithCustomAggregateIdentifier() {
-        SerializedObject serialized = testSubject.serialize(new CustomIdentifierEvent("Some name",
-                                                                                      new SomeAggregateId("ok")));
-        CustomIdentifierEvent deserialized = (CustomIdentifierEvent) testSubject.deserialize(serialized);
-        assertEquals("ok", deserialized.getSomeAggregateId().asString());
-    }
-
     @Revision(2)
     public static class RevisionSpecifiedEvent {
     }
@@ -197,36 +181,4 @@ public class XStreamSerializerTest {
         }
     }
 
-    public static class CustomIdentifierEvent {
-
-        private static final long serialVersionUID = 1657550542124835062L;
-        private String name;
-        private DateMidnight date;
-        private DateTime dateTime;
-        private Period period;
-        private SomeAggregateId someAggregateId;
-
-        public CustomIdentifierEvent(String name, SomeAggregateId someAggregateId) {
-            this.name = name;
-            this.someAggregateId = someAggregateId;
-            this.date = new DateMidnight();
-            this.dateTime = new DateTime();
-            this.period = new Period(100);
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public SomeAggregateId getSomeAggregateId() {
-            return someAggregateId;
-        }
-    }
-
-    public static class SomeAggregateId extends StringAggregateIdentifier {
-
-        public SomeAggregateId(String id) {
-            super(id);
-        }
-    }
 }

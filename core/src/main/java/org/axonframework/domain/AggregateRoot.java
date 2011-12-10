@@ -30,7 +30,7 @@ public interface AggregateRoot {
      *
      * @return the identifier of this aggregate
      */
-    AggregateIdentifier getIdentifier();
+    Object getIdentifier();
 
     /**
      * Clears the events currently marked as "uncommitted" and clears any known EventRegistrationCallbacks (see {@link

@@ -18,8 +18,6 @@ package org.axonframework.repository;
 
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.AbstractAggregateRoot;
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
@@ -36,7 +34,7 @@ public class GenericJpaRepositoryTest {
 
     private EntityManager mockEntityManager;
     private GenericJpaRepository<StubJpaAggregate> testSubject;
-    private AggregateIdentifier aggregateId;
+    private String aggregateId;
     private StubJpaAggregate aggregate;
 
     @Before
@@ -45,7 +43,7 @@ public class GenericJpaRepositoryTest {
         testSubject = new GenericJpaRepository<StubJpaAggregate>(new SimpleEntityManagerProvider(mockEntityManager),
                                                                  StubJpaAggregate.class);
         DefaultUnitOfWork.startAndGet();
-        aggregateId = new StringAggregateIdentifier("123");
+        aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
         when(mockEntityManager.find(StubJpaAggregate.class, "123")).thenReturn(aggregate);
     }
@@ -88,8 +86,15 @@ public class GenericJpaRepositoryTest {
 
     private class StubJpaAggregate extends AbstractAggregateRoot {
 
-        private StubJpaAggregate(AggregateIdentifier identifier) {
-            super(identifier);
+        private final String identifier;
+
+        private StubJpaAggregate(String identifier) {
+            this.identifier = identifier;
+        }
+
+        @Override
+        public Object getIdentifier() {
+            return identifier;
         }
     }
 }

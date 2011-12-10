@@ -16,12 +16,13 @@
 
 package org.axonframework.integrationtests.jpa;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
+import java.util.UUID;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 
 /**
  * @author Allard Buijze
@@ -31,12 +32,15 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
 
     @Basic
     private long counter;
+    @Id
+    private final String identifier;
 
     public SimpleJpaEventSourcedAggregate() {
+        identifier = UUID.randomUUID().toString();
     }
 
-    public SimpleJpaEventSourcedAggregate(AggregateIdentifier identifier) {
-        super(identifier);
+    public SimpleJpaEventSourcedAggregate(String identifier) {
+        this.identifier = identifier;
     }
 
     public void doSomething() {
@@ -50,6 +54,11 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
 
     public long getInvocationCount() {
         return counter;
+    }
+
+    @Override
+    public Object getIdentifier() {
+        return identifier;
     }
 }
 

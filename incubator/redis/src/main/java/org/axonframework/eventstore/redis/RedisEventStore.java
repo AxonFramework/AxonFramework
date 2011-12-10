@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore.redis;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
@@ -40,7 +39,7 @@ public class RedisEventStore implements EventStore {
     public void appendEvents(String type, final DomainEventStream events) {
         Jedis jedis = redisConnectionProvider.newConnection();
         DomainEventMessage firstEvent = events.peek();
-        final byte[] key = (type + "." + firstEvent.getAggregateIdentifier().asString()).getBytes(UTF8);
+        final byte[] key = (type + "." + firstEvent.getAggregateIdentifier()).getBytes(UTF8);
         jedis.watch(key);
         Long eventCount = jedis.llen(key);
         if ((firstEvent.getSequenceNumber() != 0 && eventCount == null)
@@ -77,7 +76,7 @@ public class RedisEventStore implements EventStore {
     }
 
     @Override
-    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+    public DomainEventStream readEvents(String type, Object identifier) {
         throw new UnsupportedOperationException("Method not yet implemented");
     }
 

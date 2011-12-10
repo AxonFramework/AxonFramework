@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
@@ -56,7 +55,7 @@ public interface EventEntryStore {
      * @param entityManager The entity manager providing access to the data store
      * @return the serialized representation of the last known snapshot event
      */
-    SerializedDomainEventData loadLastSnapshotEvent(String aggregateType, AggregateIdentifier identifier,
+    SerializedDomainEventData loadLastSnapshotEvent(String aggregateType, Object identifier,
                                                     EntityManager entityManager);
 
     /**
@@ -87,7 +86,7 @@ public interface EventEntryStore {
      * @param entityManager       The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    List<? extends SerializedDomainEventData> fetchBatch(String aggregateType, AggregateIdentifier identifier,
+    List<? extends SerializedDomainEventData> fetchBatch(String aggregateType, Object identifier,
                                                          long firstSequenceNumber, int batchSize,
                                                          EntityManager entityManager);
 

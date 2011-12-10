@@ -20,8 +20,9 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
+
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -48,7 +49,7 @@ public class AbstractEventSourcedEntityTest {
     }
 
     private DomainEventMessage domainEvent(StubDomainEvent stubDomainEvent) {
-        return new GenericDomainEventMessage<StubDomainEvent>(new UUIDAggregateIdentifier(), (long) 0,
+        return new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), (long) 0,
                                                               stubDomainEvent, MetaData.emptyInstance());
     }
 

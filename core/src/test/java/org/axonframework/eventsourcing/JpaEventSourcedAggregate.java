@@ -21,6 +21,7 @@ import org.axonframework.domain.StubDomainEvent;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 
 /**
  * @author Allard Buijze
@@ -31,6 +32,16 @@ public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot 
     private static final long serialVersionUID = -7774899863711655258L;
     @Basic
     private long counter;
+
+    @Id
+    private String identifier;
+
+    JpaEventSourcedAggregate() {
+    }
+
+    public JpaEventSourcedAggregate(String identifier) {
+        this.identifier = identifier;
+    }
 
     public void increaseCounter() {
         apply(new StubDomainEvent());
@@ -46,6 +57,11 @@ public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot 
 
     public void delete() {
         apply(new MyAggregateDeletedEvent());
+    }
+
+    @Override
+    public Object getIdentifier() {
+        return identifier;
     }
 
     public static class MyAggregateDeletedEvent {

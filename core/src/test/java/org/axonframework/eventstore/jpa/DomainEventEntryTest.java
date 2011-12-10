@@ -16,10 +16,8 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
@@ -56,7 +54,7 @@ public class DomainEventEntryTest {
 
     @Test
     public void testDomainEventEntry_WrapEventsCorrectly() {
-        AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        UUID aggregateIdentifier = UUID.randomUUID();
         DateTime timestamp = new DateTime();
         UUID eventIdentifier = UUID.randomUUID();
 
@@ -68,7 +66,7 @@ public class DomainEventEntryTest {
 
         DomainEventEntry actualResult = new DomainEventEntry("test", mockDomainEvent, mockPayload, mockMetaData);
 
-        assertEquals(aggregateIdentifier, actualResult.getAggregateIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actualResult.getAggregateIdentifier());
         assertEquals(2L, actualResult.getSequenceNumber());
         assertEquals(timestamp, actualResult.getTimestamp());
         assertEquals("test", actualResult.getType());

@@ -30,7 +30,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
 
     private static final long serialVersionUID = 5751346338145616886L;
 
-    private final AggregateIdentifier aggregateIdentifier;
+    private final Object aggregateIdentifier;
     private final long sequenceNumber;
 
     /**
@@ -41,7 +41,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param sequenceNumber      The message's sequence number
      * @param payload             The application-specific payload of the message
      */
-    public GenericDomainEventMessage(AggregateIdentifier aggregateIdentifier, long sequenceNumber,
+    public GenericDomainEventMessage(Object aggregateIdentifier, long sequenceNumber,
                                      T payload) {
         this(aggregateIdentifier, sequenceNumber, payload, MetaData.emptyInstance());
     }
@@ -55,7 +55,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param payload             The application-specific payload of the message
      * @param metaData            The MetaData to attach to the message
      */
-    public GenericDomainEventMessage(AggregateIdentifier aggregateIdentifier, long sequenceNumber,
+    public GenericDomainEventMessage(Object aggregateIdentifier, long sequenceNumber,
                                      T payload, Map<String, Object> metaData) {
         super(payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;
@@ -81,7 +81,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

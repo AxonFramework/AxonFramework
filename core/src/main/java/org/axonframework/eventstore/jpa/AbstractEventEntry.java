@@ -16,9 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
@@ -84,7 +82,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
-        this.aggregateIdentifier = event.getAggregateIdentifier().asString();
+        this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
         this.metaData = Arrays.copyOf(metaData.getData(), metaData.getData().length);
         this.timeStamp = event.getTimestamp().toString();
@@ -103,8 +101,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * @return The deserialized domain event
      */
     public DomainEventMessage<?> getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(eventIdentifier,
-                                                        new StringAggregateIdentifier(aggregateIdentifier),
+        return new SerializedDomainEventMessage<Object>(eventIdentifier, aggregateIdentifier,
                                                         sequenceNumber, new DateTime(timeStamp),
                                                         new SimpleSerializedObject(payload,
                                                                                    payloadType,
@@ -118,8 +115,8 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      *
      * @return the Aggregate Identifier of the associated event.
      */
-    public AggregateIdentifier getAggregateIdentifier() {
-        return new StringAggregateIdentifier(aggregateIdentifier);
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 
     /**

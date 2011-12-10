@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 
 /**
@@ -48,5 +47,5 @@ public interface EventStore {
      *
      * @throws EventStoreException if an error occurs while reading the events in the event stream
      */
-    DomainEventStream readEvents(String type, AggregateIdentifier identifier);
+    DomainEventStream readEvents(String type, Object identifier);
 }

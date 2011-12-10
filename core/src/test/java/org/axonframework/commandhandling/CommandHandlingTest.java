@@ -16,12 +16,10 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
@@ -42,7 +40,7 @@ import static org.mockito.Mockito.*;
 public class CommandHandlingTest {
 
     private EventSourcingRepository<StubAggregate> repository;
-    private AggregateIdentifier aggregateIdentifier;
+    private Object aggregateIdentifier;
     private EventBus mockEventBus;
     private EventStore mockEventStore;
 
@@ -53,7 +51,7 @@ public class CommandHandlingTest {
         mockEventStore = new StubEventStore();
         repository.setEventBus(mockEventBus);
         repository.setEventStore(mockEventStore);
-        aggregateIdentifier = new UUIDAggregateIdentifier();
+        aggregateIdentifier = "testAggregateIdentifier";
     }
 
     @Test
@@ -94,7 +92,7 @@ public class CommandHandlingTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+        public DomainEventStream readEvents(String type, Object identifier) {
             return new SimpleDomainEventStream(new ArrayList<DomainEventMessage>(storedEvents));
         }
     }

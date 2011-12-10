@@ -16,19 +16,28 @@
 
 package org.axonframework.integrationtests.loopbacktest;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+
+import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
 public class Message extends AbstractAnnotatedAggregateRoot {
 
+    private final UUID identifier;
+
     public Message(String messageContents) {
+        identifier = UUID.randomUUID();
         apply(new MessageCreatedEvent(messageContents));
     }
 
-    public Message(AggregateIdentifier identifier) {
-        super(identifier);
+    public Message(UUID identifier) {
+        this.identifier = identifier;
+    }
+
+    @Override
+    public UUID getIdentifier() {
+        return identifier;
     }
 }

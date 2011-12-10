@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
+import java.util.UUID;
 
 /**
  * @author Allard Buijze
@@ -24,14 +24,14 @@ import org.axonframework.domain.AggregateIdentifier;
 public class SagaTriggeringEvent {
 
     private final String message;
-    private final String identifier;
+    private final UUID identifier;
 
-    public SagaTriggeringEvent(AggregateIdentifier aggregateIdentifier, String message) {
-        identifier = aggregateIdentifier.asString();
+    public SagaTriggeringEvent(UUID aggregateIdentifier, String message) {
+        identifier = aggregateIdentifier;
         this.message = message;
     }
 
-    public String getMyId() {
+    public UUID getMyId() {
         return identifier;
     }
 

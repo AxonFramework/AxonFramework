@@ -17,11 +17,8 @@
 package org.axonframework.domain;
 
 import java.io.Serializable;
-import java.util.Collection;
 import javax.persistence.Basic;
-import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import javax.persistence.Version;
 
@@ -36,16 +33,12 @@ import javax.persistence.Version;
 public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
-    private static final IdentifierFactory IDENTIFIER_FACTORY = IdentifierFactory.getInstance();
 
     @Transient
-    private EventContainer eventContainer;
+    private volatile EventContainer eventContainer;
 
     @Transient
     private boolean deleted = false;
-
-    @Id
-    private String id;
 
     @Basic(optional = true)
     private Long lastEventSequenceNumber;
@@ -53,26 +46,6 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     @SuppressWarnings({"UnusedDeclaration"})
     @Version
     private Long version;
-
-    /**
-     * Initializes the aggregate root using a random aggregate identifier.
-     */
-    protected AbstractAggregateRoot() {
-        this(new StringAggregateIdentifier(IDENTIFIER_FACTORY.generateIdentifier()));
-    }
-
-    /**
-     * Initializes the aggregate root using the provided aggregate identifier.
-     *
-     * @param identifier the identifier of this aggregate
-     */
-    protected AbstractAggregateRoot(AggregateIdentifier identifier) {
-        if (identifier == null) {
-            throw new IllegalArgumentException("Aggregate identifier may not be null.");
-        }
-        this.id = identifier.asString();
-        eventContainer = new EventContainer(identifier);
-    }
 
     /**
      * Registers an event to be published when the aggregate is saved, containing the given <code>payload</code> and no
@@ -95,7 +68,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @return The Event holding the given <code>payload</code>
      */
     protected <T> DomainEventMessage<T> registerEvent(MetaData metaData, T payload) {
-        return eventContainer.addEvent(metaData, payload);
+        return getEventContainer().addEvent(metaData, payload);
     }
 
     /**
@@ -117,22 +90,12 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
 
     @Override
     public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        this.eventContainer.addEventRegistrationCallback(eventRegistrationCallback);
+        getEventContainer().addEventRegistrationCallback(eventRegistrationCallback);
     }
 
     @Override
     public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        this.eventContainer.removeEventRegistrationCallback(eventRegistrationCallback);
-    }
-
-    /**
-     * Shorthand helper method to easily return the aggregate identifier as a String value. To get the actual
-     * identifier, use {@link #getIdentifier()}.
-     *
-     * @return the String representation of this aggregate's identifier
-     */
-    protected String id() {
-        return getIdentifier().asString();
+        getEventContainer().removeEventRegistrationCallback(eventRegistrationCallback);
     }
 
     /**
@@ -148,23 +111,13 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * Callers should not expect the exact same instance, nor an instance of the same class as provided in the
-     * constructor. When this aggregate has been serialized or persisted using JPA, the identifier returned here is an
-     * instance of {@link StringAggregateIdentifier}.
-     */
-    @Override
-    public AggregateIdentifier getIdentifier() {
-        return eventContainer.getAggregateIdentifier();
-    }
-
-    /**
-     * {@inheritDoc}
      */
     @Override
     public void commitEvents() {
-        lastEventSequenceNumber = eventContainer.getLastSequenceNumber();
-        eventContainer.commit();
+        if (eventContainer != null) {
+            lastEventSequenceNumber = eventContainer.getLastSequenceNumber();
+            eventContainer.commit();
+        }
     }
 
     /**
@@ -176,23 +129,13 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     }
 
     /**
-     * Appends all the uncommitted events to the given <code>collection</code>. This method is a high-performance
-     * alternative to {@link #getUncommittedEvents()}.
-     *
-     * @param collection the collection to append uncommitted events to
-     */
-    public void appendUncommittedEventsTo(Collection<DomainEventMessage> collection) {
-        collection.addAll(eventContainer.getEventList());
-    }
-
-    /**
      * Initialize the event stream using the given sequence number of the last known event. This will cause the new
      * events to be attached to this aggregate to be assigned a continuous sequence number.
      *
      * @param lastSequenceNumber The sequence number of the last event from this aggregate
      */
     protected void initializeEventStream(long lastSequenceNumber) {
-        eventContainer.initializeSequenceNumber(lastSequenceNumber);
+        getEventContainer().initializeSequenceNumber(lastSequenceNumber);
         lastEventSequenceNumber = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
     }
 
@@ -203,6 +146,9 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @return the sequence number of the last committed event
      */
     protected Long getLastCommittedEventSequenceNumber() {
+        if (eventContainer == null) {
+            return lastEventSequenceNumber;
+        }
         return eventContainer.getLastCommittedSequenceNumber();
     }
 
@@ -214,19 +160,11 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
         return version;
     }
 
-    /**
-     * JPA / EJB3 @PostLoad annotated method used to initialize the fields in this class after an instance has been
-     * loaded from persistent storage.
-     * <p/>
-     * Subclasses are responsible for invoking this method if they provide their own {@link @PostLoad} annotated
-     * method.
-     * Failure to do so will inevitably result in <code>NullPointerException</code>.
-     *
-     * @see PostLoad
-     */
-    @PostLoad
-    protected void performPostLoadInitialization() {
-        eventContainer = new EventContainer(new StringAggregateIdentifier(id));
-        eventContainer.initializeSequenceNumber(lastEventSequenceNumber);
+    private EventContainer getEventContainer() {
+        if (eventContainer == null) {
+            eventContainer = new EventContainer(getIdentifier());
+            eventContainer.initializeSequenceNumber(lastEventSequenceNumber);
+        }
+        return eventContainer;
     }
 }

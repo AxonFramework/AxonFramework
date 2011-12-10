@@ -21,7 +21,6 @@ import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import static org.junit.Assert.*;
@@ -36,12 +35,6 @@ public class AbstractAggregateRootTest {
     @Before
     public void setUp() {
         testSubject = new AggregateRoot();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testCreateAggregateWithNullIdentifier() throws IOException {
-        testSubject = new AggregateRoot(null) {
-        };
     }
 
     @Test
@@ -91,11 +84,19 @@ public class AbstractAggregateRootTest {
 
     private static class AggregateRoot extends AbstractAggregateRoot {
 
+        private final Object identifier;
+
         private AggregateRoot() {
+            identifier = IdentifierFactory.getInstance().generateIdentifier();
         }
 
-        private AggregateRoot(AggregateIdentifier identifier) {
-            super(identifier);
+        private AggregateRoot(Object identifier) {
+            this.identifier = identifier;
+        }
+
+        @Override
+        public Object getIdentifier() {
+            return identifier;
         }
 
         public void doSomething() {

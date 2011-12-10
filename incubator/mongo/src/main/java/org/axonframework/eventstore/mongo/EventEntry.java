@@ -19,9 +19,7 @@ package org.axonframework.eventstore.mongo;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
@@ -93,7 +91,7 @@ class EventEntry {
      */
     EventEntry(String aggregateType, DomainEventMessage event, Serializer eventSerializer) {
         this.aggregateType = aggregateType;
-        this.aggregateIdentifier = event.getAggregateIdentifier().asString();
+        this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
         this.eventIdentifier = event.getIdentifier();
         SerializedObject serializedPayload = eventSerializer.serialize(event.getPayload());
@@ -130,8 +128,7 @@ class EventEntry {
      */
     public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
         return new SerializedDomainEventMessage(
-                eventIdentifier, new StringAggregateIdentifier(aggregateIdentifier),
-                sequenceNumber, new DateTime(timeStamp),
+                eventIdentifier, aggregateIdentifier, sequenceNumber, new DateTime(timeStamp),
                 new SimpleSerializedObject(serializedPayload.getBytes(UTF8), payoadType, payloadRevision),
                 new SerializedMetaData(serializedMetaData.getBytes(UTF8)), eventSerializer, eventSerializer);
     }
@@ -150,8 +147,8 @@ class EventEntry {
      *
      * @return AggregateIdentifier for this EventEntry
      */
-    public AggregateIdentifier getAggregateIdentifier() {
-        return new StringAggregateIdentifier(aggregateIdentifier);
+    public String getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 
     /**
@@ -191,8 +188,7 @@ class EventEntry {
 
     public DomainEventMessage asDomainEventMessage(Serializer eventSerializer) {
         return new SerializedDomainEventMessage(
-                eventIdentifier, new StringAggregateIdentifier(aggregateIdentifier),
-                sequenceNumber, new DateTime(timeStamp),
+                eventIdentifier, aggregateIdentifier, sequenceNumber, new DateTime(timeStamp),
                 new SimpleSerializedObject(serializedPayload.getBytes(UTF8), payoadType, payloadRevision),
                 new SerializedMetaData(serializedMetaData.getBytes(UTF8)), eventSerializer, eventSerializer);
     }

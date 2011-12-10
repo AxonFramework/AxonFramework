@@ -16,11 +16,11 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.*;
+
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -48,7 +48,7 @@ public class AbstractAnnotatedAggregateRootTest {
 
     @Test
     public void testInitializeWithIdentifier() {
-        testSubject = new SimpleAggregateRoot(new UUIDAggregateIdentifier());
+        testSubject = new SimpleAggregateRoot(UUID.randomUUID());
         assertEquals(0, testSubject.getUncommittedEventCount());
     }
 
@@ -56,13 +56,15 @@ public class AbstractAnnotatedAggregateRootTest {
 
         private int invocationCount;
         private volatile SimpleEntity entity;
+        private final UUID identifier;
 
         private SimpleAggregateRoot() {
+            identifier = UUID.randomUUID();
             apply(new StubDomainEvent());
         }
 
-        private SimpleAggregateRoot(AggregateIdentifier identifier) {
-            super(identifier);
+        private SimpleAggregateRoot(UUID identifier) {
+            this.identifier = identifier;
         }
 
         @EventHandler
@@ -79,6 +81,11 @@ public class AbstractAnnotatedAggregateRootTest {
 
         public void doSomething() {
             apply(new StubDomainEvent());
+        }
+
+        @Override
+        public UUID getIdentifier() {
+            return identifier;
         }
     }
 

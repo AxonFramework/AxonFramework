@@ -18,6 +18,8 @@ package org.axonframework.domain;
 
 import org.junit.*;
 
+import java.util.UUID;
+
 import static org.junit.Assert.*;
 
 /**
@@ -30,7 +32,7 @@ public class EventContainerTest {
 
     @Test
     public void testAddEvent_IdAndSequenceNumberInitialized() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        final UUID identifier = UUID.randomUUID();
 
         EventContainer eventContainer = new EventContainer(identifier);
         assertEquals(identifier, eventContainer.getAggregateIdentifier());

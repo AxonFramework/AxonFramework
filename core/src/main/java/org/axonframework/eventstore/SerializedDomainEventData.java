@@ -1,6 +1,5 @@
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateTime;
 
@@ -25,7 +24,7 @@ public interface SerializedDomainEventData {
      *
      * @return the Identifier of the Aggregate to which the Event was applied
      */
-    AggregateIdentifier getAggregateIdentifier();
+    Object getAggregateIdentifier();
 
     /**
      * Returns the sequence number of the event in the aggregate.

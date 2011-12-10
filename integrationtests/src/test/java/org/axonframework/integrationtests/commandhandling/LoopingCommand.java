@@ -16,19 +16,17 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * @author Allard Buijze
  */
 public class LoopingCommand {
-    private final AggregateIdentifier aggregateId;
+    private final Object aggregateId;
 
-    public LoopingCommand(AggregateIdentifier aggregateId) {
+    public LoopingCommand(Object aggregateId) {
         this.aggregateId = aggregateId;
     }
 
-    public AggregateIdentifier getAggregateId() {
+    public Object getAggregateId() {
         return aggregateId;
     }
 }

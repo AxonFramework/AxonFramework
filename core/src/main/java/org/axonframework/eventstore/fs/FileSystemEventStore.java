@@ -18,7 +18,6 @@ package org.axonframework.eventstore.fs;
 
 import org.apache.commons.io.input.CountingInputStream;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
@@ -117,7 +116,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      * {@inheritDoc}
      */
     @Override
-    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+    public DomainEventStream readEvents(String type, Object identifier) {
         try {
             if (!eventFileResolver.eventFileExists(type, identifier)) {
                 throw new EventStreamNotFoundException(type, identifier);
@@ -128,8 +127,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
             throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
                                           + "for aggregate type [%s] with identifier [%s]",
-                                  type,
-                                  identifier.asString()), e);
+                                  type, identifier), e);
         }
     }
 
@@ -140,7 +138,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      */
     @Override
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
-        AggregateIdentifier aggregateIdentifier = snapshotEvent.getAggregateIdentifier();
+        Object aggregateIdentifier = snapshotEvent.getAggregateIdentifier();
         OutputStream fileOutputStream = null;
         try {
 
@@ -162,7 +160,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         }
     }
 
-    private long calculateOffset(String type, AggregateIdentifier aggregateIdentifier, long sequenceNumber)
+    private long calculateOffset(String type, Object aggregateIdentifier, long sequenceNumber)
             throws IOException {
         CountingInputStream countingInputStream = null;
         try {
@@ -179,7 +177,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         }
     }
 
-    private DomainEventStream readEvents(String type, AggregateIdentifier identifier, InputStream eventFileInputStream)
+    private DomainEventStream readEvents(String type, Object identifier, InputStream eventFileInputStream)
             throws IOException {
         SnapshotEventEntry snapshotEntry = readSnapshotEvent(type, identifier, eventFileInputStream);
         InputStream is = eventFileInputStream;
@@ -192,7 +190,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         return new BufferedReaderDomainEventStream(is, eventSerializer);
     }
 
-    private SnapshotEventEntry readSnapshotEvent(String type, AggregateIdentifier identifier,
+    private SnapshotEventEntry readSnapshotEvent(String type, Object identifier,
                                                  InputStream eventFileInputStream)
             throws IOException {
         SnapshotEventEntry snapshotEvent = null;
@@ -205,8 +203,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
                     logger.warn(
                             "The skip operation did not actually skip the expected amount of bytes. "
                                     + "The event log of aggregate of type {} and identifier {} might be corrupt.",
-                            type,
-                            identifier.asString());
+                            type, identifier);
                 }
             } finally {
                 IOUtils.closeQuietly(snapshotFileInputStream);

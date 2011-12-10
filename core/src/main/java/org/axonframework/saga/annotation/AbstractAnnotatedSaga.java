@@ -16,7 +16,6 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.saga.AssociationValue;
@@ -133,17 +132,6 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     }
 
     /**
-     * Registers a AssociationValue with the given saga. When the saga is committed, it can be found using the
-     * registered property.
-     *
-     * @param key   The key of the association value to associate this saga with.
-     * @param value The value of the association value to associate this saga with.
-     */
-    protected void associateWith(String key, AggregateIdentifier value) {
-        associateWith(key, value.asString());
-    }
-
-    /**
      * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
      * given association. If the given property wasn't registered with the saga, nothing happens.
      *
@@ -175,14 +163,4 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
         removeAssociationWith(key, value.toString());
     }
 
-    /**
-     * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
-     * given association value. If the given saga wasn't associated with given values, nothing happens.
-     *
-     * @param key   The key of the association value to remove from this saga.
-     * @param value The value of the association value to remove from this saga.
-     */
-    protected void removeAssociationWith(String key, AggregateIdentifier value) {
-        removeAssociationWith(key, value.asString());
-    }
 }

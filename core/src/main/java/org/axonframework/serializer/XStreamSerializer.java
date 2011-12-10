@@ -27,13 +27,10 @@ import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.common.SerializationException;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.dom4j.Document;
 import org.joda.time.DateTime;
 
@@ -123,17 +120,9 @@ public class XStreamSerializer implements Serializer {
         this.converterFactory = converterFactory;
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
-        xStream.addImmutableType(AggregateIdentifier.class);
-        xStream.addImmutableType(StringAggregateIdentifier.class);
-        xStream.addImmutableType(UUIDAggregateIdentifier.class);
-        xStream.registerConverter(new AggregateIdentifierConverter());
         xStream.aliasPackage("axon.domain", "org.axonframework.domain");
         xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
 
-        xStream.addDefaultImplementation(StringAggregateIdentifier.class, AggregateIdentifier.class);
-        xStream.alias("uuid-id", UUIDAggregateIdentifier.class);
-        xStream.alias("aggregate-id", StringAggregateIdentifier.class);
-        xStream.alias("string-id", StringAggregateIdentifier.class);
         xStream.alias("domain-event", GenericDomainEventMessage.class);
         xStream.alias("event", GenericEventMessage.class);
 

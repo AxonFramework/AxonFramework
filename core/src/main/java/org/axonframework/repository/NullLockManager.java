@@ -16,7 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 
 /**
@@ -45,7 +44,7 @@ class NullLockManager implements LockManager {
      * This implementation does nothing.
      */
     @Override
-    public void obtainLock(AggregateIdentifier aggregateIdentifier) {
+    public void obtainLock(Object aggregateIdentifier) {
     }
 
     /**
@@ -54,6 +53,6 @@ class NullLockManager implements LockManager {
      * This implementation does nothing.
      */
     @Override
-    public void releaseLock(AggregateIdentifier aggregateIdentifier) {
+    public void releaseLock(Object aggregateIdentifier) {
     }
 }

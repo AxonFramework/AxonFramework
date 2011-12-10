@@ -16,26 +16,24 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * @author Allard Buijze
  */
 public class UpdateStubAggregateCommand {
 
-    private AggregateIdentifier aggregateId;
+    private Object aggregateId;
     private Long aggregateVersion;
 
-    public UpdateStubAggregateCommand(AggregateIdentifier aggregateId, Long aggregateVersion) {
+    public UpdateStubAggregateCommand(Object aggregateId, Long aggregateVersion) {
         this.aggregateId = aggregateId;
         this.aggregateVersion = aggregateVersion;
     }
 
-    public UpdateStubAggregateCommand(AggregateIdentifier aggregateId) {
+    public UpdateStubAggregateCommand(Object aggregateId) {
         this.aggregateId = aggregateId;
     }
 
-    public AggregateIdentifier getAggregateId() {
+    public Object getAggregateId() {
         return aggregateId;
     }
 

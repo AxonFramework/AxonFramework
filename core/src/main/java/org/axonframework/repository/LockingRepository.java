@@ -16,7 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -112,7 +111,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
+    public T load(Object aggregateIdentifier, Long expectedVersion) {
         lockManager.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
@@ -187,7 +186,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     @Override
-    protected abstract T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
+    protected abstract T doLoad(Object aggregateIdentifier, Long expectedVersion);
 
     /**
      * UnitOfWorkListeners that cleans up remaining locks after a UnitOfWork has been committed or rolled back.

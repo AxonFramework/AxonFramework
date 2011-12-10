@@ -17,19 +17,25 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AbstractAggregateRoot;
+import org.axonframework.domain.IdentifierFactory;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 
 @Entity
 public class JpaAggregate extends AbstractAggregateRoot {
 
     private static final long serialVersionUID = -7075224524414732603L;
 
+    @Id
+    private String id;
+
     @Basic
     private String message;
 
     public JpaAggregate(String message) {
+        this.id = IdentifierFactory.getInstance().generateIdentifier();
         this.message = message;
     }
 
@@ -37,6 +43,11 @@ public class JpaAggregate extends AbstractAggregateRoot {
      * Constructor performing very basic initialization, as required by JPA.
      */
     protected JpaAggregate() {
+    }
+
+    @Override
+    public Object getIdentifier() {
+        return id;
     }
 
     public void setMessage(String newMessage) {

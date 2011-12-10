@@ -23,7 +23,6 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -64,7 +63,7 @@ public class GaeEventStore implements SnapshotEventStore {
         }
     }
 
-    public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+    public DomainEventStream readEvents(String type, Object identifier) {
         long snapshotSequenceNumber = -1;
         EventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
         if (lastSnapshotEvent != null) {
@@ -106,9 +105,9 @@ public class GaeEventStore implements SnapshotEventStore {
         }
     }
 
-    private List<DomainEventMessage> readEventSegmentInternal(String type, AggregateIdentifier identifier,
+    private List<DomainEventMessage> readEventSegmentInternal(String type, Object identifier,
                                                               long firstSequenceNumber) {
-        Query query = EventEntry.forAggregate(type, identifier.asString(), firstSequenceNumber);
+        Query query = EventEntry.forAggregate(type, identifier.toString(), firstSequenceNumber);
         PreparedQuery preparedQuery = datastoreService.prepare(query);
         List<Entity> entities = preparedQuery.asList(FetchOptions.Builder.withDefaults());
 
@@ -119,8 +118,8 @@ public class GaeEventStore implements SnapshotEventStore {
         return events;
     }
 
-    private EventEntry loadLastSnapshotEvent(String type, AggregateIdentifier identifier) {
-        Query query = EventEntry.forLastSnapshot("snapshot_" + type, identifier.asString());
+    private EventEntry loadLastSnapshotEvent(String type, Object identifier) {
+        Query query = EventEntry.forLastSnapshot("snapshot_" + type, identifier.toString());
         PreparedQuery preparedQuery = datastoreService.prepare(query);
         Iterator<Entity> entityIterator = preparedQuery.asIterable().iterator();
         if (entityIterator.hasNext()) {

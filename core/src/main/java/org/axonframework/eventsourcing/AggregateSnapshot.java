@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.joda.time.DateTime;
@@ -96,13 +95,13 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
     }
 
     @Override
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregate.getIdentifier();
     }
 
     @Override
     public String getIdentifier() {
-        return format("%s@%s", getAggregateIdentifier().asString(), getSequenceNumber());
+        return format("%s@%s", getAggregateIdentifier().toString(), getSequenceNumber());
     }
 
     @Override

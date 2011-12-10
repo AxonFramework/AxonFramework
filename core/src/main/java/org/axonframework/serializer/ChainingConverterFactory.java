@@ -79,7 +79,7 @@ public class ChainingConverterFactory implements ConverterFactory {
      */
     public void setAdditionalConverters(List<ContentTypeConverter> additionalConverters) {
         for (ContentTypeConverter converter : additionalConverters) {
-            converters.addFirst(converter);
+            registerConverter(converter);
         }
     }
 }

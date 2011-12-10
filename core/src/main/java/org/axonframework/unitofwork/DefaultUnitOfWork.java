@@ -16,7 +16,6 @@
 
 package org.axonframework.unitofwork;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -103,7 +102,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
                 logger.info("Ignoring aggregate registration. An aggregate of same type and identifier was already"
                                     + "registered in this Unit Of Work: type [{}], identifier [{}]",
                             aggregate.getClass().getSimpleName(),
-                            aggregate.getIdentifier().asString());
+                            aggregate.getIdentifier());
             }
             return similarAggregate;
         }
@@ -132,7 +131,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @SuppressWarnings({"unchecked"})
     private <T extends AggregateRoot> T findSimilarAggregate(Class<T> aggregateType,
-                                                             AggregateIdentifier identifier) {
+                                                             Object identifier) {
         for (AggregateRoot aggregate : registeredAggregates.keySet()) {
             if (aggregateType.isInstance(aggregate) && identifier.equals(aggregate.getIdentifier())) {
                 return (T) aggregate;
@@ -220,7 +219,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
             if (logger.isDebugEnabled()) {
                 logger.debug("Persisting changes to [{}], identifier: [{}]",
                              entry.aggregateRoot.getClass().getName(),
-                             entry.aggregateRoot.getIdentifier().asString());
+                             entry.aggregateRoot.getIdentifier().toString());
             }
             entry.saveAggregate();
         }

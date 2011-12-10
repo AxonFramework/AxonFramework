@@ -24,9 +24,15 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 public class StubAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
     private static final long serialVersionUID = -4775374127196305627L;
+    private final Object identifier;
 
-    public StubAnnotatedAggregate(AggregateIdentifier identifier) {
-        super(identifier);
+    public StubAnnotatedAggregate(Object identifier) {
+        this.identifier = identifier;
+    }
+
+    @Override
+    public Object getIdentifier() {
+        return identifier;
     }
 
     public void doSomething() {

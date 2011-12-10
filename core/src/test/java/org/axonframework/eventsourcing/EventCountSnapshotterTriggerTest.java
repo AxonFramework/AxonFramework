@@ -18,13 +18,11 @@ package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
 import net.sf.jsr107cache.CacheListener;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -42,7 +40,7 @@ public class EventCountSnapshotterTriggerTest {
 
     private EventCountSnapshotterTrigger testSubject;
     private Snapshotter mockSnapshotter;
-    private AggregateIdentifier aggregateIdentifier;
+    private Object aggregateIdentifier;
     private Cache mockCache;
     private CapturingMatcher<CacheListener> listener;
     private EventSourcedAggregateRoot aggregate;
@@ -55,7 +53,7 @@ public class EventCountSnapshotterTriggerTest {
         testSubject = new EventCountSnapshotterTrigger();
         testSubject.setTrigger(3);
         testSubject.setSnapshotter(mockSnapshotter);
-        aggregateIdentifier = new UUIDAggregateIdentifier();
+        aggregateIdentifier = "aggregateIdentifier";
         aggregate = new StubAggregate(aggregateIdentifier);
         mockCache = mock(Cache.class);
         listener = new CapturingMatcher<CacheListener>();

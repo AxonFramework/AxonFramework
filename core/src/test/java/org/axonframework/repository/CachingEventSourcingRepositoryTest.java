@@ -18,7 +18,6 @@ package org.axonframework.repository;
 
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -109,7 +108,7 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
-        AggregateIdentifier identifier = aggregate1.getIdentifier();
+        Object identifier = aggregate1.getIdentifier();
 
         DefaultUnitOfWork.startAndGet();
         aggregate1.delete();
@@ -128,7 +127,7 @@ public class CachingEventSourcingRepositoryTest {
     private static class StubAggregateFactory implements AggregateFactory<StubAggregate> {
 
         @Override
-        public StubAggregate createAggregate(AggregateIdentifier aggregateIdentifier, DomainEventMessage firstEvent) {
+        public StubAggregate createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
             return new StubAggregate(aggregateIdentifier);
         }
 
@@ -145,7 +144,7 @@ public class CachingEventSourcingRepositoryTest {
 
     private class InMemoryEventStore implements EventStore {
 
-        private Map<AggregateIdentifier, List<DomainEventMessage>> store = new HashMap<AggregateIdentifier, List<DomainEventMessage>>();
+        private Map<Object, List<DomainEventMessage>> store = new HashMap<Object, List<DomainEventMessage>>();
 
         @Override
         public void appendEvents(String identifier, DomainEventStream events) {
@@ -160,7 +159,7 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+        public DomainEventStream readEvents(String type, Object identifier) {
             return new SimpleDomainEventStream(store.get(identifier));
         }
     }

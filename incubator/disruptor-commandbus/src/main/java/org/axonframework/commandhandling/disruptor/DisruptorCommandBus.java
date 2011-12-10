@@ -25,7 +25,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.annotation.CommandMessage;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -115,15 +114,15 @@ public class DisruptorCommandBus implements CommandBus, Repository {
     }
 
     @Override
-    public AggregateRoot load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
+    public AggregateRoot load(Object aggregateIdentifier, Long expectedVersion) {
         return load(aggregateIdentifier);
     }
 
     @Override
-    public AggregateRoot load(AggregateIdentifier aggregateIdentifier) {
+    public AggregateRoot load(Object aggregateIdentifier) {
 
         //        CurrentUnitOfWork.get().registerAggregate(aggregateRoot, null);
-//        if (aggregateRoot.getIdentifier().equals(aggregateIdentifier)) {
+//        if (aggregateRoot.id().equals(aggregateIdentifier)) {
         return CommandHandlerInvoker.preLoadedAggregate.get();
 //        } else {
 //            throw new UnsupportedOperationException("Not supported to load another aggregate than the pre-loaded one");

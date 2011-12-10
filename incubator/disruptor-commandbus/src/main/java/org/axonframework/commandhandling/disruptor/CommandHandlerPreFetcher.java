@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -32,7 +31,7 @@ import java.util.Map;
  */
 class CommandHandlerPreFetcher implements EventHandler<CommandHandlingEntry> {
 
-    private final Map<AggregateIdentifier, EventSourcedAggregateRoot> map = new HashMap<AggregateIdentifier, EventSourcedAggregateRoot>();
+    private final Map<Object, EventSourcedAggregateRoot> map = new HashMap<Object, EventSourcedAggregateRoot>();
     private final EventStore eventStore;
     private final AggregateFactory<?> aggregateFactory;
     private final Map<Class<?>, CommandHandler<?>> commandHandlers;
@@ -51,7 +50,7 @@ class CommandHandlerPreFetcher implements EventHandler<CommandHandlingEntry> {
     }
 
     private void preLoadAggregate(CommandHandlingEntry entry) {
-        final AggregateIdentifier aggregateIdentifier = entry.getAggregateIdentifier();
+        final Object aggregateIdentifier = entry.getAggregateIdentifier();
         if (map.containsKey(aggregateIdentifier)) {
             entry.setPreLoadedAggregate(map.get(aggregateIdentifier));
         } else {

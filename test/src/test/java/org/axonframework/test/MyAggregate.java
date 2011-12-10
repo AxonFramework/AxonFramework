@@ -16,7 +16,6 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
@@ -27,9 +26,10 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
     private int lastNumber;
+    private final Object identifier;
 
-    public MyAggregate(AggregateIdentifier aggregateIdentifier) {
-        super(aggregateIdentifier);
+    public MyAggregate(Object identifier) {
+        this.identifier = identifier;
     }
 
     @EventHandler
@@ -44,5 +44,10 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
     public void doSomething() {
         apply(new MyEvent(lastNumber + 1));
+    }
+
+    @Override
+    public Object getIdentifier() {
+        return identifier;
     }
 }

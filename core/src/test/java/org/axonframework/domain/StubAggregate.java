@@ -19,22 +19,30 @@ package org.axonframework.domain;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 
+import java.util.UUID;
+
 /**
  * @author Allard Buijze
  */
 public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     private int invocationCount;
+    private final Object identifier;
 
     public StubAggregate() {
+        identifier = UUID.randomUUID();
     }
 
-    public StubAggregate(AggregateIdentifier identifier) {
-        super(identifier);
+    public StubAggregate(Object identifier) {
+        this.identifier = identifier;
     }
 
     public void doSomething() {
         apply(new StubDomainEvent());
+    }
+
+    public Object getIdentifier() {
+        return identifier;
     }
 
     @EventHandler

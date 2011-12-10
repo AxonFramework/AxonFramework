@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 
@@ -43,14 +42,14 @@ class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public SnapshotEventEntry loadLastSnapshotEvent(String aggregateType, AggregateIdentifier identifier,
+    public SnapshotEventEntry loadLastSnapshotEvent(String aggregateType, Object identifier,
                                                     EntityManager entityManager) {
         List<SnapshotEventEntry> entries = entityManager.createQuery(
                 "SELECT e "
                         + "FROM SnapshotEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
                         + "ORDER BY e.sequenceNumber DESC")
-                                                        .setParameter("id", identifier.asString())
+                                                        .setParameter("id", identifier.toString())
                                                         .setParameter("type", aggregateType)
                                                         .setMaxResults(1)
                                                         .setFirstResult(0)
@@ -92,7 +91,7 @@ class DefaultEventEntryStore implements EventEntryStore {
                                               + "AND e.sequenceNumber <= :sequenceOfFirstSnapshotToPrune")
                          .setParameter("type", type)
                          .setParameter("aggregateIdentifier",
-                                       mostRecentSnapshotEvent.getAggregateIdentifier().asString())
+                                       mostRecentSnapshotEvent.getAggregateIdentifier().toString())
                          .setParameter("sequenceOfFirstSnapshotToPrune", sequenceOfFirstSnapshotToPrune)
                          .executeUpdate();
         }
@@ -116,7 +115,7 @@ class DefaultEventEntryStore implements EventEntryStore {
                         + "WHERE e.type = :type AND e.aggregateIdentifier = :aggregateIdentifier "
                         + "ORDER BY e.sequenceNumber DESC")
                             .setParameter("type", type)
-                            .setParameter("aggregateIdentifier", snapshotEvent.getAggregateIdentifier().asString())
+                            .setParameter("aggregateIdentifier", snapshotEvent.getAggregateIdentifier().toString())
                             .setFirstResult(maxSnapshotsArchived)
                             .setMaxResults(1)
                             .getResultList().iterator();
@@ -124,16 +123,14 @@ class DefaultEventEntryStore implements EventEntryStore {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public List<DomainEventEntry> fetchBatch(String aggregateType, AggregateIdentifier identifier,
-                                             long firstSequenceNumber,
+    public List<DomainEventEntry> fetchBatch(String aggregateType, Object identifier, long firstSequenceNumber,
                                              int batchSize, EntityManager entityManager) {
         return (List<DomainEventEntry>) entityManager.createQuery(
                 "SELECT e "
                         + "FROM DomainEventEntry e "
                         + "WHERE e.aggregateIdentifier = :id AND e.type = :type AND e.sequenceNumber >= :seq "
                         + "ORDER BY e.sequenceNumber ASC")
-                                                     .setParameter("id",
-                                                                   identifier.asString())
+                                                     .setParameter("id", identifier.toString())
                                                      .setParameter("type", aggregateType)
                                                      .setParameter("seq", firstSequenceNumber)
                                                      .setMaxResults(batchSize)

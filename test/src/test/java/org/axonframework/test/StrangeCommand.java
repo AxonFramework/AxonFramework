@@ -16,20 +16,18 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * @author Allard Buijze
  */
 class StrangeCommand {
 
-    private AggregateIdentifier aggregateIdentifier;
+    private Object aggregateIdentifier;
 
-    StrangeCommand(AggregateIdentifier aggregateIdentifier) {
+    StrangeCommand(Object aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
     }
 
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 }

@@ -16,8 +16,6 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * Exception indicating that the event store could not find an event stream for a given aggregate type and identifier.
  * This typically means that there is no aggregate with the given identifier.
@@ -45,10 +43,9 @@ public class EventStreamNotFoundException extends EventStoreException {
      * @param type       The type identifier of the aggregate that wasn't found
      * @param identifier The identifier of the aggregate that wasn't found
      */
-    public EventStreamNotFoundException(String type, AggregateIdentifier identifier) {
+    public EventStreamNotFoundException(String type, Object identifier) {
         this(String.format("Aggregate of type [%s] with identifier [%s] cannot be found.",
-                           type,
-                           identifier.asString()));
+                           type, identifier));
     }
 
     /**

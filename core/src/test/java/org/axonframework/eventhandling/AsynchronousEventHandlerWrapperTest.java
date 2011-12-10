@@ -16,18 +16,17 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -59,7 +58,7 @@ public class AsynchronousEventHandlerWrapperTest {
 
     @Test
     public void testEventsAreExecutedInOrder() throws InterruptedException {
-        AggregateIdentifier[] groupIds = new AggregateIdentifier[100];
+        Object[] groupIds = new Object[100];
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch finish = new CountDownLatch(groupIds.length);
         int eventsPerGroup = 100;
@@ -73,7 +72,7 @@ public class AsynchronousEventHandlerWrapperTest {
         BlockingQueue<EventMessage<?>> actualEventOrder = mockEventListener.events;
         assertEquals("Expected all events to be dispatched", eventsPerGroup * groupIds.length, actualEventOrder.size());
 
-        for (AggregateIdentifier groupId : groupIds) {
+        for (Object groupId : groupIds) {
             long lastFromGroup = -1;
             for (EventMessage event : actualEventOrder) {
                 DomainEventMessage domainEvent = (DomainEventMessage) event;
@@ -86,9 +85,9 @@ public class AsynchronousEventHandlerWrapperTest {
         }
     }
 
-    private AggregateIdentifier startEventDispatcher(final CountDownLatch waitToStart, final CountDownLatch waitToEnd,
+    private Object startEventDispatcher(final CountDownLatch waitToStart, final CountDownLatch waitToEnd,
                                                      int eventCount) {
-        AggregateIdentifier id = new UUIDAggregateIdentifier();
+        Object id = UUID.randomUUID();
         final List<EventMessage<StubDomainEvent>> events = new LinkedList<EventMessage<StubDomainEvent>>();
         for (int t = 0; t < eventCount; t++) {
             events.add(new GenericDomainEventMessage<StubDomainEvent>(id, t, new StubDomainEvent()));

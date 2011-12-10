@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
@@ -44,7 +43,7 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEventMessage firstEvent) {
+    public T createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
         return (T) applicationContext.getBean(prototypeBeanName, aggregateIdentifier);
     }
 

@@ -16,13 +16,11 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -33,6 +31,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.util.Collections;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -45,7 +44,7 @@ public class SpringAggregateSnapshotterTest {
     private SpringAggregateSnapshotter testSubject;
     private ApplicationContext mockApplicationContext;
     private PlatformTransactionManager mockTransactionManager;
-    private UUIDAggregateIdentifier aggregateIdentifier;
+    private UUID aggregateIdentifier;
     private SnapshotEventStore mockEventStore;
 
     @Before
@@ -58,7 +57,7 @@ public class SpringAggregateSnapshotterTest {
         when(mockApplicationContext.getBeansOfType(AggregateFactory.class))
                 .thenReturn(Collections.<String, AggregateFactory>singletonMap("myFactory", new AggregateFactory() {
                     @Override
-                    public EventSourcedAggregateRoot createAggregate(AggregateIdentifier aggregateIdentifier,
+                    public EventSourcedAggregateRoot createAggregate(Object aggregateIdentifier,
                                                                      DomainEventMessage firstEvent) {
                         return new StubAggregate(aggregateIdentifier);
                     }
@@ -76,7 +75,7 @@ public class SpringAggregateSnapshotterTest {
         testSubject.setEventStore(mockEventStore);
         testSubject.afterPropertiesSet();
         mockTransactionManager = mock(PlatformTransactionManager.class);
-        aggregateIdentifier = new UUIDAggregateIdentifier();
+        aggregateIdentifier = UUID.randomUUID();
 
         DomainEventMessage event1 = new GenericDomainEventMessage<String>(aggregateIdentifier, 1L,
                                                                           "Mock contents", MetaData.emptyInstance());

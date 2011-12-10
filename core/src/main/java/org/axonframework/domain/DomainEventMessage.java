@@ -42,12 +42,12 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      *
      * @return the identifier of the Aggregate that generated this DomainEvent
      */
-    AggregateIdentifier getAggregateIdentifier();
+    Object getAggregateIdentifier();
 
     /**
      * Returns a copy of this DomainEventMessage with the given <code>metaData</code>. The payload, {@link
      * #getTimestamp()
-     * Timestamp} and {@link #getEventIdentifier() EventIdentifier}, as well as the {@link #getAggregateIdentifier()
+     * Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the {@link #getAggregateIdentifier()
      * Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain unchanged.
      *
      * @param metaData The new MetaData for the Message
@@ -58,7 +58,7 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
 
     /**
      * Returns a copy of this DomainEventMessage with its MetaData merged with the given <code>metaData</code>. The
-     * payload, {@link #getTimestamp() Timestamp} and {@link #getEventIdentifier() EventIdentifier}, as well as the
+     * payload, {@link #getTimestamp() Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the
      * {@link #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
      * unchanged.
      *

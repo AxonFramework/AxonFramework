@@ -16,13 +16,13 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.test.matchers.Matchers;
 import org.hamcrest.CoreMatchers;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.*;
+
+import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
@@ -34,18 +34,15 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenEventOccurs() {
-        AggregateIdentifier aggregate1 = new UUIDAggregateIdentifier();
-        AggregateIdentifier aggregate2 = new UUIDAggregateIdentifier();
+        UUID aggregate1 = UUID.randomUUID();
+        UUID aggregate2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-        FixtureExecutionResult validator = fixture.givenAggregate(aggregate1).published(new TriggerSagaStartEvent(
-                aggregate1.asString()),
-                                                                                        new TriggerExistingSagaEvent(
-                                                                                                aggregate1.asString()))
-                                                  .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(
-                        aggregate2.asString()))
-
-                                                  .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(
-                        aggregate1.asString()));
+        FixtureExecutionResult validator = fixture
+                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()),
+                                                      new TriggerExistingSagaEvent(
+                                                              aggregate1.toString()))
+                .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(aggregate2.toString()))
+                .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1.toString()));
 
         validator.expectActiveSagas(1);
         validator.expectAssociationWith("identifier", aggregate2);
@@ -53,12 +50,12 @@ public class AnnotatedSagaTest {
         validator.expectScheduledEventOfType(Duration.standardMinutes(10), TimerTriggeredEvent.class);
         validator.expectScheduledEventMatching(Duration.standardMinutes(10), eventWithPayload(CoreMatchers.any(
                 TimerTriggeredEvent.class)));
-        validator.expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(aggregate1.asString()));
+        validator.expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(aggregate1.toString()));
         validator.expectScheduledEventOfType(fixture.currentTime().plusMinutes(10), TimerTriggeredEvent.class);
         validator.expectScheduledEventMatching(fixture.currentTime().plusMinutes(10),
                                                eventWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
-        validator.expectScheduledEvent(fixture.currentTime().plusMinutes(10), new TimerTriggeredEvent(aggregate1
-                                                                                                              .asString()));
+        validator.expectScheduledEvent(fixture.currentTime().plusMinutes(10),
+                                       new TimerTriggeredEvent(aggregate1.toString()));
         validator.expectDispatchedCommandsEqualTo();
         validator.expectNoDispatchedCommands();
         validator.expectPublishedEventsMatching(noEvents());
@@ -66,13 +63,13 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WithApplicationEvents() {
-        AggregateIdentifier aggregate1 = new UUIDAggregateIdentifier();
-        AggregateIdentifier aggregate2 = new UUIDAggregateIdentifier();
+        UUID aggregate1 = UUID.randomUUID();
+        UUID aggregate2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-        fixture.givenAPublished(new TimerTriggeredEvent(new UUIDAggregateIdentifier().asString()))
-               .andThenAPublished(new TimerTriggeredEvent(new UUIDAggregateIdentifier().asString()))
+        fixture.givenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
+               .andThenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
 
-               .whenPublishingA(new TimerTriggeredEvent(new UUIDAggregateIdentifier().asString()))
+               .whenPublishingA(new TimerTriggeredEvent(UUID.randomUUID().toString()))
 
                .expectActiveSagas(0)
                .expectNoAssociationWith("identifier", aggregate2)
@@ -84,15 +81,13 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenEventIsPublishedToEventBus() {
-        AggregateIdentifier aggregate1 = new UUIDAggregateIdentifier();
-        AggregateIdentifier aggregate2 = new UUIDAggregateIdentifier();
+        UUID aggregate1 = UUID.randomUUID();
+        UUID aggregate2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-        FixtureExecutionResult validator = fixture.givenAggregate(aggregate1).published(new TriggerSagaStartEvent(
-                aggregate1.asString()),
-                                                                                        new TriggerExistingSagaEvent(
-                                                                                                aggregate1.asString()))
-                                                  .whenAggregate(aggregate1).publishes(new TriggerExistingSagaEvent(
-                        aggregate1.asString()));
+        FixtureExecutionResult validator = fixture
+                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()),
+                                                      new TriggerExistingSagaEvent(aggregate1.toString()))
+                .whenAggregate(aggregate1).publishes(new TriggerExistingSagaEvent(aggregate1.toString()));
 
         validator.expectActiveSagas(1);
         validator.expectAssociationWith("identifier", aggregate1);
@@ -105,15 +100,13 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenTimeElapses() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
-        AggregateIdentifier identifier2 = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
+        UUID identifier2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
 
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.asString()))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.asString()))
-
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
                .whenTimeElapses(Duration.standardMinutes(35))
-
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
                .expectNoAssociationWith("identifier", identifier2)
@@ -124,12 +117,12 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenTimeAdvances() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
-        AggregateIdentifier identifier2 = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
+        UUID identifier2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
 
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.asString()))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.asString()))
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
 
                .whenTimeAdvancesTo(new DateTime().plus(Duration.standardDays(1)))
 

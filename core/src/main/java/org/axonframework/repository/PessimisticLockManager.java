@@ -18,7 +18,6 @@
 package org.axonframework.repository;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,14 +32,14 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 class PessimisticLockManager implements LockManager {
 
-    private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<String, DisposableLock>();
+    private final ConcurrentHashMap<Object, DisposableLock> locks = new ConcurrentHashMap<Object, DisposableLock>();
 
     /**
      * {@inheritDoc}
      */
     @Override
     public boolean validateLock(AggregateRoot aggregate) {
-        AggregateIdentifier aggregateIdentifier = aggregate.getIdentifier();
+        Object aggregateIdentifier = aggregate.getIdentifier();
 
         return isLockAvailableFor(aggregateIdentifier)
                 && lockFor(aggregateIdentifier).isHeldByCurrentThread();
@@ -52,7 +51,7 @@ class PessimisticLockManager implements LockManager {
      * @param aggregateIdentifier the identifier of the aggregate to obtains a lock for.
      */
     @Override
-    public void obtainLock(AggregateIdentifier aggregateIdentifier) {
+    public void obtainLock(Object aggregateIdentifier) {
         boolean lockObtained = false;
         while (!lockObtained) {
             createLockIfAbsent(aggregateIdentifier);
@@ -72,24 +71,24 @@ class PessimisticLockManager implements LockManager {
      * @throws IllegalMonitorStateException if a lock was obtained, but is not currently held by the current thread
      */
     @Override
-    public void releaseLock(AggregateIdentifier aggregateIdentifier) {
-        Assert.state(locks.containsKey(aggregateIdentifier.asString()), "No lock for this aggregate was ever obtained");
+    public void releaseLock(Object aggregateIdentifier) {
+        Assert.state(locks.containsKey(aggregateIdentifier), "No lock for this aggregate was ever obtained");
         DisposableLock lock = lockFor(aggregateIdentifier);
         lock.unlock(aggregateIdentifier);
     }
 
-    private void createLockIfAbsent(AggregateIdentifier aggregateIdentifier) {
+    private void createLockIfAbsent(Object aggregateIdentifier) {
         if (!locks.contains(aggregateIdentifier)) {
-            locks.putIfAbsent(aggregateIdentifier.asString(), new DisposableLock());
+            locks.putIfAbsent(aggregateIdentifier, new DisposableLock());
         }
     }
 
-    private boolean isLockAvailableFor(AggregateIdentifier aggregateIdentifier) {
-        return locks.containsKey(aggregateIdentifier.asString());
+    private boolean isLockAvailableFor(Object aggregateIdentifier) {
+        return locks.containsKey(aggregateIdentifier);
     }
 
-    private DisposableLock lockFor(AggregateIdentifier aggregateIdentifier) {
-        return locks.get(aggregateIdentifier.asString());
+    private DisposableLock lockFor(Object aggregateIdentifier) {
+        return locks.get(aggregateIdentifier);
     }
 
     private final class DisposableLock {
@@ -106,7 +105,7 @@ class PessimisticLockManager implements LockManager {
             return lock.isHeldByCurrentThread();
         }
 
-        private void unlock(AggregateIdentifier aggregateIdentifier) {
+        private void unlock(Object aggregateIdentifier) {
             lock.unlock();
             disposeIfUnused(aggregateIdentifier);
         }
@@ -120,13 +119,13 @@ class PessimisticLockManager implements LockManager {
             return true;
         }
 
-        private void disposeIfUnused(AggregateIdentifier aggregateIdentifier) {
+        private void disposeIfUnused(Object aggregateIdentifier) {
             if (lock.tryLock()) {
                 try {
                     if (lock.getHoldCount() == 1) {
                         // we now have a lock. We can shut it down.
                         isClosed = true;
-                        locks.remove(aggregateIdentifier.asString(), this);
+                        locks.remove(aggregateIdentifier, this);
                     }
                 } finally {
                     lock.unlock();

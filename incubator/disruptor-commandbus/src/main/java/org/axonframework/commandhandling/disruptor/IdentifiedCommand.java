@@ -16,12 +16,10 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * @author Allard Buijze
  */
 public interface IdentifiedCommand {
 
-    AggregateIdentifier getAggregateIdentifier();
+    Object getAggregateIdentifier();
 }

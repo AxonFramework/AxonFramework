@@ -19,6 +19,7 @@ package org.axonframework.domain;
 import org.junit.*;
 
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -29,9 +30,9 @@ public class SimpleDomainEventStreamTest {
 
     @Test
     public void testPeek() {
-        DomainEventMessage event1 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
                                                                           "Mock contents", MetaData.emptyInstance());
-        DomainEventMessage event2 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+        DomainEventMessage event2 = new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
                                                                           "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream testSubject = new SimpleDomainEventStream(event1, event2);
         assertSame(event1, testSubject.peek());
@@ -52,9 +53,9 @@ public class SimpleDomainEventStreamTest {
 
     @Test
     public void testNextAndHasNext() {
-        DomainEventMessage event1 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
                                                                           "Mock contents", MetaData.emptyInstance());
-        DomainEventMessage event2 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+        DomainEventMessage event2 = new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
                                                                           "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream testSubject = new SimpleDomainEventStream(event1, event2);
         assertTrue(testSubject.hasNext());
@@ -66,7 +67,7 @@ public class SimpleDomainEventStreamTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testNext_ReadBeyondEnd() {
-        DomainEventMessage event1 = new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
                                                                           "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream testSubject = new SimpleDomainEventStream(event1);
         testSubject.next();

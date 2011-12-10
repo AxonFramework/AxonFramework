@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -37,7 +36,7 @@ public interface ContinuedGivenState {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    GivenAggregateEventPublisher andThenAggregate(AggregateIdentifier aggregateIdentifier);
+    GivenAggregateEventPublisher andThenAggregate(Object aggregateIdentifier);
 
     /**
      * Indicates that the given <code>event</code> has been published in the past. This event is sent to the associated
@@ -50,9 +49,9 @@ public interface ContinuedGivenState {
 
     /**
      * Use this method to indicate that an aggregate with given identifier should publish certain events, <em>while
-     * recording the outcome</em>. In contrast to the {@link FixtureConfiguration#givenAggregate(org.axonframework.domain.AggregateIdentifier)
-     * given} and {@link #andThenAggregate(org.axonframework.domain.AggregateIdentifier) andThen} methods, this method
-     * will start recording activity on the EventBus and CommandBus.
+     * recording the outcome</em>. In contrast to the {@link FixtureConfiguration#givenAggregate(Object)} given} and
+     * {@link #andThenAggregate(Object)}  andThen} methods, this method will start recording activity on the EventBus
+     * and CommandBus.
      * <p/>
      * Can be chained to build natural sentences:<br/> <code>whenAggregate(someIdentifier).publishes(anEvent)</code>
      * <p/>
@@ -62,7 +61,7 @@ public interface ContinuedGivenState {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    WhenAggregateEventPublisher whenAggregate(AggregateIdentifier aggregateIdentifier);
+    WhenAggregateEventPublisher whenAggregate(Object aggregateIdentifier);
 
     /**
      * Use this method to indicate an application is published, <em>while recording the outcome</em>.

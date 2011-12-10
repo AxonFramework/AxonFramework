@@ -17,15 +17,18 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.util.Set;
+import java.util.TreeSet;
+
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
  * Aggregate factory that uses a convention to create instances of aggregates. The type must declare an
- * accessible constructor accepting a {@link org.axonframework.domain.AggregateIdentifier} as single parameter. This
+ * accessible constructor accepting the aggregate identifier used to load the aggregate as single parameter. This
  * constructor may not perform any initialization on the aggregate, other than setting the identifier.
  * <p/>
  * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
@@ -38,7 +41,7 @@ import java.lang.reflect.Modifier;
 public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implements AggregateFactory<T> {
 
     private final String typeIdentifier;
-    private final Constructor<T> constructor;
+    private final Set<Handler<T>> handlers = new TreeSet<Handler<T>>();
     private final Class<T> aggregateType;
 
     /**
@@ -55,16 +58,16 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
         Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
         this.aggregateType = aggregateType;
         this.typeIdentifier = aggregateType.getSimpleName();
-        try {
-            this.constructor = aggregateType.getDeclaredConstructor(AggregateIdentifier.class);
-            if (!constructor.isAccessible()) {
-                constructor.setAccessible(true);
+        for (Constructor<?> constructor : aggregateType.getDeclaredConstructors()) {
+            if (constructor.getParameterTypes().length == 1) {
+                handlers.add(new Handler<T>(constructor));
             }
-        } catch (NoSuchMethodException e) {
+        }
+        if (handlers.isEmpty()) {
             throw new IncompatibleAggregateException(String.format(
                     "The aggregate [%s] does not have a suitable constructor. "
                             + "See Javadoc of GenericAggregateFactory for more information.",
-                    aggregateType.getSimpleName()), e);
+                    aggregateType.getSimpleName()));
         }
     }
 
@@ -81,19 +84,20 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T createAggregate(AggregateIdentifier aggregateIdentifier, DomainEventMessage firstEvent) {
-        T aggregate;
+    public T createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
-            aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
+            return (T) ((AggregateSnapshot) firstEvent).getAggregate();
         } else {
-            try {
-                aggregate = constructor.newInstance(aggregateIdentifier);
-            } catch (Exception e) {
-                throw new IncompatibleAggregateException(String.format(
-                        "The constructor [%s] threw an exception", constructor.toString()), e);
+            for (Handler<T> handler : handlers) {
+                if (handler.matches(aggregateIdentifier)) {
+                    return handler.newInstance(aggregateIdentifier);
+                }
             }
         }
-        return aggregate;
+        throw new IncompatibleAggregateException(String.format(
+                "The aggregate [%s] does not have a suitable constructor. "
+                        + "See Javadoc of GenericAggregateFactory for more information.",
+                aggregateType.getSimpleName()));
     }
 
     @Override
@@ -104,5 +108,85 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
     @Override
     public Class<T> getAggregateType() {
         return aggregateType;
+    }
+
+    private class Handler<T> implements Comparable<Handler> {
+
+        private final int payloadDepth;
+        private final String payloadName;
+        private Constructor<?> constructor;
+        private final Class parameterType;
+
+        public Handler(Constructor<?> constructor) {
+            this.constructor = constructor;
+            parameterType = constructor.getParameterTypes()[0];
+            payloadDepth = superClassCount(parameterType, Integer.MAX_VALUE);
+            payloadName = parameterType.getName();
+            ensureAccessible(constructor);
+        }
+
+        public boolean matches(Object parameter) {
+            return parameterType.isInstance(parameter);
+        }
+
+        @SuppressWarnings("unchecked")
+        public T newInstance(Object parameter) {
+            try {
+                return (T) constructor.newInstance(parameter);
+            } catch (Exception e) {
+                throw new IncompatibleAggregateException(String.format(
+                        "The constructor [%s] threw an exception", constructor.toString()), e);
+            }
+        }
+
+        private int superClassCount(Class<?> declaringClass, int interfaceScore) {
+            if (declaringClass.isInterface()) {
+                return interfaceScore;
+            }
+            int superClasses = 0;
+
+            while (declaringClass != null) {
+                superClasses++;
+                declaringClass = declaringClass.getSuperclass();
+            }
+            return superClasses;
+        }
+
+        @Override
+        public int compareTo(Handler o) {
+            if (payloadDepth != o.payloadDepth) {
+                return o.payloadDepth - payloadDepth;
+            } else {
+                return payloadName.compareTo(o.payloadName);
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Handler that = (Handler) o;
+
+            if (payloadDepth != that.payloadDepth) {
+                return false;
+            }
+            if (!payloadName.equals(that.payloadName)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = payloadDepth;
+            result = 31 * result + payloadName.hashCode();
+            return result;
+        }
     }
 }

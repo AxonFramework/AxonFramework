@@ -16,8 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * Exception indicating that the (actual) version of a loaded aggregate did not match the given expected version number.
  * This typically means that the aggregate has been modified by another thread between the moment data was queried, and
@@ -29,7 +27,7 @@ import org.axonframework.domain.AggregateIdentifier;
 public class ConflictingAggregateVersionException extends ConflictingModificationException {
 
     private static final long serialVersionUID = 1827438009942802481L;
-    private final AggregateIdentifier aggregateIdentifier;
+    private final Object aggregateIdentifier;
     private final long expectedVersion;
     private final long actualVersion;
 
@@ -40,11 +38,11 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
      * @param expectedVersion     The version expected by the component loading the aggregate
      * @param actualVersion       The actual version of the aggregate
      */
-    public ConflictingAggregateVersionException(AggregateIdentifier aggregateIdentifier,
+    public ConflictingAggregateVersionException(Object aggregateIdentifier,
                                                 long expectedVersion, long actualVersion) {
         super(String.format("The version of aggregate [%s] was not as expected. "
                                     + "Expected [%s], but repository found [%s]",
-                            aggregateIdentifier, expectedVersion, actualVersion));
+                            aggregateIdentifier.toString(), expectedVersion, actualVersion));
         this.aggregateIdentifier = aggregateIdentifier;
         this.expectedVersion = expectedVersion;
         this.actualVersion = actualVersion;
@@ -58,11 +56,11 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
      * @param actualVersion       The actual version of the aggregate
      * @param cause               The underlying cause of the exception
      */
-    public ConflictingAggregateVersionException(AggregateIdentifier aggregateIdentifier,
+    public ConflictingAggregateVersionException(Object aggregateIdentifier,
                                                 long expectedVersion, long actualVersion, Throwable cause) {
         super(String.format("The version of aggregate [%s] was not as expected. "
                                     + "Expected [%s], but repository found [%s]",
-                            aggregateIdentifier, expectedVersion, actualVersion),
+                            aggregateIdentifier.toString(), expectedVersion, actualVersion),
               cause);
         this.aggregateIdentifier = aggregateIdentifier;
         this.expectedVersion = expectedVersion;
@@ -74,7 +72,7 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
      *
      * @return the identifier of the aggregate which version is not as expected
      */
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

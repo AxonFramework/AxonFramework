@@ -1,19 +1,17 @@
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * @author Allard Buijze
  */
 public class UpdateStubAggregateWithExtraEventCommand {
 
-    private AggregateIdentifier aggregateId;
+    private Object aggregateId;
 
-    public UpdateStubAggregateWithExtraEventCommand(AggregateIdentifier aggregateId) {
+    public UpdateStubAggregateWithExtraEventCommand(Object aggregateId) {
         this.aggregateId = aggregateId;
     }
 
-    public AggregateIdentifier getAggregateId() {
+    public Object getAggregateId() {
         return aggregateId;
     }
 }

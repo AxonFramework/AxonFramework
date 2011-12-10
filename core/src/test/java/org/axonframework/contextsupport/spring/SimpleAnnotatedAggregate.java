@@ -17,7 +17,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.AggregateIdentifier;
+import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
 /**
@@ -25,14 +25,22 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
  */
 public class SimpleAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
+    private final Object identifier;
+
     @CommandHandler
     public SimpleAnnotatedAggregate(CreateSimpleAggregateCommand command) {
+        identifier = IdentifierFactory.getInstance().generateIdentifier();
     }
 
-    public SimpleAnnotatedAggregate(AggregateIdentifier identifier) {
-        super(identifier);
+    public SimpleAnnotatedAggregate(Object identifier) {
+        this.identifier = identifier;
     }
 
     public static class CreateSimpleAggregateCommand {
+    }
+
+    @Override
+    public Object getIdentifier() {
+        return identifier;
     }
 }

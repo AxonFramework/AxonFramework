@@ -18,21 +18,17 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
 
 /**
  * CommandTargetResolver that uses annotations on the command to identify the methods that provide the
- * AggregateIdentifier of the targeted Aggregate and optionally the expected version of the aggregate.
+ * Aggregate Identifier of the targeted Aggregate and optionally the expected version of the aggregate.
  * <p/>
  * This implementation expects at least one method (without paramters) or field in the command to be annotated with
  * {@link TargetAggregateIdentifier}. If on a method, the result of the invocation of that method will be converted to
@@ -50,7 +46,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 
     @Override
     public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
-        AggregateIdentifier aggregateIdentifier;
+        Object aggregateIdentifier;
         Long aggregateVersion;
         try {
             aggregateIdentifier = findIdentifier(command);
@@ -74,17 +70,18 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
     }
 
-    private AggregateIdentifier findIdentifier(CommandMessage<?> command)
+    @SuppressWarnings("unchecked")
+    private <I> I findIdentifier(CommandMessage<?> command)
             throws InvocationTargetException, IllegalAccessException {
         for (Method m : methodsOf(command.getPayloadType())) {
             if (m.isAnnotationPresent(TargetAggregateIdentifier.class)) {
                 ensureAccessible(m);
-                return convert(m.invoke(command.getPayload()));
+                return (I) m.invoke(command.getPayload());
             }
         }
         for (Field f : fieldsOf(command.getPayloadType())) {
             if (f.isAnnotationPresent(TargetAggregateIdentifier.class)) {
-                return convert(getFieldValue(f, command.getPayload()));
+                return (I) getFieldValue(f, command.getPayload());
             }
         }
         return null;
@@ -115,15 +112,4 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         }
     }
 
-    private AggregateIdentifier convert(Object identifier) {
-        if (identifier == null) {
-            return null;
-        }
-        if (AggregateIdentifier.class.isInstance(identifier)) {
-            return (AggregateIdentifier) identifier;
-        } else if (UUID.class.isInstance(identifier)) {
-            return new UUIDAggregateIdentifier((UUID) identifier);
-        }
-        return new StringAggregateIdentifier(identifier.toString());
-    }
 }

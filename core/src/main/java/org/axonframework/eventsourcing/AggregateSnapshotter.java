@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 
@@ -43,7 +42,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
 
         DomainEventMessage firstEvent = eventStream.peek();
-        AggregateIdentifier aggregateIdentifier = firstEvent.getAggregateIdentifier();
+        Object aggregateIdentifier = firstEvent.getAggregateIdentifier();
         EventSourcedAggregateRoot aggregate;
         if (firstEvent instanceof AggregateSnapshot) {
             aggregate = ((AggregateSnapshot) firstEvent).getAggregate();

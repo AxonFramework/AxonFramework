@@ -26,7 +26,6 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -40,6 +39,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -126,7 +126,7 @@ public class GaeEventStoreTest {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        eventStore.readEvents("test", new UUIDAggregateIdentifier());
+        eventStore.readEvents("test", UUID.randomUUID());
     }
 
     private Query createCountQuery(String type) {
@@ -135,8 +135,19 @@ public class GaeEventStoreTest {
 
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
+        private final UUID identifier;
+
+        private StubAggregateRoot() {
+            this.identifier = UUID.randomUUID();
+        }
+
         public void changeState() {
             apply(new StubStateChangedEvent());
+        }
+
+        @Override
+        public UUID getIdentifier() {
+            return identifier;
         }
 
         @EventHandler

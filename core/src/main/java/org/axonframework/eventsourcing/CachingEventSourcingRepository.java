@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.repository.LockingStrategy;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -90,7 +89,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
+    public T doLoad(Object aggregateIdentifier, Long expectedVersion) {
         T aggregate = (T) cache.get(aggregateIdentifier);
         if (aggregate == null) {
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
@@ -112,9 +111,9 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
 
     private class CacheClearingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
 
-        private AggregateIdentifier identifier;
+        private Object identifier;
 
-        public CacheClearingUnitOfWorkListener(AggregateIdentifier identifier) {
+        public CacheClearingUnitOfWorkListener(Object identifier) {
             this.identifier = identifier;
         }
 

@@ -18,7 +18,6 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -60,7 +59,7 @@ import java.util.List;
  * </pre>
  * </code>
  * <p/>
- * Providing the "given" events using the {@link #given(org.axonframework.domain.DomainEventMessage...)} or {@link
+ * Providing the "given" events using the {@link #given(Object...)} or {@link
  * #given(java.util.List) given(List&lt;DomainEvent&gt;)} methods must be the last operation in the configuration
  * stage.
  * <p/>
@@ -147,7 +146,7 @@ public interface FixtureConfiguration {
      *
      * @return the identifier of the aggregate prepared in this fixture
      */
-    AggregateIdentifier getAggregateIdentifier();
+    Object getAggregateIdentifier();
 
     /**
      * Returns the command bus used by this fixture. The command bus is provided for wiring purposes only, for example
@@ -189,5 +188,5 @@ public interface FixtureConfiguration {
      *
      * @param aggregateIdentifier The aggregate identifier the fixture should use.s
      */
-    void setAggregateIdentifier(AggregateIdentifier aggregateIdentifier);
+    void setAggregateIdentifier(Object aggregateIdentifier);
 }

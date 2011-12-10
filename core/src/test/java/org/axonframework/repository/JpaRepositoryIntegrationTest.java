@@ -90,7 +90,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
     @Test
     public void testUpdateAnAggregate() {
-        JpaAggregate agg = new JpaAggregate();
+        JpaAggregate agg = new JpaAggregate("First message");
         entityManager.persist(agg);
         entityManager.flush();
         entityManager.clear();
@@ -111,7 +111,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
     @Test
     public void testDeleteAnAggregate() {
-        JpaAggregate agg = new JpaAggregate();
+        JpaAggregate agg = new JpaAggregate("First message");
         entityManager.persist(agg);
         entityManager.flush();
         entityManager.clear();
@@ -131,7 +131,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
         assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
 
-        assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier().asString()));
+        assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier().toString()));
     }
 
     @Override

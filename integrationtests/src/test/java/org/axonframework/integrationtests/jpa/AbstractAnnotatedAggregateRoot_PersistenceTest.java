@@ -16,14 +16,13 @@
 
 package org.axonframework.integrationtests.jpa;
 
-import org.axonframework.domain.AggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -39,7 +38,7 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
 
     @PersistenceContext
     private EntityManager entityManager;
-    private AggregateIdentifier id = new UUIDAggregateIdentifier();
+    private String id = UUID.randomUUID().toString();
 
     @Test
     public void testSaveAndLoadAggregate() {
@@ -51,8 +50,7 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
         entityManager.persist(aggregate);
         entityManager.flush();
 
-        SimpleJpaEventSourcedAggregate reloaded = entityManager.find(SimpleJpaEventSourcedAggregate.class,
-                                                                     id.asString());
+        SimpleJpaEventSourcedAggregate reloaded = entityManager.find(SimpleJpaEventSourcedAggregate.class, id);
         assertEquals(id, reloaded.getIdentifier());
         assertEquals(2, reloaded.getInvocationCount());
         assertEquals((Long) 1L, reloaded.getVersion());

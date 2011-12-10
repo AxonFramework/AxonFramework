@@ -16,9 +16,7 @@
 
 package org.axonframework.integrationtests.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
@@ -51,7 +49,7 @@ import static org.junit.Assert.*;
 public class AsyncSagaHandlingTest {
 
     private static final int EVENTS_PER_SAGA = 100;
-    private List<AggregateIdentifier> aggregateIdentifiers = new LinkedList<AggregateIdentifier>();
+    private List<UUID> aggregateIdentifiers = new LinkedList<UUID>();
 
     @Autowired
     private EventBus eventBus;
@@ -70,7 +68,7 @@ public class AsyncSagaHandlingTest {
         assertNotNull(eventBus);
         assertNotNull(sagaRepository);
         for (int t = 0; t < 10; t++) {
-            aggregateIdentifiers.add(new UUIDAggregateIdentifier());
+            aggregateIdentifiers.add(UUID.randomUUID());
         }
     }
 
@@ -85,8 +83,8 @@ public class AsyncSagaHandlingTest {
         sagaManager.stop();
         sagaRepository.purgeCache();
 
-        for (AggregateIdentifier id : aggregateIdentifiers) {
-            validateSaga(id.asString());
+        for (UUID id : aggregateIdentifiers) {
+            validateSaga(id);
         }
     }
 
@@ -94,8 +92,8 @@ public class AsyncSagaHandlingTest {
     @Test
     public void testAssociationProcessingOrder() throws InterruptedException {
         UUID currentAssociation = UUID.randomUUID();
-        eventBus.publish(new GenericEventMessage<SagaTriggeringEvent>(new SagaTriggeringEvent(new UUIDAggregateIdentifier(
-                currentAssociation), "message")));
+        eventBus.publish(new GenericEventMessage<SagaTriggeringEvent>(new SagaTriggeringEvent(currentAssociation,
+                                                                                              "message")));
         for (int t = 0; t < EVENTS_PER_SAGA; t++) {
             UUID newAssociation = UUID.randomUUID();
             eventBus.publish(new GenericEventMessage<SagaAssociationChangingEvent>(new SagaAssociationChangingEvent(
@@ -110,11 +108,11 @@ public class AsyncSagaHandlingTest {
         assertEquals(1, result.size());
     }
 
-    private void validateSaga(String myId) {
+    private void validateSaga(UUID myId) {
         Set<AsyncSaga> sagas = sagaRepository.find(AsyncSaga.class,
                                                    new HashSet<AssociationValue>(Arrays.asList(new AssociationValue(
                                                            "myId",
-                                                           myId))));
+                                                           myId.toString()))));
         assertEquals(1, sagas.size());
         AsyncSaga saga = sagas.iterator().next();
         Iterator<String> messageIterator = saga.getReceivedMessages().iterator();

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -43,7 +44,7 @@ public class JavaSerializationTest {
         XStream xstream = new XStream(new PureJavaReflectionProvider());
         XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
 
-        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
+        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(UUID.randomUUID());
         aggregateRoot.doSomething();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         serializer.serialize(aggregateRoot, baos);
@@ -61,7 +62,7 @@ public class JavaSerializationTest {
         XStream xstream = new XStream();
         XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
 
-        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
+        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(UUID.randomUUID());
         aggregateRoot.doSomething();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         serializer.serialize(aggregateRoot, baos);
@@ -76,7 +77,7 @@ public class JavaSerializationTest {
 
     @Test
     public void testSerialize_JavaSerialization() throws IOException, ClassNotFoundException {
-        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(new UUIDAggregateIdentifier());
+        StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(UUID.randomUUID());
         aggregateRoot.doSomething();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ObjectOutputStream(baos).writeObject(aggregateRoot);

@@ -16,7 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -64,7 +63,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
-    public T load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
+    public T load(Object aggregateIdentifier, Long expectedVersion) {
         T aggregate = doLoad(aggregateIdentifier, expectedVersion);
         validateOnLoad(aggregate, expectedVersion);
         return CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
@@ -74,7 +73,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * {@inheritDoc}
      */
     @Override
-    public T load(AggregateIdentifier aggregateIdentifier) {
+    public T load(Object aggregateIdentifier) {
         return load(aggregateIdentifier, null);
     }
 
@@ -117,11 +116,11 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
-    protected abstract T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion);
+    protected abstract T doLoad(Object aggregateIdentifier, Long expectedVersion);
 
     /**
      * Removes the aggregate from the repository. Typically, the repository should ensure that any calls to {@link
-     * #doLoad(org.axonframework.domain.AggregateIdentifier, Long)} throw a {@link AggregateNotFoundException} when
+     * #doLoad(Object, Long)} throw a {@link AggregateNotFoundException} when
      * loading a deleted aggregate.
      *
      * @param aggregate the aggregate to delete

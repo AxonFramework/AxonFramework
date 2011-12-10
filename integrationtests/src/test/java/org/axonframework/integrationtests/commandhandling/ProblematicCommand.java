@@ -16,26 +16,24 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.domain.AggregateIdentifier;
-
 /**
  * A command that should cause an exception to be thrown by the aggregate.
  */
 public class ProblematicCommand {
 
-    private AggregateIdentifier aggregateId;
+    private Object aggregateId;
     private Long aggregateVersion;
 
-    public ProblematicCommand(AggregateIdentifier aggregateId, Long aggregateVersion) {
+    public ProblematicCommand(Object aggregateId, Long aggregateVersion) {
         this.aggregateId = aggregateId;
         this.aggregateVersion = aggregateVersion;
     }
 
-    public ProblematicCommand(AggregateIdentifier aggregateId) {
+    public ProblematicCommand(Object aggregateId) {
         this.aggregateId = aggregateId;
     }
 
-    public AggregateIdentifier getAggregateId() {
+    public Object getAggregateId() {
         return aggregateId;
     }
 

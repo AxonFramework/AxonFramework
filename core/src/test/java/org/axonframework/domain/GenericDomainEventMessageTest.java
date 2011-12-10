@@ -20,6 +20,7 @@ import org.junit.*;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -32,7 +33,7 @@ public class GenericDomainEventMessageTest {
     public void testConstructor() {
         Object payload = new Object();
         long seqNo = 0;
-        AggregateIdentifier id = new UUIDAggregateIdentifier();
+        UUID id = UUID.randomUUID();
         GenericDomainEventMessage<Object> message1 = new GenericDomainEventMessage<Object>(id, seqNo, payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -69,11 +70,10 @@ public class GenericDomainEventMessageTest {
     public void testWithMetaData() {
         Object payload = new Object();
         long seqNo = 0;
-        AggregateIdentifier id = new UUIDAggregateIdentifier();
+        UUID id = UUID.randomUUID();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<Object>(id, seqNo,
-                                                                                          payload, metaData);
+        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<Object>(id, seqNo, payload, metaData);
         GenericDomainEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericDomainEventMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
@@ -86,11 +86,10 @@ public class GenericDomainEventMessageTest {
     public void testAndMetaData() {
         Object payload = new Object();
         long seqNo = 0;
-        AggregateIdentifier id = new UUIDAggregateIdentifier();
+        UUID id = UUID.randomUUID();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<Object>(id, seqNo,
-                                                                                          payload, metaData);
+        GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<Object>(id, seqNo, payload, metaData);
         GenericDomainEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         GenericDomainEventMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));

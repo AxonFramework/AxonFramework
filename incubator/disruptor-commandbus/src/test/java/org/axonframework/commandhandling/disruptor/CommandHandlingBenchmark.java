@@ -21,11 +21,9 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.commandhandling.annotation.GenericCommandMessage;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
@@ -34,6 +32,7 @@ import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 
 /**
  * Benchmark test created to compare
@@ -41,7 +40,7 @@ import java.util.Collections;
  * @author Allard Buijze
  */
 public class CommandHandlingBenchmark {
-    private static final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+    private static final UUID aggregateIdentifier = UUID.randomUUID();
 
     public static void main(String[] args) {
         CommandBus cb = new SimpleCommandBus();
@@ -53,12 +52,12 @@ public class CommandHandlingBenchmark {
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
         Repository<MyAggregate> repository = new Repository<MyAggregate>() {
             @Override
-            public MyAggregate load(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
+            public MyAggregate load(Object aggregateIdentifier, Long expectedVersion) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public MyAggregate load(AggregateIdentifier aggregateIdentifier) {
+            public MyAggregate load(Object aggregateIdentifier) {
                 return myAggregate;
             }
 
@@ -83,12 +82,19 @@ public class CommandHandlingBenchmark {
 
     private static class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
+        private final UUID identifier;
+
         protected MyAggregate() {
-            super();
+            this(UUID.randomUUID());
         }
 
-        protected MyAggregate(AggregateIdentifier identifier) {
-            super(identifier);
+        protected MyAggregate(UUID identifier) {
+            this.identifier = identifier;
+        }
+
+        @Override
+        public UUID getIdentifier() {
+            return identifier;
         }
 
         public void doSomething() {
@@ -136,7 +142,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+        public DomainEventStream readEvents(String type, Object identifier) {
             System.out.println(".");
             return storedEvents;
         }

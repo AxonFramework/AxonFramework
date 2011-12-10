@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.joda.time.DateTime;
 
 /**
@@ -49,7 +48,7 @@ public interface FixtureConfiguration {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    GivenAggregateEventPublisher givenAggregate(AggregateIdentifier aggregateIdentifier);
+    GivenAggregateEventPublisher givenAggregate(Object aggregateIdentifier);
 
     /**
      * Indicates that the given <code>applicationEvent</code> has been published in the past. This event is sent to the

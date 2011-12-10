@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.EventMessage;
 import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
@@ -49,27 +48,7 @@ public interface FixtureExecutionResult {
      * @param associationValue The value of the association to verify
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectAssociationWith(String associationKey, String associationValue);
-
-    /**
-     * Asserts that at least one of the active sagas is associated with the given <code>associationKey</code> and
-     * <code>associationValue</code>.
-     *
-     * @param associationKey   The key of the association to verify
-     * @param associationValue The value of the association to verify
-     * @return the FixtureExecutionResult for method chaining
-     */
-    FixtureExecutionResult expectAssociationWith(String associationKey, Number associationValue);
-
-    /**
-     * Asserts that at least one of the active sagas is associated with the given <code>associationKey</code> and
-     * <code>associationValue</code>.
-     *
-     * @param associationKey   The key of the association to verify
-     * @param associationValue The value of the association to verify
-     * @return the FixtureExecutionResult for method chaining
-     */
-    FixtureExecutionResult expectAssociationWith(String associationKey, AggregateIdentifier associationValue);
+    FixtureExecutionResult expectAssociationWith(String associationKey, Object associationValue);
 
     /**
      * Asserts that at none of the active sagas is associated with the given <code>associationKey</code> and
@@ -79,27 +58,7 @@ public interface FixtureExecutionResult {
      * @param associationValue The value of the association to verify
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoAssociationWith(String associationKey, String associationValue);
-
-    /**
-     * Asserts that at none of the active sagas is associated with the given <code>associationKey</code> and
-     * <code>associationValue</code>.
-     *
-     * @param associationKey   The key of the association to verify
-     * @param associationValue The value of the association to verify
-     * @return the FixtureExecutionResult for method chaining
-     */
-    FixtureExecutionResult expectNoAssociationWith(String associationKey, Number associationValue);
-
-    /**
-     * Asserts that at none of the active sagas is associated with the given <code>associationKey</code> and
-     * <code>associationValue</code>.
-     *
-     * @param associationKey   The key of the association to verify
-     * @param associationValue The value of the association to verify
-     * @return the FixtureExecutionResult for method chaining
-     */
-    FixtureExecutionResult expectNoAssociationWith(String associationKey, AggregateIdentifier associationValue);
+    FixtureExecutionResult expectNoAssociationWith(String associationKey, Object associationValue);
 
     /**
      * Asserts that an event matching the given <code>matcher</code> has been scheduled to be published after the given

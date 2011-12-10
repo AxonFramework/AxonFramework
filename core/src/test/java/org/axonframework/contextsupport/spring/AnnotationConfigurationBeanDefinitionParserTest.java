@@ -19,7 +19,6 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
@@ -42,6 +41,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -124,7 +124,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
                                                                       new SimpleEvent(
                                                                               identifier), MetaData.emptyInstance()));
@@ -143,7 +143,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
                                                                       new SimpleEvent(
                                                                               identifier), MetaData.emptyInstance()));
@@ -167,7 +167,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
                                                                       new SimpleEvent(
                                                                               identifier), MetaData.emptyInstance()));

@@ -17,10 +17,8 @@
 package org.axonframework.eventstore.redis;
 
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
 import org.axonframework.serializer.XStreamSerializer;
 import org.junit.*;
@@ -62,8 +60,8 @@ public class RedisEventStoreTest {
 
     @Test
     public void testAppend() {
-        AggregateIdentifier id = new StringAggregateIdentifier("blabla");
-        String dbKey = "TEST." + id.asString();
+        String id = "blabla";
+        String dbKey = "TEST." + id;
         jedis.del(dbKey);
         testSubject.appendEvents("TEST", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<StubDomainEvent>(id, 0, new StubDomainEvent()),

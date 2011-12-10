@@ -19,10 +19,8 @@ package org.axonframework.gae.eventstore;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshot;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -55,7 +53,7 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
     }
 
     @Override
-    public void scheduleSnapshot(String typeIdentifier, AggregateIdentifier aggregateIdentifier) {
+    public void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier) {
         logger.debug("Schedule a new task to create a snapshot for type {} and aggregate {}",
                      typeIdentifier, aggregateIdentifier);
 
@@ -63,14 +61,14 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
 
         queue.add(TaskOptions.Builder.withUrl("/task/snapshot")
                                      .param("typeIdentifier", typeIdentifier)
-                                     .param("aggregateIdentifier", aggregateIdentifier.asString())
+                                     .param("aggregateIdentifier", aggregateIdentifier.toString())
                                      .method(TaskOptions.Method.POST)
         );
     }
 
     public void createSnapshot(String typeIdentifier, String aggregateIdentifier) {
         DomainEventStream eventStream =
-                eventStore.readEvents(typeIdentifier, new StringAggregateIdentifier(aggregateIdentifier));
+                eventStore.readEvents(typeIdentifier, aggregateIdentifier);
         DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, eventStream);
         if (snapshotEvent != null) {
             eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
@@ -90,7 +88,7 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
 
         DomainEventMessage firstEvent = eventStream.peek();
-        AggregateIdentifier aggregateIdentifier = firstEvent.getAggregateIdentifier();
+        Object aggregateIdentifier = firstEvent.getAggregateIdentifier();
 
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(eventStream);

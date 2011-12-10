@@ -18,8 +18,6 @@ package org.axonframework.test;
 
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
 import org.junit.*;
 
@@ -43,27 +41,25 @@ public class FixtureTest_Generic {
     public void testAggregateIdentifier_DefaultsToUUID() {
         assertNotNull(fixture.getAggregateIdentifier());
         // this must work
-        UUID.fromString(fixture.getAggregateIdentifier().asString());
+        UUID.fromString(fixture.getAggregateIdentifier().toString());
     }
 
     @Test
     public void testAggregateIdentifier_Custom() {
-        fixture.setAggregateIdentifier(new StringAggregateIdentifier("My value"));
-        assertEquals("My value", fixture.getAggregateIdentifier().asString());
+        fixture.setAggregateIdentifier("My value");
+        assertEquals("My value", fixture.getAggregateIdentifier());
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(new UUIDAggregateIdentifier(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<StubDomainEvent>(new UUIDAggregateIdentifier(),
-                                                               0,
-                                                               new StubDomainEvent())));
+                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent())));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
-        UUIDAggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<StubDomainEvent>(identifier, 0, new StubDomainEvent()),
                 new GenericDomainEventMessage<StubDomainEvent>(identifier, 2, new StubDomainEvent())));

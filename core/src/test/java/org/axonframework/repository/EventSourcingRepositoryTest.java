@@ -16,7 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -25,7 +24,6 @@ import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -49,6 +47,7 @@ import org.mockito.stubbing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -82,7 +81,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadAndSaveAggregate() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         DomainEventMessage event1 = new GenericDomainEventMessage<String>(identifier, (long) 1,
                                                                           "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<String>(identifier, (long) 2,
@@ -112,7 +111,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadWithAggregateSnapshot() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         TestAggregate simpleAggregate = new TestAggregate(identifier);
         simpleAggregate.apply(new GenericDomainEventMessage<String>(identifier, (long) 0,
                                                                     "Mock contents", MetaData.emptyInstance()));
@@ -135,7 +134,7 @@ public class EventSourcingRepositoryTest {
     @Test
     public void testLoadAndSaveWithConflictingChanges() {
         ConflictResolver conflictResolver = mock(ConflictResolver.class);
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         DomainEventMessage event2 = new GenericDomainEventMessage<String>(identifier, (long) 2,
                                                                           "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event3 = new GenericDomainEventMessage<String>(identifier, (long) 3,
@@ -176,7 +175,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadWithConflictingChanges_NoConflictResolverSet() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         DomainEventMessage event2 = new GenericDomainEventMessage<String>(identifier, (long) 2,
                                                                           "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event3 = new GenericDomainEventMessage<String>(identifier, (long) 3,
@@ -200,7 +199,7 @@ public class EventSourcingRepositoryTest {
     @Test
     public void testLoadAndSaveWithoutConflictingChanges() {
         ConflictResolver conflictResolver = mock(ConflictResolver.class);
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 1,
                                                                                   "Mock contents",
@@ -228,7 +227,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testLoadEventsWithDecorators() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         SpyEventPreprocessor decorator1 = new SpyEventPreprocessor();
         SpyEventPreprocessor decorator2 = new SpyEventPreprocessor();
         testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
@@ -274,11 +273,11 @@ public class EventSourcingRepositoryTest {
             }
 
             @Override
-            public DomainEventStream readEvents(String type, AggregateIdentifier identifier) {
+            public DomainEventStream readEvents(String type, Object identifier) {
                 return mockEventStore.readEvents(type, identifier);
             }
         });
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
+        UUID identifier = UUID.randomUUID();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 3,
                                                                                   "Mock contents",
@@ -301,9 +300,9 @@ public class EventSourcingRepositoryTest {
     private static class SubtAggregateFactory implements AggregateFactory<TestAggregate> {
 
         @Override
-        public TestAggregate createAggregate(AggregateIdentifier aggregateIdentifier,
+        public TestAggregate createAggregate(Object aggregateIdentifier,
                                              DomainEventMessage firstEvent) {
-            return new TestAggregate(aggregateIdentifier);
+            return new TestAggregate((UUID) aggregateIdentifier);
         }
 
         @Override
@@ -320,9 +319,10 @@ public class EventSourcingRepositoryTest {
     private static class TestAggregate extends AbstractEventSourcedAggregateRoot {
 
         private List<EventMessage> handledEvents = new ArrayList<EventMessage>();
+        private final UUID identifier;
 
-        private TestAggregate(AggregateIdentifier identifier) {
-            super(identifier);
+        private TestAggregate(UUID identifier) {
+            this.identifier = identifier;
         }
 
         @Override
@@ -338,6 +338,10 @@ public class EventSourcingRepositoryTest {
         public List<EventMessage> getHandledEvents() {
             return handledEvents;
         }
+
+        public UUID getIdentifier() {
+            return identifier;
+        }
     }
 
     public static class SpyEventPreprocessor implements EventStreamDecorator {
@@ -345,7 +349,7 @@ public class EventSourcingRepositoryTest {
         private DomainEventStream lastSpy;
 
         @Override
-        public DomainEventStream decorateForRead(final String aggregateType, AggregateIdentifier aggregateIdentifier,
+        public DomainEventStream decorateForRead(final String aggregateType, Object aggregateIdentifier,
                                                  final DomainEventStream eventStream) {
             createSpy(eventStream);
             return lastSpy;

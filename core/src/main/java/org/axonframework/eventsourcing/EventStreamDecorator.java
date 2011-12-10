@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 
 /**
@@ -40,7 +39,7 @@ public interface EventStreamDecorator {
      *                            decorated event stream
      * @return the decorated event stream
      */
-    DomainEventStream decorateForRead(String aggregateType, AggregateIdentifier aggregateIdentifier,
+    DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
                                       DomainEventStream eventStream);
 
     /**

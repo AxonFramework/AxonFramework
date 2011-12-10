@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.eventstore.EventStoreException;
 
 import java.io.BufferedOutputStream;
@@ -61,39 +60,39 @@ public class SimpleEventFileResolver implements EventFileResolver {
     }
 
     @Override
-    public OutputStream openEventFileForWriting(String type, AggregateIdentifier aggregateIdentifier)
+    public OutputStream openEventFileForWriting(String type, Object aggregateIdentifier)
             throws IOException {
         File eventFile = getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_EVENTS);
         return new BufferedOutputStream(new FileOutputStream(eventFile, true));
     }
 
     @Override
-    public OutputStream openSnapshotFileForWriting(String type, AggregateIdentifier aggregateIdentifier)
+    public OutputStream openSnapshotFileForWriting(String type, Object aggregateIdentifier)
             throws IOException {
         return new FileOutputStream(getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_SNAPSHOTS), true);
     }
 
     @Override
-    public InputStream openEventFileForReading(String type, AggregateIdentifier identifier) throws IOException {
+    public InputStream openEventFileForReading(String type, Object identifier) throws IOException {
         return new FileInputStream(getEventsFile(type, identifier, FILE_EXTENSION_EVENTS));
     }
 
     @Override
-    public InputStream openSnapshotFileForReading(String type, AggregateIdentifier identifier) throws IOException {
+    public InputStream openSnapshotFileForReading(String type, Object identifier) throws IOException {
         return new FileInputStream(getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS));
     }
 
     @Override
-    public boolean eventFileExists(String type, AggregateIdentifier identifier) throws IOException {
+    public boolean eventFileExists(String type, Object identifier) throws IOException {
         return getEventsFile(type, identifier, FILE_EXTENSION_EVENTS).exists();
     }
 
     @Override
-    public boolean snapshotFileExists(String type, AggregateIdentifier identifier) throws IOException {
+    public boolean snapshotFileExists(String type, Object identifier) throws IOException {
         return getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS).exists();
     }
 
-    private File getEventsFile(String type, AggregateIdentifier identifier, String extension) throws IOException {
+    private File getEventsFile(String type, Object identifier, String extension) throws IOException {
         return new File(getBaseDirForType(type), identifier + "." + extension);
     }
 

@@ -17,14 +17,11 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StringAggregateIdentifier;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -75,12 +72,11 @@ public class JpaEventStoreTest {
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
-    private AggregateIdentifier mockAggregateIdentifier;
+    private Object mockAggregateIdentifier;
 
     @Before
     public void setUp() {
-        mockAggregateIdentifier = mock(AggregateIdentifier.class);
-        when(mockAggregateIdentifier.asString()).thenReturn(UUID.randomUUID().toString());
+        mockAggregateIdentifier = UUID.randomUUID();
         aggregate1 = new StubAggregateRoot(mockAggregateIdentifier);
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
@@ -147,7 +143,7 @@ public class JpaEventStoreTest {
     @Test
     public void testLoad_LargeAmountOfEvents() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
-        AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
+        String aggregateIdentifier = "id";
         for (int t = 0; t < 110; t++) {
             domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
                                                                    "Mock contents", MetaData.emptyInstance()));
@@ -175,7 +171,7 @@ public class JpaEventStoreTest {
     @Test
     public void testEntireStreamIsReadOnUnserializableSnapshot() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
-        AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
+        String aggregateIdentifier = "id";
         for (int t = 0; t < 110; t++) {
             domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
                                                                    "Mock contents", MetaData.emptyInstance()));
@@ -226,7 +222,7 @@ public class JpaEventStoreTest {
     @Test
     public void testLoad_LargeAmountOfEventsWithSnapshot() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
-        AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
+        String aggregateIdentifier = "id";
         for (int t = 0; t < 110; t++) {
             domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
                                                                    "Mock contents", MetaData.emptyInstance()));
@@ -265,7 +261,9 @@ public class JpaEventStoreTest {
         DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
         List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
         while (actualEventStream.hasNext()) {
-            domainEvents.add(actualEventStream.next());
+            DomainEventMessage next = actualEventStream.next();
+            domainEvents.add(next);
+            assertEquals(aggregate1.getIdentifier(), next.getAggregateIdentifier());
         }
 
         assertEquals(2, domainEvents.size());
@@ -273,7 +271,7 @@ public class JpaEventStoreTest {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        testSubject.readEvents("Stub", new UUIDAggregateIdentifier());
+        testSubject.readEvents("Stub", UUID.randomUUID());
     }
 
     @Test
@@ -289,9 +287,9 @@ public class JpaEventStoreTest {
     @Test(expected = ConcurrencyException.class)
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(new StringAggregateIdentifier("123"), 0L,
+                new GenericDomainEventMessage<String>("123", 0L,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(new StringAggregateIdentifier("123"), 0L,
+                new GenericDomainEventMessage<String>("123", 0L,
                                                       "Mock contents", MetaData.emptyInstance())));
     }
 
@@ -300,9 +298,9 @@ public class JpaEventStoreTest {
         testSubject.setPersistenceExceptionResolver(null);
         try {
             testSubject.appendEvents("test", new SimpleDomainEventStream(
-                    new GenericDomainEventMessage<String>(new StringAggregateIdentifier("123"), (long) 0,
+                    new GenericDomainEventMessage<String>("123", (long) 0,
                                                           "Mock contents", MetaData.emptyInstance()),
-                    new GenericDomainEventMessage<String>(new StringAggregateIdentifier("123"), (long) 0,
+                    new GenericDomainEventMessage<String>("123", (long) 0,
                                                           "Mock contents", MetaData.emptyInstance())));
         } catch (ConcurrencyException ex) {
             fail("Didn't expect exception to be translated");
@@ -344,7 +342,7 @@ public class JpaEventStoreTest {
                 entityManager.createQuery("SELECT e FROM SnapshotEventEntry e "
                                                   + "WHERE e.type = 'type' "
                                                   + "AND e.aggregateIdentifier = :aggregateIdentifier")
-                             .setParameter("aggregateIdentifier", aggregate.getIdentifier().asString())
+                             .setParameter("aggregateIdentifier", aggregate.getIdentifier().toString())
                              .getResultList();
         assertEquals("archived snapshot count", 1L, snapshots.size());
         assertEquals("archived snapshot sequence", 1L, snapshots.iterator().next().getSequenceNumber());
@@ -356,9 +354,9 @@ public class JpaEventStoreTest {
         EventEntryStore eventEntryStore = mock(EventEntryStore.class);
         testSubject = new JpaEventStore(new SimpleEntityManagerProvider(entityManager), eventEntryStore);
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+                new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(new UUIDAggregateIdentifier(), (long) 0,
+                new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
                                                       "Mock contents", MetaData.emptyInstance())));
         verify(eventEntryStore, times(2)).persistEvent(eq("test"), isA(DomainEventMessage.class),
                                                        Matchers.<SerializedObject>any(),
@@ -366,21 +364,21 @@ public class JpaEventStoreTest {
 
         reset(eventEntryStore);
         GenericDomainEventMessage<String> eventMessage = new GenericDomainEventMessage<String>(
-                new UUIDAggregateIdentifier(), 0L, "Mock contents", MetaData.emptyInstance());
-        when(eventEntryStore.fetchBatch(anyString(), any(AggregateIdentifier.class), anyInt(), anyInt(),
+                UUID.randomUUID(), 0L, "Mock contents", MetaData.emptyInstance());
+        when(eventEntryStore.fetchBatch(anyString(), any(), anyInt(), anyInt(),
                                         any(EntityManager.class)))
                 .thenReturn(new ArrayList(Arrays.asList(new DomainEventEntry(
                         "Mock", eventMessage,
                         mockSerializedObject("Mock contents".getBytes()),
                         mockSerializedObject("Mock contents".getBytes())))));
-        when(eventEntryStore.loadLastSnapshotEvent(anyString(), any(AggregateIdentifier.class),
+        when(eventEntryStore.loadLastSnapshotEvent(anyString(), any(),
                                                    any(EntityManager.class)))
                 .thenReturn(null);
 
-        testSubject.readEvents("test", new StringAggregateIdentifier("1"));
+        testSubject.readEvents("test", "1");
 
-        verify(eventEntryStore).fetchBatch("test", new StringAggregateIdentifier("1"), 0, 100, entityManager);
-        verify(eventEntryStore).loadLastSnapshotEvent("test", new StringAggregateIdentifier("1"), entityManager);
+        verify(eventEntryStore).fetchBatch("test", "1", 0, 100, entityManager);
+        verify(eventEntryStore).loadLastSnapshotEvent("test", "1", entityManager);
     }
 
     private SerializedObject mockSerializedObject(byte[] bytes) {
@@ -390,7 +388,7 @@ public class JpaEventStoreTest {
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents,
                                                                                String aggregateType) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<DomainEventMessage<StubStateChangedEvent>>();
-        final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        final Object aggregateIdentifier = UUID.randomUUID();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<StubStateChangedEvent>(
                     aggregateIdentifier,
@@ -404,16 +402,23 @@ public class JpaEventStoreTest {
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
         private static final long serialVersionUID = -3656612830058057848L;
+        private final Object identifier;
 
         private StubAggregateRoot() {
+            this(UUID.randomUUID());
         }
 
-        private StubAggregateRoot(AggregateIdentifier identifier) {
-            super(identifier);
+        private StubAggregateRoot(Object identifier) {
+            this.identifier = identifier;
         }
 
         public void changeState() {
             apply(new StubStateChangedEvent());
+        }
+
+        @Override
+        public Object getIdentifier() {
+            return identifier;
         }
 
         @EventHandler

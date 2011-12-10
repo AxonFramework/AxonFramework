@@ -35,6 +35,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -88,7 +89,7 @@ public class HybridJpaRepositoryTest {
     @Test
     public void testStoreAggregate() {
         repository.setEventStore(eventStore);
-        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate();
+        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate(UUID.randomUUID().toString());
         aggregate.increaseCounter();
         repository.add(aggregate);
         CurrentUnitOfWork.commit();
@@ -98,12 +99,12 @@ public class HybridJpaRepositoryTest {
 
         verify(eventStore).appendEvents(eq("JpaEventSourcedAggregate"), streamContaining(1L));
         verify(eventListener).handle(isA(DomainEventMessage.class));
-        assertNotNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
+        assertNotNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier()));
     }
 
     @Test
     public void testStoreAggregate_NoEventStore() {
-        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate();
+        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate("id");
         aggregate.increaseCounter();
         repository.add(aggregate);
         CurrentUnitOfWork.commit();
@@ -113,13 +114,13 @@ public class HybridJpaRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertNotNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
+        assertNotNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier()));
     }
 
     @Test
     public void testDeleteAggregate() {
         repository.setEventStore(eventStore);
-        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate();
+        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate("id");
         aggregate.increaseCounter();
         aggregate.delete();
         repository.add(aggregate);
@@ -129,14 +130,14 @@ public class HybridJpaRepositoryTest {
         entityManager.clear();
 
         verify(eventStore).appendEvents(eq("JpaEventSourcedAggregate"), streamContaining(2L));
-        assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
+        assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier()));
         verify(eventListener).handle(isEventWith(StubDomainEvent.class));
         verify(eventListener).handle(isEventWith(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
     }
 
     @Test
     public void testDeleteAggregate_NoEventStore() {
-        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate();
+        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate("id");
         aggregate.increaseCounter();
         aggregate.delete();
         repository.add(aggregate);
@@ -148,14 +149,14 @@ public class HybridJpaRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier().asString()));
+        assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier()));
     }
 
     @Test
     public void testLoadAggregate() {
         repository.setEventStore(eventStore);
 
-        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate();
+        JpaEventSourcedAggregate aggregate = new JpaEventSourcedAggregate("id");
         aggregate.increaseCounter();
         aggregate.commitEvents();
         entityManager.persist(aggregate);

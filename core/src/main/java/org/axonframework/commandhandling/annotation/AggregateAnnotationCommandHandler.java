@@ -34,8 +34,8 @@ import javax.annotation.PreDestroy;
 /**
  * Command handler that handles commands based on {@link org.axonframework.commandhandling.annotation.CommandHandler}
  * annotations on an aggregate. Those annotations may appear on methods, in which case a specific aggregate instance
- * needs to be targeted by the command (see {@link org.axonframework.domain.AggregateIdentifier}), or on the
- * constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
+ * needs to be targeted by the command, or on the constructor. The latter will create a new Aggregate instance, which
+ * is then stored in the repository.
  *
  * @param <T> the type of aggregate this handler handles commands for
  * @author Allard Buijze
@@ -58,9 +58,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      * @param commandBus    The command bus to register command handlers to
      * @return the Adapter created for the command handler target. Can be used to unsubscribe.
      */
-    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(Class<T> aggregateType,
-                                                                                        Repository<T> repository,
-                                                                                        CommandBus commandBus) {
+    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
+            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus) {
         AggregateAnnotationCommandHandler adapter = new AggregateAnnotationCommandHandler<T>(aggregateType,
                                                                                              repository,
                                                                                              commandBus);
@@ -94,7 +93,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      * @param repository    The repository providing access to aggregate instances
      * @param commandBus    The command bus to register command handlers to
      */
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository, CommandBus commandBus) {
+    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
+                                             CommandBus commandBus) {
         this(aggregateType, repository, commandBus, new AnnotationCommandTargetResolver());
     }
 
@@ -107,8 +107,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      * @param commandBus            The command bus to register command handlers to
      * @param commandTargetResolver The target resolution strategy
      */
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository, CommandBus commandBus,
-                                             CommandTargetResolver commandTargetResolver) {
+    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
+                                             CommandBus commandBus, CommandTargetResolver commandTargetResolver) {
         this.repository = repository;
         this.commandBus = commandBus;
         this.commandTargetResolver = commandTargetResolver;

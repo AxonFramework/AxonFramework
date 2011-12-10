@@ -17,7 +17,6 @@
 package org.axonframework.repository;
 
 import org.axonframework.common.AxonNonTransientException;
-import org.axonframework.domain.AggregateIdentifier;
 
 /**
  * Exception indicating that the an aggregate could not be found in the repository.
@@ -28,7 +27,7 @@ import org.axonframework.domain.AggregateIdentifier;
 public class AggregateNotFoundException extends AxonNonTransientException {
 
     private static final long serialVersionUID = 1343530021245649274L;
-    private final AggregateIdentifier aggregateIdentifier;
+    private final Object aggregateIdentifier;
 
     /**
      * Initialize a AggregateNotFoundException for an aggregate identifier by given <code>aggregateIdentifier</code>
@@ -37,7 +36,7 @@ public class AggregateNotFoundException extends AxonNonTransientException {
      * @param aggregateIdentifier The identifier of the aggregate that could not be found
      * @param message             The message describing the cause of the exception
      */
-    public AggregateNotFoundException(AggregateIdentifier aggregateIdentifier, String message) {
+    public AggregateNotFoundException(Object aggregateIdentifier, String message) {
         super(message);
         this.aggregateIdentifier = aggregateIdentifier;
     }
@@ -51,7 +50,7 @@ public class AggregateNotFoundException extends AxonNonTransientException {
      * @param message             The message describing the cause of the exception
      * @param cause               The underlying cause of the exception
      */
-    public AggregateNotFoundException(AggregateIdentifier aggregateIdentifier, String message, Throwable cause) {
+    public AggregateNotFoundException(Object aggregateIdentifier, String message, Throwable cause) {
         super(message, cause);
         this.aggregateIdentifier = aggregateIdentifier;
     }
@@ -61,7 +60,7 @@ public class AggregateNotFoundException extends AxonNonTransientException {
      *
      * @return the identifier of the aggregate that could not be found
      */
-    public AggregateIdentifier getAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 }

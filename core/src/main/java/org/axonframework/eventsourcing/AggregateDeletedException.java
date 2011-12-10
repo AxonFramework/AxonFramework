@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.repository.AggregateNotFoundException;
 
 /**
@@ -35,7 +34,7 @@ public class AggregateDeletedException extends AggregateNotFoundException {
      * @param aggregateIdentifier The identifier of the aggregate that has been deleted
      * @param message             The message describing the cause of the exception
      */
-    public AggregateDeletedException(AggregateIdentifier aggregateIdentifier, String message) {
+    public AggregateDeletedException(Object aggregateIdentifier, String message) {
         super(aggregateIdentifier, message);
     }
 
@@ -45,7 +44,7 @@ public class AggregateDeletedException extends AggregateNotFoundException {
      *
      * @param aggregateIdentifier The identifier of the aggregate that has been deleted
      */
-    public AggregateDeletedException(AggregateIdentifier aggregateIdentifier) {
+    public AggregateDeletedException(Object aggregateIdentifier) {
         this(aggregateIdentifier,
              String.format("Aggregate with identifier [%s] not found. It has been deleted.", aggregateIdentifier));
     }

@@ -19,7 +19,6 @@ package org.axonframework.saga.annotation;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AbstractHandlerInspector;
 import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 
@@ -66,9 +65,6 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
                 ? associationProperty
                 : handlerAnnotation.keyName();
         Object associationValue = getPropertyValue(event, associationProperty);
-        if (associationValue instanceof AggregateIdentifier) {
-            associationValue = ((AggregateIdentifier) associationValue).asString();
-        }
         AssociationValue association = new AssociationValue(associationKey, associationValue.toString());
         return new HandlerConfiguration(creationPolicy(startAnnotation),
                                         handlerMethod,

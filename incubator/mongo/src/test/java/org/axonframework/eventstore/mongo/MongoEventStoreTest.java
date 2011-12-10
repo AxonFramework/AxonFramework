@@ -17,12 +17,10 @@
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.Mongo;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -38,6 +36,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
@@ -131,7 +130,7 @@ public class MongoEventStoreTest {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        eventStore.readEvents("test", new UUIDAggregateIdentifier());
+        eventStore.readEvents("test", UUID.randomUUID());
     }
 
     @Test
@@ -146,7 +145,7 @@ public class MongoEventStoreTest {
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<DomainEventMessage<StubStateChangedEvent>>();
-        final AggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        final UUID aggregateIdentifier = UUID.randomUUID();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<StubStateChangedEvent>(
                     aggregateIdentifier, t, new StubStateChangedEvent(), null));
@@ -156,8 +155,19 @@ public class MongoEventStoreTest {
 
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
+        private final UUID identifier;
+
+        private StubAggregateRoot() {
+            this.identifier = UUID.randomUUID();
+        }
+
         public void changeState() {
             apply(new StubStateChangedEvent());
+        }
+
+        @Override
+        public UUID getIdentifier() {
+            return identifier;
         }
 
         @EventHandler

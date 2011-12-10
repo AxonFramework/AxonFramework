@@ -18,10 +18,8 @@ package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.LoopingCommand;
 import org.axonframework.integrationtests.commandhandling.ProblematicCommand;
@@ -37,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -80,7 +79,7 @@ public class ConcurrentModificationTest_PessimisticLocking {
     @Test(timeout = 30000)
     public void testConcurrentModifications() throws Exception {
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
-        final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
+        final UUID aggregateId = UUID.randomUUID();
         commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)), NoOpCallback.INSTANCE);
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         final AtomicLong counter = new AtomicLong(0);

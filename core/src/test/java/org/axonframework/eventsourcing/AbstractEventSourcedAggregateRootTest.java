@@ -16,13 +16,11 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -38,10 +36,10 @@ import static org.junit.Assert.*;
 public class AbstractEventSourcedAggregateRootTest {
 
     private CompositeAggregateRoot testSubject;
+    private String identifier ="aggregateIdentifier";
 
     @Test
     public void testInitializeWithEvents() {
-        AggregateIdentifier identifier = new UUIDAggregateIdentifier();
         testSubject = new CompositeAggregateRoot(identifier);
         testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
                 identifier,
@@ -59,7 +57,7 @@ public class AbstractEventSourcedAggregateRootTest {
 
     @Test
     public void testApplyEvent() {
-        testSubject = new CompositeAggregateRoot();
+        testSubject = new CompositeAggregateRoot(identifier);
 
         assertNotNull(testSubject.getIdentifier());
         assertEquals(0, testSubject.getUncommittedEventCount());
@@ -101,13 +99,10 @@ public class AbstractEventSourcedAggregateRootTest {
         private SimpleEntity childEntity;
         private List<SimpleEntity> childEntitiesList = new ArrayList<SimpleEntity>();
         private Map<SimpleEntity, SimpleEntity> childEntitiesMap = new HashMap<SimpleEntity, SimpleEntity>();
+        private String identifier;
 
-        CompositeAggregateRoot() {
-            super();
-        }
-
-        CompositeAggregateRoot(AggregateIdentifier identifier) {
-            super(identifier);
+        CompositeAggregateRoot(String identifier) {
+            this.identifier = identifier;
         }
 
         @Override
@@ -137,6 +132,12 @@ public class AbstractEventSourcedAggregateRootTest {
         public Map<SimpleEntity, SimpleEntity> getSimpleEntityMap() {
             return childEntitiesMap;
         }
+
+        @Override
+        public String getIdentifier() {
+            return identifier;
+        }
+
     }
 
     /**

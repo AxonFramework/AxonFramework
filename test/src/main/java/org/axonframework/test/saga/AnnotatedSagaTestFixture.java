@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
@@ -50,7 +49,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     private final AnnotatedSagaManager sagaManager;
     private final List<Object> registeredResources = new LinkedList<Object>();
 
-    private Map<AggregateIdentifier, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<AggregateIdentifier, AggregateEventPublisherImpl>();
+    private Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<Object, AggregateEventPublisherImpl>();
     private FixtureExecutionResultImpl fixtureExecutionResult;
 
     /**
@@ -100,7 +99,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public GivenAggregateEventPublisher givenAggregate(AggregateIdentifier aggregateIdentifier) {
+    public GivenAggregateEventPublisher givenAggregate(Object aggregateIdentifier) {
         return getPublisherFor(aggregateIdentifier);
     }
 
@@ -111,7 +110,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public GivenAggregateEventPublisher andThenAggregate(AggregateIdentifier aggregateIdentifier) {
+    public GivenAggregateEventPublisher andThenAggregate(Object aggregateIdentifier) {
         return givenAggregate(aggregateIdentifier);
     }
 
@@ -122,7 +121,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public WhenAggregateEventPublisher whenAggregate(AggregateIdentifier aggregateIdentifier) {
+    public WhenAggregateEventPublisher whenAggregate(Object aggregateIdentifier) {
         fixtureExecutionResult.startRecording();
         return getPublisherFor(aggregateIdentifier);
     }
@@ -139,7 +138,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         return eventScheduler.getCurrentDateTime();
     }
 
-    private AggregateEventPublisherImpl getPublisherFor(AggregateIdentifier aggregateIdentifier) {
+    private AggregateEventPublisherImpl getPublisherFor(Object aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl());
         }

@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
@@ -44,16 +43,6 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
      */
     protected AbstractAnnotatedAggregateRoot() {
         super();
-        eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
-    }
-
-    /**
-     * Initializes the aggregate root using the provided aggregate identifier.
-     *
-     * @param identifier the identifier of this aggregate
-     */
-    protected AbstractAnnotatedAggregateRoot(AggregateIdentifier identifier) {
-        super(identifier);
         eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
     }
 
