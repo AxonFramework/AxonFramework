@@ -21,7 +21,7 @@ import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.junit.*;
 
-import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 
 /**

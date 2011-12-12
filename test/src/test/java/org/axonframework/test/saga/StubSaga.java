@@ -29,7 +29,7 @@ import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 
 /**
  * @author Allard Buijze

@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;

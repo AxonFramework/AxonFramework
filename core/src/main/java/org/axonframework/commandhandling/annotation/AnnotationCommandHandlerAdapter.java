@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Subscribable;

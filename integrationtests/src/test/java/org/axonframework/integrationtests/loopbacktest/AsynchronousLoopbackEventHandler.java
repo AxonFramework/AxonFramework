@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.annotation.AsynchronousEventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 
 /**
  * @author Allard Buijze

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.annotation;
+package org.axonframework.commandhandling;
 
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;

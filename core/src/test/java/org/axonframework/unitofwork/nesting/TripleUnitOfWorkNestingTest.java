@@ -17,8 +17,8 @@
 package org.axonframework.unitofwork.nesting;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;

@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.annotation;
 import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 

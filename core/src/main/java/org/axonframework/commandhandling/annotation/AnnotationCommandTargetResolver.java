@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.domain.AggregateIdentifier;

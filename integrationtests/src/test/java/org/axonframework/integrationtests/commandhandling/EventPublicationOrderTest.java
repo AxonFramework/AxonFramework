@@ -35,7 +35,7 @@ import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
-import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.mockito.Mockito.*;
 
 /**

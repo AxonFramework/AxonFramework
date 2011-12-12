@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.domain.MetaData;
 import org.junit.*;
 

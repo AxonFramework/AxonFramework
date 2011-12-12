@@ -18,8 +18,8 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.AbstractEvent;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.commandhandling.annotation.CommandMessage;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;

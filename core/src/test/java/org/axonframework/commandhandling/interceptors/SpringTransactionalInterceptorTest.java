@@ -18,9 +18,9 @@ package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.CommandMessage;
-import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;

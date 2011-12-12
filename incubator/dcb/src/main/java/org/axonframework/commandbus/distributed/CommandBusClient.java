@@ -19,7 +19,7 @@ package org.axonframework.commandbus.distributed;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.annotation.CommandMessage;
+import org.axonframework.commandhandling.CommandMessage;
 
 /**
  * @author Allard Buijze

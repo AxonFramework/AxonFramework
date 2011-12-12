@@ -16,8 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.annotation.CommandMessage;
-import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;

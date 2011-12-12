@@ -22,7 +22,7 @@ import org.axonframework.integrationtests.commandhandling.LoopingChangeDoneEvent
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 
 /**
  * @author Allard Buijze
