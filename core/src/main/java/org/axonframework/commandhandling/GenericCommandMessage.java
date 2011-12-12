@@ -108,11 +108,11 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     }
 
     @Override
-    public GenericCommandMessage<T> withMetaData(Map<String, Object> metaData) {
-        if (getMetaData().equals(metaData)) {
+    public GenericCommandMessage<T> withMetaData(Map<String, Object> newMetaData) {
+        if (getMetaData().equals(newMetaData)) {
             return this;
         }
-        return new GenericCommandMessage<T>(this, metaData);
+        return new GenericCommandMessage<T>(this, newMetaData);
     }
 
     @Override

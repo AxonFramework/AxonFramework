@@ -18,7 +18,9 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StringAggregateIdentifier;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
@@ -103,14 +105,15 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * @return The deserialized domain event
      */
     public DomainEventMessage<?> getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(eventIdentifier,
-                                                        new StringAggregateIdentifier(aggregateIdentifier),
-                                                        sequenceNumber, new DateTime(timeStamp),
-                                                        new SimpleSerializedObject(payload,
-                                                                                   payloadType,
-                                                                                   payloadRevision),
-                                                        new SerializedMetaData(metaData), eventSerializer,
-                                                        eventSerializer);
+        return new SerializedDomainEventMessage<Object>(
+                eventIdentifier,
+                new StringAggregateIdentifier(aggregateIdentifier),
+                sequenceNumber,
+                new DateTime(timeStamp),
+                new LazyDeserializingObject<Object>(new SimpleSerializedObject(payload, payloadType, payloadRevision),
+                                                    eventSerializer),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData(metaData), eventSerializer)
+        );
     }
 
     /**
