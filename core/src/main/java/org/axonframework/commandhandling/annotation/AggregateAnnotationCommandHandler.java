@@ -57,6 +57,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      * @param aggregateType The type of aggregate
      * @param repository    The repository providing access to aggregate instances
      * @param commandBus    The command bus to register command handlers to
+     * @param <T>           The type of aggregate this handler handles commands for
      * @return the Adapter created for the command handler target. Can be used to unsubscribe.
      */
     public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(Class<T> aggregateType,
@@ -76,6 +77,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      * @param repository            The repository providing access to aggregate instances
      * @param commandBus            The command bus to register command handlers to
      * @param commandTargetResolver The target resolution strategy
+     * @param <T>                   The type of aggregate this handler handles commands for
      * @return the Adapter created for the command handler target. Can be used to unsubscribe.
      */
     public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(

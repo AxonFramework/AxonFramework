@@ -118,6 +118,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      *
      * @return the Aggregate Identifier of the associated event.
      */
+    @Override
     public AggregateIdentifier getAggregateIdentifier() {
         return new StringAggregateIdentifier(aggregateIdentifier);
     }
@@ -136,6 +137,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      *
      * @return the sequence number of the associated event.
      */
+    @Override
     public long getSequenceNumber() {
         return sequenceNumber;
     }
@@ -145,22 +147,31 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      *
      * @return the time stamp of the associated event.
      */
+    @Override
     public DateTime getTimestamp() {
         return new DateTime(timeStamp);
     }
 
+    @Override
     public String getEventIdentifier() {
         return eventIdentifier;
     }
 
-    public String getTimeStamp() {
-        return timeStamp;
+    /**
+     * Returns the database-generated identifier for this entry.
+     *
+     * @return the database-generated identifier for this entry
+     */
+    public Long getId() {
+        return id;
     }
 
+    @Override
     public SerializedObject getPayload() {
         return new SimpleSerializedObject(payload, payloadType, payloadRevision);
     }
 
+    @Override
     public SerializedObject getMetaData() {
         return new SerializedMetaData(metaData);
     }

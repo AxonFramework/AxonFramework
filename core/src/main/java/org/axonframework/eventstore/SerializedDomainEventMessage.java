@@ -152,11 +152,11 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
     }
 
     @Override
-    public DomainEventMessage<T> withMetaData(Map<String, Object> metaData) {
+    public DomainEventMessage<T> withMetaData(Map<String, Object> newMetaData) {
         if (payload != null) {
-            return new GenericDomainEventMessage<T>(aggregateIdentifier, sequenceNumber, payload, metaData);
+            return new GenericDomainEventMessage<T>(aggregateIdentifier, sequenceNumber, payload, newMetaData);
         } else {
-            return new SerializedDomainEventMessage<T>(this, metaData);
+            return new SerializedDomainEventMessage<T>(this, newMetaData);
         }
     }
 

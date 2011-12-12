@@ -67,6 +67,7 @@ public class EventContainer implements Serializable {
      *
      * @param metaData the metaData of the event to add to this containr
      * @param payload  the payload of the event to add to this container
+     * @param <T>      the type of payload contained in the event
      * @return the DomainEventMessage added to the container
      */
     public <T> DomainEventMessage<T> addEvent(MetaData metaData, T payload) {
@@ -186,6 +187,12 @@ public class EventContainer implements Serializable {
         this.registrationCallbacks.add(eventRegistrationCallback);
     }
 
+    /**
+     * Removed the given <code>eventRegistrationCallback</code>, if it is currently registered. If no such callback
+     * was registered, or if it has already been unregistered, nothing happens.
+     *
+     * @param eventRegistrationCallback The callback to unregister
+     */
     public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
         if (registrationCallbacks == null) {
             return;

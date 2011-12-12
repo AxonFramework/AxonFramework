@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.serializer;
 
 import org.axonframework.common.Assert;
@@ -16,6 +32,8 @@ import static java.lang.String.format;
  * A converter that delegates to a chain of other ContentTypeConverters to convert from a source to a target for which
  * there is not necessarily a single converter available.
  *
+ * @param <S> The source type of the converter
+ * @param <T> The target type of the converter
  * @author Allard Buijze
  * @since 2.0
  */
@@ -69,11 +87,11 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
         source = delegates.get(0).expectedSourceType();
     }
 
-    private boolean isContinuous(List<ContentTypeConverter> delegates) {
+    private boolean isContinuous(List<ContentTypeConverter> candidates) {
         Class current = null;
-        for (ContentTypeConverter delegate : delegates) {
-            if (current == null || current.equals(delegate.expectedSourceType())) {
-                current = delegate.targetType();
+        for (ContentTypeConverter candidate : candidates) {
+            if (current == null || current.equals(candidate.expectedSourceType())) {
+                current = candidate.targetType();
             } else {
                 return false;
             }

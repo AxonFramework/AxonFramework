@@ -22,6 +22,7 @@ import org.axonframework.domain.Message;
  * Represents a Message carrying a command as its payload. These messages carry an intention to change application
  * state.
  *
+ * @param <T> The type of payload contained in the message
  * @author Allard Buijze
  * @since 2.0
  */
