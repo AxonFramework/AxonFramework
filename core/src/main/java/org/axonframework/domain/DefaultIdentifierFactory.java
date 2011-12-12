@@ -16,7 +16,7 @@
 
 package org.axonframework.domain;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 
 /**
  * Default IdentifierFactory implementation that uses generates random <code>java.util.UUID</code> based identifiers.
@@ -30,8 +30,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DefaultIdentifierFactory extends IdentifierFactory {
 
-    private final AtomicLong counter = new AtomicLong();
-
     /**
      * {@inheritDoc}
      * <p/>
@@ -39,6 +37,6 @@ public class DefaultIdentifierFactory extends IdentifierFactory {
      */
     @Override
     public String generateIdentifier() {
-        return Long.toString(counter.getAndIncrement());
+        return UUID.randomUUID().toString();
     }
 }
