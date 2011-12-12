@@ -37,7 +37,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, boolean endOfBatch) throws Exception {
+    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
         eventStore.appendEvents(aggregateType, entry.getEventsToStore());
         while (eventBus != null && entry.getEventsToPublish().hasNext()) {
             eventBus.publish(entry.getEventsToPublish().next());

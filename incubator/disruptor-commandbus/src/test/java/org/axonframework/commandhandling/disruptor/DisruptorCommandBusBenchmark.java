@@ -52,7 +52,7 @@ import static junit.framework.Assert.assertEquals;
 public class DisruptorCommandBusBenchmark {
 
 
-    private static final long COMMAND_COUNT = 20 * 1000L * 1000L;
+    private static final long COMMAND_COUNT = 10 * 1000L * 1000L;
 
     public static void main(String[] args) throws InterruptedException {
         EventBus eventBus = new SimpleEventBus();

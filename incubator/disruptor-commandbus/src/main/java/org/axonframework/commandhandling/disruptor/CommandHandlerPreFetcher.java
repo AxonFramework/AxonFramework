@@ -45,7 +45,7 @@ class CommandHandlerPreFetcher implements EventHandler<CommandHandlingEntry> {
     }
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, boolean endOfBatch) throws Exception {
+    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
         preLoadAggregate(entry);
         resolveCommandHandler(entry);
     }

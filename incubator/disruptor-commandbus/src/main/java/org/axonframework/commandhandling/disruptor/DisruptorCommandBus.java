@@ -16,11 +16,11 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.ClaimStrategy;
 import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.wizard.DisruptorWizard;
+import com.lmax.disruptor.EventTranslator;
+import com.lmax.disruptor.MultiThreadedClaimStrategy;
+import com.lmax.disruptor.YieldingWaitStrategy;
+import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
@@ -45,11 +45,9 @@ import java.util.concurrent.ThreadFactory;
 public class DisruptorCommandBus implements CommandBus, Repository {
 
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("Disruptor");
-    private final RingBuffer<CommandHandlingEntry> ringBuffer;
 
-    //    private final Consumer eventPublisher;
-    private ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
-    private DisruptorWizard<CommandHandlingEntry> wizard;
+    private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
+    private final Disruptor<CommandHandlingEntry> disruptor;
 
     public DisruptorCommandBus(int bufferSize, AggregateFactory<?> eventStore, EventStore aggregateFactory,
                                EventBus eventBus) {
@@ -75,28 +73,32 @@ public class DisruptorCommandBus implements CommandBus, Repository {
                 threadFactory.newThread(command).start();
             }
         };
-        wizard = new DisruptorWizard<CommandHandlingEntry>(new CommandHandlingEntryFactory(),
-                                                           bufferSize,
-                                                           executor,
-                                                           ClaimStrategy.Option.SINGLE_THREADED,
-                                                           WaitStrategy.Option.YIELDING);
+        disruptor = new Disruptor<CommandHandlingEntry>(new CommandHandlingEntryFactory(),
+                                                        executor,
+                                                        new MultiThreadedClaimStrategy(bufferSize),
+                                                        new YieldingWaitStrategy());
 
 
         //noinspection unchecked
-        wizard.handleEventsWith(new CommandHandlerPreFetcher(eventStore, aggregateFactory, commandHandlers))
-              .then(new CommandHandlerInvoker())
-              .then(new EventPublisher(eventStore,
-                                       aggregateFactory.getTypeIdentifier(),
-                                       eventBus));
-        ringBuffer = wizard.start();
+        disruptor.handleEventsWith(new CommandHandlerPreFetcher(eventStore, aggregateFactory, commandHandlers))
+                 .then(new CommandHandlerInvoker())
+                 .then(new EventPublisher(eventStore,
+                                          aggregateFactory.getTypeIdentifier(),
+                                          eventBus));
+        disruptor.start();
     }
 
     @Override
-    public void dispatch(CommandMessage<?> command) {
-        CommandHandlingEntry entry = ringBuffer.nextEvent();
-        entry.setCommand(command);
-        entry.setAggregateIdentifier(((IdentifiedCommand) command.getPayload()).getAggregateIdentifier());
-        ringBuffer.publish(entry);
+    public void dispatch(final CommandMessage<?> command) {
+        disruptor.publishEvent(new EventTranslator<CommandHandlingEntry>() {
+            @Override
+            public CommandHandlingEntry translateTo(CommandHandlingEntry event, long sequence) {
+                event.clear();
+                event.setCommand(command);
+                event.setAggregateIdentifier(((IdentifiedCommand) command.getPayload()).getAggregateIdentifier());
+                return event;
+            }
+        });
     }
 
     @Override
@@ -136,12 +138,12 @@ public class DisruptorCommandBus implements CommandBus, Repository {
     }
 
     public void stop() {
-        wizard.halt();
+        disruptor.shutdown();
     }
 
     private static class CommandHandlingEntryFactory implements EventFactory<CommandHandlingEntry> {
         @Override
-        public CommandHandlingEntry create() {
+        public CommandHandlingEntry newInstance() {
             return new CommandHandlingEntry();
         }
     }
