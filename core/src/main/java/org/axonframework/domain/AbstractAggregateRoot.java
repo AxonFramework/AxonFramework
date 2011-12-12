@@ -120,11 +120,6 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
         this.eventContainer.addEventRegistrationCallback(eventRegistrationCallback);
     }
 
-    @Override
-    public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        this.eventContainer.removeEventRegistrationCallback(eventRegistrationCallback);
-    }
-
     /**
      * Shorthand helper method to easily return the aggregate identifier as a String value. To get the actual
      * identifier, use {@link #getIdentifier()}.

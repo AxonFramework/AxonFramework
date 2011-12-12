@@ -186,17 +186,4 @@ public class EventContainer implements Serializable {
         }
         this.registrationCallbacks.add(eventRegistrationCallback);
     }
-
-    /**
-     * Removed the given <code>eventRegistrationCallback</code>, if it is currently registered. If no such callback
-     * was registered, or if it has already been unregistered, nothing happens.
-     *
-     * @param eventRegistrationCallback The callback to unregister
-     */
-    public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        if (registrationCallbacks == null) {
-            return;
-        }
-        this.registrationCallbacks.remove(eventRegistrationCallback);
-    }
 }
