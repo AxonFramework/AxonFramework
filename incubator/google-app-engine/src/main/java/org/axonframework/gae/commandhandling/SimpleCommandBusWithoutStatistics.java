@@ -87,8 +87,8 @@ public class SimpleCommandBusWithoutStatistics implements CommandBus {
         }
     }
 
-    private CommandHandler findCommandHandlerFor(Object command) {
-        final CommandHandler handler = subscriptions.get(command.getClass());
+    private CommandHandler findCommandHandlerFor(CommandMessage command) {
+        final CommandHandler handler = subscriptions.get(command.getPayloadType());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
                                                           command.getClass().getSimpleName()));

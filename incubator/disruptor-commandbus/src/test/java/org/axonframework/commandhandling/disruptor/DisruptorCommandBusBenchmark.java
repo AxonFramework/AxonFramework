@@ -52,7 +52,7 @@ import static junit.framework.Assert.assertEquals;
 public class DisruptorCommandBusBenchmark {
 
 
-    private static final long COMMAND_COUNT = 1000L * 1000L;
+    private static final long COMMAND_COUNT = 20 * 1000L * 1000L;
 
     public static void main(String[] args) throws InterruptedException {
         EventBus eventBus = new SimpleEventBus();
@@ -60,7 +60,7 @@ public class DisruptorCommandBusBenchmark {
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
         PlatformTransactionManager transactionManager = null;
         DisruptorCommandBus commandBus =
-                new DisruptorCommandBus(512, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
+                new DisruptorCommandBus(1024, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
                                         inMemoryEventStore,
                                         eventBus, new XStreamSerializer());
         commandBus.subscribe(StubCommand.class, stubHandler);
@@ -104,7 +104,7 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         protected void handle(DomainEventMessage event) {
-            if (event instanceof StubDomainEvent) {
+            if (StubDomainEvent.class.isAssignableFrom(event.getPayloadType())) {
                 timesDone++;
             }
         }
@@ -126,7 +126,7 @@ public class DisruptorCommandBusBenchmark {
                 return;
             }
             String key = events.peek().getAggregateIdentifier().asString();
-            DomainEventMessage<? extends Object> lastEvent = null;
+            DomainEventMessage<?> lastEvent = null;
             while (events.hasNext()) {
                 countDownLatch.countDown();
                 lastEvent = events.next();

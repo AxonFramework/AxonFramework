@@ -95,7 +95,7 @@ public class DisruptorCommandBus implements CommandBus, Repository {
     public void dispatch(CommandMessage<?> command) {
         CommandHandlingEntry entry = ringBuffer.nextEvent();
         entry.setCommand(command);
-        entry.setAggregateIdentifier(((IdentifiedCommand) command).getAggregateIdentifier());
+        entry.setAggregateIdentifier(((IdentifiedCommand) command.getPayload()).getAggregateIdentifier());
         ringBuffer.publish(entry);
     }
 
