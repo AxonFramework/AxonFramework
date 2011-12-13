@@ -71,7 +71,7 @@ public class CommandHandlingBenchmark {
 //        new AnnotationCommandHandlerAdapter(new MyCommandHandler(repository), cb).subscribe();
 
 
-        int COMMAND_COUNT = 1000 * 1000;
+        long COMMAND_COUNT = 5 * 1000 * 1000;
         cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"));
         long t1 = System.currentTimeMillis();
         for (int t = 0; t < COMMAND_COUNT; t++) {

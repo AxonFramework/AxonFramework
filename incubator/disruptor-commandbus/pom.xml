@@ -28,14 +28,6 @@
     <groupId>org.axonframework.incubator</groupId>
     <artifactId>disruptor-commandbus</artifactId>
 
-    <!--
-    NOTE: To enable support for this module, you need to manually install the necessary jars
-
-    mvn install:install-file -Dfile=/path/to/disruptor-1.2.1.jar -DartifactId=disruptor -DgroupId=org.axonframework.com.lmax -Dpackaging=jar -Dversion=1.2.1
-
-    Unfortunately, the jars haven't been uploaded to maven central yet (see http://code.google.com/p/disruptor/issues/detail?id=2).
-    -->
-
     <dependencies>
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
@@ -52,6 +44,12 @@
             <artifactId>spring-orm</artifactId>
             <version>${spring.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.eaio.uuid</groupId>
+            <artifactId>uuid</artifactId>
+            <version>3.2</version>
+        </dependency>
+
     </dependencies>
 
 </project>

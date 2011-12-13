@@ -17,8 +17,8 @@
 package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
+import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.CommandBus;
@@ -90,15 +90,12 @@ public class DisruptorCommandBus implements CommandBus, Repository {
 
     @Override
     public void dispatch(final CommandMessage<?> command) {
-        disruptor.publishEvent(new EventTranslator<CommandHandlingEntry>() {
-            @Override
-            public CommandHandlingEntry translateTo(CommandHandlingEntry event, long sequence) {
-                event.clear();
-                event.setCommand(command);
-                event.setAggregateIdentifier(((IdentifiedCommand) command.getPayload()).getAggregateIdentifier());
-                return event;
-            }
-        });
+        RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
+        AggregateIdentifier aggregateIdentifier = ((IdentifiedCommand) command.getPayload()).getAggregateIdentifier();
+        long sequence = ringBuffer.next();
+        CommandHandlingEntry event = ringBuffer.get(sequence);
+        event.clear(command, aggregateIdentifier);
+        ringBuffer.publish(sequence);
     }
 
     @Override

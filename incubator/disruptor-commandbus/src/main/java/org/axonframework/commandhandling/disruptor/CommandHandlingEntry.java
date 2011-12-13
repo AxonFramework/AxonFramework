@@ -119,14 +119,14 @@ public class CommandHandlingEntry {
         return eventsToPublish;
     }
 
-    public void clear() {
+    public void clear(CommandMessage<?> command, AggregateIdentifier aggregateIdentifier) {
+        this.aggregateIdentifier = aggregateIdentifier;
+        this.command = command;
         eventsToPublish = null;
         eventsToStore = null;
         result = null;
         exceptionResult = null;
-        aggregateIdentifier = null;
         commandHandler = null;
-        command = null;
         interceptorChain = null;
         unitOfWork = null;
         preLoadedAggregate = null;

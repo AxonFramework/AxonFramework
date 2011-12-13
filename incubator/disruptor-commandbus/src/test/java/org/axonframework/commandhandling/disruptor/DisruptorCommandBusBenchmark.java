@@ -34,13 +34,11 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.serializer.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -52,15 +50,14 @@ import static junit.framework.Assert.assertEquals;
 public class DisruptorCommandBusBenchmark {
 
 
-    private static final long COMMAND_COUNT = 10 * 1000L * 1000L;
+    private static final long COMMAND_COUNT = 20 * 1000L * 1000L;
 
     public static void main(String[] args) throws InterruptedException {
         EventBus eventBus = new SimpleEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        PlatformTransactionManager transactionManager = null;
         DisruptorCommandBus commandBus =
-                new DisruptorCommandBus(1024, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
+                new DisruptorCommandBus(4096, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
                                         inMemoryEventStore,
                                         eventBus, new XStreamSerializer());
         commandBus.subscribe(StubCommand.class, stubHandler);
@@ -69,8 +66,6 @@ public class DisruptorCommandBusBenchmark {
         inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
                 new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
 
-        System.out.println("Press enter to start");
-        new Scanner(System.in).nextLine();
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(new StubCommand(
