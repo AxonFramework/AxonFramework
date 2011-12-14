@@ -65,6 +65,9 @@ public class GenericAggregateFactoryTest {
 
     private static class UnsuitableAggregate extends AbstractEventSourcedAggregateRoot {
 
+        private UnsuitableAggregate(Object uuid) {
+        }
+
         @Override
         protected void handle(DomainEventMessage event) {
         }
@@ -78,6 +81,7 @@ public class GenericAggregateFactoryTest {
     private static class ExceptionThrowingAggregate
             extends AbstractEventSourcedAggregateRoot {
 
+        @AggregateInitializer
         private ExceptionThrowingAggregate(Object uuid) {
             throw new RuntimeException("Mock");
         }

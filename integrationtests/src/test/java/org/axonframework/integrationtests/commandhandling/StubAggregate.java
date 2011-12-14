@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
 /**
@@ -33,6 +34,7 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
         return aggregate;
     }
 
+    @AggregateInitializer
     StubAggregate(Object identifier) {
         this.identifier = identifier;
     }

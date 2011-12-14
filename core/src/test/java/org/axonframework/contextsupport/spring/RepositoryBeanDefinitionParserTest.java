@@ -19,6 +19,7 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotterTrigger;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -54,6 +55,7 @@ public class RepositoryBeanDefinitionParserTest {
         /**
          *
          */
+        @AggregateInitializer
         public EventSourcedAggregateRootMock(final Object identifier) {
             throw new UnsupportedOperationException("Not implemented yet");
         }

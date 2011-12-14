@@ -30,6 +30,7 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
@@ -196,6 +197,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
         private final String identifier;
 
+        @AggregateInitializer
         public AggregateA(String identifier) {
             this.identifier = identifier;
         }
@@ -220,10 +222,12 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
         private final String identifier;
 
+        @AggregateInitializer
         public AggregateB(String identifier) {
             this.identifier = identifier;
         }
 
+        @Override
         public String getIdentifier() {
             return identifier;
         }

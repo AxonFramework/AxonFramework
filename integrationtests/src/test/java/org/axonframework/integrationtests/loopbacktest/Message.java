@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.loopbacktest;
 
+import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
 import java.util.UUID;
@@ -32,6 +33,7 @@ public class Message extends AbstractAnnotatedAggregateRoot {
         apply(new MessageCreatedEvent(messageContents));
     }
 
+    @AggregateInitializer
     public Message(UUID identifier) {
         this.identifier = identifier;
     }

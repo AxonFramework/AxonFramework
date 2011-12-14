@@ -28,11 +28,12 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
  * Aggregate factory that uses a convention to create instances of aggregates. The type must declare an
- * accessible constructor accepting the aggregate identifier used to load the aggregate as single parameter. This
- * constructor may not perform any initialization on the aggregate, other than setting the identifier.
+ * {@link AggregateInitializer @AggregateInitializer} annotated constructor accepting the aggregate identifier used to
+ * load the aggregate as single parameter. This constructor may not perform any initialization on the aggregate, other
+ * than setting the identifier.
  * <p/>
  * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
- * GenericAggregateFactory will try to make it accessible.
+ * GenericAggregateFactory will try to make it accessible. If that doesn't succeed, an exception is thrown.
  *
  * @param <T> The type of aggregate this factory creates
  * @author Allard Buijze
@@ -59,7 +60,7 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
         this.aggregateType = aggregateType;
         this.typeIdentifier = aggregateType.getSimpleName();
         for (Constructor<?> constructor : aggregateType.getDeclaredConstructors()) {
-            if (constructor.getParameterTypes().length == 1) {
+            if (constructor.getAnnotation(AggregateInitializer.class) != null) {
                 handlers.add(new Handler<T>(constructor));
             }
         }
@@ -67,7 +68,7 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
             throw new IncompatibleAggregateException(String.format(
                     "The aggregate [%s] does not have a suitable constructor. "
                             + "See Javadoc of GenericAggregateFactory for more information.",
-                    aggregateType.getSimpleName()));
+                    aggregateType.getName()));
         }
     }
 
