@@ -38,10 +38,16 @@ public class FixtureTest_Generic {
     }
 
     @Test
-    public void testAggregateIdentifier_DefaultsToUUID() {
+    public void testAggregateIdentifier_DefaultsToUuidAsString() {
         assertNotNull(fixture.getAggregateIdentifier());
         // this must work
         UUID.fromString(fixture.getAggregateIdentifier().toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAggregateIdentifier_MustHaveToStringMethod() {
+        fixture.setAggregateIdentifier(new Object() {
+        });
     }
 
     @Test

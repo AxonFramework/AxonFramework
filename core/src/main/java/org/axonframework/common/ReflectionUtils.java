@@ -106,6 +106,25 @@ public abstract class ReflectionUtils {
     }
 
     /**
+     * Returns the class on which the method with name "<code>methodName</code>" and parameters of type
+     * <code>parameterTypes</code> is declared. The given <code>instanceClass</code> is the instance on which the
+     * method cn be called. If the method is not available on the given <code>instanceClass</code>, <code>null</code>
+     * is returned.
+     *
+     * @param instanceClass  The class on which to look for the method
+     * @param methodName     The name of the method
+     * @param parameterTypes The parameter types of the method
+     * @return The class on which the method is decalred, or <code>null</code> if not found
+     */
+    public static Class<?> declaringClass(Class<?> instanceClass, String methodName, Class<?>... parameterTypes) {
+        try {
+            return instanceClass.getMethod(methodName, parameterTypes).getDeclaringClass();
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    /**
      * Makes the given <code>member</code> accessible via reflection if it is not the case already.
      *
      * @param member The member (field, method, constructor, etc) to make accessible

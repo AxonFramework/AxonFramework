@@ -35,7 +35,6 @@ import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,8 +92,13 @@ public class JpaEventStoreTest {
     public void tearDown() {
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testStoreAndLoadEvents_BadIdentifierType() {
+        testSubject.appendEvents("type", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<Object>(new BadIdentifierType(), 1, new Object())));
+    }
+
     @Test
-    @Rollback(false)
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
@@ -437,5 +441,8 @@ public class JpaEventStoreTest {
 
         private StubStateChangedEvent() {
         }
+    }
+
+    private static class BadIdentifierType {
     }
 }

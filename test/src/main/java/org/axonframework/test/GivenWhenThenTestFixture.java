@@ -43,6 +43,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.axonframework.common.IdentifierValidator.validateIdentifier;
+
 /**
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
  * {@link org.axonframework.test.FixtureConfiguration}.
@@ -144,6 +146,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
 
     @Override
     public void setAggregateIdentifier(Object aggregateIdentifier) {
+        validateIdentifier(aggregateIdentifier.getClass());
         this.aggregateIdentifier = aggregateIdentifier;
     }
 
@@ -173,6 +176,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         public void appendEvents(String type, DomainEventStream events) {
             while (events.hasNext()) {
                 DomainEventMessage next = events.next();
+                validateIdentifier(next.getAggregateIdentifier().getClass());
                 if (!storedEvents.isEmpty()) {
                     DomainEventMessage lastEvent = storedEvents.peekLast();
                     if (!lastEvent.getAggregateIdentifier().equals(next.getAggregateIdentifier())) {

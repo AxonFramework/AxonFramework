@@ -40,6 +40,8 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 
+import static org.axonframework.common.IdentifierValidator.validateIdentifier;
+
 /**
  * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as
  * a
@@ -131,6 +133,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             while (events.hasNext()) {
                 event = events.next();
+                validateIdentifier(event.getAggregateIdentifier().getClass());
                 eventEntryStore.persistEvent(type, event, eventSerializer.serialize(event.getPayload()),
                                              eventSerializer.serialize(event.getMetaData()), entityManager);
             }
