@@ -16,7 +16,7 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.annotation.CommandMessage;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;

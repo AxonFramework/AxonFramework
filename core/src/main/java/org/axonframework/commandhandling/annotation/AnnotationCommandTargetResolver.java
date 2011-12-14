@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 
@@ -111,5 +112,4 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
             return Long.parseLong(fieldValue.toString());
         }
     }
-
 }

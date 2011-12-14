@@ -16,9 +16,6 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
 import org.dom4j.Document;
 import org.joda.time.DateMidnight;
@@ -58,15 +55,11 @@ public class XStreamSerializerTest {
         testSubject.addPackageAlias("axondomain", "org.axonframework.domain");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
-        SerializedObject serialized = testSubject.serialize(new GenericDomainEventMessage<StubDomainEvent>(
-                "aggregateIdentifier",
-                (long) 1,
-                new StubDomainEvent(), MetaData.emptyInstance()
-        ));
+        SerializedObject serialized = testSubject.serialize(new StubDomainEvent());
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse("Package name found in:" + asString, asString.contains("org.axonframework.domain"));
-        DomainEventMessage deserialized = (DomainEventMessage) testSubject.deserialize(serialized);
-        assertEquals(1L, deserialized.getSequenceNumber());
+        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        assertEquals(StubDomainEvent.class, deserialized.getClass());
         assertTrue(asString.contains("axondomain"));
     }
 
@@ -74,14 +67,12 @@ public class XStreamSerializerTest {
     public void testAlias() throws UnsupportedEncodingException {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
-        SerializedObject serialized = testSubject.serialize(new GenericDomainEventMessage<StubDomainEvent>(
-                "aggregateIdentifier", (long) 1, new StubDomainEvent(), MetaData.emptyInstance()
-        ));
+        SerializedObject serialized = testSubject.serialize(new StubDomainEvent());
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
-        assertTrue(asString.contains("<payload class=\"stub\""));
-        DomainEventMessage deserialized = (DomainEventMessage) testSubject.deserialize(serialized);
-        assertEquals(1L, deserialized.getSequenceNumber());
+        assertTrue(asString.contains("<stub"));
+        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        assertEquals(StubDomainEvent.class, deserialized.getClass());
     }
 
     @Test
@@ -180,5 +171,4 @@ public class XStreamSerializerTest {
             return name;
         }
     }
-
 }

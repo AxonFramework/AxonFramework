@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.annotation;
+package org.axonframework.commandhandling;
 
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;
@@ -64,12 +64,12 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     /**
      * Create a CommandMessage with the given <code>command</code> as payload.
      *
-     * @param command  the payload for the Message
-     * @param metaData The meta data for this message
+     * @param command     the payload for the Message
+     * @param newMetaData The meta data for this message
      */
-    public GenericCommandMessage(T command, Map<String, Object> metaData) {
+    public GenericCommandMessage(T command, Map<String, Object> newMetaData) {
         this.command = command;
-        this.metaData = MetaData.from(metaData);
+        this.metaData = MetaData.from(newMetaData);
         this.identifier = IdentifierFactory.getInstance().generateIdentifier();
     }
 
@@ -108,11 +108,11 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     }
 
     @Override
-    public GenericCommandMessage<T> withMetaData(Map<String, Object> metaData) {
-        if (getMetaData().equals(metaData)) {
+    public GenericCommandMessage<T> withMetaData(Map<String, Object> newMetaData) {
+        if (getMetaData().equals(newMetaData)) {
             return this;
         }
-        return new GenericCommandMessage<T>(this, metaData);
+        return new GenericCommandMessage<T>(this, newMetaData);
     }
 
     @Override

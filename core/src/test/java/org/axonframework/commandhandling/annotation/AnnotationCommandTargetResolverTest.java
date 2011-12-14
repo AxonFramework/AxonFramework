@@ -21,7 +21,7 @@ import org.junit.*;
 
 import java.util.UUID;
 
-import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 
 /**

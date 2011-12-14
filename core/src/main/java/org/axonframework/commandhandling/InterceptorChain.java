@@ -16,12 +16,10 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.annotation.CommandMessage;
-
 /**
  * The interceptor chain manages the flow of a command through a chain of interceptors and ultimately to the command
  * handler. Interceptors may continue processing via this chain by calling the {@link #proceed()} or {@link
- * #proceed(org.axonframework.commandhandling.annotation.CommandMessage)} methods. Alternatively, they can block
+ * #proceed(CommandMessage)} methods. Alternatively, they can block
  * processing by returning without calling either of these methods.
  *
  * @author Allard Buijze

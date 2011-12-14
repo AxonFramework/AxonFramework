@@ -93,11 +93,6 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
         getEventContainer().addEventRegistrationCallback(eventRegistrationCallback);
     }
 
-    @Override
-    public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        getEventContainer().removeEventRegistrationCallback(eventRegistrationCallback);
-    }
-
     /**
      * {@inheritDoc}
      */

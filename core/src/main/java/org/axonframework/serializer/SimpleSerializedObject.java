@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2011. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.serializer;
 
 import org.axonframework.common.Assert;
@@ -28,7 +44,7 @@ public class SimpleSerializedObject implements SerializedObject {
     public SimpleSerializedObject(byte[] data, SerializedType serializedType) {
         Assert.notNull(data, "Data for a serialized object cannot be null");
         Assert.notNull(serializedType, "The type identifier of the serialized object");
-        this.bytes = data;
+        this.bytes = Arrays.copyOf(data, data.length);
         this.type = serializedType;
     }
 
@@ -46,7 +62,7 @@ public class SimpleSerializedObject implements SerializedObject {
 
     @Override
     public byte[] getData() {
-        return bytes;
+        return Arrays.copyOf(bytes, bytes.length);
     }
 
     @Override

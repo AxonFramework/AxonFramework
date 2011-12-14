@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.Message;

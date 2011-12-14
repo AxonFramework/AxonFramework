@@ -20,6 +20,8 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
@@ -127,10 +129,16 @@ class EventEntry {
      * @return The actual DomainEvent
      */
     public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage(
-                eventIdentifier, aggregateIdentifier, sequenceNumber, new DateTime(timeStamp),
-                new SimpleSerializedObject(serializedPayload.getBytes(UTF8), payoadType, payloadRevision),
-                new SerializedMetaData(serializedMetaData.getBytes(UTF8)), eventSerializer, eventSerializer);
+        return new SerializedDomainEventMessage<Object>(
+                eventIdentifier,
+                aggregateIdentifier,
+                sequenceNumber,
+                new DateTime(timeStamp),
+                new LazyDeserializingObject<Object>(
+                        new SimpleSerializedObject(serializedPayload.getBytes(UTF8), payoadType, payloadRevision),
+                        eventSerializer),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
+                                                      eventSerializer));
     }
 
     /**
@@ -187,9 +195,15 @@ class EventEntry {
     }
 
     public DomainEventMessage asDomainEventMessage(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage(
-                eventIdentifier, aggregateIdentifier, sequenceNumber, new DateTime(timeStamp),
-                new SimpleSerializedObject(serializedPayload.getBytes(UTF8), payoadType, payloadRevision),
-                new SerializedMetaData(serializedMetaData.getBytes(UTF8)), eventSerializer, eventSerializer);
+        return new SerializedDomainEventMessage<Object>(
+                eventIdentifier,
+                aggregateIdentifier,
+                sequenceNumber,
+                new DateTime(timeStamp),
+                new LazyDeserializingObject<Object>(new SimpleSerializedObject(serializedPayload.getBytes(UTF8),
+                                                                               payoadType,
+                                                                               payloadRevision), eventSerializer),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
+                                                      eventSerializer));
     }
 }

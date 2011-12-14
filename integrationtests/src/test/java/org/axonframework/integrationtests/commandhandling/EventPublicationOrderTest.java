@@ -36,7 +36,7 @@ import org.mockito.stubbing.*;
 
 import java.util.UUID;
 
-import static org.axonframework.commandhandling.annotation.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.mockito.Mockito.*;
 
 /**

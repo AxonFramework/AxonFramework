@@ -88,11 +88,4 @@ public interface AggregateRoot {
      * @param eventRegistrationCallback the callback to notify when an event is registered
      */
     void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback);
-
-    /**
-     * Removes the given EventRegistrationCallback from this aggregate, if it was subscribed.
-     *
-     * @param eventRegistrationCallback The callback to unregister
-     */
-    void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback);
 }

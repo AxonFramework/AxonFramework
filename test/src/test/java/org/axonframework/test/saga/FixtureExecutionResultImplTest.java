@@ -16,7 +16,7 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.annotation.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;

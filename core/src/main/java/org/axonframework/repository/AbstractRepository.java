@@ -20,8 +20,6 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
 
@@ -42,7 +40,6 @@ import javax.annotation.Resource;
 public abstract class AbstractRepository<T extends AggregateRoot> implements Repository<T> {
 
     private EventBus eventBus;
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
 
     /**

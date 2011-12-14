@@ -16,8 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.annotation.CommandMessage;
-
 /**
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
  * unsubscribe to specific types of commands on the command bus. Only a single handler may be subscribed for a single
@@ -36,7 +34,7 @@ public interface CommandBus {
      *
      * @param command The Command to dispatch
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
-     * @see org.axonframework.commandhandling.annotation.GenericCommandMessage#asCommandMessage(Object)
+     * @see GenericCommandMessage#asCommandMessage(Object)
      */
     void dispatch(CommandMessage<?> command);
 
@@ -55,7 +53,7 @@ public interface CommandBus {
      * @param callback The callback to invoke when command processing is complete
      * @param <R>      The type of the expected result
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
-     * @see org.axonframework.commandhandling.annotation.GenericCommandMessage#asCommandMessage(Object)
+     * @see GenericCommandMessage#asCommandMessage(Object)
      */
     <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback);
 

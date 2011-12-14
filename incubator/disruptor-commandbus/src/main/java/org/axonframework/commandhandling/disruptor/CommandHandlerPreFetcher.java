@@ -44,7 +44,7 @@ class CommandHandlerPreFetcher implements EventHandler<CommandHandlingEntry> {
     }
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, boolean endOfBatch) throws Exception {
+    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
         preLoadAggregate(entry);
         resolveCommandHandler(entry);
     }
@@ -64,7 +64,7 @@ class CommandHandlerPreFetcher implements EventHandler<CommandHandlingEntry> {
     }
 
     private void resolveCommandHandler(CommandHandlingEntry entry) {
-        entry.setCommandHandler(commandHandlers.get(entry.getCommand().getClass()));
+        entry.setCommandHandler(commandHandlers.get(entry.getCommand().getPayloadType()));
         entry.setUnitOfWork(new MultiThreadedUnitOfWork());
     }
 }

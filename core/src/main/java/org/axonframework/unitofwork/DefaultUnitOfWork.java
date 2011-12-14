@@ -75,9 +75,6 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     protected void doRollback(Throwable cause) {
-        for (AggregateEntry entry : registeredAggregates.values()) {
-            entry.clear();
-        }
         registeredAggregates.clear();
         eventsToPublish.clear();
         notifyListenersRollback(cause);
@@ -108,8 +105,8 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         }
         EventRegistrationCallback eventRegistrationCallback = new UoWEventRegistrationCallback(aggregate, eventBus);
 
-        registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, saveAggregateCallback,
-                                                                  eventRegistrationCallback));
+        registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, saveAggregateCallback
+        ));
 
         // register any events already available as uncommitted in the aggregate
         DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
@@ -283,22 +280,14 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
         private final T aggregateRoot;
         private final SaveAggregateCallback<T> callback;
-        private final EventRegistrationCallback eventRegistrationCallback;
 
-        public AggregateEntry(T aggregateRoot, SaveAggregateCallback<T> callback,
-                              EventRegistrationCallback eventRegistrationCallback) {
+        public AggregateEntry(T aggregateRoot, SaveAggregateCallback<T> callback) {
             this.aggregateRoot = aggregateRoot;
             this.callback = callback;
-            this.eventRegistrationCallback = eventRegistrationCallback;
         }
 
         public void saveAggregate() {
             callback.save(aggregateRoot);
-            clear();
-        }
-
-        public void clear() {
-            aggregateRoot.removeEventRegistrationCallback(eventRegistrationCallback);
         }
     }
 

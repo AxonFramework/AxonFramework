@@ -24,12 +24,12 @@ import java.util.Map;
  * Events.
  * <p/>
  * Instead of implementing <code>Message</code> directly, consider implementing
- * {@link org.axonframework.commandhandling.annotation.CommandMessage <code>CommandMessage</code>} or {@link
+ * {@link org.axonframework.commandhandling.CommandMessage <code>CommandMessage</code>} or {@link
  * EventMessage} instead.
  *
  * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
- * @see org.axonframework.commandhandling.annotation.CommandMessage <code>CommandMessage</code>
+ * @see org.axonframework.commandhandling.CommandMessage <code>CommandMessage</code>
  * @see EventMessage
  * @since 2.0
  */

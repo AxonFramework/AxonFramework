@@ -20,9 +20,11 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.EventStoreManagement;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -202,10 +204,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                                         identifier,
                                                         entry.getSequenceNumber(),
                                                         entry.getTimestamp(),
-                                                        entry.getPayload(),
-                                                        entry.getMetaData(),
-                                                        eventSerializer,
-                                                        eventSerializer));
+                                                        new LazyDeserializingObject(entry.getPayload(),
+                                                                                    eventSerializer),
+                                                        new LazyDeserializingObject<MetaData>(entry.getMetaData(),
+                                                                                              eventSerializer)));
         }
         return events;
     }

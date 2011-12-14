@@ -67,6 +67,7 @@ public class EventContainer implements Serializable {
      *
      * @param metaData the metaData of the event to add to this containr
      * @param payload  the payload of the event to add to this container
+     * @param <T>      the type of payload contained in the event
      * @return the DomainEventMessage added to the container
      */
     public <T> DomainEventMessage<T> addEvent(MetaData metaData, T payload) {
@@ -184,12 +185,5 @@ public class EventContainer implements Serializable {
             this.registrationCallbacks = new ArrayList<EventRegistrationCallback>();
         }
         this.registrationCallbacks.add(eventRegistrationCallback);
-    }
-
-    public void removeEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        if (registrationCallbacks == null) {
-            return;
-        }
-        this.registrationCallbacks.remove(eventRegistrationCallback);
     }
 }

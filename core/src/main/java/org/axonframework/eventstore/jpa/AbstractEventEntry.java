@@ -17,6 +17,8 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
@@ -101,13 +103,15 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * @return The deserialized domain event
      */
     public DomainEventMessage<?> getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(eventIdentifier, aggregateIdentifier,
-                                                        sequenceNumber, new DateTime(timeStamp),
-                                                        new SimpleSerializedObject(payload,
-                                                                                   payloadType,
-                                                                                   payloadRevision),
-                                                        new SerializedMetaData(metaData), eventSerializer,
-                                                        eventSerializer);
+        return new SerializedDomainEventMessage<Object>(
+                eventIdentifier,
+                aggregateIdentifier,
+                sequenceNumber,
+                new DateTime(timeStamp),
+                new LazyDeserializingObject<Object>(new SimpleSerializedObject(payload, payloadType, payloadRevision),
+                                                    eventSerializer),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData(metaData), eventSerializer)
+        );
     }
 
     /**
@@ -133,6 +137,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      *
      * @return the sequence number of the associated event.
      */
+    @Override
     public long getSequenceNumber() {
         return sequenceNumber;
     }
@@ -142,22 +147,31 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      *
      * @return the time stamp of the associated event.
      */
+    @Override
     public DateTime getTimestamp() {
         return new DateTime(timeStamp);
     }
 
+    @Override
     public String getEventIdentifier() {
         return eventIdentifier;
     }
 
-    public String getTimeStamp() {
-        return timeStamp;
+    /**
+     * Returns the database-generated identifier for this entry.
+     *
+     * @return the database-generated identifier for this entry
+     */
+    public Long getId() {
+        return id;
     }
 
+    @Override
     public SerializedObject getPayload() {
         return new SimpleSerializedObject(payload, payloadType, payloadRevision);
     }
 
+    @Override
     public SerializedObject getMetaData() {
         return new SerializedMetaData(metaData);
     }

@@ -31,6 +31,8 @@ public class GenericEventMessage<T> implements EventMessage<T> {
 
     private static final long serialVersionUID = -8370948891267874107L;
 
+    // payloadType is stored separately, because of Object.getClass() performance
+    private final Class<T> payloadType;
     private final String identifier;
     private final DateTime timestamp;
     private final T payload;
@@ -69,7 +71,9 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * @param metaData The MetaData for the EventMessage
      * @see #asEventMessage(Object)
      */
+    @SuppressWarnings("unchecked")
     public GenericEventMessage(T payload, Map<String, Object> metaData) {
+        this.payloadType = (Class<T>) payload.getClass();
         this.metaData = MetaData.from(metaData);
         this.timestamp = new DateTime();
         this.payload = payload;
@@ -83,10 +87,12 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
+    @SuppressWarnings("unchecked")
     protected GenericEventMessage(EventMessage<T> original, Map<String, Object> metaData) {
         this.metaData = MetaData.from(metaData);
         this.timestamp = original.getTimestamp();
         this.payload = original.getPayload();
+        this.payloadType = (Class<T>) payload.getClass();
         this.identifier = original.getIdentifier();
     }
 
@@ -112,7 +118,7 @@ public class GenericEventMessage<T> implements EventMessage<T> {
 
     @Override
     public Class getPayloadType() {
-        return payload.getClass();
+        return payloadType;
     }
 
     @Override

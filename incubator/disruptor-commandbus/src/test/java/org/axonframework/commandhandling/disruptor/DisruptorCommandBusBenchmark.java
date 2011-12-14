@@ -17,8 +17,8 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.annotation.CommandMessage;
-import org.axonframework.commandhandling.annotation.GenericCommandMessage;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -32,13 +32,11 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.serializer.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -51,15 +49,14 @@ import static junit.framework.Assert.assertEquals;
 public class DisruptorCommandBusBenchmark {
 
 
-    private static final long COMMAND_COUNT = 1000L * 1000L;
+    private static final long COMMAND_COUNT = 20 * 1000L * 1000L;
 
     public static void main(String[] args) throws InterruptedException {
         EventBus eventBus = new SimpleEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        PlatformTransactionManager transactionManager = null;
         DisruptorCommandBus commandBus =
-                new DisruptorCommandBus(512, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
+                new DisruptorCommandBus(4096, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
                                         inMemoryEventStore,
                                         eventBus, new XStreamSerializer());
         commandBus.subscribe(StubCommand.class, stubHandler);
@@ -68,8 +65,6 @@ public class DisruptorCommandBusBenchmark {
         inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
                 new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
 
-        System.out.println("Press enter to start");
-        new Scanner(System.in).nextLine();
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(new StubCommand(
@@ -110,7 +105,7 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         protected void handle(DomainEventMessage event) {
-            if (event instanceof StubDomainEvent) {
+            if (StubDomainEvent.class.isAssignableFrom(event.getPayloadType())) {
                 timesDone++;
             }
         }
@@ -132,7 +127,7 @@ public class DisruptorCommandBusBenchmark {
                 return;
             }
             String key = events.peek().getAggregateIdentifier().toString();
-            DomainEventMessage<? extends Object> lastEvent = null;
+            DomainEventMessage<?> lastEvent = null;
             while (events.hasNext()) {
                 countDownLatch.countDown();
                 lastEvent = events.next();

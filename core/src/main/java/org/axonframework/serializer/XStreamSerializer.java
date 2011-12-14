@@ -137,12 +137,12 @@ public class XStreamSerializer implements Serializer {
     }
 
     /**
-     * Serialize the given <code>object</code> to Compact XML (see {@link com.thoughtworks.xstream.io.xml.CompactWriter})
-     * and write the bytes to the given <code>outputStream</code>. Bytes are written using the character set provided
-     * during initialization of the serializer.
+     * {@inheritDoc}
+     * <p/>
+     * This implementation marshals the given <code>object</code> to Compact XML (see {@link
+     * com.thoughtworks.xstream.io.xml.CompactWriter}) and write the bytes to the given <code>outputStream</code>.
+     * Bytes are written using the character set provided during initialization of the serializer.
      *
-     * @param object       The object to serialize.
-     * @param outputStream The stream to write bytes to
      * @see com.thoughtworks.xstream.io.xml.CompactWriter
      */
     @Override

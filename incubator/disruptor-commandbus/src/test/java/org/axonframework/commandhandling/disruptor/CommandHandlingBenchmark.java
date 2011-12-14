@@ -18,9 +18,9 @@ package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.CommandMessage;
-import org.axonframework.commandhandling.annotation.GenericCommandMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -70,7 +70,7 @@ public class CommandHandlingBenchmark {
 //        new AnnotationCommandHandlerAdapter(new MyCommandHandler(repository), cb).subscribe();
 
 
-        int COMMAND_COUNT = 1000 * 1000;
+        long COMMAND_COUNT = 5 * 1000 * 1000;
         cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"));
         long t1 = System.currentTimeMillis();
         for (int t = 0; t < COMMAND_COUNT; t++) {

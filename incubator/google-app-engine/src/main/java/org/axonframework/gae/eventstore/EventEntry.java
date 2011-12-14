@@ -22,6 +22,8 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
@@ -99,13 +101,18 @@ public class EventEntry {
      * @return The actual DomainEvent
      */
     public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage(eventIdentifier, aggregateIdentifier,
-                                                sequenceNumber, new DateTime(timeStamp),
-                                                new SimpleSerializedObject(serializedEvent.getBytes(UTF8),
-                                                                           eventType, eventRevision),
-                                                new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
-                                                eventSerializer,
-                                                eventSerializer);
+        return new SerializedDomainEventMessage<Object>(
+                eventIdentifier,
+                aggregateIdentifier,
+                sequenceNumber,
+                new DateTime(timeStamp),
+                new LazyDeserializingObject<Object>(new SimpleSerializedObject(serializedEvent.getBytes(UTF8),
+                                                                               eventType,
+                                                                               eventRevision),
+                                                    eventSerializer),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
+                                                      eventSerializer)
+        );
     }
 
     /**

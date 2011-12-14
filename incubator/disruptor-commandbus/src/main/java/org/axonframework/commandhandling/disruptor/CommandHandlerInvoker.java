@@ -27,7 +27,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     public static final ThreadLocal<EventSourcedAggregateRoot> preLoadedAggregate = new ThreadLocal<EventSourcedAggregateRoot>();
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, boolean endOfBatch) throws Exception {
+    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
         final EventSourcedAggregateRoot aggregateRoot = entry.getPreLoadedAggregate();
         preLoadedAggregate.set(entry.getPreLoadedAggregate());
         try {

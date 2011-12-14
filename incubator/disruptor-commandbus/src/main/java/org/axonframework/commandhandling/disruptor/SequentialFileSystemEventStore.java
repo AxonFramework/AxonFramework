@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.serializer.SerializedObject;
@@ -108,10 +109,12 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                                 actualIdentifier,
                                 sequenceNumber,
                                 new DateTime(timestamp),
-                                new SimpleSerializedObject(serializedEvent, payloadType, payloadRevision),
-                                null,
-                                eventSerializer,
-                                eventSerializer));
+                                new LazyDeserializingObject(new SimpleSerializedObject(serializedEvent,
+                                                                                       payloadType,
+                                                                                       payloadRevision),
+                                                            eventSerializer),
+                                null
+                        ));
                     }
                 } catch (EOFException e) {
                     break;

@@ -163,7 +163,7 @@ public class MetaData implements Map<String, Object>, Serializable {
         if (this == o) {
             return true;
         }
-        if (!Map.class.isInstance(o)) {
+        if (!(o instanceof Map)) {
             return false;
         }
 
