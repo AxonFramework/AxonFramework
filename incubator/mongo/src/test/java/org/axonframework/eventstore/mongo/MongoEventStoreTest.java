@@ -25,6 +25,9 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
 import org.junit.*;
 import org.junit.runner.*;
 import org.slf4j.Logger;
@@ -56,7 +59,7 @@ public class MongoEventStoreTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStoreTest.class);
 
-    private MongoEventStore eventStore;
+    private MongoEventStore testSubject;
     private Mongo mongo;
     private DefaultMongoTemplate mongoTemplate;
 
@@ -70,7 +73,7 @@ public class MongoEventStoreTest {
     public void setUp() {
         try {
             mongo = context.getBean(Mongo.class);
-            eventStore = context.getBean(MongoEventStore.class);
+            testSubject = context.getBean(MongoEventStore.class);
         } catch (Exception e) {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
@@ -90,13 +93,13 @@ public class MongoEventStoreTest {
 
     @Test
     public void testStoreAndLoadEvents() {
-        assertNotNull(eventStore);
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
+        assertNotNull(testSubject);
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         assertEquals((long) aggregate1.getUncommittedEventCount(), mongoTemplate.domainEventCollection().count());
 
         // we store some more events to make sure only correct events are retrieved
-        eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
-        DomainEventStream events = eventStore.readEvents("test", aggregate1.getIdentifier());
+        testSubject.appendEvents("test", aggregate2.getUncommittedEvents());
+        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
         List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
         long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
@@ -112,14 +115,14 @@ public class MongoEventStoreTest {
 
     @Test
     public void testLoadWithSnapshotEvent() {
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
-        eventStore.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
         aggregate1.changeState();
-        eventStore.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
 
-        DomainEventStream actualEventStream = eventStore.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
         List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
@@ -130,18 +133,79 @@ public class MongoEventStoreTest {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        eventStore.readEvents("test", UUID.randomUUID());
+        testSubject.readEvents("test", UUID.randomUUID());
     }
 
     @Test
-    public void testDoWithAllEvents() {
+    public void testVisitAllEvents() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        eventStore.appendEvents("type1", new SimpleDomainEventStream(createDomainEvents(77)));
-        eventStore.appendEvents("type2", new SimpleDomainEventStream(createDomainEvents(23)));
+        testSubject.appendEvents("type1", new SimpleDomainEventStream(createDomainEvents(77)));
+        testSubject.appendEvents("type2", new SimpleDomainEventStream(createDomainEvents(23)));
 
-        eventStore.visitEvents(eventVisitor);
+        testSubject.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEventMessage.class));
     }
+
+    @Test
+    public void testVisitEvents_AfterTimestamp() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
+        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+        DateTimeUtils.setCurrentMillisSystem();
+
+        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
+        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThan(onePM), eventVisitor);
+        verify(eventVisitor, times(13 + 14)).doWithEvent(isA(DomainEventMessage.class));
+    }
+
+    @Test
+    public void testVisitEvents_BetweenTimestamps() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
+        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        DateTime twoPM = new DateTime(2011, 12, 18, 14, 0, 0, 0);
+        DateTimeUtils.setCurrentMillisFixed(twoPM.getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+        DateTimeUtils.setCurrentMillisSystem();
+
+        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
+        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM)
+                                               .and(criteriaBuilder.property("timeStamp").lessThanEquals(twoPM)),
+                                eventVisitor);
+        verify(eventVisitor, times(12 + 13)).doWithEvent(isA(DomainEventMessage.class));
+    }
+
+    @Test
+    public void testVisitEvents_OnOrAfterTimestamp() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
+        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+        DateTimeUtils.setCurrentMillisSystem();
+
+        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
+        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM), eventVisitor);
+        verify(eventVisitor, times(12 + 13 + 14)).doWithEvent(isA(DomainEventMessage.class));
+    }
+
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<DomainEventMessage<StubStateChangedEvent>>();

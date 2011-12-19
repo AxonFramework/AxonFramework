@@ -21,13 +21,18 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.EventStoreManagement;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.eventstore.jpa.criteria.JpaCriteria;
+import org.axonframework.eventstore.jpa.criteria.JpaCriteriaBuilder;
+import org.axonframework.eventstore.jpa.criteria.ParameterRegistry;
+import org.axonframework.eventstore.management.Criteria;
+import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.XStreamSerializer;
@@ -36,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -234,12 +240,31 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     @Override
     public void visitEvents(EventVisitor visitor) {
+        doVisitEvents(visitor, null, Collections.<String, Object>emptyMap());
+    }
+
+    @Override
+    public void visitEvents(Criteria criteria, EventVisitor visitor) {
+        CriteriaBuilder builder = newCriteriaBuilder();
+        StringBuilder sb = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        ((JpaCriteria) criteria).parse("e", sb, parameters);
+        doVisitEvents(visitor, sb.toString(), parameters.getParameters());
+    }
+
+    @Override
+    public CriteriaBuilder newCriteriaBuilder() {
+        return new JpaCriteriaBuilder();
+    }
+
+    private void doVisitEvents(EventVisitor visitor, String whereClause, Map<String, Object> parameters) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int first = 0;
         List<? extends SerializedDomainEventData> batch;
         boolean shouldContinue = true;
         while (shouldContinue) {
-            batch = eventEntryStore.fetchBatch(first, batchSize, entityManager);
+            batch = eventEntryStore.fetchFilteredBatch(whereClause, parameters,
+                                                       first, batchSize, entityManager);
             for (SerializedDomainEventData entry : batch) {
                 visitor.doWithEvent(new SerializedDomainEventMessage<Object>(entry, eventSerializer, eventSerializer));
             }

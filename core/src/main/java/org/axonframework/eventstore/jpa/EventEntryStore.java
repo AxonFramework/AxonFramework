@@ -21,6 +21,7 @@ import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
 import java.util.List;
+import java.util.Map;
 import javax.persistence.EntityManager;
 
 /**
@@ -59,20 +60,6 @@ public interface EventEntryStore {
                                                     EntityManager entityManager);
 
     /**
-     * Fetches a selection (starting at <code>startPosition</code> and including <code>batchSize</code> entries) of
-     * events in the entire event store.
-     * <p/>
-     * Note that the implementation is responsible for guaranteeing a consistent ordering in the query. Otherwise,
-     * batches may not represent a consecutive list of the entire collection of events.
-     *
-     * @param startPosition The first item to include in the batch
-     * @param batchSize     The number of items to include in the batch
-     * @param entityManager The entity manager providing access to the data store
-     * @return a List of serialized representations of Events included in this batch
-     */
-    List<? extends SerializedDomainEventData> fetchBatch(int startPosition, int batchSize, EntityManager entityManager);
-
-    /**
      * Fetches a selection of events for an aggregate of given <code>type</code> and given <code>identifier</code>
      * starting at given <code>firstSequenceNumber</code> with given <code>batchSize</code>. The given
      * <code>entityManager</code> provides access to the backing data store.
@@ -89,6 +76,26 @@ public interface EventEntryStore {
     List<? extends SerializedDomainEventData> fetchBatch(String aggregateType, Object identifier,
                                                          long firstSequenceNumber, int batchSize,
                                                          EntityManager entityManager);
+
+    /**
+     * Fetches a selection of events that conform to the given JPA <code>whereClause</code>,
+     * starting at given <code>firstSequenceNumber</code> with given <code>batchSize</code>. The given
+     * <code>parameters</code> provide the values for the placeholders used in the where clause.
+     * Both the <code>from</code> and <code>to</code> dates are inclusive.
+     * <p/>
+     * The "WHERE" keyword is not included in the clause. If the clause is null or an empty String, no filters are
+     * expected to be applied.
+     *
+     * @param whereClause   The JPA clause to be included after the WHERE keyword
+     * @param parameters    A map containing all the parameter values for parameter keys included in the where clause
+     * @param first         The index number of the first event in the entire selection to return
+     * @param batchSize     The total number of events to return in this batch
+     * @param entityManager The entity manager providing access to the data store
+     * @return a List of serialized representations of Events included in this batch
+     */
+    List<? extends SerializedDomainEventData> fetchFilteredBatch(String whereClause, Map<String, Object> parameters,
+                                                                 int first, int batchSize,
+                                                                 EntityManager entityManager);
 
     /**
      * Removes old snapshots from the storage for an aggregate of given <code>type</code> that generated the given

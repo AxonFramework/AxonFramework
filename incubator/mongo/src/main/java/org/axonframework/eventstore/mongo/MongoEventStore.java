@@ -23,10 +23,13 @@ import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventstore.EventStoreManagement;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.eventstore.management.Criteria;
+import org.axonframework.eventstore.management.EventStoreManagement;
+import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
+import org.axonframework.eventstore.mongo.criteria.MongoCriteriaBuilder;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.XStreamSerializer;
 import org.slf4j.Logger;
@@ -132,17 +135,43 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     @Override
     public void visitEvents(EventVisitor visitor) {
+        visitEvents(null, visitor);
+    }
+
+    @Override
+    public void visitEvents(Criteria criteria, EventVisitor visitor) {
         int first = 0;
         List<EventEntry> batch;
         boolean shouldContinue = true;
+        DBObject filter = criteria == null ? null : ((MongoCriteria) criteria).asMongoObject();
         while (shouldContinue) {
-            batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE);
+            batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE, filter);
             for (EventEntry entry : batch) {
                 visitor.doWithEvent(entry.getDomainEvent(eventSerializer));
             }
             shouldContinue = (batch.size() >= EVENT_VISITOR_BATCH_SIZE);
             first += EVENT_VISITOR_BATCH_SIZE;
         }
+    }
+
+    private List<EventEntry> fetchBatch(int startPosition, int batchSize, DBObject filter) {
+        DBObject sort = BasicDBObjectBuilder.start()
+                                            .add(EventEntry.TIME_STAMP_PROPERTY, -1)
+                                            .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1)
+                                            .get();
+        DBCursor batchDomainEvents = mongoTemplate.domainEventCollection().find(filter).sort(sort).limit(batchSize)
+                                                  .skip(startPosition);
+        List<EventEntry> entries = new ArrayList<EventEntry>();
+        while (batchDomainEvents.hasNext()) {
+            DBObject dbObject = batchDomainEvents.next();
+            entries.add(new EventEntry(dbObject));
+        }
+        return entries;
+    }
+
+    @Override
+    public MongoCriteriaBuilder newCriteriaBuilder() {
+        return new MongoCriteriaBuilder();
     }
 
     private List<DomainEventMessage> readEventSegmentInternal(String type, Object identifier,
@@ -175,20 +204,5 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         DBObject first = dbCursor.next();
 
         return new EventEntry(first);
-    }
-
-    private List<EventEntry> fetchBatch(int startPosition, int batchSize) {
-        DBObject sort = BasicDBObjectBuilder.start()
-                                            .add(EventEntry.TIME_STAMP_PROPERTY, -1)
-                                            .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1)
-                                            .get();
-        DBCursor batchDomainEvents = mongoTemplate.domainEventCollection().find().sort(sort).limit(batchSize).skip(
-                startPosition);
-        List<EventEntry> entries = new ArrayList<EventEntry>();
-        while (batchDomainEvents.hasNext()) {
-            DBObject dbObject = batchDomainEvents.next();
-            entries.add(new EventEntry(dbObject));
-        }
-        return entries;
     }
 }

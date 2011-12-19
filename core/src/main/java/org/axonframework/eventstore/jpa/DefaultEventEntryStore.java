@@ -21,7 +21,9 @@ import org.axonframework.serializer.SerializedObject;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 
 /**
  * Implementation of the EventEntryStore that stores events in DomainEventEntry entities and snapshot events in
@@ -62,12 +64,18 @@ class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public List<DomainEventEntry> fetchBatch(int startPosition, int batchSize, EntityManager entityManager) {
-        return entityManager.createQuery(
-                "SELECT e FROM DomainEventEntry e ORDER BY e.timeStamp ASC, e.sequenceNumber ASC")
-                            .setFirstResult(startPosition)
-                            .setMaxResults(batchSize)
-                            .getResultList();
+    public List<DomainEventEntry> fetchFilteredBatch(String whereClause, Map<String, Object> parameters,
+                                                     int startPosition, int batchSize,
+                                                     EntityManager entityManager) {
+        Query query = entityManager.createQuery(
+                String.format("SELECT e FROM DomainEventEntry e %s ORDER BY e.timeStamp ASC, e.sequenceNumber ASC",
+                              whereClause != null && whereClause.length() > 0 ? "WHERE " + whereClause : ""))
+                                   .setFirstResult(startPosition)
+                                   .setMaxResults(batchSize);
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+        return query.getResultList();
     }
 
     @Override
