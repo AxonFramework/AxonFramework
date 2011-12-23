@@ -8,8 +8,8 @@ package org.axonframework.serializer;
  * <p/>
  * Upcasters work on intermediate representations of the object to upcast. In some cases, this representation is a byte
  * array, while in other cases an object structure is used. The Serializer is responsible for converting the
- * intermediate representation form to one that is compatble with the upcaster. For performance reasons, however, it is
- * advisable to ensure all upcasters that operate in a chain (where one's output is another's input) use the same
+ * intermediate representation form to one that is compatible with the upcaster. For performance reasons, it is
+ * advisable to ensure that all upcasters in the same chain (where one's output is another's input) use the same
  * intermediate representation type.
  *
  * @param <T> The data format that this upcaster uses to represent the event
