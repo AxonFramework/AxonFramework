@@ -17,14 +17,17 @@
 package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
+
+import java.util.Iterator;
 
 /**
  * @author Allard Buijze
  */
-public class EventPublisher implements EventHandler<CommandHandlingEntry> {
-
+public class EventPublisher<T extends EventSourcedAggregateRoot> implements EventHandler<CommandHandlingEntry<T>> {
 
     private final EventStore eventStore;
     private final String aggregateType;
@@ -37,10 +40,12 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
-        eventStore.appendEvents(aggregateType, entry.getEventsToStore());
-        while (eventBus != null && entry.getEventsToPublish().hasNext()) {
-            eventBus.publish(entry.getEventsToPublish().next());
+    public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
+        DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
+        eventStore.appendEvents(aggregateType, unitOfWork.getEventsToStore());
+        Iterator<EventMessage> eventsToPublish = unitOfWork.getEventsToPublish().iterator();
+        while (eventBus != null && eventsToPublish.hasNext()) {
+            eventBus.publish(eventsToPublish.next());
         }
     }
 }

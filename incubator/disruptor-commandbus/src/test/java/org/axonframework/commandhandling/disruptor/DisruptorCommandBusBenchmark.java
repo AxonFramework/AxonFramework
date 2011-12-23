@@ -21,23 +21,23 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
+import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
-import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -48,17 +48,16 @@ import static junit.framework.Assert.assertEquals;
  */
 public class DisruptorCommandBusBenchmark {
 
-
-    private static final long COMMAND_COUNT = 20 * 1000L * 1000L;
+    private static final int COMMAND_COUNT = 50 * 1000 * 1000;
 
     public static void main(String[] args) throws InterruptedException {
-        EventBus eventBus = new SimpleEventBus();
+        CountingEventBus eventBus = new CountingEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        DisruptorCommandBus commandBus =
-                new DisruptorCommandBus(4096, new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
-                                        inMemoryEventStore,
-                                        eventBus, new XStreamSerializer());
+        DisruptorCommandBus<StubAggregate> commandBus =
+                new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
+                                                       inMemoryEventStore,
+                                                       eventBus);
         commandBus.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(commandBus);
         final String aggregateIdentifier = "MyID";
@@ -73,9 +72,10 @@ public class DisruptorCommandBusBenchmark {
         }
         System.out.println("Finished dispatching!");
 
-        inMemoryEventStore.countDownLatch.await(30, TimeUnit.SECONDS);
+        inMemoryEventStore.countDownLatch.await(5, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
-        assertEquals("Seems that some events are missing", 0, inMemoryEventStore.countDownLatch.getCount());
+        assertEquals("Seems that some events are not published", 0, eventBus.publisherCountDown.getCount());
+        assertEquals("Seems that some events are not stored", 0, inMemoryEventStore.countDownLatch.getCount());
 
         System.out.println("Did " + ((COMMAND_COUNT * 1000L) / (end - start)) + " commands per second");
         commandBus.stop();
@@ -84,19 +84,16 @@ public class DisruptorCommandBusBenchmark {
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
         private int timesDone = 0;
-        private final UUID identifier;
+        private final String identifier;
 
-        private StubAggregate() {
-            this(UUID.randomUUID());
-        }
-
-        private StubAggregate(UUID identifier) {
+        @AggregateInitializer
+        private StubAggregate(String identifier) {
             this.identifier = identifier;
         }
 
         @Override
         public Object getIdentifier() {
-            throw new UnsupportedOperationException("Not implemented yet");
+            return identifier;
         }
 
         public void doSomething() {
@@ -175,5 +172,25 @@ public class DisruptorCommandBusBenchmark {
 
     private static class StubDomainEvent {
 
+    }
+
+    private static class CountingEventBus implements EventBus {
+
+        private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
+
+        @Override
+        public void publish(EventMessage event) {
+            publisherCountDown.countDown();
+        }
+
+        @Override
+        public void subscribe(EventListener eventListener) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public void unsubscribe(EventListener eventListener) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
     }
 }

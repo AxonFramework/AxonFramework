@@ -19,31 +19,24 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 
 /**
  * @author Allard Buijze
  */
-public class CommandHandlingEntry {
+public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
 
     private CommandMessage<?> command;
     private Object aggregateIdentifier;
     private InterceptorChain interceptorChain;
-    private MultiThreadedUnitOfWork unitOfWork;
-    private EventSourcedAggregateRoot preLoadedAggregate;
+    private DisruptorUnitOfWork unitOfWork;
+    private T preLoadedAggregate;
     private CommandHandler<?> commandHandler;
     private Throwable exceptionResult;
     private Object result;
-    private DomainEventStream eventsToStore;
-    private DomainEventStream eventsToPublish;
 
     public CommandMessage<?> getCommand() {
         return command;
-    }
-
-    public void setCommand(CommandMessage<?> command) {
-        this.command = command;
     }
 
     public InterceptorChain getInterceptorChain() {
@@ -54,19 +47,19 @@ public class CommandHandlingEntry {
         this.interceptorChain = interceptorChain;
     }
 
-    public MultiThreadedUnitOfWork getUnitOfWork() {
+    public DisruptorUnitOfWork getUnitOfWork() {
         return unitOfWork;
     }
 
-    public void setUnitOfWork(MultiThreadedUnitOfWork unitOfWork) {
+    public void setUnitOfWork(DisruptorUnitOfWork unitOfWork) {
         this.unitOfWork = unitOfWork;
     }
 
-    public EventSourcedAggregateRoot getPreLoadedAggregate() {
+    public T getPreLoadedAggregate() {
         return preLoadedAggregate;
     }
 
-    public void setPreLoadedAggregate(EventSourcedAggregateRoot preLoadedAggregate) {
+    public void setPreLoadedAggregate(T preLoadedAggregate) {
         this.preLoadedAggregate = preLoadedAggregate;
     }
 
@@ -102,27 +95,9 @@ public class CommandHandlingEntry {
         return result;
     }
 
-    public void setEventsToStore(DomainEventStream events) {
-        this.eventsToStore = events;
-    }
-
-    public DomainEventStream getEventsToStore() {
-        return eventsToStore;
-    }
-
-    public void setEventsToPublish(DomainEventStream events) {
-        this.eventsToPublish = events;
-    }
-
-    public DomainEventStream getEventsToPublish() {
-        return eventsToPublish;
-    }
-
-    public void clear(CommandMessage<?> command, Object aggregateIdentifier) {
+    public void reset(CommandMessage<?> command, Object aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
         this.command = command;
-        eventsToPublish = null;
-        eventsToStore = null;
         result = null;
         exceptionResult = null;
         commandHandler = null;

@@ -18,53 +18,62 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.DefaultInterceptorChain;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author Allard Buijze
  */
-class CommandHandlerPreFetcher implements EventHandler<CommandHandlingEntry> {
+class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> implements EventHandler<CommandHandlingEntry<T>> {
 
-    private final Map<Object, EventSourcedAggregateRoot> map = new HashMap<Object, EventSourcedAggregateRoot>();
+    private final Map<Object, T> preLoadedAggregates = new HashMap<Object, T>();
     private final EventStore eventStore;
-    private final AggregateFactory<?> aggregateFactory;
+    private final AggregateFactory<T> aggregateFactory;
     private final Map<Class<?>, CommandHandler<?>> commandHandlers;
+    private final List<CommandHandlerInterceptor> interceptors;
 
-    CommandHandlerPreFetcher(EventStore eventStore, AggregateFactory<?> aggregateFactory,
-                             Map<Class<?>, CommandHandler<?>> commandHandlers) {
+    CommandHandlerPreFetcher(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+                             Map<Class<?>, CommandHandler<?>> commandHandlers,
+                             List<CommandHandlerInterceptor> interceptors) {
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
         this.commandHandlers = commandHandlers;
+        this.interceptors = interceptors;
     }
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
         preLoadAggregate(entry);
         resolveCommandHandler(entry);
+        entry.setInterceptorChain(new DefaultInterceptorChain(entry.getCommand(),
+                                                              entry.getUnitOfWork(),
+                                                              entry.getCommandHandler(),
+                                                              interceptors));
     }
 
-    private void preLoadAggregate(CommandHandlingEntry entry) {
+    private void preLoadAggregate(CommandHandlingEntry<T> entry) {
         final Object aggregateIdentifier = entry.getAggregateIdentifier();
-        if (map.containsKey(aggregateIdentifier)) {
-            entry.setPreLoadedAggregate(map.get(aggregateIdentifier));
+        if (preLoadedAggregates.containsKey(aggregateIdentifier)) {
+            entry.setPreLoadedAggregate(preLoadedAggregates.get(aggregateIdentifier));
         } else {
             DomainEventStream events = eventStore.readEvents(aggregateFactory.getTypeIdentifier(), aggregateIdentifier);
-            EventSourcedAggregateRoot aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier,
-                                                                                       events.peek());
+            T aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
             aggregateRoot.initializeState(events);
-            map.put(aggregateIdentifier, aggregateRoot);
+            preLoadedAggregates.put(aggregateIdentifier, aggregateRoot);
             entry.setPreLoadedAggregate(aggregateRoot);
         }
     }
 
-    private void resolveCommandHandler(CommandHandlingEntry entry) {
+    private void resolveCommandHandler(CommandHandlingEntry<T> entry) {
         entry.setCommandHandler(commandHandlers.get(entry.getCommand().getPayloadType()));
-        entry.setUnitOfWork(new MultiThreadedUnitOfWork());
+        entry.setUnitOfWork(new DisruptorUnitOfWork(entry.getPreLoadedAggregate()));
     }
 }

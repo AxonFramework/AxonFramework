@@ -21,25 +21,37 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 
 /**
  * @author Allard Buijze
+ * @since 2.0
  */
-public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry> {
+public class CommandHandlerInvoker<T extends EventSourcedAggregateRoot>
+        implements EventHandler<CommandHandlingEntry<T>> {
 
-    public static final ThreadLocal<EventSourcedAggregateRoot> preLoadedAggregate = new ThreadLocal<EventSourcedAggregateRoot>();
+    private final ThreadLocal<T> preLoadedAggregate = new ThreadLocal<T>();
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
-        final EventSourcedAggregateRoot aggregateRoot = entry.getPreLoadedAggregate();
+    public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
+        DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
+        unitOfWork.start();
+        unitOfWork.registerAggregate(entry.getPreLoadedAggregate(), null, null);
+
         preLoadedAggregate.set(entry.getPreLoadedAggregate());
         try {
-            Object result = entry.getCommandHandler().handle(entry.getCommand(), null);
+            Object result = entry.getInterceptorChain().proceed(entry.getCommand());
             entry.setResult(result);
         } catch (Throwable throwable) {
             entry.setExceptionResult(throwable);
         }
-
-        entry.setEventsToStore(aggregateRoot.getUncommittedEvents());
-        entry.setEventsToPublish(aggregateRoot.getUncommittedEvents());
-        aggregateRoot.commitEvents();
+        unitOfWork.commit();
         preLoadedAggregate.remove();
+    }
+
+    /**
+     * Returns the aggregate that has been preloaded for execution by this invoker. This is the aggregate expected to
+     * be loaded by the command handler.
+     *
+     * @return the pre-loaded aggregate
+     */
+    public T getPreLoadedAggregate() {
+        return preLoadedAggregate.get();
     }
 }
