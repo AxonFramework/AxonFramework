@@ -77,6 +77,11 @@ class MongoProperty implements Property {
         return new SimpleMongoOperator(this, "$nin", expression);
     }
 
+    /**
+     * Returns the name of the property.
+     *
+     * @return the name of the property
+     */
     public String getName() {
         return propertyName;
     }

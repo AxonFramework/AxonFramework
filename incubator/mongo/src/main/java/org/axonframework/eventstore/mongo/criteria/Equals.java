@@ -18,6 +18,7 @@ package org.axonframework.eventstore.mongo.criteria;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import org.axonframework.common.Assert;
 
 /**
  * Representation of an Equals operator for Mongo selection criteria.
@@ -38,15 +39,15 @@ class Equals extends MongoCriteria {
      * @param expression The expression to compare the property with
      */
     public Equals(MongoProperty property, Object expression) {
+        Assert.isFalse(expression instanceof MongoProperty,
+                       "The MongoEventStore does not support comparison between two properties");
+
         this.property = property;
         this.expression = expression;
     }
 
     @Override
     public DBObject asMongoObject() {
-        if (expression instanceof MongoProperty) {
-            return new BasicDBObject(property.getName(), ((MongoProperty) expression).getName());
-        }
         return new BasicDBObject(property.getName(), expression.toString());
     }
 }

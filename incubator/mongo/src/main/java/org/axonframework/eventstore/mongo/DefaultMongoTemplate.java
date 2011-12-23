@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class DefaultMongoTemplate implements MongoTemplate {
     private static final String DEFAULT_SNAPSHOTEVENTS_COLLECTION = "snapshotevents";
     private static final String DEFAULT_AXONFRAMEWORK_DATABASE = "axonframework";
 
-    private Mongo mongoDb;
+    private final Mongo mongoDb;
     private String databaseName = DEFAULT_AXONFRAMEWORK_DATABASE;
     private String domainEventsCollectionName = DEFAULT_DOMAINEVENTS_COLLECTION;
     private String snapshotEventsCollectionName = DEFAULT_SNAPSHOTEVENTS_COLLECTION;

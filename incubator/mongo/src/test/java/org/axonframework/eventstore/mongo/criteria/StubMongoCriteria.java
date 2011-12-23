@@ -16,36 +16,22 @@
 
 package org.axonframework.eventstore.mongo.criteria;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.axonframework.eventstore.management.Criteria;
 
 /**
- * Abstract class for Mongo-based criteria.
- *
  * @author Allard Buijze
- * @since 2.0
  */
-public abstract class MongoCriteria implements Criteria {
+class StubMongoCriteria extends MongoCriteria {
 
-    @Override
-    public Criteria and(Criteria criteria) {
-        return new And(this, (MongoCriteria) criteria);
+    private final BasicDBObject mongoObject;
+
+    public StubMongoCriteria(BasicDBObject mongoObject) {
+        this.mongoObject = mongoObject;
     }
 
     @Override
-    public Criteria or(Criteria criteria) {
-        return new Or(this, (MongoCriteria) criteria);
-    }
-
-    /**
-     * Returns the DBObject representing the criterium. This DBObject can be used to select documents in a Mongo Query.
-     *
-     * @return the DBObject representing the criterium
-     */
-    public abstract DBObject asMongoObject();
-
-    @Override
-    public String toString() {
-        return asMongoObject().toString();
+    public DBObject asMongoObject() {
+        return mongoObject;
     }
 }

@@ -26,8 +26,8 @@ package org.axonframework.eventstore.management;
 public interface Property {
 
     /**
-     * Returns a criteria instance where the property must be "less than" the given <code>expression</code>. The given
-     * expression may also be a property.
+     * Returns a criteria instance where the property must be "less than" the given <code>expression</code>. Some event
+     * stores also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "less than" requirement.
@@ -36,7 +36,7 @@ public interface Property {
 
     /**
      * Returns a criteria instance where the property must be "less than" or "equal to" the given
-     * <code>expression</code>. The given expression may also be a property.
+     * <code>expression</code>. Some event stores also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "less than or equals" requirement.
@@ -44,8 +44,8 @@ public interface Property {
     Criteria lessThanEquals(Object expression);
 
     /**
-     * Returns a criteria instance where the property must be "greater than" the given <code>expression</code>. The
-     * given expression may also be a property.
+     * Returns a criteria instance where the property must be "greater than" the given <code>expression</code>. Some
+     * event stores also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "greater than" requirement.
@@ -54,7 +54,7 @@ public interface Property {
 
     /**
      * Returns a criteria instance where the property must be "greater than" or "equal to" the given
-     * <code>expression</code>. The given expression may also be a property.
+     * <code>expression</code>. Some event stores also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "greater than or equals" requirement.
@@ -62,8 +62,8 @@ public interface Property {
     Criteria greaterThanEquals(Object expression);
 
     /**
-     * Returns a criteria instance where the property must "equal" the given <code>expression</code>. The given
-     * expression may also be a property.
+     * Returns a criteria instance where the property must "equal" the given <code>expression</code>. Some event stores
+     * also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing an "equals" requirement.
@@ -71,8 +71,8 @@ public interface Property {
     Criteria is(Object expression);
 
     /**
-     * Returns a criteria instance where the property must be "not equal to" the given <code>expression</code>. The
-     * given expression may also be a property.
+     * Returns a criteria instance where the property must be "not equal to" the given <code>expression</code>. Some
+     * event stores also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "not equals" requirement.
@@ -80,8 +80,8 @@ public interface Property {
     Criteria isNot(Object expression);
 
     /**
-     * Returns a criteria instance where the property must be "in" the given <code>expression</code>. The
-     * given expression must be a collection type or a property.
+     * Returns a criteria instance where the property must be "in" the given <code>expression</code>. Some event stores
+     * also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "is in" requirement.
@@ -89,8 +89,8 @@ public interface Property {
     Criteria in(Object expression);
 
     /**
-     * Returns a criteria instance where the property must be "not in" the given <code>expression</code>. The
-     * given expression must be a collection type or a property.
+     * Returns a criteria instance where the property must be "not in" the given <code>expression</code>. Some event
+     * stores also allow the given expression to be a property.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "is not in" requirement.

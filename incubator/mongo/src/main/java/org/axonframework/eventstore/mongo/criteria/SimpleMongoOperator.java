@@ -18,6 +18,7 @@ package org.axonframework.eventstore.mongo.criteria;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import org.axonframework.common.Assert;
 
 /**
  * Implementation of the simple Mongo Operators (those without special structural requirements), such as Less Than,
@@ -45,12 +46,12 @@ class SimpleMongoOperator extends MongoCriteria {
         this.property = property;
         this.operator = operator;
         this.expression = expression;
+        Assert.isFalse(expression instanceof MongoProperty,
+                       "The MongoEventStore does not support comparison between two properties");
     }
 
     @Override
     public DBObject asMongoObject() {
-        Object value = expression instanceof MongoProperty ? ((MongoProperty) expression).getName() : expression
-                .toString();
-        return new BasicDBObject(property.getName(), new BasicDBObject(operator, value));
+        return new BasicDBObject(property.getName(), new BasicDBObject(operator, expression.toString()));
     }
 }

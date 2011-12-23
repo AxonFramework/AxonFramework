@@ -45,8 +45,8 @@ class Or extends MongoCriteria {
     @Override
     public DBObject asMongoObject() {
         BasicDBList value = new BasicDBList();
-        value.add(criteria1);
-        value.add(criteria2);
+        value.add(criteria1.asMongoObject());
+        value.add(criteria2.asMongoObject());
         return new BasicDBObject("$or", value);
     }
 }
