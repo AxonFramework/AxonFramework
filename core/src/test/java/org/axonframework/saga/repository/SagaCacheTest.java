@@ -43,7 +43,7 @@ public class SagaCacheTest {
         final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
         List<Thread> threads = new ArrayList<Thread>();
         final int threadCount = Runtime.getRuntime().availableProcessors();
-        final long itemsPerThread = 100000;
+        final long itemsPerThread = 10000;
         for (int c = 0; c < threadCount; c++) {
             Thread t = new Thread(new Runnable() {
                 @Override
@@ -70,8 +70,9 @@ public class SagaCacheTest {
         // we make sure at least one item has been cleaned up
         testSubject.purge();
         assertTrue(testSubject.size() < 10000);
-        if (exception.get() != null) {
-            throw exception.get();
+        Throwable caughtException = exception.get();
+        if (caughtException != null) {
+            throw caughtException;
         }
     }
 
