@@ -30,6 +30,7 @@ import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -68,6 +69,37 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         CurrentUnitOfWork.clear(this);
     }
 
+    /**
+     * Invokes this UnitOfWork's on-prepare-commit cycle. Typically, this is run after the actual aggregates have been
+     * committed, but before any of the changes are made public.
+     */
+    public void onPrepareCommit() {
+        for (UnitOfWorkListener listener : listeners) {
+            listener.onPrepareCommit(Collections.<AggregateRoot>singleton(aggregate), eventsToPublish);
+        }
+    }
+
+    /**
+     * Invokes this UnitOfWork's on-after-commit cycle. Typically, this is run after all the events have been stored
+     * and
+     * published.
+     */
+    public void onAfterCommit() {
+        for (UnitOfWorkListener listener : listeners) {
+            listener.afterCommit();
+        }
+    }
+
+    /**
+     * Invokes this UnitOfWork's on-cleanup cycle. Typically, this is run after all the events have been stored and
+     * published and the after-commit cycle has been executed.
+     */
+    public void onCleanup() {
+        for (UnitOfWorkListener listener : listeners) {
+            listener.onCleanup();
+        }
+    }
+
     @Override
     public void rollback() {
         rollback(null);
@@ -78,6 +110,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         rollbackReason = cause;
         aggregate.commitEvents();
         CurrentUnitOfWork.clear(this);
+        onCleanup();
     }
 
     @Override
@@ -99,7 +132,8 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
                                                          SaveAggregateCallback<T> saveAggregateCallback) {
-        if (!aggregateRoot.getClass().isInstance(aggregate) || !aggregate.getIdentifier().equals(aggregateRoot.getIdentifier())) {
+        if (!aggregateRoot.getClass().isInstance(aggregate) || !aggregate.getIdentifier().equals(aggregateRoot
+                                                                                                         .getIdentifier())) {
             throw new IllegalArgumentException("Cannot register an aggregate other than the preloaded aggregate. "
                                                        + "This error typically occurs when an aggregate is loaded "
                                                        + "which is not the aggregate targeted by the command");

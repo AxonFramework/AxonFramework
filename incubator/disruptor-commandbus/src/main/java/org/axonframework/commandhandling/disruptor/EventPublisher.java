@@ -53,10 +53,13 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
     @Override
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
         DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
+        unitOfWork.onPrepareCommit();
         eventStore.appendEvents(aggregateType, unitOfWork.getEventsToStore());
         Iterator<EventMessage> eventsToPublish = unitOfWork.getEventsToPublish().iterator();
         while (eventBus != null && eventsToPublish.hasNext()) {
             eventBus.publish(eventsToPublish.next());
         }
+        unitOfWork.onAfterCommit();
+        unitOfWork.onCleanup();
     }
 }
