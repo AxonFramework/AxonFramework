@@ -129,7 +129,7 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
 
     @Override
     public ResultValidator expectVoidReturnType() {
-        return expectReturnValue(Void.TYPE);
+        return expectReturnValue(nullValue());
     }
 
     @Override
@@ -165,7 +165,7 @@ class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
     public ResultValidator expectException(Matcher<?> matcher) {
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
-        if (actualReturnValue != null) {
+        if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualReturnValue, description);
         }
         if (!matcher.matches(actualException)) {

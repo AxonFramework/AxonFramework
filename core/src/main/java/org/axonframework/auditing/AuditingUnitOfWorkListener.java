@@ -86,8 +86,7 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     /**
      * Registers the return value of the command handler with the auditing context.
      *
-     * @param returnValue The return value of the command handler, if any. May be <code>null</code> or {@link Void#TYPE
-     *                    void}.
+     * @param returnValue The return value of the command handler, if any. May be <code>null</code>.
      */
     void setReturnValue(Object returnValue) {
         this.returnValue = returnValue;

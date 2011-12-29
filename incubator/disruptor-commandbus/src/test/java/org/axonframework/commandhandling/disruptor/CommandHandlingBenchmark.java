@@ -40,6 +40,7 @@ import java.util.UUID;
  * @author Allard Buijze
  */
 public class CommandHandlingBenchmark {
+
     private static final UUID aggregateIdentifier = UUID.randomUUID();
 
     public static void main(String[] args) {
@@ -122,7 +123,7 @@ public class CommandHandlingBenchmark {
         @Override
         public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
             repository.load(aggregateIdentifier).doSomething();
-            return Void.TYPE;
+            return null;
         }
     }
 

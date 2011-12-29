@@ -41,6 +41,6 @@ public class FieldAccessibilityCallback implements PrivilegedAction<Object> {
     @Override
     public Object run() {
         field.setAccessible(true);
-        return Void.TYPE;
+        return null;
     }
 }

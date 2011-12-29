@@ -57,7 +57,7 @@ public class AnnotationCommandHandlerAdapterTest {
     @Test
     public void testHandlerDispatching_VoidReturnType() throws Throwable {
         Object actualReturnValue = testSubject.handle(GenericCommandMessage.asCommandMessage(""), mockUnitOfWork);
-        assertEquals(void.class, actualReturnValue);
+        assertEquals(null, actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
     }

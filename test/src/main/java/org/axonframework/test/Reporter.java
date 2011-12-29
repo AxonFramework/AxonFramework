@@ -253,8 +253,6 @@ class Reporter {
     private void describe(Object value, StringBuilder sb) {
         if (value == null) {
             sb.append("null");
-        } else if (value == Void.TYPE) {
-            sb.append("void");
         } else {
             sb.append(value.toString());
         }

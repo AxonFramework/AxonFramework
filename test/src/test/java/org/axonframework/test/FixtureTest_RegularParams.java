@@ -17,6 +17,7 @@
 package org.axonframework.test;
 
 import org.axonframework.repository.AggregateNotFoundException;
+import org.hamcrest.core.IsNull;
 import org.junit.*;
 
 import java.io.IOException;
@@ -54,7 +55,7 @@ public class FixtureTest_RegularParams {
                                                                       fixture.getEventBus()))
                 .given(new MyEvent(1))
                 .when(new TestCommand(fixture.getAggregateIdentifier()));
-        validator.expectReturnValue(Void.TYPE);
+        validator.expectReturnValue(null);
         validator.expectEvents(new MyEvent(2));
     }
 
@@ -65,7 +66,7 @@ public class FixtureTest_RegularParams {
         fixture.registerAnnotatedCommandHandler(commandHandler)
                .given(new MyEvent(1), new MyEvent(2))
                .when(new TestCommand(fixture.getAggregateIdentifier()))
-               .expectReturnValue(Void.TYPE)
+               .expectReturnValue(IsNull.nullValue())
                .expectEvents(new MyEvent(3));
     }
 
@@ -164,7 +165,7 @@ public class FixtureTest_RegularParams {
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("The command handler returned normally, but an exception was expected"));
             assertTrue(e.getMessage().contains(
-                    "<an instance of java.lang.RuntimeException> but returned with <void>"));
+                    "<an instance of java.lang.RuntimeException> but returned with <null>"));
         }
     }
 
@@ -177,10 +178,10 @@ public class FixtureTest_RegularParams {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                    .given(givenEvents)
                    .when(new TestCommand(fixture.getAggregateIdentifier()))
-                   .expectReturnValue(null);
+                   .expectReturnValue("some");
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("<null> but got <void>"));
+            assertTrue(e.getMessage(), e.getMessage().contains("<\"some\"> but got <null>"));
         }
     }
 

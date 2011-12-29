@@ -165,7 +165,7 @@ public class DisruptorCommandBusBenchmark {
         @Override
         public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
             repository.load(command.getPayload().getAggregateIdentifier()).doSomething();
-            return Void.TYPE;
+            return null;
         }
 
         public void setRepository(Repository<StubAggregate> repository) {
@@ -174,5 +174,6 @@ public class DisruptorCommandBusBenchmark {
     }
 
     private static class StubDomainEvent {
+
     }
 }

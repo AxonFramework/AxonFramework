@@ -154,6 +154,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     }
 
     private class AnnotatedConstructorCommandHandler implements CommandHandler<Object> {
+
         private final ConstructorCommandMessageHandler<T> handler;
 
         public AnnotatedConstructorCommandHandler(ConstructorCommandMessageHandler<T> handler) {
@@ -163,7 +164,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         @Override
         public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
             repository.add(handler.invoke(null, command));
-            return Void.TYPE;
+            return null;
         }
     }
 }

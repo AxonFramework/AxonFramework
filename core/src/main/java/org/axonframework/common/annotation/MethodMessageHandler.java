@@ -101,11 +101,7 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
         for (int i = 0; i < parameterValues.length; i++) {
             parameterValues[i] = getParameterValueResolvers()[i].resolveParameterValue(message);
         }
-        Object returnType = method.invoke(target, parameterValues);
-        if (Void.TYPE.equals(method.getReturnType())) {
-            return Void.TYPE;
-        }
-        return returnType;
+        return method.invoke(target, parameterValues);
     }
 
     /**

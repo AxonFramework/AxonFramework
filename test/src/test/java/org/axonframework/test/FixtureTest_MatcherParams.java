@@ -73,16 +73,15 @@ public class FixtureTest_MatcherParams {
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),
                                                                fixture.getEventBus());
         try {
-            fixture
-                    .registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new TestCommand(fixture.getAggregateIdentifier()))
-                    .expectException(new DoesMatch());
+            fixture.registerAnnotatedCommandHandler(commandHandler)
+                   .given(givenEvents)
+                   .when(new TestCommand(fixture.getAggregateIdentifier()))
+                   .expectException(new DoesMatch());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("The command handler returned normally, but an exception was expected"));
             assertTrue(e.getMessage().contains(
-                    "<anything> but returned with <void>"));
+                    "<anything> but returned with <null>"));
         }
     }
 
@@ -98,7 +97,7 @@ public class FixtureTest_MatcherParams {
                    .expectReturnValue(new DoesNotMatch());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("<something you can never give me> but got <void>"));
+            assertTrue(e.getMessage().contains("<something you can never give me> but got <null>"));
         }
     }
 

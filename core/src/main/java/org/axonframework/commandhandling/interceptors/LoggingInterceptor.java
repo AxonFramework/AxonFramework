@@ -64,10 +64,9 @@ public class LoggingInterceptor implements CommandHandlerInterceptor {
         logger.info("Incoming command: [{}]", command.getClass().getSimpleName());
         try {
             Object returnValue = chain.proceed();
-            logger.info("[{}] executed successfully with [{}] return type",
+            logger.info("[{}] executed successfully with a [{}] return value",
                         command.getClass().getSimpleName(),
-                        returnValue == null ? "null" : Void.TYPE.equals(returnValue) ? "void" : returnValue.getClass()
-                                .getSimpleName());
+                        returnValue == null ? "null" : returnValue.getClass().getSimpleName());
             return returnValue;
         } catch (Throwable t) {
             logger.warn(format("[%s] execution failed:", command.getClass().getSimpleName()), t);

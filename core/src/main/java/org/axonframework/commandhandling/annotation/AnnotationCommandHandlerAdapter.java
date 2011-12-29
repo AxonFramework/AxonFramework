@@ -80,7 +80,7 @@ public class AnnotationCommandHandlerAdapter
      *
      * @param command    The command to handle
      * @param unitOfWork The UnitOfWork the command is processed in
-     * @return the result of the command handling. Is {@link Void#TYPE} when the annotated handler has a
+     * @return the result of the command handling. Is <code>null</code> when the annotated handler has a
      *         <code>void</code> return value.
      *
      * @throws NoHandlerForCommandException when no handler is found for given <code>command</code>.

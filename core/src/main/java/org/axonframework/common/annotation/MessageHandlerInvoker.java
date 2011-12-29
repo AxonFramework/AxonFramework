@@ -54,7 +54,7 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
      * @throws InvocationTargetException when the handler throws a checked Exception
      */
     public Object invokeHandlerMethod(Message parameter) throws InvocationTargetException, IllegalAccessException {
-        return invokeHandlerMethod(parameter, VoidReturningCallback.INSTANCE);
+        return invokeHandlerMethod(parameter, NullReturningCallback.INSTANCE);
     }
 
     /**
@@ -95,21 +95,21 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
 
         /**
          * Indicates what needs to happen when no handler is found for a given parameter. The default behavior is to
-         * return {@link Void#TYPE}.
+         * return <code>null</code>.
          *
          * @param parameter The parameter for which no handler could be found
-         * @return the value to return when no handler method is found. Defaults to {@link Void#TYPE}.
+         * @return the value to return when no handler method is found. Defaults to <code>null</code>.
          */
         Object onNoMethodFound(Message parameter);
     }
 
-    private static class VoidReturningCallback implements NoMethodFoundCallback {
+    private static class NullReturningCallback implements NoMethodFoundCallback {
 
-        private static final VoidReturningCallback INSTANCE = new VoidReturningCallback();
+        private static final NullReturningCallback INSTANCE = new NullReturningCallback();
 
         @Override
         public Object onNoMethodFound(Message parameter) {
-            return Void.TYPE;
+            return null;
         }
     }
 }

@@ -76,7 +76,7 @@ public class LoggingInterceptorTest {
     @Test
     public void testSuccessfulExecution_VoidReturnValue() throws Throwable {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(interceptorChain.proceed()).thenReturn(Void.TYPE);
+        when(interceptorChain.proceed()).thenReturn(null);
 
         testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
 
@@ -84,7 +84,7 @@ public class LoggingInterceptorTest {
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
                                          any(Throwable.class));
         verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubCommand]"),
-                                                                           contains("[void]")), any(Throwable.class));
+                                                                           contains("[null]")), any(Throwable.class));
         verifyNoMoreInteractions(mockLogger);
     }
 
