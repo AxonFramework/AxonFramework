@@ -20,6 +20,9 @@ import com.lmax.disruptor.EventHandler;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 
 /**
+ * Component of the DisruptorCommandBus that invokes the command handler. The execution is done within a Unit Of Work.
+ * If an aggregate has been pre-loaded, it is set to the ThreadLocal.
+ *
  * @author Allard Buijze
  * @since 2.0
  */

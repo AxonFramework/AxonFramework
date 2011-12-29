@@ -49,9 +49,9 @@ import static junit.framework.Assert.assertEquals;
  */
 public class DisruptorCommandBusTest {
 
-    private static final int COMMAND_COUNT = 1000 * 1000;
+    private static final int COMMAND_COUNT = 100 * 1000;
 
-    @Test(timeout = 10000)
+    @Test
     public void testCommandProcessedAndEventsStored() throws InterruptedException {
         CountingEventBus eventBus = new CountingEventBus();
         StubHandler stubHandler = new StubHandler();
@@ -67,8 +67,10 @@ public class DisruptorCommandBusTest {
                 new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
 
         for (int i = 0; i < COMMAND_COUNT; i++) {
-            CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(new StubCommand(
-                    aggregateIdentifier));
+            CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
+                    new StubCommand(aggregateIdentifier),
+                    Collections.singletonMap(DisruptorCommandBus.TARGET_AGGREGATE_PROPERTY,
+                                             (Object) aggregateIdentifier));
             commandBus.dispatch(command);
         }
 
@@ -136,7 +138,7 @@ public class DisruptorCommandBusTest {
         }
     }
 
-    private static class StubCommand implements IdentifiedCommand {
+    private static class StubCommand {
 
         private Object agregateIdentifier;
 
@@ -144,7 +146,6 @@ public class DisruptorCommandBusTest {
             this.agregateIdentifier = agregateIdentifier;
         }
 
-        @Override
         public Object getAggregateIdentifier() {
             return agregateIdentifier;
         }

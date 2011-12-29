@@ -42,6 +42,11 @@ import java.util.concurrent.ThreadFactory;
  */
 public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements CommandBus, Repository<T> {
 
+    /**
+     * The name of the MetaData property containing the aggregate identifier of the command's target.
+     */
+    public static final String TARGET_AGGREGATE_PROPERTY = "target.aggregate";
+
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("Disruptor");
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
@@ -49,10 +54,28 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     private final CommandHandlerInvoker<T> commandHandlerInvoker;
     private final ExecutorService executorService;
 
+    /**
+     * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
+     * WaitStrategy on a RingBuffer of size 4096. The (3) Threads required for command execution are created
+     * immediately.
+     *
+     * @param aggregateFactory The factory providing uninitialized Aggregate instances for event sourcing
+     * @param eventStore       The EventStore where generated events must be stored
+     * @param eventBus         The EventBus where generated events must be published
+     */
     public DisruptorCommandBus(AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus) {
         this(aggregateFactory, eventStore, eventBus, new RingBufferConfiguration());
     }
 
+    /**
+     * Initialize the DisruptorCommandBus with given resources and settings. The 3 Threads required for command
+     * execution are immediately requested from the Configuration's Executor, if any. Otherwise, they are created.
+     *
+     * @param aggregateFactory The factory providing uninitialized Aggregate instances for event sourcing
+     * @param eventStore       The EventStore where generated events must be stored
+     * @param eventBus         The EventBus where generated events must be published
+     * @param configuration    The configuration for the command bus
+     */
     @SuppressWarnings("unchecked")
     public DisruptorCommandBus(AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus,
                                RingBufferConfiguration configuration) {
@@ -73,14 +96,14 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
                                                                    commandHandlers,
                                                                    configuration.getInterceptors()))
                  .then(commandHandlerInvoker)
-                 .then(new EventPublisher<T>(eventStore, aggregateFactory.getTypeIdentifier(), eventBus));
+                 .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore, eventBus));
         disruptor.start();
     }
 
     @Override
     public void dispatch(final CommandMessage<?> command) {
         RingBuffer<CommandHandlingEntry<T>> ringBuffer = disruptor.getRingBuffer();
-        Object aggregateIdentifier = ((IdentifiedCommand) command.getPayload()).getAggregateIdentifier();
+        Object aggregateIdentifier = command.getMetaData().get(TARGET_AGGREGATE_PROPERTY);
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
         event.reset(command, aggregateIdentifier);
@@ -89,7 +112,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
 
     @Override
     public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("This CommandBus instance does not support callbacks, yet.");
     }
 
     @Override
@@ -122,6 +145,11 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         // not necessary
     }
 
+    /**
+     * Shuts down the command bus. It no longer accepts new commands, and finishes processing commands that have
+     * already been published. This method will not shut down any executor that has been provided as part of the
+     * Configuration.
+     */
     public void stop() {
         disruptor.shutdown();
         if (executorService != null) {

@@ -30,9 +30,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Component of the DisruptorCommandBus that looks up the command handler and prepares the data for the command's
+ * execution. It loads the targeted aggregate and prepares the interceptor chain.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
-class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> implements EventHandler<CommandHandlingEntry<T>> {
+public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> implements EventHandler<CommandHandlingEntry<T>> {
 
     private final Map<Object, T> preLoadedAggregates = new HashMap<Object, T>();
     private final EventStore eventStore;
@@ -40,6 +44,14 @@ class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> implements E
     private final Map<Class<?>, CommandHandler<?>> commandHandlers;
     private final List<CommandHandlerInterceptor> interceptors;
 
+    /**
+     * Initialize the CommandHandlerPreFetcher using the given resources.
+     *
+     * @param eventStore       The EventStore providing the events to reconstruct the targeted aggregate
+     * @param aggregateFactory The factory creating empty aggregate instances
+     * @param commandHandlers  The command handlers for command processing
+     * @param interceptors     The command handler interceptors
+     */
     CommandHandlerPreFetcher(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                              Map<Class<?>, CommandHandler<?>> commandHandlers,
                              List<CommandHandlerInterceptor> interceptors) {
@@ -53,6 +65,10 @@ class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> implements E
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
         preLoadAggregate(entry);
         resolveCommandHandler(entry);
+        prepareInterceptorChain(entry);
+    }
+
+    private void prepareInterceptorChain(CommandHandlingEntry<T> entry) {
         entry.setInterceptorChain(new DefaultInterceptorChain(entry.getCommand(),
                                                               entry.getUnitOfWork(),
                                                               entry.getCommandHandler(),

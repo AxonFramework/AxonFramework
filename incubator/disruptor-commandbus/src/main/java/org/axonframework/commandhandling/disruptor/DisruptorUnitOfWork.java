@@ -33,7 +33,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Specialized UnitOfWork instance for the DisruptorCommandBus. It expects the executing command to target a single
+ * aggregate instance.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
 public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallback {
 
@@ -47,6 +51,11 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private final EventSourcedAggregateRoot aggregate;
     private List<UnitOfWorkListener> listeners = new ArrayList<UnitOfWorkListener>();
 
+    /**
+     * Initializes a UnitOfWork for execution of a command on the given <code>aggregate</code>.
+     *
+     * @param aggregate The aggregate on which a command is to be executed.
+     */
     public DisruptorUnitOfWork(EventSourcedAggregateRoot aggregate) {
         this.aggregate = aggregate;
     }
@@ -86,16 +95,17 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         this.listeners.add(listener);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
                                                          SaveAggregateCallback<T> saveAggregateCallback) {
-        if (!aggregate.getIdentifier().equals(aggregateRoot.getIdentifier())) {
+        if (!aggregateRoot.getClass().isInstance(aggregate) || !aggregate.getIdentifier().equals(aggregateRoot.getIdentifier())) {
             throw new IllegalArgumentException("Cannot register an aggregate other than the preloaded aggregate. "
                                                        + "This error typically occurs when an aggregate is loaded "
                                                        + "which is not the aggregate targeted by the command");
         }
         aggregate.addEventRegistrationCallback(this);
-        return aggregateRoot;
+        return (T) aggregate;
     }
 
     @Override

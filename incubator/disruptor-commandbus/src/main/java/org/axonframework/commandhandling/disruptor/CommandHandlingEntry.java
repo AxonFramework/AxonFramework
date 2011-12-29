@@ -22,7 +22,11 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 
 /**
+ * DataHolder for the DisruptorCommandBus. The CommandHandlingEntry maintains all information required for or produced
+ * by the command handling process.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
 public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
 
@@ -35,66 +39,140 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     private Throwable exceptionResult;
     private Object result;
 
+    /**
+     * Returns the CommandMessage to be executed.
+     *
+     * @return the CommandMessage to be executed
+     */
     public CommandMessage<?> getCommand() {
         return command;
     }
 
+    /**
+     * Returns the InterceptorChain registered with this entry, or <code>null</code> if none is available.
+     *
+     * @return the InterceptorChain registered with this entry
+     */
     public InterceptorChain getInterceptorChain() {
         return interceptorChain;
     }
 
+    /**
+     * Registers the InterceptorChain to use for the command execution.
+     *
+     * @param interceptorChain the InterceptorChain to use for the command execution
+     */
     public void setInterceptorChain(InterceptorChain interceptorChain) {
         this.interceptorChain = interceptorChain;
     }
 
+    /**
+     * Returns the UnitOfWork for the command execution.
+     *
+     * @return the UnitOfWork for the command execution
+     */
     public DisruptorUnitOfWork getUnitOfWork() {
         return unitOfWork;
     }
 
+    /**
+     * Registers the UnitOfWork to use for the command execution.
+     *
+     * @param unitOfWork the UnitOfWork to use for the command execution
+     */
     public void setUnitOfWork(DisruptorUnitOfWork unitOfWork) {
         this.unitOfWork = unitOfWork;
     }
 
+    /**
+     * Returns the Aggregate that has been pre-loaded for the command execution.
+     *
+     * @return the Aggregate that has been pre-loaded for the command execution
+     */
     public T getPreLoadedAggregate() {
         return preLoadedAggregate;
     }
 
+    /**
+     * Registers the Aggregate that has been pre-loaded for the command execution.
+     *
+     * @param preLoadedAggregate Aggregate the that has been pre-loaded for the command execution
+     */
     public void setPreLoadedAggregate(T preLoadedAggregate) {
         this.preLoadedAggregate = preLoadedAggregate;
     }
 
+    /**
+     * Returns the Handler to execute the incoming command.
+     *
+     * @return the Handler to execute the incoming command
+     */
     public CommandHandler getCommandHandler() {
         return commandHandler;
     }
 
+    /**
+     * Registers the Handler to execute the incoming command.
+     *
+     * @param commandHandler the Handler to execute the incoming command
+     */
     public void setCommandHandler(CommandHandler commandHandler) {
         this.commandHandler = commandHandler;
     }
 
+    /**
+     * Returns the Identifier of the targeted Aggregate.
+     *
+     * @return the Identifier of the targeted Aggregate
+     */
     public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
-    public void setAggregateIdentifier(Object aggregateIdentifier) {
-        this.aggregateIdentifier = aggregateIdentifier;
-    }
-
+    /**
+     * Registers the exception that occurred while processing the incoming command.
+     *
+     * @param exceptionResult the exception that occurred while processing the incoming command
+     */
     public void setExceptionResult(Throwable exceptionResult) {
         this.exceptionResult = exceptionResult;
     }
 
+    /**
+     * Returns the exception that occurred while processing the incoming command, or <code>null</code> if
+     * processing did not result in an exception or if execution is not yet finished.
+     *
+     * @return the exception that occurred while processing the incoming command, if any.
+     */
     public Throwable getExceptionResult() {
         return exceptionResult;
     }
 
+    /**
+     * Registers the result of the command's execution, if successful.
+     *
+     * @param result the result of the command's execution, if successful
+     */
     public void setResult(Object result) {
         this.result = result;
     }
 
+    /**
+     * Returns the result of the command's execution, or <code>null</code> if the commmand is not yet executed or
+     * resulted in an exception.
+     *
+     * @return the result of the command's execution, if any
+     */
     public Object getResult() {
         return result;
     }
 
+    /**
+     * Resets this entry, preparing it for use for another command.
+     *
+     * @param command             The new command the entry is used for
+     * @param aggregateIdentifier The identifier of the Aggregate that the command targets
+     */
     public void reset(CommandMessage<?> command, Object aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
         this.command = command;

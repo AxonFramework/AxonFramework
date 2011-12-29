@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -66,19 +66,23 @@ public class DisruptorCommandBusBenchmark {
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
-            CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(new StubCommand(
-                    aggregateIdentifier));
+            CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
+                    new StubCommand(aggregateIdentifier),
+                    Collections.singletonMap(DisruptorCommandBus.TARGET_AGGREGATE_PROPERTY,
+                                             (Object) aggregateIdentifier));
             commandBus.dispatch(command);
         }
         System.out.println("Finished dispatching!");
 
         inMemoryEventStore.countDownLatch.await(5, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
-        assertEquals("Seems that some events are not published", 0, eventBus.publisherCountDown.getCount());
-        assertEquals("Seems that some events are not stored", 0, inMemoryEventStore.countDownLatch.getCount());
-
-        System.out.println("Did " + ((COMMAND_COUNT * 1000L) / (end - start)) + " commands per second");
-        commandBus.stop();
+        try {
+            assertEquals("Seems that some events are not published", 0, eventBus.publisherCountDown.getCount());
+            assertEquals("Seems that some events are not stored", 0, inMemoryEventStore.countDownLatch.getCount());
+            System.out.println("Did " + ((COMMAND_COUNT * 1000L) / (end - start)) + " commands per second");
+        } finally {
+            commandBus.stop();
+        }
     }
 
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
@@ -138,7 +142,7 @@ public class DisruptorCommandBusBenchmark {
         }
     }
 
-    private static class StubCommand implements IdentifiedCommand {
+    private static class StubCommand {
 
         private Object agregateIdentifier;
 
@@ -146,7 +150,6 @@ public class DisruptorCommandBusBenchmark {
             this.agregateIdentifier = agregateIdentifier;
         }
 
-        @Override
         public Object getAggregateIdentifier() {
             return agregateIdentifier;
         }
