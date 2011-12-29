@@ -174,8 +174,8 @@
                 Axon depends on. There is also a "full" zip file, which contains Axon, its
                 dependencies, the sources and the documentation, all in a single download. </para>
             <para>If you really want to stay on the bleeding edge of development, you can also
-                checkout the sources from the subversion repository:
-                    <uri>http://axonframework.googlecode.com/svn/trunk/</uri>. </para>
+                checkout the sources from the GitHub repository:
+                    <uri>https://github.com/AxonFramework/AxonFramework</uri>. </para>
         </sect2>
         <sect2>
             <title>Configure Maven</title>
