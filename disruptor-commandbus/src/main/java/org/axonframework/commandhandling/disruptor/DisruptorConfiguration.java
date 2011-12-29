@@ -27,14 +27,14 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
- * Configuration object for the DisruptorCommandBus. The RingBufferConfiguration provides access to the options to
+ * Configuration object for the DisruptorCommandBus. The DisruptorConfiguration provides access to the options to
  * tweak performance settings. Instances are not thread-safe and should not be altered after they have been used to
  * initialize a DisruptorCommandBus.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public class RingBufferConfiguration {
+public class DisruptorConfiguration {
 
     private ClaimStrategy claimStrategy;
     private WaitStrategy waitStrategy;
@@ -45,7 +45,7 @@ public class RingBufferConfiguration {
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
      * multi-threaded claim strategy.
      */
-    public RingBufferConfiguration() {
+    public DisruptorConfiguration() {
         this.claimStrategy = new MultiThreadedClaimStrategy(4096);
         this.waitStrategy = new BlockingWaitStrategy();
     }
@@ -69,7 +69,7 @@ public class RingBufferConfiguration {
      * @see com.lmax.disruptor.MultiThreadedClaimStrategy MultiThreadedClaimStrategy
      * @see com.lmax.disruptor.SingleThreadedClaimStrategy SingleThreadedClaimStrategy
      */
-    public RingBufferConfiguration setClaimStrategy(ClaimStrategy claimStrategy) {
+    public DisruptorConfiguration setClaimStrategy(ClaimStrategy claimStrategy) {
         this.claimStrategy = claimStrategy;
         return this;
     }
@@ -102,7 +102,7 @@ public class RingBufferConfiguration {
      * @see com.lmax.disruptor.BusySpinWaitStrategy BusySpinWaitStrategy
      * @see com.lmax.disruptor.YieldingWaitStrategy YieldingWaitStrategy
      */
-    public RingBufferConfiguration setWaitStrategy(WaitStrategy waitStrategy) {
+    public DisruptorConfiguration setWaitStrategy(WaitStrategy waitStrategy) {
         this.waitStrategy = waitStrategy;
         return this;
     }
@@ -127,7 +127,7 @@ public class RingBufferConfiguration {
      * @param executor the Executor that provides the processing resources
      * @return <code>this</code> for method chaining
      */
-    public RingBufferConfiguration setExecutor(Executor executor) {
+    public DisruptorConfiguration setExecutor(Executor executor) {
         this.executor = executor;
         return this;
     }
@@ -148,7 +148,7 @@ public class RingBufferConfiguration {
      * @param interceptors The interceptors to invoke when handling an incoming command
      * @return <code>this</code> for method chaining
      */
-    public RingBufferConfiguration setInterceptors(List<CommandHandlerInterceptor> interceptors) {
+    public DisruptorConfiguration setInterceptors(List<CommandHandlerInterceptor> interceptors) {
         this.interceptors.clear();
         this.interceptors.addAll(interceptors);
         return this;

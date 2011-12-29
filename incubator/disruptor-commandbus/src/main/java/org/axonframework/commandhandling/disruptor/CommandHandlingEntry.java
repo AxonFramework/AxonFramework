@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import com.lmax.disruptor.EventFactory;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
@@ -38,6 +40,7 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     private CommandHandler<?> commandHandler;
     private Throwable exceptionResult;
     private Object result;
+    private CommandCallback<?> callback;
 
     /**
      * Returns the CommandMessage to be executed.
@@ -168,19 +171,43 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
+     * Returns the CommandCallback instance for the executed command.
+     *
+     * @return the CommandCallback instance for the executed command
+     */
+    public CommandCallback getCallback() {
+        return callback;
+    }
+
+    /**
      * Resets this entry, preparing it for use for another command.
      *
      * @param command             The new command the entry is used for
      * @param aggregateIdentifier The identifier of the Aggregate that the command targets
+     * @param callback            The callback to report the result of command execution to
      */
-    public void reset(CommandMessage<?> command, Object aggregateIdentifier) {
+    public void reset(CommandMessage<?> command, Object aggregateIdentifier, CommandCallback callback) {
         this.aggregateIdentifier = aggregateIdentifier;
         this.command = command;
+        this.callback = callback;
         result = null;
         exceptionResult = null;
         commandHandler = null;
         interceptorChain = null;
         unitOfWork = null;
         preLoadedAggregate = null;
+    }
+
+    /**
+     * Factory class for CommandHandlingEntry instances.
+     *
+     * @param <T> The type of aggregate the command bus processes commands for
+     */
+    public static class Factory<T extends EventSourcedAggregateRoot> implements EventFactory<CommandHandlingEntry<T>> {
+
+        @Override
+        public CommandHandlingEntry<T> newInstance() {
+            return new CommandHandlingEntry<T>();
+        }
     }
 }

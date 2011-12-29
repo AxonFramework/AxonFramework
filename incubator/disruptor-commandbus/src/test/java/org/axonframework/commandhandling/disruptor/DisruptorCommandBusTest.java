@@ -16,9 +16,14 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import com.lmax.disruptor.SingleThreadedClaimStrategy;
+import com.lmax.disruptor.SleepingWaitStrategy;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -33,16 +38,26 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.junit.*;
+import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -50,35 +65,106 @@ import static junit.framework.Assert.assertEquals;
 public class DisruptorCommandBusTest {
 
     private static final int COMMAND_COUNT = 100 * 1000;
+    private CountingEventBus eventBus;
+    private StubHandler stubHandler;
+    private InMemoryEventStore inMemoryEventStore;
+    private DisruptorCommandBus<StubAggregate> testSubject;
+    private final String aggregateIdentifier = "MyID";
+
+    @Before
+    public void setUp() throws Exception {
+        eventBus = new CountingEventBus();
+        stubHandler = new StubHandler();
+        inMemoryEventStore = new InMemoryEventStore();
+
+        inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
+                new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
+    }
+
+    @After
+    public void tearDown() {
+        testSubject.stop();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCallbackInvokedBeforeUnitOfWorkCleanup() throws Throwable {
+        CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
+        ExecutorService customExecutor = Executors.newCachedThreadPool();
+        testSubject = new DisruptorCommandBus<StubAggregate>(
+                new GenericAggregateFactory<StubAggregate>(StubAggregate.class), inMemoryEventStore, eventBus,
+                new DisruptorConfiguration().setInterceptors(Arrays.asList(mockInterceptor))
+                                            .setClaimStrategy(new SingleThreadedClaimStrategy(8))
+                                            .setWaitStrategy(new SleepingWaitStrategy())
+                                            .setExecutor(customExecutor));
+        testSubject.subscribe(StubCommand.class, stubHandler);
+        stubHandler.setRepository(testSubject);
+        final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
+        when(mockUnitOfWorkListener.onEventRegistered(any(EventMessage.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return invocation.getArguments()[0];
+            }
+        });
+        when(mockInterceptor.handle(any(), any(UnitOfWork.class), any(InterceptorChain.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        ((UnitOfWork) invocation.getArguments()[1]).registerListener(mockUnitOfWorkListener);
+                        return ((InterceptorChain) invocation.getArguments()[2]).proceed();
+                    }
+                });
+        CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
+                new StubCommand(aggregateIdentifier),
+                Collections.singletonMap(DisruptorCommandBus.TARGET_AGGREGATE_PROPERTY,
+                                         (Object) aggregateIdentifier));
+        CommandCallback mockCallback = mock(CommandCallback.class);
+        testSubject.dispatch(command, mockCallback);
+
+        testSubject.stop();
+        assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
+        customExecutor.shutdown();
+        assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
+        InOrder inOrder = inOrder(mockInterceptor, mockUnitOfWorkListener, mockCallback);
+        inOrder.verify(mockInterceptor).handle(any(), any(UnitOfWork.class), any(InterceptorChain.class));
+        inOrder.verify(mockUnitOfWorkListener).onPrepareCommit(any(Set.class), any(List.class));
+        inOrder.verify(mockUnitOfWorkListener).afterCommit();
+        inOrder.verify(mockCallback).onSuccess(any());
+        inOrder.verify(mockUnitOfWorkListener).onCleanup();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testCommandRejectedAfterShutdown() throws InterruptedException {
+        testSubject = new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
+                                                             inMemoryEventStore,
+                                                             eventBus);
+        testSubject.subscribe(StubCommand.class, stubHandler);
+        stubHandler.setRepository(testSubject);
+
+        testSubject.stop();
+        testSubject.dispatch(new GenericCommandMessage<Object>(new Object()));
+    }
 
     @Test
     public void testCommandProcessedAndEventsStored() throws InterruptedException {
-        CountingEventBus eventBus = new CountingEventBus();
-        StubHandler stubHandler = new StubHandler();
-        InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        DisruptorCommandBus<StubAggregate> commandBus =
-                new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
-                                                       inMemoryEventStore,
-                                                       eventBus);
-        commandBus.subscribe(StubCommand.class, stubHandler);
-        stubHandler.setRepository(commandBus);
-        final String aggregateIdentifier = "MyID";
-        inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
+        testSubject = new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
+                                                             inMemoryEventStore,
+                                                             eventBus);
+        testSubject.subscribe(StubCommand.class, stubHandler);
+        stubHandler.setRepository(testSubject);
 
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
                     new StubCommand(aggregateIdentifier),
                     Collections.singletonMap(DisruptorCommandBus.TARGET_AGGREGATE_PROPERTY,
                                              (Object) aggregateIdentifier));
-            commandBus.dispatch(command);
+            testSubject.dispatch(command);
         }
 
         inMemoryEventStore.countDownLatch.await(5, TimeUnit.SECONDS);
         eventBus.publisherCountDown.await(1, TimeUnit.SECONDS);
         assertEquals("Seems that some events are not published", 0, eventBus.publisherCountDown.getCount());
         assertEquals("Seems that some events are not stored", 0, inMemoryEventStore.countDownLatch.getCount());
-        commandBus.stop();
     }
 
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {

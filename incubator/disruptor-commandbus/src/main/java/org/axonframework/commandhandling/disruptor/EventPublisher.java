@@ -50,6 +50,7 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
         this.eventBus = eventBus;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
         DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
@@ -60,6 +61,13 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
             eventBus.publish(eventsToPublish.next());
         }
         unitOfWork.onAfterCommit();
+        Throwable exceptionResult = entry.getExceptionResult();
+        if (exceptionResult != null) {
+            exceptionResult.printStackTrace();
+            entry.getCallback().onFailure(exceptionResult);
+        } else {
+            entry.getCallback().onSuccess(entry.getResult());
+        }
         unitOfWork.onCleanup();
     }
 }
