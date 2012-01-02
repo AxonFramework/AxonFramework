@@ -245,7 +245,6 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     @Override
     public void visitEvents(Criteria criteria, EventVisitor visitor) {
-        CriteriaBuilder builder = newCriteriaBuilder();
         StringBuilder sb = new StringBuilder();
         ParameterRegistry parameters = new ParameterRegistry();
         ((JpaCriteria) criteria).parse("e", sb, parameters);
@@ -334,8 +333,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         private final Object id;
         private final String typeId;
 
-        private BatchingDomainEventStream(List<DomainEventMessage> firstBatch, Object id,
-                                          String typeId) {
+        private BatchingDomainEventStream(List<DomainEventMessage> firstBatch, Object id, String typeId) {
             this.id = id;
             this.typeId = typeId;
             this.currentBatchSize = firstBatch.size();

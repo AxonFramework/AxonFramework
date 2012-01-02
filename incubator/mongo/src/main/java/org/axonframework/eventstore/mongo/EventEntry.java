@@ -96,12 +96,12 @@ class EventEntry {
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
         this.eventIdentifier = event.getIdentifier();
-        SerializedObject serializedPayload = eventSerializer.serialize(event.getPayload());
-        SerializedObject serializedMetaData = eventSerializer.serialize(event.getMetaData());
-        this.serializedPayload = new String(serializedPayload.getData(), UTF8);
-        this.payoadType = serializedPayload.getType().getName();
-        this.payloadRevision = serializedPayload.getType().getRevision();
-        this.serializedMetaData = new String(serializedMetaData.getData(), UTF8);
+        SerializedObject serializedPayloadObject = eventSerializer.serialize(event.getPayload());
+        SerializedObject serializedMetaDataObject = eventSerializer.serialize(event.getMetaData());
+        this.serializedPayload = new String(serializedPayloadObject.getData(), UTF8);
+        this.payoadType = serializedPayloadObject.getType().getName();
+        this.payloadRevision = serializedPayloadObject.getType().getRevision();
+        this.serializedMetaData = new String(serializedMetaDataObject.getData(), UTF8);
         this.timeStamp = event.getTimestamp().toString();
     }
 
@@ -194,6 +194,13 @@ class EventEntry {
                                    .get();
     }
 
+    /**
+     * Returns this entry as a DomainEventMessage, using the given <code>eventSerializer</code> to deserialize the
+     * payload and meta data.
+     *
+     * @param eventSerializer the serializer to deserialize the payload and meta data
+     * @return a DomainEventMessage containing the data from this entry
+     */
     public DomainEventMessage asDomainEventMessage(Serializer eventSerializer) {
         return new SerializedDomainEventMessage<Object>(
                 eventIdentifier,

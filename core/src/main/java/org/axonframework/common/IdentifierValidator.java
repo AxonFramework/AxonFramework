@@ -34,7 +34,7 @@ import static org.axonframework.common.ReflectionUtils.declaringClass;
  * @author Allard Buijze
  * @since 2.0
  */
-public class IdentifierValidator {
+public final class IdentifierValidator {
 
     private static final IdentifierValidator INSTANCE = new IdentifierValidator();
     private static final Object NULL = new Object();

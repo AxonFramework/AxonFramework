@@ -60,9 +60,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     private final Serializer eventSerializer;
 
     /**
-     * Constructor that accepts a Serializer, the MongoTemplate and a string containing the testContext. The
-     * TestContext
-     * can be Null. Provide true in case of the test context.
+     * Constructor that accepts a Serializer and the MongoTemplate.
      *
      * @param eventSerializer Your own Serializer
      * @param mongo           Mongo instance to obtain the database and the collections.
