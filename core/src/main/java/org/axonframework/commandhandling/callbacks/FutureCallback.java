@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -28,8 +29,8 @@ import java.util.concurrent.TimeoutException;
  * Command Handler Callback that allows the dispatching thread to wait for the result of the callback, using the Future
  * mechanism. This callback allows the caller to synchronize calls when an asynchronous command bus is being used.
  *
- * @author Allard Buijze
  * @param <R> the type of result of the command handling
+ * @author Allard Buijze
  * @since 0.6
  */
 public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
@@ -62,7 +63,7 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
     @Override
     public R get() throws InterruptedException, ExecutionException {
         latch.await();
-        return doGetResult();
+        return getFutureResult();
     }
 
     /**
@@ -79,18 +80,50 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      */
     @Override
     public R get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException, ExecutionException {
-        if (!latch.await(timeout, unit)) {
-            throw new TimeoutException("The timeout of the getResult operation was reached");
-        }
+        wait(timeout, unit);
+        return getFutureResult();
+    }
+
+    /**
+     * Waits if necessary for the command handling to complete, and then returns its result.
+     * <p/>
+     * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
+     * checked exceptions are wrapped in a {@link CommandExecutionException}.
+     *
+     * @return the result of the command handler execution.
+     *
+     * @throws InterruptedException if the current thread is interrupted while waiting
+     */
+    public R getResult() throws InterruptedException {
+        latch.await();
         return doGetResult();
     }
 
     /**
-     * Always returns false, since command execution cannot be cancelled.
+     * Waits if necessary for at most the given time for the command handling to complete, and then retrieves its
+     * result, if available.
+     * <p/>
+     * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
+     * checked exceptions are wrapped in a {@link CommandExecutionException}.
+     *
+     * @param timeout the maximum time to wait
+     * @param unit    the time unit of the timeout argument
+     * @return the result of the command handler execution.
+     *
+     * @throws InterruptedException if the current thread is interrupted while waiting
+     * @throws TimeoutException     if the wait timed out
+     */
+    public R getResult(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+        wait(timeout, unit);
+        return doGetResult();
+    }
+
+    /**
+     * Always returns <code>false</code>, since command execution cannot be cancelled.
      *
      * @param mayInterruptIfRunning <tt>true</tt> if the thread executing the command should be interrupted; otherwise,
      *                              in-progress tasks are allowed to complete
-     * @return false
+     * @return <code>false</code>
      */
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -117,11 +150,31 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
         return latch.getCount() == 0L;
     }
 
-    private R doGetResult() throws ExecutionException {
+    private R doGetResult() {
+        if (failure != null) {
+            if (failure instanceof Error) {
+                throw (Error) failure;
+            } else if (failure instanceof RuntimeException) {
+                throw (RuntimeException) failure;
+            } else {
+                throw new CommandExecutionException("An exception occurred while executing a command", failure);
+            }
+        } else {
+            return result;
+        }
+    }
+
+    private R getFutureResult() throws ExecutionException {
         if (failure != null) {
             throw new ExecutionException(failure);
         } else {
             return result;
+        }
+    }
+
+    private void wait(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+        if (!latch.await(timeout, unit)) {
+            throw new TimeoutException("The timeout of the getResult operation was reached");
         }
     }
 }
