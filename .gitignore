@@ -1,0 +1,10 @@
+*.iml
+axon.ipr
+axon.iws
+incubator/**/target/
+core/target/
+integration/target/
+test/target/
+**/target/
+.idea/
+**/*.iml
