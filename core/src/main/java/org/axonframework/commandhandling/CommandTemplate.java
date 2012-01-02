@@ -37,7 +37,8 @@ public class CommandTemplate {
      * @param <R>     The expected type of return value
      * @return The result of the command handler execution
      *
-     * @throws InterruptedException when the thread is interrupted while waiting
+     * @throws InterruptedException      when the thread is interrupted while waiting
+     * @throws CommandExecutionException when command execution threw a checked exception
      */
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) throws InterruptedException {
@@ -54,8 +55,9 @@ public class CommandTemplate {
      * @param <R>     The expected type of return value
      * @return The result of the command handler execution
      *
-     * @throws InterruptedException when the thread is interrupted while waiting
-     * @throws TimeoutException     when the given timeout has expired while waiting for a result
+     * @throws InterruptedException      when the thread is interrupted while waiting
+     * @throws TimeoutException          when the given timeout has expired while waiting for a result
+     * @throws CommandExecutionException when command execution threw a checked exception
      */
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) throws TimeoutException,
