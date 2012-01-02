@@ -145,6 +145,22 @@
             asynchronous, it will return immediately after the command has been successfully
             received. Your application will just have to guarantee that the command is processed and
             with "positive outcome", sooner or later...</para>
+        <simplesect>
+            <title><code>CommandTemplate</code></title>
+            <para>In many cases, however, your application will want to be able to wait for the
+                result of a command. Especially in the cases where guarantees are more important
+                than scalability and the user interface needs the outcome of the command. In such
+                case, you can choose to use the <code>FutureCallback</code>, or the simpler
+                alternative: the <code>CommandTemplate</code>. </para>
+            <para>The <code>CommandTemplate</code> wraps a <code>CommandBus</code> and allows some
+                "send and wait" type operations to be executed using a single method call. Some
+                methods allow you to specify a timeout. If no response has been received before the
+                timeout has expired, an exception is thrown. Note that the time starts counting when
+                the <code>dispatch</code> method of the <code>CommandBus</code> has returned. In the
+                case of the <code>SimpleCommandBus</code>, timeouts are ignored, since the
+                    <code>dispatch</code> method only returns <emphasis>after</emphasis> the
+                callbacks have been notified.</para>
+        </simplesect>
     </sect1>
         <sect1 xml:id="configuring-command-bus">
         <title>Configuring the Command Bus</title>
