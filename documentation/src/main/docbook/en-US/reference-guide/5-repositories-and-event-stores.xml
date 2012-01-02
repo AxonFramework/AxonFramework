@@ -391,6 +391,40 @@
             </note>
         </simplesect>
         <simplesect>
+            <title>Working with multiple Persistence Contexts</title>
+            <para>By default, the JPA Event Store expects the application to have only a single,
+                container managed, persistence context. In many cases, however, an application has
+                more than one. In that case, you must provide an explicit
+                    <code>EntityManagerProvider</code> implementation that returns the
+                    <code>EntityManager</code> instance for the <code>EventStore</code> to use. This
+                also allows for application managed persistence contexts to be used. It is the
+                    <code>EntityManagerProvider</code>'s responsiblity to provide a correct instance
+                of the <code>EntityManager</code>.</para>
+            <para>There are a few implementations of the <code>EntityManagerProvider</code>
+                available, each for different needs. The <code>SimpleEntityManagerProvider</code>
+                simply returns the <code>EntityManager</code> instance which is given to it at
+                construction time. This makes the implementation a simple option for Container
+                Managed Contexts. Alternatively, there is the
+                    <code>ContainerManagedEntityManagerProvider</code>, which returns the default
+                persistence context, and is used by default by the Jpa Event Store.</para>
+            <para>If you have a persistence unit called "myPersistenceUnit" which you wish to use in
+                the <code>JpaEventStore</code>, this is what the EntityManagerProvider
+                implementation could look
+                like:<programlisting language="java">public class MyEntityManagerProvider implements EntityManagerProvider {
+
+    private EntityManager entityManager;
+
+    @Override
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    @PersistenceContext(unitName = "myPersistenceUnit")
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }</programlisting></para>
+        </simplesect>
+        <simplesect>
             <title>Customizing the Event storage</title>
             <para>By default, the JPA Event Store stores entries in
                 <code>DomainEventEntry</code>

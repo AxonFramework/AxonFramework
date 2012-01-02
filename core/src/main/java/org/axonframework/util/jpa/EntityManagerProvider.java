@@ -31,5 +31,10 @@ import javax.persistence.EntityManager;
  */
 public interface EntityManagerProvider {
 
+    /**
+     * Returns an instance of an EntityManager for the EventStore to use.
+     *
+     * @return an instance of an EntityManager for the EventStore to use
+     */
     EntityManager getEntityManager();
 }

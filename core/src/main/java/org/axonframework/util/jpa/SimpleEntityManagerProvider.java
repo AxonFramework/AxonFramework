@@ -26,8 +26,15 @@ import javax.persistence.EntityManager;
  * @since 1.3
  */
 public class SimpleEntityManagerProvider implements EntityManagerProvider {
+
     private final EntityManager entityManager;
 
+    /**
+     * Initializes the SimpleEntityManagerProvider to return the given <code>entityManager</code> each time {@link
+     * #getEntityManager()} is called.
+     *
+     * @param entityManager the entity manager for the EventStore to use.
+     */
     public SimpleEntityManagerProvider(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
