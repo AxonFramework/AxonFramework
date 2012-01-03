@@ -41,7 +41,7 @@ public class VersionedAggregateIdentifier {
     }
 
     /**
-     * Returns the identifier of the targeted Aggregate.
+     * Returns the identifier of the targeted Aggregate. May never return <code>null</code>.
      *
      * @return the identifier of the targeted Aggregate
      */

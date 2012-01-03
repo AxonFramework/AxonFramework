@@ -28,6 +28,7 @@
         <module>integrationtests</module>
         <module>incubator/mongo</module>
         <module>incubator/google-app-engine</module>
+        <module>distributed</module>
         <!--<module>migration</module>-->
     </modules>
     <packaging>pom</packaging>
@@ -86,7 +87,6 @@
         <profile>
             <id>with-incubator</id>
             <modules>
-                <module>incubator/dcb</module>
                 <module>incubator/redis</module>
                 <module>incubator/disruptor-commandbus</module>
             </modules>
