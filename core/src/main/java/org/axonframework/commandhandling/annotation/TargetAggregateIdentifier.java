@@ -25,10 +25,8 @@ import java.lang.annotation.Target;
  * Field or method level annotation that marks a field or method providing the identifier of the aggregate that a
  * command targets.
  * <p/>
- * If placed on a method, that method must contain no parameters. The return value will be converted to an
- * AggregateIdentifier. When returning a {@link java.util.UUID}, it is converted to a {@link
- * org.axonframework.domain.UUIDAggregateIdentifier}. Any other value will be wrapped in a {@link
- * org.axonframework.domain.StringAggregateIdentifier} wrapping the return value's {@code toString()} value.
+ * If placed on a method, that method must contain no parameters. The return value will be used as the
+ * Aggregate Identifier.
  * <p/>
  * If placed on a field, the field's value will be converted into an AggregateIdentifier instance identical to how a
  * method's return value is converted.
