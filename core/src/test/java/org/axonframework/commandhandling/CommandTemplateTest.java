@@ -39,7 +39,7 @@ public class CommandTemplateTest {
 
     @Test
     public void testSendAndWait_ReturnsValue() throws Exception {
-        onCommandReturn("returnValue", 0);
+        onCommandReturn("returnValue", 10);
         String actual = testSubject.sendAndWait(new Object());
         assertEquals("returnValue", actual);
     }
@@ -57,14 +57,14 @@ public class CommandTemplateTest {
     @Test
     public void testSendAndWaitWithTimeout_ReturnsValue() throws Exception {
         onCommandReturn("returnValue", 0);
-        String actual = testSubject.sendAndWait(new Object(), 10, TimeUnit.MILLISECONDS);
+        String actual = testSubject.sendAndWait(new Object(), 1000, TimeUnit.MILLISECONDS);
         assertEquals("returnValue", actual);
     }
 
     @Test(expected = StubRuntimeException.class)
     public void testSendAndWaitWithTimeout_ThrowsException() throws Exception {
         onCommandThrow(new StubRuntimeException(), 0);
-        testSubject.sendAndWait(new Object(), 10, TimeUnit.MILLISECONDS);
+        testSubject.sendAndWait(new Object(), 1000, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = TimeoutException.class)
@@ -80,7 +80,7 @@ public class CommandTemplateTest {
         try {
             actual.get(10, TimeUnit.MILLISECONDS);
             fail("Expected timeout");
-        } catch ( TimeoutException e) {
+        } catch (TimeoutException e) {
             // expected
         }
         assertEquals("returnValue", actual.get());
