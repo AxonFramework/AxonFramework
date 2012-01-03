@@ -108,30 +108,49 @@
             <para>Event listeners need to be registered with an event bus (see <xref
                     linkend="event-bus"/>) to be notified of events. Axon provides a base
                 implementation that take care of this, and other things, for you. </para>
+        </sect2>
+        <sect2 xml:id="annotated-event-handlers">
+            <title>Annotated Event Handler</title>
             <simplesect>
                 <title>
                     <code>AnnotationEventListenerAdapter</code></title>
-                <para>The
-                    <code>AnnotationEventListenerAdapter</code>
-                    can wrap any object into an
+                <para>The <code>AnnotationEventListenerAdapter</code> can wrap any object into an
                     event listener. The adapter will invoke the most appropriate event handler
                     method available. These event handler methods must be annotated with the
-                    <code>@EventHandler</code>
-                    annotation and are resolved according to the same
-                    rules that count for annotated aggregate roots (see <xref linkend="annotated-aggregate-root"/>).
+                        <code>@EventHandler</code> annotation and are resolved according the
+                        following rules:</para>
+                <para>
+                    TODO explain multiple parameters, first defines event type. Rest is metadata blabla, customizable.
+                    <orderedlist>
+                        <listitem><para>Some explanation</para></listitem>
+                    </orderedlist>
+                    
+                    In all circumstances, exactly one event
+                    handler method is invoked per listener instance. Axon will search the most specific method to invoke, in the following
+                    order: <orderedlist>
+                        <listitem>
+                            <para>On the actual instance level of the class hierarchy (as returned by
+                                <code>this.getClass()</code>), all annotated methods are evaluated </para>
+                        </listitem>
+                        <listitem>
+                            <para>If one or more methods are found of which the parameter is of the event type or a
+                                super type, the method with the most specific type is chosen and invoked </para>
+                        </listitem>
+                        <listitem>
+                            <para>If no methods are found on this level of the class hierarchy, the super type is
+                                evaluated the same way</para>
+                        </listitem>
+                        <listitem>
+                            <para>When the top level of the hierarchy is reached, and no suitable event handler is
+                                found, the event is ignored.</para>
+                        </listitem>
+                    </orderedlist>
                 </para>
-                <para>The constructor of the
-                    <code>AnnotationEventListenerAdapter</code>
-                    takes two
+                <para>The constructor of the <code>AnnotationEventListenerAdapter</code> takes two
                     parameters: the annotated bean, and the <code>EventBus</code>, to which the
                     listener should subscribe. You can subscribe and unsubscribe the event listener
-                    using the
-                    <code>subscribe()</code>
-                    and
-                    <code>unsubscribe()</code>
-                    methods on the
-                    adapter.
-                </para>
+                    using the <code>subscribe()</code> and <code>unsubscribe()</code> methods on the
+                    adapter. </para>
                 <tip>
                     <para>If you use Spring, you can automatically wrap all annotated event
                         listeners with an adapter automatically by adding

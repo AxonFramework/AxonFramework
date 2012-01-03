@@ -32,26 +32,100 @@
         synchronous and asynchronous command processing.</para>
         <para>The next sections provide an overview of the tasks related to creating a Command
             Handling infrastructure with the Axon Framework.</para>
+    <sect1>
+        <title>The Command Bus</title>
+        <para>The Command Bus is the mechanism that dispatches commands to their respective Command
+            Handler. Commands are always sent to only one (and exactly one) command handler. If no
+            command handler is available for a dispatched command, an exception
+                (<code>NoHandlerForCommandException</code>) is thrown. Subscribing multiple command
+            handlers to the same command type will result in subscriptions replacing each other. In
+            that case, the last subscription wins.</para>
+        <sect2>
+            <title>Dispatching commands</title>
+            <para>The CommandBus provides two methods to dispatch commands to their respective
+                handler: <code>dispatch(commandMessage, callback)</code> and
+                    <code>dispatch(commandMessage)</code>. The first parameter is the actual command
+                to dispatch. The optional second parameter takes a callback that allows the
+                dispatching component to be notified when command handling is completed. This
+                callback has two methods: <code>onSuccess()</code> and <code>onFailure()</code>,
+                which are called when command handling returned normally, or when it threw an
+                exception, respectively.</para>
+            <para>The calling component may not assume that the callback is invoked in the same
+                thread that dispatched the command. If the calling thread depends on the result
+                before continuing (which is a highly discouraged approach), you can use the
+                    <code>FutureCallback</code>. It is a combination of a <code>Future</code> (as
+                defined in the java.concurrent package) and Axon's
+                <code>CommandCallback</code>.</para>
+            <para>Best scalability is achieved when your application is not interested in the result
+                of a dispatched command at all. In that case, you should use the single-parameter
+                version of the <code>dispatch</code> method. If the <code>CommandBus</code>is fully
+                asynchronous, it will return immediately after the command has been successfully
+                dispatched. Your application will just have to guarantee that the command is
+                processed and with "positive outcome", sooner or later...</para>
+            <simplesect>
+                <title><code>CommandTemplate</code></title>
+                <para>In many cases, however, your application will want to be able to wait for the
+                    result of a command. Especially in the cases where guarantees are more important
+                    than scalability and the user interface needs the outcome of the command. In
+                    such case, you can choose to use the <code>FutureCallback</code>, or the simpler
+                    alternative: the <code>CommandTemplate</code>. </para>
+                <para>The <code>CommandTemplate</code> wraps a <code>CommandBus</code> and allows
+                    some "send and wait" type operations to be executed using a single method call.
+                    Some methods allow you to specify a timeout. If no response has been received
+                    before the timeout has expired, an exception is thrown. Note that the time
+                    starts counting when the <code>dispatch</code> method of the
+                        <code>CommandBus</code> has returned. In the case of the
+                        <code>SimpleCommandBus</code>, timeouts are ignored, since the
+                        <code>dispatch</code> method only returns <emphasis>after</emphasis> the
+                    callbacks have been notified.</para>
+            </simplesect>
+        </sect2>
+        <sect2>
+            <title><code>SimpleCommandBus</code></title>
+            <para/>
+        </sect2>
+        <sect2>
+            <title><code>DistributedCommandBus</code></title>
+            <para/>
+        </sect2>
+        <sect2>
+            <title><code>DisruptorCommandBus</code></title>
+            <para/>
+        </sect2>
+    </sect1>
         <sect1>
-        <title>Creating a Command Handler</title>
+        <title>Command Handling</title>
         <para>The Command Handler is the object that receives a Command of a pre-defined type and
             takes action based on its contents. In Axon, a Command may be any object. There is no
-            predefined type that needs to be implemented. The Command Handler, however, must
-            implement the <code>CommandHandler</code> interface. This interface declares only a
-            single method: <code>Object handle(T command, UnitOfWork uow)</code>, where T is the
-            type of Command this Handler can process. The concept of the UnitOfWork is explained in
-                <xref linkend="unit-of-work"/>. It is not recommended to use return values, but they
-            are allowed. Always consider using a "fire and forget" style of command handlers, where
-            a client does not have to wait for a response. As return value in such a case, you are
-            recommended to use <code>Void.TYPE</code>, the official representation of the
-                <code>void</code> keyword.</para>
-        <note>
-            <para>Note that Command Handlers need to be explicitly subscribed to the Command Bus for
-                the specific types of Command they can handle. See <xref
-                    linkend="configuring-command-bus"/>.</para>
-        </note>
-        <simplesect>
-            <title>Annotation support</title>
+            predefined type that needs to be implemented. </para>
+        <sect2>
+            <title>Creating a Command Handler</title>
+            <para>A Command Handler must implement the <code>CommandHandler</code> interface. This
+                interface declares only a single method: <code>Object handle(CommandMessage&lt;T>
+                    command, UnitOfWork uow)</code>, where T is the type of Command this Handler can
+                process. The concept of the UnitOfWork is explained in <xref linkend="unit-of-work"
+                />. Be weary when using return values. Typically, it is a bad idea to use return
+                values to return server-generated identifiers. Consider using client-generated
+                (random) identifiers, such as UUIDs. They allow for a "fire and forget" style of
+                command handlers, where a client does not have to wait for a response. As return
+                value in such a case, you are recommended to simply return <code>null</code>.</para>
+            <annotation>
+                <para>TODO: Explain the role and purpose of a Command Handler. Should it execute
+                    queries? Should it do validation?</para>
+            </annotation>
+        </sect2>
+        <sect2>
+            <title>Subscribing to a Command Bus</title>
+            <para>You can subscribe and unsubscribe command handlers using the
+                    <code>subscribe</code> and <code>unsubscribe</code> methods on
+                    <code>CommandBus</code>, respectively. They both take two parameters: the type
+                of command to (un)subscribe the handler to, and the handler to (un)subscribe. An
+                unsubscription will only be successful if the handler passed as the second parameter
+                was currently assigned to handle that type of command. If another command was
+                subscribed to that type of command, nothing happens.</para>
+        </sect2>
+        <sect2>
+            <title>Annotation based handlers</title>
             <para>More often than not, a command handler will need to process several types of
                 closely related commands. With Axon's annotation support you can use any POJO as
                 command handler. Just add the <code>@CommandHandler</code> annotation to your
@@ -61,6 +135,11 @@
                     linkend="unit-of-work"/>). Note that for each command type, there may only be
                 one handler! This restriction counts for all handlers registered to the same command
                 bus.</para>
+            <annotation>
+                <para>TODO: Describe the features of new annotation support. First parameter is
+                    either message or payload. Other parameters are dynamically resolved. Explain
+                    @MetaData annotation.</para>
+            </annotation>
             <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
                 annotated class into a <code>CommandHandler</code>. The adapter also takes a
                     <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on the
@@ -77,108 +156,54 @@
                     annotation-config element. This might result in command handler being subscribed
                     twice.</para>
             </note>
-        </simplesect>
-        <simplesect>
-            <title><code>AggregateAnnotationCommandHandler</code></title>
-            <para>It is not unlikely that most command handler operations have an identical
-                structure: they load an Aggregate from a repository and call a method on the
-                returned aggregate using values from the command as parameter. If that is the case,
-                you might benefit from a generic command handler: the
-                    <code>AggregateAnnotationCommandHandler</code>. This command handler uses
-                    <code>@CommandHandler</code> annotations on the aggregate's methods to identify
-                which methods need to be invoked for an incoming command. If the
-                    <code>@CommandHandler</code> annotation is placed on a constructor, that command
-                will cause a new Aggregate instance to be created.</para>
-            <para>The <code>AggregateAnnotationCommandHandler</code> still needs to know which
-                aggregate instance (identified by it's unique Aggregate Identifier) to load and
-                which version to expect. By default, the
-                    <code>AggregateAnnotationCommandHandler</code> uses annotations on the command
-                object to find this information. The <code>@TargetAggregateIdentifier</code>
-                annotation must be put on a field or getter method to indicate where the identifier
-                of the target Aggregate can be found. Similarly, the
-                    <code>@TargetAggregateVersion</code> may used to indicate the expected
-                version.</para>
-            <para>The <code>@TargetAggregateIdentifier</code> annotation can be placed on a field or
-                a method. The latter case will use the return value of a method invocation (without
-                parameters) as the value to use. If this value is an instance of
-                    <code>AggregateIdentifier</code>, it will be directly used. If it is a
-                    <code>java.util.UUID</code>, it will be wrapped in a
-                    <code>UUIDAggregateIdentifier</code>. Any other object will have its
-                    <code>toString()</code> value wrapped in a
-                    <code>StringAggregateIdentifier</code>.</para>
-            <para>If you prefer not to use annotations, the behavior can be overridden by supplying
-                a custom <code>CommandTargetResolver</code>. This class should return the
-                    <code>AggregateIdentifier</code> and expected version (if any) based on a given
-                command.</para>
-            <para>
-                <note>
-                    <title>Creating new Aggregate Instances</title>
-                    <para>When the <code>@CommandHandler</code> annotation is placed on an
-                        Aggregate's constructor, the respective command will create a new instance
-                        of that aggregte and add it to the repository. Those commands do not require
-                        to target a specific aggregate instance. That wouldn't make sense, since the
-                        instance is yet to be created. Therefore, those commands do not require any
-                            <code>@TargetAggregateIdentifier</code> or
-                            <code>@TargetAggregateVersion</code> annotations, nor will a custom
-                            <code>CommandTargetResolver</code> be invoked for these commands.</para>
-                </note>
-            </para>
-        </simplesect>
-    </sect1>
-    <sect1>
-        <title>Dispatching commands</title>
-        <para>The CommandBus provides two methods to dispatch commands to their respective handler:
-                <code>dispatch(command, callback)</code> and <code>dispatch(command)</code>. The
-            first parameter is the actual command to dispatch. The optional second parameter takes a
-            callback that allows the dispatching component to be notified when command handling
-            is completed. This callback has two methods: <code>onSuccess()</code> and
-                <code>onFailure()</code>, which are called when command handling returned normally,
-            or when it threw an exception, respectively.</para>
-        <para>The calling component may not assume that the callback is invoked in the same thread
-            that dispatched the command. If the calling thread depends on the result before
-            continuing (which is a highly discouraged approach), you can use the
-                <code>FutureCallback</code>. It is a combination of a <code>Future</code> (as
-            defined in the java.concurrent package) and Axon's <code>CommandCallback</code>.</para>
-        <para>Best scalability is achieved when your application is not interested in the result of
-            a dispatched command at all. In that case, you should use the single-parameter
-            version of the <code>dispatch</code> method. If the <code>CommandBus</code> is fully
-            asynchronous, it will return immediately after the command has been successfully
-            received. Your application will just have to guarantee that the command is processed and
-            with "positive outcome", sooner or later...</para>
-        <simplesect>
-            <title><code>CommandTemplate</code></title>
-            <para>In many cases, however, your application will want to be able to wait for the
-                result of a command. Especially in the cases where guarantees are more important
-                than scalability and the user interface needs the outcome of the command. In such
-                case, you can choose to use the <code>FutureCallback</code>, or the simpler
-                alternative: the <code>CommandTemplate</code>. </para>
-            <para>The <code>CommandTemplate</code> wraps a <code>CommandBus</code> and allows some
-                "send and wait" type operations to be executed using a single method call. Some
-                methods allow you to specify a timeout. If no response has been received before the
-                timeout has expired, an exception is thrown. Note that the time starts counting when
-                the <code>dispatch</code> method of the <code>CommandBus</code> has returned. In the
-                case of the <code>SimpleCommandBus</code>, timeouts are ignored, since the
-                    <code>dispatch</code> method only returns <emphasis>after</emphasis> the
-                callbacks have been notified.</para>
-        </simplesect>
-    </sect1>
-        <sect1 xml:id="configuring-command-bus">
-        <title>Configuring the Command Bus</title>
-        <para>The Command Bus is the mechanism that dispatches commands to their respective Command
-            Handler. Commands are always sent to only one (and exactly one) command handler. If no
-            command handler is available for a dispatched command, an exception
-                (<code>NoHandlerForCommandException</code>) is thrown. Subscribing multiple command
-            handlers to the same command type will result in subscriptions replacing each other. In
-            that case, the last subscription wins.</para>
-        <para>Axon provides a single implementation of the Command Bus:
-                <code>SimpleCommandBus</code>. The <code>SimpleCommandBus</code> dispatches and
-            commands and executes the handler in the calling thread. You can subscribe and
-            unsubscribe command handlers using the <code>subscribe</code> and
-                <code>unsubscribe</code> methods, respectively. They both take two parameters: the
-            type of command to (un)subscribe the handler to, and the handler to (un)subscribe. An
-            unsubscription will only be done if the handler passed as the second parameter was
-            currently assigned to handle that type of command. If another command was subscribed to
-            that type of command, nothing happens.</para>
+            <simplesect>
+                <title><code>AggregateAnnotationCommandHandler</code></title>
+                <para>It is not unlikely that most command handler operations have an identical
+                    structure: they load an Aggregate from a repository and call a method on the
+                    returned aggregate using values from the command as parameter. If that is the
+                    case, you might benefit from a generic command handler: the
+                        <code>AggregateAnnotationCommandHandler</code>. This command handler uses
+                        <code>@CommandHandler</code> annotations on the aggregate's methods to
+                    identify which methods need to be invoked for an incoming command. If the
+                        <code>@CommandHandler</code> annotation is placed on a constructor, that
+                    command will cause a new Aggregate instance to be created.</para>
+                <para>The <code>AggregateAnnotationCommandHandler</code> still needs to know which
+                    aggregate instance (identified by it's unique Aggregate Identifier) to load and
+                    which version to expect. By default, the
+                        <code>AggregateAnnotationCommandHandler</code> uses annotations on the
+                    command object to find this information. The
+                        <code>@TargetAggregateIdentifier</code> annotation must be put on a field or
+                    getter method to indicate where the identifier of the target Aggregate can be
+                    found. Similarly, the <code>@TargetAggregateVersion</code> may used to indicate
+                    the expected version.</para>
+                <para>The <code>@TargetAggregateIdentifier</code> annotation can be placed on a
+                    field or a method. The latter case will use the return value of a method
+                    invocation (without parameters) as the value to use. If this value is an
+                    instance of <code>AggregateIdentifier</code>, it will be directly used. If it is
+                    a <code>java.util.UUID</code>, it will be wrapped in a
+                        <code>UUIDAggregateIdentifier</code>. Any other object will have its
+                        <code>toString()</code> value wrapped in a
+                        <code>StringAggregateIdentifier</code>.</para>
+                <para>If you prefer not to use annotations, the behavior can be overridden by
+                    supplying a custom <code>CommandTargetResolver</code>. This class should return
+                    the <code>AggregateIdentifier</code> and expected version (if any) based on a
+                    given command.</para>
+                <para>
+                    <note>
+                        <title>Creating new Aggregate Instances</title>
+                        <para>When the <code>@CommandHandler</code> annotation is placed on an
+                            Aggregate's constructor, the respective command will create a new
+                            instance of that aggregte and add it to the repository. Those commands
+                            do not require to target a specific aggregate instance. That wouldn't
+                            make sense, since the instance is yet to be created. Therefore, those
+                            commands do not require any <code>@TargetAggregateIdentifier</code> or
+                                <code>@TargetAggregateVersion</code> annotations, nor will a custom
+                                <code>CommandTargetResolver</code> be invoked for these
+                            commands.</para>
+                    </note>
+                </para>
+            </simplesect>
+        </sect2>
     </sect1>
     <sect1 xml:id="unit-of-work">
         <title>Unit of Work</title>
@@ -192,6 +217,10 @@
             repositories a lot easier, since you do not have to explicitly save your changes.
             Secondly, it is an important hook-point for interceptors to find out what a command
             handler has done.</para>
+        <annotation>
+            <para>TODO Explain how to use the UnitOfWork to send application events as part of a
+                transaction</para>
+        </annotation>
         <para>In most cases, you are unlikely to need access to the Unit of Work. It is mainly used
             by the building blocks that Axon provides. If you do need access to it, for whatever
             reason, there are a few ways to obtain it. The Command Handler receives the Unit Of Work

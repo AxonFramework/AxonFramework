@@ -14,7 +14,7 @@
     ~ See the License for the specific language governing permissions and
     ~ limitations under the License.
 -->
-<chapter xml:id="domain-modeling" version="5.0" xmlns="http://docbook.org/ns/docbook">
+<chapter xml:id="domain-modeling" version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude">
     <title>Domain Modeling</title>
     <para>In a CQRS-based application, a Domain Model (as defined by Eric Evans and Martin Fowler)
         can be a very powerful mechanism to harness the complexity involved in the validation and
@@ -309,38 +309,16 @@
     private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
         // do something with someProperty
     }
-}                </programlisting>
-                <para>In all circumstances, exactly one event handler method is invoked. The
-                    <code>AbstractAnnotatedAggregateRoot</code>
-                    will search the most specific
-                    method to invoke, in the following order:
-                </para>
-                <orderedlist>
-                    <listitem>
-                        <para>On the actual instance level of the class hierarchy (as returned by
-                            <code>this.getClass()</code>), all annotated methods are evaluated
-                        </para>
-                    </listitem>
-                    <listitem>
-                        <para>If one or more methods are found of which the parameter is of the
-                            event type or a super type, the method with the most specific type is
-                            chosen and invoked </para>
-                    </listitem>
-                    <listitem>
-                        <para>If no methods are found on this level of the class hierarchy, the
-                            super type is evaluated the same way
-                        </para>
-                    </listitem>
-                    <listitem>
-                        <para>When the level of the <code>AbstractAnnotatedAggregateRoot</code> is
-                            reached, and no suitable event handler is found, the event is ignored. </para>
-                    </listitem>
-                </orderedlist>
-                <para>Event handler methods may be private, as long as the security settings of the
-                    JVM allow the Axon Framework to change the accessibility of the method. This
-                    allows you to clearly separate the public API of your aggregate, which exposes
-                    the methods that generate events, from the internal logic, which processes the
-                    events.</para>
+}</programlisting>
+                <para><code>@EventHandler</code> annotated methods are resolved using specific rules. These rules are thorougly explained in <xref linkend="annotated-event-handlers"/>.</para>
+                    <note>
+                        <title>Using private methods</title>
+                        <para>Event handler methods may be private, as long as the security settings of the JVM
+                            allow the Axon Framework to change the accessibility of the method. This allows you to
+                            clearly separate the public API of your aggregate, which exposes the methods that
+                            generate events, from the internal logic, which processes the events.</para>
+                    </note>
+                
             </simplesect>
         </sect2>
         <sect2>
@@ -365,7 +343,8 @@
                 automatically register the Aggregate Root with an Entity before applying any Events
                 to it. This means that Entities (unlike usual in the Aggregate Root) should never
                 apply an Event in their constructor. Non-Aggregate Root Entities should be created
-                in an <code>@EventHandler</code> annotated method in their parent Entity. Axon will
+                in an <code>@EventHandler</code> annotated method in their parent Entity (as
+                creation of an entity can be considered a state change of the Aggregate). Axon will
                 ensure that the Aggregate Root is properly registered in time.</para>
             <para>Axon will automatically detect most of the child entities in the fields of an
                 Entity (albeit aggregate root or not). The following Entities are found:<itemizedlist>

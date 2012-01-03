@@ -89,14 +89,12 @@
                 multi-threading concerns are typically hard to deal with, leading to hard-to-trace
                 bugs and sometimes complete application failure. When you have a tight deadline, you
                 probably don't even want to care about these concerns. Axon's code is thoroughly
-                tested to prevent these types of bugs. </para>
-            <para>Most of the concerns Axon addresses are located within a single JVM. However, for
-                an application to be scalable, a single JVM is not enough. Therefore, Axon provides
-                the <code>axon-intregration</code> module, which allows events to be sent to a
-                Spring Integration channel. From there, you can use Spring Integration to dispatch
-                events to application components on different machines. In the near future, Axon
-                will provide more ways to dispatch commands and events between JVM's and physical
-                machines. </para>
+                tested to prevent these types of bugs.</para>
+            <para>The Axon Framework consists of a number of modules (jars) that provide the tools
+                and components to build a scalable infrastructure. The Axon Core module provides the
+                basic API's for the different components, and simple implemenatinos that provide
+                solutions for single-JVM applications. The other modules address scalability or
+                high-performance issues, by providing specialized building blocks.</para>
         </sect2>
         <sect2>
             <title>When to use Axon?</title>
@@ -173,9 +171,8 @@
                 only provide the Axon library itself, while others also provide the libraries that
                 Axon depends on. There is also a "full" zip file, which contains Axon, its
                 dependencies, the sources and the documentation, all in a single download. </para>
-            <para>If you really want to stay on the bleeding edge of development, you can also
-                checkout the sources from the GitHub repository:
-                    <uri>https://github.com/AxonFramework/AxonFramework</uri>. </para>
+            <para>If you really want to stay on the bleeding edge of development, you can clone the
+                Git repository: <uri>git://github.com/AxonFramework/AxonFramework.git</uri>, or visit <uri>https://github.com/AxonFramework/AxonFramework</uri> to browse the sources online. </para>
         </sect2>
         <sect2>
             <title>Configure Maven</title>
@@ -185,29 +182,12 @@
             <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-core</artifactId>
-    <version>1.2</version>
+    <version>2.0</version>
 </dependency>]]></programlisting>
             <para>Most of the features provided by the Axon Framework are optional and require
                 additional dependencies. We have chosen not to add these dependencies by default, as
                 they would potentially clutter your project with artifacts you don't need. This
                 section discusses these dependencies and describes in what scenarios you need them. </para>
-            <simplesect>
-                <title>Spring Integration</title>
-                <para>The Axon Framework provides connectors that allow you to publish events on a
-                    Spring Integration channel. These connectors require Spring Integration on the
-                    classpath. You need the following maven dependencies to use these connectors.
-                    Axon was compiled against Spring Integration 2.</para>
-                <programlisting language="xml"><![CDATA[<dependency>
-    <groupId>org.axonframework</groupId>
-    <artifactId>axon-integration</artifactId>
-    <version>1.2</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework.integration</groupId>
-    <artifactId>spring-integration-core</artifactId>
-    <version><!-- Add version here --></version>
-</dependency>]]></programlisting>
-            </simplesect>
         </sect2>
         <sect2>
             <title>Infrastructure requirements</title>
@@ -220,6 +200,11 @@
                 Thread Pool, for example. If you don't use an Application Server (e.g. Tomcat, Jetty
                 or a stand-alone app), you can use the <code>Executors</code> class or the Spring
                 Framework to create and configure Thread Pools.</para>
+        </sect2>
+        <sect2>
+            <title>Start coding</title>
+            <para>TODO: Outline the steps needed to create an Axon based application. Refer to the
+                chapters in which these components are explained.</para>
         </sect2>
     </sect1>
     <sect1 xml:id="contributing">

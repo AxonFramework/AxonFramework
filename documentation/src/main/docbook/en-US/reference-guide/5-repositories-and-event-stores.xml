@@ -22,25 +22,18 @@
         other types of queries should be performed against the query database, not the
         Repository.
     </para>
-    <para>In the Axon Framework, all repositories must implement the
-        <code>Repository</code>
+    <para>In the Axon Framework, all repositories must implement the <code>Repository</code>
         interface. This interface prescribes three methods:<code>load(identifier, version)</code>,
-        <code>load(identifier)</code>
-        and<code>add(aggregate)</code>. The
-        <code>load</code>
-        methods allows you to load aggregates from the repository. The optional
-        <code>version</code>
-        parameter is used to detect concurrent modifications (see<xref linkend="conflict-resolution"/>).
-        <code>add</code>
-        is used to register newly created
-        aggregates in the repository.
-    </para>
-    <para>Depending on your underlying persistence storage and auditing needs, there are a
-        number of base implementations that provide basic functionality needed by most repositories.
-        Axon Framework makes a distinction between repositories that save the current state of the
-        aggregate (see<xref linkend="standard-repositories"/>), and those that store the events of
-        an aggregate (see<xref linkend="event-sourcing-repositories"/>).
-    </para>
+            <code>load(identifier)</code> and<code>add(aggregate)</code>. The <code>load</code>
+        methods allows you to load aggregates from the repository. The optional <code>version</code>
+        parameter is used to detect concurrent modifications (see <xref
+            linkend="conflict-resolution"/>). <code>add</code> is used to register newly created
+        aggregates in the repository. </para>
+    <para>Depending on your underlying persistence storage and auditing needs, there are a number of
+        base implementations that provide basic functionality needed by most repositories. Axon
+        Framework makes a distinction between repositories that save the current state of the
+        aggregate (see <xref linkend="standard-repositories"/>), and those that store the events of
+        an aggregate (see <xref linkend="event-sourcing-repositories"/>). </para>
     <para>Note that the Repository interface does not prescribe a
         <code>delete(identifier)</code>
         method. Deleting aggregates is done by invoking the (protected)
