@@ -2,6 +2,12 @@ package org.axonframework.commandbus.distributed;
 
 import org.junit.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 
 import static org.junit.Assert.*;
@@ -53,6 +59,7 @@ public class ConsistentHashTest {
 
     @Test
     public void testGetNodeName() {
+        assertEquals("Node3", testSubject.getNodeName("Node3 #0"));
         assertEquals("Node3", testSubject.getNodeName("value1"));
         assertEquals("Node1", testSubject.getNodeName("value2"));
         assertEquals("Node3", testSubject.getNodeName("value3"));
@@ -66,5 +73,42 @@ public class ConsistentHashTest {
         assertEquals("Node1", testSubject.getNodeName("value2"));
         assertEquals("Node2", testSubject.getNodeName("value3"));
         assertEquals("Node1", testSubject.getNodeName("value4"));
+    }
+
+    @Test
+    public void testAdditionalNodeRemovedOldReferences() {
+        testSubject = ConsistentHash.emptyRing()
+                                    .withAdditionalNode("Node", 15)
+                                    .withAdditionalNode("Node", 10);
+        ConsistentHash reference = ConsistentHash.emptyRing().withAdditionalNode("Node", 10);
+
+        assertEquals(reference, testSubject);
+    }
+
+    @Test
+    public void testExternalization() throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(baos);
+        out.writeObject(testSubject);
+        out.close();
+        Object actual = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject();
+        assertEquals(testSubject, actual);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assertTrue(testSubject.equals(testSubject));
+        assertFalse(testSubject.equals(new Object()));
+
+        assertEquals(testSubject.hashCode(), testSubject.hashCode());
+
+        ConsistentHash copy = ConsistentHash.emptyRing()
+                                            .withAdditionalNode("Node1", 2)
+                                            .withAdditionalNode("Node2", 3)
+                                            .withAdditionalNode("Node3", 4);
+
+        assertTrue(testSubject.equals(copy));
+        assertEquals(testSubject.hashCode(), copy.hashCode());
+        assertNotSame(testSubject.hashCode(), copy.withExclusively(Arrays.asList("Node1")).hashCode());
     }
 }

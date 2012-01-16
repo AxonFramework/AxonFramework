@@ -40,8 +40,8 @@ public class DistributedCommandBus implements CommandBus {
      * @param routingKeyExtractor the RoutingKeyExtractor to define routing keys for each command
      */
     public DistributedCommandBus(CommandBusConnector connector, RoutingKeyExtractor routingKeyExtractor) {
-        this.routingKeyExtractor = routingKeyExtractor;
         this.connector = connector;
+        this.routingKeyExtractor = routingKeyExtractor;
     }
 
     /**

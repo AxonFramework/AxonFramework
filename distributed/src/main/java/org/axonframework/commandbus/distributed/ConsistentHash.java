@@ -41,10 +41,12 @@ public class ConsistentHash implements Externalizable {
     }
 
     /**
-     * Initializes an empty hash. Is used for serialization. Instead of using this constructor, use {@link
-     * #emptyRing()}
-     * to obtain an instance.
+     * Initializes an empty hash.
+     * <p/>
+     * This constructor is required for serialization. Instead of using this constructor, use {@link #emptyRing()} to
+     * obtain an instance.
      */
+    @SuppressWarnings("UnusedDeclaration")
     public ConsistentHash() {
         this(new TreeMap<String, String>());
     }

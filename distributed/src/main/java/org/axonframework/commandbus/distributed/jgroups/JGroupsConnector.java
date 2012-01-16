@@ -115,7 +115,8 @@ public class JGroupsConnector implements CommandBusConnector {
             if (!channel.isConnected()) {
                 channel.connect(clusterName, null, 10000);
             }
-            channel.send(null, new JoinMessage(loadFactor));
+            channel.send(new Message(null, new JoinMessage(loadFactor))
+                                 .setFlag(Message.Flag.RSVP));
         } catch (Exception e) {
             joinedCondition.markJoined(false);
             channel.disconnect();
@@ -256,7 +257,7 @@ public class JGroupsConnector implements CommandBusConnector {
             }
 
             if (msg.getSrc().equals(channel.getAddress())) {
-                joinedCondition.markJoined(joinedCondition.success);
+                joinedCondition.markJoined(true);
                 logger.info("Local segment successfully joined the distributed command bus");
             }
         }
