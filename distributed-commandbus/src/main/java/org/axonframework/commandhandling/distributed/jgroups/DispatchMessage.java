@@ -1,4 +1,4 @@
-package org.axonframework.commandbus.distributed.jgroups;
+package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;

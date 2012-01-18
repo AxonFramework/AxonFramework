@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandbus.distributed.jgroups;
+package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.commandbus.distributed.CommandBusConnector;
-import org.axonframework.commandbus.distributed.ConsistentHash;
-import org.axonframework.commandbus.distributed.RemoteCommandHandlingException;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandbus.distributed;
+package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 

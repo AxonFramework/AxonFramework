@@ -1,4 +1,4 @@
-package org.axonframework.commandbus.distributed;
+package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;

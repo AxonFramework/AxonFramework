@@ -1,4 +1,4 @@
-package org.axonframework.commandbus.distributed.jgroups;
+package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;

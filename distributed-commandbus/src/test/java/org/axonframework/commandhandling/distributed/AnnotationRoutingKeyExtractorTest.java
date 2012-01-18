@@ -1,4 +1,4 @@
-package org.axonframework.commandbus.distributed;
+package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;

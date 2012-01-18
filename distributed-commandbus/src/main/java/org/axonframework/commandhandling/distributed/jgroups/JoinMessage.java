@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandbus.distributed.jgroups;
+package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.jgroups.util.Streamable;
 

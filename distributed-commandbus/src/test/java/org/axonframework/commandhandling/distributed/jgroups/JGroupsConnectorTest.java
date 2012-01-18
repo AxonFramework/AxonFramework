@@ -1,4 +1,4 @@
-package org.axonframework.commandbus.distributed.jgroups;
+package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
@@ -106,7 +106,7 @@ public class JGroupsConnectorTest {
     }
 
     private static JChannel connect() throws Exception {
-        return new JChannel("org/axonframework/commandbus/distributed/jgroups/tcp.xml");
+        return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp.xml");
     }
 
     private static class InvokeCallback implements Answer<Object> {

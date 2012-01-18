@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandbus.distributed.jgroups;
+package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.commandbus.distributed.DistributedCommandBus;
-import org.axonframework.commandbus.distributed.RoutingKeyExtractor;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.distributed.RoutingKeyExtractor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -44,7 +44,7 @@ public class JGroupsCommandBusRunner {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.net.preferIPv4Stack", "true");
-        JChannel channel = new JChannel("org/axonframework/commandbus/distributed/jgroups/tcp.xml");
+        JChannel channel = new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp.xml");
 
         JGroupsConnector connector = new JGroupsConnector(channel,
                                                           "testing",
