@@ -19,7 +19,7 @@ package org.axonframework.domain;
 import java.util.Map;
 
 /**
- * Represents a Message that wrapps a DomainEvent, and Event representing an important change in the Domain. In
+ * Represents a Message that wraps a DomainEvent and an Event representing an important change in the Domain. In
  * contrast to a regular EventMessage, a DomainEventMessages contains the identifier of the Aggregate that reported it.
  * The DomainEventMessage's sequence number allows Messages to be placed in their order of generation.
  *
