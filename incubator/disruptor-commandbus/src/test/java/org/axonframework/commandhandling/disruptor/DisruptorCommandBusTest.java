@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.commandhandling.MetaDataCommandTargetResolver;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -70,6 +71,7 @@ public class DisruptorCommandBusTest {
     private InMemoryEventStore inMemoryEventStore;
     private DisruptorCommandBus<StubAggregate> testSubject;
     private final String aggregateIdentifier = "MyID";
+    private static final String TARGET_AGGREGATE_PROPERTY = "target-aggregate";
 
     @Before
     public void setUp() throws Exception {
@@ -93,6 +95,7 @@ public class DisruptorCommandBusTest {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus<StubAggregate>(
                 new GenericAggregateFactory<StubAggregate>(StubAggregate.class), inMemoryEventStore, eventBus,
+                new MetaDataCommandTargetResolver(TARGET_AGGREGATE_PROPERTY),
                 new DisruptorConfiguration().setInterceptors(Arrays.asList(mockInterceptor))
                                             .setClaimStrategy(new SingleThreadedClaimStrategy(8))
                                             .setWaitStrategy(new SleepingWaitStrategy())
@@ -116,7 +119,7 @@ public class DisruptorCommandBusTest {
                 });
         CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
                 new StubCommand(aggregateIdentifier),
-                Collections.singletonMap(DisruptorCommandBus.TARGET_AGGREGATE_PROPERTY,
+                Collections.singletonMap(TARGET_AGGREGATE_PROPERTY,
                                          (Object) aggregateIdentifier));
         CommandCallback mockCallback = mock(CommandCallback.class);
         testSubject.dispatch(command, mockCallback);
@@ -137,7 +140,8 @@ public class DisruptorCommandBusTest {
     public void testCommandRejectedAfterShutdown() throws InterruptedException {
         testSubject = new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
                                                              inMemoryEventStore,
-                                                             eventBus);
+                                                             eventBus,
+                                                             new MetaDataCommandTargetResolver(TARGET_AGGREGATE_PROPERTY));
         testSubject.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(testSubject);
 
@@ -149,14 +153,15 @@ public class DisruptorCommandBusTest {
     public void testCommandProcessedAndEventsStored() throws InterruptedException {
         testSubject = new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
                                                              inMemoryEventStore,
-                                                             eventBus);
+                                                             eventBus,
+                                                             new MetaDataCommandTargetResolver(TARGET_AGGREGATE_PROPERTY));
         testSubject.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(testSubject);
 
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
                     new StubCommand(aggregateIdentifier),
-                    Collections.singletonMap(DisruptorCommandBus.TARGET_AGGREGATE_PROPERTY,
+                    Collections.singletonMap(TARGET_AGGREGATE_PROPERTY,
                                              (Object) aggregateIdentifier));
             testSubject.dispatch(command);
         }

@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.DefaultInterceptorChain;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -36,29 +37,34 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.0
  */
-public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> implements EventHandler<CommandHandlingEntry<T>> {
+public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
+        implements EventHandler<CommandHandlingEntry<T>> {
 
     private final Map<Object, T> preLoadedAggregates = new HashMap<Object, T>();
     private final EventStore eventStore;
     private final AggregateFactory<T> aggregateFactory;
     private final Map<Class<?>, CommandHandler<?>> commandHandlers;
     private final List<CommandHandlerInterceptor> interceptors;
+    private final CommandTargetResolver commandTargetResolver;
 
     /**
      * Initialize the CommandHandlerPreFetcher using the given resources.
      *
-     * @param eventStore       The EventStore providing the events to reconstruct the targeted aggregate
-     * @param aggregateFactory The factory creating empty aggregate instances
-     * @param commandHandlers  The command handlers for command processing
-     * @param interceptors     The command handler interceptors
+     * @param eventStore            The EventStore providing the events to reconstruct the targeted aggregate
+     * @param aggregateFactory      The factory creating empty aggregate instances
+     * @param commandHandlers       The command handlers for command processing
+     * @param interceptors          The command handler interceptors
+     * @param commandTargetResolver The instance that resolves the aggregate identifier for each incoming command
      */
     CommandHandlerPreFetcher(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                              Map<Class<?>, CommandHandler<?>> commandHandlers,
-                             List<CommandHandlerInterceptor> interceptors) {
+                             List<CommandHandlerInterceptor> interceptors,
+                             CommandTargetResolver commandTargetResolver) {
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
         this.commandHandlers = commandHandlers;
         this.interceptors = interceptors;
+        this.commandTargetResolver = commandTargetResolver;
     }
 
     @Override
@@ -66,6 +72,8 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> imple
         preLoadAggregate(entry);
         resolveCommandHandler(entry);
         prepareInterceptorChain(entry);
+        // make sure that any lazy initializing messages are initialized by now
+        entry.getCommand().getPayload();
     }
 
     private void prepareInterceptorChain(CommandHandlingEntry<T> entry) {
@@ -76,7 +84,7 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot> imple
     }
 
     private void preLoadAggregate(CommandHandlingEntry<T> entry) {
-        final Object aggregateIdentifier = entry.getAggregateIdentifier();
+        Object aggregateIdentifier = commandTargetResolver.resolveTarget(entry.getCommand()).getIdentifier();
         if (preLoadedAggregates.containsKey(aggregateIdentifier)) {
             entry.setPreLoadedAggregate(preLoadedAggregates.get(aggregateIdentifier));
         } else {

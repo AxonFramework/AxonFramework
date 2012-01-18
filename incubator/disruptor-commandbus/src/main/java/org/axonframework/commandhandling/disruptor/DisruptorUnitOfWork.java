@@ -144,7 +144,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
 
     @Override
     public void publishEvent(EventMessage event, EventBus eventBus) {
-        throw new UnsupportedOperationException("Not supported yet!");
+        eventsToPublish.add(event);
     }
 
     /**

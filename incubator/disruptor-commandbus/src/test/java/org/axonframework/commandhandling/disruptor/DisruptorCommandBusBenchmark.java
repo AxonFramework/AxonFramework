@@ -18,7 +18,9 @@ package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -49,6 +51,7 @@ import static org.junit.Assert.*;
 public class DisruptorCommandBusBenchmark {
 
     private static final int COMMAND_COUNT = 50 * 1000 * 1000;
+    private static final String TARGET_AGGREGATE_PROPERTY = "target-aggregate";
 
     public static void main(String[] args) throws InterruptedException {
         CountingEventBus eventBus = new CountingEventBus();
@@ -57,7 +60,13 @@ public class DisruptorCommandBusBenchmark {
         DisruptorCommandBus<StubAggregate> commandBus =
                 new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
                                                        inMemoryEventStore,
-                                                       eventBus);
+                                                       eventBus, new CommandTargetResolver() {
+                    @Override
+                    public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
+                        return new VersionedAggregateIdentifier(command.getMetaData().get(TARGET_AGGREGATE_PROPERTY),
+                                                                null);
+                    }
+                });
         commandBus.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(commandBus);
         final String aggregateIdentifier = "MyID";
@@ -68,7 +77,7 @@ public class DisruptorCommandBusBenchmark {
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
                     new StubCommand(aggregateIdentifier),
-                    Collections.singletonMap(DisruptorCommandBus.TARGET_AGGREGATE_PROPERTY,
+                    Collections.singletonMap(TARGET_AGGREGATE_PROPERTY,
                                              (Object) aggregateIdentifier));
             commandBus.dispatch(command);
         }

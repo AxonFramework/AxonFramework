@@ -33,7 +33,6 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
 
     private CommandMessage<?> command;
-    private Object aggregateIdentifier;
     private InterceptorChain interceptorChain;
     private DisruptorUnitOfWork unitOfWork;
     private T preLoadedAggregate;
@@ -124,15 +123,6 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
-     * Returns the Identifier of the targeted Aggregate.
-     *
-     * @return the Identifier of the targeted Aggregate
-     */
-    public Object getAggregateIdentifier() {
-        return aggregateIdentifier;
-    }
-
-    /**
      * Registers the exception that occurred while processing the incoming command.
      *
      * @param exceptionResult the exception that occurred while processing the incoming command
@@ -182,12 +172,10 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     /**
      * Resets this entry, preparing it for use for another command.
      *
-     * @param command             The new command the entry is used for
-     * @param aggregateIdentifier The identifier of the Aggregate that the command targets
-     * @param callback            The callback to report the result of command execution to
+     * @param command  The new command the entry is used for
+     * @param callback The callback to report the result of command execution to
      */
-    public void reset(CommandMessage<?> command, Object aggregateIdentifier, CommandCallback callback) {
-        this.aggregateIdentifier = aggregateIdentifier;
+    public void reset(CommandMessage<?> command, CommandCallback callback) {
         this.command = command;
         this.callback = callback;
         result = null;

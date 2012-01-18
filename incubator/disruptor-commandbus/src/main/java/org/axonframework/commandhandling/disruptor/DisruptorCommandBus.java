@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
@@ -43,11 +44,6 @@ import java.util.concurrent.ThreadFactory;
  */
 public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements CommandBus, Repository<T> {
 
-    /**
-     * The name of the MetaData property containing the aggregate identifier of the command's target.
-     */
-    public static final String TARGET_AGGREGATE_PROPERTY = "target.aggregate";
-
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("Disruptor");
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
@@ -61,26 +57,31 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
      * WaitStrategy on a RingBuffer of size 4096. The (3) Threads required for command execution are created
      * immediately.
      *
-     * @param aggregateFactory The factory providing uninitialized Aggregate instances for event sourcing
-     * @param eventStore       The EventStore where generated events must be stored
-     * @param eventBus         The EventBus where generated events must be published
+     * @param aggregateFactory      The factory providing uninitialized Aggregate instances for event sourcing
+     * @param eventStore            The EventStore where generated events must be stored
+     * @param eventBus              The EventBus where generated events must be published
+     * @param commandTargetResolver The CommandTargetResolver that resolves the aggregate identifier for incoming
+     *                              commands
      */
-    public DisruptorCommandBus(AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus) {
-        this(aggregateFactory, eventStore, eventBus, new DisruptorConfiguration());
+    public DisruptorCommandBus(AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus,
+                               CommandTargetResolver commandTargetResolver) {
+        this(aggregateFactory, eventStore, eventBus, commandTargetResolver, new DisruptorConfiguration());
     }
 
     /**
      * Initialize the DisruptorCommandBus with given resources and settings. The 3 Threads required for command
      * execution are immediately requested from the Configuration's Executor, if any. Otherwise, they are created.
      *
-     * @param aggregateFactory The factory providing uninitialized Aggregate instances for event sourcing
-     * @param eventStore       The EventStore where generated events must be stored
-     * @param eventBus         The EventBus where generated events must be published
-     * @param configuration    The configuration for the command bus
+     * @param aggregateFactory      The factory providing uninitialized Aggregate instances for event sourcing
+     * @param eventStore            The EventStore where generated events must be stored
+     * @param eventBus              The EventBus where generated events must be published
+     * @param configuration         The configuration for the command bus
+     * @param commandTargetResolver The CommandTargetResolver that resolves the aggregate identifier for incoming
+     *                              commands
      */
     @SuppressWarnings("unchecked")
     public DisruptorCommandBus(AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus,
-                               DisruptorConfiguration configuration) {
+                               CommandTargetResolver commandTargetResolver, DisruptorConfiguration configuration) {
         Executor executor = configuration.getExecutor();
         if (executor == null) {
             executorService = Executors.newCachedThreadPool(new AxonThreadFactory(DISRUPTOR_THREAD_GROUP));
@@ -96,7 +97,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         disruptor.handleEventsWith(new CommandHandlerPreFetcher<T>(eventStore,
                                                                    aggregateFactory,
                                                                    commandHandlers,
-                                                                   configuration.getInterceptors()))
+                                                                   configuration.getInterceptors(),
+                                                                   commandTargetResolver))
                  .then(commandHandlerInvoker)
                  .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore, eventBus));
         disruptor.start();
@@ -111,10 +113,9 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         Assert.state(started, "CommandBus has been shut down. It is not accepting any Commands");
         RingBuffer<CommandHandlingEntry<T>> ringBuffer = disruptor.getRingBuffer();
-        Object aggregateIdentifier = command.getMetaData().get(TARGET_AGGREGATE_PROPERTY);
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
-        event.reset(command, aggregateIdentifier, callback);
+        event.reset(command, callback);
         ringBuffer.publish(sequence);
     }
 
