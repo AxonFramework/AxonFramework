@@ -25,10 +25,10 @@
         <module>core</module>
         <module>integration</module>
         <module>test</module>
+        <module>distributed-commandbus</module>
         <module>integrationtests</module>
         <module>incubator/mongo</module>
         <module>incubator/google-app-engine</module>
-        <module>distributed</module>
         <!--<module>migration</module>-->
     </modules>
     <packaging>pom</packaging>

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>axon-distributed</artifactId>
+    <artifactId>axon-distributed-commandbus</artifactId>
     <dependencies>
         <dependency>
             <groupId>org.jgroups</groupId>
