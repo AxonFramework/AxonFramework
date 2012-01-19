@@ -18,8 +18,7 @@ package org.axonframework.eventstore.mongo;
 
 import com.mongodb.DB;
 import com.mongodb.Mongo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import static org.mockito.Mockito.*;
 
@@ -37,12 +36,11 @@ public class AxonMongoWrapperTest {
         mockMongo = mock(Mongo.class);
         mockDb = mock(DB.class);
         mongoTemplate = new DefaultMongoTemplate(mockMongo);
+        when(mockMongo.getDB(anyString())).thenReturn(mockDb);
     }
 
     @Test
     public void testDomainEvents() throws Exception {
-        when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
-
         mongoTemplate.domainEventCollection();
 
         verify(mockMongo).getDB("axonframework");
@@ -51,7 +49,6 @@ public class AxonMongoWrapperTest {
 
     @Test
     public void testSnapshotEvents() throws Exception {
-        when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
 
         mongoTemplate.snapshotEventCollection();
 
@@ -60,40 +57,16 @@ public class AxonMongoWrapperTest {
     }
 
     @Test
-    public void testDatabase() throws Exception {
-        mongoTemplate.database();
-        verify(mockMongo).getDB("axonframework");
+    public void testCustomProvidedNames() throws Exception {
+        mongoTemplate = new DefaultMongoTemplate(mockMongo, "customdatabase", "customevents", "customsnapshots");
 
-    }
-
-    @Test
-    public void testDomainEvents_changedName() throws Exception {
-        when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
-
-        mongoTemplate.setDomainEventsCollectionName("customdomainevents");
-        mongoTemplate.domainEventCollection();
-
-        verify(mockMongo).getDB("axonframework");
-        verify(mockDb).getCollection("customdomainevents");
-    }
-
-    @Test
-    public void testSnapshotEvents_changedName() throws Exception {
-        when(mockMongo.getDB("axonframework")).thenReturn(mockDb);
-
-        mongoTemplate.setSnapshotEventsCollectionName("customsnapshotname");
-        mongoTemplate.snapshotEventCollection();
-
-        verify(mockMongo).getDB("axonframework");
-        verify(mockDb).getCollection("customsnapshotname");
-    }
-
-    @Test
-    public void testDatabase_changedName() throws Exception {
-        mongoTemplate.setDatabaseName("customdatabase");
         mongoTemplate.database();
         verify(mockMongo).getDB("customdatabase");
 
-    }
+        mongoTemplate.domainEventCollection();
+        verify(mockDb).getCollection("customevents");
 
+        mongoTemplate.snapshotEventCollection();
+        verify(mockDb).getCollection("customevents");
+    }
 }

@@ -48,7 +48,7 @@ import javax.annotation.PostConstruct;
  * leverage MongoDB's features, yet.</p>
  *
  * @author Jettro Coenradie
- * @since 0.7
+ * @since 2.0 (in incubator since 0.7)
  */
 public class MongoEventStore implements SnapshotEventStore, EventStoreManagement {
 

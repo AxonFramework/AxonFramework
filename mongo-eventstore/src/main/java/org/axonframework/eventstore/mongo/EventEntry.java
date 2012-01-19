@@ -34,7 +34,7 @@ import org.joda.time.DateTime;
  *
  * @author Allard Buijze
  * @author Jettro Coenradie
- * @since 0.7
+ * @since 2.0 (in incubator since 0.7)
  */
 class EventEntry {
 

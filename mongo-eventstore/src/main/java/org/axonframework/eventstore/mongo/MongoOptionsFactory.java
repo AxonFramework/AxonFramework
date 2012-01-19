@@ -26,9 +26,10 @@ import org.slf4j.LoggerFactory;
  * object.</p>
  *
  * @author Jettro Coenradie
- * @since 0.7
+ * @since 2.0 (in incubator since 0.7)
  */
 public class MongoOptionsFactory {
+
     private static final Logger logger = LoggerFactory.getLogger(MongoOptionsFactory.class);
 
     private MongoOptions defaults;

@@ -20,16 +20,11 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 
 /**
- * <p>Generic template for accessing Mongo for the axon events.</p>
- * <p/>
- * <p>You can ask for the collection of domain events as well as the collection of snapshot events. We use the mongo
- * client mongo-java-driver. This is a wrapper around the standard mongo methods. For convenience the interface also
- * gives access to the database that contains the axon collections.</p>
- * <p/>
- * <p>Implementations of this interface must provide the connection to Mongo.</p>
+ * Interface describing a mechanism that provides access to the Database and Collections required by the
+ * MongoEventStore.
  *
  * @author Jettro Coenradie
- * @since 0.7
+ * @since 2.0 (in incubator since 0.7)
  */
 public interface MongoTemplate {
 
@@ -41,7 +36,7 @@ public interface MongoTemplate {
     DBCollection domainEventCollection();
 
     /**
-     * Returtns a reference to the collection containing the snapshot events.
+     * Returns a reference to the collection containing the snapshot events.
      *
      * @return DBCollection containing the snapshot events
      */

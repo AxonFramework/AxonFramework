@@ -1,16 +1,16 @@
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.MongoOptions;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Jettro Coenradie
  */
 public class MongoOptionsFactoryTest {
+
     private MongoOptionsFactory factory;
 
     @Before
@@ -28,7 +28,8 @@ public class MongoOptionsFactoryTest {
         assertEquals(defaults.socketTimeout, options.socketTimeout);
         assertEquals(defaults.connectionsPerHost, options.connectionsPerHost);
         assertEquals(defaults.connectTimeout, options.connectTimeout);
-        assertEquals(defaults.threadsAllowedToBlockForConnectionMultiplier, options.threadsAllowedToBlockForConnectionMultiplier);
+        assertEquals(defaults.threadsAllowedToBlockForConnectionMultiplier,
+                     options.threadsAllowedToBlockForConnectionMultiplier);
     }
 
     @Test
@@ -47,6 +48,5 @@ public class MongoOptionsFactoryTest {
         assertEquals(9, options.connectionsPerHost);
         assertEquals(11, options.connectTimeout);
         assertEquals(31, options.threadsAllowedToBlockForConnectionMultiplier);
-
     }
 }
