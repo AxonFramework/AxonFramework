@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.interceptors;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -63,7 +64,7 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
-        testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
+        testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
@@ -78,7 +79,7 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
-        testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
+        testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
@@ -93,7 +94,7 @@ public class LoggingInterceptorTest {
         when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
+        testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger).log(any(String.class), eq(Level.INFO),
@@ -109,7 +110,7 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         try {
-            testSubject.handle(new StubCommand(), unitOfWork, interceptorChain);
+            testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             // expected

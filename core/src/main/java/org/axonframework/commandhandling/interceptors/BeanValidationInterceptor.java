@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.UnitOfWork;
 
@@ -55,9 +56,10 @@ public class BeanValidationInterceptor implements CommandHandlerInterceptor {
     }
 
     @Override
-    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain) throws Throwable {
+    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain interceptorChain)
+            throws Throwable {
         Validator validator = validatorFactory.getValidator();
-        Set<ConstraintViolation<Object>> violations = validateCommand(command, validator);
+        Set<ConstraintViolation<Object>> violations = validateCommand(command.getPayload(), validator);
         if (violations != null && !violations.isEmpty()) {
             throw new JSR303ViolationException("One or more JSR303 constraints were violated.", violations);
         }

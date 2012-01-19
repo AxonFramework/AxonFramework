@@ -17,6 +17,7 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.UnitOfWork;
 
@@ -44,7 +45,7 @@ public class AuditingInterceptor implements CommandHandlerInterceptor {
     private AuditLogger auditLogger = NullAuditLogger.INSTANCE;
 
     @Override
-    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
+    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
         AuditingUnitOfWorkListener auditListener = new AuditingUnitOfWorkListener(command,
                                                                                   auditDataProvider,
                                                                                   auditLogger);
