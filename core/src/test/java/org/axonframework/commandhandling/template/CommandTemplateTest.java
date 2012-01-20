@@ -1,5 +1,9 @@
-package org.axonframework.commandhandling;
+package org.axonframework.commandhandling.template;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
 import org.junit.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
