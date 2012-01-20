@@ -16,13 +16,13 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
 import org.axonframework.common.Assert;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.Address;
@@ -155,14 +155,14 @@ public class JGroupsConnector implements CommandBusConnector {
     @Override
     public <R> void send(String routingKey, CommandMessage<?> commandMessage, CommandCallback<R> callback)
             throws Exception {
-        Address dest = getAddress(channel, consistentHash.getNodeName(routingKey));
+        Address dest = getAddress(consistentHash.getNodeName(routingKey));
         callbacks.put(commandMessage.getIdentifier(), new MemberAwareCommandCallback<R>(dest, callback));
         channel.send(dest, new DispatchMessage(commandMessage, serializer, true));
     }
 
     @Override
     public void send(String routingKey, CommandMessage<?> commandMessage) throws Exception {
-        Address dest = getAddress(channel, consistentHash.getNodeName(routingKey));
+        Address dest = getAddress(consistentHash.getNodeName(routingKey));
         channel.send(dest, new DispatchMessage(commandMessage, serializer, false));
     }
 
@@ -171,7 +171,7 @@ public class JGroupsConnector implements CommandBusConnector {
         return localSegment;
     }
 
-    private Address getAddress(JChannel channel, String nodeName) {
+    private Address getAddress(String nodeName) {
         for (Address member : channel.getView()) {
             if (channel.getName(member).equals(nodeName)) {
                 return member;
@@ -332,8 +332,8 @@ public class JGroupsConnector implements CommandBusConnector {
             joinCountDown.await(timeout, timeUnit);
         }
 
-        private void markJoined(boolean success) {
-            this.success = success;
+        private void markJoined(boolean joinSucceeded) {
+            this.success = joinSucceeded;
             joinCountDown.countDown();
         }
 

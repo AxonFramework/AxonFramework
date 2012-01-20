@@ -50,6 +50,7 @@ public interface CommandBusConnector {
      *                   routingKey will be sent to the same destination.
      * @param command    The command to send to the (remote) member
      * @param callback   The callback on which result notifications are sent
+     * @param <R>        The type of object expected as return value in the callback
      * @throws Exception when an error occurs before or during the sending of the message
      */
     <R> void send(String routingKey, CommandMessage<?> command, CommandCallback<R> callback) throws Exception;
