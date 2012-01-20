@@ -1,5 +1,8 @@
-package org.axonframework.commandhandling;
+package org.axonframework.commandhandling.template;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.junit.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -80,7 +83,7 @@ public class CommandTemplateTest {
         try {
             actual.get(10, TimeUnit.MILLISECONDS);
             fail("Expected timeout");
-        } catch ( TimeoutException e) {
+        } catch (TimeoutException e) {
             // expected
         }
         assertEquals("returnValue", actual.get());
