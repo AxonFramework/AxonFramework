@@ -106,11 +106,6 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
         return typeIdentifier;
     }
 
-    @Override
-    public Class<T> getAggregateType() {
-        return aggregateType;
-    }
-
     private class Handler<T> implements Comparable<Handler> {
 
         private final int payloadDepth;

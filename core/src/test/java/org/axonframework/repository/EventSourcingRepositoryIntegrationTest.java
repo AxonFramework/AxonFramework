@@ -205,11 +205,6 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         public String getTypeIdentifier() {
             return "SimpleAggregateRoot";
         }
-
-        @Override
-        public Class<SimpleAggregateRoot> getAggregateType() {
-            return SimpleAggregateRoot.class;
-        }
     }
 
     private class InMemoryEventStore implements EventStore {
