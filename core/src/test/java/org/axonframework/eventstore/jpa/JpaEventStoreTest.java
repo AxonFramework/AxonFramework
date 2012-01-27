@@ -58,6 +58,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Frank Versnel
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
@@ -198,14 +199,14 @@ public class JpaEventStoreTest {
             }
 
             @Override
-            public Object deserialize(SerializedObject serializedObject) {
+            public List<Object> deserialize(SerializedObject serializedObject) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public Class classForType(SerializedType type) {
+            public List<Class> classForType(SerializedType type) {
                 try {
-                    return Class.forName(type.getName());
+                    return Arrays.asList(new Class[] {Class.forName(type.getName())});
                 } catch (ClassNotFoundException e) {
                     return null;
                 }
@@ -451,7 +452,7 @@ public class JpaEventStoreTest {
     }
 
     private SerializedObject mockSerializedObject(byte[] bytes) {
-        return new SimpleSerializedObject(bytes, "mock", 0);
+        return new SimpleSerializedObject(bytes, "java.lang.String", 0);
     }
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {

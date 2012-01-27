@@ -72,7 +72,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
+            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
 
         if (events.isEmpty()) {
@@ -113,7 +113,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
         for (Entity entity : entities) {
-            events.add(new EventEntry(entity).getDomainEvent(eventSerializer));
+            events.addAll(new EventEntry(entity).getDomainEvent(eventSerializer));
         }
         return events;
     }

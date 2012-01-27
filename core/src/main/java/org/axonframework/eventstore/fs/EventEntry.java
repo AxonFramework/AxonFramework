@@ -52,7 +52,7 @@ class EventEntry {
      * @return the deserialized domain event
      */
     public DomainEventMessage deserialize(Serializer serializer) {
-        return (DomainEventMessage) serializer.deserialize(serializedEvent);
+         return (DomainEventMessage) serializer.deserialize(serializedEvent).get(0);
     }
 
     /**

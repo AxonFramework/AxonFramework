@@ -18,7 +18,10 @@ package org.axonframework.serializer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Represents a series of upcasters which are combined to upcast a {@link SerializedObject} to the most recent revision
@@ -29,6 +32,7 @@ import java.util.List;
  * can be guaranteed.
  *
  * @author Allard Buijze
+ * @author Frank Versnel
  * @since 2.0
  */
 public class UpcasterChain {
@@ -60,39 +64,99 @@ public class UpcasterChain {
     }
 
     /**
-     * Pass the given <code>serializedObject</code> through the chain of upcasters. The result is a serializedObject
-     * representing the latest revision of the payload object.
+     * Pass the given <code>serializedObject</code> through the chain of upcasters. The result is a list of zero or
+     * more
+     * serializedObjects representing the latest revision of the payload object.
      *
      * @param serializedObject the serialized object to upcast
-     * @return the upcast SerializedObject
+     * @return the upcast SerializedObjects
      */
-    @SuppressWarnings({"unchecked"})
-    public IntermediateRepresentation upcast(SerializedObject serializedObject) {
-        IntermediateRepresentation current = new DefaultIntermediateRepresentation(serializedObject);
-        for (Upcaster upcaster : upcasters) {
-            if (upcaster.canUpcast(current.getType())) {
-                current = ensureCorrectContentType(current, upcaster.expectedRepresentationType());
-                current = upcaster.upcast(current);
-            }
+    public List<IntermediateRepresentation> upcast(SerializedObject serializedObject) {
+        return upcast(new LinkedList<Upcaster>(upcasters),
+                      new DefaultIntermediateRepresentation(serializedObject));
+    }
+
+    private List<IntermediateRepresentation> upcast(Queue<Upcaster> upcasterChain,
+                                                    IntermediateRepresentation current) {
+        // No upcasters are left in the queue, we're done.
+        if (upcasterChain.isEmpty()) {
+            return Collections.singletonList(current);
         }
-        return current;
+        // There are still upcasters left to process.
+        else {
+            // Upcast the current IntermediateRepresentation.
+            Upcaster upcaster = upcasterChain.poll();
+            List<IntermediateRepresentation> unprocessedIntermediates = upcast(upcaster, current);
+
+            // Process all intermediates returned by the top upcaster exhaustively
+            List<IntermediateRepresentation> processedIntermediates = new ArrayList<IntermediateRepresentation>();
+            for (IntermediateRepresentation unprocessedIntermediate : unprocessedIntermediates) {
+                processedIntermediates.addAll(upcast(new LinkedList<Upcaster>(upcasterChain), unprocessedIntermediate));
+            }
+
+            return processedIntermediates;
+        }
     }
 
     /**
-     * Upcast the given <code>serializedType</code> to represent the type of the latest revision of that object.
+     * Upcasts the given IntermediateRepresentation if the upcasters supports upcasting its type, otherwise returns
+     * a list with the unprocessed IntermediateRepresentation as its only element.
+     *
+     * @param upcaster the upcaster that should do the upcasting
+     * @param current  the IntermediateRepresentation that might be upcasted
+     * @return the upcast IntermediateRepresentation, or the unprocessed IntermediateRepresentation if the upcaster
+     *         does not support upcasting the IntermediateRepresentation's type.
+     */
+    @SuppressWarnings({"unchecked"})
+    private List<IntermediateRepresentation> upcast(Upcaster upcaster, IntermediateRepresentation current) {
+        if (upcaster.canUpcast(current.getType())) {
+            current = ensureCorrectContentType(current, upcaster.expectedRepresentationType());
+            return upcaster.upcast(current);
+        } else {
+            return Arrays.asList(current);
+        }
+    }
+
+    /**
+     * Upcast the given <code>serializedType</code> to represent the type(s) of the latest revision of that object.
      * Changes in class names or packaging are typically reflected in a change in the SerializedType definition/
      *
      * @param serializedType The serialized type to upcast
-     * @return The last known revision of the SerializedType
+     * @return The last known revision of the SerializedType of which there might be zero, one or multiple
      */
-    public SerializedType upcast(SerializedType serializedType) {
-        SerializedType current = serializedType;
-        for (Upcaster upcaster : upcasters) {
-            if (upcaster.canUpcast(current)) {
-                current = upcaster.upcast(current);
-            }
+    public List<SerializedType> upcast(SerializedType serializedType) {
+        return upcast(new LinkedList<Upcaster>(upcasters), serializedType);
+    }
+
+    private List<SerializedType> upcast(Queue<Upcaster> upcasterChain,
+                                        SerializedType current) {
+        // No upcasters are left in the queue, we're done.
+        if (upcasterChain.isEmpty()) {
+            return Collections.singletonList(current);
         }
-        return current;
+        // There are still upcasters left to process.
+        else {
+            // Upcast the current IntermediateRepresentation.
+            Upcaster upcaster = upcasterChain.poll();
+            List<SerializedType> unprocessedSerializedTypes = upcast(upcaster, current);
+
+            // Process all intermediates returned by the top upcaster exhaustively
+            List<SerializedType> processedSerializedTypes = new ArrayList<SerializedType>();
+            for (SerializedType unprocessedSerializedType : unprocessedSerializedTypes) {
+                processedSerializedTypes.addAll(upcast(new LinkedList<Upcaster>(upcasterChain),
+                                                       unprocessedSerializedType));
+            }
+
+            return processedSerializedTypes;
+        }
+    }
+
+    private List<SerializedType> upcast(Upcaster upcaster, SerializedType current) {
+        if (upcaster.canUpcast(current)) {
+            return upcaster.upcast(current);
+        } else {
+            return Arrays.asList(current);
+        }
     }
 
     @SuppressWarnings({"unchecked"})
@@ -106,7 +170,7 @@ public class UpcasterChain {
         return (IntermediateRepresentation<T>) current;
     }
 
-    private static class DefaultIntermediateRepresentation implements IntermediateRepresentation<byte[]> {
+    private class DefaultIntermediateRepresentation implements IntermediateRepresentation<byte[]> {
         private final SerializedObject serializedObject;
 
         public DefaultIntermediateRepresentation(SerializedObject serializedObject) {

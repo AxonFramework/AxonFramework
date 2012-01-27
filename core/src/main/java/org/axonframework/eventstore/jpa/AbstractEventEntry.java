@@ -17,8 +17,6 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
@@ -28,6 +26,7 @@ import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 
 import java.util.Arrays;
+import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -102,16 +101,16 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * @param eventSerializer The Serializer to deserialize the DomainEvent with.
      * @return The deserialized domain event
      */
-    public DomainEventMessage<?> getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(
-                eventIdentifier,
-                aggregateIdentifier,
-                sequenceNumber,
-                new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(new SimpleSerializedObject(payload, payloadType, payloadRevision),
-                                                    eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(metaData), eventSerializer)
-        );
+    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer) {
+        return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
+                                                                      eventIdentifier,
+                                                                      aggregateIdentifier,
+                                                                      sequenceNumber,
+                                                                      new DateTime(timeStamp),
+                                                                      new SimpleSerializedObject(payload,
+                                                                                                 payloadType,
+                                                                                                 payloadRevision),
+                                                                      new SerializedMetaData(metaData));
     }
 
     /**
@@ -172,7 +171,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
     }
 
     @Override
-    public SerializedObject getMetaData() {
+    public SerializedMetaData getMetaData() {
         return new SerializedMetaData(metaData);
     }
 }

@@ -30,6 +30,7 @@ import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 
 import java.nio.charset.Charset;
+import java.util.List;
 
 /**
  * Data needed by different types of event logs.
@@ -128,17 +129,18 @@ class EventEntry {
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
      * @return The actual DomainEvent
      */
-    public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(
-                eventIdentifier,
-                aggregateIdentifier,
-                sequenceNumber,
-                new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(
-                        new SimpleSerializedObject(serializedPayload.getBytes(UTF8), payoadType, payloadRevision),
-                        eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
-                                                      eventSerializer));
+    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer) {
+        return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
+                                                                      eventIdentifier,
+                                                                      aggregateIdentifier,
+                                                                      sequenceNumber,
+                                                                      new DateTime(timeStamp),
+                                                                      new SimpleSerializedObject(serializedPayload
+                                                                                                         .getBytes(UTF8),
+                                                                                                 payoadType,
+                                                                                                 payloadRevision),
+                                                                      new SerializedMetaData(serializedMetaData
+                                                                                                     .getBytes(UTF8)));
     }
 
     /**
@@ -192,25 +194,5 @@ class EventEntry {
                                                                                                firstSequenceNumber))
                                    .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
                                    .get();
-    }
-
-    /**
-     * Returns this entry as a DomainEventMessage, using the given <code>eventSerializer</code> to deserialize the
-     * payload and meta data.
-     *
-     * @param eventSerializer the serializer to deserialize the payload and meta data
-     * @return a DomainEventMessage containing the data from this entry
-     */
-    public DomainEventMessage asDomainEventMessage(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(
-                eventIdentifier,
-                aggregateIdentifier,
-                sequenceNumber,
-                new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(new SimpleSerializedObject(serializedPayload.getBytes(UTF8),
-                                                                               payoadType,
-                                                                               payloadRevision), eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
-                                                      eventSerializer));
     }
 }

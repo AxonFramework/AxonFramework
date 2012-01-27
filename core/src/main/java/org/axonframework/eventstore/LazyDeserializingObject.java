@@ -24,13 +24,17 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Represents a serialized object that can be deserialized upon request. Typically used as a wrapper class for keeping
+ * Represents a serialized object that can be deserializedObjects upon request. Typically used as a wrapper class for keeping
  * a SerializedObject and its Serializer together.
  *
  * @param <T> The type of object contained in the serialized object
  * @author Allard Buijze
+ * @author Frank Versnel
  * @since 2.0
  */
 public class LazyDeserializingObject<T> implements Serializable {
@@ -38,22 +42,36 @@ public class LazyDeserializingObject<T> implements Serializable {
     private static final long serialVersionUID = -5533042142349963796L;
 
     private transient final SerializedObject serializedObject;
-    private transient final Serializer payloadSerializer;
-    private transient volatile Class<?> objectType;
-    private volatile T deserialized;
 
+    private transient final Serializer payloadSerializer;
+
+    private transient volatile List<Class> deserializedObjectTypes;
+
+    private volatile List<T> deserializedObjects;
     /**
-     * Creates an instance with the given <code>deserialized</code> object instance. Using this constructor will ensure
+     * Creates an instance with the given <code>deserializedObject</code> object instance. Using this constructor will
+     * ensure
      * that no deserialization is required when invoking the {@link #getType()} or {@link #getObject()} methods.
      *
-     * @param deserialized The deserialized object to return on {@link #getObject()}
+     * @param deserializedObject The deserialized object to return as a singleton list on {@link #getObject()}
      */
-    public LazyDeserializingObject(T deserialized) {
-        Assert.notNull(deserialized, "The given deserialized instance may not be null");
+    public LazyDeserializingObject(T deserializedObject) {
+        this(Collections.singletonList(deserializedObject));
+    }
+
+    /**
+     * Creates an instance with the given <code>deserializedObjects</code> object instances. Using this constructor will
+     * ensure
+     * that no deserialization is required when invoking the {@link #getType()} or {@link #getObject()} methods.
+     *
+     * @param deserializedObjects The deserialized objects to return on {@link #getObject()}
+     */
+    public LazyDeserializingObject(List<T> deserializedObjects) {
+        Assert.notNull(deserializedObjects, "The given deserializedObjects instance may not be null");
         serializedObject = null;
         payloadSerializer = null;
-        this.deserialized = deserialized;
-        this.objectType = deserialized.getClass();
+        this.deserializedObjects = deserializedObjects;
+        this.deserializedObjectTypes = extractTypes(deserializedObjects);
     }
 
     /**
@@ -73,38 +91,55 @@ public class LazyDeserializingObject<T> implements Serializable {
      *
      * @return the class of the serialized object
      */
-    public Class<?> getType() {
-        if (objectType == null) {
-            objectType = payloadSerializer.classForType(serializedObject.getType());
+    public List<Class> getType() {
+        if (deserializedObjectTypes == null) {
+            deserializedObjectTypes = payloadSerializer.classForType(serializedObject.getType());
         }
-        return objectType;
+        return deserializedObjectTypes;
+    }
+
+    /**
+     * Returns the number of objects that this serialized object consists of when it is deserialized.
+     *
+     * @return the number of objects that this serialized object consists of when it is deserialized
+     */
+    public int deserializedObjectCount() {
+        return getType().size();
     }
 
     /**
      * Deserializes the object and returns the result.
      *
-     * @return the deserialized object
+     * @return the deserialized objects
      */
     @SuppressWarnings("unchecked")
-    public T getObject() {
+    public List<T> getObject() {
         if (!isDeserialized()) {
-            deserialized = (T) payloadSerializer.deserialize(serializedObject);
+            deserializedObjects = (List<T>) payloadSerializer.deserialize(serializedObject);
         }
-        if (objectType == null && deserialized != null) {
-            objectType = deserialized.getClass();
+        if (deserializedObjectTypes == null && deserializedObjects != null) {
+            deserializedObjectTypes = extractTypes(deserializedObjects);
         }
-        return deserialized;
+        return deserializedObjects;
     }
 
     private void writeObject(ObjectOutputStream outputStream) throws IOException {
-        // make sure the contained object is deserialized
+        // make sure the contained object is deserializedObjects
         getObject();
         outputStream.defaultWriteObject();
     }
 
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
         inputStream.defaultReadObject();
-        objectType = deserialized.getClass();
+        deserializedObjectTypes = extractTypes(deserializedObjects);
+    }
+
+    private List<Class> extractTypes(List<T> deserializedObjects) {
+        List<Class> extractedTypes = new ArrayList<Class>();
+        for (T deserializedObject : deserializedObjects) {
+            extractedTypes.add(deserializedObject.getClass());
+        }
+        return extractedTypes;
     }
 
     /**
@@ -114,6 +149,10 @@ public class LazyDeserializingObject<T> implements Serializable {
      * @return whether the contained object has been deserialized already.
      */
     public boolean isDeserialized() {
-        return deserialized != null;
+        return deserializedObjects != null;
+    }
+
+    public Serializer getPayloadSerializer() {
+        return payloadSerializer;
     }
 }

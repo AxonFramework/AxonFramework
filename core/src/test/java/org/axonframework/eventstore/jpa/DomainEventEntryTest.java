@@ -26,8 +26,7 @@ import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 import org.junit.*;
 
-import java.util.Collections;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -48,8 +47,11 @@ public class DomainEventEntryTest {
         mockDomainEvent = mock(DomainEventMessage.class);
         mockSerializer = mock(Serializer.class);
         metaData = new MetaData(Collections.singletonMap("Key", "Value"));
-        when(mockSerializer.deserialize(mockPayload)).thenReturn("Payload");
-        when(mockSerializer.deserialize(mockMetaData)).thenReturn(metaData);
+        when(mockSerializer.deserialize(mockPayload)).thenReturn(Arrays.asList((Object)"Payload"));
+        when(mockSerializer.deserialize(mockMetaData)).thenReturn(Arrays.asList(((Object)metaData)));
+        List<Class> payloadType = new ArrayList<Class>();
+        payloadType.add(String.class);
+        when(mockSerializer.classForType(mockPayload.getType())).thenReturn(payloadType);
     }
 
     @Test
@@ -70,7 +72,7 @@ public class DomainEventEntryTest {
         assertEquals(2L, actualResult.getSequenceNumber());
         assertEquals(timestamp, actualResult.getTimestamp());
         assertEquals("test", actualResult.getType());
-        DomainEventMessage<?> domainEvent = actualResult.getDomainEvent(mockSerializer);
+        DomainEventMessage<?> domainEvent = actualResult.getDomainEvent(mockSerializer).get(0);
         assertTrue(domainEvent instanceof SerializedDomainEventMessage);
         verify(mockSerializer, never()).deserialize(mockPayload);
         verify(mockSerializer, never()).deserialize(mockMetaData);

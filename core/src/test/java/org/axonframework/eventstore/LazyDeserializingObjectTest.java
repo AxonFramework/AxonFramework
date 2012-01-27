@@ -26,6 +26,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -38,15 +41,17 @@ public class LazyDeserializingObjectTest {
     private Serializer mockSerializer;
     private SerializedObject mockSerializedObject;
     private SerializedType mockSerializedType;
-    private String mockDeserializedObject = "I am a mock";
+    private List<Object> mockDeserializedObjects = Arrays.asList((Object)"I am a mock");
 
     @Before
     public void setUp() throws Exception {
         mockSerializer = mock(Serializer.class);
         mockSerializedObject = mock(SerializedObject.class);
-        when(mockSerializer.classForType(mockSerializedType)).thenReturn(String.class);
+        List<Class> mockDeserializedType = new ArrayList<Class>();
+        mockDeserializedType.add(String.class);
+        when(mockSerializer.classForType(mockSerializedType)).thenReturn(mockDeserializedType);
         when(mockSerializedObject.getType()).thenReturn(mockSerializedType);
-        when(mockSerializer.deserialize(mockSerializedObject)).thenReturn(mockDeserializedObject);
+        when(mockSerializer.deserialize(mockSerializedObject)).thenReturn(mockDeserializedObjects);
     }
 
     @Test
@@ -54,10 +59,10 @@ public class LazyDeserializingObjectTest {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockSerializedObject,
                                                                                           mockSerializer);
         verify(mockSerializer, never()).deserialize(any(SerializedObject.class));
-        assertEquals(String.class, testSubject.getType());
+        assertEquals(String.class, testSubject.getType().get(0));
         assertFalse(testSubject.isDeserialized());
         verify(mockSerializer, never()).deserialize(any(SerializedObject.class));
-        assertSame(mockDeserializedObject, testSubject.getObject());
+        assertSame(mockDeserializedObjects, testSubject.getObject());
         assertTrue(testSubject.isDeserialized());
     }
 
@@ -73,9 +78,9 @@ public class LazyDeserializingObjectTest {
 
     @Test
     public void testWithProvidedDeserializedInstance() {
-        LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockDeserializedObject);
-        assertEquals(String.class, testSubject.getType());
-        assertSame(mockDeserializedObject, testSubject.getObject());
+        LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockDeserializedObjects);
+        assertEquals(String.class, testSubject.getType().get(0));
+        assertSame(mockDeserializedObjects, testSubject.getObject());
         assertTrue(testSubject.isDeserialized());
     }
 
@@ -97,8 +102,8 @@ public class LazyDeserializingObjectTest {
         ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
         LazyDeserializingObject<Object> actual = (LazyDeserializingObject<Object>) new ObjectInputStream(in)
                 .readObject();
-        assertEquals(mockDeserializedObject, actual.getObject());
-        assertEquals(String.class, actual.getType());
+        assertEquals(mockDeserializedObjects, actual.getObject());
+        assertEquals(String.class, actual.getType().get(0));
         assertTrue(actual.isDeserialized());
     }
 }

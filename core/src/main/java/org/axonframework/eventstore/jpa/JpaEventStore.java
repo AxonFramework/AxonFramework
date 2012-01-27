@@ -20,10 +20,8 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -169,15 +167,23 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         SerializedDomainEventData lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(type, identifier,
                                                                                             entityManager);
-        DomainEventMessage snapshotEvent = null;
+        List<DomainEventMessage> snapshotEvents = new ArrayList<DomainEventMessage>();
         if (lastSnapshotEvent != null) {
             try {
-                snapshotEvent = new GenericDomainEventMessage<Object>(
-                        identifier,
-                        lastSnapshotEvent.getSequenceNumber(),
-                        eventSerializer.deserialize(lastSnapshotEvent.getPayload()),
-                        (Map<String, Object>) eventSerializer.deserialize(lastSnapshotEvent.getMetaData()));
-                snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
+                List<Object> deserializedEvents = eventSerializer.deserialize(lastSnapshotEvent.getMetaData());
+                for(Object deserializedEvent : deserializedEvents) {
+                    snapshotEvents.add(new GenericDomainEventMessage<Object>(
+                            identifier,
+                            lastSnapshotEvent.getSequenceNumber(),
+                            eventSerializer.deserialize(lastSnapshotEvent.getPayload()),
+                            (Map<String, Object>) deserializedEvent));
+                }
+
+                // It could be that the deserialized snapshot is an empty list
+                // If it is the sequence number is incorrect and we need to use some other sequence number
+                if(!deserializedEvents.isEmpty()) {
+                    snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
+                }
             } catch (RuntimeException ex) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
@@ -187,9 +193,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         }
 
         List<DomainEventMessage> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1);
-        if (snapshotEvent != null) {
-            events.add(0, snapshotEvent);
-        }
+        events.addAll(0, snapshotEvents);
         if (events.isEmpty()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
@@ -206,14 +210,13 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                                                                        entityManager);
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entries.size());
         for (SerializedDomainEventData entry : entries) {
-            events.add(new SerializedDomainEventMessage(entry.getEventIdentifier(),
-                                                        identifier,
-                                                        entry.getSequenceNumber(),
-                                                        entry.getTimestamp(),
-                                                        new LazyDeserializingObject(entry.getPayload(),
-                                                                                    eventSerializer),
-                                                        new LazyDeserializingObject<MetaData>(entry.getMetaData(),
-                                                                                              eventSerializer)));
+            events.addAll(SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
+                                                                                 entry.getEventIdentifier(),
+                                                                                 identifier,
+                                                                                 entry.getSequenceNumber(),
+                                                                                 entry.getTimestamp(),
+                                                                                 entry.getPayload(),
+                                                                                 entry.getMetaData()));
         }
         return events;
     }
@@ -258,14 +261,19 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     private void doVisitEvents(EventVisitor visitor, String whereClause, Map<String, Object> parameters) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
+        // TODO Batch processing is duplicated for JpaEventStore and MongoEventStore
+        // provide a more generic way of doing batch processing.
         int first = 0;
         List<? extends SerializedDomainEventData> batch;
         boolean shouldContinue = true;
         while (shouldContinue) {
-            batch = eventEntryStore.fetchFilteredBatch(whereClause, parameters,
-                                                       first, batchSize, entityManager);
+            batch = eventEntryStore.fetchFilteredBatch(whereClause, parameters, first, batchSize, entityManager);
             for (SerializedDomainEventData entry : batch) {
-                visitor.doWithEvent(new SerializedDomainEventMessage<Object>(entry, eventSerializer, eventSerializer));
+                List<DomainEventMessage> domainEventMessages =
+                        SerializedDomainEventMessage.createDomainEventMessages(entry, eventSerializer, eventSerializer);
+                for(DomainEventMessage domainEventMessage : domainEventMessages) {
+                    visitor.doWithEvent(domainEventMessage);
+                }
             }
             shouldContinue = (batch.size() >= batchSize);
             first += batchSize;

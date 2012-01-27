@@ -27,6 +27,9 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Serializer implementation that uses Java serialization to serialize and deserialize object instances. This
@@ -35,6 +38,7 @@ import java.io.OutputStream;
  * {@link XStreamSerializer} might be a more suitable alternative.
  *
  * @author Allard Buijze
+ * @author Frank Versnel
  * @since 2.0
  */
 public class JavaSerializer implements Serializer {
@@ -63,10 +67,10 @@ public class JavaSerializer implements Serializer {
     }
 
     @Override
-    public Object deserialize(SerializedObject serializedObject) {
+    public List<Object> deserialize(SerializedObject serializedObject) {
         InputStream stream = serializedObject.getStream();
         try {
-            return deserialize(stream);
+            return Collections.singletonList(deserialize(stream));
         } catch (IOException e) {
             throw new SerializationException("The theoretically impossible has just happened: "
                                                      + "An IOException while reading to a ByteArrayInputStream.", e);
@@ -76,9 +80,9 @@ public class JavaSerializer implements Serializer {
     }
 
     @Override
-    public Class classForType(SerializedType type) {
+    public List<Class> classForType(SerializedType type) {
         try {
-            return Class.forName(type.getName());
+            return Arrays.asList(new Class[]{Class.forName(type.getName())});
         } catch (ClassNotFoundException e) {
             logger.warn("Could not load class for serialized type [{}] revision {}",
                         type.getName(), type.getRevision());

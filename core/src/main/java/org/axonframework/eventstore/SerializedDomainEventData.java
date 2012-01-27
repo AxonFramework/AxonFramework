@@ -1,5 +1,6 @@
 package org.axonframework.eventstore;
 
+import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateTime;
 
@@ -45,7 +46,7 @@ public interface SerializedDomainEventData {
      *
      * @return the serialized data of the MetaData of the serialized Event
      */
-    SerializedObject getMetaData();
+    SerializedMetaData getMetaData();
 
     /**
      * Returns the serialized data of the Event Message's payload.

@@ -112,7 +112,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
+            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
         }
 
         if (events.isEmpty()) {
@@ -145,7 +145,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         while (shouldContinue) {
             batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE, filter);
             for (EventEntry entry : batch) {
-                visitor.doWithEvent(entry.getDomainEvent(eventSerializer));
+                for(DomainEventMessage event : entry.getDomainEvent(eventSerializer)) {
+                    visitor.doWithEvent(event);
+                }
             }
             shouldContinue = (batch.size() >= EVENT_VISITOR_BATCH_SIZE);
             first += EVENT_VISITOR_BATCH_SIZE;
@@ -181,7 +183,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                          .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(dbCursor.size());
         while (dbCursor.hasNext()) {
-            events.add(new EventEntry(dbCursor.next()).asDomainEventMessage(eventSerializer));
+            events.addAll(new EventEntry(dbCursor.next()).getDomainEvent(eventSerializer));
         }
         return events;
     }

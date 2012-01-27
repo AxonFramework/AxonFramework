@@ -20,13 +20,18 @@ import org.dom4j.Document;
 import org.junit.*;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Frank Versnel
  */
 public class UpcasterChainTest {
 
@@ -56,21 +61,21 @@ public class UpcasterChainTest {
         when(mockUpcaster12.canUpcast(any(SerializedType.class))).thenReturn(false);
         when(mockUpcaster23.canUpcast(any(SerializedType.class))).thenReturn(false);
         when(mockUpcaster12.canUpcast(object1.getType())).thenReturn(true);
-        when(mockUpcaster12.upcast(object1.getType())).thenReturn(object2.getType());
+        when(mockUpcaster12.upcast(object1.getType())).thenReturn(Arrays.asList(object2.getType()));
 
         when(mockUpcaster23.canUpcast(object2.getType())).thenReturn(true);
-        when(mockUpcaster23.upcast(object2.getType())).thenReturn(object3.getType());
+        when(mockUpcaster23.upcast(object2.getType())).thenReturn(Arrays.asList(object3.getType()));
 
         UpcasterChain chain = new UpcasterChain(null, Arrays.asList(mockUpcaster12, mockUpcasterFake, mockUpcaster23));
 
-        SerializedType actual1 = chain.upcast(object1.getType());
+        List<SerializedType> actual1 = chain.upcast(object1.getType());
         verify(mockUpcaster12).upcast(object1.getType());
         verify(mockUpcaster23).upcast(object2.getType());
         verify(mockUpcasterFake, never()).upcast(any(SerializedType.class));
-        assertEquals(object3.getType(), actual1);
+        assertEquals(object3.getType(), actual1.get(0));
 
-        SerializedType actual2 = chain.upcast(object2.getType());
-        assertEquals(object3.getType(), actual2);
+        List<SerializedType> actual2 = chain.upcast(object2.getType());
+        assertEquals(object3.getType(), actual2.get(0));
     }
 
     @Test
@@ -81,11 +86,11 @@ public class UpcasterChainTest {
 
         UpcasterChain chain = new UpcasterChain(null, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
 
-        IntermediateRepresentation actual1 = chain.upcast(object1);
-        assertEquals(object3.getType(), actual1.getType());
+        List<IntermediateRepresentation> actual1 = chain.upcast(object1);
+        assertEquals(object3.getType(), actual1.get(0).getType());
 
-        IntermediateRepresentation actual2 = chain.upcast(object2);
-        assertEquals(object3.getType(), actual2.getType());
+        List<IntermediateRepresentation> actual2 = chain.upcast(object2);
+        assertEquals(object3.getType(), actual2.get(0).getType());
     }
 
     @Test
@@ -113,13 +118,13 @@ public class UpcasterChainTest {
 
         UpcasterChain chain = new UpcasterChain(mockConverterFactory, mockUpcaster12);
 
-        IntermediateRepresentation actual1 = chain.upcast(object1);
+        List<IntermediateRepresentation> actual1 = chain.upcast(object1);
         verify(mockConverterFactory).getConverter(byte[].class, InputStream.class);
         verify(mockConverterFactory, never()).getConverter(InputStream.class, byte[].class);
         verify(mockStreamToByteConverter, never()).convert(isA(IntermediateRepresentation.class));
         verify(mockByteToStreamConverter).convert(isA(IntermediateRepresentation.class));
-        assertEquals(object2.getType(), actual1.getType());
-        assertArrayEquals(object2.getData(), (byte[]) actual1.getData());
+        assertEquals(object2.getType(), actual1.get(0).getType());
+        assertArrayEquals(object2.getData(), (byte[]) actual1.get(0).getData());
     }
 
     @Test
@@ -137,6 +142,18 @@ public class UpcasterChainTest {
             assertSame(mockException, e);
             verify(mockConverterFactory).getConverter(intermediate1.getContentType(), Document.class);
         }
+    }
+
+    @Test
+    public void testUpcastObjectToMultipleObjects() {
+        Upcaster mockUpcaster = new StubUpcaster(intermediate1.getType(), byte[].class, intermediate2, intermediate3);
+
+        UpcasterChain chain = new UpcasterChain(null, mockUpcaster);
+        List<IntermediateRepresentation> upcastedObjects = chain.upcast(object1);
+
+        assertEquals(2, upcastedObjects.size());
+        assertEquals(intermediate2, upcastedObjects.get(0));
+        assertEquals(intermediate3, upcastedObjects.get(1));
     }
 
     private class MockIntermediateRepresentation implements IntermediateRepresentation {
@@ -167,15 +184,20 @@ public class UpcasterChainTest {
 
     private class StubUpcaster implements Upcaster {
 
-        private IntermediateRepresentation upcastResult;
+        private List<IntermediateRepresentation> upcastResult;
         private SerializedType expectedType;
         private Class<?> contentType;
 
+        public StubUpcaster(SerializedType expectedType, Class<?> contentType,
+                            IntermediateRepresentation... upcastResult) {
+            this.expectedType = expectedType;
+            this.contentType = contentType;
+            this.upcastResult = Arrays.asList(upcastResult);
+        }
+
         public StubUpcaster(SerializedType expectedType, IntermediateRepresentation upcastResult,
                             Class<?> contentType) {
-            this.contentType = contentType;
-            this.expectedType = expectedType;
-            this.upcastResult = upcastResult;
+            this(expectedType, contentType, upcastResult);
         }
 
         @Override
@@ -189,14 +211,15 @@ public class UpcasterChainTest {
         }
 
         @Override
-        public IntermediateRepresentation upcast(IntermediateRepresentation intermediateRepresentation) {
+        public List<IntermediateRepresentation> upcast(IntermediateRepresentation intermediateRepresentation) {
             assertEquals(expectedType, intermediateRepresentation.getType());
             return upcastResult;
         }
 
         @Override
-        public SerializedType upcast(SerializedType serializedType) {
-            return new SimpleSerializedType(serializedType.getName(), serializedType.getRevision() + 1);
+        public List<SerializedType> upcast(SerializedType serializedType) {
+            return new ArrayList<SerializedType> (
+                    Arrays.asList(new SimpleSerializedType(serializedType.getName(), serializedType.getRevision() + 1)));
         }
     }
 }

@@ -25,11 +25,13 @@ import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
+ * @author Frank Versnel
  */
 public class XStreamSerializerTest {
 
@@ -44,7 +46,7 @@ public class XStreamSerializerTest {
     @Test
     public void testSerializeAndDeserializeDomainEvent() {
         SerializedObject serializedEvent = testSubject.serialize(new TestEvent("Henk"));
-        Object actualResult = testSubject.deserialize(serializedEvent);
+        Object actualResult = testSubject.deserialize(serializedEvent).get(0);
         assertTrue(actualResult instanceof TestEvent);
         TestEvent actualEvent = (TestEvent) actualResult;
         assertEquals("Henk", actualEvent.getName());
@@ -58,7 +60,7 @@ public class XStreamSerializerTest {
         SerializedObject serialized = testSubject.serialize(new StubDomainEvent());
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse("Package name found in:" + asString, asString.contains("org.axonframework.domain"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized).get(0);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
         assertTrue(asString.contains("axondomain"));
     }
@@ -71,7 +73,7 @@ public class XStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("<stub"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized).get(0);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
     }
 
@@ -83,7 +85,7 @@ public class XStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("<relevantPeriod"));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized).get(0);
         assertNotNull(deserialized);
     }
 
@@ -123,17 +125,17 @@ public class XStreamSerializerTest {
             }
 
             @Override
-            public IntermediateRepresentation upcast(IntermediateRepresentation intermediateRepresentation) {
-                return intermediateRepresentation;
+            public List<IntermediateRepresentation> upcast(IntermediateRepresentation intermediateRepresentation) {
+                return Arrays.asList(intermediateRepresentation);
             }
 
             @Override
-            public SerializedType upcast(SerializedType serializedType) {
-                return serializedType;
+            public List<SerializedType> upcast(SerializedType serializedType) {
+                return Arrays.asList(serializedType);
             }
         }));
         SerializedObject serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized).get(0);
         assertArrayEquals(SPECIAL__CHAR__STRING.getBytes(), deserialized.getName().getBytes());
     }
 
@@ -144,7 +146,7 @@ public class XStreamSerializerTest {
     @Test
     public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
         SerializedObject serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized).get(0);
         assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 

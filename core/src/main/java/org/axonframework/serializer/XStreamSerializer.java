@@ -26,6 +26,7 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.mapper.Mapper;
+import org.axonframework.common.Assert;
 import org.axonframework.common.SerializationException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -41,6 +42,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +58,7 @@ import java.util.UUID;
  * policy). That means that for portability, you should do either of these two.
  *
  * @author Allard Buijze
+ * @author Frank Versnel
  * @see com.thoughtworks.xstream.XStream
  * @since 1.2
  */
@@ -118,6 +122,7 @@ public class XStreamSerializer implements Serializer {
         this.charset = charset;
         this.xStream = xStream;
         this.converterFactory = converterFactory;
+        this.upcasters = new UpcasterChain(converterFactory, new ArrayList<Upcaster>());
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.aliasPackage("axon.domain", "org.axonframework.domain");
@@ -184,33 +189,36 @@ public class XStreamSerializer implements Serializer {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public Object deserialize(SerializedObject serializedObject) {
-        UpcasterChain currentUpcasterChain = upcasters; // create copy for concurrency reasons
-        IntermediateRepresentation<?> current = new SimpleIntermediateRepresentation<byte[]>(serializedObject.getType(),
-                                                                                             byte[].class,
-                                                                                             serializedObject
-                                                                                                     .getData());
-        if (currentUpcasterChain != null) {
-            current = currentUpcasterChain.upcast(serializedObject);
+    public List<Object> deserialize(SerializedObject serializedObject) {
+        List<IntermediateRepresentation> upcastedSerializedObjects = upcasters.upcast(serializedObject);
+        
+        List<Object> deserializedObjects = new ArrayList<Object>();
+        for(IntermediateRepresentation upcastedSerializedObject : upcastedSerializedObjects) {
+            if ("org.dom4j.Document".equals(upcastedSerializedObject.getContentType().getName())) {
+                deserializedObjects.add(xStream.unmarshal(new Dom4JReader((Document) upcastedSerializedObject.getData())));
+            } else {
+                ContentTypeConverter converter =
+                        converterFactory.getConverter(upcastedSerializedObject.getContentType(), InputStream.class);
+                IntermediateRepresentation convertedUpcastedSerializedObject =
+                        converter.convert(upcastedSerializedObject);
+
+                deserializedObjects.add(xStream.fromXML(
+                        new InputStreamReader((InputStream) convertedUpcastedSerializedObject.getData(), charset)));
+            }
         }
-        if ("org.dom4j.Document".equals(current.getContentType().getName())) {
-            return xStream.unmarshal(new Dom4JReader((Document) current.getData()));
-        } else {
-            current = converterFactory.getConverter(current.getContentType(), InputStream.class).convert(current);
-        }
-        return xStream.fromXML(new InputStreamReader((InputStream) current.getData(), charset));
+        return deserializedObjects;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Class classForType(SerializedType type) {
-        UpcasterChain currentUpcasterChain = upcasters; // create copy for concurrency reasons
-        if (currentUpcasterChain != null) {
-            type = currentUpcasterChain.upcast(type);
+    public List<Class> classForType(SerializedType type) {
+        List<Class> classes = new ArrayList<Class>();
+        for(SerializedType upcastedType : upcasters.upcast(type)) {
+            classes.add(xStream.getMapper().realClass(upcastedType.getName()));
         }
-        return xStream.getMapper().realClass(type.getName());
+        return classes;
     }
 
     /**

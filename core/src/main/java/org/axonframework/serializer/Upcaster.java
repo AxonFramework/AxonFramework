@@ -1,5 +1,7 @@
 package org.axonframework.serializer;
 
+import java.util.List;
+
 /**
  * Interface for Upcasters. An upcaster is the mechanism used to convert deprecated (typically serialized) objects and
  * convert them into the current format. If the serializer itself is not able to cope with the changed formats
@@ -14,6 +16,7 @@ package org.axonframework.serializer;
  *
  * @param <T> The data format that this upcaster uses to represent the event
  * @author Allard Buijze
+ * @author Frank Versnel
  * @since 2.0
  */
 public interface Upcaster<T> {
@@ -37,21 +40,23 @@ public interface Upcaster<T> {
     Class<T> expectedRepresentationType();
 
     /**
-     * Upcasts the given <code>intermediateRepresentation</code> into another one. The returned representation must
-     * reflect the changes made by this upcaster by updating its SerializedType definition.
+     * Upcasts the given <code>intermediateRepresentation</code> into zero or more other representations.
+     * The returned representation must reflect the changes made by this upcaster by updating its SerializedType
+     * definition.
      *
      * @param intermediateRepresentation The representation of the object to upcast
      * @return the new representation of the object
      */
-    IntermediateRepresentation<?> upcast(IntermediateRepresentation<T> intermediateRepresentation);
+    List<IntermediateRepresentation<?>> upcast(IntermediateRepresentation<T> intermediateRepresentation);
 
     /**
      * Upcast the given <code>serializedType</code> into its new format. Generally, this involves increasing the
      * revision number. Sometimes, it is also necessary to alter the type's name (in case of a renamed class, for
-     * example).
+     * example). The order and the size of the list returned has to match with the order and size of the list of the
+     * upcasted IntermediateRepresentations by this upcaster.
      *
      * @param serializedType The serialized type to upcast
      * @return the upcast serialized type
      */
-    SerializedType upcast(SerializedType serializedType);
+    List<SerializedType> upcast(SerializedType serializedType);
 }

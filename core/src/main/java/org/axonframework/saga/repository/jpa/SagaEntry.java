@@ -69,7 +69,7 @@ public class SagaEntry {
      * @return the Saga instance stored in this entry
      */
     public Saga getSaga(Serializer serializer) {
-        return (Saga) serializer.deserialize(new SimpleSerializedObject(serializedSaga, sagaType, revision));
+        return (Saga) serializer.deserialize(new SimpleSerializedObject(serializedSaga, sagaType, revision)).get(0);
     }
 
     /**
