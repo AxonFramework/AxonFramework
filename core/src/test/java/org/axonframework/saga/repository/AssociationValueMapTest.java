@@ -16,17 +16,16 @@
 
 package org.axonframework.saga.repository;
 
+import org.axonframework.domain.StringAggregateIdentifier;
 import org.axonframework.saga.AssociationValue;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -40,45 +39,42 @@ public class AssociationValueMapTest {
         testSubject = new AssociationValueMap();
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitializeIllegalValue() {
+        av(new Object());
+    }
+
     @Test
     public void testStoreVarietyOfItems() {
         assertTrue(testSubject.isEmpty());
 
-        Object anObject = new Object();
+        Object anObject = new StringAggregateIdentifier("12");
         testSubject.add(av(anObject), "1");
         testSubject.add(av(anObject), "1");
         assertEquals("Wrong count after adding an object twice", 1, testSubject.size());
-        testSubject.add(av(new Object()), "1");
+        testSubject.add(av(13), "1");
         assertEquals("Wrong count after adding two objects", 2, testSubject.size());
         testSubject.add(av(new FixedHashAndToString(1, "a")), "1");
         testSubject.add(av(new FixedHashAndToString(1, "a")), "1");
         assertEquals("Wrong count after adding equal objects", 3, testSubject.size());
         testSubject.add(av(new FixedHashAndToString(1, "b")), "1");
         assertEquals("Wrong count after adding two FixedHash instances", 4, testSubject.size());
-        testSubject.add(av(new FixedHashAndToString(2, "a")), "1");
-        testSubject.add(av(new FixedHashAndToString(3, "a")), "1");
-        assertEquals("Wrong count after adding two FixedHash instances", 6, testSubject.size());
-        testSubject.add(av("a"), "1");
-        testSubject.add(av("a"), "1");
-        assertEquals("Wrong count after adding two identical Strings", 7, testSubject.size());
         testSubject.add(av("b"), "1");
-        assertEquals("Wrong count after adding two identical Strings", 8, testSubject.size());
+        assertEquals("Wrong count after adding two identical Strings", 4, testSubject.size());
 
         testSubject.add(av("a"), "2");
-        assertEquals("Wrong count after adding two identical Strings for different saga", 9, testSubject.size());
+        assertEquals("Wrong count after adding two identical Strings for different saga", 5, testSubject.size());
         assertEquals(2, testSubject.findSagas(av("a")).size());
     }
 
     @Test
     public void testRemoveItems() {
         testStoreVarietyOfItems();
-        assertEquals("Wrong initial item count", 9, testSubject.size());
+        assertEquals("Wrong initial item count", 5, testSubject.size());
         testSubject.remove(av("a"), "1");
-        assertEquals("Wrong item count", 8, testSubject.size());
+        assertEquals("Wrong item count", 4, testSubject.size());
         testSubject.remove(av("a"), "2");
-        assertEquals("Wrong item count", 7, testSubject.size());
-        testSubject.remove(av(new FixedHashAndToString(1, "a")), "1");
-        assertEquals("Wrong item count", 6, testSubject.size());
+        assertEquals("Wrong item count", 3, testSubject.size());
 
         testSubject.clear();
         assertTrue(testSubject.isEmpty());

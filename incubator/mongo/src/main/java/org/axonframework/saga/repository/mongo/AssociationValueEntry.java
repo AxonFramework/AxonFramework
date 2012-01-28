@@ -13,6 +13,7 @@ import java.io.Serializable;
  * @author Jettro Coenradie
  */
 public class AssociationValueEntry {
+
     static final String ASSOCIATION_KEY = "key";
     static final String ASSOCIATION_VALUE = "value";
     static final String ASSOCIATION_SAGA_IDENTIFIER = "sagaIdentifier";
@@ -33,7 +34,7 @@ public class AssociationValueEntry {
         }
         this.sagaId = sagaIdentifier;
         this.associationKey = associationValue.getKey();
-        this.associationValue = (String) associationValue.getValue();
+        this.associationValue = associationValue.getValue();
     }
 
     public AssociationValueEntry(DBObject dbObject) {
@@ -62,31 +63,32 @@ public class AssociationValueEntry {
 
     public DBObject asDBObject() {
         return BasicDBObjectBuilder.start()
-                .add(ASSOCIATION_KEY, associationKey)
-                .add(ASSOCIATION_VALUE, associationValue)
-                .add(ASSOCIATION_SAGA_IDENTIFIER, sagaId)
-                .get();
+                                   .add(ASSOCIATION_KEY, associationKey)
+                                   .add(ASSOCIATION_VALUE, associationValue)
+                                   .add(ASSOCIATION_SAGA_IDENTIFIER, sagaId)
+                                   .get();
     }
 
     public static DBObject queryByKeyAndValue(String key, String value) {
         return BasicDBObjectBuilder.start()
-                .add(ASSOCIATION_KEY, key)
-                .add(ASSOCIATION_VALUE, value)
-                .get();
+                                   .add(ASSOCIATION_KEY, key)
+                                   .add(ASSOCIATION_VALUE, value)
+                                   .get();
     }
 
     public static DBObject queryBySagaIdentifier(String sagaIdentifier) {
         return BasicDBObjectBuilder.start()
-                .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
-                .get();
+                                   .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
+                                   .get();
     }
 
-    public static DBObject queryBySagaIdentifierAndAssociationKeyValue(String sagaIdentifier, String key, String value) {
+    public static DBObject queryBySagaIdentifierAndAssociationKeyValue(String sagaIdentifier, String key,
+                                                                       String value) {
         return BasicDBObjectBuilder.start()
-                .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
-                .add(ASSOCIATION_KEY, key)
-                .add(ASSOCIATION_VALUE, value)
-                .get();
+                                   .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
+                                   .add(ASSOCIATION_KEY, key)
+                                   .add(ASSOCIATION_VALUE, value)
+                                   .get();
     }
 
 }

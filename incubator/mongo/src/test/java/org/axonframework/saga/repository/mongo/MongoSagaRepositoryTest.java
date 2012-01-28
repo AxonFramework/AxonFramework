@@ -5,14 +5,15 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import org.axonframework.domain.Event;
 import org.axonframework.eventstore.mongo.MongoEventStore;
-import org.axonframework.saga.*;
+import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.AssociationValues;
+import org.axonframework.saga.NoSuchSagaException;
+import org.axonframework.saga.Saga;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.JavaSagaSerializer;
 import org.axonframework.saga.repository.XStreamSagaSerializer;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "/META-INF/spring/mongo-context.xml")
 public class MongoSagaRepositoryTest {
+
     private final static Logger logger = LoggerFactory.getLogger(MongoSagaRepositoryTest.class);
 
     @Autowired
@@ -72,7 +74,7 @@ public class MongoSagaRepositoryTest {
         testSaga.registerAssociationValue(new AssociationValue("key", "value"));
         otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
         Set<MyTestSaga> actual = repository.find(MyTestSaga.class, Collections.singleton(new AssociationValue("key",
-                "value")));
+                                                                                                              "value")));
         assertEquals(1, actual.size());
         assertEquals(MyTestSaga.class, actual.iterator().next().getClass());
 
@@ -113,7 +115,7 @@ public class MongoSagaRepositoryTest {
         testSaga.end(); // make the saga inactive
         repository.commit(testSaga); //remove the saga because it is inactive
         Set<MyTestSaga> actual = repository.find(MyTestSaga.class,
-                Collections.singleton(new AssociationValue("key", "value")));
+                                                 Collections.singleton(new AssociationValue("key", "value")));
         assertTrue("Didn't expect any sagas", actual.isEmpty());
 
         DBObject sagaQuery = SagaEntry.queryByIdentifier("test1");
@@ -175,7 +177,7 @@ public class MongoSagaRepositoryTest {
 
         // load saga2
         Set<MyOtherTestSaga> loaded2 = repository.find(MyOtherTestSaga.class, setOf(new AssociationValue("key",
-                "value")));
+                                                                                                         "value")));
         assertEquals(1, loaded2.size());
         MyOtherTestSaga loadedSaga2 = loaded2.iterator().next();
         assertEquals(identifier2, loadedSaga2.getSagaIdentifier());
@@ -221,7 +223,9 @@ public class MongoSagaRepositoryTest {
         MyTestSaga saga = new MyTestSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
         mongoTemplate.sagaCollection().save(new SagaEntry(saga, new JavaSagaSerializer()).asDBObject());
-        mongoTemplate.associationsCollection().save(new AssociationValueEntry(identifier, new AssociationValue("key", "value")).asDBObject());
+        mongoTemplate.associationsCollection().save(new AssociationValueEntry(identifier, new AssociationValue("key",
+                                                                                                               "value"))
+                                                            .asDBObject());
 
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.removeAssociationValue("key", "value");
@@ -239,7 +243,8 @@ public class MongoSagaRepositoryTest {
         loaded.counter = 1;
         repository.commit(loaded);
 
-        SagaEntry entry = new SagaEntry(mongoTemplate.sagaCollection().findOne(SagaEntry.queryByIdentifier(identifier)));
+        SagaEntry entry = new SagaEntry(mongoTemplate.sagaCollection().findOne(SagaEntry
+                                                                                       .queryByIdentifier(identifier)));
         MyTestSaga actualSaga = (MyTestSaga) entry.getSaga(new JavaSagaSerializer());
         assertNotSame(loaded, actualSaga);
         assertEquals(1, actualSaga.counter);
@@ -259,14 +264,13 @@ public class MongoSagaRepositoryTest {
     }
 
     @DirtiesContext
-    @Test(expected = SagaStorageException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testStoreAssociationValue_NotSerializable() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", new Object()));
         repository.add(saga);
     }
-
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
 
@@ -292,6 +296,7 @@ public class MongoSagaRepositoryTest {
     }
 
     public static class MyOtherTestSaga extends AbstractAnnotatedSaga {
+
         private static final long serialVersionUID = -1562911263884220240L;
         private int counter = 0;
 
@@ -309,6 +314,7 @@ public class MongoSagaRepositoryTest {
     }
 
     private class InexistentSaga implements Saga {
+
         @Override
         public String getSagaIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");

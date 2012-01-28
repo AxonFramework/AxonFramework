@@ -16,6 +16,7 @@
 
 package org.axonframework.saga;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.util.Assert;
 
 import java.io.Serializable;
@@ -36,7 +37,7 @@ public class AssociationValue implements Serializable {
     private static final long serialVersionUID = 3573690125021875389L;
 
     private final String propertyKey;
-    private final Object propertyValue;
+    private final String propertyValue;
 
     /**
      * Creates a Association Value instance with the given <code>key</code> and <code>value</code>.
@@ -45,13 +46,25 @@ public class AssociationValue implements Serializable {
      * @param value The value corresponding to the key of the association. It is highly recommended to only use
      *              serializable values.
      * @deprecated The storage of arbitrary objects is deprecated. Use {@link #AssociationValue(String, String)}
-     *             instead.
+     *             instead. This constructor may still be used, but requires all given <code>value</code>s implement
+     *             a <code>toString()</code> method that provides a representative String value.
      */
     @Deprecated
     public AssociationValue(String key, Object value) {
+        Assert.notNull(key, "Cannot associate a Saga with a null key");
         Assert.notNull(value, "Cannot associate a Saga with a null value");
         this.propertyKey = key;
-        this.propertyValue = value;
+        if (value instanceof AggregateIdentifier) {
+            this.propertyValue = ((AggregateIdentifier) value).asString();
+        } else {
+            try {
+                Assert.isFalse(value.getClass().getMethod("toString").getDeclaringClass().equals(Object.class),
+                               "Given value doesn't seem to provide a suitable toString method.");
+            } catch (NoSuchMethodException e) {
+                throw new AssertionError("Given value doesn't seem to provide a suitable toString method");
+            }
+            this.propertyValue = value.toString();
+        }
     }
 
     /**
@@ -84,7 +97,7 @@ public class AssociationValue implements Serializable {
      *
      * @return the value of this association. Never <code>null</code>.
      */
-    public Object getValue() {
+    public String getValue() {
         return propertyValue;
     }
 

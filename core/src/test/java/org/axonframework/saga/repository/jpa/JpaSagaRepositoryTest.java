@@ -21,7 +21,6 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaStorageException;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.XStreamSagaSerializer;
 import org.junit.*;
@@ -276,15 +275,6 @@ public class JpaSagaRepositoryTest {
         assertNull(entityManager.find(SagaEntry.class, identifier));
     }
 
-    @DirtiesContext
-    @Test(expected = SagaStorageException.class)
-    public void testStoreAssociationValue_NotSerializable() {
-        String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
-        saga.registerAssociationValue(new AssociationValue("key", new Object()));
-        repository.add(saga);
-    }
-
     public static class MyTestSaga extends AbstractAnnotatedSaga {
 
         private static final long serialVersionUID = -1562911263884220240L;
@@ -309,6 +299,7 @@ public class JpaSagaRepositoryTest {
     }
 
     public static class MyOtherTestSaga extends AbstractAnnotatedSaga {
+
         private static final long serialVersionUID = -1562911263884220240L;
         private int counter = 0;
 
@@ -326,6 +317,7 @@ public class JpaSagaRepositoryTest {
     }
 
     private class InexistentSaga implements Saga {
+
         @Override
         public String getSagaIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");
