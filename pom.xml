@@ -91,6 +91,12 @@
                 <module>incubator/disruptor-commandbus</module>
             </modules>
         </profile>
+        <profile>
+            <id>with-spring-insight</id>
+            <modules>
+                <module>spring-insight-plugin</module>
+            </modules>
+        </profile>
     </profiles>
 
     <properties>
