@@ -44,7 +44,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
@@ -75,8 +74,7 @@ public class JpaEventStoreTest {
 
     @Before
     public void setUp() {
-        mockAggregateIdentifier = mock(AggregateIdentifier.class);
-        when(mockAggregateIdentifier.asString()).thenReturn(UUID.randomUUID().toString());
+        mockAggregateIdentifier = new UUIDAggregateIdentifier();
         aggregate1 = new StubAggregateRoot(mockAggregateIdentifier);
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
@@ -87,11 +85,6 @@ public class JpaEventStoreTest {
         aggregate2.changeState();
         aggregate2.changeState();
         entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
-    }
-
-    @After
-    public void tearDown() {
-        verify(mockAggregateIdentifier, never()).toString();
     }
 
     @Test
@@ -144,7 +137,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
-    public void testEntireStreamIsReadOnUnserializableSnapshot() {
+    public void testEntireStreamIsReadOnUnserializableSnapshot_WithException() {
         List<DomainEvent> domainEvents = new ArrayList<DomainEvent>(110);
         AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
         for (int t = 0; t < 110; t++) {
@@ -160,6 +153,48 @@ public class JpaEventStoreTest {
             @Override
             public byte[] serialize(DomainEvent event) {
                 return "this ain't gonna work!".getBytes();
+            }
+
+            @Override
+            public DomainEvent deserialize(InputStream inputStream) throws IOException {
+                throw new UnsupportedOperationException("Not implemented yet");
+            }
+
+            @Override
+            public DomainEvent deserialize(byte[] serializedEvent) {
+                throw new UnsupportedOperationException(
+                        "Not implemented yet");
+            }
+        };
+        final StubDomainEvent stubDomainEvent = new StubDomainEvent(aggregateIdentifier, 30);
+        SnapshotEventEntry entry = new SnapshotEventEntry("test",
+                                                          stubDomainEvent,
+                                                          serializer.serialize(stubDomainEvent));
+        entityManager.persist(entry);
+        entityManager.flush();
+        entityManager.clear();
+
+        DomainEventStream stream = testSubject.readEvents("test", aggregateIdentifier);
+        assertEquals(0L, (long) stream.peek().getSequenceNumber());
+    }
+
+    @Test
+    public void testEntireStreamIsReadOnUnserializableSnapshot_WithError() {
+        List<DomainEvent> domainEvents = new ArrayList<DomainEvent>(110);
+        AggregateIdentifier aggregateIdentifier = new StringAggregateIdentifier("id");
+        for (int t = 0; t < 110; t++) {
+            domainEvents.add(new StubDomainEvent(aggregateIdentifier, t));
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        final Serializer<DomainEvent> serializer = new Serializer<DomainEvent>() {
+            @Override
+            public void serialize(DomainEvent object, OutputStream outputStream) throws IOException {
+                throw new UnsupportedOperationException("Not implemented yet");
+            }
+
+            @Override
+            public byte[] serialize(DomainEvent event) {
+                return "<org.axonframework.eventhandling.EventListener />".getBytes();
             }
 
             @Override
