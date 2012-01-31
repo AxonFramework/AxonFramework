@@ -10,6 +10,13 @@ import org.axonframework.domain.MetaData;
 import com.springsource.insight.intercept.operation.Operation;
 import com.springsource.insight.intercept.operation.OperationMap;
 
+/**
+ * Operation populating helper methods specific to Axon 2 
+ * {@link Message} types.
+ * 
+ * @author Joris Kuipers
+ *
+ */
 public class Axon20OperationUtils {
     
     /**

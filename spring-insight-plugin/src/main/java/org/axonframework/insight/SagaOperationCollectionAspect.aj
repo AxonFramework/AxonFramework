@@ -8,7 +8,12 @@ import com.springsource.insight.collection.method.MethodOperationCollectionAspec
 import com.springsource.insight.intercept.operation.Operation;
 import com.springsource.insight.intercept.operation.OperationMap;
 
-public aspect SagaOperationCollectionAspect extends MethodOperationCollectionAspect {
+/**
+ * Collects operations for {@link Saga} executions.
+ * 
+ * @author Joris Kuipers
+ *
+ */public aspect SagaOperationCollectionAspect extends MethodOperationCollectionAspect {
     
     public pointcut collectionPoint(): execution(void Saga.handle(*));
 
@@ -16,7 +21,7 @@ public aspect SagaOperationCollectionAspect extends MethodOperationCollectionAsp
     protected Operation createOperation(JoinPoint jp) {
         Saga saga = (Saga) jp.getTarget();
         Operation operation = super.createOperation(jp)
-                .type(AxonOperationType.SAGA_HANDLER)
+                .type(AxonOperationType.SAGA)
                 .put("id", saga.getSagaIdentifier());
         OperationMap values = operation.createMap("associationValues");
         for (AssociationValue value : saga.getAssociationValues()) {

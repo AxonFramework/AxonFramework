@@ -3,6 +3,12 @@ package org.axonframework.insight;
 import com.springsource.insight.intercept.operation.Operation;
 import com.springsource.insight.intercept.operation.OperationType;
 
+/**
+ * Concrete analyzer for Axon command handler operations.
+ * 
+ * @author Joris Kuipers
+ *
+ */
 public class CommandHandlerEndPointAnalyzer extends AbstractHandlerEndPointAnalyzer {
 
     @Override

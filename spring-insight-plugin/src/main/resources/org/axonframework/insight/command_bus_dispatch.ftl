@@ -1,7 +1,7 @@
 <#ftl strip_whitespace=true>
 <#import "/insight-1.0.ftl" as insight />
 
-<@insight.group label="Axon Command Handler">
+<@insight.group label="Axon CommandBus Dispatch">
     <@insight.entry name="Command type" value=operation.commandType />
     <@insight.entry name="Command ID" value=operation.commandId />
     <#if operation.metaData?has_content>

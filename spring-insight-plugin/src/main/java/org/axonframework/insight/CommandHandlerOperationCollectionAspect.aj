@@ -8,6 +8,12 @@ import org.axonframework.unitofwork.UnitOfWork;
 import com.springsource.insight.collection.method.MethodOperationCollectionAspect;
 import com.springsource.insight.intercept.operation.Operation;
 
+/**
+ * Collects operations for command handler executions.
+ * 
+ * @author Joris Kuipers
+ *
+ */
 public aspect CommandHandlerOperationCollectionAspect extends MethodOperationCollectionAspect {
 
     public pointcut collectionPoint(): 

@@ -4,19 +4,23 @@ import org.aspectj.lang.JoinPoint;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.saga.SagaManager;
 
 import com.springsource.insight.collection.method.MethodOperationCollectionAspect;
 import com.springsource.insight.intercept.operation.Operation;
 
-public aspect EventHandlerOperationCollectionAspect extends MethodOperationCollectionAspect {
+/**
+ * Collects operations for event handler executions.
+ * 
+ * @author Joris Kuipers
+ *
+ */public aspect EventHandlerOperationCollectionAspect extends MethodOperationCollectionAspect {
 
-    // this matches SagaManager.handle() as well: we're OK with that,
-    // since async Saga invocations won't show up and this still gives 
-    // a hint that the event is handled by one or more Sagas.
     public pointcut collectionPoint(): 
         execution(@EventHandler * *(*, ..)) || 
         (execution(void EventListener.handle(*))
-         && !within(AnnotationEventListenerAdapter));
+         && !within(AnnotationEventListenerAdapter)
+         && !within(SagaManager));
 
     @Override
     protected Operation createOperation(JoinPoint jp) {

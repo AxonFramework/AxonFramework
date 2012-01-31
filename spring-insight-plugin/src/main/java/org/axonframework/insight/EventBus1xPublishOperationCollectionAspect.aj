@@ -7,6 +7,12 @@ import org.axonframework.eventhandling.EventBus;
 import com.springsource.insight.collection.AbstractOperationCollectionAspect;
 import com.springsource.insight.intercept.operation.Operation;
 
+/**
+ * {@link EventBus} publish operation matching for Axon 1.x apps.
+ * 
+ * @author Joris Kuipers
+ *
+ */
 public aspect EventBus1xPublishOperationCollectionAspect extends AbstractOperationCollectionAspect {
     
     public pointcut collectionPoint(): execution(* EventBus.publish(!EventMessage));

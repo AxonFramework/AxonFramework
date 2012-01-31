@@ -12,10 +12,16 @@ import com.springsource.insight.intercept.trace.Frame;
 import com.springsource.insight.intercept.trace.FrameUtil;
 import com.springsource.insight.intercept.trace.Trace;
 
+/**
+ * Analyzer for Axon Saga operations.
+ * 
+ * @author Joris Kuipers
+ *
+ */
 public class SagaOperationEndPointAnalyzer implements EndPointAnalyzer {
 
     public EndPointAnalysis locateEndPoint(Trace trace) {
-        Frame handlerFrame = trace.getFirstFrameOfType(AxonOperationType.SAGA_HANDLER);
+        Frame handlerFrame = trace.getFirstFrameOfType(AxonOperationType.SAGA);
         if (handlerFrame == null) return null;
         
         Operation handlerOp = handlerFrame.getOperation();

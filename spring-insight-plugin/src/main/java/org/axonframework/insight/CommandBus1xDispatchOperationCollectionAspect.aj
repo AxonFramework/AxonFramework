@@ -6,6 +6,12 @@ import org.axonframework.commandhandling.CommandBus;
 import com.springsource.insight.collection.AbstractOperationCollectionAspect;
 import com.springsource.insight.intercept.operation.Operation;
 
+/**
+ * {@link CommandBus} dispatch operation matching for Axon 1.x apps.
+ * 
+ * @author Joris Kuipers
+ *
+ */
 public aspect CommandBus1xDispatchOperationCollectionAspect extends AbstractOperationCollectionAspect {
     
     public pointcut collectionPoint(): execution(* CommandBus.dispatch(Object, ..));

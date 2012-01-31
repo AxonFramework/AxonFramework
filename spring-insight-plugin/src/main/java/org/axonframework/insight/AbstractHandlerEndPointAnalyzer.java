@@ -12,6 +12,12 @@ import com.springsource.insight.intercept.trace.Frame;
 import com.springsource.insight.intercept.trace.FrameUtil;
 import com.springsource.insight.intercept.trace.Trace;
 
+/**
+ * Common handling flow for Event- and CommandHandlers.
+ * 
+ * @author Joris Kuipers
+ *
+ */
 public abstract class AbstractHandlerEndPointAnalyzer implements EndPointAnalyzer {
 
     public EndPointAnalysis locateEndPoint(Trace trace) {
