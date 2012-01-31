@@ -4,6 +4,7 @@
 <@insight.group label="Axon CommandBus Dispatch">
     <@insight.entry name="Command type" value=operation.commandType />
     <@insight.entry name="Command ID" value=operation.commandId />
+    <@insight.entry name="Callback type" value=operation.callbackType />
     <#if operation.metaData?has_content>
 	    <@insight.entry name="Meta-data">
             <@insight.group collection=operation.metaData ; entry>
