@@ -178,7 +178,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
-    public void testEntireStreamIsReadOnUnserializableSnapshot() {
+    public void testEntireStreamIsReadOnUnserializableSnapshot_WithException() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
         String aggregateIdentifier = "id";
         for (int t = 0; t < 110; t++) {
@@ -195,6 +195,60 @@ public class JpaEventStoreTest {
             @Override
             public SerializedObject serialize(Object object) {
                 return new SimpleSerializedObject("this ain't gonna work".getBytes(), "failingType", 0);
+            }
+
+            @Override
+            public Object deserialize(SerializedObject serializedObject) {
+                throw new UnsupportedOperationException("Not implemented yet");
+            }
+
+            @Override
+            public Class classForType(SerializedType type) {
+                try {
+                    return Class.forName(type.getName());
+                } catch (ClassNotFoundException e) {
+                    return null;
+                }
+            }
+        };
+        final DomainEventMessage<String> stubDomainEvent = new GenericDomainEventMessage<String>(
+                aggregateIdentifier,
+                (long) 30,
+                "Mock contents", MetaData.emptyInstance()
+        );
+        SnapshotEventEntry entry = new SnapshotEventEntry("test",
+                                                          stubDomainEvent,
+                                                          serializer.serialize(stubDomainEvent.getPayload()),
+                                                          serializer.serialize(stubDomainEvent.getMetaData()));
+        entityManager.persist(entry);
+        entityManager.flush();
+        entityManager.clear();
+
+        DomainEventStream stream = testSubject.readEvents("test", aggregateIdentifier);
+        assertEquals(0L, stream.peek().getSequenceNumber());
+    }
+
+    @Test
+    public void testEntireStreamIsReadOnUnserializableSnapshot_WithError() {
+        List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
+        String aggregateIdentifier = "id";
+        for (int t = 0; t < 110; t++) {
+            domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
+                                                                   "Mock contents", MetaData.emptyInstance()));
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        final Serializer serializer = new Serializer() {
+            @Override
+            public SerializedType serialize(Object object, OutputStream outputStream) throws IOException {
+                throw new UnsupportedOperationException("Not implemented yet");
+            }
+
+            @Override
+            public SerializedObject serialize(Object object) {
+                // this will cause InstantiationError, since it is an interface
+                return new SimpleSerializedObject("<org.axonframework.eventhandling.EventListener />".getBytes(),
+                                                  "failingType",
+                                                  0);
             }
 
             @Override

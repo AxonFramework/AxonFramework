@@ -183,6 +183,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
                             ex.getMessage());
+            } catch (LinkageError error) {
+                logger.warn("Error while reading snapshot event entry. "
+                                    + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
+                            error.getClass().getName(),
+                            error.getMessage());
             }
         }
 
