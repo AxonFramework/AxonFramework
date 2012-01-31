@@ -14,7 +14,8 @@ import com.springsource.insight.intercept.operation.Operation;
  * 
  * @author Joris Kuipers
  *
- */public aspect EventHandlerOperationCollectionAspect extends MethodOperationCollectionAspect {
+ */
+public aspect EventHandlerOperationCollectionAspect extends MethodOperationCollectionAspect {
 
     public pointcut collectionPoint(): 
         execution(@EventHandler * *(*, ..)) || 

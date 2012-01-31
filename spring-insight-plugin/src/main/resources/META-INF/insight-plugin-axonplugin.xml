@@ -26,6 +26,6 @@
 		                    
 	<bean class="org.axonframework.insight.CommandHandlerEndPointAnalyzer"/>
 	<bean class="org.axonframework.insight.EventHandlerEndPointAnalyzer"/>
-	<bean class="org.axonframework.insight.SagaEndPointAnalyzer"/>
+	<bean class="org.axonframework.insight.SagaOperationEndPointAnalyzer"/>
 
 </beans>
