@@ -3,6 +3,12 @@
 
 <@insight.group label="Axon Event Handler">
     <@insight.entry name="Event type" value=operation.eventType />
+    <#if operation.eventId?has_content>
+	    <@insight.entry name="Event ID" value=operation.eventId />
+    </#if>
+    <#if operation.timestamp?has_content>
+	    <@insight.entry name="Event timestamp" value=operation.timestamp />
+    </#if>
     <#if operation.metaData?has_content>
 	    <@insight.entry name="Meta-data">
             <@insight.group collection=operation.metaData ; entry>

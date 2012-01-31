@@ -3,6 +3,9 @@
 
 <@insight.group label="Axon Command Handler">
     <@insight.entry name="Command type" value=operation.commandType />
+    <#if operation.commandId?has_content>
+	    <@insight.entry name="Command ID" value=operation.commandId />
+    </#if>
     <#if operation.metaData?has_content>
 	    <@insight.entry name="Meta-data">
             <@insight.group collection=operation.metaData ; entry>
