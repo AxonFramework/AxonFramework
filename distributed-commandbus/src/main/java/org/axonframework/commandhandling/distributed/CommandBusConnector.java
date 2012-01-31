@@ -1,7 +1,7 @@
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 
 /**
@@ -56,12 +56,28 @@ public interface CommandBusConnector {
     <R> void send(String routingKey, CommandMessage<?> command, CommandCallback<R> callback) throws Exception;
 
     /**
-     * The CommandBus instance on which local messages should be dispatched.
+     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code> to the local segment of the
+     * command bus.
      * <p/>
-     * This is generally <em>not</em> a Distributed Command Bus, unless this connector serves as a proxy between to
-     * distributed buses.
+     * If a subscription already exists for the given type, the behavior is undefined. Implementations may throw an
+     * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
+     * <code>handler</code> gets the subscription.
      *
-     * @return the CommandBus instance on which local messages should be dispatched.
+     * @param commandType The type of command to subscribe the handler to
+     * @param handler     The handler instance that handles the given type of command
+     * @param <C>         The Type of command
      */
-    CommandBus getLocalSegment();
+    <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler);
+
+    /**
+     * Unsubscribe the given <code>handler</code> to commands of type <code>commandType</code>. If the handler is not
+     * currently assigned to that type of command, no action is taken.
+     *
+     * @param commandType The type of command the handler is subscribed to
+     * @param handler     The handler instance to unsubscribe from the CommandBus
+     * @param <C>         The Type of command
+     * @return <code>true</code> of this handler is successfully unsubscribed, <code>false</code> of the given
+     *         <code>handler</code> was not the current handler for given <code>commandType</code>.
+     */
+    <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler);
 }

@@ -144,9 +144,12 @@ public class SimpleCommandBus implements CommandBus {
      * {@inheritDoc}
      */
     @Override
-    public <T> void unsubscribe(Class<T> commandType, CommandHandler<? super T> handler) {
-        subscriptions.remove(commandType, handler);
-        statistics.recordUnregisteredHandler(commandType.getSimpleName());
+    public <T> boolean unsubscribe(Class<T> commandType, CommandHandler<? super T> handler) {
+        if (subscriptions.remove(commandType, handler)) {
+            statistics.recordUnregisteredHandler(commandType.getSimpleName());
+            return true;
+        }
+        return false;
     }
 
     /**

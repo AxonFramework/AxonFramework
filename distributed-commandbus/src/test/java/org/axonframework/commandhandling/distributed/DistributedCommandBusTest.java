@@ -28,7 +28,6 @@ public class DistributedCommandBusTest {
     public void setUp() throws Exception {
         mockLocalSegment = mock(CommandBus.class);
         mockConnector = mock(CommandBusConnector.class);
-        when(mockConnector.getLocalSegment()).thenReturn(mockLocalSegment);
         mockRoutingKeyExtractor = mock(RoutingKeyExtractor.class);
         when(mockRoutingKeyExtractor.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
 
@@ -70,16 +69,16 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testSubscribeIsDoneOnLocalSegment() {
+    public void testSubscribeIsDoneOnConnector() {
         testSubject.subscribe(Object.class, mockHandler);
 
-        verify(mockLocalSegment).subscribe(Object.class, mockHandler);
+        verify(mockConnector).subscribe(Object.class, mockHandler);
     }
 
     @Test
-    public void testUnsubscribeIsDoneOnLocalSegment() {
+    public void testUnsubscribeIsDoneOnConnector() {
         testSubject.unsubscribe(Object.class, mockHandler);
 
-        verify(mockLocalSegment).unsubscribe(Object.class, mockHandler);
+        verify(mockConnector).unsubscribe(Object.class, mockHandler);
     }
 }

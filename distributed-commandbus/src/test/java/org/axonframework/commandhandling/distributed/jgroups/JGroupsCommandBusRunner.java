@@ -41,12 +41,13 @@ public class JGroupsCommandBusRunner {
 
     private static DistributedCommandBus dcb;
     private static final int MESSAGE_COUNT = 1000;
+    private static JGroupsConnector connector;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.net.preferIPv4Stack", "true");
         JChannel channel = new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp.xml");
 
-        JGroupsConnector connector = new JGroupsConnector(channel,
+        connector = new JGroupsConnector(channel,
                                                           "testing",
                                                           new SimpleCommandBus(),
                                                           new XStreamSerializer());
@@ -75,6 +76,13 @@ public class JGroupsCommandBusRunner {
                 System.out.println("This is not a number.");
             }
         }
+        dcb.subscribe(String.class, new CommandHandler<String>() {
+            @Override
+            public Object handle(CommandMessage<String> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
+                System.out.println("Received message: " + stringCommandMessage.getPayload());
+                return null;
+            }
+        });
         connector.connect(loadFactor);
         System.out.println("Waiting for Joining to complete");
         connector.awaitJoined();
@@ -94,7 +102,10 @@ public class JGroupsCommandBusRunner {
                     System.out.println(newLoadFactor + " is not a number");
                 }
             } else if ("members".equals(line)) {
-                System.out.println(channel.getViewAsString());
+                System.out.println(connector.getConsistentHash().toString());
+            } else if (line.matches("join [0-9]+")) {
+                int factor = Integer.parseInt(line.split(" ")[1]);
+                connector.connect(factor);
             } else if (!"quit".equals(line)) {
                 dcb.dispatch(new GenericCommandMessage<String>(line));
             }

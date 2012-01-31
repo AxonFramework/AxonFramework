@@ -5,6 +5,9 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
  * spread load. Each "physical" CommandBus instance is considered a "segment" of a conceptual distributed CommandBus.
@@ -21,6 +24,7 @@ public class DistributedCommandBus implements CommandBus {
 
     private final RoutingKeyExtractor routingKeyExtractor;
     private final CommandBusConnector connector;
+    private final Set<String> supportedCommands = new CopyOnWriteArraySet<String>();
 
     /**
      * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingKeyExtractor}.
@@ -81,7 +85,7 @@ public class DistributedCommandBus implements CommandBus {
      */
     @Override
     public <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        connector.getLocalSegment().subscribe(commandType, handler);
+        connector.subscribe(commandType, handler);
     }
 
     /**
@@ -90,7 +94,7 @@ public class DistributedCommandBus implements CommandBus {
      * In the DistributedCommandBus, the handler is unsubscribed from the local segment only.
      */
     @Override
-    public <C> void unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        connector.getLocalSegment().unsubscribe(commandType, handler);
+    public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
+        return connector.unsubscribe(commandType, handler);
     }
 }

@@ -18,9 +18,11 @@ package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
 import org.axonframework.common.Assert;
@@ -39,10 +41,13 @@ import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -74,6 +79,9 @@ public class JGroupsConnector implements CommandBusConnector {
     private final Serializer serializer;
     private final JoinCondition joinedCondition = new JoinCondition();
     private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks = new ConcurrentHashMap<String, MemberAwareCommandCallback>();
+    private final Set<String> supportedCommandTypes = new CopyOnWriteArraySet<String>();
+    private volatile int loadFactor;
+    private final JGroupsConnector.MessageReceiver messageReceiver;
 
     /**
      * Initializes the Connector using given resources. The <code>channel</code> is used to connect this connector to
@@ -96,6 +104,7 @@ public class JGroupsConnector implements CommandBusConnector {
         this.clusterName = clusterName;
         this.localSegment = localSegment;
         this.serializer = serializer;
+        this.messageReceiver = new MessageReceiver();
     }
 
     /**
@@ -108,19 +117,32 @@ public class JGroupsConnector implements CommandBusConnector {
      * @param loadFactor The load factor for this node.
      * @throws Exception when an error occurs while connecting
      */
-    public void connect(int loadFactor) throws Exception {
+    public synchronized void connect(int loadFactor) throws Exception {
+        this.loadFactor = loadFactor;
         Assert.isTrue(loadFactor >= 0, "Load Factor must be a positive integer value.");
+        Assert.isTrue(channel.getReceiver() == null || channel.getReceiver() == messageReceiver,
+                      "The given channel already has a receiver configured. "
+                              + "Has the channel been reused with other Connectors?");
         try {
-            channel.setReceiver(new MessageReceiver());
-            if (!channel.isConnected()) {
-                channel.connect(clusterName, null, 10000);
-            }
-            channel.send(new Message(null, new JoinMessage(loadFactor))
-                                 .setFlag(Message.Flag.RSVP));
+            channel.setReceiver(messageReceiver);
+            channel.connect(clusterName, null, 10000);
+            updateMembership();
         } catch (Exception e) {
             joinedCondition.markJoined(false);
             channel.disconnect();
             throw e;
+        }
+    }
+
+    private void updateMembership() throws MembershipUpdateFailedException {
+        try {
+            if (channel.isConnected()) {
+                channel.send(new Message(null, new JoinMessage(loadFactor, new HashSet<String>(supportedCommandTypes)))
+                                     .setFlag(Message.Flag.RSVP));
+            }
+        } catch (Exception e) {
+            throw new MembershipUpdateFailedException(
+                    "Failed to dispatch Join message to Distributed Command Bus Members", e);
         }
     }
 
@@ -155,20 +177,42 @@ public class JGroupsConnector implements CommandBusConnector {
     @Override
     public <R> void send(String routingKey, CommandMessage<?> commandMessage, CommandCallback<R> callback)
             throws Exception {
-        Address dest = getAddress(consistentHash.getNodeName(routingKey));
+        String destination = consistentHash.getMember(routingKey, commandMessage.getPayloadType().getName());
+        if (destination == null) {
+            throw new CommandDispatchException("No node known to accept " + commandMessage.getPayloadType().getName());
+        }
+        Address dest = getAddress(destination);
         callbacks.put(commandMessage.getIdentifier(), new MemberAwareCommandCallback<R>(dest, callback));
         channel.send(dest, new DispatchMessage(commandMessage, serializer, true));
     }
 
     @Override
     public void send(String routingKey, CommandMessage<?> commandMessage) throws Exception {
-        Address dest = getAddress(consistentHash.getNodeName(routingKey));
+        String destination = consistentHash.getMember(routingKey, commandMessage.getPayloadType().getName());
+        if (destination == null) {
+            throw new CommandDispatchException("No node known to accept " + commandMessage.getPayloadType().getName());
+        }
+        Address dest = getAddress(destination);
         channel.send(dest, new DispatchMessage(commandMessage, serializer, false));
     }
 
     @Override
-    public CommandBus getLocalSegment() {
-        return localSegment;
+    public synchronized <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler) {
+        localSegment.subscribe(commandType, handler);
+        if (supportedCommandTypes.add(commandType.getName())) {
+            updateMembership();
+        }
+    }
+
+    @Override
+    public synchronized <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
+        if (localSegment.unsubscribe(commandType, handler)) {
+            if (supportedCommandTypes.remove(commandType.getName())) {
+                updateMembership();
+            }
+            return true;
+        }
+        return false;
     }
 
     private Address getAddress(String nodeName) {
@@ -178,6 +222,15 @@ public class JGroupsConnector implements CommandBusConnector {
             }
         }
         throw new IllegalArgumentException("Given node doesn't seem to be a member of the DistributedCommandBus");
+    }
+
+    /**
+     * Returns the consistent hash on which current assignment of commands to nodes is being executed.
+     *
+     * @return the consistent hash on which current assignment of commands to nodes is being executed
+     */
+    public ConsistentHash getConsistentHash() {
+        return consistentHash;
     }
 
     private class MessageReceiver extends ReceiverAdapter {
@@ -250,8 +303,10 @@ public class JGroupsConnector implements CommandBusConnector {
         }
 
         private void processJoinMessage(Message msg, JoinMessage joinMessage) {
-            consistentHash = consistentHash.withAdditionalNode(channel.getName(msg.getSrc()),
-                                                               joinMessage.getLoadFactor());
+            String channelName = channel.getName(msg.getSrc());
+
+            consistentHash = consistentHash.withAdditionalNode(channelName, joinMessage.getLoadFactor(),
+                                                               joinMessage.getCommandTypes());
             if (logger.isInfoEnabled()) {
                 logger.info("{} joined with load factor: {}", msg.getSrc(), joinMessage.getLoadFactor());
             }

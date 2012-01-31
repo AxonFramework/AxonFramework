@@ -108,8 +108,8 @@ public class DisruptorCommandBus implements CommandBus, Repository {
     }
 
     @Override
-    public <C> void unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        commandHandlers.remove(commandType, handler);
+    public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
+        return commandHandlers.remove(commandType, handler);
     }
 
     @Override
