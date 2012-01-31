@@ -25,24 +25,12 @@ import static org.mockito.Mockito.*;
  */
 public class JGroupsConnectorTest {
 
-    private static JChannel channel1;
-    private static JChannel channel2;
+    private JChannel channel1;
+    private JChannel channel2;
     private JGroupsConnector connector1;
     private CommandBus mockCommandBus1;
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
-
-    @BeforeClass
-    public static void startChannels() throws Exception {
-        channel1 = connect();
-        channel2 = connect();
-    }
-
-    @AfterClass
-    public static void stopChannel() {
-        closeSilently(channel1);
-        closeSilently(channel2);
-    }
 
     @Before
     public void setUp() throws Exception {
@@ -56,8 +44,8 @@ public class JGroupsConnectorTest {
 
     @After
     public void tearDown() {
-        channel1.disconnect();
-        channel2.disconnect();
+        closeSilently(channel1);
+        closeSilently(channel2);
     }
 
     @SuppressWarnings("unchecked")
