@@ -18,7 +18,6 @@ public aspect EventHandlerOperationCollectionAspect extends MethodOperationColle
         (execution(void EventListener.handle(*))
          && !within(AnnotationEventListenerAdapter));
 
-
     @Override
     protected Operation createOperation(JoinPoint jp) {
         Operation operation = 
@@ -32,7 +31,6 @@ public aspect EventHandlerOperationCollectionAspect extends MethodOperationColle
         }
         Object event = args[0];
         operation.put("eventType", event.getClass().getName());
-        // TODO: what else do want to add to the operation?
         return operation;
     }
 

@@ -15,7 +15,6 @@ public aspect CommandHandlerOperationCollectionAspect extends MethodOperationCol
         (execution(* org.axonframework.commandhandling.CommandHandler.handle(*, UnitOfWork))
          && !within(AnnotationCommandHandlerAdapter));
 
-
     @Override
     protected Operation createOperation(JoinPoint jp) {
         Operation operation = 
@@ -29,7 +28,6 @@ public aspect CommandHandlerOperationCollectionAspect extends MethodOperationCol
         }
         Object command = args[0];
         operation.put("commandType", command.getClass().getName());
-        // TODO: what else do want to add to the operation?
         return operation;
     }
 
