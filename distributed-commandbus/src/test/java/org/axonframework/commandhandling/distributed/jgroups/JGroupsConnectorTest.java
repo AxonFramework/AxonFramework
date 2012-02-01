@@ -62,7 +62,8 @@ public class JGroupsConnectorTest {
         connector2.connect(80);
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
-        Thread.sleep(250);
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
 
         List<FutureCallback> callbacks = new ArrayList<FutureCallback>();
 
@@ -82,8 +83,15 @@ public class JGroupsConnectorTest {
         assertEquals(100, counter1.get() + counter2.get());
         System.out.println("Node 1 got " + counter1.get());
         System.out.println("Node 2 got " + counter2.get());
-        verify(mockCommandBus1, atMost(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
-        verify(mockCommandBus2, atLeast(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+        verify(mockCommandBus1, atMost(40)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+        verify(mockCommandBus2, atLeast(60)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+    }
+
+    private void waitForConnectorSync() throws InterruptedException {
+        while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
+            // don't have a member for String yet, which means we must wait a little longer
+            Thread.sleep(20);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -100,7 +108,8 @@ public class JGroupsConnectorTest {
         connector2.connect(80);
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
-        Thread.sleep(250);
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
 
         List<FutureCallback> callbacks = new ArrayList<FutureCallback>();
 
