@@ -9,6 +9,8 @@ import org.axonframework.serializer.SimpleSerializedObject;
  * #convert(org.axonframework.serializer.SerializedObject)} method, based on information available through the other
  * methods.
  *
+ * @param <S> The source data type representing the serialized object
+ * @param <T> The target data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
  */

@@ -30,6 +30,7 @@ public interface Serializer {
      *
      * @param object                 The object to serialize
      * @param expectedRepresentation The expected data type representing the serialized object
+     * @param <T>                    The expected data type representing the serialized object
      * @return the instance representing the serialized object.
      */
     <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation);
@@ -39,6 +40,7 @@ public interface Serializer {
      * from the array or modified in any way. The resulting object instance is cast to the expected type.
      *
      * @param serializedObject the instance describing the type of object and the bytes providing the serialized data
+     * @param <T>              The data type of the serialized object
      * @return the serialized object, cast to the expected type
      *
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.

@@ -8,9 +8,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
+ * Utility class for generating hashes for values using several algorithms.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
-public class Digester {
+public final class Digester {
 
     private MessageDigest messageDigest;
 

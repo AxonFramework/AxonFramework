@@ -21,6 +21,7 @@ import org.axonframework.domain.MetaData;
 /**
  * Represents the serialized form of a {@link MetaData} instance.
  *
+ * @param <T> The data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
  */
@@ -32,7 +33,7 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
      * Construct an instance with given <code>bytes</code> representing the serialized form of a {@link MetaData}
      * instance.
      *
-     * @param data data representing the serialized form of a {@link MetaData} instance.
+     * @param data     data representing the serialized form of a {@link MetaData} instance.
      * @param dataType The type of data
      */
     public SerializedMetaData(T data, Class<T> dataType) {

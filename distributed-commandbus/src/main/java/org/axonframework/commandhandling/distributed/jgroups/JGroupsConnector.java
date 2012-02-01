@@ -80,7 +80,7 @@ public class JGroupsConnector implements CommandBusConnector {
     private final JoinCondition joinedCondition = new JoinCondition();
     private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks = new ConcurrentHashMap<String, MemberAwareCommandCallback>();
     private final Set<String> supportedCommandTypes = new CopyOnWriteArraySet<String>();
-    private volatile int loadFactor;
+    private volatile int currentLoadFactor;
     private final JGroupsConnector.MessageReceiver messageReceiver;
 
     /**
@@ -118,7 +118,7 @@ public class JGroupsConnector implements CommandBusConnector {
      * @throws Exception when an error occurs while connecting
      */
     public synchronized void connect(int loadFactor) throws Exception {
-        this.loadFactor = loadFactor;
+        this.currentLoadFactor = loadFactor;
         Assert.isTrue(loadFactor >= 0, "Load Factor must be a positive integer value.");
         Assert.isTrue(channel.getReceiver() == null || channel.getReceiver() == messageReceiver,
                       "The given channel already has a receiver configured. "
@@ -137,7 +137,7 @@ public class JGroupsConnector implements CommandBusConnector {
     private void updateMembership() throws MembershipUpdateFailedException {
         try {
             if (channel.isConnected()) {
-                channel.send(new Message(null, new JoinMessage(loadFactor, new HashSet<String>(supportedCommandTypes)))
+                channel.send(new Message(null, new JoinMessage(currentLoadFactor, new HashSet<String>(supportedCommandTypes)))
                                      .setFlag(Message.Flag.RSVP));
             }
         } catch (Exception e) {

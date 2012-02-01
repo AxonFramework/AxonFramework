@@ -5,9 +5,6 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
  * spread load. Each "physical" CommandBus instance is considered a "segment" of a conceptual distributed CommandBus.
@@ -24,7 +21,6 @@ public class DistributedCommandBus implements CommandBus {
 
     private final RoutingKeyExtractor routingKeyExtractor;
     private final CommandBusConnector connector;
-    private final Set<String> supportedCommands = new CopyOnWriteArraySet<String>();
 
     /**
      * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingKeyExtractor}.

@@ -37,7 +37,7 @@ public class SagaEntry {
 
     @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
     @Id
-    private String sagaId;
+    private String sagaId; // NOSONAR
 
     @Basic
     private String sagaType;

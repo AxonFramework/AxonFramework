@@ -23,6 +23,7 @@ import static java.lang.String.format;
 /**
  * SerializedObject implementation that takes all properties as constructor parameters.
  *
+ * @param <T> The data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
  */

@@ -3,6 +3,7 @@ package org.axonframework.serializer;
 /**
  * Interface describing the structure of a serialized object.
  *
+ * @param <T> The data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
  */
