@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Callback that does absolutely nothing when invoked. For performance reasons, an instance of this callback can be
@@ -25,8 +27,13 @@ import org.axonframework.commandhandling.CommandCallback;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated Use the {@link org.axonframework.commandhandling.CommandBus#dispatch(Object)} method instead to indicate
+ *             that no callback action is required..
  */
+@Deprecated
 public final class NoOpCallback implements CommandCallback<Object> {
+
+    private static final Logger logger = LoggerFactory.getLogger(NoOpCallback.class);
 
     /**
      * A statically available instance of the NoOpCallback. Provided for performance reasons.
@@ -49,5 +56,6 @@ public final class NoOpCallback implements CommandCallback<Object> {
      */
     @Override
     public void onFailure(Throwable cause) {
+        logger.warn("Command processing resulted in an exception.", cause);
     }
 }
