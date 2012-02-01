@@ -251,7 +251,7 @@
         apply(new MyAggregateCreatedEvent());
     }
 
-    public MyAggregateRoot(UUID identifier) {
+    public MyAggregateRoot(AggregateIdentifier identifier) {
         super(identifier);
     }
 
@@ -301,7 +301,7 @@
         apply(new MyAggregateCreatedEvent());
     }
 
-    public MyAggregateRoot(UUID identifier) {
+    public MyAggregateRoot(AggregateIdentifier identifier) {
         super(identifier);
     }
 
