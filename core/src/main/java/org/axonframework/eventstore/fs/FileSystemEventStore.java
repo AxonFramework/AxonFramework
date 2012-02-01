@@ -96,7 +96,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
             DomainEventMessage next = eventsToStore.next();
             out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
             do {
-                SerializedObject serializedObject = eventSerializer.serialize(next);
+                SerializedObject<byte[]> serializedObject = eventSerializer.serialize(next, byte[].class);
                 String timeStamp = next.getTimestamp().toString();
                 writeEventEntry(out, next.getSequenceNumber(), timeStamp, serializedObject);
                 if (eventsToStore.hasNext()) {
@@ -142,7 +142,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         OutputStream fileOutputStream = null;
         try {
 
-            SerializedObject serializedEvent = eventSerializer.serialize(snapshotEvent);
+            SerializedObject<byte[]> serializedEvent = eventSerializer.serialize(snapshotEvent, byte[].class);
 
             long offset = calculateOffset(type, aggregateIdentifier, snapshotEvent.getSequenceNumber());
             long sequenceNumber = snapshotEvent.getSequenceNumber();

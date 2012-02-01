@@ -29,8 +29,6 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 
-import java.nio.charset.Charset;
-
 /**
  * Data needed by different types of event logs.
  *
@@ -73,7 +71,6 @@ class EventEntry {
     /**
      * Charset used for the serialization is usually UTF-8, which is presented by this constant.
      */
-    protected static final Charset UTF8 = Charset.forName("UTF-8");
     private final String aggregateIdentifier;
     private final long sequenceNumber;
     private final String timeStamp;
@@ -96,12 +93,13 @@ class EventEntry {
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
         this.eventIdentifier = event.getIdentifier();
-        SerializedObject serializedPayloadObject = eventSerializer.serialize(event.getPayload());
-        SerializedObject serializedMetaDataObject = eventSerializer.serialize(event.getMetaData());
-        this.serializedPayload = new String(serializedPayloadObject.getData(), UTF8);
+        SerializedObject<String> serializedPayloadObject = eventSerializer.serialize(event.getPayload(), String.class);
+        SerializedObject<String> serializedMetaDataObject = eventSerializer.serialize(event.getMetaData(),
+                                                                                      String.class);
+        this.serializedPayload = serializedPayloadObject.getData();
         this.payoadType = serializedPayloadObject.getType().getName();
         this.payloadRevision = serializedPayloadObject.getType().getRevision();
-        this.serializedMetaData = new String(serializedMetaDataObject.getData(), UTF8);
+        this.serializedMetaData = serializedMetaDataObject.getData();
         this.timeStamp = event.getTimestamp().toString();
     }
 
@@ -135,9 +133,10 @@ class EventEntry {
                 sequenceNumber,
                 new DateTime(timeStamp),
                 new LazyDeserializingObject<Object>(
-                        new SimpleSerializedObject(serializedPayload.getBytes(UTF8), payoadType, payloadRevision),
+                        new SimpleSerializedObject<String>(serializedPayload, String.class, payoadType,
+                                                           payloadRevision),
                         eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData<String>(serializedMetaData, String.class),
                                                       eventSerializer));
     }
 
@@ -148,15 +147,6 @@ class EventEntry {
      */
     public long getSequenceNumber() {
         return sequenceNumber;
-    }
-
-    /**
-     * getter for the aggregate identifier.
-     *
-     * @return AggregateIdentifier for this EventEntry
-     */
-    public String getAggregateIdentifier() {
-        return aggregateIdentifier;
     }
 
     /**
@@ -207,10 +197,13 @@ class EventEntry {
                 aggregateIdentifier,
                 sequenceNumber,
                 new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(new SimpleSerializedObject(serializedPayload.getBytes(UTF8),
-                                                                               payoadType,
-                                                                               payloadRevision), eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
+                new LazyDeserializingObject<Object>(new SimpleSerializedObject<String>(serializedPayload,
+                                                                                       String.class,
+                                                                                       payoadType,
+                                                                                       payloadRevision),
+                                                    eventSerializer),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData<String>(serializedMetaData,
+                                                                                     String.class),
                                                       eventSerializer));
     }
 }

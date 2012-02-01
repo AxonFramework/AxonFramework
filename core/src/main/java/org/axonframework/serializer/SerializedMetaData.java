@@ -18,37 +18,35 @@ package org.axonframework.serializer;
 
 import org.axonframework.domain.MetaData;
 
-import java.io.InputStream;
-import java.util.Arrays;
-
 /**
  * Represents the serialized form of a {@link MetaData} instance.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public class SerializedMetaData implements SerializedObject {
+public class SerializedMetaData<T> implements SerializedObject<T> {
 
-    private final SimpleSerializedObject delegate;
+    private final SimpleSerializedObject<T> delegate;
 
     /**
      * Construct an instance with given <code>bytes</code> representing the serialized form of a {@link MetaData}
      * instance.
      *
-     * @param bytes data representing the serialized form of a {@link MetaData} instance.
+     * @param data data representing the serialized form of a {@link MetaData} instance.
+     * @param dataType The type of data
      */
-    public SerializedMetaData(byte[] bytes) {
-        delegate = new SimpleSerializedObject(Arrays.copyOf(bytes, bytes.length), MetaData.class.getName(), -1);
+    public SerializedMetaData(T data, Class<T> dataType) {
+        delegate = new SimpleSerializedObject<T>(data, dataType, MetaData.class.getName(), -1);
     }
 
     @Override
-    public byte[] getData() {
+    public T getData() {
         return delegate.getData();
     }
 
     @Override
-    public InputStream getStream() {
-        return delegate.getStream();
+    public Class<T> getContentType() {
+        return delegate.getContentType();
     }
 
     @Override
@@ -56,6 +54,7 @@ public class SerializedMetaData implements SerializedObject {
         return delegate.getType();
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object o) {
         if (this == o) {

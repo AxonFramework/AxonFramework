@@ -1,7 +1,7 @@
 package org.axonframework.serializer.converters;
 
-import org.axonframework.serializer.IntermediateRepresentation;
-import org.axonframework.serializer.SimpleIntermediateRepresentation;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
@@ -35,9 +35,10 @@ public class Dom4JToByteArrayConverterTest {
         Document doc = df.createDocument("UTF-8");
         doc.setRootElement(df.createElement("rootElement"));
 
-        SimpleIntermediateRepresentation<Document> original = new SimpleIntermediateRepresentation<Document>(
-                serializedType, Document.class, doc);
-        IntermediateRepresentation<byte[]> actual = testSubject.convert(original);
+        SimpleSerializedObject<Document> original = new SimpleSerializedObject<Document>(doc,
+                                                                                         Document.class,
+                                                                                         serializedType);
+        SerializedObject<byte[]> actual = testSubject.convert(original);
 
         assertNotNull(actual);
         assertNotNull(actual.getData());

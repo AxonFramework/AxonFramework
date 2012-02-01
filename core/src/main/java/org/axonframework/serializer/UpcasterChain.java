@@ -67,8 +67,8 @@ public class UpcasterChain {
      * @return the upcast SerializedObject
      */
     @SuppressWarnings({"unchecked"})
-    public IntermediateRepresentation upcast(SerializedObject serializedObject) {
-        IntermediateRepresentation current = new DefaultIntermediateRepresentation(serializedObject);
+    public SerializedObject upcast(SerializedObject<?> serializedObject) {
+        SerializedObject<?> current = serializedObject;
         for (Upcaster upcaster : upcasters) {
             if (upcaster.canUpcast(current.getType())) {
                 current = ensureCorrectContentType(current, upcaster.expectedRepresentationType());
@@ -96,36 +96,14 @@ public class UpcasterChain {
     }
 
     @SuppressWarnings({"unchecked"})
-    private <T> IntermediateRepresentation<T> ensureCorrectContentType(IntermediateRepresentation<?> current,
+    private <T> SerializedObject<T> ensureCorrectContentType(SerializedObject<?> current,
                                                                        Class<T> expectedContentType) {
         if (!expectedContentType.isAssignableFrom(current.getContentType())) {
             ContentTypeConverter converter = converterFactory.getConverter(current.getContentType(),
                                                                            expectedContentType);
             current = converter.convert(current);
         }
-        return (IntermediateRepresentation<T>) current;
+        return (SerializedObject<T>) current;
     }
 
-    private static class DefaultIntermediateRepresentation implements IntermediateRepresentation<byte[]> {
-        private final SerializedObject serializedObject;
-
-        public DefaultIntermediateRepresentation(SerializedObject serializedObject) {
-            this.serializedObject = serializedObject;
-        }
-
-        @Override
-        public Class<byte[]> getContentType() {
-            return byte[].class;
-        }
-
-        @Override
-        public SerializedType getType() {
-            return serializedObject.getType();
-        }
-
-        @Override
-        public byte[] getData() {
-            return serializedObject.getData();
-        }
-    }
 }

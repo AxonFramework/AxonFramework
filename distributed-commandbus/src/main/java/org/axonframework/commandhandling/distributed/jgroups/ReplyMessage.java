@@ -49,15 +49,15 @@ public class ReplyMessage implements Streamable, Externalizable {
      */
     public ReplyMessage(String commandIdentifier, Object returnValue, Throwable error, Serializer serializer) {
         this.success = error == null;
-        SerializedObject result;
+        SerializedObject<byte[]> result;
         if (success) {
             if (returnValue == null) {
                 result = null;
             } else {
-                result = serializer.serialize(returnValue);
+                result = serializer.serialize(returnValue, byte[].class);
             }
         } else {
-            result = serializer.serialize(error);
+            result = serializer.serialize(error, byte[].class);
         }
         this.commandIdentifier = commandIdentifier;
         if (result != null) {
@@ -107,7 +107,8 @@ public class ReplyMessage implements Streamable, Externalizable {
     }
 
     private Object deserializeResult(Serializer serializer) {
-        return serializer.deserialize(new SimpleSerializedObject(serializedResult, resultType, resultRevision));
+        return serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedResult, byte[].class,
+                                                                         resultType, resultRevision));
     }
 
     /**

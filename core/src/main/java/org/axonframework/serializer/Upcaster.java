@@ -20,8 +20,8 @@ public interface Upcaster<T> {
 
     /**
      * Indicates whether this upcaster is capable of upcasting the given <code>type</code>. Unless this method returns
-     * <code>true</code>, the {@link #upcast(SerializedType)} and {@link #upcast(IntermediateRepresentation)} methods
-     * should not be invoked on this Upcaster instance.
+     * <code>true</code>, the {@link #upcast(SerializedType)} and {@link #upcast(SerializedType)} methods should not be
+     * invoked on this Upcaster instance.
      *
      * @param serializedType The type under investigation
      * @return <code>true</code> if this upcaster can upcast the given serialized type, <code>false</code> otherwise.
@@ -43,7 +43,7 @@ public interface Upcaster<T> {
      * @param intermediateRepresentation The representation of the object to upcast
      * @return the new representation of the object
      */
-    IntermediateRepresentation<?> upcast(IntermediateRepresentation<T> intermediateRepresentation);
+    SerializedObject<?> upcast(SerializedObject<T> intermediateRepresentation);
 
     /**
      * Upcast the given <code>serializedType</code> into its new format. Generally, this involves increasing the

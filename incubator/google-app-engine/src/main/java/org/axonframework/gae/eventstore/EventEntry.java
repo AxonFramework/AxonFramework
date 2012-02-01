@@ -39,6 +39,7 @@ import java.nio.charset.Charset;
  * @author Jettro Coenradie
  */
 public class EventEntry {
+
     private static final String AGGREGATE_IDENTIFIER = "aggregateIdentifier";
     private static final String SEQUENCE_NUMBER = "sequenceNumber";
     private static final String SERIALIZED_EVENT = "serializedEvent";
@@ -74,11 +75,12 @@ public class EventEntry {
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
-        SerializedObject serializedEvent = eventSerializer.serialize(event.getPayload());
+        SerializedObject<byte[]> serializedEvent = eventSerializer.serialize(event.getPayload(), byte[].class);
         this.serializedEvent = new String(serializedEvent.getData(), UTF8);
         this.eventType = serializedEvent.getType().getName();
         this.eventRevision = serializedEvent.getType().getRevision();
-        this.serializedMetaData = new String(eventSerializer.serialize(event.getMetaData()).getData(), UTF8);
+        this.serializedMetaData = new String(eventSerializer.serialize(event.getMetaData(), byte[].class).getData(),
+                                             UTF8);
         this.timeStamp = event.getTimestamp().toString();
     }
 
@@ -106,11 +108,13 @@ public class EventEntry {
                 aggregateIdentifier,
                 sequenceNumber,
                 new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(new SimpleSerializedObject(serializedEvent.getBytes(UTF8),
-                                                                               eventType,
-                                                                               eventRevision),
+                new LazyDeserializingObject<Object>(new SimpleSerializedObject<byte[]>(serializedEvent.getBytes(UTF8),
+                                                                                       byte[].class,
+                                                                                       eventType,
+                                                                                       eventRevision),
                                                     eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData.getBytes(UTF8)),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData<byte[]>(serializedMetaData.getBytes(UTF8),
+                                                                                     byte[].class),
                                                       eventSerializer)
         );
     }
@@ -122,27 +126,6 @@ public class EventEntry {
      */
     public long getSequenceNumber() {
         return sequenceNumber;
-    }
-
-    /**
-     * getter for the aggregate identifier.
-     *
-     * @return AggregateIdentifier for this EventEntry
-     */
-    public Object getAggregateIdentifier() {
-        return aggregateIdentifier;
-    }
-
-    public String getAggregateType() {
-        return aggregateType;
-    }
-
-    public String getSerializedEvent() {
-        return serializedEvent;
-    }
-
-    public String getTimeStamp() {
-        return timeStamp;
     }
 
     Entity asEntity() {

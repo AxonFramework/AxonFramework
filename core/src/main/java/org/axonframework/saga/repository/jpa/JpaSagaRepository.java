@@ -149,7 +149,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected void updateSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        SerializedObject serializedSaga = serializer.serialize(saga);
+        SerializedObject<byte[]> serializedSaga = serializer.serialize(saga, byte[].class);
         int updates = entityManager.createQuery(
                 "UPDATE SagaEntry se SET se.serializedSaga = :serializedSaga, se"
                         + ".sagaType = :sagaType, "

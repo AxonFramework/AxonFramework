@@ -27,7 +27,7 @@ import org.axonframework.serializer.SerializedObject;
  */
 class SnapshotEventEntry {
 
-    private final SerializedObject serializedEvent;
+    private final SerializedObject<byte[]> serializedEvent;
     private final long offset;
     private final long sequenceNumber;
     private final String timeStamp;
@@ -42,7 +42,7 @@ class SnapshotEventEntry {
      * @param timeStamp       The ISO8601 timestamp of the event
      * @param offset          The offset that the event allows in the event log
      */
-    public SnapshotEventEntry(SerializedObject serializedEvent, long sequenceNumber, String timeStamp, long offset) {
+    public SnapshotEventEntry(SerializedObject<byte[]> serializedEvent, long sequenceNumber, String timeStamp, long offset) {
         this.offset = offset;
         this.timeStamp = timeStamp;
         this.serializedEvent = serializedEvent;
@@ -54,7 +54,7 @@ class SnapshotEventEntry {
      *
      * @return An InputStream accessing the bytes.
      */
-    public SerializedObject getPayload() {
+    public SerializedObject<byte[]> getPayload() {
         return serializedEvent;
     }
 
@@ -67,15 +67,6 @@ class SnapshotEventEntry {
      */
     public long getSequenceNumber() {
         return sequenceNumber;
-    }
-
-    /**
-     * Returns the size of the serialized object (the number of bytes).
-     *
-     * @return the size of the serialized object in bytes.
-     */
-    public int getEventSize() {
-        return serializedEvent.getData().length;
     }
 
     /**

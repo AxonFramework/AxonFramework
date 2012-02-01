@@ -30,18 +30,18 @@ import static org.mockito.Mockito.*;
  */
 public class UpcasterChainTest {
 
-    private SerializedObject object1;
-    private SerializedObject object2;
-    private SerializedObject object3;
-    private IntermediateRepresentation intermediate1;
-    private IntermediateRepresentation intermediate2;
-    private IntermediateRepresentation intermediate3;
+    private SerializedObject<byte[]> object1;
+    private SerializedObject<byte[]> object2;
+    private SerializedObject<byte[]> object3;
+    private SerializedObject intermediate1;
+    private SerializedObject intermediate2;
+    private SerializedObject intermediate3;
 
     @Before
     public void setUp() throws Exception {
-        object1 = new SimpleSerializedObject("object1".getBytes(), "type1", 0);
-        object2 = new SimpleSerializedObject("object1".getBytes(), "type2", 1);
-        object3 = new SimpleSerializedObject("object1".getBytes(), "type3", 2);
+        object1 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type1", 0);
+        object2 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type2", 1);
+        object3 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type3", 2);
         intermediate1 = new MockIntermediateRepresentation(object1, byte[].class);
         intermediate2 = new MockIntermediateRepresentation(object2, byte[].class);
         intermediate3 = new MockIntermediateRepresentation(object3, byte[].class);
@@ -81,21 +81,21 @@ public class UpcasterChainTest {
 
         UpcasterChain chain = new UpcasterChain(null, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
 
-        IntermediateRepresentation actual1 = chain.upcast(object1);
+        SerializedObject actual1 = chain.upcast(object1);
         assertEquals(object3.getType(), actual1.getType());
 
-        IntermediateRepresentation actual2 = chain.upcast(object2);
+        SerializedObject actual2 = chain.upcast(object2);
         assertEquals(object3.getType(), actual2.getType());
     }
 
     @Test
     public void testUpcastObject_WithTypeConversion() {
 
-        IntermediateRepresentation intermediate1_stream = new MockIntermediateRepresentation(object1,
-                                                                                             InputStream.class);
-        IntermediateRepresentation intermediate2_bytes = new MockIntermediateRepresentation(object2, byte[].class);
-        IntermediateRepresentation intermediate2_stream = new MockIntermediateRepresentation(object2,
-                                                                                             InputStream.class);
+        SerializedObject intermediate1_stream = new MockIntermediateRepresentation(object1,
+                                                                                   InputStream.class);
+        SerializedObject intermediate2_bytes = new MockIntermediateRepresentation(object2, byte[].class);
+        SerializedObject intermediate2_stream = new MockIntermediateRepresentation(object2,
+                                                                                   InputStream.class);
         Upcaster mockUpcaster12 = new StubUpcaster(intermediate1.getType(), intermediate2_stream, InputStream.class);
 
         ConverterFactory mockConverterFactory = mock(ConverterFactory.class);
@@ -106,18 +106,18 @@ public class UpcasterChainTest {
 
         when(mockByteToStreamConverter.expectedSourceType()).thenReturn(byte[].class);
         when(mockStreamToByteConverter.targetType()).thenReturn(InputStream.class);
-        when(mockByteToStreamConverter.convert(isA(IntermediateRepresentation.class)))
+        when(mockByteToStreamConverter.convert(isA(SerializedObject.class)))
                 .thenReturn(intermediate1_stream);
         when(mockStreamToByteConverter.convert(intermediate2_stream))
                 .thenReturn(intermediate2_bytes);
 
         UpcasterChain chain = new UpcasterChain(mockConverterFactory, mockUpcaster12);
 
-        IntermediateRepresentation actual1 = chain.upcast(object1);
+        SerializedObject actual1 = chain.upcast(object1);
         verify(mockConverterFactory).getConverter(byte[].class, InputStream.class);
         verify(mockConverterFactory, never()).getConverter(InputStream.class, byte[].class);
-        verify(mockStreamToByteConverter, never()).convert(isA(IntermediateRepresentation.class));
-        verify(mockByteToStreamConverter).convert(isA(IntermediateRepresentation.class));
+        verify(mockStreamToByteConverter, never()).convert(isA(SerializedObject.class));
+        verify(mockByteToStreamConverter).convert(isA(SerializedObject.class));
         assertEquals(object2.getType(), actual1.getType());
         assertArrayEquals(object2.getData(), (byte[]) actual1.getData());
     }
@@ -139,7 +139,7 @@ public class UpcasterChainTest {
         }
     }
 
-    private class MockIntermediateRepresentation implements IntermediateRepresentation {
+    private class MockIntermediateRepresentation implements SerializedObject {
 
         private final Class<?> contentType;
         private final SerializedObject serializedObject;
@@ -167,11 +167,11 @@ public class UpcasterChainTest {
 
     private class StubUpcaster implements Upcaster {
 
-        private IntermediateRepresentation upcastResult;
+        private SerializedObject upcastResult;
         private SerializedType expectedType;
         private Class<?> contentType;
 
-        public StubUpcaster(SerializedType expectedType, IntermediateRepresentation upcastResult,
+        public StubUpcaster(SerializedType expectedType, SerializedObject upcastResult,
                             Class<?> contentType) {
             this.contentType = contentType;
             this.expectedType = expectedType;
@@ -189,7 +189,7 @@ public class UpcasterChainTest {
         }
 
         @Override
-        public IntermediateRepresentation upcast(IntermediateRepresentation intermediateRepresentation) {
+        public SerializedObject upcast(SerializedObject intermediateRepresentation) {
             assertEquals(expectedType, intermediateRepresentation.getType());
             return upcastResult;
         }

@@ -16,9 +16,6 @@
 
 package org.axonframework.serializer;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 /**
  * Interface describing a serialization mechanism. Implementations can serialize objects of given type <code>T</code>
  * to an output stream and read the object back in from an input stream.
@@ -29,24 +26,13 @@ import java.io.OutputStream;
 public interface Serializer {
 
     /**
-     * Serializes the given <code>object</code> to the given <code>outputStream</code>. This method does not close the
-     * <code>outputStream</code> after writing the <code>object</code>.
-     *
-     * @param object       The object to serialize
-     * @param outputStream The outputStream to write the serialized data to
-     * @return The SerializedType instance describing the content written to the OutputStream
-     *
-     * @throws IOException when an error occurs while writing to the stream
-     */
-    SerializedType serialize(Object object, OutputStream outputStream) throws IOException;
-
-    /**
      * Serialize the given <code>object</code> into a byte[].
      *
-     * @param object The object to serialize
+     * @param object                 The object to serialize
+     * @param expectedRepresentation The expected data type representing the serialized object
      * @return the instance representing the serialized object.
      */
-    SerializedObject serialize(Object object);
+    <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation);
 
     /**
      * Deserializes the first object read from the given <code>bytes</code>. The <code>bytes</code> are not consumed
@@ -57,7 +43,7 @@ public interface Serializer {
      *
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.
      */
-    Object deserialize(SerializedObject serializedObject);
+    <T> Object deserialize(SerializedObject<T> serializedObject);
 
     /**
      * Returns the class for the given type identifier. The result of this method must guarantee that the deserialized

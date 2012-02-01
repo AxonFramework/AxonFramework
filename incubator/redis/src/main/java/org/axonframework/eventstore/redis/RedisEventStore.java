@@ -58,7 +58,8 @@ public class RedisEventStore implements EventStore {
             Transaction multi = jedis.multi();
             while (events.hasNext()) {
                 DomainEventMessage domainEvent = events.next();
-                multi.rpush(new String(key, UTF8), new String(eventSerializer.serialize(domainEvent).getData(), UTF8));
+                multi.rpush(new String(key, UTF8), new String(eventSerializer.serialize(domainEvent, byte[].class)
+                                                                             .getData(), UTF8));
             }
             multi.exec();
 //                }

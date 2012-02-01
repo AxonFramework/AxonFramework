@@ -3,10 +3,9 @@ package org.axonframework.serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * ConverterFactory implementation that will combine converters to form chains of converters to be able to convert
@@ -22,21 +21,28 @@ import java.util.ServiceLoader;
 public class ChainingConverterFactory implements ConverterFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(ChainingConverterFactory.class);
-    private final Deque<ContentTypeConverter<?, ?>> converters = new ArrayDeque<ContentTypeConverter<?, ?>>();
+    private final List<ContentTypeConverter<?, ?>> converters = new CopyOnWriteArrayList<ContentTypeConverter<?, ?>>();
 
     /**
      * Initialize a new ChainingConverterFactory. Will autodetect all converters mentioned in
      * <code>/META-INF/services/org.axonframework.serializer.ContentTypeConverter</code> files on the class path.
+     * <p/>
+     * Instances of ChainingConverterFactory are safe for use in a multi-threaded environment, with exception of the
+     * {@link #registerConverter(ContentTypeConverter)} method.
      */
     public ChainingConverterFactory() {
         ServiceLoader<ContentTypeConverter> converterLoader = ServiceLoader.load(ContentTypeConverter.class);
         for (ContentTypeConverter converter : converterLoader) {
-            converters.addFirst(converter);
+            converters.add(converter);
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <S, T> ContentTypeConverter getConverter(Class<S> sourceContentType, Class<T> targetContentType) {
+    public <S, T> ContentTypeConverter<S, T> getConverter(Class<S> sourceContentType, Class<T> targetContentType) {
+        if (sourceContentType.equals(targetContentType)) {
+            return new NoConversion(sourceContentType);
+        }
         for (ContentTypeConverter converter : converters) {
             try {
                 if (converter.expectedSourceType().isAssignableFrom(sourceContentType) &&
@@ -51,7 +57,7 @@ public class ChainingConverterFactory implements ConverterFactory {
         }
         ChainedConverter<S, T> converter = ChainedConverter.calculateChain(sourceContentType, targetContentType,
                                                                            converters);
-        converters.addFirst(converter);
+        converters.add(0, converter);
         return converter;
     }
 
@@ -67,7 +73,7 @@ public class ChainingConverterFactory implements ConverterFactory {
      * @param converter the converter to register.
      */
     public void registerConverter(ContentTypeConverter converter) {
-        converters.addFirst(converter);
+        converters.add(0, converter);
     }
 
     /**
@@ -80,6 +86,35 @@ public class ChainingConverterFactory implements ConverterFactory {
     public void setAdditionalConverters(List<ContentTypeConverter> additionalConverters) {
         for (ContentTypeConverter converter : additionalConverters) {
             registerConverter(converter);
+        }
+    }
+
+    private static class NoConversion<T> implements ContentTypeConverter<T, T> {
+
+        private final Class<T> type;
+
+        public NoConversion(Class<T> type) {
+            this.type = type;
+        }
+
+        @Override
+        public Class<T> expectedSourceType() {
+            return type;
+        }
+
+        @Override
+        public Class<T> targetType() {
+            return type;
+        }
+
+        @Override
+        public SerializedObject<T> convert(SerializedObject<T> original) {
+            return original;
+        }
+
+        @Override
+        public T convert(T original) {
+            return original;
         }
     }
 }

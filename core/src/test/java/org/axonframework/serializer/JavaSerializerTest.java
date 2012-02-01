@@ -20,7 +20,8 @@ public class JavaSerializerTest {
 
     @Test
     public void testSerializeAndDeserialize() {
-        SerializedObject serializedObject = testSubject.serialize(new MySerializableObject("hello"));
+        SerializedObject<byte[]> serializedObject = testSubject.serialize(new MySerializableObject("hello"),
+                                                                          byte[].class);
         assertEquals(MySerializableObject.class.getName(), serializedObject.getType().getName());
         assertEquals(0, serializedObject.getType().getRevision());
 
@@ -41,6 +42,7 @@ public class JavaSerializerTest {
     }
 
     private static class MySerializableObject implements Serializable {
+
         private static final long serialVersionUID = 2166108932776672373L;
         private String someProperty;
 

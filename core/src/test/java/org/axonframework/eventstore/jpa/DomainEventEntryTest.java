@@ -38,8 +38,10 @@ import static org.mockito.Mockito.*;
 public class DomainEventEntryTest {
 
     private DomainEventMessage mockDomainEvent;
-    private SerializedObject mockPayload = new SimpleSerializedObject("PayloadBytes".getBytes(), "Mock", 0);
-    private SerializedObject mockMetaData = new SerializedMetaData("MetaDataBytes".getBytes());
+    private SerializedObject<byte[]> mockPayload = new SimpleSerializedObject<byte[]>("PayloadBytes".getBytes(),
+                                                                                      byte[].class, "Mock", 0);
+    private SerializedObject<byte[]> mockMetaData = new SerializedMetaData<byte[]>("MetaDataBytes".getBytes(),
+                                                                                   byte[].class);
     private Serializer mockSerializer;
     private MetaData metaData;
 
@@ -49,7 +51,7 @@ public class DomainEventEntryTest {
         mockSerializer = mock(Serializer.class);
         metaData = new MetaData(Collections.singletonMap("Key", "Value"));
         when(mockSerializer.deserialize(mockPayload)).thenReturn("Payload");
-        when(mockSerializer.deserialize(mockMetaData)).thenReturn(metaData);
+        when(mockSerializer.deserialize(isA(SerializedMetaData.class))).thenReturn(metaData);
     }
 
     @Test
@@ -79,7 +81,8 @@ public class DomainEventEntryTest {
         verify(mockSerializer).deserialize(mockPayload);
         verify(mockSerializer, never()).deserialize(mockMetaData);
 
-        assertEquals(metaData, domainEvent.getMetaData());
-        verify(mockSerializer).deserialize(mockMetaData);
+        MetaData actual = domainEvent.getMetaData();
+        verify(mockSerializer).deserialize(isA(SerializedMetaData.class));
+        assertEquals(metaData, actual);
     }
 }

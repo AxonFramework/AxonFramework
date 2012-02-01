@@ -54,8 +54,8 @@ public class DispatchMessage implements Streamable, Externalizable {
     public DispatchMessage(CommandMessage<?> commandMessage, Serializer serializer, boolean expectReply) {
         this.commandIdentifier = commandMessage.getIdentifier();
         this.expectReply = expectReply;
-        SerializedObject payload = serializer.serialize(commandMessage.getPayload());
-        SerializedObject metaData = serializer.serialize(commandMessage.getMetaData());
+        SerializedObject<byte[]> payload = serializer.serialize(commandMessage.getPayload(), byte[].class);
+        SerializedObject<byte[]> metaData = serializer.serialize(commandMessage.getMetaData(), byte[].class);
         payloadType = payload.getType().getName();
         payloadRevision = payload.getType().getRevision();
         serializedPayload = payload.getData();
@@ -78,10 +78,12 @@ public class DispatchMessage implements Streamable, Externalizable {
      * @return the CommandMessage wrapped in this Message
      */
     public CommandMessage<?> getCommandMessage(Serializer serializer) {
-        final Object payload = serializer.deserialize(new SimpleSerializedObject(serializedPayload,
+        final Object payload = serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedPayload,
+                                                                                 byte[].class,
                                                                                  payloadType,
                                                                                  payloadRevision));
-        final MetaData metaData = (MetaData) serializer.deserialize(new SerializedMetaData(serializedMetaData));
+        final MetaData metaData = (MetaData) serializer.deserialize(new SerializedMetaData<byte[]>(serializedMetaData,
+                                                                                                   byte[].class));
         return new GenericCommandMessage<Object>(commandIdentifier, payload, metaData);
     }
 

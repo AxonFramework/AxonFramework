@@ -42,8 +42,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -187,14 +185,11 @@ public class JpaEventStoreTest {
         }
         testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
         final Serializer serializer = new Serializer() {
-            @Override
-            public SerializedType serialize(Object object, OutputStream outputStream) throws IOException {
-                throw new UnsupportedOperationException("Not implemented yet");
-            }
 
             @Override
-            public SerializedObject serialize(Object object) {
-                return new SimpleSerializedObject("this ain't gonna work".getBytes(), "failingType", 0);
+            public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
+                Assert.assertEquals(byte[].class, expectedType);
+                return new SimpleSerializedObject("this ain't gonna work".getBytes(), byte[].class, "failingType", 0);
             }
 
             @Override
@@ -216,10 +211,10 @@ public class JpaEventStoreTest {
                 (long) 30,
                 "Mock contents", MetaData.emptyInstance()
         );
-        SnapshotEventEntry entry = new SnapshotEventEntry("test",
-                                                          stubDomainEvent,
-                                                          serializer.serialize(stubDomainEvent.getPayload()),
-                                                          serializer.serialize(stubDomainEvent.getMetaData()));
+        SnapshotEventEntry entry = new SnapshotEventEntry(
+                "test", stubDomainEvent,
+                serializer.serialize(stubDomainEvent.getPayload(), byte[].class),
+                serializer.serialize(stubDomainEvent.getMetaData(), byte[].class));
         entityManager.persist(entry);
         entityManager.flush();
         entityManager.clear();
@@ -238,15 +233,13 @@ public class JpaEventStoreTest {
         }
         testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
         final Serializer serializer = new Serializer() {
-            @Override
-            public SerializedType serialize(Object object, OutputStream outputStream) throws IOException {
-                throw new UnsupportedOperationException("Not implemented yet");
-            }
 
             @Override
-            public SerializedObject serialize(Object object) {
+            public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
                 // this will cause InstantiationError, since it is an interface
+                Assert.assertEquals(byte[].class, expectedType);
                 return new SimpleSerializedObject("<org.axonframework.eventhandling.EventListener />".getBytes(),
+                                                  byte[].class,
                                                   "failingType",
                                                   0);
             }
@@ -270,10 +263,10 @@ public class JpaEventStoreTest {
                 (long) 30,
                 "Mock contents", MetaData.emptyInstance()
         );
-        SnapshotEventEntry entry = new SnapshotEventEntry("test",
-                                                          stubDomainEvent,
-                                                          serializer.serialize(stubDomainEvent.getPayload()),
-                                                          serializer.serialize(stubDomainEvent.getMetaData()));
+        SnapshotEventEntry entry = new SnapshotEventEntry(
+                "test", stubDomainEvent,
+                serializer.serialize(stubDomainEvent.getPayload(), byte[].class),
+                serializer.serialize(stubDomainEvent.getMetaData(), byte[].class));
         entityManager.persist(entry);
         entityManager.flush();
         entityManager.clear();
@@ -504,8 +497,8 @@ public class JpaEventStoreTest {
         verify(eventEntryStore).loadLastSnapshotEvent("test", "1", entityManager);
     }
 
-    private SerializedObject mockSerializedObject(byte[] bytes) {
-        return new SimpleSerializedObject(bytes, "mock", 0);
+    private SerializedObject<byte[]> mockSerializedObject(byte[] bytes) {
+        return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "mock", 0);
     }
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {

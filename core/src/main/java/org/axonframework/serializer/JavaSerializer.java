@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 
 /**
  * Serializer implementation that uses Java serialization to serialize and deserialize object instances. This
@@ -40,33 +39,39 @@ import java.io.OutputStream;
 public class JavaSerializer implements Serializer {
 
     private static final Logger logger = LoggerFactory.getLogger(JavaSerializer.class);
+    private final ConverterFactory converterFactory = new ChainingConverterFactory();
 
-    @SuppressWarnings({"NonSerializableObjectPassedToObjectStream"})
     @Override
-    public SerializedType serialize(Object object, OutputStream outputStream) throws IOException {
+    public <T> SerializedObject<T> serialize(Object instance, Class<T> expectedType) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            ObjectOutputStream oos = new ObjectOutputStream(outputStream);
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
             try {
-                oos.writeObject(object);
+                oos.writeObject(instance);
             } finally {
                 oos.flush();
             }
         } catch (IOException e) {
             throw new SerializationException("An exception occurred writing serialized data to the output stream", e);
         }
-        return new SimpleSerializedType(object.getClass().getName(), revisionOf(object.getClass()));
+        new SimpleSerializedType(instance.getClass().getName(), revisionOf(instance.getClass()));
+        T converted = converterFactory.getConverter(byte[].class, expectedType)
+                                                    .convert(baos.toByteArray());
+        return new SimpleSerializedObject<T>(converted, expectedType, instance.getClass().getName(),
+                                             revisionOf(instance.getClass()));
     }
 
     @Override
-    public SerializedObject serialize(Object instance) {
-        return serializeObject(instance);
-    }
-
-    @Override
-    public Object deserialize(SerializedObject serializedObject) {
-        InputStream stream = serializedObject.getStream();
+    public <T> Object deserialize(SerializedObject<T> serializedObject) {
+        SerializedObject<InputStream> converted = converterFactory.getConverter(serializedObject.getContentType(),
+                                                                                InputStream.class)
+                                                                  .convert(serializedObject);
+        InputStream stream = converted.getData();
         try {
-            return deserialize(stream);
+            ObjectInputStream ois = new ObjectInputStream(stream);
+            return ois.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new SerializationException("The theoretically impossible has just happened: "
                                                      + "An IOException while reading to a ByteArrayInputStream.", e);
@@ -101,27 +106,5 @@ public class JavaSerializer implements Serializer {
     protected int revisionOf(Class<?> type) {
         Revision revision = type.getAnnotation(Revision.class);
         return revision == null ? 0 : revision.value();
-    }
-
-    private SerializedObject serializeObject(Object instance) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            serialize(instance, baos);
-        } catch (IOException e) {
-            throw new SerializationException("The theoretically impossible has just happened: "
-                                                     + "An IOException while writing to a ByteArrayOutputStream.", e);
-        }
-        return new SimpleSerializedObject(baos.toByteArray(), instance.getClass().getName(),
-                                          revisionOf(instance.getClass()));
-    }
-
-    private Object deserialize(InputStream inputStream) throws IOException {
-        ObjectInputStream ois;
-        try {
-            ois = new ObjectInputStream(inputStream);
-            return ois.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
-        }
     }
 }
