@@ -143,7 +143,7 @@ public class JGroupsConnectorTest {
     }
 
     private static JChannel connect() throws Exception {
-        return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp.xml");
+        return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_static.xml");
     }
 
     private static class CountingCommandHandler<T> implements CommandHandler<T> {
