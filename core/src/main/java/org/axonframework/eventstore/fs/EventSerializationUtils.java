@@ -80,9 +80,10 @@ abstract class EventSerializationUtils {
             logger.warn("Failed to read the required amount of bytes from the underlying stream.");
             return null;
         }
-        return new EventEntry(sequenceNumber, timeStamp, new SimpleSerializedObject(serializedEventData,
-                                                                                    payloadType,
-                                                                                    eventRevision));
+        return new EventEntry(sequenceNumber, timeStamp, new SimpleSerializedObject<byte[]>(serializedEventData,
+                                                                                            byte[].class,
+                                                                                            payloadType,
+                                                                                            eventRevision));
     }
 
     /**
@@ -98,7 +99,7 @@ abstract class EventSerializationUtils {
      * @throws IOException when an error occurs writing to the output stream.
      */
     public static void writeEventEntry(OutputStream outputStream, long sequenceNumber, String timeStamp,
-                                       SerializedObject serializedEvent)
+                                       SerializedObject<byte[]> serializedEvent)
             throws IOException {
         BinaryEntryOutputStream out = new BinaryEntryOutputStream(outputStream);
         out.writeNumber(LATEST_ENTRY_VERSION);
@@ -182,7 +183,7 @@ abstract class EventSerializationUtils {
         String type = in.readString();
         int revision = (int) in.readNumber();
         byte[] serializedEvent = in.readBytes();
-        return new SnapshotEventEntry(new SimpleSerializedObject(serializedEvent, type, revision),
+        return new SnapshotEventEntry(new SimpleSerializedObject<byte[]>(serializedEvent, byte[].class, type, revision),
                                       sequenceNumber,
                                       timeStamp,
                                       offset);

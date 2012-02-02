@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -29,14 +30,15 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  * Upon successful execution of the command, the transaction is committed. If execution fails, the UnitOfWork and the
  * transaction are rolled back.
  *
- * @author Allard Buijze
  * @param <T> The type of object representing the transaction
+ * @author Allard Buijze
  * @since 0.6
  */
 public abstract class TransactionInterceptor<T> implements CommandHandlerInterceptor {
 
     @Override
-    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain) throws Throwable {
+    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain interceptorChain)
+            throws Throwable {
         T transaction = startTransaction();
         CurrentUnitOfWork.get().registerListener(new TransactionalUnitOfWork(transaction));
         return interceptorChain.proceed();

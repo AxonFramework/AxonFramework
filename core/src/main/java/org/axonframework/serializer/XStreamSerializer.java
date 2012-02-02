@@ -38,7 +38,6 @@ import org.joda.time.DateTime;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
@@ -143,28 +142,14 @@ public class XStreamSerializer implements Serializer {
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * This implementation marshals the given <code>object</code> to Compact XML (see {@link
-     * com.thoughtworks.xstream.io.xml.CompactWriter}) and write the bytes to the given <code>outputStream</code>.
-     * Bytes are written using the character set provided during initialization of the serializer.
-     *
-     * @see com.thoughtworks.xstream.io.xml.CompactWriter
      */
     @Override
-    public SerializedType serialize(Object object, OutputStream outputStream) {
-        xStream.marshal(object, new CompactWriter(new OutputStreamWriter(outputStream, charset)));
-        return new SimpleSerializedType(typeIdentifierOf(object.getClass()), revisionOf(object.getClass()));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SerializedObject serialize(Object object) {
+    public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        serialize(object, baos);
-        return new SimpleSerializedObject(baos.toByteArray(), typeIdentifierOf(object.getClass()),
-                                          revisionOf(object.getClass()));
+        xStream.marshal(object, new CompactWriter(new OutputStreamWriter(baos, charset)));
+        T converted = converterFactory.getConverter(byte[].class, expectedType).convert(baos.toByteArray());
+        return new SimpleSerializedObject<T>(converted, expectedType, typeIdentifierOf(object.getClass()),
+                                             revisionOf(object.getClass()));
     }
 
     /**
@@ -190,16 +175,16 @@ public class XStreamSerializer implements Serializer {
     @SuppressWarnings({"unchecked"})
     @Override
     public List<Object> deserialize(SerializedObject serializedObject) {
-        List<IntermediateRepresentation> upcastedSerializedObjects = upcasters.upcast(serializedObject);
+        List<SerializedObject> upcastedSerializedObjects = upcasters.upcast(serializedObject);
         
         List<Object> deserializedObjects = new ArrayList<Object>();
-        for(IntermediateRepresentation upcastedSerializedObject : upcastedSerializedObjects) {
+        for(SerializedObject upcastedSerializedObject : upcastedSerializedObjects) {
             if ("org.dom4j.Document".equals(upcastedSerializedObject.getContentType().getName())) {
                 deserializedObjects.add(xStream.unmarshal(new Dom4JReader((Document) upcastedSerializedObject.getData())));
             } else {
                 ContentTypeConverter converter =
                         converterFactory.getConverter(upcastedSerializedObject.getContentType(), InputStream.class);
-                IntermediateRepresentation convertedUpcastedSerializedObject =
+                SerializedObject convertedUpcastedSerializedObject =
                         converter.convert(upcastedSerializedObject);
 
                 deserializedObjects.add(xStream.fromXML(

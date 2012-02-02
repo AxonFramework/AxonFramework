@@ -74,6 +74,21 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     }
 
     /**
+     * Create a CommandMessage with the given <code>command</code> as payload and a custom chosen
+     * <code>identifier</code>. Use this constructor to reconstruct instances of existing command messages, which have
+     * already been assigned an identifier.
+     *
+     * @param identifier  the unique identifier of this message
+     * @param command     the payload for the Message
+     * @param newMetaData The meta data for this message
+     */
+    public GenericCommandMessage(String identifier, T command, Map<String, Object> newMetaData) {
+        this.identifier = identifier;
+        this.command = command;
+        this.metaData = MetaData.from(newMetaData);
+    }
+
+    /**
      * Copy constructor that allows creation of a new GenericCommandMessage with modified metaData. All information
      * from the <code>original</code> is copied, except for the metaData.
      *

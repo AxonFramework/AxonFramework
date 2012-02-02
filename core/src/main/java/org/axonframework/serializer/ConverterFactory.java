@@ -23,5 +23,5 @@ public interface ConverterFactory {
      * @throws CannotConvertBetweenTypesException
      *          when no suitable converter can be found
      */
-    <S, T> ContentTypeConverter getConverter(Class<S> sourceContentType, Class<T> targetContentType);
+    <S, T> ContentTypeConverter<S, T> getConverter(Class<S> sourceContentType, Class<T> targetContentType);
 }

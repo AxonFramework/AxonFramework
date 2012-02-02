@@ -1,9 +1,6 @@
 package org.axonframework.serializer.converters;
 
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.serializer.ContentTypeConverter;
-import org.axonframework.serializer.IntermediateRepresentation;
-import org.axonframework.serializer.SimpleIntermediateRepresentation;
 import org.dom4j.Document;
 
 /**
@@ -13,7 +10,7 @@ import org.dom4j.Document;
  * @author Allard Buijze
  * @since 2.0
  */
-public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document, byte[]> {
+public class Dom4JToByteArrayConverter extends AbstractContentTypeConverter<Document, byte[]> {
 
     @Override
     public Class<Document> expectedSourceType() {
@@ -26,8 +23,7 @@ public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document,
     }
 
     @Override
-    public IntermediateRepresentation<byte[]> convert(final IntermediateRepresentation<Document> original) {
-        return new SimpleIntermediateRepresentation<byte[]>(original.getType(), byte[].class,
-                                                            original.getData().asXML().getBytes(IOUtils.UTF8));
+    public byte[] convert(Document original) {
+        return original.asXML().getBytes(IOUtils.UTF8);
     }
 }

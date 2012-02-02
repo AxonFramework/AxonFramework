@@ -114,7 +114,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
                                                                      long sequenceNumber,
                                                                      DateTime timestamp,
                                                                      SerializedObject serializedPayload,
-                                                                     SerializedMetaData serializedMetaData) {
+                                                                     SerializedObject serializedMetaData) {
         return createDomainEventMessages(eventSerializer,
                                          eventSerializer,
                                          eventIdentifier,
@@ -132,7 +132,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
                                                                      long sequenceNumber,
                                                                      DateTime timeStamp,
                                                                      SerializedObject serializedPayload,
-                                                                     SerializedMetaData serializedMetaData) {
+                                                                     SerializedObject serializedMetaData) {
         LazyDeserializingObject<Object> lazyDeserializedPayload =
                 new LazyDeserializingObject<Object>(serializedPayload, payloadSerializer);
         LazyDeserializingObject<MetaData> lazyDeserializedMetadata =

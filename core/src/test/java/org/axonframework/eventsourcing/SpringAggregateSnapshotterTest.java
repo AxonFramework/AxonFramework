@@ -66,11 +66,6 @@ public class SpringAggregateSnapshotterTest {
                     public String getTypeIdentifier() {
                         return "stub";
                     }
-
-                    @Override
-                    public Class getAggregateType() {
-                        return StubAggregate.class;
-                    }
                 }));
         testSubject.setEventStore(mockEventStore);
         testSubject.afterPropertiesSet();

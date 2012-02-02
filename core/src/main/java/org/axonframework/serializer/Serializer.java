@@ -31,35 +31,26 @@ import java.util.List;
 public interface Serializer {
 
     /**
-     * Serializes the given <code>object</code> to the given <code>outputStream</code>. This method does not close the
-     * <code>outputStream</code> after writing the <code>object</code>.
-     *
-     * @param object       The object to serialize
-     * @param outputStream The outputStream to write the serialized data to
-     * @return The SerializedType instance describing the content written to the OutputStream
-     *
-     * @throws IOException when an error occurs while writing to the stream
-     */
-    SerializedType serialize(Object object, OutputStream outputStream) throws IOException;
-
-    /**
      * Serialize the given <code>object</code> into a byte[].
      *
-     * @param object The object to serialize
+     * @param object                 The object to serialize
+     * @param expectedRepresentation The expected data type representing the serialized object
+     * @param <T>                    The expected data type representing the serialized object
      * @return the instance representing the serialized object.
      */
-    SerializedObject serialize(Object object);
+    <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation);
 
     /**
      * Deserializes the first object read from the given <code>bytes</code>. The <code>bytes</code> are not consumed
      * from the array or modified in any way. The resulting object instances are cast to the expected types.
      *
      * @param serializedObject the instance describing the type of object and the bytes providing the serialized data
-     * @return the serialized object, cast to the expected types and split into zero, one or more instances
+     * @param <T>              The data type of the serialized object
+     * @return the serialized object, cast to the expected type
      *
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.
      */
-    List<Object> deserialize(SerializedObject serializedObject);
+    <T> List<Object> deserialize(SerializedObject<T> serializedObject);
 
     /**
      * Returns the classes for the given type identifier. The result of this method must guarantee that the deserialized

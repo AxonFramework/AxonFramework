@@ -37,7 +37,7 @@ public class SagaEntry {
 
     @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
     @Id
-    private String sagaId;
+    private String sagaId; // NOSONAR
 
     @Basic
     private String sagaType;
@@ -45,7 +45,6 @@ public class SagaEntry {
     private int revision;
     @Lob
     private byte[] serializedSaga;
-
 
     /**
      * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
@@ -56,7 +55,7 @@ public class SagaEntry {
      */
     public SagaEntry(Saga saga, Serializer serializer) {
         this.sagaId = saga.getSagaIdentifier();
-        SerializedObject serialized = serializer.serialize(saga);
+        SerializedObject<byte[]> serialized = serializer.serialize(saga, byte[].class);
         this.serializedSaga = serialized.getData();
         this.sagaType = serialized.getType().getName();
         this.revision = serialized.getType().getRevision();
@@ -69,16 +68,8 @@ public class SagaEntry {
      * @return the Saga instance stored in this entry
      */
     public Saga getSaga(Serializer serializer) {
-        return (Saga) serializer.deserialize(new SimpleSerializedObject(serializedSaga, sagaType, revision)).get(0);
-    }
-
-    /**
-     * Returns the Identifier of the Saga stored in this entry.
-     *
-     * @return the Identifier of the Saga stored in this entry
-     */
-    public String getSagaId() {
-        return sagaId;
+        return (Saga) serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedSaga, byte[].class,
+                                                                                sagaType, revision)).get(0);
     }
 
     /**

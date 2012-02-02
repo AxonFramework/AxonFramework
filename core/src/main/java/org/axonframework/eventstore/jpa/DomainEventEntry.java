@@ -52,8 +52,8 @@ public class DomainEventEntry extends AbstractEventEntry {
      * @param metaData The serialized metaData of the Event
      */
     public DomainEventEntry(String type, DomainEventMessage event,
-                            SerializedObject payload,
-                            SerializedObject metaData) {
+                            SerializedObject<byte[]> payload,
+                            SerializedObject<byte[]> metaData) {
         super(type, event, payload, metaData);
     }
 }

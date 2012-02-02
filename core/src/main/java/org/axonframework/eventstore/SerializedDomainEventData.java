@@ -8,10 +8,11 @@ import org.joda.time.DateTime;
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
  * their storage entries implement this interface.
  *
+ * @param <T> The content type of the serialized data
  * @author Allard Buijze
  * @since 2.0
  */
-public interface SerializedDomainEventData {
+public interface SerializedDomainEventData<T> {
 
     /**
      * Returns the identifier of the serialized event.
@@ -46,12 +47,12 @@ public interface SerializedDomainEventData {
      *
      * @return the serialized data of the MetaData of the serialized Event
      */
-    SerializedMetaData getMetaData();
+    SerializedObject<T> getMetaData();
 
     /**
      * Returns the serialized data of the Event Message's payload.
      *
      * @return the serialized data of the Event Message's payload
      */
-    SerializedObject getPayload();
+    SerializedObject<T> getPayload();
 }

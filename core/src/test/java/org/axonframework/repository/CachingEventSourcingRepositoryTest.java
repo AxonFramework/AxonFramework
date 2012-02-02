@@ -135,11 +135,6 @@ public class CachingEventSourcingRepositoryTest {
         public String getTypeIdentifier() {
             return "mock";
         }
-
-        @Override
-        public Class<StubAggregate> getAggregateType() {
-            return StubAggregate.class;
-        }
     }
 
     private class InMemoryEventStore implements EventStore {

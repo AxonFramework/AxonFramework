@@ -22,9 +22,10 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * CommandBus implementation that does not perform any actions on subscriptions or dispatched commands, but records
@@ -36,7 +37,7 @@ import java.util.Map;
  */
 public class RecordingCommandBus implements CommandBus {
 
-    private Map<Class<?>, CommandHandler<?>> subscriptions = new HashMap<Class<?>, CommandHandler<?>>();
+    private ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private List<CommandMessage<?>> dispatchedCommands = new ArrayList<CommandMessage<?>>();
 
     @Override
@@ -57,8 +58,8 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        subscriptions.remove(commandType);
+    public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
+        return subscriptions.remove(commandType, handler);
     }
 
     /**

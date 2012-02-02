@@ -77,6 +77,8 @@ public interface CommandBus {
      * @param commandType The type of command the handler is subscribed to
      * @param handler     The handler instance to unsubscribe from the CommandBus
      * @param <C>         The Type of command
+     * @return <code>true</code> of this handler is successfully unsubscribed, <code>false</code> of the given
+     *         <code>handler</code> was not the current handler for given <code>commandType</code>.
      */
-    <C> void unsubscribe(Class<C> commandType, CommandHandler<? super C> handler);
+    <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler);
 }

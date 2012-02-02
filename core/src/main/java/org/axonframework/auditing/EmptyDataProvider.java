@@ -16,6 +16,8 @@
 
 package org.axonframework.auditing;
 
+import org.axonframework.commandhandling.CommandMessage;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -38,7 +40,7 @@ public class EmptyDataProvider implements AuditDataProvider {
      * This implementation returns an empty map.
      */
     @Override
-    public Map<String, Object> provideAuditDataFor(Object command) {
+    public Map<String, Object> provideAuditDataFor(CommandMessage<?> command) {
         return Collections.emptyMap();
     }
 }

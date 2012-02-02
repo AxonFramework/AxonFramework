@@ -24,7 +24,7 @@ import org.axonframework.commandhandling.CommandCallback;
  * @author Allard Buijze
  * @since 0.6
  */
-public abstract class VoidCallback implements CommandCallback<Class<Void>> {
+public abstract class VoidCallback implements CommandCallback<Object> {
 
     /**
      * {@inheritDoc}
@@ -32,7 +32,7 @@ public abstract class VoidCallback implements CommandCallback<Class<Void>> {
      * This implementation merely invokes {@link #onSuccess()}.
      */
     @Override
-    public void onSuccess(Class<Void> result) {
+    public void onSuccess(Object result) {
         onSuccess();
     }
 

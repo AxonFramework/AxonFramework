@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -46,14 +47,15 @@ public class BeanValidationInterceptorTest {
 
     @Test
     public void testValidateSimpleObject() throws Throwable {
-        testSubject.handle("Simple instance", uow, mockInterceptorChain);
+        testSubject.handle(new GenericCommandMessage<Object>("Simple instance"), uow, mockInterceptorChain);
         verify(mockInterceptorChain).proceed();
     }
 
     @Test
     public void testValidateAnnotatedObject_IllegalNullValue() throws Throwable {
         try {
-            testSubject.handle(new JSR303AnnotatedInstance(null), uow, mockInterceptorChain);
+            testSubject.handle(new GenericCommandMessage<Object>(new JSR303AnnotatedInstance(null)),
+                               uow, mockInterceptorChain);
             fail("Expected exception");
         } catch (JSR303ViolationException e) {
             assertFalse(e.getViolations().isEmpty());
@@ -63,7 +65,8 @@ public class BeanValidationInterceptorTest {
 
     @Test
     public void testValidateAnnotatedObject_LegalValue() throws Throwable {
-        testSubject.handle(new JSR303AnnotatedInstance("abc"), uow, mockInterceptorChain);
+        testSubject.handle(new GenericCommandMessage<Object>(new JSR303AnnotatedInstance("abc")),
+                           uow, mockInterceptorChain);
 
         verify(mockInterceptorChain).proceed();
     }
@@ -71,7 +74,8 @@ public class BeanValidationInterceptorTest {
     @Test
     public void testValidateAnnotatedObject_IllegalValue() throws Throwable {
         try {
-            testSubject.handle(new JSR303AnnotatedInstance("bea"), uow, mockInterceptorChain);
+            testSubject.handle(new GenericCommandMessage<Object>(new JSR303AnnotatedInstance("bea")),
+                               uow, mockInterceptorChain);
             fail("Expected exception");
         } catch (JSR303ViolationException e) {
             assertFalse(e.getViolations().isEmpty());
@@ -84,7 +88,8 @@ public class BeanValidationInterceptorTest {
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor(mockValidatorFactory);
 
-        testSubject.handle(new JSR303AnnotatedInstance("abc"), uow, mockInterceptorChain);
+        testSubject.handle(new GenericCommandMessage<Object>(new JSR303AnnotatedInstance("abc")),
+                           uow, mockInterceptorChain);
 
         verify(mockValidatorFactory).getValidator();
     }

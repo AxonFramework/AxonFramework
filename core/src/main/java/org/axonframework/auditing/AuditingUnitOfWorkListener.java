@@ -16,6 +16,7 @@
 
 package org.axonframework.auditing;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.unitofwork.UnitOfWorkListener;
@@ -36,7 +37,7 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
 
     private final AuditDataProvider auditDataProvider;
     private final AuditLogger auditLogger;
-    private final Object command;
+    private final CommandMessage<?> command;
     private final List<EventMessage> recordedEvents = new ArrayList<EventMessage>();
     private volatile Object returnValue;
 
@@ -49,7 +50,8 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
      * @param auditDataProvider The instance providing the information to attach to the events
      * @param auditLogger       The logger writing the audit
      */
-    public AuditingUnitOfWorkListener(Object command, AuditDataProvider auditDataProvider, AuditLogger auditLogger) {
+    public AuditingUnitOfWorkListener(CommandMessage<?> command, AuditDataProvider auditDataProvider,
+                                      AuditLogger auditLogger) {
         this.auditDataProvider = auditDataProvider;
         this.auditLogger = auditLogger;
         this.command = command;

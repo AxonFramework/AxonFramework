@@ -32,5 +32,14 @@ public interface ContentTypeConverter<S, T> {
      * @param original The source to convert
      * @return the converted representation
      */
-    IntermediateRepresentation<T> convert(IntermediateRepresentation<S> original);
+    SerializedObject<T> convert(SerializedObject<S> original);
+
+    /**
+     * Converts the given object into another. Typically, these values are contained by a {@link SerializedObject}
+     * instance.
+     *
+     * @param original the value to convert
+     * @return the converted value
+     */
+    T convert(S original);
 }

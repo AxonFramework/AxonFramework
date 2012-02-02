@@ -1,14 +1,20 @@
 package org.axonframework.serializer;
 
-import java.io.InputStream;
-
 /**
  * Interface describing the structure of a serialized object.
  *
+ * @param <T> The data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
  */
-public interface SerializedObject {
+public interface SerializedObject<T> {
+
+    /**
+     * Returns the type of this representation's data.
+     *
+     * @return the type of this representation's data
+     */
+    Class<T> getContentType();
 
     /**
      * Returns the description of the type of object contained in the data.
@@ -22,13 +28,6 @@ public interface SerializedObject {
      *
      * @return the actual data of the serialized object
      */
-    byte[] getData();
+    T getData();
 
-    /**
-     * An inputstream accessing the serialized data. Each invocation of this method will return a new stream. The
-     * caller should close the stream when finished reading.
-     *
-     * @return an inputstream accessing the serialized data
-     */
-    InputStream getStream();
 }

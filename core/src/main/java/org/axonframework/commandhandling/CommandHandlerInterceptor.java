@@ -34,7 +34,7 @@ public interface CommandHandlerInterceptor {
      * given <code>unitOfWork</code>.
      * <p/>
      * The interceptor is responsible for the continuation of the dispatch process by invoking the {@link
-     * org.axonframework.commandhandling.InterceptorChain#proceed(Object)} method on the given
+     * org.axonframework.commandhandling.InterceptorChain#proceed(CommandMessage)} method on the given
      * <code>interceptorChain</code>.
      * <p/>
      * Any information gathered by interceptors may be attached to the unitOfWork. This information is made
@@ -43,12 +43,13 @@ public interface CommandHandlerInterceptor {
      * Interceptors are highly recommended not to change the type of the command handling result, as the dispatching
      * component might expect a result of a specific type.
      *
-     * @param command          The command being dispatched
+     * @param commandMessage   The command being dispatched
      * @param unitOfWork       The UnitOfWork in which
      * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process
      * @return the result of the command handler. May have been modified by interceptors.
      *
      * @throws Throwable any exception that occurs while handling the command
      */
-    Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain interceptorChain) throws Throwable;
+    Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork, InterceptorChain interceptorChain)
+            throws Throwable;
 }

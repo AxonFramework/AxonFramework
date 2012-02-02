@@ -1,7 +1,7 @@
 package org.axonframework.serializer.converters;
 
-import org.axonframework.serializer.IntermediateRepresentation;
-import org.axonframework.serializer.SimpleIntermediateRepresentation;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.junit.*;
 
@@ -28,8 +28,8 @@ public class InputStreamToByteArrayConverterTest {
     public void testConvert() {
         byte[] bytes = "Hello, world!".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
-        IntermediateRepresentation<byte[]> actual = testSubject
-                .convert(new SimpleIntermediateRepresentation<InputStream>(type, InputStream.class, inputStream));
+        SerializedObject<byte[]> actual = testSubject
+                .convert(new SimpleSerializedObject<InputStream>(inputStream, InputStream.class, type));
 
         assertEquals(type, actual.getType());
         assertArrayEquals(bytes, actual.getData());

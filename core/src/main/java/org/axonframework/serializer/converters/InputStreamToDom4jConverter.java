@@ -1,9 +1,6 @@
 package org.axonframework.serializer.converters;
 
 import org.axonframework.serializer.CannotConvertBetweenTypesException;
-import org.axonframework.serializer.ContentTypeConverter;
-import org.axonframework.serializer.IntermediateRepresentation;
-import org.axonframework.serializer.SimpleIntermediateRepresentation;
 import org.dom4j.Document;
 import org.dom4j.io.STAXEventReader;
 
@@ -19,7 +16,7 @@ import javax.xml.stream.XMLStreamException;
  * @author Allard Buijze
  * @since 2.0
  */
-public class InputStreamToDom4jConverter implements ContentTypeConverter<InputStream, Document> {
+public class InputStreamToDom4jConverter extends AbstractContentTypeConverter<InputStream, Document> {
 
     @Override
     public Class<InputStream> expectedSourceType() {
@@ -32,11 +29,10 @@ public class InputStreamToDom4jConverter implements ContentTypeConverter<InputSt
     }
 
     @Override
-    public IntermediateRepresentation<Document> convert(IntermediateRepresentation<InputStream> original) {
+    public Document convert(InputStream original) {
         try {
-            Document document = new STAXEventReader().readDocument(new InputStreamReader(original.getData(),
-                                                                                         Charset.forName("UTF-8")));
-            return new SimpleIntermediateRepresentation<Document>(original.getType(), Document.class, document);
+            return new STAXEventReader().readDocument(new InputStreamReader(original,
+                                                                            Charset.forName("UTF-8")));
         } catch (XMLStreamException e) {
             throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to dom4j Document.", e);
         }

@@ -69,7 +69,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                 os.writeUTF(event.getAggregateIdentifier().toString());
                 os.writeLong(event.getSequenceNumber());
                 os.writeUTF(event.getTimestamp().toString());
-                SerializedObject serialized = eventSerializer.serialize(event);
+                SerializedObject<byte[]> serialized = eventSerializer.serialize(event, byte[].class);
                 os.writeUTF(serialized.getType().getName());
                 os.writeInt(serialized.getType().getRevision());
                 os.writeInt(serialized.getData().length);
@@ -104,15 +104,15 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                     byte[] serializedEvent = new byte[length];
                     ois.readFully(serializedEvent);
                     if (type.equals(actualType) && identifier.toString().equals(actualIdentifier)) {
-                        domainEvents.add(new SerializedDomainEventMessage(
+                        domainEvents.add(new SerializedDomainEventMessage<Object>(
                                 eventIdentifier,
                                 actualIdentifier,
                                 sequenceNumber,
                                 new DateTime(timestamp),
-                                new LazyDeserializingObject(new SimpleSerializedObject(serializedEvent,
-                                                                                       payloadType,
-                                                                                       payloadRevision),
-                                                            eventSerializer),
+                                new LazyDeserializingObject<Object>(
+                                        new SimpleSerializedObject<byte[]>(serializedEvent, byte[].class,
+                                                                           payloadType, payloadRevision),
+                                        eventSerializer),
                                 null
                         ));
                     }

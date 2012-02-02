@@ -133,8 +133,8 @@ public class SimpleCommandBusWithoutStatistics implements CommandBus {
      * {@inheritDoc}
      */
     @Override
-    public <T> void unsubscribe(Class<T> commandType, CommandHandler<? super T> handler) {
-        subscriptions.remove(commandType, handler);
+    public <T> boolean unsubscribe(Class<T> commandType, CommandHandler<? super T> handler) {
+        return subscriptions.remove(commandType, handler);
     }
 
     /**

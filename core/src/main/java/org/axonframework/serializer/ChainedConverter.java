@@ -101,12 +101,22 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public IntermediateRepresentation<T> convert(IntermediateRepresentation<S> original) {
-        IntermediateRepresentation intermediate = original;
+    public SerializedObject<T> convert(SerializedObject<S> original) {
+        SerializedObject intermediate = original;
         for (ContentTypeConverter step : delegates) {
             intermediate = step.convert(intermediate);
         }
         return intermediate;
+    }
+
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public T convert(S original) {
+        Object intermediate = original;
+        for (ContentTypeConverter step : delegates) {
+            intermediate = step.convert(intermediate);
+        }
+        return (T) intermediate;
     }
 
     @Override

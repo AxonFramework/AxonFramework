@@ -46,13 +46,11 @@ public class JavaSerializationTest {
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(UUID.randomUUID());
         aggregateRoot.doSomething();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        serializer.serialize(aggregateRoot, baos);
-        String xml = new String(baos.toByteArray(), UTF8);
+        String xml = new String(serializer.serialize(aggregateRoot, byte[].class).getData(), UTF8);
         assertNotNull(xml);
 
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject(baos.toByteArray(), "ignored", 0)).get(0);
+                new SimpleSerializedObject<byte[]>(xml.getBytes(UTF8), byte[].class, "ignored", 0)).get(0);
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }
@@ -64,13 +62,12 @@ public class JavaSerializationTest {
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(UUID.randomUUID());
         aggregateRoot.doSomething();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        serializer.serialize(aggregateRoot, baos);
-        String xml = new String(baos.toByteArray(), UTF8);
+        byte[] data = serializer.serialize(aggregateRoot, byte[].class).getData();
+        String xml = new String(data, UTF8);
         assertNotNull(xml);
 
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject(baos.toByteArray(), "ignored", 0)).get(0);
+                new SimpleSerializedObject<byte[]>(data, byte[].class, "ignored", 0)).get(0);
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }

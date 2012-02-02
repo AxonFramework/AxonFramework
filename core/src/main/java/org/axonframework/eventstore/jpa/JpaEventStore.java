@@ -140,8 +140,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             while (events.hasNext()) {
                 event = events.next();
                 validateIdentifier(event.getAggregateIdentifier().getClass());
-                eventEntryStore.persistEvent(type, event, eventSerializer.serialize(event.getPayload()),
-                                             eventSerializer.serialize(event.getMetaData()), entityManager);
+                eventEntryStore.persistEvent(type, event, eventSerializer.serialize(event.getPayload(), byte[].class),
+                                             eventSerializer.serialize(event.getMetaData(), byte[].class),
+                                             entityManager);
             }
             entityManager.flush();
         } catch (RuntimeException exception) {
@@ -189,6 +190,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
                             ex.getMessage());
+            } catch (LinkageError error) {
+                logger.warn("Error while reading snapshot event entry. "
+                                    + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
+                            error.getClass().getName(),
+                            error.getMessage());
             }
         }
 
@@ -232,8 +238,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         // Persist snapshot before pruning redundant archived ones, in order to prevent snapshot misses when reloading
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
-        eventEntryStore.persistSnapshot(type, snapshotEvent, eventSerializer.serialize(snapshotEvent.getPayload()),
-                                        eventSerializer.serialize(snapshotEvent.getMetaData()), entityManager);
+        eventEntryStore.persistSnapshot(type, snapshotEvent,
+                                        eventSerializer.serialize(snapshotEvent.getPayload(), byte[].class),
+                                        eventSerializer.serialize(snapshotEvent.getMetaData(), byte[].class),
+                                        entityManager);
 
         if (maxSnapshotsArchived > 0) {
             eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived,

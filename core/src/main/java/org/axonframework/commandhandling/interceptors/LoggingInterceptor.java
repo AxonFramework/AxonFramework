@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -60,16 +61,16 @@ public class LoggingInterceptor implements CommandHandlerInterceptor {
     }
 
     @Override
-    public Object handle(Object command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
-        logger.info("Incoming command: [{}]", command.getClass().getSimpleName());
+    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
+        logger.info("Incoming command: [{}]", command.getPayloadType().getSimpleName());
         try {
             Object returnValue = chain.proceed();
             logger.info("[{}] executed successfully with a [{}] return value",
-                        command.getClass().getSimpleName(),
+                        command.getPayloadType().getSimpleName(),
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());
             return returnValue;
         } catch (Throwable t) {
-            logger.warn(format("[%s] execution failed:", command.getClass().getSimpleName()), t);
+            logger.warn(format("[%s] execution failed:", command.getPayloadType().getSimpleName()), t);
             throw t;
         }
     }

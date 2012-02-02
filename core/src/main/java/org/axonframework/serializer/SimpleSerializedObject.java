@@ -18,33 +18,33 @@ package org.axonframework.serializer;
 
 import org.axonframework.common.Assert;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.Arrays;
-
 import static java.lang.String.format;
 
 /**
  * SerializedObject implementation that takes all properties as constructor parameters.
  *
+ * @param <T> The data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
  */
-public class SimpleSerializedObject implements SerializedObject {
+public class SimpleSerializedObject<T> implements SerializedObject<T> {
 
-    private final byte[] bytes;
+    private final T data;
     private final SerializedType type;
+    private Class<T> dataType;
 
     /**
      * Initializes a SimpleSerializedObject using given <code>data</code> and <code>serializedType</code>.
      *
      * @param data           The data of the serialized object
+     * @param dataType       The type of data
      * @param serializedType The type description of the serialized object
      */
-    public SimpleSerializedObject(byte[] data, SerializedType serializedType) {
+    public SimpleSerializedObject(T data, Class<T> dataType, SerializedType serializedType) {
         Assert.notNull(data, "Data for a serialized object cannot be null");
         Assert.notNull(serializedType, "The type identifier of the serialized object");
-        this.bytes = Arrays.copyOf(data, data.length);
+        this.data = data;
+        this.dataType = dataType;
         this.type = serializedType;
     }
 
@@ -53,21 +53,22 @@ public class SimpleSerializedObject implements SerializedObject {
      * <code>type</code> and <code>revision</code>.
      *
      * @param data     The data of the serialized object
+     * @param dataType The type of data
      * @param type     The type identifying the serialized object
      * @param revision The revision number of the serialized object
      */
-    public SimpleSerializedObject(byte[] data, String type, int revision) {
-        this(data, new SimpleSerializedType(type, revision));
+    public SimpleSerializedObject(T data, Class<T> dataType, String type, int revision) {
+        this(data, dataType, new SimpleSerializedType(type, revision));
     }
 
     @Override
-    public byte[] getData() {
-        return Arrays.copyOf(bytes, bytes.length);
+    public T getData() {
+        return data;
     }
 
     @Override
-    public InputStream getStream() {
-        return new ByteArrayInputStream(bytes);
+    public Class<T> getContentType() {
+        return dataType;
     }
 
     @Override
@@ -75,6 +76,7 @@ public class SimpleSerializedObject implements SerializedObject {
         return type;
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -86,10 +88,13 @@ public class SimpleSerializedObject implements SerializedObject {
 
         SimpleSerializedObject that = (SimpleSerializedObject) o;
 
-        if (!Arrays.equals(bytes, that.bytes)) {
+        if (data != null ? !data.equals(that.data) : that.data != null) {
             return false;
         }
-        if (!type.equals(that.type)) {
+        if (dataType != null ? !dataType.equals(that.dataType) : that.dataType != null) {
+            return false;
+        }
+        if (type != null ? !type.equals(that.type) : that.type != null) {
             return false;
         }
 
@@ -98,8 +103,9 @@ public class SimpleSerializedObject implements SerializedObject {
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(bytes);
-        result = 31 * result + type.hashCode();
+        int result = data != null ? data.hashCode() : 0;
+        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (dataType != null ? dataType.hashCode() : 0);
         return result;
     }
 

@@ -31,10 +31,9 @@ import static org.axonframework.common.ReflectionUtils.*;
  * CommandTargetResolver that uses annotations on the command to identify the methods that provide the
  * Aggregate Identifier of the targeted Aggregate and optionally the expected version of the aggregate.
  * <p/>
- * This implementation expects at least one method (without paramters) or field in the command to be annotated with
- * {@link TargetAggregateIdentifier}. If on a method, the result of the invocation of that method will be converted to
- * an {@link AggregateIdentifier}. If on a field, the value held in that field is used to construct an {@link
- * AggregateIdentifier}.
+ * This implementation expects at least one method (without parameters) or field in the command to be annotated with
+ * {@link TargetAggregateIdentifier}. If on a method, the result of the invocation of that method will used as
+ * Aggregate Identifier. If on a field, the value held in that field is used.
  * <p/>
  * Similarly, the expected aggregate version may be provided by annotating a method (without parameters) or field with
  * {@link TargetAggregateVersion}. The return value of the method or value held in the field is used as the expected

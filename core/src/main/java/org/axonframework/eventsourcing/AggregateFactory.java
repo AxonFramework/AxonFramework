@@ -50,12 +50,4 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
      * @return the type identifier of the aggregates this repository stores
      */
     String getTypeIdentifier();
-
-    /**
-     * Returns the class of the aggregate returned by this factory. If this factory supports polymorphism, the class
-     * returned is the common parent of all possible aggregate types.
-     *
-     * @return the class of the aggregate returned by this factory
-     */
-    Class<T> getAggregateType();
 }

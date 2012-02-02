@@ -45,7 +45,7 @@ public class XStreamSerializerTest {
 
     @Test
     public void testSerializeAndDeserializeDomainEvent() {
-        SerializedObject serializedEvent = testSubject.serialize(new TestEvent("Henk"));
+        SerializedObject<byte[]> serializedEvent = testSubject.serialize(new TestEvent("Henk"), byte[].class);
         Object actualResult = testSubject.deserialize(serializedEvent).get(0);
         assertTrue(actualResult instanceof TestEvent);
         TestEvent actualEvent = (TestEvent) actualResult;
@@ -57,7 +57,7 @@ public class XStreamSerializerTest {
         testSubject.addPackageAlias("axondomain", "org.axonframework.domain");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
-        SerializedObject serialized = testSubject.serialize(new StubDomainEvent());
+        SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse("Package name found in:" + asString, asString.contains("org.axonframework.domain"));
         StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized).get(0);
@@ -69,7 +69,7 @@ public class XStreamSerializerTest {
     public void testAlias() throws UnsupportedEncodingException {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
-        SerializedObject serialized = testSubject.serialize(new StubDomainEvent());
+        SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("<stub"));
@@ -81,7 +81,7 @@ public class XStreamSerializerTest {
     public void testFieldAlias() throws UnsupportedEncodingException {
         testSubject.addFieldAlias("relevantPeriod", TestEvent.class, "period");
 
-        SerializedObject serialized = testSubject.serialize(new TestEvent("hello"));
+        SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent("hello"), byte[].class);
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("<relevantPeriod"));
@@ -91,7 +91,7 @@ public class XStreamSerializerTest {
 
     @Test
     public void testRevisionNumber() throws UnsupportedEncodingException {
-        SerializedObject serialized = testSubject.serialize(new RevisionSpecifiedEvent());
+        SerializedObject<byte[]> serialized = testSubject.serialize(new RevisionSpecifiedEvent(), byte[].class);
         assertNotNull(serialized);
         assertEquals(2, serialized.getType().getRevision());
         assertEquals(RevisionSpecifiedEvent.class.getName(), serialized.getType().getName());
@@ -100,7 +100,7 @@ public class XStreamSerializerTest {
     @Test
     public void testSerializedTypeUsesClassAlias() throws UnsupportedEncodingException {
         testSubject.addAlias("rse", RevisionSpecifiedEvent.class);
-        SerializedObject serialized = testSubject.serialize(new RevisionSpecifiedEvent());
+        SerializedObject<byte[]> serialized = testSubject.serialize(new RevisionSpecifiedEvent(), byte[].class);
         assertNotNull(serialized);
         assertEquals(2, serialized.getType().getRevision());
         assertEquals("rse", serialized.getType().getName());
@@ -125,7 +125,7 @@ public class XStreamSerializerTest {
             }
 
             @Override
-            public List<IntermediateRepresentation> upcast(IntermediateRepresentation intermediateRepresentation) {
+            public List<SerializedObject> upcast(SerializedObject intermediateRepresentation) {
                 return Arrays.asList(intermediateRepresentation);
             }
 
@@ -134,7 +134,7 @@ public class XStreamSerializerTest {
                 return Arrays.asList(serializedType);
             }
         }));
-        SerializedObject serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
+        SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
         TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized).get(0);
         assertArrayEquals(SPECIAL__CHAR__STRING.getBytes(), deserialized.getName().getBytes());
     }
@@ -145,13 +145,14 @@ public class XStreamSerializerTest {
      */
     @Test
     public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
-        SerializedObject serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING));
+        SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
         TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized).get(0);
         assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 
     @Revision(2)
     public static class RevisionSpecifiedEvent {
+
     }
 
     public static class TestEvent {

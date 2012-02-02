@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 public class ChainedConverterTest {
 
     private ContentTypeConverter testSubject;
-    private IntermediateRepresentation<?> source;
+    private SerializedObject<?> source;
     private Class<?> target;
     private SimpleSerializedType mockType;
     private Set<ContentTypeConverter<?, ?>> candidates;
@@ -52,60 +52,59 @@ public class ChainedConverterTest {
         ContentTypeConverter mock = mock(ContentTypeConverter.class);
         when(mock.expectedSourceType()).thenReturn(expectedType);
         when(mock.targetType()).thenReturn(targetType);
-        when(mock.convert(isA(IntermediateRepresentation.class))).thenReturn(new SimpleIntermediateRepresentation(
-                mockType,
-                targetType,
-                representation));
+        when(mock.convert(isA(SerializedObject.class))).thenReturn(new SimpleSerializedObject(representation,
+                                                                                              targetType,
+                                                                                              mockType));
         return mock;
     }
 
     @Test
     public void testComplexRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleIntermediateRepresentation<Number>(mockType, Number.class, 1L);
+        source = new SimpleSerializedObject<Number>(1L, Number.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
         assertNotNull(testSubject);
-        verify(numberToStringConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(stringToReaderConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(bytesToInputStreamConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(stringToByteConverter, never()).convert(any(IntermediateRepresentation.class));
+        verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
+        verify(stringToReaderConverter, never()).convert(any(SerializedObject.class));
+        verify(bytesToInputStreamConverter, never()).convert(any(SerializedObject.class));
+        verify(stringToByteConverter, never()).convert(any(SerializedObject.class));
 
-        IntermediateRepresentation<InputStream> actual = testSubject.convert(source);
+        SerializedObject<InputStream> actual = testSubject.convert(source);
         assertEquals(target, actual.getContentType());
         InputStream actualContents = actual.getData();
         assertNotNull(actualContents);
         assertArrayEquals("hello".getBytes(), IOUtils.toByteArray(actualContents));
 
-        verify(numberToStringConverter).convert(isA(IntermediateRepresentation.class));
-        verify(stringToByteConverter).convert(isA(IntermediateRepresentation.class));
-        verify(bytesToInputStreamConverter).convert(isA(IntermediateRepresentation.class));
-        verify(stringToReaderConverter, never()).convert(isA(IntermediateRepresentation.class));
+        verify(numberToStringConverter).convert(isA(SerializedObject.class));
+        verify(stringToByteConverter).convert(isA(SerializedObject.class));
+        verify(bytesToInputStreamConverter).convert(isA(SerializedObject.class));
+        verify(stringToReaderConverter, never()).convert(isA(SerializedObject.class));
     }
 
     @Test
     public void testSimpleRoute() {
         target = String.class;
-        source = new SimpleIntermediateRepresentation<Number>(mockType, Number.class, 1L);
+        source = new SimpleSerializedObject<Number>(1L, Number.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
         assertNotNull(testSubject);
-        verify(numberToStringConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(stringToReaderConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(bytesToInputStreamConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(stringToByteConverter, never()).convert(any(IntermediateRepresentation.class));
+        verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
+        verify(stringToReaderConverter, never()).convert(any(SerializedObject.class));
+        verify(bytesToInputStreamConverter, never()).convert(any(SerializedObject.class));
+        verify(stringToByteConverter, never()).convert(any(SerializedObject.class));
 
-        IntermediateRepresentation<String> actual = testSubject.convert(source);
+        SerializedObject<String> actual = testSubject.convert(source);
         assertEquals("hello", actual.getData());
 
-        verify(numberToStringConverter).convert(any(IntermediateRepresentation.class));
-        verify(stringToReaderConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(bytesToInputStreamConverter, never()).convert(any(IntermediateRepresentation.class));
-        verify(stringToByteConverter, never()).convert(any(IntermediateRepresentation.class));
+        verify(numberToStringConverter).convert(any(SerializedObject.class));
+        verify(stringToReaderConverter, never()).convert(any(SerializedObject.class));
+        verify(bytesToInputStreamConverter, never()).convert(any(SerializedObject.class));
+        verify(stringToByteConverter, never()).convert(any(SerializedObject.class));
     }
 
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testInexistentRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleIntermediateRepresentation<Reader>(mockType, Reader.class, new StringReader("hello"));
+        source = new SimpleSerializedObject<Reader>(new StringReader("hello"), Reader.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
     }
 

@@ -77,7 +77,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * @param metaData The serialized metaData of the Event
      */
     protected AbstractEventEntry(String type, DomainEventMessage event,
-                                 SerializedObject payload, SerializedObject metaData) {
+                                 SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
         this.eventIdentifier = event.getIdentifier();
         this.type = type;
         this.payloadType = payload.getType().getName();
@@ -107,10 +107,11 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
                                                                       aggregateIdentifier,
                                                                       sequenceNumber,
                                                                       new DateTime(timeStamp),
-                                                                      new SimpleSerializedObject(payload,
+                                                                      new SimpleSerializedObject(payload,  
+                                                                                                 byte[].class,
                                                                                                  payloadType,
                                                                                                  payloadRevision),
-                                                                      new SerializedMetaData(metaData));
+                                                                      new SerializedMetaData(metaData, byte[].class));
     }
 
     /**
@@ -166,12 +167,12 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
     }
 
     @Override
-    public SerializedObject getPayload() {
-        return new SimpleSerializedObject(payload, payloadType, payloadRevision);
+    public SerializedObject<byte[]> getPayload() {
+        return new SimpleSerializedObject<byte[]>(payload, byte[].class, payloadType, payloadRevision);
     }
 
     @Override
-    public SerializedMetaData getMetaData() {
-        return new SerializedMetaData(metaData);
+    public SerializedObject<byte[]> getMetaData() {
+        return new SerializedMetaData<byte[]>(metaData, byte[].class);
     }
 }

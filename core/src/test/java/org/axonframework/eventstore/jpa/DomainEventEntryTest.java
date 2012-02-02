@@ -37,8 +37,10 @@ import static org.mockito.Mockito.*;
 public class DomainEventEntryTest {
 
     private DomainEventMessage mockDomainEvent;
-    private SerializedObject mockPayload = new SimpleSerializedObject("PayloadBytes".getBytes(), "Mock", 0);
-    private SerializedObject mockMetaData = new SerializedMetaData("MetaDataBytes".getBytes());
+    private SerializedObject<byte[]> mockPayload = new SimpleSerializedObject<byte[]>("PayloadBytes".getBytes(),
+                                                                                      byte[].class, "Mock", 0);
+    private SerializedObject<byte[]> mockMetaData = new SerializedMetaData<byte[]>("MetaDataBytes".getBytes(),
+                                                                                   byte[].class);
     private Serializer mockSerializer;
     private MetaData metaData;
 
@@ -47,8 +49,8 @@ public class DomainEventEntryTest {
         mockDomainEvent = mock(DomainEventMessage.class);
         mockSerializer = mock(Serializer.class);
         metaData = new MetaData(Collections.singletonMap("Key", "Value"));
-        when(mockSerializer.deserialize(mockPayload)).thenReturn(Arrays.asList((Object)"Payload"));
-        when(mockSerializer.deserialize(mockMetaData)).thenReturn(Arrays.asList(((Object)metaData)));
+        when(mockSerializer.deserialize(mockPayload)).thenReturn(Collections.singletonList((Object)"Payload"));
+        when(mockSerializer.deserialize(isA(SerializedMetaData.class))).thenReturn(Collections.singletonList(metaData));
         List<Class> payloadType = new ArrayList<Class>();
         payloadType.add(String.class);
         when(mockSerializer.classForType(mockPayload.getType())).thenReturn(payloadType);
@@ -81,7 +83,8 @@ public class DomainEventEntryTest {
         verify(mockSerializer).deserialize(mockPayload);
         verify(mockSerializer, never()).deserialize(mockMetaData);
 
-        assertEquals(metaData, domainEvent.getMetaData());
-        verify(mockSerializer).deserialize(mockMetaData);
+        MetaData actual = domainEvent.getMetaData();
+        verify(mockSerializer).deserialize(isA(SerializedMetaData.class));
+        assertEquals(metaData, actual);
     }
 }

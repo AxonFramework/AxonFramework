@@ -16,6 +16,8 @@
 
 package org.axonframework.auditing;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
@@ -53,7 +55,7 @@ public class AuditingInterceptorTest {
         testSubject.setAuditDataProvider(mockAuditDataProvider);
         testSubject.setAuditLogger(mockAuditLogger);
 
-        when(mockAuditDataProvider.provideAuditDataFor(any(Object.class)))
+        when(mockAuditDataProvider.provideAuditDataFor(any(CommandMessage.class)))
                 .thenReturn(Collections.singletonMap("key", (Object) "value"));
     }
 
@@ -71,8 +73,9 @@ public class AuditingInterceptorTest {
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
-        Object result = testSubject.handle("Command!", uow, mockInterceptorChain);
-        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
+        GenericCommandMessage<String> command = new GenericCommandMessage<String>("Command!");
+        Object result = testSubject.handle(command, uow, mockInterceptorChain);
+        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
 
         aggregate.doSomething();
         aggregate.doSomething();
@@ -80,8 +83,8 @@ public class AuditingInterceptorTest {
         assertEquals("Return value", result);
         uow.commit();
 
-        verify(mockAuditDataProvider, atLeast(1)).provideAuditDataFor("Command!");
-        verify(mockAuditLogger, times(1)).logSuccessful(eq("Command!"), any(Object.class), any(List.class));
+        verify(mockAuditDataProvider, atLeast(1)).provideAuditDataFor(command);
+        verify(mockAuditLogger, times(1)).logSuccessful(eq(command), any(Object.class), any(List.class));
         DomainEventMessage eventFromAggregate = aggregate.getUncommittedEvents().next();
         assertEquals("value", eventFromAggregate.getMetaData().get("key"));
     }
@@ -97,17 +100,18 @@ public class AuditingInterceptorTest {
         aggregate.doSomething();
         aggregate.doSomething();
         uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
+        GenericCommandMessage command = new GenericCommandMessage("Command!");
         try {
-            testSubject.handle("Command!", uow, mockInterceptorChain);
+            testSubject.handle(command, uow, mockInterceptorChain);
         } catch (RuntimeException e) {
             assertSame(mockException, e);
         }
 
-        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
+        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
         RuntimeException mockFailure = new RuntimeException("mock");
         uow.rollback(mockFailure);
-        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(Object.class));
-        verify(mockAuditLogger, never()).logSuccessful(eq("Command!"), any(Object.class), any(List.class));
-        verify(mockAuditLogger).logFailed(eq("Command!"), eq(mockFailure), any(List.class));
+        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
+        verify(mockAuditLogger, never()).logSuccessful(eq(command), any(Object.class), any(List.class));
+        verify(mockAuditLogger).logFailed(eq(command), eq(mockFailure), any(List.class));
     }
 }

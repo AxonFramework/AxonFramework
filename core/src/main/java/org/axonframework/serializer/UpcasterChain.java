@@ -71,13 +71,12 @@ public class UpcasterChain {
      * @param serializedObject the serialized object to upcast
      * @return the upcast SerializedObjects
      */
-    public List<IntermediateRepresentation> upcast(SerializedObject serializedObject) {
-        return upcast(new LinkedList<Upcaster>(upcasters),
-                      new DefaultIntermediateRepresentation(serializedObject));
+    public List<SerializedObject> upcast(SerializedObject serializedObject) {
+        return upcast(new LinkedList<Upcaster>(upcasters), serializedObject);
     }
 
-    private List<IntermediateRepresentation> upcast(Queue<Upcaster> upcasterChain,
-                                                    IntermediateRepresentation current) {
+    private List<SerializedObject> upcast(Queue<Upcaster> upcasterChain,
+                                                    SerializedObject current) {
         // No upcasters are left in the queue, we're done.
         if (upcasterChain.isEmpty()) {
             return Collections.singletonList(current);
@@ -86,11 +85,11 @@ public class UpcasterChain {
         else {
             // Upcast the current IntermediateRepresentation.
             Upcaster upcaster = upcasterChain.poll();
-            List<IntermediateRepresentation> unprocessedIntermediates = upcast(upcaster, current);
+            List<SerializedObject> unprocessedIntermediates = upcast(upcaster, current);
 
             // Process all intermediates returned by the top upcaster exhaustively
-            List<IntermediateRepresentation> processedIntermediates = new ArrayList<IntermediateRepresentation>();
-            for (IntermediateRepresentation unprocessedIntermediate : unprocessedIntermediates) {
+            List<SerializedObject> processedIntermediates = new ArrayList<SerializedObject>();
+            for (SerializedObject unprocessedIntermediate : unprocessedIntermediates) {
                 processedIntermediates.addAll(upcast(new LinkedList<Upcaster>(upcasterChain), unprocessedIntermediate));
             }
 
@@ -108,7 +107,7 @@ public class UpcasterChain {
      *         does not support upcasting the IntermediateRepresentation's type.
      */
     @SuppressWarnings({"unchecked"})
-    private List<IntermediateRepresentation> upcast(Upcaster upcaster, IntermediateRepresentation current) {
+    private List<SerializedObject> upcast(Upcaster upcaster, SerializedObject current) {
         if (upcaster.canUpcast(current.getType())) {
             current = ensureCorrectContentType(current, upcaster.expectedRepresentationType());
             return upcaster.upcast(current);
@@ -160,36 +159,14 @@ public class UpcasterChain {
     }
 
     @SuppressWarnings({"unchecked"})
-    private <T> IntermediateRepresentation<T> ensureCorrectContentType(IntermediateRepresentation<?> current,
+    private <T> SerializedObject<T> ensureCorrectContentType(SerializedObject<?> current,
                                                                        Class<T> expectedContentType) {
         if (!expectedContentType.isAssignableFrom(current.getContentType())) {
             ContentTypeConverter converter = converterFactory.getConverter(current.getContentType(),
                                                                            expectedContentType);
             current = converter.convert(current);
         }
-        return (IntermediateRepresentation<T>) current;
+        return (SerializedObject<T>) current;
     }
 
-    private class DefaultIntermediateRepresentation implements IntermediateRepresentation<byte[]> {
-        private final SerializedObject serializedObject;
-
-        public DefaultIntermediateRepresentation(SerializedObject serializedObject) {
-            this.serializedObject = serializedObject;
-        }
-
-        @Override
-        public Class<byte[]> getContentType() {
-            return byte[].class;
-        }
-
-        @Override
-        public SerializedType getType() {
-            return serializedObject.getType();
-        }
-
-        @Override
-        public byte[] getData() {
-            return serializedObject.getData();
-        }
-    }
 }

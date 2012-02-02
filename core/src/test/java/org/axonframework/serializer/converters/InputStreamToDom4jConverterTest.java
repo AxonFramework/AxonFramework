@@ -1,7 +1,7 @@
 package org.axonframework.serializer.converters;
 
-import org.axonframework.serializer.IntermediateRepresentation;
-import org.axonframework.serializer.SimpleIntermediateRepresentation;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.dom4j.Document;
 import org.junit.*;
@@ -29,8 +29,8 @@ public class InputStreamToDom4jConverterTest {
     public void testConvert() throws Exception {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
-        IntermediateRepresentation<Document> actual = testSubject
-                .convert(new SimpleIntermediateRepresentation<InputStream>(type, InputStream.class, inputStream));
+        SerializedObject<Document> actual = testSubject
+                .convert(new SimpleSerializedObject<InputStream>(inputStream, InputStream.class, type));
 
         assertEquals("parent", actual.getData().getRootElement().getName());
     }
