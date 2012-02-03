@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:insight="http://www.springframework.org/schema/insight-idk"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-		http://www.springframework.org/schema/insight-idk http://www.springframework.org/schema/insight-idk/insight-idk-1.0.xsd">
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:insight="http://www.springframework.org/schema/insight-idk"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/insight-idk http://www.springframework.org/schema/insight-idk/insight-idk-1.0.xsd">
 
-	<insight:plugin name="axon" version="{$project.version}" publisher="Axon Framework" />
+  <insight:plugin name="axon" version="{$project.version}" publisher="Axon Framework" />
 
-	<insight:operation-group group="Axon Buses"    operation="command_bus_dispatch" />
-	<insight:operation-group group="Axon Buses"    operation="event_bus_publish" />
-	
-	<insight:operation-group group="Axon Handlers" operation="command_handler_operation" />
-	<insight:operation-group group="Axon Handlers" operation="event_handler_operation" />
-	<insight:operation-group group="Axon Handlers" operation="saga_operation" />
+  <insight:operation-group group="Axon Buses"    operation="command_bus_dispatch" />
+  <insight:operation-group group="Axon Buses"    operation="event_bus_publish" />
 
-	<insight:operation-view operation="command_bus_dispatch"
-		                    template="org/axonframework/insight/command_bus_dispatch.ftl" />
-	<insight:operation-view operation="command_handler_operation"
-		                    template="org/axonframework/insight/command_handler_operation.ftl" />
-	<insight:operation-view operation="event_bus_publish"
-		                    template="org/axonframework/insight/event_bus_publish.ftl" />
-	<insight:operation-view operation="event_handler_operation"
-		                    template="org/axonframework/insight/event_handler_operation.ftl" />
-	<insight:operation-view operation="saga_operation"
-		                    template="org/axonframework/insight/saga_operation.ftl" />
-		                    
-	<bean class="org.axonframework.insight.CommandHandlerEndPointAnalyzer"/>
-	<bean class="org.axonframework.insight.EventHandlerEndPointAnalyzer"/>
-	<bean class="org.axonframework.insight.SagaOperationEndPointAnalyzer"/>
+  <insight:operation-group group="Axon Handlers" operation="command_handler_operation" />
+  <insight:operation-group group="Axon Handlers" operation="event_handler_operation" />
+  <insight:operation-group group="Axon Handlers" operation="saga_operation" />
+
+  <insight:operation-view operation="command_bus_dispatch"
+                          template="org/axonframework/insight/command_bus_dispatch.ftl" />
+  <insight:operation-view operation="command_handler_operation"
+                          template="org/axonframework/insight/command_handler_operation.ftl" />
+  <insight:operation-view operation="event_bus_publish"
+                          template="org/axonframework/insight/event_bus_publish.ftl" />
+  <insight:operation-view operation="event_handler_operation"
+                          template="org/axonframework/insight/event_handler_operation.ftl" />
+  <insight:operation-view operation="saga_operation"
+                          template="org/axonframework/insight/saga_operation.ftl" />
+
+  <bean class="org.axonframework.insight.CommandHandlerEndPointAnalyzer"/>
+  <bean class="org.axonframework.insight.EventHandlerEndPointAnalyzer"/>
+  <bean class="org.axonframework.insight.SagaOperationEndPointAnalyzer"/>
 
 </beans>
