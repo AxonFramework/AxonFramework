@@ -2,7 +2,7 @@ Axon plugin for Spring Insight
 ==============================
 
 This project provides a plugin for the Axon framework that can be used with 
-[Spring Insight]{http://www.springsource.org/insight}. It supports Axon 1.x
+[Spring Insight](http://www.springsource.org/insight). It supports Axon 1.x
 versions as well as the 2.0 version that's under development at the time of
 writing.
 
@@ -15,7 +15,7 @@ check that the handle invocations take place in the context of their
 corresponding bus. Command and event types are captured, as well as additional
 metadata where available.
 
-Here's an example of a trace containing Axon frames: ![screenshot]{screenshot.png}
+Here's an example of a trace containing Axon frames: ![screenshot](screenshot.png)
 
 Usage
 -----
