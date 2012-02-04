@@ -4,3 +4,6 @@ axon.iws
 target/
 .idea/
 **/*.iml
+.classpath
+.project
+.settings/
