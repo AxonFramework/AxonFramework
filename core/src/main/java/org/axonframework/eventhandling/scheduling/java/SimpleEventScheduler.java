@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.domain.ApplicationEvent;
+import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
@@ -28,6 +29,9 @@ import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +55,7 @@ public class SimpleEventScheduler implements EventScheduler {
     private final ScheduledExecutorService executorService;
     private final EventBus eventBus;
     private final EventTriggerCallback eventTriggerCallback;
+    private final Map<String, Future<?>> tokens = new ConcurrentHashMap<String, Future<?>>();
 
     /**
      * Initialize the SimpleEventScheduler using the given <code>executorService</code> as trigger and execution
@@ -89,10 +94,12 @@ public class SimpleEventScheduler implements EventScheduler {
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, ApplicationEvent event) {
-        ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(event),
+        String tokenId = IdentifierFactory.getInstance().generateIdentifier();
+        ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(event, tokenId),
                                                              triggerDuration.getMillis(),
                                                              TimeUnit.MILLISECONDS);
-        return new SimpleScheduleToken(future);
+        tokens.put(tokenId, future);
+        return new SimpleScheduleToken(tokenId);
     }
 
     @Override
@@ -105,20 +112,25 @@ public class SimpleEventScheduler implements EventScheduler {
         if (!SimpleScheduleToken.class.isInstance(scheduleToken)) {
             throw new IllegalArgumentException("The given ScheduleToken was not provided by this scheduler.");
         }
-        SimpleScheduleToken token = (SimpleScheduleToken) scheduleToken;
-        token.getFuture().cancel(false);
+        Future<?> future = tokens.remove(((SimpleScheduleToken) scheduleToken).getTokenId());
+        if (future != null) {
+            future.cancel(false);
+        }
     }
 
     private class PublishEventTask implements Runnable {
 
         private final ApplicationEvent event;
+        private final String tokenId;
 
-        public PublishEventTask(ApplicationEvent event) {
+        public PublishEventTask(ApplicationEvent event, String tokenId) {
             this.event = event;
+            this.tokenId = tokenId;
         }
 
         @Override
         public void run() {
+            logger.info("Triggered the publication of event [{}]", event.getClass().getSimpleName());
             eventTriggerCallback.beforePublication(event);
             try {
                 eventBus.publish(event);
@@ -127,6 +139,7 @@ public class SimpleEventScheduler implements EventScheduler {
                 throw e;
             }
             eventTriggerCallback.afterPublicationSuccess();
+            tokens.remove(tokenId);
         }
     }
 

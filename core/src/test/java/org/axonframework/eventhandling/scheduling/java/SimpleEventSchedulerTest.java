@@ -27,6 +27,11 @@ import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 import org.quartz.SchedulerException;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -74,6 +79,18 @@ public class SimpleEventSchedulerTest {
         testSubject.schedule(new Duration(30), new StubEvent(mockSaga));
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus).publish(isA(StubEvent.class));
+    }
+
+    @Test
+    public void testScheduleTokenIsSerializable() throws IOException, ClassNotFoundException {
+        ScheduleToken token = testSubject.schedule(Duration.ZERO, new StubEvent(mock(Saga.class)));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(token);
+        oos.close();
+        ScheduleToken token2 = (ScheduleToken) new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))
+                .readObject();
+        testSubject.cancelSchedule(token2);
     }
 
     @Test
