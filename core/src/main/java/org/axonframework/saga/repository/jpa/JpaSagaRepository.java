@@ -137,10 +137,8 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected void deleteSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
+        entityManager.remove(entityManager.getReference(SagaEntry.class, saga.getSagaIdentifier()));
         entityManager.flush();
-        entityManager.createQuery("DELETE FROM SagaEntry se WHERE se.sagaId = :sagaId")
-                     .setParameter("sagaId", saga.getSagaIdentifier())
-                     .executeUpdate();
         entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
                      .setParameter("sagaId", saga.getSagaIdentifier())
                      .executeUpdate();
@@ -149,19 +147,8 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected void updateSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        SerializedObject<byte[]> serializedSaga = serializer.serialize(saga, byte[].class);
-        int updates = entityManager.createQuery(
-                "UPDATE SagaEntry se SET se.serializedSaga = :serializedSaga, se"
-                        + ".sagaType = :sagaType, "
-                        + "se.revision = :revision WHERE se.sagaId = :sagaId")
-                                   .setParameter("sagaId", saga.getSagaIdentifier())
-                                   .setParameter("serializedSaga", serializedSaga.getData())
-                                   .setParameter("sagaType", serializedSaga.getType().getName())
-                                   .setParameter("revision", serializedSaga.getType().getRevision())
-                                   .executeUpdate();
-        if (updates == 0) {
-            storeSaga(saga);
-        } else if (useExplicitFlush) {
+        entityManager.merge(new SagaEntry(saga, serializer));
+        if (useExplicitFlush) {
             entityManager.flush();
         }
     }

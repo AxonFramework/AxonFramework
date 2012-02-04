@@ -267,7 +267,12 @@ public class JpaSagaRepositoryTest {
     public void testEndSaga() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
-        entityManager.persist(new SagaEntry(saga, new XStreamSerializer()));
+        saga.associate("key", "value");
+        repository.add(saga);
+        entityManager.flush();
+        assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
+                                .setParameter("id", identifier)
+                                .getResultList().isEmpty());
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.end();
         repository.commit(loaded);
@@ -275,6 +280,9 @@ public class JpaSagaRepositoryTest {
         entityManager.clear();
 
         assertNull(entityManager.find(SagaEntry.class, identifier));
+        assertTrue(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
+                .setParameter("id", identifier)
+                .getResultList().isEmpty());
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
@@ -297,6 +305,10 @@ public class JpaSagaRepositoryTest {
         @Override
         public void end() {
             super.end();
+        }
+
+        public void associate(String key, String value) {
+            associateWith(key, value);
         }
     }
 
