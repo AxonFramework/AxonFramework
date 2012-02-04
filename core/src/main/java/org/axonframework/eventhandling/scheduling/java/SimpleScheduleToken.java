@@ -18,8 +18,6 @@ package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
-import java.util.concurrent.ScheduledFuture;
-
 /**
  * ScheduleToken for tasks event scheduled using the SimpleEventScheduler.
  *
@@ -28,24 +26,24 @@ import java.util.concurrent.ScheduledFuture;
  */
 class SimpleScheduleToken implements ScheduleToken {
 
-    private static final long serialVersionUID = 1894122648511994000L;
-    private final ScheduledFuture<?> future;
+    private static final long serialVersionUID = -8118223354702247016L;
+    private final String tokenId;
 
     /**
-     * Creates a SimpleScheduleToken for the given <code>future</code>.
+     * Creates a SimpleScheduleToken with the given <code>tokenId</code>.
      *
-     * @param future The future referencing the scheduled task.
+     * @param tokenId The identifier referencing the scheduled task.
      */
-    public SimpleScheduleToken(ScheduledFuture<?> future) {
-        this.future = future;
+    public SimpleScheduleToken(String tokenId) {
+        this.tokenId = tokenId;
     }
 
     /**
-     * Returns the future referencing the scheduled task.
+     * Returns the identifier of the scheduled task.
      *
-     * @return the future referencing the scheduled task
+     * @return the identifier of the scheduled task
      */
-    public ScheduledFuture<?> getFuture() {
-        return future;
+    public String getTokenId() {
+        return tokenId;
     }
 }
