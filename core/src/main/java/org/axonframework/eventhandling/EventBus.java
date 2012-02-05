@@ -30,8 +30,8 @@ import org.axonframework.domain.EventMessage;
  * @see SimpleEventBus
  * @since 0.1
  */
-public interface EventBus {
 
+public interface EventBus {
     /**
      * Publish an event on this bus. It is dispatched to all subscribed event listeners.
      *
