@@ -5,9 +5,9 @@ import com.springsource.insight.intercept.operation.OperationType;
 
 /**
  * Concrete analyzer for Axon event handler operations.
- * 
- * @author Joris Kuipers
  *
+ * @author Joris Kuipers
+ * @since 2.0
  */
 public class EventHandlerEndPointAnalyzer extends AbstractHandlerEndPointAnalyzer {
 
@@ -25,5 +25,4 @@ public class EventHandlerEndPointAnalyzer extends AbstractHandlerEndPointAnalyze
     String getExample(Operation operation) {
         return "EVENT: " + operation.get("eventType");
     }
-
 }

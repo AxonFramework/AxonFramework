@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
@@ -80,7 +80,7 @@ public class ConcurrentModificationTest_PessimisticLocking {
     public void testConcurrentModifications() throws Exception {
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final UUID aggregateId = UUID.randomUUID();
-        commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)), NoOpCallback.INSTANCE);
+        commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)));
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         final AtomicLong counter = new AtomicLong(0);
         List<Future<?>> results = new LinkedList<Future<?>>();
@@ -89,11 +89,10 @@ public class ConcurrentModificationTest_PessimisticLocking {
                 @Override
                 public void run() {
                     try {
-                        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)),
-                                            NoOpCallback.INSTANCE);
+                        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)));
                         commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
-                                            NoOpCallback.INSTANCE);
-                        commandBus.dispatch(asCommandMessage(new LoopingCommand(aggregateId)), NoOpCallback.INSTANCE);
+                                            SilentCallback.INSTANCE);
+                        commandBus.dispatch(asCommandMessage(new LoopingCommand(aggregateId)));
                         counter.incrementAndGet();
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
@@ -123,6 +122,19 @@ public class ConcurrentModificationTest_PessimisticLocking {
                          expectedSequenceNumber,
                          ((DomainEventMessage) event).getSequenceNumber());
             expectedSequenceNumber++;
+        }
+    }
+
+    private static class SilentCallback implements CommandCallback<Object> {
+
+        public static final CommandCallback<Object> INSTANCE = new SilentCallback();
+
+        @Override
+        public void onSuccess(Object result) {
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
         }
     }
 }

@@ -29,6 +29,7 @@
         <module>integrationtests</module>
         <module>incubator/mongo</module>
         <module>incubator/google-app-engine</module>
+        <module>spring-insight-plugin</module>
         <!--<module>migration</module>-->
     </modules>
     <packaging>pom</packaging>
@@ -89,12 +90,6 @@
             <modules>
                 <module>incubator/redis</module>
                 <module>incubator/disruptor-commandbus</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>with-spring-insight</id>
-            <modules>
-                <module>spring-insight-plugin</module>
             </modules>
         </profile>
     </profiles>
@@ -184,7 +179,9 @@
                 <configuration>
                     <includes>
                         <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
                         <include>**/*Test_*.java</include>
+                        <include>**/*Tests_*.java</include>
                     </includes>
                 </configuration>
             </plugin>

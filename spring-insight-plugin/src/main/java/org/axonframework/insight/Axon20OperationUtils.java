@@ -1,40 +1,43 @@
 package org.axonframework.insight;
 
-import java.util.Map.Entry;
-
+import com.springsource.insight.intercept.operation.Operation;
+import com.springsource.insight.intercept.operation.OperationMap;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 
-import com.springsource.insight.intercept.operation.Operation;
-import com.springsource.insight.intercept.operation.OperationMap;
+import java.util.Map.Entry;
 
 /**
- * Operation populating helper methods specific to Axon 2 
+ * Operation populating helper methods specific to Axon 2
  * {@link Message} types.
- * 
- * @author Joris Kuipers
  *
+ * @author Joris Kuipers
+ * @since 2.0
  */
 public class Axon20OperationUtils {
-    
+
     /**
      * Adds {@link MetaData} from the {@link Message} to the {@link Operation}.
-     * 
-     * @param operation
-     * @param message can be null, in which case nothing happens
+     *
+     * @param operation the operation to add meta data to
+     * @param message   can be null, in which case nothing happens
      */
     static void addMetaDataTo(Operation operation, Message<?> message) {
-        if (message != null) addMetaDataTo(operation, message.getMetaData());
+        if (message != null) {
+            addMetaDataTo(operation, message.getMetaData());
+        }
     }
-    
+
     /**
-     * Processes the event handler arguments 
+     * Processes the event handler arguments
      * by populating the given {@link Operation}
-     * 
+     *
+     * @param args      The arguments of the operation
+     * @param operation The operation
      * @return true if first arg was {@link EventMessage} and has been handled,
-     *          false if calling code still needs to handle it as an event.
+     *         false if calling code still needs to handle it as an event.
      */
     static boolean processEventMessage(Object[] args, Operation operation) {
         if (!(args[0] instanceof EventMessage<?>)) {
@@ -50,11 +53,13 @@ public class Axon20OperationUtils {
     }
 
     /**
-     * Processes the command handler arguments 
+     * Processes the command handler arguments
      * by populating the given {@link Operation}
-     * 
+     *
+     * @param args      The arguments of the operation
+     * @param operation The operation
      * @return true if first arg was {@link CommandMessage} and has been handled,
-     *          false if calling code still needs to handle it as a command.
+     *         false if calling code still needs to handle it as a command.
      */
     static boolean processCommandMessage(Object[] args, Operation operation) {
         if (!(args[0] instanceof CommandMessage<?>)) {
@@ -67,12 +72,11 @@ public class Axon20OperationUtils {
         Axon20OperationUtils.addMetaDataTo(operation, commandMessage);
         return true;
     }
-    
+
     private static void addMetaDataTo(Operation operation, MetaData metaData) {
         OperationMap map = operation.createMap("metaData");
-        for (Entry<String, Object> entry: metaData.entrySet()) {
+        for (Entry<String, Object> entry : metaData.entrySet()) {
             map.put(entry.getKey(), entry.getValue().toString());
         }
     }
-
 }

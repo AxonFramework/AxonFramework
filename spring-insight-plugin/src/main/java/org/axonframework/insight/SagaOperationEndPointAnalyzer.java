@@ -1,9 +1,5 @@
 package org.axonframework.insight;
 
-import static com.springsource.insight.intercept.operation.OperationFields.CLASS_NAME;
-import static com.springsource.insight.intercept.operation.OperationFields.SHORT_CLASS_NAME;
-import static com.springsource.insight.intercept.operation.OperationFields.METHOD_NAME;
-
 import com.springsource.insight.intercept.endpoint.EndPointAnalysis;
 import com.springsource.insight.intercept.endpoint.EndPointAnalyzer;
 import com.springsource.insight.intercept.endpoint.EndPointName;
@@ -12,11 +8,13 @@ import com.springsource.insight.intercept.trace.Frame;
 import com.springsource.insight.intercept.trace.FrameUtil;
 import com.springsource.insight.intercept.trace.Trace;
 
+import static com.springsource.insight.intercept.operation.OperationFields.*;
+
 /**
  * Analyzer for Axon Saga operations.
  * 
  * @author Joris Kuipers
- *
+ * @since 2.0
  */
 public class SagaOperationEndPointAnalyzer implements EndPointAnalyzer {
 

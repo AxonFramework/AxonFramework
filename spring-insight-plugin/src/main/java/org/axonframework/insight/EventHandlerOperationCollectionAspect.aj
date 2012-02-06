@@ -1,32 +1,27 @@
 package org.axonframework.insight;
 
-import org.aspectj.lang.JoinPoint;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.saga.SagaManager;
-
 import com.springsource.insight.collection.method.MethodOperationCollectionAspect;
 import com.springsource.insight.intercept.operation.Operation;
+import org.aspectj.lang.JoinPoint;
 
 /**
  * Collects operations for event handler executions.
- * 
- * @author Joris Kuipers
  *
+ * @author Joris Kuipers
+ * @since 2.0
  */
 public aspect EventHandlerOperationCollectionAspect extends MethodOperationCollectionAspect {
 
-    public pointcut collectionPoint(): 
-        execution(@EventHandler * *(*, ..)) || 
-        (execution(void EventListener.handle(*))
-         && !within(AnnotationEventListenerAdapter)
-         && !within(SagaManager));
+    public pointcut collectionPoint():
+            execution(@org.axonframework.eventhandling.annotation.EventHandler * *(*, ..)) ||
+                    (execution(void org.axonframework.eventhandling.EventListener.handle(*))
+                            && !within(org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter)
+                            && !within(org.axonframework.saga.SagaManager));
 
     @Override
     protected Operation createOperation(JoinPoint jp) {
-        Operation operation = 
-            super.createOperation(jp).type(AxonOperationType.EVENT_HANDLER);
+        Operation operation =
+                super.createOperation(jp).type(AxonOperationType.EVENT_HANDLER);
         Object[] args = jp.getArgs();
         if (!AxonVersion.IS_AXON_1X) {
             if (Axon20OperationUtils.processEventMessage(args, operation)) {
@@ -38,5 +33,4 @@ public aspect EventHandlerOperationCollectionAspect extends MethodOperationColle
         operation.put("eventType", event.getClass().getName());
         return operation;
     }
-
 }

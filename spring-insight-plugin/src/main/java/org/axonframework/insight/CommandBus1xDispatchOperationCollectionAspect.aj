@@ -1,20 +1,19 @@
 package org.axonframework.insight;
 
 import org.aspectj.lang.JoinPoint;
-import org.axonframework.commandhandling.CommandBus;
 
 import com.springsource.insight.collection.AbstractOperationCollectionAspect;
 import com.springsource.insight.intercept.operation.Operation;
 
 /**
- * {@link CommandBus} dispatch operation matching for Axon 1.x apps.
+ * {@link org.axonframework.commandhandling.CommandBus} dispatch operation matching for Axon 1.x apps.
  * 
  * @author Joris Kuipers
- *
+ * @since 2.0
  */
 public aspect CommandBus1xDispatchOperationCollectionAspect extends AbstractOperationCollectionAspect {
     
-    public pointcut collectionPoint(): execution(* CommandBus.dispatch(Object, ..));
+    public pointcut collectionPoint(): execution(* org.axonframework.commandhandling.CommandBus.dispatch(Object, ..));
         
     @Override
     protected Operation createOperation(JoinPoint jp) {
