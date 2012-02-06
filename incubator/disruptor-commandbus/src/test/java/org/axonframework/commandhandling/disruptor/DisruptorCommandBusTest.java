@@ -109,7 +109,7 @@ public class DisruptorCommandBusTest {
                 return invocation.getArguments()[0];
             }
         });
-        when(mockInterceptor.handle(any(), any(UnitOfWork.class), any(InterceptorChain.class)))
+        when(mockInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class)))
                 .thenAnswer(new Answer<Object>() {
                     @Override
                     public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -129,7 +129,7 @@ public class DisruptorCommandBusTest {
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
         InOrder inOrder = inOrder(mockInterceptor, mockUnitOfWorkListener, mockCallback);
-        inOrder.verify(mockInterceptor).handle(any(), any(UnitOfWork.class), any(InterceptorChain.class));
+        inOrder.verify(mockInterceptor).handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class));
         inOrder.verify(mockUnitOfWorkListener).onPrepareCommit(any(Set.class), any(List.class));
         inOrder.verify(mockUnitOfWorkListener).afterCommit();
         inOrder.verify(mockCallback).onSuccess(any());
