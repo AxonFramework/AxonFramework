@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
@@ -80,7 +81,7 @@ public class ConcurrentModificationTest_PessimisticLocking {
     public void testConcurrentModifications() throws Exception {
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
-        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
+        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId));
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         final AtomicLong counter = new AtomicLong(0);
         List<Future<?>> results = new LinkedList<Future<?>>();
@@ -89,9 +90,9 @@ public class ConcurrentModificationTest_PessimisticLocking {
                 @Override
                 public void run() {
                     try {
-                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
-                        commandBus.dispatch(new ProblematicCommand(aggregateId), NoOpCallback.INSTANCE);
-                        commandBus.dispatch(new LoopingCommand(aggregateId), NoOpCallback.INSTANCE);
+                        commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId));
+                        commandBus.dispatch(new ProblematicCommand(aggregateId), SilentCallback.INSTANCE);
+                        commandBus.dispatch(new LoopingCommand(aggregateId));
                         counter.incrementAndGet();
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
@@ -123,4 +124,15 @@ public class ConcurrentModificationTest_PessimisticLocking {
             expectedSequenceNumber++;
         }
     }
-}
+    private static class SilentCallback implements CommandCallback<Object> {
+
+        public static final CommandCallback<Object> INSTANCE = new SilentCallback();
+
+        @Override
+        public void onSuccess(Object result) {
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+        }
+    }}

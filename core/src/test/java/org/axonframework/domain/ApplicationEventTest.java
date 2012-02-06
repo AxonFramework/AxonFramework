@@ -117,7 +117,9 @@ public class ApplicationEventTest {
         assertNotNull(event.getSourceDescription());
     }
 
-    private static class MyApplicationEvent extends ApplicationEvent {
+    public static class MyApplicationEvent extends ApplicationEvent {
+
+        private static final long serialVersionUID = 1497851755983245442L;
 
         public MyApplicationEvent(Object source) {
             super(source);

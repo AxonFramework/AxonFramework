@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.DomainEvent;
@@ -90,7 +90,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
         Log4jConfigurer.initLogging("classpath:log4j_silenced.properties");
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
         final AggregateIdentifier aggregateId = new UUIDAggregateIdentifier();
-        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId), NoOpCallback.INSTANCE);
+        commandBus.dispatch(new CreateStubAggregateCommand(aggregateId));
         final CountDownLatch cdl = new CountDownLatch(THREAD_COUNT);
         final CountDownLatch starter = new CountDownLatch(1);
 
@@ -106,7 +106,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
                         throw new RuntimeException(e);
                     }
                     for (int t = 0; t < COMMAND_PER_THREAD_COUNT; t++) {
-                        commandBus.dispatch(new ProblematicCommand(aggregateId), NoOpCallback.INSTANCE);
+                        commandBus.dispatch(new ProblematicCommand(aggregateId), SilentCallback.INSTANCE);
                         commandBus.dispatch(new UpdateStubAggregateCommand(aggregateId), new VoidCallback() {
                             @Override
                             protected void onSuccess() {
@@ -178,5 +178,18 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         uncaughtExceptions.add(e);
+    }
+
+    private static class SilentCallback implements CommandCallback<Object> {
+
+        public static final CommandCallback<Object> INSTANCE = new SilentCallback();
+
+        @Override
+        public void onSuccess(Object result) {
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+        }
     }
 }
