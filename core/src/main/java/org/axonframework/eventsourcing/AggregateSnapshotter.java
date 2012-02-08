@@ -39,7 +39,6 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
 
     @Override
     protected DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
-        AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
 
         DomainEventMessage firstEvent = eventStream.peek();
         Object aggregateIdentifier = firstEvent.getAggregateIdentifier();
@@ -47,6 +46,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         if (firstEvent instanceof AggregateSnapshot) {
             aggregate = ((AggregateSnapshot) firstEvent).getAggregate();
         } else {
+            AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
             aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         }
         aggregate.initializeState(eventStream);
