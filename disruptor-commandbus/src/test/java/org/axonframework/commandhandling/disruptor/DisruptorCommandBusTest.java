@@ -174,6 +174,8 @@ public class DisruptorCommandBusTest {
 
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
+        private static final long serialVersionUID = 8192033940704210095L;
+
         private int timesDone = 0;
         private final String identifier;
 

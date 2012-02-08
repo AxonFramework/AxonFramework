@@ -26,6 +26,7 @@
         <module>integration</module>
         <module>test</module>
         <module>distributed-commandbus</module>
+        <module>disruptor-commandbus</module>
         <module>integrationtests</module>
         <module>incubator/mongo</module>
         <module>incubator/google-app-engine</module>
@@ -97,7 +98,6 @@
             <id>with-incubator</id>
             <modules>
                 <module>incubator/redis</module>
-                <module>incubator/disruptor-commandbus</module>
             </modules>
         </profile>
     </profiles>
