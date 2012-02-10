@@ -125,6 +125,41 @@ public abstract class ReflectionUtils {
     }
 
     /**
+     * Indicates whether the given class implements a customized equals method. This methods returns true if the
+     * declaring type of the equals method is not <code>Object</code>.
+     *
+     * @param type The type to inspect
+     * @return <code>true</code> if the given type overrides the equals method, otherwise <code>false</code>
+     */
+    public static boolean hasEqualsMethod(Class<?> type) {
+        return !Object.class.equals(declaringClass(type, "equals", Object.class));
+    }
+
+    /**
+     * Indicates whether the two given objects are <em>not the same</em>, override an equals method that indicates
+     * they are <em>not equal</em>, or implements {@link Comparable} which indicates the two are not equal. If this
+     * method cannot safely indicate two objects are not equal, it returns
+     * <code>false</code>.
+     *
+     * @param value      One of the values to compare
+     * @param otherValue other value to compate
+     * @return <code>true</code> if these objects explicitly indicate they are not equal, <code>false</code> otherwise.
+     */
+    @SuppressWarnings("unchecked")
+    public static boolean explicitlyUnequal(Object value, Object otherValue) {
+        if (value == otherValue) {
+            return false;
+        } else if (value == null || otherValue == null) {
+            return true;
+        } else if (value instanceof Comparable) {
+            return ((Comparable) value).compareTo(otherValue) != 0;
+        } else if (hasEqualsMethod(value.getClass())) {
+            return !value.equals(otherValue);
+        }
+        return false;
+    }
+
+    /**
      * Makes the given <code>member</code> accessible via reflection if it is not the case already.
      *
      * @param member The member (field, method, constructor, etc) to make accessible

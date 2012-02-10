@@ -189,4 +189,14 @@ public interface FixtureConfiguration {
      * @param aggregateIdentifier The aggregate identifier the fixture should use.s
      */
     void setAggregateIdentifier(Object aggregateIdentifier);
+
+    /**
+     * Sets whether or not the fixture should detect and report state changes that occur outside of Event Handler
+     * methods.
+     *
+     * @param reportIllegalStateChange whether or not to detect and report state changes outside of Event Handler
+     *                                 methods.
+     */
+    void setReportIllegalStateChange(boolean reportIllegalStateChange);
+
 }

@@ -83,6 +83,49 @@ public class FixtureTest_RegularParams {
     }
 
     @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_ExplicitValue() {
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createRepository(MyAggregate.class),
+                                                                          fixture.getEventBus()))
+                    .given(givenEvents)
+                    .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), 5));
+        } catch (AssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("\"lastNumber\""));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<5>"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<4>"));
+        }
+    }
+
+    @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_NullValue() {
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createRepository(MyAggregate.class),
+                                                                          fixture.getEventBus()))
+                    .given(givenEvents)
+                    .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), null));
+        } catch (AssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("\"lastNumber\""));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<null>"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<4>"));
+        }
+    }
+
+    @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_Ignored() {
+        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        fixture.setReportIllegalStateChange(false);
+        fixture
+                .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createRepository(MyAggregate.class),
+                                                                      fixture.getEventBus()))
+                .given(givenEvents)
+                .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), null));
+    }
+
+    @Test
     public void testFixture_CommandHandlerDispatchesNonDomainEvents() {
         List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),

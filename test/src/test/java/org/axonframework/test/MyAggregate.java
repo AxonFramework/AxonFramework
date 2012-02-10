@@ -26,7 +26,9 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
  */
 class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
-    private int lastNumber;
+    @SuppressWarnings("UnusedDeclaration")
+    private transient int counter;
+    private Integer lastNumber;
     private final Object identifier;
 
     @AggregateInitializer
@@ -44,7 +46,14 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
         // we don't care about events
     }
 
+    public void doSomethingIllegal(Integer newIllegalValue) {
+        apply(new MyEvent(lastNumber + 1));
+        lastNumber = newIllegalValue;
+    }
+
     public void doSomething() {
+        // this state change should be accepted, since it happens on a transient value
+        counter++;
         apply(new MyEvent(lastNumber + 1));
     }
 
