@@ -38,6 +38,11 @@ class MyCommandHandler {
     }
 
     @CommandHandler
+    public void createAggregate(CreateAggregateCommand command) {
+        repository.add(new MyAggregate(0, command.getAggregateIdentifier()));
+    }
+
+    @CommandHandler
     public void handleTestCommand(TestCommand testCommand) {
         MyAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
         aggregate.doSomething();

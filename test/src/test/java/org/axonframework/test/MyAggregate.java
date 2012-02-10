@@ -34,6 +34,11 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
         super(aggregateIdentifier);
     }
 
+    public MyAggregate(int initialValue, AggregateIdentifier aggregateIdentifier) {
+        super(aggregateIdentifier);
+        apply(new MyEvent(initialValue));
+    }
+
     @EventHandler
     public void handleMyEvent(MyEvent event) {
         lastNumber = event.getSomeValue();
