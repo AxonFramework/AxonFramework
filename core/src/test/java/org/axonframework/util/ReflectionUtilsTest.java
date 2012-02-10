@@ -20,6 +20,7 @@ import org.junit.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -101,6 +102,38 @@ public class ReflectionUtilsTest {
                                                                                             "three"),
                                                                    Collections.singleton("four"));
         assertEquals(6, ReflectionUtils.findFieldValuesOfType(item, String.class).size());
+    }
+
+    @Test
+    public void testExplicitlyUnequal_NullValues() {
+        assertFalse(ReflectionUtils.explicitlyUnequal(null, null));
+        assertTrue(ReflectionUtils.explicitlyUnequal(null, ""));
+        assertTrue(ReflectionUtils.explicitlyUnequal("", null));
+    }
+
+    @Test
+    public void testHasEqualsMethod() {
+        assertTrue(ReflectionUtils.hasEqualsMethod(String.class));
+        assertTrue(ReflectionUtils.hasEqualsMethod(ArrayList.class));
+        assertFalse(ReflectionUtils.hasEqualsMethod(SomeType.class));
+    }
+
+    @SuppressWarnings("RedundantStringConstructorCall")
+    @Test
+    public void testExplicitlyUnequal_ComparableValues() {
+        assertFalse(ReflectionUtils.explicitlyUnequal("value", new String("value")));
+        assertTrue(ReflectionUtils.explicitlyUnequal("value1", "value2"));
+    }
+
+    @Test
+    public void testExplicitlyUnequal_OverridesEqualsMethod() {
+        assertFalse(ReflectionUtils.explicitlyUnequal(Collections.singletonList("value"), Collections.singletonList("value")));
+        assertTrue(ReflectionUtils.explicitlyUnequal(Collections.singletonList("value1"), Collections.singletonList("value")));
+    }
+
+    @Test
+    public void testExplicitlyUnequal_NoEqualsOrComparable() {
+        assertFalse(ReflectionUtils.explicitlyUnequal(new SomeType(), new SomeType()));
     }
 
     private static class SomeType {

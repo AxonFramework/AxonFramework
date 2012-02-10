@@ -44,19 +44,19 @@ public class FixtureTest_RegularParams {
     public void testFixture_NoEventsInStore() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                                                                      fixture.getEventBus()))
-                .given()
-                .when(new TestCommand(fixture.getAggregateIdentifier()))
-                .expectException(AggregateNotFoundException.class);
+               .given()
+               .when(new TestCommand(fixture.getAggregateIdentifier()))
+               .expectException(AggregateNotFoundException.class);
     }
 
     @Test
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
                                                                      fixture.getEventBus()))
-                .given(new SimpleDomainEventStream(new MyEvent(1)))
-                .when(new TestCommand(fixture.getAggregateIdentifier()))
-                .expectReturnValue(Void.TYPE)
-                .expectEvents(new MyEvent(2));
+               .given(new SimpleDomainEventStream(new MyEvent(1)))
+               .when(new TestCommand(fixture.getAggregateIdentifier()))
+               .expectReturnValue(Void.TYPE)
+               .expectEvents(new MyEvent(2));
     }
 
     @Test
@@ -64,10 +64,10 @@ public class FixtureTest_RegularParams {
         MyCommandHandler commandHandler = new MyCommandHandler();
         commandHandler.setRepository(fixture.createGenericRepository(MyAggregate.class));
         fixture.registerAnnotatedCommandHandler(commandHandler)
-                .given(new MyEvent(1), new MyEvent(2))
-                .when(new TestCommand(fixture.getAggregateIdentifier()))
-                .expectReturnValue(Void.TYPE)
-                .expectEvents(new MyEvent(3));
+               .given(new MyEvent(1), new MyEvent(2))
+               .when(new TestCommand(fixture.getAggregateIdentifier()))
+               .expectReturnValue(Void.TYPE)
+               .expectEvents(new MyEvent(3));
     }
 
     @Test
@@ -80,6 +80,52 @@ public class FixtureTest_RegularParams {
                 .when(new TestCommand(fixture.getAggregateIdentifier()))
                 .expectEvents(new MyEvent(4))
                 .expectVoidReturnType();
+    }
+
+    @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_ExplicitValue() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(
+                            new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                 fixture.getEventBus()))
+                    .given(givenEvents)
+                    .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), 5));
+        } catch (AssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("\"lastNumber\""));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<5>"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<4>"));
+        }
+    }
+
+    @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_NullValue() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        try {
+            fixture
+                    .registerAnnotatedCommandHandler(
+                            new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                 fixture.getEventBus()))
+                    .given(givenEvents)
+                    .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), null));
+        } catch (AssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("\"lastNumber\""));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<null>"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<4>"));
+        }
+    }
+
+    @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_Ignored() {
+        List<DomainEvent> givenEvents = Arrays.<DomainEvent>asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        fixture.setReportIllegalStateChange(false);
+        fixture
+                .registerAnnotatedCommandHandler(
+                        new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                             fixture.getEventBus()))
+                .given(givenEvents)
+                .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), null));
     }
 
     @Test
@@ -176,9 +222,9 @@ public class FixtureTest_RegularParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new TestCommand(fixture.getAggregateIdentifier()))
-                    .expectReturnValue(null);
+                   .given(givenEvents)
+                   .when(new TestCommand(fixture.getAggregateIdentifier()))
+                   .expectReturnValue(null);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("<null> but got <void>"));
@@ -192,9 +238,9 @@ public class FixtureTest_RegularParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new StrangeCommand(fixture.getAggregateIdentifier()))
-                    .expectException(IOException.class);
+                   .given(givenEvents)
+                   .when(new StrangeCommand(fixture.getAggregateIdentifier()))
+                   .expectException(IOException.class);
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(

@@ -52,6 +52,12 @@ class MyCommandHandler {
         throw new StrangeCommandReceivedException("Strange command received");
     }
 
+    @CommandHandler
+    public void handleIllegalStateChange(IllegalStateChangeCommand command) {
+        MyAggregate aggregate = repository.load(command.getAggregateIdentifier());
+        aggregate.doSomethingIllegal(command.getNewIllegalValue());
+    }
+
     public void setRepository(Repository<MyAggregate> repository) {
         this.repository = repository;
     }

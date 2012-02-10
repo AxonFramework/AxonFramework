@@ -106,6 +106,60 @@ public abstract class ReflectionUtils {
     }
 
     /**
+     * Returns the class on which the method with name "<code>methodName</code>" and parameters of type
+     * <code>parameterTypes</code> is declared. The given <code>instanceClass</code> is the instance on which the
+     * method cn be called. If the method is not available on the given <code>instanceClass</code>, <code>null</code>
+     * is returned.
+     *
+     * @param instanceClass  The class on which to look for the method
+     * @param methodName     The name of the method
+     * @param parameterTypes The parameter types of the method
+     * @return The class on which the method is decalred, or <code>null</code> if not found
+     */
+    public static Class<?> declaringClass(Class<?> instanceClass, String methodName, Class<?>... parameterTypes) {
+        try {
+            return instanceClass.getMethod(methodName, parameterTypes).getDeclaringClass();
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Indicates whether the given class implements a customized equals method. This methods returns true if the
+     * declaring type of the equals method is not <code>Object</code>.
+     *
+     * @param type The type to inspect
+     * @return <code>true</code> if the given type overrides the equals method, otherwise <code>false</code>
+     */
+    public static boolean hasEqualsMethod(Class<?> type) {
+        return !Object.class.equals(declaringClass(type, "equals", Object.class));
+    }
+
+    /**
+     * Indicates whether the two given objects are <em>not the same</em>, override an equals method that indicates
+     * they are <em>not equal</em>, or implements {@link Comparable} which indicates the two are not equal. If this
+     * method cannot safely indicate two objects are not equal, it returns
+     * <code>false</code>.
+     *
+     * @param value      One of the values to compare
+     * @param otherValue other value to compate
+     * @return <code>true</code> if these objects explicitly indicate they are not equal, <code>false</code> otherwise.
+     */
+    @SuppressWarnings("unchecked")
+    public static boolean explicitlyUnequal(Object value, Object otherValue) {
+        if (value == otherValue) {
+            return false;
+        } else if (value == null || otherValue == null) {
+            return true;
+        } else if (value instanceof Comparable) {
+            return ((Comparable) value).compareTo(otherValue) != 0;
+        } else if (hasEqualsMethod(value.getClass())) {
+            return !value.equals(otherValue);
+        }
+        return false;
+    }
+
+    /**
      * Makes the given <code>member</code> accessible via reflection if it is not the case already.
      *
      * @param member The member (field, method, constructor, etc) to make accessible
