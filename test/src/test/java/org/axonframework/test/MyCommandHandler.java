@@ -39,7 +39,11 @@ class MyCommandHandler {
 
     @CommandHandler
     public void createAggregate(CreateAggregateCommand command) {
-        repository.add(new MyAggregate(0, command.getAggregateIdentifier()));
+        if (command.getAggregateIdentifier() != null) {
+            repository.add(new MyAggregate(0, command.getAggregateIdentifier()));
+        } else {
+            repository.add(new MyAggregate(0));
+        }
     }
 
     @CommandHandler

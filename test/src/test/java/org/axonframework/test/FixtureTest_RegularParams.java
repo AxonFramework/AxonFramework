@@ -129,6 +129,14 @@ public class FixtureTest_RegularParams {
     }
 
     @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_AggregateGeneratesIdentifier() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                                     fixture.getEventBus()))
+               .given()
+               .when(new CreateAggregateCommand(null));
+    }
+
+    @Test
     public void testFixtureGivenCommands() {
         fixture
                 .registerAnnotatedCommandHandler(

@@ -366,6 +366,10 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                     Iterator<AggregateRoot> iterator = aggregateRoots.iterator();
                     if (iterator.hasNext()) {
                         workingAggregate = iterator.next();
+                        if (workingAggregate.getVersion() == null) {
+                            // to cope with aggregates generating their own identifiers
+                            aggregateIdentifier = workingAggregate.getIdentifier();
+                        }
                     }
                 }
             });
