@@ -201,11 +201,11 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
 
             // return to regular event store, just in case
             repository.setEventStore(eventStore);
-            assertEqualState(workingAggregate, aggregate2);
+            assertValidWorkingAggregateState(aggregate2);
         }
     }
 
-    private void assertEqualState(AggregateRoot workingAggregate, EventSourcedAggregateRoot eventSourcedAggregate) {
+    private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate) {
         for (Field field : fieldsOf(workingAggregate.getClass())) {
             if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
                 ensureAccessible(field);

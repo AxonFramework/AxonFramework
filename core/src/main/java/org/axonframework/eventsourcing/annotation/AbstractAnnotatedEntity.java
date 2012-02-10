@@ -35,6 +35,9 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
 
     private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
 
+    /**
+     * Default constructor for AnnotatedEntities
+     */
     protected AbstractAnnotatedEntity() {
         this.eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
     }

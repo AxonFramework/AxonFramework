@@ -73,6 +73,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      * <p/>
      * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
      * SnapshotEventEntry}.
+     *
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      */
     public JpaEventStore(EntityManagerProvider entityManagerProvider) {
         this(entityManagerProvider, new XStreamEventSerializer(), new DefaultEventEntryStore());

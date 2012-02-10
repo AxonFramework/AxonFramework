@@ -155,6 +155,11 @@ public interface FixtureExecutionResult {
      */
     FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher);
 
+    /**
+     * Asserts that no commands have been dispatched by the Saga.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     */
     FixtureExecutionResult expectNoDispatchedCommands();
 
     /**
