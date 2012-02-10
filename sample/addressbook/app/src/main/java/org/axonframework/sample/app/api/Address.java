@@ -16,12 +16,14 @@
 
 package org.axonframework.sample.app.api;
 
+import java.io.Serializable;
+
 /**
  * <p>Value object representing an address.</p>
  *
  * @author Allard Buijze
  */
-public class Address {
+public class Address implements Serializable {
 
     private String streetAndNumber;
     private String zipCode;

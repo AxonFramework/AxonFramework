@@ -106,7 +106,7 @@ public class GaeXStream extends XStream {
         registerConverter(new MapConverter(mapper), PRIORITY_NORMAL);
         registerConverter(new TreeMapConverter(mapper), PRIORITY_NORMAL);
         registerConverter(new TreeSetConverter(mapper), PRIORITY_NORMAL);
-        registerConverter(new EncodedByteArrayConverter(), PRIORITY_NORMAL);
+        registerConverter((Converter) new EncodedByteArrayConverter(), PRIORITY_NORMAL);
 
         registerConverter(new FileConverter(), PRIORITY_NORMAL);
 
