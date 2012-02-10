@@ -126,6 +126,19 @@ public class FixtureTest_RegularParams {
     }
 
     @Test
+    public void testFixtureGivenCommands() {
+        fixture
+                .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createRepository(MyAggregate.class),
+                                                                      fixture.getEventBus()))
+                .givenCommands(new CreateAggregateCommand(fixture.getAggregateIdentifier()),
+                               new TestCommand(fixture.getAggregateIdentifier()),
+                               new TestCommand(fixture.getAggregateIdentifier()),
+                               new TestCommand(fixture.getAggregateIdentifier()))
+                .when(new TestCommand(fixture.getAggregateIdentifier()))
+                .expectEvents(new MyEvent(4));
+    }
+
+    @Test
     public void testFixture_CommandHandlerDispatchesNonDomainEvents() {
         List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.createRepository(MyAggregate.class),

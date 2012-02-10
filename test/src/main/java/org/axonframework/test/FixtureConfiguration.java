@@ -118,9 +118,6 @@ public interface FixtureConfiguration {
     /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
-     * <p/>
-     * Note that the aggregate identifier and the sequence number do not have to be set on these events. The fixture
-     * will automatically set those.
      *
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
@@ -130,14 +127,29 @@ public interface FixtureConfiguration {
     /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
-     * <p/>
-     * Note that the aggregate identifier and the sequence number do not have to be set on these events. The fixture
-     * will automatically set those.
      *
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
      */
     TestExecutor given(List<?> domainEvents);
+
+    /**
+     * Configures the given <code>commands</code> as the command that will provide the "given" events. The commands are
+     * executed, and the resulting stored events are captured.
+     *
+     * @param commands the domain events the event store should return
+     * @return a TestExecutor instance that can execute the test with this configuration
+     */
+    TestExecutor givenCommands(Object... commands);
+
+    /**
+     * Configures the given <code>commands</code> as the command that will provide the "given" events. The commands are
+     * executed, and the resulting stored events are captured.
+     *
+     * @param commands the domain events the event store should return
+     * @return a TestExecutor instance that can execute the test with this configuration
+     */
+    TestExecutor givenCommands(List<?> commands);
 
     /**
      * Returns the identifier of the aggregate that this fixture prepares. When commands need to load an aggregate
@@ -198,5 +210,4 @@ public interface FixtureConfiguration {
      *                                 methods.
      */
     void setReportIllegalStateChange(boolean reportIllegalStateChange);
-
 }

@@ -144,6 +144,23 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         return this;
     }
 
+    @Override
+    public TestExecutor givenCommands(Object... commands) {
+        return givenCommands(Arrays.asList(commands));
+    }
+
+    @Override
+    public TestExecutor givenCommands(List<?> commands) {
+        clearGivenWhenState();
+        for (Object command : commands) {
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage(command));
+            givenEvents.addAll(storedEvents);
+            storedEvents.clear();
+        }
+        publishedEvents.clear();
+        return this;
+    }
+
     @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator when(Object command) {
