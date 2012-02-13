@@ -137,6 +137,15 @@ public class FixtureTest_RegularParams {
     }
 
     @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createGenericRepository(MyAggregate.class),
+                                                                     fixture.getEventBus()))
+               .given(new MyEvent(5))
+               .when(new DeleteCommand(fixture.getAggregateIdentifier()))
+               .expectEvents(new MyAggregateDeletedEvent());
+    }
+
+    @Test
     public void testFixtureGivenCommands() {
         fixture
                 .registerAnnotatedCommandHandler(

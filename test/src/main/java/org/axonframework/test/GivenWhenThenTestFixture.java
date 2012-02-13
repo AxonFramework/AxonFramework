@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -195,42 +196,58 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                 }
             });
             UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-            EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
-            // rollback to prevent changes bing pushed to event store
-            uow.rollback();
-
-            // return to regular event store, just in case
-            repository.setEventStore(eventStore);
-            assertValidWorkingAggregateState(aggregate2);
-        }
-    }
-
-    private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate) {
-        for (Field field : fieldsOf(workingAggregate.getClass())) {
-            if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
-                ensureAccessible(field);
-                Object workingFieldValue = null;
-                Object eventSourcedFieldValue = null;
-                try {
-                    workingFieldValue = field.get(workingAggregate);
-                    eventSourcedFieldValue = field.get(eventSourcedAggregate);
-                } catch (IllegalAccessException e) {
-                    logger.warn("Could not access field \"{}\". Unable to detect inappropriate state changes",
-                                field.getName());
+            try {
+                EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
+                if (workingAggregate.isDeleted()) {
+                    throw new AxonAssertionError("The working aggregate was considered deleted, "
+                                                         + "but the Repository still contains a non-deleted copy of "
+                                                         + "the aggregate. Make sure one of the Aggregate's Events "
+                                                         + "contains an AggregateDeletedEvent, or the aggregate "
+                                                         + "explicitly marks itself as deleted in an EventHandler.");
                 }
-                ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, field.getName());
+                assertValidWorkingAggregateState(aggregate2);
+            } catch (AggregateNotFoundException notFound) {
+                if (!workingAggregate.isDeleted()) {
+                    throw new AxonAssertionError("The working aggregate was not considered deleted, "
+                                                         + "but the Repository cannot recover the state of the "
+                                                         + "aggregate, as it is considered deleted there.");
+                }
+            } finally {
+                // rollback to prevent changes bing pushed to event store
+                uow.rollback();
+
+                // return to regular event store, just in case
+                repository.setEventStore(eventStore);
             }
         }
     }
 
-    private void ensureValuesEqual(Object workingValue, Object eventSourcedValue, String propertyPath) {
+    private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate) {
+        HashSet<ComparationEntry> comparedEntries = new HashSet<ComparationEntry>();
+        comparedEntries.add(new ComparationEntry(workingAggregate, eventSourcedAggregate));
+        if (!workingAggregate.getClass().equals(eventSourcedAggregate.getClass())) {
+            throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
+                                                               + "be of another type than the original. Got <%s>, "
+                                                               + "expected, <%s>.",
+                                                       workingAggregate.getClass().getName(),
+                                                       eventSourcedAggregate.getClass().getName()));
+        }
+        ensureValuesEqual(workingAggregate,
+                          eventSourcedAggregate,
+                          eventSourcedAggregate.getClass().getName(),
+                          comparedEntries);
+    }
+
+    private void ensureValuesEqual(Object workingValue, Object eventSourcedValue, String propertyPath,
+                                   Set<ComparationEntry> comparedEntries) {
         if (explicitlyUnequal(workingValue, eventSourcedValue)) {
             throw new AxonAssertionError(format("Illegal state change detected! "
                                                         + "Property \"%s\" has different value when sourcing events\n"
                                                         + "Working aggregate value:     <%s>\n"
                                                         + "Value after applying events: <%s>",
                                                 propertyPath, workingValue, eventSourcedValue));
-        } else if (workingValue != null && !hasEqualsMethod(workingValue.getClass())) {
+        } else if (comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue))
+                && workingValue != null && !hasEqualsMethod(workingValue.getClass())) {
             for (Field field : fieldsOf(workingValue.getClass())) {
                 if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
                     ensureAccessible(field);
@@ -244,7 +261,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                         logger.warn("Could not access field \"{}\". Unable to detect inappropriate state changes.",
                                     newPropertyPath);
                     }
-                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath);
+                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries);
                 }
             }
         }
@@ -374,6 +391,45 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                 }
             });
             return interceptorChain.proceed();
+        }
+    }
+
+    private static class ComparationEntry {
+
+        private final Object workingObject;
+        private final Object eventSourceObject;
+
+        public ComparationEntry(Object workingObject, Object eventSourceObject) {
+            this.workingObject = workingObject;
+            this.eventSourceObject = eventSourceObject;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ComparationEntry that = (ComparationEntry) o;
+
+            if (!eventSourceObject.equals(that.eventSourceObject)) {
+                return false;
+            }
+            if (!workingObject.equals(that.workingObject)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = workingObject.hashCode();
+            result = 31 * result + eventSourceObject.hashCode();
+            return result;
         }
     }
 }
