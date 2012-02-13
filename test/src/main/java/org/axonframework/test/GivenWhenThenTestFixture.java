@@ -227,8 +227,8 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
         comparedEntries.add(new ComparationEntry(workingAggregate, eventSourcedAggregate));
         if (!workingAggregate.getClass().equals(eventSourcedAggregate.getClass())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
-                                                               + "be of another type than the original. Got <%s>, "
-                                                               + "expected, <%s>.",
+                                                               + "be of another type than the original.\n"
+                                                               + "Working type: <%s>\nEvent Sourced type: <%s>",
                                                        workingAggregate.getClass().getName(),
                                                        eventSourcedAggregate.getClass().getName()));
         }
@@ -242,7 +242,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                                    Set<ComparationEntry> comparedEntries) {
         if (explicitlyUnequal(workingValue, eventSourcedValue)) {
             throw new AxonAssertionError(format("Illegal state change detected! "
-                                                        + "Property \"%s\" has different value when sourcing events\n"
+                                                        + "Property \"%s\" has different value when sourcing events.\n"
                                                         + "Working aggregate value:     <%s>\n"
                                                         + "Value after applying events: <%s>",
                                                 propertyPath, workingValue, eventSourcedValue));
@@ -252,16 +252,14 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                 if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
                     ensureAccessible(field);
                     String newPropertyPath = propertyPath + "." + field.getName();
-                    Object workingFieldValue = null;
-                    Object eventSourcedFieldValue = null;
                     try {
-                        workingFieldValue = field.get(workingValue);
-                        eventSourcedFieldValue = field.get(eventSourcedValue);
+                        Object workingFieldValue = field.get(workingValue);
+                        Object eventSourcedFieldValue = field.get(eventSourcedValue);
+                        ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries);
                     } catch (IllegalAccessException e) {
                         logger.warn("Could not access field \"{}\". Unable to detect inappropriate state changes.",
                                     newPropertyPath);
                     }
-                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries);
                 }
             }
         }
