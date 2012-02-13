@@ -126,6 +126,23 @@ public class FixtureTest_RegularParams {
     }
 
     @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_AggregateGeneratesIdentifier() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createRepository(MyAggregate.class),
+                                                                     fixture.getEventBus()))
+               .given()
+               .when(new CreateAggregateCommand(null));
+    }
+
+    @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createRepository(MyAggregate.class),
+                                                                     fixture.getEventBus()))
+               .given(new MyEvent(5))
+               .when(new DeleteCommand(fixture.getAggregateIdentifier()))
+               .expectEvents(new MyAggregateDeletedEvent());
+    }
+
+    @Test
     public void testFixtureGivenCommands() {
         fixture
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.createRepository(MyAggregate.class),
