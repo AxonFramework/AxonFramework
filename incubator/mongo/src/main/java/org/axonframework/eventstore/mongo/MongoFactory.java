@@ -26,26 +26,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Factory bean for a Mongo instance class. This factory is required since we want to support the most basic setup as
+ * <p>Factory bean for a Mongo instance class. This factory is required since we want to support the most basic setup as
  * well as a more advanced setup. The most basic setup makes use of only one instance of Mongo. This scenario is not
- * really suitable for a production environment, but it does work for a simple test environment.
- * <p/>
- * The factory supports two environments: <ul> <li>Single instance - configure this factory with
- * setSingleInstanceContext(true) or system parameter axon.mongo.singleinstance</li> <li>Replica Set - the list of
- * provide <code>ServerAddress</code> instances becomes mandatory.</li> </ul>
- * <p/>
- * For Replica Set usage we expect at least 1 server to be configured. If not, an <code>IllegalStateException</code> is
- * thrown. Be warned, it is better to provide multiple servers in case of a Replica Set.
- * <p/>
- * To configure a Mongo that fits your purpose, you can use two other configuration options. You can provide a
- * WriteConcern and a MongoOptions object.
- * <p/>
- * The write concern is important in relation to the environment. In a single instance context, the SAFE WriteConcern is
- * by default used. For a replica set environment, by default the REPLICA_SAFE is used.
- * <p/>
- * Configuring the Mongo instance thread pool can be done by providing a <code>MongoOptions</code>. To make this easier,
+ * really suitable for a production environment, but it does work for a simple test environment.</p>
+ * <p>The factory supports two environments: </p>
+ * <ul>
+ * <li>Single instance - configure this factory with setSingleInstanceContext(true) or
+ * system parameter axon.mongo.singleinstance</li>
+ * <li>Replica Set - the list of provided <code>ServerAddress</code> instances becomes mandatory.</li>
+ * </ul>
+ * <p>For Replica Set usage we expect at least 1 server to be configured. If not, an <code>IllegalStateException</code> is
+ * thrown. Be warned, it is better to provide multiple servers in case of a Replica Set.</p>
+ * <p>To configure a Mongo that fits your purpose, you can use two other configuration options. You can provide a
+ * WriteConcern and a MongoOptions object.</p>
+ * <p>The write concern is important in relation to the environment. In a single instance context, the SAFE WriteConcern is
+ * by default used. For a replica set environment, by default the REPLICA_SAFE is used.</p>
+ * <p>Configuring the Mongo instance thread pool can be done by providing a <code>MongoOptions</code>. To make this easier,
  * a factory is provided. The <code>MongoOptionsFactory</code> facilitates creating such an object. One good reason to
- * provide a MongoOptions object is to increase the number of connections to the actual mongo databasel
+ * provide a MongoOptions object is to increase the number of connections to the actual mongo database</p>
  *
  * @author Jettro Coenradie
  * @since 0.7
@@ -158,11 +156,11 @@ public class MongoFactory {
      * @return true if we connect to a single instance Mongo, false for a replica set
      */
     boolean isSingleInstanceContext() {
-        String systemTestContext = System.getProperty(SYSTEMPROPERTY_SINGLEINSTANCECONTEXT);
-        if (null != systemTestContext) {
-            return Boolean.parseBoolean(systemTestContext);
+        String singleInstanceContext = System.getProperty(SYSTEMPROPERTY_SINGLEINSTANCECONTEXT);
+        if (null != singleInstanceContext) {
+            return Boolean.parseBoolean(singleInstanceContext);
         } else {
-            return singleInstanceContext;
+            return this.singleInstanceContext;
         }
 
     }

@@ -50,7 +50,7 @@ public class MongoSagaRepository extends AbstractSagaRepository {
         if (!initialized) {
             initialize();
         }
-        super.commit(saga);    //To change body of overridden methods use File | Settings | File Templates.
+        super.commit(saga);
     }
 
     private synchronized void initialize() {

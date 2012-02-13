@@ -42,8 +42,6 @@ import static org.axonframework.eventstore.mongo.EventEntry.UTF8;
  * <p>This event store implementation needs a serializer as well as a {@see MongoTemplate} to interact with the
  * mongo database.</p>
  * <p/>
- * <p><strong>Warning:</strong> This implementation is still in progress and may be subject to alterations. The
- * implementation works, but has not been optimized to fully leverage MongoDB's features, yet.</p>
  *
  * @author Jettro Coenradie
  * @since 0.7
@@ -126,7 +124,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         EventEntry snapshotEventEntry = new EventEntry(type, snapshotEvent, eventSerializer);
         mongoTemplate.snapshotEventCollection().insert(snapshotEventEntry.asDBObject());
         if (logger.isDebugEnabled()) {
-            logger.debug("snapshot event of type {} appended.");
+            logger.debug("snapshot event of type {} appended.", type);
         }
     }
 

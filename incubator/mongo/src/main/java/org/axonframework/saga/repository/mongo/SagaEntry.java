@@ -6,7 +6,7 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.SagaSerializer;
 
 /**
- * Java representation of sagas stored in a mongo instance
+ * <p>Java representation of sagas stored in a mongo instance.</p>
  *
  * @author Jettro Coenradie
  */

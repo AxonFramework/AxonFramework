@@ -8,7 +8,7 @@ import org.axonframework.saga.SagaStorageException;
 import java.io.Serializable;
 
 /**
- * Mongo java representation of an Association Value belonging to a certain saga.
+ * <p>Mongo java representation of an Association Value belonging to a certain saga.</p>
  *
  * @author Jettro Coenradie
  */
@@ -63,32 +63,32 @@ public class AssociationValueEntry {
 
     public DBObject asDBObject() {
         return BasicDBObjectBuilder.start()
-                                   .add(ASSOCIATION_KEY, associationKey)
-                                   .add(ASSOCIATION_VALUE, associationValue)
-                                   .add(ASSOCIATION_SAGA_IDENTIFIER, sagaId)
-                                   .get();
+                .add(ASSOCIATION_KEY, associationKey)
+                .add(ASSOCIATION_VALUE, associationValue)
+                .add(ASSOCIATION_SAGA_IDENTIFIER, sagaId)
+                .get();
     }
 
     public static DBObject queryByKeyAndValue(String key, String value) {
         return BasicDBObjectBuilder.start()
-                                   .add(ASSOCIATION_KEY, key)
-                                   .add(ASSOCIATION_VALUE, value)
-                                   .get();
+                .add(ASSOCIATION_KEY, key)
+                .add(ASSOCIATION_VALUE, value)
+                .get();
     }
 
     public static DBObject queryBySagaIdentifier(String sagaIdentifier) {
         return BasicDBObjectBuilder.start()
-                                   .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
-                                   .get();
+                .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
+                .get();
     }
 
     public static DBObject queryBySagaIdentifierAndAssociationKeyValue(String sagaIdentifier, String key,
                                                                        String value) {
         return BasicDBObjectBuilder.start()
-                                   .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
-                                   .add(ASSOCIATION_KEY, key)
-                                   .add(ASSOCIATION_VALUE, value)
-                                   .get();
+                .add(ASSOCIATION_SAGA_IDENTIFIER, sagaIdentifier)
+                .add(ASSOCIATION_KEY, key)
+                .add(ASSOCIATION_VALUE, value)
+                .get();
     }
 
 }
