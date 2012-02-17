@@ -29,7 +29,6 @@
         <module>integrationtests</module>
         <module>incubator/mongo</module>
         <module>incubator/google-app-engine</module>
-        <module>spring-insight-plugin</module>
         <!--<module>migration</module>-->
     </modules>
     <packaging>pom</packaging>
@@ -55,6 +54,15 @@
             <id>with-doc</id>
             <modules>
                 <module>documentation</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>with-insight-plugin</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>spring-insight-plugin</module>
             </modules>
         </profile>
         <profile>
