@@ -32,7 +32,6 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.Upcaster;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;

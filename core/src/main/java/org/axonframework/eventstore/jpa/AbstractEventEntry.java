@@ -23,7 +23,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.UpcasterChain;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.util.Arrays;
@@ -103,13 +103,13 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
      * @return The deserialized domain event
      */
-    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer, UpcasterChain upcasterChain) {
+    public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer, UpcasterChain upcasterChain) {
         return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
                                                                       eventIdentifier,
                                                                       aggregateIdentifier,
                                                                       sequenceNumber,
                                                                       new DateTime(timeStamp),
-                                                                      new SimpleSerializedObject(payload,  
+                                                                      new SimpleSerializedObject(payload,
                                                                                                  byte[].class,
                                                                                                  payloadType,
                                                                                                  payloadRevision),

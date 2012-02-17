@@ -33,9 +33,9 @@ import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.Upcaster;
-import org.axonframework.serializer.UpcasterChain;
 import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.upcasting.Upcaster;
+import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +75,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     private final Serializer eventSerializer;
     private final EventEntryStore eventEntryStore;
     private int batchSize = DEFAULT_BATCH_SIZE;
-    private UpcasterChain upcasterChain;
+    private UpcasterChain upcasterChain = UpcasterChain.EMPTY;
     private final EntityManagerProvider entityManagerProvider;
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
 
@@ -130,7 +130,6 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         this.entityManagerProvider = entityManagerProvider;
         this.eventSerializer = eventSerializer;
         this.eventEntryStore = eventEntryStore;
-        setUpcasters(new ArrayList<Upcaster>());
     }
 
     /**

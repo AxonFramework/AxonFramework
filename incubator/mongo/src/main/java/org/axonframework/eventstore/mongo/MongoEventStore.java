@@ -31,9 +31,9 @@ import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteriaBuilder;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.Upcaster;
-import org.axonframework.serializer.UpcasterChain;
 import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.upcasting.Upcaster;
+import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,7 +149,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         while (shouldContinue) {
             batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE, filter);
             for (EventEntry entry : batch) {
-                for(DomainEventMessage event : entry.getDomainEvent(eventSerializer, upcasterChain)) {
+                for (DomainEventMessage event : entry.getDomainEvent(eventSerializer, upcasterChain)) {
                     visitor.doWithEvent(event);
                 }
             }

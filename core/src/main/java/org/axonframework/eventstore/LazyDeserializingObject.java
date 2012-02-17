@@ -25,7 +25,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * Represents a serialized object that can be deserializedObjects upon request. Typically used as a wrapper class for keeping
+ * Represents a serialized object that can be deserializedObjects upon request. Typically used as a wrapper class for
+ * keeping
  * a SerializedObject and its Serializer together.
  *
  * @param <T> The type of object contained in the serialized object
@@ -36,13 +37,13 @@ import java.io.Serializable;
 public class LazyDeserializingObject<T> implements Serializable {
 
     private static final long serialVersionUID = -5533042142349963796L;
-    
+
     private transient Serializer serializer;
     private transient LazyUpcastingObject serializedObject;
-
-    private int indexOnDeserializedObject;
-    private volatile T deserializedObject;
+    private transient int indexOnDeserializedObject;
     private transient volatile Class deserializedObjectType;
+
+    private volatile T deserializedObject;
 
     /**
      * Creates an instance with the given <code>deserializedObject</code> object instance. Using this constructor will
@@ -60,8 +61,8 @@ public class LazyDeserializingObject<T> implements Serializable {
     }
 
     /**
-     * @param serializedObject The serialized payload of the message
-     * @param serializer       The serializer to deserialize the payload data with
+     * @param serializedObject          The serialized payload of the message
+     * @param serializer                The serializer to deserialize the payload data with
      * @param indexOnDeserializedObject the index on the deserialized object
      */
     public LazyDeserializingObject(LazyUpcastingObject serializedObject, Serializer serializer,
@@ -81,7 +82,8 @@ public class LazyDeserializingObject<T> implements Serializable {
      */
     public Class getType() {
         if (deserializedObjectType == null) {
-            deserializedObjectType = serializer.classForType(serializedObject.getTypes().get(indexOnDeserializedObject));
+            deserializedObjectType = serializer.classForType(serializedObject.getTypes()
+                                                                             .get(indexOnDeserializedObject));
         }
         return deserializedObjectType;
     }
@@ -94,7 +96,8 @@ public class LazyDeserializingObject<T> implements Serializable {
     @SuppressWarnings("unchecked")
     public T getObject() {
         if (!isDeserialized()) {
-            deserializedObject = (T) serializer.deserialize(serializedObject.getObjects().get(indexOnDeserializedObject));
+            deserializedObject = (T) serializer.deserialize(serializedObject.getObjects()
+                                                                            .get(indexOnDeserializedObject));
         }
         if (deserializedObjectType == null && deserializedObject != null) {
             deserializedObjectType = extractType(deserializedObject);
@@ -126,5 +129,4 @@ public class LazyDeserializingObject<T> implements Serializable {
     public boolean isDeserialized() {
         return deserializedObject != null;
     }
-
 }

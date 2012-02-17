@@ -21,7 +21,7 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.UpcasterChain;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
@@ -52,7 +52,18 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
     private transient final LazyDeserializingObject<MetaData> serializedMetaData;
     private transient final LazyDeserializingObject<T> serializedPayload;
 
-    private SerializedDomainEventMessage(String eventIdentifier, Object aggregateIdentifier,
+    /**
+     * Creates a new instance with given event details,to be deserialized with given
+     * <code>payloadSerializer</code> and <code>metaDataSerializer</code>.
+     *
+     * @param eventIdentifier     The identifier of the EventMessage
+     * @param aggregateIdentifier The identifier of the Aggregate this message originates from
+     * @param sequenceNumber      The sequence number that represents the order in which the message is generated
+     * @param timestamp           The timestamp of (original) message creation
+     * @param serializedPayload   The serialized payload of this message
+     * @param serializedMetaData  The serialized meta data of the message
+     */
+    public SerializedDomainEventMessage(String eventIdentifier, Object aggregateIdentifier,
                                         long sequenceNumber, DateTime timestamp,
                                         LazyDeserializingObject<T> serializedPayload,
                                         LazyDeserializingObject<MetaData> serializedMetaData) {
@@ -147,7 +158,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
                             timeStamp,
                             new LazyDeserializingObject<Object>(lazyUpcastedPayload, payloadSerializer, eventIndex),
                             new LazyDeserializingObject<MetaData>(lazyUpcastedMetaData, metaDataSerializer, eventIndex)
-                            ));
+                    ));
         }
         return lazyDeserializedDomainEvents;
     }

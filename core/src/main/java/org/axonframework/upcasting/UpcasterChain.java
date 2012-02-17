@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.serializer;
+package org.axonframework.upcasting;
 
-import java.io.Serializable;
+import org.axonframework.serializer.ChainingConverterFactory;
+import org.axonframework.serializer.ContentTypeConverter;
+import org.axonframework.serializer.ConverterFactory;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SerializedType;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,7 +30,8 @@ import java.util.List;
 import java.util.Queue;
 
 /**
- * Represents a series of upcasters which are combined to upcast a {@link SerializedObject} to the most recent revision
+ * Represents a series of upcasters which are combined to upcast a {@link org.axonframework.serializer.SerializedObject}
+ * to the most recent revision
  * of that payload. The intermediate representation required by each of the upcasters is converted using converters
  * provided by a converterFactory.
  * <p/>
@@ -40,6 +46,11 @@ public class UpcasterChain {
 
     private final List<Upcaster> upcasters;
     private final ConverterFactory converterFactory;
+
+    /**
+     * Represents an empty UpcasterChain.
+     */
+    public static final UpcasterChain EMPTY = new UpcasterChain(Collections.<Upcaster>emptyList());
 
     /**
      * Initializes the UpcasterChain with a ChainingConverterFactory
@@ -167,7 +178,7 @@ public class UpcasterChain {
 
     @SuppressWarnings({"unchecked"})
     private <T> SerializedObject<T> ensureCorrectContentType(SerializedObject<?> current,
-                                                                       Class<T> expectedContentType) {
+                                                             Class<T> expectedContentType) {
         if (!expectedContentType.isAssignableFrom(current.getContentType())) {
             ContentTypeConverter converter = converterFactory.getConverter(current.getContentType(),
                                                                            expectedContentType);
@@ -175,5 +186,4 @@ public class UpcasterChain {
         }
         return (SerializedObject<T>) current;
     }
-
 }

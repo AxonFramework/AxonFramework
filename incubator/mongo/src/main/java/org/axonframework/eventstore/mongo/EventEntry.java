@@ -25,7 +25,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.UpcasterChain;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.util.List;
@@ -134,10 +134,11 @@ class EventEntry {
                                                                       aggregateIdentifier,
                                                                       sequenceNumber,
                                                                       new DateTime(timeStamp),
-                                                                      new SimpleSerializedObject<String>(serializedPayload,
-                                                                                                 String.class,
-                                                                                                 payoadType,
-                                                                                                 payloadRevision),
+                                                                      new SimpleSerializedObject<String>(
+                                                                              serializedPayload,
+                                                                              String.class,
+                                                                              payoadType,
+                                                                              payloadRevision),
                                                                       new SerializedMetaData<String>(serializedMetaData,
                                                                                                      String.class),
                                                                       upcasterChain);
@@ -186,5 +187,4 @@ class EventEntry {
                                    .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
                                    .get();
     }
-
 }

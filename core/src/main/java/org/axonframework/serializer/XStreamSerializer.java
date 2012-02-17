@@ -41,7 +41,6 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -172,11 +171,11 @@ public class XStreamSerializer implements Serializer {
         if ("org.dom4j.Document".equals(serializedObject.getContentType().getName())) {
             return xStream.unmarshal(new Dom4JReader((Document) serializedObject.getData()));
         } else {
-            SerializedObject convertedSerializedObject = converterFactory.getConverter(serializedObject
-                                                                                               .getContentType(),
-                                                                                       InputStream.class).convert(
-                    serializedObject);
-            return xStream.fromXML(new InputStreamReader((InputStream) convertedSerializedObject.getData(), charset));
+            SerializedObject<InputStream> convertedSerializedObject =
+                    converterFactory.getConverter(serializedObject.getContentType(),
+                                                  InputStream.class)
+                                    .convert(serializedObject);
+            return xStream.fromXML(new InputStreamReader(convertedSerializedObject.getData(), charset));
         }
     }
 

@@ -29,9 +29,9 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.Upcaster;
-import org.axonframework.serializer.UpcasterChain;
 import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.upcasting.Upcaster;
+import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -137,5 +137,4 @@ public class GaeEventStore implements SnapshotEventStore {
     public void setUpcasters(List<Upcaster> upcasters) {
         this.upcasterChain = new UpcasterChain(upcasters);
     }
-
 }

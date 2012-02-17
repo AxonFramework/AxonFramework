@@ -27,7 +27,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.UpcasterChain;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.nio.charset.Charset;

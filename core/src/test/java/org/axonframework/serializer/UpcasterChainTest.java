@@ -16,14 +16,14 @@
 
 package org.axonframework.serializer;
 
+import org.axonframework.upcasting.Upcaster;
+import org.axonframework.upcasting.UpcasterChain;
 import org.dom4j.Document;
 import org.junit.*;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -211,15 +211,16 @@ public class UpcasterChainTest {
         }
 
         @Override
-        public  List<SerializedObject> upcast(SerializedObject intermediateRepresentation) {
+        public List<SerializedObject> upcast(SerializedObject intermediateRepresentation) {
             assertEquals(expectedType, intermediateRepresentation.getType());
             return upcastResult;
         }
 
         @Override
         public List<SerializedType> upcast(SerializedType serializedType) {
-            return new ArrayList<SerializedType> (
-                    Arrays.asList(new SimpleSerializedType(serializedType.getName(), serializedType.getRevision() + 1)));
+            return new ArrayList<SerializedType>(
+                    Arrays.asList(new SimpleSerializedType(serializedType.getName(),
+                                                           serializedType.getRevision() + 1)));
         }
     }
 }
