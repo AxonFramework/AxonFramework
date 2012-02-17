@@ -26,10 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Serializer implementation that uses Java serialization to serialize and deserialize object instances. This
@@ -38,7 +34,6 @@ import java.util.List;
  * {@link XStreamSerializer} might be a more suitable alternative.
  *
  * @author Allard Buijze
- * @author Frank Versnel
  * @since 2.0
  */
 public class JavaSerializer implements Serializer {
@@ -61,20 +56,20 @@ public class JavaSerializer implements Serializer {
         }
         new SimpleSerializedType(instance.getClass().getName(), revisionOf(instance.getClass()));
         T converted = converterFactory.getConverter(byte[].class, expectedType)
-                                                    .convert(baos.toByteArray());
+                                      .convert(baos.toByteArray());
         return new SimpleSerializedObject<T>(converted, expectedType, instance.getClass().getName(),
                                              revisionOf(instance.getClass()));
     }
 
     @Override
-    public <T> List<Object> deserialize(SerializedObject<T> serializedObject) {
+    public <T> Object deserialize(SerializedObject<T> serializedObject) {
         SerializedObject<InputStream> converted = converterFactory.getConverter(serializedObject.getContentType(),
                                                                                 InputStream.class)
                                                                   .convert(serializedObject);
         InputStream stream = converted.getData();
         try {
             ObjectInputStream ois = new ObjectInputStream(stream);
-            return Collections.singletonList(ois.readObject());
+            return ois.readObject();
         } catch (ClassNotFoundException e) {
             throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         } catch (IOException e) {
@@ -86,9 +81,9 @@ public class JavaSerializer implements Serializer {
     }
 
     @Override
-    public List<Class> classForType(SerializedType type) {
+    public Class classForType(SerializedType type) {
         try {
-            return Arrays.asList(new Class[]{Class.forName(type.getName())});
+            return Class.forName(type.getName());
         } catch (ClassNotFoundException e) {
             logger.warn("Could not load class for serialized type [{}] revision {}",
                         type.getName(), type.getRevision());

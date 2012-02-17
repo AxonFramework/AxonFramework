@@ -26,7 +26,6 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.mapper.Mapper;
-import org.axonframework.common.Assert;
 import org.axonframework.common.SerializationException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -41,8 +40,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +54,6 @@ import java.util.UUID;
  * policy). That means that for portability, you should do either of these two.
  *
  * @author Allard Buijze
- * @author Frank Versnel
  * @see com.thoughtworks.xstream.XStream
  * @since 1.2
  */
@@ -66,7 +62,6 @@ public class XStreamSerializer implements Serializer {
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
     private final XStream xStream;
     private final Charset charset;
-    private volatile UpcasterChain upcasters;
     private ConverterFactory converterFactory;
 
     /**
@@ -121,7 +116,6 @@ public class XStreamSerializer implements Serializer {
         this.charset = charset;
         this.xStream = xStream;
         this.converterFactory = converterFactory;
-        this.upcasters = new UpcasterChain(converterFactory, new ArrayList<Upcaster>());
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.aliasPackage("axon.domain", "org.axonframework.domain");
@@ -174,36 +168,24 @@ public class XStreamSerializer implements Serializer {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public List<Object> deserialize(SerializedObject serializedObject) {
-        List<SerializedObject> upcastedSerializedObjects = upcasters.upcast(serializedObject);
-        
-        List<Object> deserializedObjects = new ArrayList<Object>();
-        for(SerializedObject upcastedSerializedObject : upcastedSerializedObjects) {
-            if ("org.dom4j.Document".equals(upcastedSerializedObject.getContentType().getName())) {
-                deserializedObjects.add(xStream.unmarshal(new Dom4JReader((Document) upcastedSerializedObject.getData())));
-            } else {
-                ContentTypeConverter converter =
-                        converterFactory.getConverter(upcastedSerializedObject.getContentType(), InputStream.class);
-                SerializedObject convertedUpcastedSerializedObject =
-                        converter.convert(upcastedSerializedObject);
-
-                deserializedObjects.add(xStream.fromXML(
-                        new InputStreamReader((InputStream) convertedUpcastedSerializedObject.getData(), charset)));
-            }
+    public <T> Object deserialize(SerializedObject<T> serializedObject) {
+        if ("org.dom4j.Document".equals(serializedObject.getContentType().getName())) {
+            return xStream.unmarshal(new Dom4JReader((Document) serializedObject.getData()));
+        } else {
+            SerializedObject convertedSerializedObject = converterFactory.getConverter(serializedObject
+                                                                                               .getContentType(),
+                                                                                       InputStream.class).convert(
+                    serializedObject);
+            return xStream.fromXML(new InputStreamReader((InputStream) convertedSerializedObject.getData(), charset));
         }
-        return deserializedObjects;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<Class> classForType(SerializedType type) {
-        List<Class> classes = new ArrayList<Class>();
-        for(SerializedType upcastedType : upcasters.upcast(type)) {
-            classes.add(xStream.getMapper().realClass(upcastedType.getName()));
-        }
-        return classes;
+    public Class classForType(SerializedType type) {
+        return xStream.getMapper().realClass(type.getName());
     }
 
     /**
@@ -279,20 +261,6 @@ public class XStreamSerializer implements Serializer {
         return xStream.getMapper().serializedClass(type);
     }
 
-    /**
-     * Sets the upcasters which allow older revisions of serialized objects to be deserialized. Upcasters are evaluated
-     * in the order they are provided in the given List. That means that you should take special precaution when an
-     * upcaster expects another upcaster to have processed an event.
-     * <p/>
-     * Any upcaster that relies on another upcaster doing its work first, should be placed <em>after</em> that other
-     * upcaster in the given list. Thus for any <em>upcaster B</em> that relies on <em>upcaster A</em> to do its work
-     * first, the following must be true: <code>upcasters.indexOf(B) > upcasters.indexOf(A)</code>.
-     *
-     * @param upcasters the upcasters for this serializer.
-     */
-    public void setUpcasters(List<Upcaster> upcasters) {
-        this.upcasters = new UpcasterChain(converterFactory, upcasters);
-    }
 
     /**
      * XStream Converter to serialize DateTime classes as a String.

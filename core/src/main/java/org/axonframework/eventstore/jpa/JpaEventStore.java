@@ -33,6 +33,8 @@ import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.Upcaster;
+import org.axonframework.serializer.UpcasterChain;
 import org.axonframework.serializer.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,10 +72,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     private static final int DEFAULT_BATCH_SIZE = 100;
     private static final int DEFAULT_MAX_SNAPSHOTS_ARCHIVED = 1;
 
-    private final EntityManagerProvider entityManagerProvider;
     private final Serializer eventSerializer;
     private final EventEntryStore eventEntryStore;
     private int batchSize = DEFAULT_BATCH_SIZE;
+    private UpcasterChain upcasterChain;
+    private final EntityManagerProvider entityManagerProvider;
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
 
     private PersistenceExceptionResolver persistenceExceptionResolver;
@@ -127,6 +130,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         this.entityManagerProvider = entityManagerProvider;
         this.eventSerializer = eventSerializer;
         this.eventEntryStore = eventEntryStore;
+        setUpcasters(new ArrayList<Upcaster>());
     }
 
     /**
@@ -168,23 +172,15 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         SerializedDomainEventData lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(type, identifier,
                                                                                             entityManager);
-        List<DomainEventMessage> snapshotEvents = new ArrayList<DomainEventMessage>();
+        DomainEventMessage snapshotEvent = null;
         if (lastSnapshotEvent != null) {
             try {
-                List<Object> deserializedEvents = eventSerializer.deserialize(lastSnapshotEvent.getMetaData());
-                for(Object deserializedEvent : deserializedEvents) {
-                    snapshotEvents.add(new GenericDomainEventMessage<Object>(
-                            identifier,
-                            lastSnapshotEvent.getSequenceNumber(),
-                            eventSerializer.deserialize(lastSnapshotEvent.getPayload()),
-                            (Map<String, Object>) deserializedEvent));
-                }
-
-                // It could be that the deserialized snapshot is an empty list
-                // If it is the sequence number is incorrect and we need to use some other sequence number
-                if(!deserializedEvents.isEmpty()) {
-                    snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
-                }
+                snapshotEvent = new GenericDomainEventMessage<Object>(
+                        identifier,
+                        lastSnapshotEvent.getSequenceNumber(),
+                        eventSerializer.deserialize(lastSnapshotEvent.getPayload()),
+                        (Map<String, Object>) eventSerializer.deserialize(lastSnapshotEvent.getMetaData()));
+                snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
             } catch (RuntimeException ex) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
@@ -199,7 +195,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
         }
 
         List<DomainEventMessage> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1);
-        events.addAll(0, snapshotEvents);
+        if (snapshotEvent != null) {
+            events.add(0, snapshotEvent);
+        }
         if (events.isEmpty()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
@@ -222,7 +220,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
                                                                                  entry.getSequenceNumber(),
                                                                                  entry.getTimestamp(),
                                                                                  entry.getPayload(),
-                                                                                 entry.getMetaData()));
+                                                                                 entry.getMetaData(),
+                                                                                 upcasterChain));
         }
         return events;
     }
@@ -278,8 +277,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
             batch = eventEntryStore.fetchFilteredBatch(whereClause, parameters, first, batchSize, entityManager);
             for (SerializedDomainEventData entry : batch) {
                 List<DomainEventMessage> domainEventMessages =
-                        SerializedDomainEventMessage.createDomainEventMessages(entry, eventSerializer, eventSerializer);
-                for(DomainEventMessage domainEventMessage : domainEventMessages) {
+                        SerializedDomainEventMessage.createDomainEventMessages(entry,
+                                                                               eventSerializer,
+                                                                               eventSerializer,
+                                                                               upcasterChain);
+                for (DomainEventMessage domainEventMessage : domainEventMessages) {
                     visitor.doWithEvent(domainEventMessage);
                 }
             }
@@ -325,6 +327,21 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
      */
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
+    }
+
+    /**
+     * Sets the upcasters which allow older revisions of serialized objects to be deserialized. Upcasters are evaluated
+     * in the order they are provided in the given List. That means that you should take special precaution when an
+     * upcaster expects another upcaster to have processed an event.
+     * <p/>
+     * Any upcaster that relies on another upcaster doing its work first, should be placed <em>after</em> that other
+     * upcaster in the given list. Thus for any <em>upcaster B</em> that relies on <em>upcaster A</em> to do its work
+     * first, the following must be true: <code>upcasters.indexOf(B) > upcasters.indexOf(A)</code>.
+     *
+     * @param upcasters the upcasters for this serializer.
+     */
+    public void setUpcasters(List<Upcaster> upcasters) {
+        this.upcasterChain = new UpcasterChain(upcasters);
     }
 
     /**

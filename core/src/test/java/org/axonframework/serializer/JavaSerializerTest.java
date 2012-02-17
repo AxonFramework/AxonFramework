@@ -3,7 +3,6 @@ package org.axonframework.serializer;
 import org.junit.*;
 
 import java.io.Serializable;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -26,15 +25,15 @@ public class JavaSerializerTest {
         assertEquals(MySerializableObject.class.getName(), serializedObject.getType().getName());
         assertEquals(0, serializedObject.getType().getRevision());
 
-        Object actualResult = testSubject.deserialize(serializedObject).get(0);
+        Object actualResult = testSubject.deserialize(serializedObject);
         assertTrue(actualResult instanceof MySerializableObject);
         assertEquals("hello", ((MySerializableObject) actualResult).getSomeProperty());
     }
 
     @Test
     public void testClassForType() {
-        List<Class> actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(), 0));
-        assertEquals(MySerializableObject.class, actual.get(0));
+        Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(), 0));
+        assertEquals(MySerializableObject.class, actual);
     }
 
     @Test

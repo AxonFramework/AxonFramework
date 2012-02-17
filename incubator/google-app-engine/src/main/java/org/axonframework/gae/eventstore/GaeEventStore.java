@@ -29,9 +29,12 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.Upcaster;
+import org.axonframework.serializer.UpcasterChain;
 import org.axonframework.serializer.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -46,6 +49,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
     private final Serializer eventSerializer;
     private final DatastoreService datastoreService;
+    private UpcasterChain upcasterChain;
 
     public GaeEventStore() {
         this(new XStreamSerializer());
@@ -72,7 +76,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
+            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer, upcasterChain));
         }
 
         if (events.isEmpty()) {
@@ -113,7 +117,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
         for (Entity entity : entities) {
-            events.addAll(new EventEntry(entity).getDomainEvent(eventSerializer));
+            events.addAll(new EventEntry(entity).getDomainEvent(eventSerializer, upcasterChain));
         }
         return events;
     }
@@ -128,4 +132,10 @@ public class GaeEventStore implements SnapshotEventStore {
         }
         return null;
     }
+
+    @Required
+    public void setUpcasters(List<Upcaster> upcasters) {
+        this.upcasterChain = new UpcasterChain(upcasters);
+    }
+
 }

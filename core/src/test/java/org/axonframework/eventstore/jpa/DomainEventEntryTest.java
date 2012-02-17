@@ -23,10 +23,13 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.UpcasterChain;
 import org.joda.time.DateTime;
 import org.junit.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -43,17 +46,15 @@ public class DomainEventEntryTest {
                                                                                    byte[].class);
     private Serializer mockSerializer;
     private MetaData metaData;
+    private UpcasterChain upcasterChain = new UpcasterChain(new ArrayList());
 
     @Before
     public void setUp() {
         mockDomainEvent = mock(DomainEventMessage.class);
         mockSerializer = mock(Serializer.class);
         metaData = new MetaData(Collections.singletonMap("Key", "Value"));
-        when(mockSerializer.deserialize(mockPayload)).thenReturn(Collections.singletonList((Object)"Payload"));
-        when(mockSerializer.deserialize(isA(SerializedMetaData.class))).thenReturn(Collections.singletonList(metaData));
-        List<Class> payloadType = new ArrayList<Class>();
-        payloadType.add(String.class);
-        when(mockSerializer.classForType(mockPayload.getType())).thenReturn(payloadType);
+        when(mockSerializer.deserialize(mockPayload)).thenReturn("Payload");
+        when(mockSerializer.deserialize(isA(SerializedMetaData.class))).thenReturn(metaData);
     }
 
     @Test
@@ -74,7 +75,7 @@ public class DomainEventEntryTest {
         assertEquals(2L, actualResult.getSequenceNumber());
         assertEquals(timestamp, actualResult.getTimestamp());
         assertEquals("test", actualResult.getType());
-        DomainEventMessage<?> domainEvent = actualResult.getDomainEvent(mockSerializer).get(0);
+        DomainEventMessage<?> domainEvent = actualResult.getDomainEvent(mockSerializer, upcasterChain).get(0);
         assertTrue(domainEvent instanceof SerializedDomainEventMessage);
         verify(mockSerializer, never()).deserialize(mockPayload);
         verify(mockSerializer, never()).deserialize(mockMetaData);

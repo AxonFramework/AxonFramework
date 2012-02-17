@@ -63,7 +63,7 @@ public class AbstractAggregateRootTest {
         return (AggregateRoot) serializer.deserialize(new SimpleSerializedObject<byte[]>(baos.toByteArray(),
                                                                                          byte[].class,
                                                                                          "ignored",
-                                                                                         0)).get(0);
+                                                                                         0));
     }
 
     @Test

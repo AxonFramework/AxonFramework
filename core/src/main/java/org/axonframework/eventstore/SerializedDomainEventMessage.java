@@ -19,9 +19,9 @@ package org.axonframework.eventstore;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
@@ -51,31 +51,26 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
     private final DateTime timestamp;
     private transient final LazyDeserializingObject<MetaData> serializedMetaData;
     private transient final LazyDeserializingObject<T> serializedPayload;
-    private final int indexOnDeserializedObject;
 
     private SerializedDomainEventMessage(String eventIdentifier, Object aggregateIdentifier,
                                         long sequenceNumber, DateTime timestamp,
                                         LazyDeserializingObject<T> serializedPayload,
-                                        LazyDeserializingObject<MetaData> serializedMetaData,
-                                        int indexOnDeserializedObject) {
+                                        LazyDeserializingObject<MetaData> serializedMetaData) {
         this.sequenceNumber = sequenceNumber;
         this.aggregateIdentifier = aggregateIdentifier;
         this.eventIdentifier = eventIdentifier;
         this.timestamp = timestamp;
         this.serializedPayload = serializedPayload;
         this.serializedMetaData = serializedMetaData;
-        this.indexOnDeserializedObject = indexOnDeserializedObject;
     }
 
-    private SerializedDomainEventMessage(SerializedDomainEventMessage<T> original, Map<String, Object> metaData,
-                                         int indexOnDeserializedObject) {
-        this.sequenceNumber = original.getSequenceNumber();
+    private SerializedDomainEventMessage(SerializedDomainEventMessage<T> original, Map<String, Object> metaData) {
+        this.serializedMetaData = new LazyDeserializingObject<MetaData>(MetaData.from(metaData));
         this.aggregateIdentifier = original.getAggregateIdentifier();
+        this.sequenceNumber = original.getSequenceNumber();
         this.eventIdentifier = original.getIdentifier();
         this.timestamp = original.getTimestamp();
         this.serializedPayload = original.serializedPayload;
-        this.serializedMetaData = new LazyDeserializingObject<MetaData>(MetaData.from(metaData));
-        this.indexOnDeserializedObject = indexOnDeserializedObject;
     }
 
     /**
@@ -85,27 +80,30 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
      * @param data               The serialized data for this EventMessage
      * @param payloadSerializer  The serializer to deserialize the payload data with
      * @param metaDataSerializer The serializer to deserialize meta data with
+     * @param upcasterChain      Used for upcasting the given data
      * @return the newly created instances, where each instance represents a domain event in the serialized data
      */
     public static List<DomainEventMessage> createDomainEventMessages(SerializedDomainEventData data,
-                                                                        Serializer payloadSerializer,
-                                                                        Serializer metaDataSerializer) {
+                                                                     Serializer payloadSerializer,
+                                                                     Serializer metaDataSerializer,
+                                                                     UpcasterChain upcasterChain) {
         return createDomainEventMessages(payloadSerializer, metaDataSerializer, data.getEventIdentifier(),
                                          data.getAggregateIdentifier(), data.getSequenceNumber(),
-                                         data.getTimestamp(), data.getPayload(), data.getMetaData());
+                                         data.getTimestamp(), data.getPayload(), data.getMetaData(), upcasterChain);
     }
 
     /**
      * Creates new instances with given event details,to be deserialized with given <code>eventSerializer</code>.
      *
-     * @param eventSerializer           The serializer to deserialize both the serializedObject and the
-     *                                  serializedMetaData
-     * @param eventIdentifier           The identifier of the EventMessage
-     * @param aggregateIdentifier       The identifier of the Aggregate this message originates from
-     * @param sequenceNumber            The sequence number that represents the order in which the message is generated
-     * @param timestamp                 The timestamp of (original) message creation
+     * @param eventSerializer     The serializer to deserialize both the serializedObject and the
+     *                            serializedMetaData
+     * @param eventIdentifier     The identifier of the EventMessage
+     * @param aggregateIdentifier The identifier of the Aggregate this message originates from
+     * @param sequenceNumber      The sequence number that represents the order in which the message is generated
+     * @param timestamp           The timestamp of (original) message creation
      * @param serializedPayload   The serialized payload of this message
      * @param serializedMetaData  The serialized meta data of the message
+     * @param upcasterChain       Used for upcasting the given serializedPayload and serializedMetaData
      * @return the newly created instances, where each instance represents a domain event in the serialized data
      */
     public static List<DomainEventMessage> createDomainEventMessages(Serializer eventSerializer,
@@ -114,7 +112,8 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
                                                                      long sequenceNumber,
                                                                      DateTime timestamp,
                                                                      SerializedObject serializedPayload,
-                                                                     SerializedObject serializedMetaData) {
+                                                                     SerializedObject serializedMetaData,
+                                                                     UpcasterChain upcasterChain) {
         return createDomainEventMessages(eventSerializer,
                                          eventSerializer,
                                          eventIdentifier,
@@ -122,33 +121,33 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
                                          sequenceNumber,
                                          timestamp,
                                          serializedPayload,
-                                         serializedMetaData);
+                                         serializedMetaData,
+                                         upcasterChain);
     }
 
     private static List<DomainEventMessage> createDomainEventMessages(Serializer payloadSerializer,
                                                                       Serializer metaDataSerializer,
-                                                                     String eventIdentifier,
-                                                                     Object aggregateIdentifier,
-                                                                     long sequenceNumber,
-                                                                     DateTime timeStamp,
-                                                                     SerializedObject serializedPayload,
-                                                                     SerializedObject serializedMetaData) {
-        LazyDeserializingObject<Object> lazyDeserializedPayload =
-                new LazyDeserializingObject<Object>(serializedPayload, payloadSerializer);
-        LazyDeserializingObject<MetaData> lazyDeserializedMetadata =
-                new LazyDeserializingObject<MetaData>(serializedMetaData, metaDataSerializer);
+                                                                      String eventIdentifier,
+                                                                      Object aggregateIdentifier,
+                                                                      long sequenceNumber,
+                                                                      DateTime timeStamp,
+                                                                      SerializedObject serializedPayload,
+                                                                      SerializedObject serializedMetaData,
+                                                                      UpcasterChain upcasterChain) {
+        LazyUpcastingObject lazyUpcastedPayload = new LazyUpcastingObject(upcasterChain, serializedPayload);
+        LazyUpcastingObject lazyUpcastedMetaData = new LazyUpcastingObject(upcasterChain, serializedMetaData);
 
         List<DomainEventMessage> lazyDeserializedDomainEvents = new ArrayList<DomainEventMessage>();
-        for (int eventIndex = 0; eventIndex < lazyDeserializedPayload.deserializedObjectCount(); eventIndex++) {
+        for (int eventIndex = 0; eventIndex < lazyUpcastedPayload.upcastedObjectCount(); eventIndex++) {
             lazyDeserializedDomainEvents.add(
                     new SerializedDomainEventMessage(
                             eventIdentifier,
                             aggregateIdentifier,
                             sequenceNumber,
                             timeStamp,
-                            lazyDeserializedPayload,
-                            lazyDeserializedMetadata,
-                            eventIndex));
+                            new LazyDeserializingObject<Object>(lazyUpcastedPayload, payloadSerializer, eventIndex),
+                            new LazyDeserializingObject<MetaData>(lazyUpcastedMetaData, metaDataSerializer, eventIndex)
+                            ));
         }
         return lazyDeserializedDomainEvents;
     }
@@ -175,19 +174,19 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
 
     @Override
     public MetaData getMetaData() {
-        MetaData metaData = serializedMetaData.getObject().get(indexOnDeserializedObject);
+        MetaData metaData = serializedMetaData.getObject();
         return metaData == null ? MetaData.emptyInstance() : metaData;
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     public T getPayload() {
-        return serializedPayload.getObject().get(indexOnDeserializedObject);
+        return serializedPayload.getObject();
     }
 
     @Override
     public Class getPayloadType() {
-        return serializedPayload.getType().get(indexOnDeserializedObject);
+        return serializedPayload.getType();
     }
 
     @Override
@@ -196,7 +195,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
             return new GenericDomainEventMessage<T>(aggregateIdentifier, sequenceNumber,
                                                     getPayload(), newMetaData);
         } else {
-            return new SerializedDomainEventMessage<T>(this, newMetaData, indexOnDeserializedObject);
+            return new SerializedDomainEventMessage<T>(this, newMetaData);
         }
     }
 

@@ -17,16 +17,12 @@
 package org.axonframework.eventstore;
 
 import org.axonframework.common.Assert;
-import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Represents a serialized object that can be deserializedObjects upon request. Typically used as a wrapper class for keeping
@@ -40,49 +36,41 @@ import java.util.List;
 public class LazyDeserializingObject<T> implements Serializable {
 
     private static final long serialVersionUID = -5533042142349963796L;
+    
+    private transient Serializer serializer;
+    private transient LazyUpcastingObject serializedObject;
 
-    private transient final SerializedObject serializedObject;
+    private int indexOnDeserializedObject;
+    private volatile T deserializedObject;
+    private transient volatile Class deserializedObjectType;
 
-    private transient final Serializer payloadSerializer;
-
-    private transient volatile List<Class> deserializedObjectTypes;
-
-    private volatile List<T> deserializedObjects;
     /**
      * Creates an instance with the given <code>deserializedObject</code> object instance. Using this constructor will
      * ensure
      * that no deserialization is required when invoking the {@link #getType()} or {@link #getObject()} methods.
      *
-     * @param deserializedObject The deserialized object to return as a singleton list on {@link #getObject()}
+     * @param deserializedObject The deserialized object to return on {@link #getObject()}
      */
     public LazyDeserializingObject(T deserializedObject) {
-        this(Collections.singletonList(deserializedObject));
-    }
-
-    /**
-     * Creates an instance with the given <code>deserializedObjects</code> object instances. Using this constructor will
-     * ensure
-     * that no deserialization is required when invoking the {@link #getType()} or {@link #getObject()} methods.
-     *
-     * @param deserializedObjects The deserialized objects to return on {@link #getObject()}
-     */
-    public LazyDeserializingObject(List<T> deserializedObjects) {
-        Assert.notNull(deserializedObjects, "The given deserializedObjects instance may not be null");
+        Assert.notNull(deserializedObject, "The given deserialized instance may not be null");
         serializedObject = null;
-        payloadSerializer = null;
-        this.deserializedObjects = deserializedObjects;
-        this.deserializedObjectTypes = extractTypes(deserializedObjects);
+        serializer = null;
+        this.deserializedObject = deserializedObject;
+        this.deserializedObjectType = deserializedObject.getClass();
     }
 
     /**
      * @param serializedObject The serialized payload of the message
      * @param serializer       The serializer to deserialize the payload data with
+     * @param indexOnDeserializedObject the index on the deserialized object
      */
-    public LazyDeserializingObject(SerializedObject serializedObject, Serializer serializer) {
+    public LazyDeserializingObject(LazyUpcastingObject serializedObject, Serializer serializer,
+                                   int indexOnDeserializedObject) {
         Assert.notNull(serializedObject, "The given serializedObject may not be null");
         Assert.notNull(serializer, "The given serializer may not be null");
         this.serializedObject = serializedObject;
-        this.payloadSerializer = serializer;
+        this.serializer = serializer;
+        this.indexOnDeserializedObject = indexOnDeserializedObject;
     }
 
     /**
@@ -91,20 +79,11 @@ public class LazyDeserializingObject<T> implements Serializable {
      *
      * @return the class of the serialized object
      */
-    public List<Class> getType() {
-        if (deserializedObjectTypes == null) {
-            deserializedObjectTypes = payloadSerializer.classForType(serializedObject.getType());
+    public Class getType() {
+        if (deserializedObjectType == null) {
+            deserializedObjectType = serializer.classForType(serializedObject.getTypes().get(indexOnDeserializedObject));
         }
-        return deserializedObjectTypes;
-    }
-
-    /**
-     * Returns the number of objects that this serialized object consists of when it is deserialized.
-     *
-     * @return the number of objects that this serialized object consists of when it is deserialized
-     */
-    public int deserializedObjectCount() {
-        return getType().size();
+        return deserializedObjectType;
     }
 
     /**
@@ -113,14 +92,14 @@ public class LazyDeserializingObject<T> implements Serializable {
      * @return the deserialized objects
      */
     @SuppressWarnings("unchecked")
-    public List<T> getObject() {
+    public T getObject() {
         if (!isDeserialized()) {
-            deserializedObjects = (List<T>) payloadSerializer.deserialize(serializedObject);
+            deserializedObject = (T) serializer.deserialize(serializedObject.getObjects().get(indexOnDeserializedObject));
         }
-        if (deserializedObjectTypes == null && deserializedObjects != null) {
-            deserializedObjectTypes = extractTypes(deserializedObjects);
+        if (deserializedObjectType == null && deserializedObject != null) {
+            deserializedObjectType = extractType(deserializedObject);
         }
-        return deserializedObjects;
+        return deserializedObject;
     }
 
     private void writeObject(ObjectOutputStream outputStream) throws IOException {
@@ -131,15 +110,11 @@ public class LazyDeserializingObject<T> implements Serializable {
 
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
         inputStream.defaultReadObject();
-        deserializedObjectTypes = extractTypes(deserializedObjects);
+        deserializedObjectType = extractType(deserializedObject);
     }
 
-    private List<Class> extractTypes(List<T> deserializedObjects) {
-        List<Class> extractedTypes = new ArrayList<Class>();
-        for (T deserializedObject : deserializedObjects) {
-            extractedTypes.add(deserializedObject.getClass());
-        }
-        return extractedTypes;
+    private Class extractType(T deserializedObject) {
+        return deserializedObject.getClass();
     }
 
     /**
@@ -149,10 +124,7 @@ public class LazyDeserializingObject<T> implements Serializable {
      * @return whether the contained object has been deserialized already.
      */
     public boolean isDeserialized() {
-        return deserializedObjects != null;
+        return deserializedObject != null;
     }
 
-    public Serializer getPayloadSerializer() {
-        return payloadSerializer;
-    }
 }

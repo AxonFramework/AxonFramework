@@ -27,6 +27,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.nio.charset.Charset;
@@ -99,9 +100,10 @@ public class EventEntry {
      * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
+     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
      * @return The actual DomainEvent
      */
-    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer) {
+    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer, UpcasterChain upcasterChain) {
         return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
                                                                       eventIdentifier,
                                                                       aggregateIdentifier,
@@ -114,7 +116,8 @@ public class EventEntry {
                                                                                                  eventRevision),
                                                                       new SerializedMetaData(serializedMetaData
                                                                                                      .getBytes(UTF8),
-                                                                                             byte[].class));
+                                                                                             byte[].class),
+                                                                      upcasterChain);
     }
 
     /**

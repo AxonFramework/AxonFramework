@@ -50,7 +50,7 @@ public class JavaSerializationTest {
         assertNotNull(xml);
 
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject<byte[]>(xml.getBytes(UTF8), byte[].class, "ignored", 0)).get(0);
+                new SimpleSerializedObject<byte[]>(xml.getBytes(UTF8), byte[].class, "ignored", 0));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }
@@ -67,7 +67,7 @@ public class JavaSerializationTest {
         assertNotNull(xml);
 
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject<byte[]>(data, byte[].class, "ignored", 0)).get(0);
+                new SimpleSerializedObject<byte[]>(data, byte[].class, "ignored", 0));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }

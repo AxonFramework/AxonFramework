@@ -32,6 +32,7 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.Upcaster;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
@@ -194,14 +195,14 @@ public class JpaEventStoreTest {
             }
 
             @Override
-            public List<Object> deserialize(SerializedObject serializedObject) {
+            public Object deserialize(SerializedObject serializedObject) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public List<Class> classForType(SerializedType type) {
+            public Class classForType(SerializedType type) {
                 try {
-                    return Collections.singletonList((Class)Class.forName(type.getName()));
+                    return Class.forName(type.getName());
                 } catch (ClassNotFoundException e) {
                     return null;
                 }
@@ -246,14 +247,14 @@ public class JpaEventStoreTest {
             }
 
             @Override
-            public List<Object> deserialize(SerializedObject serializedObject) {
+            public Object deserialize(SerializedObject serializedObject) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public List<Class> classForType(SerializedType type) {
+            public Class classForType(SerializedType type) {
                 try {
-                    return Arrays.asList(new Class[] {Class.forName(type.getName())});
+                    return Class.forName(type.getName());
                 } catch (ClassNotFoundException e) {
                     return null;
                 }

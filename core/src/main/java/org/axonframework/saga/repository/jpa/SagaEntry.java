@@ -69,7 +69,7 @@ public class SagaEntry {
      */
     public Saga getSaga(Serializer serializer) {
         return (Saga) serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedSaga, byte[].class,
-                                                                                sagaType, revision)).get(0);
+                                                                                sagaType, revision));
     }
 
     /**

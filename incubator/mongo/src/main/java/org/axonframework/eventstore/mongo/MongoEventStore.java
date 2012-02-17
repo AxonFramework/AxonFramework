@@ -31,6 +31,8 @@ import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteriaBuilder;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.Upcaster;
+import org.axonframework.serializer.UpcasterChain;
 import org.axonframework.serializer.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +60,8 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     private final MongoTemplate mongoTemplate;
     private final Serializer eventSerializer;
+
+    private UpcasterChain upcasterChain;
 
     /**
      * Constructor that accepts a Serializer and the MongoTemplate.
@@ -112,7 +116,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
+            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer, upcasterChain));
         }
 
         if (events.isEmpty()) {
@@ -145,7 +149,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         while (shouldContinue) {
             batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE, filter);
             for (EventEntry entry : batch) {
-                for(DomainEventMessage event : entry.getDomainEvent(eventSerializer)) {
+                for(DomainEventMessage event : entry.getDomainEvent(eventSerializer, upcasterChain)) {
                     visitor.doWithEvent(event);
                 }
             }
@@ -183,7 +187,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                          .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(dbCursor.size());
         while (dbCursor.hasNext()) {
-            events.addAll(new EventEntry(dbCursor.next()).getDomainEvent(eventSerializer));
+            events.addAll(new EventEntry(dbCursor.next()).getDomainEvent(eventSerializer, upcasterChain));
         }
         return events;
     }
@@ -204,5 +208,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         DBObject first = dbCursor.next();
 
         return new EventEntry(first);
+    }
+
+    public void setUpcasters(List<Upcaster> upcasters) {
+        this.upcasterChain = new UpcasterChain(upcasters);
     }
 }

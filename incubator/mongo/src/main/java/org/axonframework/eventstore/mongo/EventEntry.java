@@ -20,13 +20,12 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.util.List;
@@ -126,9 +125,10 @@ class EventEntry {
      * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
+     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
      * @return The actual DomainEvent
      */
-    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer) {
+    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer, UpcasterChain upcasterChain) {
         return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
                                                                       eventIdentifier,
                                                                       aggregateIdentifier,
@@ -139,7 +139,8 @@ class EventEntry {
                                                                                                  payoadType,
                                                                                                  payloadRevision),
                                                                       new SerializedMetaData<String>(serializedMetaData,
-                                                                                                     String.class));
+                                                                                                     String.class),
+                                                                      upcasterChain);
     }
 
     /**

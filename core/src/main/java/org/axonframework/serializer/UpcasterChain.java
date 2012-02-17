@@ -16,6 +16,7 @@
 
 package org.axonframework.serializer;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,6 +40,15 @@ public class UpcasterChain {
 
     private final List<Upcaster> upcasters;
     private final ConverterFactory converterFactory;
+
+    /**
+     * Initializes the UpcasterChain with a ChainingConverterFactory
+     *
+     * @param upcasters The upcasters forming the chain (in given order)
+     */
+    public UpcasterChain(List<Upcaster> upcasters) {
+        this(new ChainingConverterFactory(), upcasters);
+    }
 
     /**
      * Initialize a chain of the given <code>upcasters</code> and using the given <code>converterFactory</code> to
@@ -65,8 +75,7 @@ public class UpcasterChain {
 
     /**
      * Pass the given <code>serializedObject</code> through the chain of upcasters. The result is a list of zero or
-     * more
-     * serializedObjects representing the latest revision of the payload object.
+     * more serializedObjects representing the latest revision of the payload object.
      *
      * @param serializedObject the serialized object to upcast
      * @return the upcast SerializedObjects
@@ -75,8 +84,7 @@ public class UpcasterChain {
         return upcast(new LinkedList<Upcaster>(upcasters), serializedObject);
     }
 
-    private List<SerializedObject> upcast(Queue<Upcaster> upcasterChain,
-                                                    SerializedObject current) {
+    private List<SerializedObject> upcast(Queue<Upcaster> upcasterChain, SerializedObject current) {
         // No upcasters are left in the queue, we're done.
         if (upcasterChain.isEmpty()) {
             return Collections.singletonList(current);
@@ -112,7 +120,7 @@ public class UpcasterChain {
             current = ensureCorrectContentType(current, upcaster.expectedRepresentationType());
             return upcaster.upcast(current);
         } else {
-            return Arrays.asList(current);
+            return Collections.singletonList(current);
         }
     }
 
@@ -127,8 +135,7 @@ public class UpcasterChain {
         return upcast(new LinkedList<Upcaster>(upcasters), serializedType);
     }
 
-    private List<SerializedType> upcast(Queue<Upcaster> upcasterChain,
-                                        SerializedType current) {
+    private List<SerializedType> upcast(Queue<Upcaster> upcasterChain, SerializedType current) {
         // No upcasters are left in the queue, we're done.
         if (upcasterChain.isEmpty()) {
             return Collections.singletonList(current);
@@ -154,7 +161,7 @@ public class UpcasterChain {
         if (upcaster.canUpcast(current)) {
             return upcaster.upcast(current);
         } else {
-            return Arrays.asList(current);
+            return Collections.singletonList(current);
         }
     }
 

@@ -16,16 +16,11 @@
 
 package org.axonframework.serializer;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
-
 /**
  * Interface describing a serialization mechanism. Implementations can serialize objects of given type <code>T</code>
  * to an output stream and read the object back in from an input stream.
  *
  * @author Allard Buijze
- * @author Frank Versnel
  * @since 1.2
  */
 public interface Serializer {
@@ -42,7 +37,7 @@ public interface Serializer {
 
     /**
      * Deserializes the first object read from the given <code>bytes</code>. The <code>bytes</code> are not consumed
-     * from the array or modified in any way. The resulting object instances are cast to the expected types.
+     * from the array or modified in any way. The resulting object instance is cast to the expected type.
      *
      * @param serializedObject the instance describing the type of object and the bytes providing the serialized data
      * @param <T>              The data type of the serialized object
@@ -50,16 +45,14 @@ public interface Serializer {
      *
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.
      */
-    <T> List<Object> deserialize(SerializedObject<T> serializedObject);
+    <T> Object deserialize(SerializedObject<T> serializedObject);
 
     /**
-     * Returns the classes for the given type identifier. The result of this method must guarantee that the deserialized
-     * SerializedObject with the given <code>type</code> are instances of the returned Classes. The order
-     * of the classes has to be the same as the order of the deserialized objects so that each entry in the returned list
-     * points to the entry on the same index in the list of the deserialized objects.
+     * Returns the class for the given type identifier. The result of this method must guarantee that the deserialized
+     * SerializedObject with the given <code>type</code> is an instance of the returned Class.
      *
      * @param type The type identifier of the object
      * @return the Class representing the type of the serialized Object.
      */
-    List<Class> classForType(SerializedType type);
+    Class classForType(SerializedType type);
 }
