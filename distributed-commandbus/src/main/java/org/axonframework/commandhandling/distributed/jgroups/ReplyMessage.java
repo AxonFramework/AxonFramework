@@ -25,7 +25,7 @@ public class ReplyMessage implements Streamable, Externalizable {
     private String commandIdentifier;
     private boolean success;
     private String resultType;
-    private int resultRevision;
+    private String resultRevision;
     private byte[] serializedResult;
 
     /**
@@ -125,10 +125,10 @@ public class ReplyMessage implements Streamable, Externalizable {
         out.writeUTF(commandIdentifier);
         out.writeBoolean(success);
         if (resultType == null) {
-            out.writeUTF("null");
+            out.writeUTF("_null");
         } else {
             out.writeUTF(resultType);
-            out.writeInt(resultRevision);
+            out.writeUTF(resultRevision == null ? "_null" : resultRevision);
             out.writeInt(serializedResult.length);
             out.write(serializedResult);
         }
@@ -139,10 +139,13 @@ public class ReplyMessage implements Streamable, Externalizable {
         commandIdentifier = in.readUTF();
         success = in.readBoolean();
         resultType = in.readUTF();
-        if ("null".equals(resultType)) {
+        if ("_null".equals(resultType)) {
             resultType = null;
         } else {
-            resultRevision = in.readInt();
+            resultRevision = in.readUTF();
+            if ("_null".equals(resultRevision)) {
+                resultRevision = null;
+            }
             serializedResult = new byte[in.readInt()];
             in.readFully(serializedResult);
         }

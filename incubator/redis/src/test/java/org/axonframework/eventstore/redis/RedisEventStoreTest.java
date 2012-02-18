@@ -20,7 +20,7 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;

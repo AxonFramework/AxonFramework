@@ -31,7 +31,7 @@ import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteriaBuilder;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,7 +181,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                          .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(dbCursor.size());
         while (dbCursor.hasNext()) {
-            events.add(new EventEntry(dbCursor.next()).asDomainEventMessage(eventSerializer));
+            events.add(new EventEntry(dbCursor.next()).getDomainEvent(eventSerializer));
         }
         return events;
     }

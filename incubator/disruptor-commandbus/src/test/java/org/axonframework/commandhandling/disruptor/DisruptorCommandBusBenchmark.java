@@ -30,7 +30,7 @@ import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.Collection;

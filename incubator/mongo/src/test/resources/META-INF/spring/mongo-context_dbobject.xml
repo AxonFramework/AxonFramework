@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) 2010. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Axon Event store -->
+    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore" lazy-init="true">
+        <constructor-arg>
+            <bean class="org.axonframework.serializer.bson.DBObjectXStreamSerializer"/>
+        </constructor-arg>
+        <constructor-arg ref="mongoTemplate"/>
+    </bean>
+
+    <!-- Infrastructure Mongo -->
+    <bean id="mongoTemplate" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
+        <constructor-arg ref="mongoDb"/>
+    </bean>
+
+    <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongoInstance"
+          lazy-init="true"/>
+
+    <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory" lazy-init="true">
+        <property name="singleInstanceContext" value="true"/>
+        <property name="mongoOptions">
+            <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
+                  factory-method="createMongoOptions"/>
+        </property>
+    </bean>
+
+    <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
+        <property name="connectionsPerHost" value="100"/>
+    </bean>
+
+</beans>

@@ -19,7 +19,7 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.saga.repository.jpa.JpaSagaRepository;
 import org.axonframework.saga.spring.SpringResourceInjector;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
@@ -57,7 +57,7 @@ public class JpaSagaRepositoryBeanDefinitionParser extends AbstractBeanDefinitio
         } else {
             builder.addConstructorArgValue(
                     BeanDefinitionBuilder.genericBeanDefinition(ContainerManagedEntityManagerProvider.class)
-                            .getBeanDefinition());
+                                         .getBeanDefinition());
         }
     }
 

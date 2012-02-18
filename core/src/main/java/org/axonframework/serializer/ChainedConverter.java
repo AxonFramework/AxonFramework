@@ -60,12 +60,17 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      */
     public static <S, T> ChainedConverter<S, T> calculateChain(Class<S> sourceType, Class<T> targetType,
                                                                Collection<ContentTypeConverter<?, ?>> candidates) {
-        Route route = new RouteCalculator(candidates).calculateRoute(sourceType, targetType);
+        Route route = calculateRoute(sourceType, targetType, candidates);
         if (route == null) {
             throw new CannotConvertBetweenTypesException(format("Cannot build a converter to convert from %s to %s",
                                                                 sourceType.getName(), targetType.getName()));
         }
         return new ChainedConverter<S, T>(route.asList());
+    }
+
+    public static <S, T> Route calculateRoute(Class<S> sourceType, Class<T> targetType,
+                                              Collection<ContentTypeConverter<?, ?>> candidates) {
+        return new RouteCalculator(candidates).calculateRoute(sourceType, targetType);
     }
 
     /**
@@ -130,6 +135,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     }
 
     private static final class RouteCalculator {
+
         private final Set<ContentTypeConverter<?, ?>> candidates;
         private final List<Route> routes = new LinkedList<Route>();
 

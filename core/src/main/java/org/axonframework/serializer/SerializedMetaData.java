@@ -37,7 +37,7 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
      * @param dataType The type of data
      */
     public SerializedMetaData(T data, Class<T> dataType) {
-        delegate = new SimpleSerializedObject<T>(data, dataType, MetaData.class.getName(), -1);
+        delegate = new SimpleSerializedObject<T>(data, dataType, MetaData.class.getName(), null);
     }
 
     @Override

@@ -54,7 +54,7 @@ public class EventEntry {
     private final String timeStamp;
     private final String aggregateType;
     private final String serializedEvent;
-    private final int eventRevision;
+    private final String eventRevision;
     private final String eventType;
     private final String serializedMetaData;
 
@@ -91,7 +91,7 @@ public class EventEntry {
         this.sequenceNumber = (Long) entity.getProperty(SEQUENCE_NUMBER);
         this.serializedEvent = ((Text) entity.getProperty(SERIALIZED_EVENT)).getValue();
         this.timeStamp = (String) entity.getProperty(TIME_STAMP);
-        this.eventRevision = Integer.valueOf(entity.getProperty(EVENT_REVISION).toString());
+        this.eventRevision = (String) entity.getProperty(EVENT_REVISION);
         this.eventType = (String) entity.getProperty(EVENT_TYPE);
         this.serializedMetaData = ((Text) entity.getProperty(META_DATA)).getValue();
     }

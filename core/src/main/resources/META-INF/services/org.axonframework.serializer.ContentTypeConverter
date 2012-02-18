@@ -1,6 +1,4 @@
 org.axonframework.serializer.converters.ByteArrayToInputStreamConverter
 org.axonframework.serializer.converters.InputStreamToByteArrayConverter
-org.axonframework.serializer.converters.InputStreamToDom4jConverter
-org.axonframework.serializer.converters.Dom4JToByteArrayConverter
 org.axonframework.serializer.converters.ByteArrayToStringConverter
 org.axonframework.serializer.converters.StringToByteArrayConverter

@@ -13,7 +13,7 @@ import static java.lang.String.format;
 public class SimpleSerializedType implements SerializedType {
 
     private final String type;
-    private final int revisionId;
+    private final String revisionId;
 
     /**
      * Initialize with given <code>objectType</code> and <code>revisionNumber</code>
@@ -21,7 +21,7 @@ public class SimpleSerializedType implements SerializedType {
      * @param objectType     The description of the serialized object's type
      * @param revisionNumber The revision number of the serialized object's type
      */
-    public SimpleSerializedType(String objectType, int revisionNumber) {
+    public SimpleSerializedType(String objectType, String revisionNumber) {
         Assert.notNull(objectType, "objectType cannot be null");
         this.type = objectType;
         this.revisionId = revisionNumber;
@@ -33,7 +33,7 @@ public class SimpleSerializedType implements SerializedType {
     }
 
     @Override
-    public int getRevision() {
+    public String getRevision() {
         return revisionId;
     }
 
@@ -48,7 +48,7 @@ public class SimpleSerializedType implements SerializedType {
 
         SimpleSerializedType that = (SimpleSerializedType) o;
 
-        if (revisionId != that.revisionId) {
+        if (revisionId != null ? !revisionId.equals(that.revisionId) : that.revisionId != null) {
             return false;
         }
         if (!type.equals(that.type)) {
@@ -61,12 +61,12 @@ public class SimpleSerializedType implements SerializedType {
     @Override
     public int hashCode() {
         int result = type.hashCode();
-        result = 31 * result + revisionId;
+        result = 31 * result + (revisionId != null ? revisionId.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return format("SimpleSerializedType[%s] r%s", type, revisionId);
+        return format("SimpleSerializedType[%s] (revision %s)", type, revisionId);
     }
 }

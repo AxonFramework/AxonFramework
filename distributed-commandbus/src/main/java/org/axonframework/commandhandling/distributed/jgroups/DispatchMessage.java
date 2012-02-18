@@ -31,7 +31,7 @@ public class DispatchMessage implements Streamable, Externalizable {
     private String commandIdentifier;
     private boolean expectReply;
     private String payloadType;
-    private int payloadRevision;
+    private String payloadRevision;
     private byte[] serializedPayload;
     private byte[] serializedMetaData;
 
@@ -79,9 +79,9 @@ public class DispatchMessage implements Streamable, Externalizable {
      */
     public CommandMessage<?> getCommandMessage(Serializer serializer) {
         final Object payload = serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedPayload,
-                                                                                 byte[].class,
-                                                                                 payloadType,
-                                                                                 payloadRevision));
+                                                                                         byte[].class,
+                                                                                         payloadType,
+                                                                                         payloadRevision));
         final MetaData metaData = (MetaData) serializer.deserialize(new SerializedMetaData<byte[]>(serializedMetaData,
                                                                                                    byte[].class));
         return new GenericCommandMessage<Object>(commandIdentifier, payload, metaData);
@@ -92,7 +92,7 @@ public class DispatchMessage implements Streamable, Externalizable {
         out.writeUTF(commandIdentifier);
         out.writeBoolean(expectReply);
         out.writeUTF(payloadType);
-        out.writeInt(payloadRevision);
+        out.writeUTF(payloadRevision == null ? "_null" : payloadRevision);
         out.writeInt(serializedPayload.length);
         out.write(serializedPayload);
         out.writeInt(serializedMetaData.length);
@@ -104,7 +104,10 @@ public class DispatchMessage implements Streamable, Externalizable {
         commandIdentifier = in.readUTF();
         expectReply = in.readBoolean();
         payloadType = in.readUTF();
-        payloadRevision = in.readInt();
+        payloadRevision = in.readUTF();
+        if ("_null".equals(payloadRevision)) {
+            payloadRevision = null;
+        }
         serializedPayload = new byte[in.readInt()];
         in.readFully(serializedPayload);
         serializedMetaData = new byte[in.readInt()];

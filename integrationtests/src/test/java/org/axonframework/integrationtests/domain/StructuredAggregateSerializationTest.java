@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.domain;
 
 import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 
 import java.io.UnsupportedEncodingException;

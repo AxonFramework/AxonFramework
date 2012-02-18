@@ -74,7 +74,10 @@ abstract class EventSerializationUtils {
         int sequenceNumber = (int) in.readNumber();
         String timeStamp = in.readString();
         String payloadType = in.readString();
-        int eventRevision = (int) in.readNumber();
+        String eventRevision = in.readString();
+        if ("_".equals(eventRevision)) {
+            eventRevision = null;
+        }
         byte[] serializedEventData = in.readBytes();
         if (serializedEventData == null) {
             logger.warn("Failed to read the required amount of bytes from the underlying stream.");
@@ -106,7 +109,8 @@ abstract class EventSerializationUtils {
         out.writeNumber(sequenceNumber);
         out.writeString(timeStamp);
         out.writeString(serializedEvent.getType().getName());
-        out.writeNumber(serializedEvent.getType().getRevision());
+        String revision = serializedEvent.getType().getRevision();
+        out.writeString(revision == null ? "_" : revision);
         out.writeBytes(serializedEvent.getData());
     }
 
@@ -167,7 +171,8 @@ abstract class EventSerializationUtils {
         out.writeString(snapshotEntry.getTimeStamp());
         out.writeNumber(snapshotEntry.getOffset());
         out.writeString(snapshotEntry.getPayload().getType().getName());
-        out.writeNumber(snapshotEntry.getPayload().getType().getRevision());
+        String revision = snapshotEntry.getPayload().getType().getRevision();
+        out.writeString(revision == null ? "_" : revision);
         out.writeBytes(snapshotEntry.getPayload().getData());
     }
 
@@ -181,7 +186,7 @@ abstract class EventSerializationUtils {
             return null;
         }
         String type = in.readString();
-        int revision = (int) in.readNumber();
+        String revision = in.readString();
         byte[] serializedEvent = in.readBytes();
         return new SnapshotEventEntry(new SimpleSerializedObject<byte[]>(serializedEvent, byte[].class, type, revision),
                                       sequenceNumber,

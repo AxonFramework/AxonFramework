@@ -9,6 +9,19 @@ package org.axonframework.serializer;
  */
 public interface ConverterFactory {
 
+
+    /**
+     * Indicates whether this factory contains a converter capable of converting the given
+     * <code>sourceContentType</code> into the <code>targetContentType</code>.
+     *
+     * @param sourceContentType The type of source data for which a converter must be available
+     * @param targetContentType The type of target data for which a converter must be available
+     * @param <S>               The type of source data for which a converter must be available
+     * @param <T>               The type of target data for which a converter must be available
+     * @return <code>true</code> if a converter is available, otherwise <code>false</code>.
+     */
+    public <S, T> boolean hasConverter(Class<S> sourceContentType, Class<T> targetContentType);
+
     /**
      * Returns a converter that is capable of converting IntermediateRepresentation object containing the given
      * <code>sourceContentType</code> to the given <code>targetContentType</code>.

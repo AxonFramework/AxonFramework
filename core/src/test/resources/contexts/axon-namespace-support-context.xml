@@ -63,7 +63,7 @@
                               use-explicit-flush="false" saga-serializer="sagaSerializer"
                               entity-manager-provider="myEntityManagerProvider"/>
 
-    <bean id="sagaSerializer" class="org.axonframework.serializer.XStreamSerializer"/>
+    <bean id="sagaSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 
     <bean id="commandTargetResolver" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.commandhandling.CommandTargetResolver"/>
@@ -124,7 +124,7 @@
 
     <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer"/>
 
-    <bean id="eventSerializer" class="org.axonframework.serializer.XStreamSerializer"/>
+    <bean id="eventSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 
     <bean id="commandBusInterceptor"
           class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">

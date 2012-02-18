@@ -19,7 +19,7 @@ package org.axonframework.domain;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
@@ -50,7 +50,7 @@ public class JavaSerializationTest {
         assertNotNull(xml);
 
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject<byte[]>(xml.getBytes(UTF8), byte[].class, "ignored", 0));
+                new SimpleSerializedObject<byte[]>(xml.getBytes(UTF8), byte[].class, "ignored", "0"));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }
@@ -67,7 +67,7 @@ public class JavaSerializationTest {
         assertNotNull(xml);
 
         StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject<byte[]>(data, byte[].class, "ignored", 0));
+                new SimpleSerializedObject<byte[]>(data, byte[].class, "ignored", "0"));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }

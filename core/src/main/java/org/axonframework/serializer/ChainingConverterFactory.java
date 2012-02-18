@@ -37,6 +37,19 @@ public class ChainingConverterFactory implements ConverterFactory {
         }
     }
 
+    @Override
+    public <S, T> boolean hasConverter(Class<S> sourceContentType, Class<T> targetContentType) {
+        if (sourceContentType.equals(targetContentType)) {
+            return true;
+        }
+        for (ContentTypeConverter converter : converters) {
+            if (canConvert(converter, sourceContentType, targetContentType)) {
+                return true;
+            }
+        }
+        return ChainedConverter.calculateRoute(sourceContentType, targetContentType, converters) != null;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> ContentTypeConverter<S, T> getConverter(Class<S> sourceContentType, Class<T> targetContentType) {
@@ -44,21 +57,31 @@ public class ChainingConverterFactory implements ConverterFactory {
             return new NoConversion(sourceContentType);
         }
         for (ContentTypeConverter converter : converters) {
-            try {
-                if (converter.expectedSourceType().isAssignableFrom(sourceContentType) &&
-                        targetContentType.isAssignableFrom(converter.targetType())) {
-                    return converter;
-                }
-            } catch (NoClassDefFoundError e) {
-                logger.info("ContentTypeConverter [{}] is ignored. It seems to rely on a class that is "
-                                    + "not available in the class loader: {}", converter, e.getMessage());
-                converters.remove(converter);
+            if (canConvert(converter, sourceContentType, targetContentType)) {
+                return converter;
             }
         }
         ChainedConverter<S, T> converter = ChainedConverter.calculateChain(sourceContentType, targetContentType,
                                                                            converters);
         converters.add(0, converter);
         return converter;
+    }
+
+    private <S, T> boolean canConvert(ContentTypeConverter converter, Class<S> sourceContentType,
+                                      Class<T> targetContentType) {
+        try {
+            if (converter.expectedSourceType().isAssignableFrom(sourceContentType) &&
+                    targetContentType.isAssignableFrom(converter.targetType())) {
+                return true;
+            }
+            // we do this call to make sure target Type is on the classpath
+            converter.targetType();
+        } catch (NoClassDefFoundError e) {
+            logger.info("ContentTypeConverter [{}] is ignored. It seems to rely on a class that is "
+                                + "not available in the class loader: {}", converter, e.getMessage());
+            converters.remove(converter);
+        }
+        return false;
     }
 
     /**
@@ -74,6 +97,36 @@ public class ChainingConverterFactory implements ConverterFactory {
      */
     public void registerConverter(ContentTypeConverter converter) {
         converters.add(0, converter);
+    }
+
+    /**
+     * Registers a convert of the given <code>converterType</code> with this factory, only if initialization of such a
+     * converter is possible. Both the expected source type and target type classes are checked for availability on the
+     * class path. In contrast to {@link #registerConverter(ContentTypeConverter)}, this method allows potentially
+     * unsafe (in terms of class dependencies) converters to be registered.
+     * <p/>
+     * The converter which is registered <em>last</em> will be inspected <em>first</em> when finding a suitable
+     * converter for a given input and output type.
+     * <p/>
+     * An alternative to explicit converter registration (but without the ordering guarantees) is to creaate a file
+     * called <code>org.axonframework.serializer.ContentTypeConverter</code> in <code>/META-INF/services/</code> on the
+     * class path which contains the fully qualified class names of the converters, separated by newlines. These
+     * implementations must have a public no-arg constructor.
+     *
+     * @param converterType the type of converter to register.
+     */
+    public void registerConverter(Class<? extends ContentTypeConverter> converterType) {
+        try {
+            ContentTypeConverter converter = converterType.getConstructor().newInstance();
+            converter.targetType();
+            converter.expectedSourceType();
+            registerConverter(converter);
+        } catch (Exception e) {
+            logger.warn("An exception occurred while trying to initialize a [{}].", converterType.getName(), e);
+        } catch (NoClassDefFoundError e) {
+            logger.info("ContentTypeConverter of type [{}] is ignored. It seems to rely on a class that is "
+                                + "not available in the class loader: {}", converterType, e.getMessage());
+        }
     }
 
     /**

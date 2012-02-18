@@ -35,7 +35,7 @@ import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +81,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
     /**
-     * Initialize a JpaEventStore using an {@link org.axonframework.serializer.XStreamSerializer}, which
+     * Initialize a JpaEventStore using an {@link org.axonframework.serializer.xml.XStreamSerializer}, which
      * serializes events as XML and the default Event Entry store.
      * <p/>
      * The JPA Persistence context is required to contain two entities: {@link DomainEventEntry} and {@link
@@ -95,7 +95,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement {
 
     /**
      * Initialize a JpaEventStore using the given <code>eventEntryStore</code> and an {@link
-     * org.axonframework.serializer.XStreamSerializer}, which serializes events as XML.
+     * org.axonframework.serializer.xml.XStreamSerializer}, which serializes events as XML.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      * @param eventEntryStore       The instance providing persistence logic for Domain Event entries

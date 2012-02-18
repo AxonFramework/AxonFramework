@@ -42,7 +42,7 @@ public class SagaEntry {
     @Basic
     private String sagaType;
     @Basic
-    private int revision;
+    private String revision;
     @Lob
     private byte[] serializedSaga;
 

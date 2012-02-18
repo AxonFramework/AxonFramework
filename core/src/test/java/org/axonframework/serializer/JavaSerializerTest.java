@@ -23,7 +23,7 @@ public class JavaSerializerTest {
         SerializedObject<byte[]> serializedObject = testSubject.serialize(new MySerializableObject("hello"),
                                                                           byte[].class);
         assertEquals(MySerializableObject.class.getName(), serializedObject.getType().getName());
-        assertEquals(0, serializedObject.getType().getRevision());
+        assertEquals(null, serializedObject.getType().getRevision());
 
         Object actualResult = testSubject.deserialize(serializedObject);
         assertTrue(actualResult instanceof MySerializableObject);
@@ -32,13 +32,13 @@ public class JavaSerializerTest {
 
     @Test
     public void testClassForType() {
-        Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(), 0));
+        Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(), "0"));
         assertEquals(MySerializableObject.class, actual);
     }
 
     @Test
     public void testClassForType_UnknownClass() {
-        assertNull(testSubject.classForType(new SimpleSerializedType("unknown", 0)));
+        assertNull(testSubject.classForType(new SimpleSerializedType("unknown", "0")));
     }
 
     private static class MySerializableObject implements Serializable {

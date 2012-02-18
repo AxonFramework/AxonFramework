@@ -33,7 +33,7 @@ public class ChainedConverterTest {
 
     @Before
     public void setUp() throws Exception {
-        mockType = new SimpleSerializedType("mock", 0);
+        mockType = new SimpleSerializedType("mock", "0");
         candidates = new HashSet<ContentTypeConverter<?, ?>>();
         numberToStringConverter = mockConverter(Number.class, String.class, "hello");
         stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());

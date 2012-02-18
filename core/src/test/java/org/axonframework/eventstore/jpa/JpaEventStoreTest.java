@@ -189,7 +189,12 @@ public class JpaEventStoreTest {
             @Override
             public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
                 Assert.assertEquals(byte[].class, expectedType);
-                return new SimpleSerializedObject("this ain't gonna work".getBytes(), byte[].class, "failingType", 0);
+                return new SimpleSerializedObject("this ain't gonna work".getBytes(), byte[].class, "failingType", "0");
+            }
+
+            @Override
+            public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
+                return byte[].class.equals(expectedRepresentation);
             }
 
             @Override
@@ -241,7 +246,12 @@ public class JpaEventStoreTest {
                 return new SimpleSerializedObject("<org.axonframework.eventhandling.EventListener />".getBytes(),
                                                   byte[].class,
                                                   "failingType",
-                                                  0);
+                                                  "0");
+            }
+
+            @Override
+            public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
+                return byte[].class.equals(expectedRepresentation);
             }
 
             @Override
@@ -498,7 +508,7 @@ public class JpaEventStoreTest {
     }
 
     private SerializedObject<byte[]> mockSerializedObject(byte[] bytes) {
-        return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "mock", 0);
+        return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "mock", "0");
     }
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {

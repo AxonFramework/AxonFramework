@@ -17,10 +17,10 @@ public interface SerializedType {
     String getName();
 
     /**
-     * Returns the revision number of the serialized object. This revision number is used by upcasters to decide how
-     * to transform serialized objects during deserialization.
+     * Returns the revision identifier of the serialized object. This revision identifier is used by upcasters to
+     * decide how to transform serialized objects during deserialization.
      *
-     * @return the revision number of the serialized object
+     * @return the revision identifier of the serialized object
      */
-    int getRevision();
+    String getRevision();
 }

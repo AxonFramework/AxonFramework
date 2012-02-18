@@ -26,7 +26,11 @@ package org.axonframework.serializer;
 public interface Serializer {
 
     /**
-     * Serialize the given <code>object</code> into a byte[].
+     * Serialize the given <code>object</code> into a Serialized Object containing the given
+     * <code>expectedRepresentation</code>.
+     * <p/>
+     * Use {@link #canSerializeTo(Class)} to detect whether the <code>expectedRepresentation</code> is supported by
+     * this serializer.
      *
      * @param object                 The object to serialize
      * @param expectedRepresentation The expected data type representing the serialized object
@@ -34,6 +38,21 @@ public interface Serializer {
      * @return the instance representing the serialized object.
      */
     <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation);
+
+    /**
+     * Indicates whether this Serializer is capable of serializing to the given <code>expectedRepresentation</code>.
+     * <p/>
+     * When <code>true</code>, this does *not* guarantee that the serialization and (optional) conversion will also
+     * succeed when executed. For example, when a serializer produces a <code>byte[]</code> containing JSON, trying to
+     * convert to a Dom4J Document will fail, even though this serializer has a converter to convert
+     * <code>byte[]</code>
+     * to Dom4J instances.
+     *
+     * @param expectedRepresentation The type of data a Serialized Object should contain
+     * @param <T>                    The type of data a Serialized Object should contain
+     * @return <code>true</code> if the <code>expectedRepresentation</code> is supported, otherwise <code>false</code>.
+     */
+    <T> boolean canSerializeTo(Class<T> expectedRepresentation);
 
     /**
      * Deserializes the first object read from the given <code>bytes</code>. The <code>bytes</code> are not consumed

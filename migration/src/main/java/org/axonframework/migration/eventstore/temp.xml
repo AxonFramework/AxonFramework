@@ -1,0 +1,33 @@
+<com.bridgebig.api.user.event.UserCreatedEvent eventRevision="1780">
+    <metaData>
+        <values>
+            <entry>
+                <string>userAgent</string>
+                <null/>
+            </entry>
+            <entry>
+                <string>_timestamp</string>
+                <dateTime>2012-02-08T09:13:04.989Z</dateTime>
+            </entry>
+            <entry>
+                <string>_identifier</string>
+                <string>cc0965a8-5a28-4927-a83f-b0be472a7b65</string>
+            </entry>
+            <entry>
+                <string>ipAddress</string>
+                <null/>
+            </entry>
+        </values>
+    </metaData>
+    <sequenceNumber>0</sequenceNumber>
+    <aggregateIdentifier>henk</aggregateIdentifier>
+    <userData>
+        <email>henk</email>
+        <nickname>henk</nickname>
+        <passwordHash>a94a8fe5ccb19ba61c4c0873d391e987982fbbd3</passwordHash>
+        <country>NLD</country>
+        <userRole>USER</userRole>
+    </userData>
+    <activationId>da5c6a63-377f-45c1-a870-5f00ffa4841a</activationId>
+    <valuable class="com.bridgebig.api.common.ZeroValue">INSTANCE</valuable>
+</com.bridgebig.api.user.event.UserCreatedEvent>

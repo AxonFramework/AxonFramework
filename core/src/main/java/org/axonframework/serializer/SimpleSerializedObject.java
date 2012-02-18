@@ -57,7 +57,7 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
      * @param type     The type identifying the serialized object
      * @param revision The revision number of the serialized object
      */
-    public SimpleSerializedObject(T data, Class<T> dataType, String type, int revision) {
+    public SimpleSerializedObject(T data, Class<T> dataType, String type, String revision) {
         this(data, dataType, new SimpleSerializedType(type, revision));
     }
 

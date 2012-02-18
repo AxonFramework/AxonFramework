@@ -28,7 +28,7 @@
 
     <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
         <constructor-arg>
-            <bean class="org.axonframework.serializer.XStreamSerializer"/>
+            <bean class="org.axonframework.serializer.xml.XStreamSerializer"/>
         </constructor-arg>
     </bean>
 

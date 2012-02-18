@@ -1,5 +1,7 @@
 package org.axonframework.serializer.converters;
 
+import org.axonframework.serializer.AbstractContentTypeConverter;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 

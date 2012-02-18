@@ -28,7 +28,7 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
     private int changeCounter;
     private final Object identifier;
 
-    static StubAggregate create(Object identifier) {
+    public static StubAggregate create(Object identifier) {
         StubAggregate aggregate = new StubAggregate(identifier);
         aggregate.apply(new StubAggregateCreatedEvent());
         return aggregate;
@@ -45,6 +45,11 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
 
     public void causeTrouble() {
         throw new RuntimeException("That's problematic");
+    }
+
+    @Override
+    public void markDeleted() {
+        super.markDeleted();
     }
 
     @Override

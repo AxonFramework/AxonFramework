@@ -71,7 +71,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                 os.writeUTF(event.getTimestamp().toString());
                 SerializedObject<byte[]> serialized = eventSerializer.serialize(event, byte[].class);
                 os.writeUTF(serialized.getType().getName());
-                os.writeInt(serialized.getType().getRevision());
+                os.writeUTF(serialized.getType().getRevision());
                 os.writeInt(serialized.getData().length);
                 os.write(serialized.getData());
             }
@@ -99,7 +99,7 @@ public class SequentialFileSystemEventStore implements SnapshotEventStore {
                     long sequenceNumber = ois.readLong();
                     String timestamp = ois.readUTF();
                     String payloadType = ois.readUTF();
-                    int payloadRevision = ois.readInt();
+                    String payloadRevision = ois.readUTF();
                     int length = ois.readInt();
                     byte[] serializedEvent = new byte[length];
                     ois.readFully(serializedEvent);

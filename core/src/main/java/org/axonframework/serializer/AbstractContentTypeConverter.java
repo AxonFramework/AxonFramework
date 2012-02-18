@@ -1,8 +1,4 @@
-package org.axonframework.serializer.converters;
-
-import org.axonframework.serializer.ContentTypeConverter;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SimpleSerializedObject;
+package org.axonframework.serializer;
 
 /**
  * Abstract implementation of the ContentTypeConverter for convenience purposes. It implements the {@link

@@ -1,6 +1,7 @@
 package org.axonframework.serializer.converters;
 
 import org.apache.commons.io.IOUtils;
+import org.axonframework.serializer.AbstractContentTypeConverter;
 import org.axonframework.serializer.CannotConvertBetweenTypesException;
 
 import java.io.IOException;

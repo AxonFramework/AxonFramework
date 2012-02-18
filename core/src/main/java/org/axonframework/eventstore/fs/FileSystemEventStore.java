@@ -26,7 +26,7 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +64,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
 
     /**
      * Basic initialization of the event store. The actual serialization and deserialization is delegated to a {@link
-     * org.axonframework.serializer.XStreamSerializer}
+     * org.axonframework.serializer.xml.XStreamSerializer}
      */
     public FileSystemEventStore() {
         this.eventSerializer = new XStreamSerializer();

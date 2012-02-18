@@ -61,7 +61,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
     @Basic
     private String payloadType;
     @Basic
-    private int payloadRevision;
+    private String payloadRevision;
     @Basic
     @Lob
     private byte[] metaData;

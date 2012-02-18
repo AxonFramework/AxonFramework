@@ -22,7 +22,7 @@ import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -271,8 +271,8 @@ public class JpaSagaRepositoryTest {
         repository.add(saga);
         entityManager.flush();
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                                .setParameter("id", identifier)
-                                .getResultList().isEmpty());
+                                 .setParameter("id", identifier)
+                                 .getResultList().isEmpty());
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.end();
         repository.commit(loaded);
@@ -281,8 +281,8 @@ public class JpaSagaRepositoryTest {
 
         assertNull(entityManager.find(SagaEntry.class, identifier));
         assertTrue(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                .setParameter("id", identifier)
-                .getResultList().isEmpty());
+                                .setParameter("id", identifier)
+                                .getResultList().isEmpty());
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
@@ -313,6 +313,7 @@ public class JpaSagaRepositoryTest {
     }
 
     public static class MyOtherTestSaga extends AbstractAnnotatedSaga {
+
         private static final long serialVersionUID = -1562911263884220240L;
         private int counter = 0;
 
@@ -330,6 +331,7 @@ public class JpaSagaRepositoryTest {
     }
 
     private class InexistentSaga implements Saga {
+
         @Override
         public String getSagaIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");

@@ -18,7 +18,7 @@ package org.axonframework.eventstore.redis;
 
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 

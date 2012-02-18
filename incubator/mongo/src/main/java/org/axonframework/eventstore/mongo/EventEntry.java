@@ -75,10 +75,10 @@ class EventEntry {
     private final long sequenceNumber;
     private final String timeStamp;
     private final String aggregateType;
-    private final String serializedPayload;
+    private final Object serializedPayload;
     private final String payoadType;
-    private final int payloadRevision;
-    private final String serializedMetaData;
+    private final String payloadRevision;
+    private final Object serializedMetaData;
     private final String eventIdentifier;
 
     /**
@@ -93,9 +93,15 @@ class EventEntry {
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
         this.eventIdentifier = event.getIdentifier();
-        SerializedObject<String> serializedPayloadObject = eventSerializer.serialize(event.getPayload(), String.class);
-        SerializedObject<String> serializedMetaDataObject = eventSerializer.serialize(event.getMetaData(),
-                                                                                      String.class);
+        Class<?> serializationTarget = String.class;
+        if (eventSerializer.canSerializeTo(DBObject.class)) {
+            serializationTarget = DBObject.class;
+        }
+        SerializedObject serializedPayloadObject = eventSerializer.serialize(
+                event.getPayload(), serializationTarget);
+        SerializedObject serializedMetaDataObject = eventSerializer.serialize(
+                event.getMetaData(), serializationTarget);
+
         this.serializedPayload = serializedPayloadObject.getData();
         this.payoadType = serializedPayloadObject.getType().getName();
         this.payloadRevision = serializedPayloadObject.getType().getRevision();
@@ -111,12 +117,12 @@ class EventEntry {
     EventEntry(DBObject dbObject) {
         this.aggregateIdentifier = (String) dbObject.get(AGGREGATE_IDENTIFIER_PROPERTY);
         this.sequenceNumber = (Long) dbObject.get(SEQUENCE_NUMBER_PROPERTY);
-        this.serializedPayload = (String) dbObject.get(SERIALIZED_PAYLOAD_PROPERTY);
+        this.serializedPayload = dbObject.get(SERIALIZED_PAYLOAD_PROPERTY);
         this.timeStamp = (String) dbObject.get(TIME_STAMP_PROPERTY);
         this.aggregateType = (String) dbObject.get(AGGREGATE_TYPE_PROPERTY);
         this.payoadType = (String) dbObject.get(PAYLOAD_TYPE_PROPERTY);
-        this.payloadRevision = (Integer) dbObject.get(PAYLOAD_REVISION_PROPERTY);
-        this.serializedMetaData = (String) dbObject.get(META_DATA_PROPERTY);
+        this.payloadRevision = (String) dbObject.get(PAYLOAD_REVISION_PROPERTY);
+        this.serializedMetaData = dbObject.get(META_DATA_PROPERTY);
         this.eventIdentifier = (String) dbObject.get(EVENT_IDENTIFIER_PROPERTY);
     }
 
@@ -127,16 +133,21 @@ class EventEntry {
      * @return The actual DomainEvent
      */
     public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
+        Class<?> representationType = String.class;
+        if (serializedPayload instanceof DBObject) {
+            representationType = DBObject.class;
+        }
         return new SerializedDomainEventMessage<Object>(
                 eventIdentifier,
                 aggregateIdentifier,
                 sequenceNumber,
                 new DateTime(timeStamp),
                 new LazyDeserializingObject<Object>(
-                        new SimpleSerializedObject<String>(serializedPayload, String.class, payoadType,
-                                                           payloadRevision),
+                        new SimpleSerializedObject(serializedPayload, representationType, payoadType,
+                                                   payloadRevision),
                         eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData<String>(serializedMetaData, String.class),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData,
+                                                                             representationType),
                                                       eventSerializer));
     }
 
@@ -182,28 +193,5 @@ class EventEntry {
                                                                                                firstSequenceNumber))
                                    .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
                                    .get();
-    }
-
-    /**
-     * Returns this entry as a DomainEventMessage, using the given <code>eventSerializer</code> to deserialize the
-     * payload and meta data.
-     *
-     * @param eventSerializer the serializer to deserialize the payload and meta data
-     * @return a DomainEventMessage containing the data from this entry
-     */
-    public DomainEventMessage asDomainEventMessage(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(
-                eventIdentifier,
-                aggregateIdentifier,
-                sequenceNumber,
-                new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(new SimpleSerializedObject<String>(serializedPayload,
-                                                                                       String.class,
-                                                                                       payoadType,
-                                                                                       payloadRevision),
-                                                    eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData<String>(serializedMetaData,
-                                                                                     String.class),
-                                                      eventSerializer));
     }
 }

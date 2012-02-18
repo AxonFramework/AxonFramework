@@ -39,7 +39,7 @@ public class DomainEventEntryTest {
 
     private DomainEventMessage mockDomainEvent;
     private SerializedObject<byte[]> mockPayload = new SimpleSerializedObject<byte[]>("PayloadBytes".getBytes(),
-                                                                                      byte[].class, "Mock", 0);
+                                                                                      byte[].class, "Mock", "0");
     private SerializedObject<byte[]> mockMetaData = new SerializedMetaData<byte[]>("MetaDataBytes".getBytes(),
                                                                                    byte[].class);
     private Serializer mockSerializer;

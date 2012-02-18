@@ -39,9 +39,9 @@ public class UpcasterChainTest {
 
     @Before
     public void setUp() throws Exception {
-        object1 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type1", 0);
-        object2 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type2", 1);
-        object3 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type3", 2);
+        object1 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type1", "0");
+        object2 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type2", "1");
+        object3 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type3", "2");
         intermediate1 = new MockIntermediateRepresentation(object1, byte[].class);
         intermediate2 = new MockIntermediateRepresentation(object2, byte[].class);
         intermediate3 = new MockIntermediateRepresentation(object3, byte[].class);

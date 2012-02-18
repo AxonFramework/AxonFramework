@@ -17,7 +17,7 @@
 package org.axonframework.domain;
 
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 
 import java.io.ByteArrayOutputStream;
@@ -63,7 +63,7 @@ public class AbstractAggregateRootTest {
         return (AggregateRoot) serializer.deserialize(new SimpleSerializedObject<byte[]>(baos.toByteArray(),
                                                                                          byte[].class,
                                                                                          "ignored",
-                                                                                         0));
+                                                                                         "0"));
     }
 
     @Test

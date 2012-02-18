@@ -31,7 +31,7 @@ import java.io.ObjectOutputStream;
  * Serializer implementation that uses Java serialization to serialize and deserialize object instances. This
  * implementation is very suitable if the life span of the serialized objects allows classes to remain unchanged. If
  * Class definitions need to be changed during the object's life cycle, another implementation, like the
- * {@link XStreamSerializer} might be a more suitable alternative.
+ * {@link org.axonframework.serializer.xml.XStreamSerializer} might be a more suitable alternative.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -56,9 +56,14 @@ public class JavaSerializer implements Serializer {
         }
         new SimpleSerializedType(instance.getClass().getName(), revisionOf(instance.getClass()));
         T converted = converterFactory.getConverter(byte[].class, expectedType)
-                                                    .convert(baos.toByteArray());
+                                      .convert(baos.toByteArray());
         return new SimpleSerializedObject<T>(converted, expectedType, instance.getClass().getName(),
                                              revisionOf(instance.getClass()));
+    }
+
+    @Override
+    public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
+        return (converterFactory.hasConverter(byte[].class, expectedRepresentation));
     }
 
     @Override
@@ -103,8 +108,8 @@ public class JavaSerializer implements Serializer {
      * @param type The type for which to return the revision number
      * @return the revision number for the given <code>type</code>
      */
-    protected int revisionOf(Class<?> type) {
+    protected String revisionOf(Class<?> type) {
         Revision revision = type.getAnnotation(Revision.class);
-        return revision == null ? 0 : revision.value();
+        return revision == null ? null : revision.value();
     }
 }

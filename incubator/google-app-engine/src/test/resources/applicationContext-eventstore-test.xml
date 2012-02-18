@@ -23,7 +23,7 @@
         <constructor-arg index="0" ref="xStreamEventSerializer"/>
     </bean>
 
-    <bean name="xStreamEventSerializer" class="org.axonframework.serializer.XStreamSerializer">
+    <bean name="xStreamEventSerializer" class="org.axonframework.serializer.xml.XStreamSerializer">
         <constructor-arg index="0" type="com.thoughtworks.xstream.XStream" ref="xStream"/>
     </bean>
 

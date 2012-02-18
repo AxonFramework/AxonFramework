@@ -21,7 +21,7 @@ public class InputStreamToByteArrayConverterTest {
     @Before
     public void setUp() throws Exception {
         testSubject = new InputStreamToByteArrayConverter();
-        type = new SimpleSerializedType("bla", 0);
+        type = new SimpleSerializedType("bla", "0");
     }
 
     @Test
