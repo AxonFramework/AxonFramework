@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>1.3.2-SNAPSHOT</version>
+    <version>1.3.2</version>
     <modules>
         <module>core</module>
         <module>integration</module>
