@@ -17,7 +17,6 @@ import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -39,11 +38,7 @@ public class MongoSagaRepositoryTest {
 
     private final static Logger logger = LoggerFactory.getLogger(MongoSagaRepositoryTest.class);
 
-    @Autowired
     private MongoSagaRepository repository;
-
-    @Autowired
-    @Qualifier("sagaMongoTemplate")
     private MongoTemplate mongoTemplate;
 
     @Autowired
@@ -59,8 +54,10 @@ public class MongoSagaRepositoryTest {
             eventStore = context.getBean(MongoEventStore.class);
         } catch (Exception e) {
             logger.error("No Mongo instance found. Ignoring test.");
-            Assume.assumeNoException(e);
+            Assume.assumeTrue(false);
         }
+        repository = context.getBean(MongoSagaRepository.class);
+        mongoTemplate = context.getBean("sagaMongoTemplate", MongoTemplate.class);
         mongoTemplate.database().dropDatabase();
     }
 
@@ -85,7 +82,6 @@ public class MongoSagaRepositoryTest {
         DBObject sagaQuery = SagaEntry.queryByIdentifier("test1");
         DBCursor sagaCursor = mongoTemplate.sagaCollection().find(sagaQuery);
         assertEquals("Amount of found sagas is not as expected", 1, sagaCursor.size());
-
     }
 
     @DirtiesContext
@@ -335,5 +331,4 @@ public class MongoSagaRepositoryTest {
             throw new UnsupportedOperationException("Not implemented yet");
         }
     }
-
 }
