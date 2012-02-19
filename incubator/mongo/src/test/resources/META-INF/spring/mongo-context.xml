@@ -32,7 +32,7 @@
     </bean>
 
     <!-- Axon saga's -->
-    <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
+    <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository" lazy-init="true">
         <constructor-arg ref="sagaMongoTemplate"/>
     </bean>
 

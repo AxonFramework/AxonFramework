@@ -50,6 +50,7 @@ public class MongoSagaRepositoryTest {
     @Before
     public void setUp() throws Exception {
         try {
+            System.setProperty("axon.mongo.singleinstance", "true");
             mongo = context.getBean(Mongo.class);
             eventStore = context.getBean(MongoEventStore.class);
         } catch (Exception e) {
