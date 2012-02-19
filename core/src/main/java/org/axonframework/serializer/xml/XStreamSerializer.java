@@ -97,7 +97,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     @Override
-    protected <T> T doSerialize(Object object, Class<T> expectedFormat) {
+    protected <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         xStream.marshal(object, new CompactWriter(new OutputStreamWriter(baos, getCharset())));
         return convert(byte[].class, expectedFormat, baos.toByteArray());
@@ -108,7 +108,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public Object doDeserialize(SerializedObject serializedObject) {
+    public Object doDeserialize(SerializedObject serializedObject, XStream xStream) {
         if ("org.dom4j.Document".equals(serializedObject.getContentType().getName())) {
             return xStream.unmarshal(new Dom4JReader((Document) serializedObject.getData()));
         }
@@ -118,7 +118,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     @Override
-    protected void registerOptionalConverters(ChainingConverterFactory converterFactory) {
+    protected void registerConverters(ChainingConverterFactory converterFactory) {
         converterFactory.registerConverter(Dom4JToByteArrayConverter.class);
         converterFactory.registerConverter(InputStreamToDom4jConverter.class);
     }

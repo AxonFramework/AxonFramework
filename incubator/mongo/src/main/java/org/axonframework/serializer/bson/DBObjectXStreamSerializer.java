@@ -71,13 +71,13 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     }
 
     @Override
-    protected void registerOptionalConverters(ChainingConverterFactory converterFactory) {
+    protected void registerConverters(ChainingConverterFactory converterFactory) {
         converterFactory.registerConverter(new DBObjectToStringContentTypeConverter());
         converterFactory.registerConverter(new StringToDBObjectContentTypeConverter());
     }
 
     @Override
-    protected <T> T doSerialize(Object object, Class<T> expectedFormat) {
+    protected <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream) {
         BasicDBObject root = new BasicDBObject();
         getXStream().marshal(object, new DBObjectHierarchicalStreamWriter(root));
         return convert(DBObject.class, expectedFormat, root);
@@ -85,7 +85,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Object doDeserialize(SerializedObject serializedObject) {
+    protected Object doDeserialize(SerializedObject serializedObject, XStream xStream) {
         DBObject serialized = (DBObject) convert(serializedObject.getContentType(),
                                                  DBObject.class, serializedObject.getData());
         return getXStream().unmarshal(new DBObjectHierarchicalStreamReader(serialized));

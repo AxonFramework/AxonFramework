@@ -23,17 +23,23 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
+ * Abstract implementation for XStream based serializers. It provides some helper methods and configuration features
+ * independent of the actual format used to marshal to.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
 public abstract class AbstractXStreamSerializer implements Serializer {
 
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
-    protected final XStream xStream;
+    private final XStream xStream;
     private final Charset charset;
     private volatile UpcasterChain upcasters;
     private ConverterFactory converterFactory;
 
-
+    /**
+     * Initialize a generic serializer using the UTF-8 character set and a default XStream instance.
+     */
     protected AbstractXStreamSerializer() {
         this(DEFAULT_CHARSET_NAME);
     }
@@ -69,15 +75,28 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         this(charset, xStream, new ChainingConverterFactory());
     }
 
-    protected abstract void registerOptionalConverters(ChainingConverterFactory converterFactory);
+    /**
+     * Registers any converters that are specific to the type of content written by this serializer.
+     *
+     * @param converterFactory the ConverterFactory to register the converters with
+     */
+    protected abstract void registerConverters(ChainingConverterFactory converterFactory);
 
-
+    /**
+     * Initialize the serializer using the given <code>charset</code>, <code>xStream</code> instance and
+     * <code>converterFactory</code>. The <code>xStream</code> instance is configured with several converters for the
+     * most common types in Axon.
+     *
+     * @param charset          The character set to use
+     * @param xStream          The XStream instance to use
+     * @param converterFactory The ConverterFactory providing the necessary content converters
+     */
     public AbstractXStreamSerializer(Charset charset, XStream xStream, ConverterFactory converterFactory) {
         this.charset = charset;
         this.xStream = xStream;
         this.converterFactory = converterFactory;
         if (converterFactory instanceof ChainingConverterFactory) {
-            registerOptionalConverters((ChainingConverterFactory) converterFactory);
+            registerConverters((ChainingConverterFactory) converterFactory);
         }
         xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
@@ -107,7 +126,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      */
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
-        T result = doSerialize(object, expectedType);
+        T result = doSerialize(object, expectedType, xStream);
         return new SimpleSerializedObject<T>(result, expectedType, typeIdentifierOf(object.getClass()),
                                              revisionOf(object.getClass()));
     }
@@ -124,7 +143,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         if (currentUpcasterChain != null) {
             current = currentUpcasterChain.upcast(current);
         }
-        return doDeserialize(current);
+        return doDeserialize(current, xStream);
     }
 
     /**
@@ -133,18 +152,19 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      *
      * @param object         The object to serialize
      * @param expectedFormat The format in which the serialized object must be returned
-     * @param <T>            The format in which the serialized object must be returned
+     * @param xStream        The XStream instance to serialize with
      * @return The serialized object
      */
-    protected abstract <T> T doSerialize(Object object, Class<T> expectedFormat);
+    protected abstract <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream);
 
     /**
      * Deserialize the given <code>serializedObject</code>.
      *
      * @param serializedObject The instance containing the serialized format of the object
+     * @param xStream          The XStream instance to deserialize with
      * @return the deserialized object
      */
-    protected abstract Object doDeserialize(SerializedObject serializedObject);
+    protected abstract Object doDeserialize(SerializedObject serializedObject, XStream xStream);
 
     /**
      * Convert the given <code>source</code>, of type <code>sourceType</code> to the given <code>targetType</code>.
@@ -259,6 +279,12 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return converterFactory;
     }
 
+    /**
+     * Returns the type identifier for the given <code>type</code>. It uses the aliasing rules configured in XStream.
+     *
+     * @param type The type to get the type identifier of
+     * @return A String containing the type identifier of the given class
+     */
     protected String typeIdentifierOf(Class<?> type) {
         return xStream.getMapper().serializedClass(type);
     }
@@ -301,7 +327,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             try {
                 Constructor constructor = context.getRequiredType().getConstructor(Object.class);
                 return constructor.newInstance(reader.getValue());
-            } catch (Exception e) {
+            } catch (Exception e) { // NOSONAR
                 throw new SerializationException(String.format(
                         "An exception occurred while deserializing a Joda Time object: %s",
                         context.getRequiredType().getSimpleName()), e);
