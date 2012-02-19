@@ -68,8 +68,26 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
         return new ChainedConverter<S, T>(route.asList());
     }
 
-    public static <S, T> Route calculateRoute(Class<S> sourceType, Class<T> targetType,
-                                              Collection<ContentTypeConverter<?, ?>> candidates) {
+    /**
+     * Indicates whether this converter is capable of converting the given <code>sourceContentType</code> into
+     * <code>targetContentType</code>, using the given <code>converters</code>. When <code>true</code>, it may use any
+     * number of the given <code>converters</code> to form a chain.
+     *
+     * @param sourceContentType The content type of the source object
+     * @param targetContentType The content type of the target object
+     * @param converters        The converters eligible for use
+     * @param <S>               The content type of the source object
+     * @param <T>               The content type of the target object
+     * @return <code>true</code> if this Converter can convert between the given types, using the given converters.
+     *         Otherwise <code>false</code>.
+     */
+    public static <S, T> boolean canConvert(Class<S> sourceContentType, Class<T> targetContentType,
+                                            List<ContentTypeConverter<?, ?>> converters) {
+        return calculateRoute(sourceContentType, targetContentType, converters) != null;
+    }
+
+    private static <S, T> Route calculateRoute(Class<S> sourceType, Class<T> targetType,
+                                               Collection<ContentTypeConverter<?, ?>> candidates) {
         return new RouteCalculator(candidates).calculateRoute(sourceType, targetType);
     }
 
@@ -134,6 +152,9 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
         return target;
     }
 
+    /**
+     * Instance that calculates a "route" through a number of converters using Dijkstra's algorithm.
+     */
     private static final class RouteCalculator {
 
         private final Set<ContentTypeConverter<?, ?>> candidates;

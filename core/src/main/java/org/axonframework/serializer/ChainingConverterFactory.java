@@ -47,7 +47,7 @@ public class ChainingConverterFactory implements ConverterFactory {
                 return true;
             }
         }
-        return ChainedConverter.calculateRoute(sourceContentType, targetContentType, converters) != null;
+        return ChainedConverter.canConvert(sourceContentType, targetContentType, converters);
     }
 
     @SuppressWarnings("unchecked")
