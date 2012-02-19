@@ -55,7 +55,7 @@ public class DBObjectHierarchicalStreamReader implements HierarchicalStreamReade
         } else {
             itemStack.push(new NameAwareObject(nextChildName, nextChild.toString()));
             nodeValue = nextChild.toString();
-            childrenStack.push(Collections.<NameAwareObject>emptyIterator());
+            childrenStack.push(Collections.<NameAwareObject>emptyList().iterator());
         }
     }
 
