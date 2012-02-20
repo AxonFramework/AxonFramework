@@ -1,11 +1,12 @@
 package org.axonframework.insight;
 
-import com.springsource.insight.collection.method.MethodOperationCollectionAspect;
-import com.springsource.insight.intercept.operation.Operation;
-import com.springsource.insight.intercept.operation.OperationMap;
 import org.aspectj.lang.JoinPoint;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
+
+import com.springsource.insight.collection.method.MethodOperationCollectionAspect;
+import com.springsource.insight.intercept.operation.Operation;
+import com.springsource.insight.intercept.operation.OperationMap;
 
 /**
  * Collects operations for {@link Saga} executions.
@@ -15,7 +16,10 @@ import org.axonframework.saga.Saga;
  */
 public aspect SagaOperationCollectionAspect extends MethodOperationCollectionAspect {
 
-    public pointcut collectionPoint(): execution(void org.axonframework.saga.Saga.handle(*));
+    public pointcut collectionPoint(): 
+        execution(@org.axonframework.saga.annotation.SagaEventHandler * *(*, ..)) ||
+            (execution(void org.axonframework.saga.Saga.handle(*))
+                    && !within(org.axonframework.saga.annotation.AbstractAnnotatedSaga));
 
     @Override
     protected Operation createOperation(JoinPoint jp) {
