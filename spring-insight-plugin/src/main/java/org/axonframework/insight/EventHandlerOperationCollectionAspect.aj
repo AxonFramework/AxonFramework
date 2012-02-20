@@ -16,7 +16,7 @@ public aspect EventHandlerOperationCollectionAspect extends MethodOperationColle
             execution(@org.axonframework.eventhandling.annotation.EventHandler * *(*, ..)) ||
                     (execution(void org.axonframework.eventhandling.EventListener.handle(*))
                             && !within(org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter)
-                            && !within(org.axonframework.saga.SagaManager));
+                            && !execution(void org.axonframework.saga.SagaManager.handle(*)));
 
     @Override
     protected Operation createOperation(JoinPoint jp) {
