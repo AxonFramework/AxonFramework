@@ -93,7 +93,7 @@ public class FixtureTest_RegularParams {
                     .given(givenEvents)
                     .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), 5));
         } catch (AssertionError e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("\"lastNumber\""));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(".lastNumber\""));
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<5>"));
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<4>"));
         }
@@ -110,7 +110,7 @@ public class FixtureTest_RegularParams {
                     .given(givenEvents)
                     .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), null));
         } catch (AssertionError e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("\"lastNumber\""));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(".lastNumber\""));
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<null>"));
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<4>"));
         }
