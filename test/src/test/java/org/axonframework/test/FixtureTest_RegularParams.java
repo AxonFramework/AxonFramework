@@ -91,6 +91,7 @@ public class FixtureTest_RegularParams {
                                                                           fixture.getEventBus()))
                     .given(givenEvents)
                     .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), 5));
+            fail("Expected AssertionError");
         } catch (AssertionError e) {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(".lastNumber\""));
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<5>"));
@@ -107,6 +108,7 @@ public class FixtureTest_RegularParams {
                                                                           fixture.getEventBus()))
                     .given(givenEvents)
                     .when(new IllegalStateChangeCommand(fixture.getAggregateIdentifier(), null));
+            fail("Expected AssertionError");
         } catch (AssertionError e) {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(".lastNumber\""));
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<null>"));
