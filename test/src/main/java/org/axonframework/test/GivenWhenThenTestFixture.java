@@ -217,7 +217,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
 
     private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate) {
         HashSet<ComparationEntry> comparedEntries = new HashSet<ComparationEntry>();
-        comparedEntries.add(new ComparationEntry(workingAggregate, eventSourcedAggregate));
         if (!workingAggregate.getClass().equals(eventSourcedAggregate.getClass())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
                                                                + "be of another type than the original.\n"
@@ -239,8 +238,8 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                                                         + "Working aggregate value:     <%s>\n"
                                                         + "Value after applying events: <%s>",
                                                 propertyPath, workingValue, eventSourcedValue));
-        } else if (comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue))
-                && workingValue != null && !hasEqualsMethod(workingValue.getClass())) {
+        } else if (workingValue != null && comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue))
+                && !hasEqualsMethod(workingValue.getClass())) {
             for (Field field : fieldsOf(workingValue.getClass())) {
                 if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
                     ensureAccessible(field);
