@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * <p>Beware with this test, it requires a running mongodb as specified in the configuration file, if no mongo instance
- * is running, tests will be ignored.</p> <p/> <p>Autowired dependencies are left out on purpose, it does not work with
+ * is running, tests will be ignored.<p/> <p>Autowired dependencies are left out on purpose, it does not work with
  * the assume used to check if mongo is running.</p>
  *
  * @author Jettro Coenradie
@@ -57,7 +57,7 @@ public class MongoEventStoreTest {
 
     private MongoEventStore eventStore;
     private Mongo mongo;
-    private DefaultMongoTemplate mongoTemplate;
+    private DefaultEventStoreCollections mongoTemplate;
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
@@ -74,7 +74,7 @@ public class MongoEventStoreTest {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
-        mongoTemplate = new DefaultMongoTemplate(mongo);
+        mongoTemplate = new DefaultEventStoreCollections(mongo);
         mongoTemplate.database().dropDatabase();
         aggregate1 = new StubAggregateRoot();
         for (int t = 0; t < 10; t++) {

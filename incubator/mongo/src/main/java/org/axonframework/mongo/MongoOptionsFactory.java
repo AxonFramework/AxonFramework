@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.mongo;
+package org.axonframework.mongo;
 
 import com.mongodb.MongoOptions;
 import org.slf4j.Logger;

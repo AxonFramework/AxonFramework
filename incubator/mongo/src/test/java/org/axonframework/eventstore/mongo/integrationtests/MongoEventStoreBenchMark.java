@@ -19,7 +19,7 @@ package org.axonframework.eventstore.mongo.integrationtests;
 import com.mongodb.Mongo;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
-import org.axonframework.eventstore.mongo.DefaultMongoTemplate;
+import org.axonframework.eventstore.mongo.DefaultEventStoreCollections;
 import org.axonframework.eventstore.mongo.MongoEventStore;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 
@@ -49,7 +49,7 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
     @Override
     protected void prepareEventStore() {
-        DefaultMongoTemplate mongoTemplate = new DefaultMongoTemplate(mongoDb);
+        DefaultEventStoreCollections mongoTemplate = new DefaultEventStoreCollections(mongoDb);
         mongoTemplate.database().dropDatabase();
     }
 

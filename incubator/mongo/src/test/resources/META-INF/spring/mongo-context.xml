@@ -28,27 +28,27 @@
 
     <!-- Axon Event store -->
     <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore" lazy-init="true">
-        <constructor-arg ref="mongoTemplate"/>
+        <constructor-arg ref="eventStoreCollections"/>
+    </bean>
+
+    <bean id="eventStoreCollections" class="org.axonframework.eventstore.mongo.DefaultEventStoreCollections">
+        <constructor-arg ref="mongoDb"/>
     </bean>
 
     <!-- Axon saga's -->
     <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
-        <constructor-arg ref="sagaMongoTemplate"/>
+        <constructor-arg ref="sagaStoreCollections"/>
     </bean>
 
-    <bean id="sagaMongoTemplate" class="org.axonframework.saga.repository.mongo.DefaultMongoTemplate">
+    <bean id="sagaStoreCollections" class="org.axonframework.saga.repository.mongo.DefaultSagaStoreCollections">
         <constructor-arg ref="mongoDb"/>
     </bean>
 
     <!-- Infrastructure Mongo -->
-    <bean id="mongoTemplate" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
-        <constructor-arg ref="mongoDb"/>
-    </bean>
-
     <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongoInstance"
           lazy-init="true"/>
 
-    <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory" lazy-init="true">
+    <bean id="mongoFactoryBean" class="org.axonframework.mongo.MongoFactory" lazy-init="true">
         <property name="singleInstanceContext" value="true"/>
         <property name="mongoOptions">
             <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
@@ -56,7 +56,7 @@
         </property>
     </bean>
 
-    <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
+    <bean id="mongoOptionsFactory" class="org.axonframework.mongo.MongoOptionsFactory">
         <property name="connectionsPerHost" value="100"/>
     </bean>
 

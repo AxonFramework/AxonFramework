@@ -1,4 +1,4 @@
-package org.axonframework.eventstore.mongo;
+package org.axonframework.mongo;
 
 import com.mongodb.Mongo;
 import com.mongodb.ServerAddress;

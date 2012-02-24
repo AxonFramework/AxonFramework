@@ -32,7 +32,7 @@
     <!-- Infrastructure configuration -->
     <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongoInstance"/>
 
-    <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory">
+    <bean id="mongoFactoryBean" class="org.axonframework.mongo.MongoFactory">
         <property name="singleInstanceContext" value="false"/>
         <property name="mongoOptions">
             <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
@@ -55,7 +55,7 @@
         </property>
     </bean>
 
-    <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
+    <bean id="mongoOptionsFactory" class="org.axonframework.mongo.MongoOptionsFactory">
         <property name="connectionsPerHost" value="10"/>
         <property name="threadsAllowedToBlockForConnectionMultiplier" value="100"/>
     </bean>

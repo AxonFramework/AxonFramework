@@ -5,14 +5,14 @@ import com.mongodb.DBCollection;
 
 /**
  * <p>Generic template for accessing Mongo for the axon sagas.</p>
- * <p>You can ask for the collection of domain events as well as the collection of sagas and association values. We
- * use the mongo client mongo-java-driver. This is a wrapper around the standard mongo methods. For convenience the
- * interface also gives access to the database that contains the axon saga collections.</p>
- * <p>Implementations of this interface must provide the connection to Mongo.</p>
+ * <p>You can ask for the collection of sagas and association values. We use the mongo client mongo-java-driver. This
+ * is a wrapper around the standard mongo methods. For convenience the interface also gives access to the database that
+ * contains the axon saga collections.</p>
+ * <p>Implementations of this interface must provide the connection to the Mongo database.</p>
  *
  * @author Jettro Coenradie
  */
-public interface MongoTemplate {
+public interface SagaStoreCollections {
     /**
      * Returns a reference to the collection containing the saga instances.
      *

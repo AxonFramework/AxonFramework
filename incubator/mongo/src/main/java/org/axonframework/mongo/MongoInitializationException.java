@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.mongo;
+package org.axonframework.mongo;
 
 /**
  * <p>Exception used to indicate the configuration of the MongoDB connection has errors</p>.

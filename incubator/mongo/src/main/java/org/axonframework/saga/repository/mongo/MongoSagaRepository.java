@@ -18,14 +18,14 @@ import java.util.Set;
  */
 public class MongoSagaRepository extends AbstractSagaRepository {
 
-    private MongoTemplate mongoTemplate;
+    private SagaStoreCollections sagaStoreCollections;
     private SagaSerializer serializer;
     private ResourceInjector injector;
 
     private volatile boolean initialized = false;
 
-    public MongoSagaRepository(MongoTemplate mongoTemplate) {
-        this.mongoTemplate = mongoTemplate;
+    public MongoSagaRepository(SagaStoreCollections sagaStoreCollections) {
+        this.sagaStoreCollections = sagaStoreCollections;
         this.serializer = new JavaSagaSerializer();
     }
 
@@ -55,7 +55,7 @@ public class MongoSagaRepository extends AbstractSagaRepository {
 
     private synchronized void initialize() {
         if (!initialized) {
-            DBCursor dbCursor = mongoTemplate.associationsCollection().find();
+            DBCursor dbCursor = sagaStoreCollections.associationsCollection().find();
             getAssociationValueMap().clear();
             while (dbCursor.hasNext()) {
                 AssociationValueEntry entry = new AssociationValueEntry(dbCursor.next());
@@ -67,12 +67,12 @@ public class MongoSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void deleteSaga(Saga saga) {
-        mongoTemplate.sagaCollection().findAndRemove(SagaEntry.queryByIdentifier(saga.getSagaIdentifier()));
+        sagaStoreCollections.sagaCollection().findAndRemove(SagaEntry.queryByIdentifier(saga.getSagaIdentifier()));
     }
 
     @Override
     protected <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier) {
-        DBObject dbSaga = mongoTemplate.sagaCollection().findOne(SagaEntry.queryByIdentifier(sagaIdentifier));
+        DBObject dbSaga = sagaStoreCollections.sagaCollection().findOne(SagaEntry.queryByIdentifier(sagaIdentifier));
         if (dbSaga == null) {
             throw new NoSuchSagaException(type, sagaIdentifier);
         }
@@ -92,7 +92,7 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     @Override
     protected void updateSaga(Saga saga) {
         SagaEntry sagaEntry = new SagaEntry(saga, serializer);
-        mongoTemplate.sagaCollection().findAndModify(
+        sagaStoreCollections.sagaCollection().findAndModify(
                 SagaEntry.queryByIdentifier(saga.getSagaIdentifier()),
                 sagaEntry.asDBObject());
     }
@@ -100,20 +100,20 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     @Override
     protected void storeSaga(Saga saga) {
         SagaEntry sagaEntry = new SagaEntry(saga, serializer);
-        mongoTemplate.sagaCollection().save(sagaEntry.asDBObject());
+        sagaStoreCollections.sagaCollection().save(sagaEntry.asDBObject());
     }
 
     @Override
     protected void storeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
         AssociationValueEntry associationValueEntry = new AssociationValueEntry(sagaIdentifier, associationValue);
-        mongoTemplate.associationsCollection().save(associationValueEntry.asDBObject());
+        sagaStoreCollections.associationsCollection().save(associationValueEntry.asDBObject());
     }
 
     @Override
     protected void removeAssociationValue(AssociationValue associationValue, String sagaIdentifier) {
         DBObject query = AssociationValueEntry.queryBySagaIdentifierAndAssociationKeyValue(
                 sagaIdentifier, associationValue.getKey(), (String) associationValue.getValue());
-        mongoTemplate.associationsCollection().findAndRemove(query);
+        sagaStoreCollections.associationsCollection().findAndRemove(query);
     }
 
     /**

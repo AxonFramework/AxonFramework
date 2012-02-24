@@ -7,7 +7,7 @@ import com.mongodb.Mongo;
 /**
  * @author Jettro Coenradie
  */
-public class DefaultMongoTemplate implements MongoTemplate {
+public class DefaultSagaStoreCollections implements SagaStoreCollections {
     private static final String DEFAULT_SAGAS_COLLECTION_NAME = "sagas";
     private static final String DEFAULT_ASSOCIATIONS_COLLECTION_NAME = "associations";
     private static final String DEFAULT_AXONFRAMEWORK_DATABASE = "axonframework";
@@ -18,7 +18,7 @@ public class DefaultMongoTemplate implements MongoTemplate {
 
     private Mongo mongoDb;
 
-    public DefaultMongoTemplate(Mongo mongoDb) {
+    public DefaultSagaStoreCollections(Mongo mongoDb) {
         this.mongoDb = mongoDb;
     }
 

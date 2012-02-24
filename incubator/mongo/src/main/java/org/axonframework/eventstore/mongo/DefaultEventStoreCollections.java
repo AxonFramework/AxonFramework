@@ -21,14 +21,14 @@ import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
 
 /**
- * <p>Default implementation for the {@see MongoTemplate}. This implementation requires access to the configured
+ * <p>Default implementation for the {@see SagaStoreCollections}. This implementation requires access to the configured
  *
  * @author Jettro Coenradie
  * @{see Mongo} object. You can influence the names of the collections used to store the events as well as the
  * snapshot events.</p>
  * @since 0.7
  */
-public class DefaultMongoTemplate implements MongoTemplate {
+public class DefaultEventStoreCollections implements EventStoreCollections {
 
     private static final String DEFAULT_DOMAINEVENTS_COLLECTION = "domainevents";
     private static final String DEFAULT_SNAPSHOTEVENTS_COLLECTION = "snapshotevents";
@@ -44,7 +44,7 @@ public class DefaultMongoTemplate implements MongoTemplate {
      *
      * @param mongoDb The actual connection to a MongoDB instance
      */
-    public DefaultMongoTemplate(Mongo mongoDb) {
+    public DefaultEventStoreCollections(Mongo mongoDb) {
         this.mongoDb = mongoDb;
     }
 

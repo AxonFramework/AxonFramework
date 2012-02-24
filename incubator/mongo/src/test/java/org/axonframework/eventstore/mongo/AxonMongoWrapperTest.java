@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  */
 public class AxonMongoWrapperTest {
 
-    private DefaultMongoTemplate mongoTemplate;
+    private DefaultEventStoreCollections mongoTemplate;
     private Mongo mockMongo;
     private DB mockDb;
 
@@ -36,7 +36,7 @@ public class AxonMongoWrapperTest {
     public void createFixtures() {
         mockMongo = mock(Mongo.class);
         mockDb = mock(DB.class);
-        mongoTemplate = new DefaultMongoTemplate(mockMongo);
+        mongoTemplate = new DefaultEventStoreCollections(mockMongo);
     }
 
     @Test

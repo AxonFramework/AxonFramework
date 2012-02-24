@@ -12,7 +12,7 @@ import com.mongodb.DBCollection;
  *
  * @author Jettro Coenradie
  */
-public interface MongoTemplate {
+public interface EventStoreCollections {
     /**
      * Returns a reference to the collection containing the domain events.
      *
