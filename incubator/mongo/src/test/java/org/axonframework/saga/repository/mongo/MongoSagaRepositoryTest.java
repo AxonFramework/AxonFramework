@@ -13,7 +13,6 @@ import org.axonframework.saga.repository.JavaSagaSerializer;
 import org.axonframework.saga.repository.XStreamSagaSerializer;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -37,7 +36,6 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-//@Ignore
 public class MongoSagaRepositoryTest {
 
     private final static Logger logger = LoggerFactory.getLogger(MongoSagaRepositoryTest.class);
@@ -64,7 +62,6 @@ public class MongoSagaRepositoryTest {
         }
     }
 
-    @DirtiesContext
     @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaFound() {
         MyTestSaga testSaga = new MyTestSaga("test1");
@@ -87,7 +84,6 @@ public class MongoSagaRepositoryTest {
         assertEquals("Amount of found sagas is not as expected", 1, sagaCursor.size());
     }
 
-    @DirtiesContext
     @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_NoSagaFound() {
         MyTestSaga testSaga = new MyTestSaga("test1");
@@ -103,7 +99,6 @@ public class MongoSagaRepositoryTest {
     }
 
     @Test
-    @DirtiesContext
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaDeleted() {
         MyTestSaga testSaga = new MyTestSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
@@ -122,7 +117,6 @@ public class MongoSagaRepositoryTest {
         assertEquals("No saga is expected after .end and .commit", 0, sagaCursor.size());
     }
 
-    @DirtiesContext
     @Test
     public void testAddAndLoadSaga_ByIdentifier() {
         String identifier = UUID.randomUUID().toString();
@@ -134,7 +128,6 @@ public class MongoSagaRepositoryTest {
         assertNotNull(sagaStoreCollections.sagaCollection().find(SagaEntry.queryByIdentifier(identifier)));
     }
 
-    @DirtiesContext
     @Test
     public void testAddAndLoadSaga_ByAssociationValue() {
         String identifier = UUID.randomUUID().toString();
@@ -150,7 +143,6 @@ public class MongoSagaRepositoryTest {
     }
 
     @Test
-    @DirtiesContext
     public void testAddAndLoadSaga_MultipleHitsByAssociationValue() {
         String identifier1 = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
@@ -184,7 +176,6 @@ public class MongoSagaRepositoryTest {
     }
 
     @Test
-    @DirtiesContext
     public void testAddAndLoadSaga_AssociateValueAfterStorage() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
@@ -198,7 +189,6 @@ public class MongoSagaRepositoryTest {
         assertNotNull(sagaStoreCollections.sagaCollection().find(SagaEntry.queryByIdentifier(identifier)));
     }
 
-    @DirtiesContext
     @Test
     public void testLoadUncachedSaga_ByIdentifier() {
         repository.setSerializer(new XStreamSagaSerializer());
@@ -215,7 +205,6 @@ public class MongoSagaRepositoryTest {
         repository.load(MyTestSaga.class, "123456");
     }
 
-    @DirtiesContext
     @Test
     public void testLoadSaga_AssociationValueRemoved() {
         String identifier = UUID.randomUUID().toString();
@@ -232,7 +221,6 @@ public class MongoSagaRepositoryTest {
         assertEquals(0, found.size());
     }
 
-    @DirtiesContext
     @Test
     public void testSaveSaga() {
         String identifier = UUID.randomUUID().toString();
@@ -249,7 +237,6 @@ public class MongoSagaRepositoryTest {
         assertEquals(1, actualSaga.counter);
     }
 
-    @DirtiesContext
     @Test
     public void testEndSaga() {
         String identifier = UUID.randomUUID().toString();
@@ -262,7 +249,6 @@ public class MongoSagaRepositoryTest {
         assertNull(sagaStoreCollections.sagaCollection().findOne(SagaEntry.queryByIdentifier(identifier)));
     }
 
-    @DirtiesContext
     @Test(expected = IllegalArgumentException.class)
     public void testStoreAssociationValue_NotSerializable() {
         String identifier = UUID.randomUUID().toString();
