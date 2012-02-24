@@ -30,6 +30,8 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
     private transient int counter;
     private Integer lastNumber;
 
+    private MyEntity entity;
+
     public MyAggregate(AggregateIdentifier aggregateIdentifier) {
         super(aggregateIdentifier);
     }
@@ -43,19 +45,26 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
         apply(new MyEvent(initialValue));
     }
 
-    @EventHandler
-    public void handleMyEvent(MyEvent event) {
-        lastNumber = event.getSomeValue();
-    }
-
-    @EventHandler
-    public void handleAll(DomainEvent event) {
-        // we don't care about events
+    public void delete() {
+        apply(new MyAggregateDeletedEvent());
     }
 
     public void doSomethingIllegal(Integer newIllegalValue) {
         apply(new MyEvent(lastNumber + 1));
         lastNumber = newIllegalValue;
+    }
+
+    @EventHandler
+    public void handleMyEvent(MyEvent event) {
+        lastNumber = event.getSomeValue();
+        if (entity == null) {
+            entity = new MyEntity();
+        }
+    }
+
+    @EventHandler
+    public void handleAll(DomainEvent event) {
+        // we don't care about events
     }
 
     public void doSomething() {

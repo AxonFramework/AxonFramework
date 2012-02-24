@@ -17,12 +17,12 @@
   -->
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.axonframework.org/schema/core"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
-    <context:annotation-config/>
-    <context:event-bus id="eventBus"/>
-    <context:command-bus id="commandBus"/>
+    <axon:annotation-config/>
+    <axon:event-bus id="eventBus"/>
+    <axon:command-bus id="commandBus"/>
 
     <bean id="springResourceInjector" class="org.axonframework.saga.spring.SpringResourceInjector"/>
 
@@ -31,16 +31,16 @@
         <constructor-arg ref="eventStoreCollections"/>
     </bean>
 
-    <bean id="eventStoreCollections" class="org.axonframework.eventstore.mongo.DefaultEventStoreCollections">
+    <bean id="eventStoreCollections" class="org.axonframework.eventstore.mongo.DefaultEventStoreCollections" lazy-init="true">
         <constructor-arg ref="mongoDb"/>
     </bean>
 
     <!-- Axon saga's -->
-    <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
+    <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository" lazy-init="true">
         <constructor-arg ref="sagaStoreCollections"/>
     </bean>
 
-    <bean id="sagaStoreCollections" class="org.axonframework.saga.repository.mongo.DefaultSagaStoreCollections">
+    <bean id="sagaStoreCollections" class="org.axonframework.saga.repository.mongo.DefaultSagaStoreCollections" lazy-init="true">
         <constructor-arg ref="mongoDb"/>
     </bean>
 
@@ -59,6 +59,5 @@
     <bean id="mongoOptionsFactory" class="org.axonframework.mongo.MongoOptionsFactory">
         <property name="connectionsPerHost" value="100"/>
     </bean>
-
 
 </beans>

@@ -37,7 +37,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@Ignore
+//@Ignore
 public class MongoSagaRepositoryTest {
 
     private final static Logger logger = LoggerFactory.getLogger(MongoSagaRepositoryTest.class);
@@ -53,13 +53,14 @@ public class MongoSagaRepositoryTest {
     public void setUp() throws Exception {
 
         try {
+            System.setProperty("axon.mongo.singleinstance", "true");
             mongo = context.getBean(Mongo.class);
             repository = context.getBean(MongoSagaRepository.class);
             sagaStoreCollections = new DefaultSagaStoreCollections(mongo);
             sagaStoreCollections.database().dropDatabase();
         } catch (Exception e) {
             logger.error("No Mongo instance found. Ignoring test.");
-            Assume.assumeNoException(e);
+            Assume.assumeTrue(false);
         }
     }
 
@@ -84,7 +85,6 @@ public class MongoSagaRepositoryTest {
         DBObject sagaQuery = SagaEntry.queryByIdentifier("test1");
         DBCursor sagaCursor = sagaStoreCollections.sagaCollection().find(sagaQuery);
         assertEquals("Amount of found sagas is not as expected", 1, sagaCursor.size());
-
     }
 
     @DirtiesContext
@@ -334,5 +334,4 @@ public class MongoSagaRepositoryTest {
             throw new UnsupportedOperationException("Not implemented yet");
         }
     }
-
 }

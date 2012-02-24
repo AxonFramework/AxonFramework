@@ -55,7 +55,6 @@ class PessimisticLockManager implements LockManager {
     public void obtainLock(AggregateIdentifier aggregateIdentifier) {
         boolean lockObtained = false;
         while (!lockObtained) {
-            createLockIfAbsent(aggregateIdentifier);
             DisposableLock lock = lockFor(aggregateIdentifier);
             lockObtained = lock.lock();
             if (!lockObtained) {
@@ -78,18 +77,17 @@ class PessimisticLockManager implements LockManager {
         lock.unlock(aggregateIdentifier);
     }
 
-    private void createLockIfAbsent(AggregateIdentifier aggregateIdentifier) {
-        if (!locks.contains(aggregateIdentifier)) {
-            locks.putIfAbsent(aggregateIdentifier.asString(), new DisposableLock());
-        }
-    }
-
     private boolean isLockAvailableFor(AggregateIdentifier aggregateIdentifier) {
         return locks.containsKey(aggregateIdentifier.asString());
     }
 
     private DisposableLock lockFor(AggregateIdentifier aggregateIdentifier) {
-        return locks.get(aggregateIdentifier.asString());
+        DisposableLock lock = locks.get(aggregateIdentifier.asString());
+        while (lock == null) {
+            locks.putIfAbsent(aggregateIdentifier.asString(), new DisposableLock());
+            lock = locks.get(aggregateIdentifier.asString());
+        }
+        return lock;
     }
 
     private final class DisposableLock {
