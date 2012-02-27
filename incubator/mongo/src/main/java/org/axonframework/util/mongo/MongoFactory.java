@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.mongo;
+package org.axonframework.util.mongo;
 
 import com.mongodb.Mongo;
 import com.mongodb.MongoOptions;

@@ -1,4 +1,4 @@
-package org.axonframework.mongo;
+package org.axonframework.util.mongo;
 
 import com.mongodb.MongoOptions;
 import org.junit.Before;

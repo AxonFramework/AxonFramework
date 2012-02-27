@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.mongo;
+package org.axonframework.util.mongo;
 
 /**
  * <p>Exception used to indicate the configuration of the MongoDB connection has errors</p>.
