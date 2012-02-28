@@ -58,8 +58,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     /**
      * Creates a snapshot event for an aggregate of the given <code>typeIdentifier</code> of which passed events are
-     * available in the given <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is not
-     * necessary or appropriate for the given event stream.
+     * available in the given <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is
+     * not necessary or appropriate for the given event stream.
      *
      * @param typeIdentifier The aggregate's type identifier
      * @param eventStream    The event stream containing the aggregate's past events
@@ -98,8 +98,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     /**
-     * Sets the executor that should process actual snapshot taking. Defaults to a single threaded (asynchronous)
-     * executor.
+     * Sets the executor that should process actual snapshot taking. Defaults to an instance that runs all actions in
+     * the calling thread (i.e. synchronous execution).
      *
      * @param executor the executor to execute snapshotting tasks
      */
