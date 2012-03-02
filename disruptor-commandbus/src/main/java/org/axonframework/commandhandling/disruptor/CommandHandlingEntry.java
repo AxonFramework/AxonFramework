@@ -32,7 +32,8 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
 
     private CommandMessage<?> command;
-    private InterceptorChain interceptorChain;
+    private InterceptorChain invocationInterceptorChain;
+    private InterceptorChain publisherInterceptorChain;
     private DisruptorUnitOfWork unitOfWork;
     private T preLoadedAggregate;
     private CommandHandler<?> commandHandler;
@@ -54,12 +55,13 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
-     * Returns the InterceptorChain registered with this entry, or <code>null</code> if none is available.
+     * Returns the InterceptorChain for the invocation process registered with this entry, or <code>null</code> if none
+     * is available.
      *
-     * @return the InterceptorChain registered with this entry
+     * @return the InterceptorChain for the invocation process registered with this entry
      */
-    public InterceptorChain getInterceptorChain() {
-        return interceptorChain;
+    public InterceptorChain getInvocationInterceptorChain() {
+        return invocationInterceptorChain;
     }
 
     /**
@@ -67,8 +69,27 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
      *
      * @param interceptorChain the InterceptorChain to use for the command execution
      */
-    public void setInterceptorChain(InterceptorChain interceptorChain) {
-        this.interceptorChain = interceptorChain;
+    public void setInvocationInterceptorChain(InterceptorChain interceptorChain) {
+        this.invocationInterceptorChain = interceptorChain;
+    }
+
+    /**
+     * Returns the InterceptorChain for the publication process registered with this entry, or <code>null</code> if none
+     * is available.
+     *
+     * @return the InterceptorChain for the publication process registered with this entry
+     */
+    public InterceptorChain getPublisherInterceptorChain() {
+        return publisherInterceptorChain;
+    }
+
+    /**
+     * Registers the InterceptorChain to use for the event publication.
+     *
+     * @param interceptorChain the InterceptorChain to use for the command execution
+     */
+    public void setPublisherInterceptorChain(InterceptorChain interceptorChain) {
+        this.publisherInterceptorChain = interceptorChain;
     }
 
     /**
@@ -207,7 +228,7 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
         result = null;
         exceptionResult = null;
         commandHandler = null;
-        interceptorChain = null;
+        invocationInterceptorChain = null;
         unitOfWork = null;
         preLoadedAggregate = null;
     }
@@ -225,7 +246,7 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
         result = null;
         exceptionResult = null;
         commandHandler = null;
-        interceptorChain = null;
+        invocationInterceptorChain = null;
         unitOfWork = null;
         preLoadedAggregate = null;
     }

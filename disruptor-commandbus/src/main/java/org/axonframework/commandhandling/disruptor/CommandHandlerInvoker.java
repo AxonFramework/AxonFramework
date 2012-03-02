@@ -36,17 +36,20 @@ public class CommandHandlerInvoker<T extends EventSourcedAggregateRoot>
         if (!entry.isRecoverEntry()) {
             DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
             unitOfWork.start();
-            unitOfWork.registerAggregate(entry.getPreLoadedAggregate(), null, null);
-
-            preLoadedAggregate.set(entry.getPreLoadedAggregate());
+            if (entry.getPreLoadedAggregate() != null) {
+                unitOfWork.registerAggregate(entry.getPreLoadedAggregate(), null, null);
+                preLoadedAggregate.set(entry.getPreLoadedAggregate());
+            }
             try {
-                Object result = entry.getInterceptorChain().proceed(entry.getCommand());
+                Object result = entry.getInvocationInterceptorChain().proceed(entry.getCommand());
                 entry.setResult(result);
+                unitOfWork.commit();
             } catch (Throwable throwable) {
                 entry.setExceptionResult(throwable);
+                unitOfWork.rollback();
+            } finally {
+                preLoadedAggregate.remove();
             }
-            unitOfWork.commit();
-            preLoadedAggregate.remove();
         }
     }
 

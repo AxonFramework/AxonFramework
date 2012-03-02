@@ -101,6 +101,11 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
     @SuppressWarnings("unchecked")
     private void publishChanges(CommandHandlingEntry<T> entry, DisruptorUnitOfWork unitOfWork,
                                 EventSourcedAggregateRoot aggregate) {
+        try {
+            entry.setResult(entry.getPublisherInterceptorChain().proceed(entry.getCommand()));
+        } catch (Throwable throwable) {
+            entry.setExceptionResult(throwable);
+        }
         unitOfWork.onPrepareCommit();
         Throwable exceptionResult = entry.getExceptionResult();
         try {

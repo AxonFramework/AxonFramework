@@ -24,6 +24,7 @@ import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
@@ -48,7 +49,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private DomainEventStream eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
 
     private final List<EventMessage> eventsToPublish = new ArrayList<EventMessage>();
-    private final EventSourcedAggregateRoot aggregate;
+    private EventSourcedAggregateRoot aggregate;
     private List<UnitOfWorkListener> listeners = new ArrayList<UnitOfWorkListener>();
 
     /**
@@ -65,6 +66,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         committed = true;
         eventsToStore = aggregate.getUncommittedEvents();
         aggregate.commitEvents();
+        CurrentUnitOfWork.clear(this);
     }
 
     /**
@@ -100,6 +102,8 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     /**
      * Invokes this UnitOfWork's on-rollback cycle. Typically, this is run after all the events have been stored and
      * published and the after-commit cycle has been executed.
+     *
+     * @param cause The cause of the rollback
      */
     public void onRollback(Throwable cause) {
         for (UnitOfWorkListener listener : listeners) {
@@ -115,11 +119,15 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public void rollback(Throwable cause) {
         rollbackReason = cause;
-        aggregate.commitEvents();
+        if (aggregate != null) {
+            aggregate.commitEvents();
+        }
+        CurrentUnitOfWork.clear(this);
     }
 
     @Override
     public void start() {
+        CurrentUnitOfWork.set(this);
     }
 
     @Override
@@ -136,6 +144,9 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
                                                          SaveAggregateCallback<T> saveAggregateCallback) {
+        if (aggregate == null) {
+            aggregate = (EventSourcedAggregateRoot) aggregateRoot;
+        }
         if (!aggregateRoot.getClass().isInstance(aggregate)
                 || !aggregate.getIdentifier().equals(aggregateRoot.getIdentifier())) {
             throw new IllegalArgumentException("Cannot register an aggregate other than the preloaded aggregate. "

@@ -39,7 +39,8 @@ public class DisruptorConfiguration {
     private ClaimStrategy claimStrategy;
     private WaitStrategy waitStrategy;
     private Executor executor;
-    private final List<CommandHandlerInterceptor> interceptors = new ArrayList<CommandHandlerInterceptor>();
+    private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
+    private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
@@ -141,20 +142,45 @@ public class DisruptorConfiguration {
      *
      * @return the interceptors for the DisruptorCommandBus
      */
-    public List<CommandHandlerInterceptor> getInterceptors() {
-        return interceptors;
+    public List<CommandHandlerInterceptor> getInvokerInterceptors() {
+        return invokerInterceptors;
     }
 
     /**
-     * Configures the CommandHandlerInterceptors to use with the DisruptorCommandBus. The interceptors are invoked by
-     * the thread that also executes the command handler.
+     * Configures the CommandHandlerInterceptors to use with the DisruptorCommandBus during in the invocation thread.
+     * The interceptors are invoked by the thread that also executes the command handler.
+     * <p/>
+     * Note that this is *not* the thread that stores and publishes the generated events. See {@link
+     * #setPublisherInterceptors(java.util.List)}.
      *
-     * @param interceptors The interceptors to invoke when handling an incoming command
+     * @param invokerInterceptors The interceptors to invoke when handling an incoming command
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setInterceptors(List<CommandHandlerInterceptor> interceptors) {
-        this.interceptors.clear();
-        this.interceptors.addAll(interceptors);
+    public DisruptorConfiguration setInvokerInterceptors(List<CommandHandlerInterceptor> invokerInterceptors) {
+        this.invokerInterceptors.clear();
+        this.invokerInterceptors.addAll(invokerInterceptors);
+        return this;
+    }
+
+    /**
+     * Returns the interceptors for the DisruptorCommandBus.
+     *
+     * @return the interceptors for the DisruptorCommandBus
+     */
+    public List<CommandHandlerInterceptor> getPublisherInterceptors() {
+        return publisherInterceptors;
+    }
+
+    /**
+     * Configures the CommandHandlerInterceptors to use with the DisruptorCommandBus during the publication of changes.
+     * The interceptors are invoked by the thread that also stores and publishes the events.
+     *
+     * @param invokerInterceptors The interceptors to invoke when handling an incoming command
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setPublisherInterceptors(List<CommandHandlerInterceptor> invokerInterceptors) {
+        this.publisherInterceptors.clear();
+        this.publisherInterceptors.addAll(invokerInterceptors);
         return this;
     }
 }

@@ -28,7 +28,9 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.repository.ConflictingAggregateVersionException;
 import org.axonframework.repository.Repository;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -98,7 +100,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         disruptor.handleEventsWith(new CommandHandlerPreFetcher<T>(eventStore,
                                                                    aggregateFactory,
                                                                    commandHandlers,
-                                                                   configuration.getInterceptors(),
+                                                                   configuration.getInvokerInterceptors(),
+                                                                   configuration.getPublisherInterceptors(),
                                                                    commandTargetResolver))
                  .then(commandHandlerInvoker)
                  .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore, eventBus, executor));
@@ -130,14 +133,15 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         return commandHandlers.remove(commandType, handler);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * Note: This implementation will ignore the expected version.
-     */
     @Override
     public T load(Object aggregateIdentifier, Long expectedVersion) {
-        return load(aggregateIdentifier);
+        T aggregate = load(aggregateIdentifier);
+        if (expectedVersion != null && aggregate.getVersion() > expectedVersion) {
+            throw new ConflictingAggregateVersionException(aggregateIdentifier,
+                                                           expectedVersion,
+                                                           aggregate.getVersion());
+        }
+        return aggregate;
     }
 
     @Override
@@ -152,7 +156,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
 
     @Override
     public void add(T aggregate) {
-        // not necessary
+        CurrentUnitOfWork.get().registerAggregate(aggregate, null, null);
     }
 
     /**
