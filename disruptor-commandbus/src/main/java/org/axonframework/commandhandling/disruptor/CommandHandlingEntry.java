@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventFactory;
-import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
@@ -39,7 +38,11 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     private CommandHandler<?> commandHandler;
     private Throwable exceptionResult;
     private Object result;
-    private CommandCallback<?> callback;
+    private BlacklistDetectingCallback callback;
+
+    // for recovery of corrupt aggregates
+    private boolean isRecoverEntry;
+    private Object aggregateIdentifier;
 
     /**
      * Returns the CommandMessage to be executed.
@@ -165,8 +168,29 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
      *
      * @return the CommandCallback instance for the executed command
      */
-    public CommandCallback getCallback() {
+    public BlacklistDetectingCallback getCallback() {
         return callback;
+    }
+
+    /**
+     * Indicates whether this entry is a recovery entry. When <code>true</code>, this entry does not contain any
+     * command
+     * handling information.
+     *
+     * @return <code>true</code> if this entry represents a recovery request, otherwise <code>false</code>.
+     */
+    public boolean isRecoverEntry() {
+        return isRecoverEntry;
+    }
+
+    /**
+     * Returns the identifier of the aggregate to recover. Returns <code>null</code> when {@link #isRecoverEntry()}
+     * returns <code>false</code>.
+     *
+     * @return the identifier of the aggregate to recover
+     */
+    public Object getRecoveringAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 
     /**
@@ -175,9 +199,29 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
      * @param command  The new command the entry is used for
      * @param callback The callback to report the result of command execution to
      */
-    public void reset(CommandMessage<?> command, CommandCallback callback) {
+    public void reset(CommandMessage<?> command, BlacklistDetectingCallback callback) {
         this.command = command;
         this.callback = callback;
+        this.isRecoverEntry = false;
+        this.aggregateIdentifier = null;
+        result = null;
+        exceptionResult = null;
+        commandHandler = null;
+        interceptorChain = null;
+        unitOfWork = null;
+        preLoadedAggregate = null;
+    }
+
+    /**
+     * Resets this entry, preparing it for use as a recovery entry.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to recover
+     */
+    public void resetAsRecoverEntry(Object aggregateIdentifier) {
+        this.isRecoverEntry = true;
+        this.aggregateIdentifier = aggregateIdentifier;
+        this.command = null;
+        this.callback = null;
         result = null;
         exceptionResult = null;
         commandHandler = null;

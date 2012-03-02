@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -44,7 +43,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements CommandBus, Repository<T> {
 
-    private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("Disruptor");
+    private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private final Disruptor<CommandHandlingEntry<T>> disruptor;
@@ -55,7 +54,9 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
      * WaitStrategy on a RingBuffer of size 4096. The (3) Threads required for command execution are created
-     * immediately.
+     * immediately. Additional threads are used to invoke response callbacks and to initialize a recovery process in
+     * the
+     * case of errors.
      *
      * @param aggregateFactory      The factory providing uninitialized Aggregate instances for event sourcing
      * @param eventStore            The EventStore where generated events must be stored
@@ -100,13 +101,13 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
                                                                    configuration.getInterceptors(),
                                                                    commandTargetResolver))
                  .then(commandHandlerInvoker)
-                 .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore, eventBus));
+                 .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore, eventBus, executor));
         disruptor.start();
     }
 
     @Override
     public void dispatch(final CommandMessage<?> command) {
-        dispatch(command, NoOpCallback.INSTANCE);
+        dispatch(command, null);
     }
 
     @Override
@@ -115,7 +116,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         RingBuffer<CommandHandlingEntry<T>> ringBuffer = disruptor.getRingBuffer();
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
-        event.reset(command, callback);
+        event.reset(command, new BlacklistDetectingCallback<T, R>(callback, disruptor.getRingBuffer()));
         ringBuffer.publish(sequence);
     }
 
@@ -129,6 +130,11 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         return commandHandlers.remove(commandType, handler);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * Note: This implementation will ignore the expected version.
+     */
     @Override
     public T load(Object aggregateIdentifier, Long expectedVersion) {
         return load(aggregateIdentifier);

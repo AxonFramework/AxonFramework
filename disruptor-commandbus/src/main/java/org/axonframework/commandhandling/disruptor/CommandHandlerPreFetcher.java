@@ -69,11 +69,15 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
 
     @Override
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
-        preLoadAggregate(entry);
-        resolveCommandHandler(entry);
-        prepareInterceptorChain(entry);
-        // make sure that any lazy initializing messages are initialized by now
-        entry.getCommand().getPayload();
+        if (entry.isRecoverEntry()) {
+            preLoadedAggregates.remove(entry.getRecoveringAggregateIdentifier());
+        } else {
+            preLoadAggregate(entry);
+            resolveCommandHandler(entry);
+            prepareInterceptorChain(entry);
+            // make sure that any lazy initializing messages are initialized by now
+            entry.getCommand().getPayload();
+        }
     }
 
     private void prepareInterceptorChain(CommandHandlingEntry<T> entry) {

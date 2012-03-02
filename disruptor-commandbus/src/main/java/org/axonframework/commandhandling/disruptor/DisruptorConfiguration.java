@@ -62,6 +62,8 @@ public class DisruptorConfiguration {
     /**
      * Sets the ClaimStrategy (including buffer size) which prescribes how threads get access to provide commands to
      * the CommandBus' RingBuffer.
+     * <p/>
+     * Defaults to a MultiThreadedClaimStrategy with 4096 elements in the RingBuffer.
      *
      * @param claimStrategy The ClaimStrategy to use
      * @return <code>this</code> for method chaining
@@ -118,11 +120,13 @@ public class DisruptorConfiguration {
 
     /**
      * Sets the Executor that provides the processing resources (Threads) for the components of the
-     * DisruptorCommandBus. The provided executor must be capable of providing the required number of threads
-     * (typically 3). Failure to do this results in the disruptor hanging at startup, waiting for resources to become
-     * available.
+     * DisruptorCommandBus. The provided executor must be capable of providing the required number of threads. Three
+     * threads are required immediately at startup and will not be returned until the CommandBus is stopped. Additional
+     * threads are used to invoke callbacks and start a recovery process in case aggregate state has been corrupted.
+     * Failure to do this results in the disruptor hanging at startup, waiting for resources to become available.
      * <p/>
-     * Defaults to <code>null</code>, causing the DisruptorCommandBus to create the necessary threads itself.
+     * Defaults to <code>null</code>, causing the DisruptorCommandBus to create the necessary threads itself. In that
+     * case, threads are created in the <code>DisruptorCommandBus</code> ThreadGroup.
      *
      * @param executor the Executor that provides the processing resources
      * @return <code>this</code> for method chaining

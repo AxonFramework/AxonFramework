@@ -33,19 +33,21 @@ public class CommandHandlerInvoker<T extends EventSourcedAggregateRoot>
 
     @Override
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
-        DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
-        unitOfWork.start();
-        unitOfWork.registerAggregate(entry.getPreLoadedAggregate(), null, null);
+        if (!entry.isRecoverEntry()) {
+            DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
+            unitOfWork.start();
+            unitOfWork.registerAggregate(entry.getPreLoadedAggregate(), null, null);
 
-        preLoadedAggregate.set(entry.getPreLoadedAggregate());
-        try {
-            Object result = entry.getInterceptorChain().proceed(entry.getCommand());
-            entry.setResult(result);
-        } catch (Throwable throwable) {
-            entry.setExceptionResult(throwable);
+            preLoadedAggregate.set(entry.getPreLoadedAggregate());
+            try {
+                Object result = entry.getInterceptorChain().proceed(entry.getCommand());
+                entry.setResult(result);
+            } catch (Throwable throwable) {
+                entry.setExceptionResult(throwable);
+            }
+            unitOfWork.commit();
+            preLoadedAggregate.remove();
         }
-        unitOfWork.commit();
-        preLoadedAggregate.remove();
     }
 
     /**

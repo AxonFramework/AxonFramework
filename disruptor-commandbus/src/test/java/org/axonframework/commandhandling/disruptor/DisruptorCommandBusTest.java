@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import org.axonframework.commandhandling.CommandCallback;
@@ -129,12 +130,71 @@ public class DisruptorCommandBusTest {
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
         InOrder inOrder = inOrder(mockInterceptor, mockUnitOfWorkListener, mockCallback);
-        inOrder.verify(mockInterceptor).handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class));
+        inOrder.verify(mockInterceptor).handle(any(CommandMessage.class),
+                                               any(UnitOfWork.class),
+                                               any(InterceptorChain.class));
         inOrder.verify(mockUnitOfWorkListener).onPrepareCommit(any(Set.class), any(List.class));
         inOrder.verify(mockUnitOfWorkListener).afterCommit();
-        inOrder.verify(mockCallback).onSuccess(any());
         inOrder.verify(mockUnitOfWorkListener).onCleanup();
+
+        verify(mockCallback).onSuccess(any());
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testAggregatesBlacklistedAndRecoveredOnError() throws Throwable {
+        CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
+        ExecutorService customExecutor = Executors.newCachedThreadPool();
+        testSubject = new DisruptorCommandBus<StubAggregate>(
+                new GenericAggregateFactory<StubAggregate>(StubAggregate.class), inMemoryEventStore, eventBus,
+                new MetaDataCommandTargetResolver(TARGET_AGGREGATE_PROPERTY),
+                new DisruptorConfiguration().setInterceptors(Arrays.asList(mockInterceptor))
+                                            .setClaimStrategy(new MultiThreadedClaimStrategy(8))
+                                            .setWaitStrategy(new SleepingWaitStrategy())
+                                            .setExecutor(customExecutor));
+        testSubject.subscribe(StubCommand.class, stubHandler);
+        testSubject.subscribe(ErrorCommand.class, stubHandler);
+        stubHandler.setRepository(testSubject);
+        final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
+        when(mockUnitOfWorkListener.onEventRegistered(any(EventMessage.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return invocation.getArguments()[0];
+            }
+        });
+        when(mockInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        ((UnitOfWork) invocation.getArguments()[1]).registerListener(mockUnitOfWorkListener);
+                        return ((InterceptorChain) invocation.getArguments()[2]).proceed();
+                    }
+                });
+        CommandCallback mockCallback = mock(CommandCallback.class);
+        for (int t = 0; t < 1000; t++) {
+            CommandMessage command;
+            if (t % 100 == 10) {
+                command = new GenericCommandMessage<ErrorCommand>(
+                        new ErrorCommand(aggregateIdentifier),
+                        Collections.singletonMap(TARGET_AGGREGATE_PROPERTY,
+                                                 (Object) aggregateIdentifier));
+            } else {
+                command = new GenericCommandMessage<StubCommand>(
+                        new StubCommand(aggregateIdentifier),
+                        Collections.singletonMap(TARGET_AGGREGATE_PROPERTY,
+                                                 (Object) aggregateIdentifier));
+            }
+            testSubject.dispatch(command, mockCallback);
+        }
+
+        testSubject.stop();
+        assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
+        customExecutor.shutdown();
+        assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
+        verify(mockCallback, atLeast(100)).onSuccess(any());
+        verify(mockCallback, times(10)).onFailure(isA(AggregateBlacklistedException.class));
+    }
+
 
     @Test(expected = IllegalStateException.class)
     public void testCommandRejectedAfterShutdown() throws InterruptedException {
@@ -193,6 +253,10 @@ public class DisruptorCommandBusTest {
             apply(new SomethingDoneEvent());
         }
 
+        public void createFailingEvent() {
+            apply(new FailingEvent());
+        }
+
         @Override
         protected void handle(DomainEventMessage event) {
             if (StubDomainEvent.class.isAssignableFrom(event.getPayloadType())) {
@@ -221,6 +285,9 @@ public class DisruptorCommandBusTest {
             while (events.hasNext()) {
                 countDownLatch.countDown();
                 lastEvent = events.next();
+                if (FailingEvent.class.isAssignableFrom(lastEvent.getPayloadType())) {
+                    throw new RuntimeException("This is a failing event. EventStore refuses to store that");
+                }
             }
             storedEvents.put(key, lastEvent);
         }
@@ -244,6 +311,13 @@ public class DisruptorCommandBusTest {
         }
     }
 
+    private static class ErrorCommand extends StubCommand {
+
+        public ErrorCommand(Object agregateIdentifier) {
+            super(agregateIdentifier);
+        }
+    }
+
     private static class StubHandler implements CommandHandler<StubCommand> {
 
         private Repository<StubAggregate> repository;
@@ -253,7 +327,12 @@ public class DisruptorCommandBusTest {
 
         @Override
         public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
-            repository.load(command.getPayload().getAggregateIdentifier()).doSomething();
+            StubAggregate aggregate = repository.load(command.getPayload().getAggregateIdentifier());
+            if (ErrorCommand.class.isAssignableFrom(command.getPayloadType())) {
+                aggregate.createFailingEvent();
+            } else {
+                aggregate.doSomething();
+            }
             return Void.TYPE;
         }
 
@@ -284,5 +363,12 @@ public class DisruptorCommandBusTest {
         public void unsubscribe(EventListener eventListener) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
+    }
+
+    /**
+     * @author Allard Buijze
+     */
+    static class FailingEvent {
+
     }
 }
