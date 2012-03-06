@@ -19,10 +19,7 @@ package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.util.Assert;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
+import org.axonframework.util.lock.IdentifierBasedLock;
 
 /**
  * Implementation of the {@link LockManager} that uses a pessimistic locking strategy. Calls to obtainLock will block
@@ -33,7 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 class PessimisticLockManager implements LockManager {
 
-    private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<String, DisposableLock>();
+    private final IdentifierBasedLock lock = new IdentifierBasedLock();
 
     /**
      * {@inheritDoc}
@@ -41,9 +38,7 @@ class PessimisticLockManager implements LockManager {
     @Override
     public boolean validateLock(AggregateRoot aggregate) {
         AggregateIdentifier aggregateIdentifier = aggregate.getIdentifier();
-
-        return isLockAvailableFor(aggregateIdentifier)
-                && lockFor(aggregateIdentifier).isHeldByCurrentThread();
+        return lock.hasLock(aggregateIdentifier.asString());
     }
 
     /**
@@ -53,14 +48,7 @@ class PessimisticLockManager implements LockManager {
      */
     @Override
     public void obtainLock(AggregateIdentifier aggregateIdentifier) {
-        boolean lockObtained = false;
-        while (!lockObtained) {
-            DisposableLock lock = lockFor(aggregateIdentifier);
-            lockObtained = lock.lock();
-            if (!lockObtained) {
-                locks.remove(aggregateIdentifier, lock);
-            }
-        }
+        lock.obtainLock(aggregateIdentifier.asString());
     }
 
     /**
@@ -72,64 +60,6 @@ class PessimisticLockManager implements LockManager {
      */
     @Override
     public void releaseLock(AggregateIdentifier aggregateIdentifier) {
-        Assert.state(locks.containsKey(aggregateIdentifier.asString()), "No lock for this aggregate was ever obtained");
-        DisposableLock lock = lockFor(aggregateIdentifier);
-        lock.unlock(aggregateIdentifier);
-    }
-
-    private boolean isLockAvailableFor(AggregateIdentifier aggregateIdentifier) {
-        return locks.containsKey(aggregateIdentifier.asString());
-    }
-
-    private DisposableLock lockFor(AggregateIdentifier aggregateIdentifier) {
-        DisposableLock lock = locks.get(aggregateIdentifier.asString());
-        while (lock == null) {
-            locks.putIfAbsent(aggregateIdentifier.asString(), new DisposableLock());
-            lock = locks.get(aggregateIdentifier.asString());
-        }
-        return lock;
-    }
-
-    private final class DisposableLock {
-
-        private final ReentrantLock lock;
-        // guarded by "lock"
-        private volatile boolean isClosed = false;
-
-        private DisposableLock() {
-            this.lock = new ReentrantLock();
-        }
-
-        private boolean isHeldByCurrentThread() {
-            return lock.isHeldByCurrentThread();
-        }
-
-        private void unlock(AggregateIdentifier aggregateIdentifier) {
-            lock.unlock();
-            disposeIfUnused(aggregateIdentifier);
-        }
-
-        private boolean lock() {
-            lock.lock();
-            if (isClosed) {
-                lock.unlock();
-                return false;
-            }
-            return true;
-        }
-
-        private void disposeIfUnused(AggregateIdentifier aggregateIdentifier) {
-            if (lock.tryLock()) {
-                try {
-                    if (lock.getHoldCount() == 1) {
-                        // we now have a lock. We can shut it down.
-                        isClosed = true;
-                        locks.remove(aggregateIdentifier.asString(), this);
-                    }
-                } finally {
-                    lock.unlock();
-                }
-            }
-        }
+        lock.releaseLock(aggregateIdentifier.asString());
     }
 }

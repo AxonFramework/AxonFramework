@@ -19,7 +19,10 @@ package org.axonframework.saga;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.TransactionManager;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.axonframework.util.Subscribable;
+import org.axonframework.util.lock.IdentifierBasedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +50,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
     private final SagaHandlerExecutor executionWrapper;
+    private final IdentifierBasedLock lock = new IdentifierBasedLock();
 
     /**
      * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code>.
@@ -206,8 +210,20 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
             if (synchronizeSagaAccess) {
                 //Saga instance is unique (no two instances will exist inside a JVM with the same identifier)
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (saga) {
+                lock.obtainLock(saga.getSagaIdentifier());
+                try {
                     invokeSagaHandler(event, saga);
+                } finally {
+                    if (CurrentUnitOfWork.isStarted()) {
+                        CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
+                            @Override
+                            public void onCleanup() {
+                                lock.releaseLock(saga.getSagaIdentifier());
+                            }
+                        });
+                    } else {
+                        lock.releaseLock(saga.getSagaIdentifier());
+                    }
                 }
             } else {
                 invokeSagaHandler(event, saga);

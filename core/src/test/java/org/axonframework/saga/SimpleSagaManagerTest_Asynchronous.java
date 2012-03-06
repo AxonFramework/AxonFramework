@@ -114,6 +114,8 @@ public class SimpleSagaManagerTest_Asynchronous {
         final Saga saga2 = mock(Saga.class);
         when(saga1.isActive()).thenReturn(true);
         when(saga2.isActive()).thenReturn(true);
+        when(saga1.getSagaIdentifier()).thenReturn("saga1");
+        when(saga2.getSagaIdentifier()).thenReturn("saga2");
         sagas.add(saga1);
         sagas.add(saga2);
         when(testSubject.findSagas(event)).thenReturn(sagas);
