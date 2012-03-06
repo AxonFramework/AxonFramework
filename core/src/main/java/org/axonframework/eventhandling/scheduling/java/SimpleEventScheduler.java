@@ -137,9 +137,10 @@ public class SimpleEventScheduler implements EventScheduler {
             } catch (RuntimeException e) {
                 eventTriggerCallback.afterPublicationFailure(e);
                 throw e;
+            } finally {
+                tokens.remove(tokenId);
             }
             eventTriggerCallback.afterPublicationSuccess();
-            tokens.remove(tokenId);
         }
     }
 
