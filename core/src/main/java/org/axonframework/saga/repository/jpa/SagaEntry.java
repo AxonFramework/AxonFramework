@@ -22,6 +22,7 @@ import org.axonframework.saga.repository.SagaSerializer;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
+import javax.persistence.Transient;
 
 /**
  * Java Persistence Entity allowing sagas to be stored in a relational database.
@@ -39,6 +40,9 @@ public class SagaEntry {
     @Lob
     private byte[] serializedSaga;
 
+    @Transient
+    private transient Saga saga;
+
     /**
      * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
      * saga is not modified by this operation.
@@ -49,6 +53,7 @@ public class SagaEntry {
     public SagaEntry(Saga saga, SagaSerializer serializer) {
         this.sagaId = saga.getSagaIdentifier();
         this.serializedSaga = serializer.serialize(saga);
+        this.saga = saga;
     }
 
     /**
@@ -58,6 +63,9 @@ public class SagaEntry {
      * @return the Saga instance stored in this entry
      */
     public Saga getSaga(SagaSerializer serializer) {
+        if (saga != null) {
+            return saga;
+        }
         return serializer.deserialize(serializedSaga);
     }
 
@@ -77,5 +85,14 @@ public class SagaEntry {
      */
     protected SagaEntry() {
         // required by JPA
+    }
+
+    /**
+     * Returns the serialized form of the Saga.
+     *
+     * @return the serialized form of the Saga
+     */
+    public byte[] getSerializedSaga() {
+        return serializedSaga;
     }
 }
