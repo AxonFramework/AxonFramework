@@ -52,6 +52,9 @@ public class SagaManagerTest {
         when(mockSaga1.isActive()).thenReturn(true);
         when(mockSaga2.isActive()).thenReturn(true);
         when(mockSaga3.isActive()).thenReturn(false);
+        when(mockSaga1.getSagaIdentifier()).thenReturn("saga1");
+        when(mockSaga2.getSagaIdentifier()).thenReturn("saga2");
+        when(mockSaga3.getSagaIdentifier()).thenReturn("saga3");
         testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory) {
             @Override
             protected Set<Saga> findSagas(Event event) {
