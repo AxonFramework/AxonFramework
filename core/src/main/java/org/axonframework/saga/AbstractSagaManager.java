@@ -19,10 +19,8 @@ package org.axonframework.saga;
 import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
-import org.axonframework.util.Subscribable;
 import org.axonframework.util.lock.IdentifierBasedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -178,6 +176,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     }
 
     private class SagaInvocationTask implements Runnable {
+
         private final Saga saga;
         private final EventMessage event;
 
@@ -213,6 +212,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     }
 
     private class SagaLookupAndInvocationTask implements Runnable {
+
         private final EventMessage event;
 
         public SagaLookupAndInvocationTask(EventMessage event) {

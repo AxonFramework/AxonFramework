@@ -1,6 +1,6 @@
 package org.axonframework.util.lock;
 
-import org.axonframework.util.Assert;
+import org.axonframework.common.Assert;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
