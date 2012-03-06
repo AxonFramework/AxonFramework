@@ -51,12 +51,14 @@ public class SimpleSagaManagerTest {
         sagasFromRepository = new HashSet<Saga>();
 
         saga1 = mock(Saga.class);
+        when(saga1.getSagaIdentifier()).thenReturn("saga1");
         sagasFromRepository.add(saga1);
         when(associationValueResolver.extractAssociationValue(event))
                 .thenReturn(setWith(new AssociationValue("key", "val")));
         when(repository.find(eq(Saga.class), eq(setWith(new AssociationValue("key", "val")))))
                 .thenReturn(sagasFromRepository);
         sagaFromFactory = mock(Saga.class);
+        when(sagaFromFactory.getSagaIdentifier()).thenReturn("sagaFromFactory");
         when(sagaFactory.createSaga(Saga.class)).thenReturn(sagaFromFactory);
     }
 
@@ -107,6 +109,8 @@ public class SimpleSagaManagerTest {
         final Saga saga2 = mock(Saga.class);
         when(saga1.isActive()).thenReturn(true);
         when(saga2.isActive()).thenReturn(true);
+        when(saga1.getSagaIdentifier()).thenReturn("saga1");
+        when(saga2.getSagaIdentifier()).thenReturn("saga2");
         sagas.add(saga1);
         sagas.add(saga2);
         when(testSubject.findSagas(event)).thenReturn(sagas);

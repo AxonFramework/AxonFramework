@@ -148,15 +148,15 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     protected void deleteSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         try {
+            entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
+                         .setParameter("sagaId", saga.getSagaIdentifier())
+                         .executeUpdate();
             entityManager.remove(entityManager.getReference(SagaEntry.class, saga.getSagaIdentifier()));
         } catch (EntityNotFoundException e) {
             logger.info("Could not delete SagaEntry {}, it appears to have already been deleted.",
                         saga.getSagaIdentifier());
         }
         entityManager.flush();
-        entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
-                     .setParameter("sagaId", saga.getSagaIdentifier())
-                     .executeUpdate();
     }
 
     @Override

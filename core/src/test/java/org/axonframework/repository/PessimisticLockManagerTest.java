@@ -16,12 +16,9 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
 import org.junit.*;
-
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -32,20 +29,7 @@ import static org.mockito.Mockito.*;
 public class PessimisticLockManagerTest {
 
     @Test
-    public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
-        PessimisticLockManager manager = new PessimisticLockManager();
-        UUID identifier = UUID.randomUUID();
-        manager.obtainLock(identifier);
-        manager.releaseLock(identifier);
-
-        Field locksField = manager.getClass().getDeclaredField("locks");
-        locksField.setAccessible(true);
-        Map locks = (Map) locksField.get(manager);
-        assertEquals("Expected lock to be cleaned up", 0, locks.size());
-    }
-
-    @Test
-    public void testLockOnlyCleanedUpIfNoLocksAreHeld() {
+    public void testObtainAndReleaseLocks() {
         PessimisticLockManager manager = new PessimisticLockManager();
         UUID identifier = UUID.randomUUID();
         AggregateRoot aggregateRoot = mock(AggregateRoot.class);
