@@ -199,6 +199,8 @@ public class JpaSagaRepositoryTest {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
         entityManager.persist(new SagaEntry(saga, new XStreamSerializer()));
+        entityManager.flush();
+        entityManager.clear();
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         assertNotSame(saga, loaded);
         assertEquals(identifier, loaded.getSagaIdentifier());

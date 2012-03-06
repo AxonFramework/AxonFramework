@@ -20,6 +20,8 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -34,6 +36,8 @@ import java.util.Set;
  * @since 0.7
  */
 public abstract class AbstractSagaRepository implements SagaRepository {
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSagaRepository.class);
 
     private final AssociationValueMap associationValueMap = new AssociationValueMap();
     private final SagaCache sagaCache = new SagaCache();
@@ -70,8 +74,11 @@ public abstract class AbstractSagaRepository implements SagaRepository {
             }
             cachedSaga = sagaCache.put(storedSaga);
             if (isSameInstance(cachedSaga, storedSaga)) {
+                logger.debug("Loaded saga with id {} was not cached yet.", sagaIdentifier);
                 cachedSaga.getAssociationValues().addChangeListener(
                         new AssociationValueChangeListener(typeOf(cachedSaga), cachedSaga.getSagaIdentifier()));
+            } else {
+                logger.debug("Loaded saga with id {} has been replaced by a cached instance", sagaIdentifier);
             }
         }
         if (!type.isInstance(cachedSaga)) {

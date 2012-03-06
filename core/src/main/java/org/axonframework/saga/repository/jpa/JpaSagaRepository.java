@@ -25,11 +25,15 @@ import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.serializer.JavaSerializer;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 
 /**
  * JPA implementation of the Saga Repository. It uses an {@link EntityManager} to persist the actual saga in a backing
@@ -42,6 +46,8 @@ import javax.persistence.EntityManager;
  * @since 0.7
  */
 public class JpaSagaRepository extends AbstractSagaRepository {
+
+    private static final Logger logger = LoggerFactory.getLogger(JpaSagaRepository.class);
 
     private final EntityManagerProvider entityManagerProvider;
     private ResourceInjector injector;
@@ -131,13 +137,22 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         if (injector != null) {
             injector.injectResources(storedSaga);
         }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Loaded saga id {} as {}", sagaId, new String(entry.getSerializedSaga(),
+                                                                       Charset.forName("UTF-8")));
+        }
         return storedSaga;
     }
 
     @Override
     protected void deleteSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        entityManager.remove(entityManager.getReference(SagaEntry.class, saga.getSagaIdentifier()));
+        try {
+            entityManager.remove(entityManager.getReference(SagaEntry.class, saga.getSagaIdentifier()));
+        } catch (EntityNotFoundException e) {
+            logger.info("Could not delete SagaEntry {}, it appears to have already been deleted.",
+                        saga.getSagaIdentifier());
+        }
         entityManager.flush();
         entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
                      .setParameter("sagaId", saga.getSagaIdentifier())
@@ -147,7 +162,12 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected void updateSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        entityManager.merge(new SagaEntry(saga, serializer));
+        SagaEntry entry = new SagaEntry(saga, serializer);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Updating saga id {} as {}", saga.getSagaIdentifier(), new String(entry.getSerializedSaga(),
+                                                                                           Charset.forName("UTF-8")));
+        }
+        entityManager.merge(entry);
         if (useExplicitFlush) {
             entityManager.flush();
         }
@@ -156,7 +176,12 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected void storeSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        entityManager.persist(new SagaEntry(saga, serializer));
+        SagaEntry entry = new SagaEntry(saga, serializer);
+        entityManager.persist(entry);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Storing saga id {} as {}", saga.getSagaIdentifier(), new String(entry.getSerializedSaga(),
+                                                                                          Charset.forName("UTF-8")));
+        }
         if (useExplicitFlush) {
             entityManager.flush();
         }
