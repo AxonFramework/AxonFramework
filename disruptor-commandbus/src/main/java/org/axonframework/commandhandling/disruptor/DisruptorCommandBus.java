@@ -63,7 +63,13 @@ import java.util.concurrent.ThreadFactory;
  * not cope with exceptions very well. When an exception occurs, an Aggregate that has been pre-loaded is potentially
  * corrupt. That means that an aggregate does not represent a state that can be reproduced by replaying its committed
  * events. Although this implementation will recover from this corrupt state, it may result in a number of commands
- * being rejected in the meantime. These command may be retried. This is not done automatically.
+ * being rejected in the meantime. These command may be retried if the cause of the {@link
+ * AggregateStateCorruptedException} does not indicate a non-transient error.
+ * <p/>
+ * Commands that have been executed against a potentially corrupt Aggregate will result in a {@link
+ * AggregateStateCorruptedException} exception. These commands are automatically rescheduled for processing by
+ * default. Use {@link DisruptorConfiguration#setRescheduleCommandsOnCorruptState(boolean)} disable this feature. Note
+ * that the order in which commands are executed is not fully guaranteed when this feature is enabled (default).
  * <p/>
  * <em>Limitations of this implementation</em>
  * <p/>
@@ -99,6 +105,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     private final Disruptor<CommandHandlingEntry<T>> disruptor;
     private final CommandHandlerInvoker<T> commandHandlerInvoker;
     private final ExecutorService executorService;
+    private final boolean rescheduleOnCorruptState;
     private volatile boolean started = true;
 
     /**
@@ -139,6 +146,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         } else {
             executorService = null;
         }
+        rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
         disruptor = new Disruptor<CommandHandlingEntry<T>>(new CommandHandlingEntry.Factory<T>(),
                                                            executor,
                                                            configuration.getClaimStrategy(),
@@ -167,7 +175,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         RingBuffer<CommandHandlingEntry<T>> ringBuffer = disruptor.getRingBuffer();
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
-        event.reset(command, new BlacklistDetectingCallback<T, R>(callback, disruptor.getRingBuffer()));
+        event.reset(command, new BlacklistDetectingCallback<T, R>(callback, command, disruptor.getRingBuffer(), this,
+                                                                  rescheduleOnCorruptState));
         ringBuffer.publish(sequence);
     }
 

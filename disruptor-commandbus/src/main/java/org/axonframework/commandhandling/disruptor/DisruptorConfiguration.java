@@ -42,6 +42,7 @@ public class DisruptorConfiguration {
     private WaitStrategy waitStrategy;
     private Executor executor;
     private RollbackConfiguration rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
+    private boolean rescheduleCommandsOnCorruptState = false;
     private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
 
@@ -211,6 +212,33 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
         this.rollbackConfiguration = rollbackConfiguration;
+        return this;
+    }
+
+    /**
+     * Indicates whether commands that failed due to potentially corrupt Aggregate state should be automatically
+     * rescheduled for processing.
+     *
+     * @return <code>true</code> if commands are automatically rescheduled, otherwise <code>false</code>
+     */
+    public boolean getRescheduleCommandsOnCorruptState() {
+        return rescheduleCommandsOnCorruptState;
+    }
+
+    /**
+     * Indicates whether commands that failed because they were executed against potentially corrupted aggregate state
+     * should be automatically rescheduled. Commands that caused the aggregate state to become corrupted are
+     * <em>never</em> automatically rescheduled, to prevent poison message syndrome.
+     * <p/>
+     * Default to <code>true</code>.
+     *
+     * @param rescheduleCommandsOnCorruptState
+     *         whether or not to automatically reschedule commands that failed due to potentially corrupted aggregate
+     *         state.
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setRescheduleCommandsOnCorruptState(boolean rescheduleCommandsOnCorruptState) {
+        this.rescheduleCommandsOnCorruptState = rescheduleCommandsOnCorruptState;
         return this;
     }
 }
