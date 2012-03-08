@@ -40,6 +40,54 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
+ * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
+ * process in three steps which can be executed in different threads. The CommandBus is backed by a {@link Disruptor},
+ * which ensures that these steps are executed sequentially in these threads, while minimizing locking and inter-thread
+ * communication.
+ * <p/>
+ * The process is split into three separate steps, each of which is executed in a different thread:
+ * <ol>
+ * <li><em>CommandHandler resolution and aggregate pre-loading</em><br/>
+ * This process finds the Command Handler for an incoming command, prepares the interceptor chains and makes sure the
+ * targeted aggregate is loaded into the cache.</li>
+ * <li><em>Command Handler execution</em><br/>This process invokes the command handler with the incoming command. The
+ * result and changes to the aggregate are recorded for the next step.</li>
+ * <li><em>Event storage and publication</em><br/>This process stores all generated domain events and publishes them
+ * (with any optional application events) to the event bus. Finally, an asynchronous task is scheduled to invoke the
+ * command handler callback with the result of the command handling result.</li>
+ * </ol>
+ * <p/>
+ * <em>Exceptions and recovery</em>
+ * <p/>
+ * This separation of process steps makes this implementation very efficient and highly performing. However, it does
+ * not cope with exceptions very well. When an exception occurs, an Aggregate that has been pre-loaded is potentially
+ * corrupt. That means that an aggregate does not represent a state that can be reproduced by replaying its committed
+ * events. Although this implementation will recover from this corrupt state, it may result in a number of commands
+ * being rejected in the meantime. These command may be retried. This is not done automatically.
+ * <p/>
+ * <em>Limitations of this implementation</em>
+ * <p/>
+ * Although this implementation allows applications to achieve extreme performance (over 1M commands on commodity
+ * hardware), it does have some limitations. It currently only allows a single aggregate to be invoked during command
+ * processing. Furthermore, the identifier of this aggregate must be made available in the command (see {@link
+ * CommandTargetResolver}). Another limitation is that for each Aggregate Type, you will need to configure a separate
+ * DisruptorCommandBus instance, as an instance is tied to a specific aggregate class.
+ * <p/>
+ * <em>Infrastructure considerations</em>
+ * <p/>
+ * This CommandBus implementation also implements {@link Repository} and requires this CommandBus to be injected as
+ * repository into the CommandHandlers registered with this CommandBus. Using another repository will most likely
+ * result in state changes being lost.
+ * <p/>
+ * The DisruptorCommandBus must have access to at least 4 threads, three of which are permanently used while the
+ * DisruptorCommandBus is operational. At least on additional thread is required to invoke callbacks and initiate a
+ * recovery process in the case of exceptions.
+ * <p/>
+ * Consider providing an alternative {@link org.axonframework.domain.IdentifierFactory} implementation. The default
+ * implementation used {@link java.util.UUID#randomUUID()} to generated identifier for Events. The poor performance of
+ * this method severely impacts overall performance of the DisruptorCommandBus. A better performing alternative is, for
+ * example, <a href="http://johannburkard.de/software/uuid/" target="_blank"><code>com.eaio.uuid.UUID</code></a>
+ *
  * @author Allard Buijze
  * @since 2.0
  */
@@ -57,8 +105,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
      * WaitStrategy on a RingBuffer of size 4096. The (3) Threads required for command execution are created
      * immediately. Additional threads are used to invoke response callbacks and to initialize a recovery process in
-     * the
-     * case of errors.
+     * the case of errors.
      *
      * @param aggregateFactory      The factory providing uninitialized Aggregate instances for event sourcing
      * @param eventStore            The EventStore where generated events must be stored
