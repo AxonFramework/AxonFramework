@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.RoutingKeyExtractor;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
@@ -51,7 +51,7 @@ public class JGroupsCommandBusRunner {
                                          "testing",
                                          new SimpleCommandBus(),
                                          new XStreamSerializer());
-        dcb = new DistributedCommandBus(connector, new RoutingKeyExtractor() {
+        dcb = new DistributedCommandBus(connector, new RoutingStrategy() {
             @Override
             public String getRoutingKey(CommandMessage<?> command) {
                 return command.getPayload().toString();

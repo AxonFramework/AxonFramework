@@ -9,13 +9,13 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class AnnotationRoutingKeyExtractorTest {
+public class AnnotationRoutingStrategyTest {
 
-    private AnnotationRoutingKeyExtractor testSubject;
+    private AnnotationRoutingStrategy testSubject;
 
     @Before
     public void setUp() throws Exception {
-        this.testSubject = new AnnotationRoutingKeyExtractor();
+        this.testSubject = new AnnotationRoutingStrategy();
     }
 
     @Test

@@ -18,7 +18,7 @@ public class DistributedCommandBusTest {
     private CommandBus testSubject;
     private CommandBus mockLocalSegment;
     private CommandBusConnector mockConnector;
-    private RoutingKeyExtractor mockRoutingKeyExtractor;
+    private RoutingStrategy mockRoutingStrategy;
     private CommandHandler<Object> mockHandler;
     private CommandMessage<?> message;
     private CommandCallback<Object> callback;
@@ -28,10 +28,10 @@ public class DistributedCommandBusTest {
     public void setUp() throws Exception {
         mockLocalSegment = mock(CommandBus.class);
         mockConnector = mock(CommandBusConnector.class);
-        mockRoutingKeyExtractor = mock(RoutingKeyExtractor.class);
-        when(mockRoutingKeyExtractor.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
+        mockRoutingStrategy = mock(RoutingStrategy.class);
+        when(mockRoutingStrategy.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
 
-        testSubject = new DistributedCommandBus(mockConnector, mockRoutingKeyExtractor);
+        testSubject = new DistributedCommandBus(mockConnector, mockRoutingStrategy);
         mockHandler = mock(CommandHandler.class);
         message = new GenericCommandMessage<Object>(new Object());
         callback = new FutureCallback<Object>();
@@ -41,7 +41,7 @@ public class DistributedCommandBusTest {
     public void testDispatchIsDelegatedToConnection_WithCallback() throws Exception {
         testSubject.dispatch(message, callback);
 
-        verify(mockRoutingKeyExtractor).getRoutingKey(message);
+        verify(mockRoutingStrategy).getRoutingKey(message);
         verify(mockConnector).send("key", message, callback);
     }
 
@@ -49,7 +49,7 @@ public class DistributedCommandBusTest {
     public void testDispatchIsDelegatedToConnection_WithoutCallback() throws Exception {
         testSubject.dispatch(message);
 
-        verify(mockRoutingKeyExtractor).getRoutingKey(message);
+        verify(mockRoutingStrategy).getRoutingKey(message);
         verify(mockConnector).send("key", message);
     }
 

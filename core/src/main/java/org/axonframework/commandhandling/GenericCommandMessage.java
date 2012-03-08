@@ -67,7 +67,7 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      * @param command     the payload for the Message
      * @param newMetaData The meta data for this message
      */
-    public GenericCommandMessage(T command, Map<String, Object> newMetaData) {
+    public GenericCommandMessage(T command, Map<String, ?> newMetaData) {
         this.command = command;
         this.metaData = MetaData.from(newMetaData);
         this.identifier = IdentifierFactory.getInstance().generateIdentifier();

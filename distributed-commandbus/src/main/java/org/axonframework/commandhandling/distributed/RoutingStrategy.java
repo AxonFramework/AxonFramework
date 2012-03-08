@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.CommandMessage;
  * @author Allard Buijze
  * @since 2.0
  */
-public interface RoutingKeyExtractor {
+public interface RoutingStrategy {
 
     /**
      * Generates a routing key for the given <code>command</code>. Commands that should be handled by the same segment,

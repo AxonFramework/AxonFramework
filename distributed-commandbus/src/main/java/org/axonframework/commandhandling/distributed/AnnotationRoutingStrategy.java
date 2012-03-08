@@ -4,7 +4,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 
 /**
- * RoutingKeyExtractor that expects an {@link org.axonframework.commandhandling.annotation.TargetAggregateIdentifier}
+ * RoutingStrategy that expects an {@link org.axonframework.commandhandling.annotation.TargetAggregateIdentifier}
  * annotation on the command message's payload. Commands are routed based on the identifier of the aggregate that they
  * target. This approach ensures that commands to be processed by the same aggregate are dispatched to the same node in
  * a DistributedCommandBus. See {@link AnnotationCommandTargetResolver} for more details.
@@ -17,7 +17,7 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResol
  * @see DistributedCommandBus
  * @since 2.0
  */
-public class AnnotationRoutingKeyExtractor implements RoutingKeyExtractor {
+public class AnnotationRoutingStrategy implements RoutingStrategy {
 
     private final AnnotationCommandTargetResolver targetResolver = new AnnotationCommandTargetResolver();
 

@@ -19,29 +19,29 @@ public class DistributedCommandBus implements CommandBus {
 
     private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command on the DistributedCommandBus";
 
-    private final RoutingKeyExtractor routingKeyExtractor;
+    private final RoutingStrategy routingStrategy;
     private final CommandBusConnector connector;
 
     /**
-     * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingKeyExtractor}.
+     * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingStrategy}.
      *
      * @param connector the connector that connects the different command bus segments
      */
     public DistributedCommandBus(CommandBusConnector connector) {
-        this(connector, new AnnotationRoutingKeyExtractor());
+        this(connector, new AnnotationRoutingStrategy());
     }
 
     /**
-     * Initializes the command bus with the given <code>connector</code> and <code>routingKeyExtractor</code>. The
-     * <code>routingKeyExtractor</code> is used to calculate a routing key for each dispatched command. For a given
+     * Initializes the command bus with the given <code>connector</code> and <code>routingStrategy</code>. The
+     * <code>routingStrategy</code> is used to calculate a routing key for each dispatched command. For a given
      * configuration of segments, commands resulting in the same routing key are routed to the same segment.
      *
      * @param connector           the connector that connects the different command bus segments
-     * @param routingKeyExtractor the RoutingKeyExtractor to define routing keys for each command
+     * @param routingStrategy the RoutingStrategy to define routing keys for each command
      */
-    public DistributedCommandBus(CommandBusConnector connector, RoutingKeyExtractor routingKeyExtractor) {
+    public DistributedCommandBus(CommandBusConnector connector, RoutingStrategy routingStrategy) {
         this.connector = connector;
-        this.routingKeyExtractor = routingKeyExtractor;
+        this.routingStrategy = routingStrategy;
     }
 
     /**
@@ -51,7 +51,7 @@ public class DistributedCommandBus implements CommandBus {
      */
     @Override
     public void dispatch(CommandMessage<?> command) {
-        String routingKey = routingKeyExtractor.getRoutingKey(command);
+        String routingKey = routingStrategy.getRoutingKey(command);
         try {
             connector.send(routingKey, command);
         } catch (Exception e) {
@@ -66,7 +66,7 @@ public class DistributedCommandBus implements CommandBus {
      */
     @Override
     public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
-        String routingKey = routingKeyExtractor.getRoutingKey(command);
+        String routingKey = routingStrategy.getRoutingKey(command);
         try {
             connector.send(routingKey, command, callback);
         } catch (Exception e) {
