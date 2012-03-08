@@ -104,7 +104,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
                                                                    configuration.getPublisherInterceptors(),
                                                                    commandTargetResolver))
                  .then(commandHandlerInvoker)
-                 .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore, eventBus, executor));
+                 .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore,
+                                             eventBus, executor, configuration.getRollbackConfiguration()));
         disruptor.start();
     }
 

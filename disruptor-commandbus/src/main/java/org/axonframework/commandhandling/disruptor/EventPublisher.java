@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -46,22 +47,27 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
     private final String aggregateType;
     private final EventBus eventBus;
     private final Executor executor;
+    private final RollbackConfiguration rollbackConfiguration;
     private final Set<String> blackListedAggregates = new HashSet<String>();
 
     /**
      * Initializes the EventPublisher to publish Events to the given <code>eventStore</code> and <code>eventBus</code>
      * for aggregate of given <code>aggregateType</code>.
      *
-     * @param aggregateType The type of aggregate to store the events for
-     * @param eventStore    The EventStore persisting the generated events
-     * @param eventBus      The EventBus to publish events on
-     * @param executor      The executor which schedules response reporting
+     * @param aggregateType         The type of aggregate to store the events for
+     * @param eventStore            The EventStore persisting the generated events
+     * @param eventBus              The EventBus to publish events on
+     * @param executor              The executor which schedules response reporting
+     * @param rollbackConfiguration The configuration that indicates which exceptions should result in a UnitOfWork
+     *                              rollback
      */
-    public EventPublisher(String aggregateType, EventStore eventStore, EventBus eventBus, Executor executor) {
+    public EventPublisher(String aggregateType, EventStore eventStore, EventBus eventBus, Executor executor,
+                          RollbackConfiguration rollbackConfiguration) {
         this.eventStore = eventStore;
         this.aggregateType = aggregateType;
         this.eventBus = eventBus;
         this.executor = executor;
+        this.rollbackConfiguration = rollbackConfiguration;
     }
 
     @SuppressWarnings("unchecked")
@@ -109,12 +115,12 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
         unitOfWork.onPrepareCommit();
         Throwable exceptionResult = entry.getExceptionResult();
         try {
-            eventStore.appendEvents(aggregateType, unitOfWork.getEventsToStore());
-            Iterator<EventMessage> eventsToPublish = unitOfWork.getEventsToPublish().iterator();
-            while (eventBus != null && eventsToPublish.hasNext()) {
-                eventBus.publish(eventsToPublish.next());
+            if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
+                unitOfWork.rollback(exceptionResult);
+            } else {
+                storeAndPublish(unitOfWork);
+                unitOfWork.onAfterCommit();
             }
-            unitOfWork.onAfterCommit();
         } catch (Exception e) {
             blackListedAggregates.add(aggregate.getIdentifier().toString());
             exceptionResult = new AggregateBlacklistedException(
@@ -129,6 +135,14 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
         }
         if (exceptionResult != null || entry.getCallback().hasDelegate()) {
             executor.execute(new ReportResultTask(entry.getCallback(), entry.getResult(), exceptionResult));
+        }
+    }
+
+    private void storeAndPublish(DisruptorUnitOfWork unitOfWork) {
+        eventStore.appendEvents(aggregateType, unitOfWork.getEventsToStore());
+        Iterator<EventMessage> eventsToPublish = unitOfWork.getEventsToPublish().iterator();
+        while (eventBus != null && eventsToPublish.hasNext()) {
+            eventBus.publish(eventsToPublish.next());
         }
     }
 

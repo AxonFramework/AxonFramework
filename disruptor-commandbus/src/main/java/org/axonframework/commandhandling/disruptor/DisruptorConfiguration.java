@@ -21,6 +21,8 @@ import com.lmax.disruptor.ClaimStrategy;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.RollbackConfiguration;
+import org.axonframework.commandhandling.RollbackOnUncheckedExceptionConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +41,7 @@ public class DisruptorConfiguration {
     private ClaimStrategy claimStrategy;
     private WaitStrategy waitStrategy;
     private Executor executor;
+    private RollbackConfiguration rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
     private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
 
@@ -181,6 +184,33 @@ public class DisruptorConfiguration {
     public DisruptorConfiguration setPublisherInterceptors(List<CommandHandlerInterceptor> invokerInterceptors) {
         this.publisherInterceptors.clear();
         this.publisherInterceptors.addAll(invokerInterceptors);
+        return this;
+    }
+
+    /**
+     * Returns the RollbackConfiguration indicating for which Exceptions the DisruptorCommandBus should perform a
+     * rollback, and which exceptions should result in a Commit.
+     * <p/>
+     * Note that only exceptions resulting from Command processing are evaluated. Exceptions that occur while
+     * attempting
+     * to store or publish events will always result in a Rollback.
+     *
+     * @return the RollbackConfiguration indicating for the DisruptorCommandBus
+     */
+    public RollbackConfiguration getRollbackConfiguration() {
+        return rollbackConfiguration;
+    }
+
+    /**
+     * Sets the rollback configuration for the DisruptorCommandBus to use. Defaults to {@link
+     * RollbackOnUncheckedExceptionConfiguration} a configuration that commits on checked exceptions, and performs a
+     * rollback on runtime exceptions.
+     *
+     * @param rollbackConfiguration the RollbackConfiguration indicating for the DisruptorCommandBus
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+        this.rollbackConfiguration = rollbackConfiguration;
         return this;
     }
 }

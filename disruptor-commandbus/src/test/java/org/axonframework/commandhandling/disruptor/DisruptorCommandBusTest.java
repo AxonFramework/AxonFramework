@@ -26,6 +26,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.MetaDataCommandTargetResolver;
+import org.axonframework.commandhandling.RollbackOnAllExceptionsConfiguration;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -152,7 +153,8 @@ public class DisruptorCommandBusTest {
                 new DisruptorConfiguration().setInvokerInterceptors(Arrays.asList(mockInterceptor))
                                             .setClaimStrategy(new MultiThreadedClaimStrategy(8))
                                             .setWaitStrategy(new SleepingWaitStrategy())
-                                            .setExecutor(customExecutor));
+                                            .setExecutor(customExecutor)
+                                            .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration()));
         testSubject.subscribe(StubCommand.class, stubHandler);
         testSubject.subscribe(CreateCommand.class, stubHandler);
         testSubject.subscribe(ErrorCommand.class, stubHandler);
