@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
@@ -295,11 +294,10 @@ public class JGroupsConnector implements CommandBusConnector {
             final CommandMessage commandMessage = message.getCommandMessage(serializer);
             CommandCallback<Object> callback;
             if (message.isExpectReply()) {
-                callback = new ReplyingCallback(msg, commandMessage);
+                localSegment.dispatch(commandMessage, new ReplyingCallback(msg, commandMessage));
             } else {
-                callback = NoOpCallback.INSTANCE;
+                localSegment.dispatch(commandMessage);
             }
-            localSegment.dispatch(commandMessage, callback);
         }
 
         private void processJoinMessage(Message msg, JoinMessage joinMessage) {

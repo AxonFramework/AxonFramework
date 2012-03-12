@@ -33,9 +33,7 @@ class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
 
     @Override
     public void onSuccess(R result) {
-        if (delegate != null) {
-            delegate.onSuccess(result);
-        }
+        delegate.onSuccess(result);
     }
 
     @Override
@@ -45,16 +43,10 @@ class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
             CommandHandlingEntry event = ringBuffer.get(sequence);
             event.resetAsRecoverEntry(((AggregateBlacklistedException) cause).getAggregateIdentifier());
             ringBuffer.publish(sequence);
-            if (delegate != null) {
-                delegate.onFailure(cause);
-            }
+            delegate.onFailure(cause.getCause());
         } else if (rescheduleOnCorruptState && cause instanceof AggregateStateCorruptedException) {
-            if (delegate == null) {
-                commandBus.dispatch(command);
-            } else {
-                commandBus.dispatch(command, delegate);
-            }
-        } else if (delegate != null) {
+            commandBus.doDispatch(command, delegate);
+        } else {
             delegate.onFailure(cause);
         }
     }

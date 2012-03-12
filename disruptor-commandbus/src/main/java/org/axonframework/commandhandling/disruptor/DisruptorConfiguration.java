@@ -42,9 +42,10 @@ public class DisruptorConfiguration {
     private WaitStrategy waitStrategy;
     private Executor executor;
     private RollbackConfiguration rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
-    private boolean rescheduleCommandsOnCorruptState = false;
+    private boolean rescheduleCommandsOnCorruptState = true;
     private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
+    private long coolingDownPeriod = 1000;
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
@@ -240,5 +241,31 @@ public class DisruptorConfiguration {
     public DisruptorConfiguration setRescheduleCommandsOnCorruptState(boolean rescheduleCommandsOnCorruptState) {
         this.rescheduleCommandsOnCorruptState = rescheduleCommandsOnCorruptState;
         return this;
+    }
+
+    /**
+     * Returns the cooling down period for the shutdown of the DisruptorCommandBus, in milliseconds. This is the time
+     * in which new commands are no longer accepted, but the DisruptorCommandBus may reschedule Commands that may have
+     * been executed against a corrupted Aggregate. If no commands have been rescheduled during this period, the
+     * disruptor shuts down completely. Otherwise, it wait until no commands were scheduled for processing.
+     *
+     * @return the cooling down period for the shutdown of the DisruptorCommandBus, in milliseconds.
+     */
+    public long getCoolingDownPeriod() {
+        return coolingDownPeriod;
+    }
+
+    /**
+     * Sets the cooling down period in milliseconds. This is the time in which new commands are no longer accepted, but
+     * the DisruptorCommandBus may reschedule Commands that may have been executed against a corrupted Aggregate. If no
+     * commands have been rescheduled during this period, the disruptor shuts down completely. Otherwise, it wait until
+     * no commands were scheduled for processing.
+     * <p/>
+     * Defaults to 1000 (1 second).
+     *
+     * @param coolingDownPeriod the cooling down period for the shutdown of the DisruptorCommandBus, in milliseconds.
+     */
+    public void setCoolingDownPeriod(long coolingDownPeriod) {
+        this.coolingDownPeriod = coolingDownPeriod;
     }
 }

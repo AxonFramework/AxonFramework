@@ -21,7 +21,6 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.*;
@@ -66,7 +65,7 @@ public class SpringTransactionalInterceptorTest {
     public void testTransactionManagement_CommitFails() {
         doThrow(new RuntimeException()).when(mockTransactionManager).commit(mockTransactionStatus);
         when(mockTransactionStatus.isCompleted()).thenReturn(true);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), NoOpCallback.INSTANCE);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()));
         verify(mockTransactionManager).commit(mockTransactionStatus);
         verify(mockTransactionManager, never()).rollback(any(TransactionStatus.class));
     }

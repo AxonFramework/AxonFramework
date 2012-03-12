@@ -18,17 +18,21 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.repository.AggregateNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 
 import static java.lang.String.format;
@@ -49,6 +53,7 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
     private final Executor executor;
     private final RollbackConfiguration rollbackConfiguration;
     private final Set<String> blackListedAggregates = new HashSet<String>();
+    private final Map<CommandMessage, Object> failedCreateCommands = new WeakHashMap<CommandMessage, Object>();
 
     /**
      * Initializes the EventPublisher to publish Events to the given <code>eventStore</code> and <code>eventBus</code>
@@ -75,61 +80,59 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
         if (entry.isRecoverEntry()) {
             recoverAggregate(entry);
+        } else if (entry.getExceptionResult() instanceof AggregateNotFoundException
+                && failedCreateCommands.remove(entry.getCommand()) == null) {
+            // the command failed for the first time
+            reschedule(entry);
         } else {
             DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
             EventSourcedAggregateRoot aggregate = unitOfWork.getAggregate();
-            if (blackListedAggregates.contains(aggregate.getIdentifier().toString())) {
-                notifyBlacklisted(entry, unitOfWork, aggregate);
+            if (blackListedAggregates.contains(entry.getAggregateIdentifier().toString())) {
+                rejectExecution(entry, unitOfWork, entry.getAggregateIdentifier());
             } else {
-                publishChanges(entry, unitOfWork, aggregate);
+                processPublication(entry, unitOfWork, aggregate);
             }
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void reschedule(CommandHandlingEntry<T> entry) {
+        failedCreateCommands.put(entry.getCommand(), logger);
+        executor.execute(new ReportResultTask(
+                entry.getCallback(), null,
+                new AggregateStateCorruptedException(
+                        entry.getAggregateIdentifier(), "Rescheduling command for execution. "
+                        + "It was executed against a potentially recently created command")));
+    }
+
     private void recoverAggregate(CommandHandlingEntry<T> entry) {
-        blackListedAggregates.remove(entry.getRecoveringAggregateIdentifier().toString());
+        blackListedAggregates.remove(entry.getAggregateIdentifier().toString());
         logger.info("Reset notification for {} received. The aggregate is removed from the blacklist",
-                    entry.getRecoveringAggregateIdentifier());
+                    entry.getAggregateIdentifier());
     }
 
     @SuppressWarnings("unchecked")
-    private void notifyBlacklisted(CommandHandlingEntry<T> entry, DisruptorUnitOfWork unitOfWork,
-                                   EventSourcedAggregateRoot aggregate) {
+    private void rejectExecution(CommandHandlingEntry<T> entry, DisruptorUnitOfWork unitOfWork,
+                                 Object aggregateIdentifier) {
         executor.execute(new ReportResultTask(
                 entry.getCallback(), null,
                 new AggregateStateCorruptedException(
                         unitOfWork.getAggregate(),
-                        format("%s %s has been blacklisted and will be ignored until its state has been recovered.",
-                               aggregate.getClass().getSimpleName(),
-                               aggregate.getIdentifier()))));
+                        format("Aggregate %s has been blacklisted and will be ignored until its state has been recovered.",
+                               aggregateIdentifier))));
     }
 
     @SuppressWarnings("unchecked")
-    private void publishChanges(CommandHandlingEntry<T> entry, DisruptorUnitOfWork unitOfWork,
-                                EventSourcedAggregateRoot aggregate) {
-        try {
-            entry.setResult(entry.getPublisherInterceptorChain().proceed(entry.getCommand()));
-        } catch (Throwable throwable) {
-            entry.setExceptionResult(throwable);
-        }
-        unitOfWork.onPrepareCommit();
+    private void processPublication(CommandHandlingEntry<T> entry, DisruptorUnitOfWork unitOfWork,
+                                    EventSourcedAggregateRoot aggregate) {
+        invokeInterceptorChain(entry);
         Throwable exceptionResult = entry.getExceptionResult();
         try {
             if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
-                unitOfWork.rollback(exceptionResult);
+                exceptionResult = performRollback(unitOfWork, entry.getAggregateIdentifier(), exceptionResult);
             } else {
-                storeAndPublish(unitOfWork);
-                unitOfWork.onAfterCommit();
+                exceptionResult = performCommit(unitOfWork, aggregate, exceptionResult);
             }
-        } catch (Exception e) {
-            blackListedAggregates.add(aggregate.getIdentifier().toString());
-            exceptionResult = new AggregateBlacklistedException(
-                    aggregate.getIdentifier(),
-                    format("%s %s state corrupted. "
-                                   + "Blacklisting the aggregate until a reset message has been received",
-                           aggregate.getClass().getSimpleName(),
-                           aggregate.getIdentifier()), e);
-            unitOfWork.onRollback(exceptionResult);
         } finally {
             unitOfWork.onCleanup();
         }
@@ -138,12 +141,56 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
         }
     }
 
+    private void invokeInterceptorChain(CommandHandlingEntry<T> entry) {
+        try {
+            entry.setResult(entry.getPublisherInterceptorChain().proceed(entry.getCommand()));
+        } catch (Throwable throwable) {
+            entry.setExceptionResult(throwable);
+        }
+    }
+
+    private Throwable performRollback(DisruptorUnitOfWork unitOfWork, Object aggregateIdentifier,
+                                      Throwable exceptionResult) {
+        unitOfWork.onRollback(exceptionResult);
+        exceptionResult = notifyBlacklisted(unitOfWork, aggregateIdentifier, exceptionResult);
+        return exceptionResult;
+    }
+
+    private Throwable performCommit(DisruptorUnitOfWork unitOfWork, EventSourcedAggregateRoot aggregate,
+                                    Throwable exceptionResult) {
+        unitOfWork.onPrepareCommit();
+        try {
+            if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
+                unitOfWork.rollback(exceptionResult);
+            } else {
+                storeAndPublish(unitOfWork);
+                unitOfWork.onAfterCommit();
+            }
+        } catch (Exception e) {
+            exceptionResult = notifyBlacklisted(unitOfWork, aggregate.getIdentifier(), e);
+        }
+        return exceptionResult;
+    }
+
     private void storeAndPublish(DisruptorUnitOfWork unitOfWork) {
         eventStore.appendEvents(aggregateType, unitOfWork.getEventsToStore());
         Iterator<EventMessage> eventsToPublish = unitOfWork.getEventsToPublish().iterator();
         while (eventBus != null && eventsToPublish.hasNext()) {
             eventBus.publish(eventsToPublish.next());
         }
+    }
+
+    private Throwable notifyBlacklisted(DisruptorUnitOfWork unitOfWork, Object aggregateIdentifier,
+                                        Throwable cause) {
+        Throwable exceptionResult;
+        blackListedAggregates.add(aggregateIdentifier.toString());
+        exceptionResult = new AggregateBlacklistedException(
+                aggregateIdentifier,
+                format("Aggregate %s state corrupted. "
+                               + "Blacklisting the aggregate until a reset message has been received",
+                       aggregateIdentifier), cause);
+        unitOfWork.onRollback(exceptionResult);
+        return exceptionResult;
     }
 
     private class ReportResultTask<R> implements Runnable {

@@ -81,7 +81,7 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
     @Override
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
         if (entry.isRecoverEntry()) {
-            preLoadedAggregates.remove(entry.getRecoveringAggregateIdentifier());
+            preLoadedAggregates.remove(entry.getAggregateIdentifier());
         } else {
             preLoadAggregate(entry);
             resolveCommandHandler(entry);
@@ -104,6 +104,7 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
 
     private void preLoadAggregate(CommandHandlingEntry<T> entry) {
         Object aggregateIdentifier = commandTargetResolver.resolveTarget(entry.getCommand()).getIdentifier();
+        entry.setAggregateIdentifier(aggregateIdentifier);
         if (preLoadedAggregates.containsKey(aggregateIdentifier)) {
             entry.setPreLoadedAggregate(preLoadedAggregates.get(aggregateIdentifier));
         } else {
@@ -117,7 +118,10 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
                     entry.setPreLoadedAggregate(aggregateRoot);
                 }
             } catch (AggregateNotFoundException e) {
-                logger.info("Aggregate to preload not found. Possibly involves an aggregate being created");
+                logger.info("Aggregate to pre-load not found. Possibly involves an aggregate being created, "
+                                    + "or a command that was executed against an aggregate that did not yet"
+                                    + "finish the creation process. It will be rescheduled for publication when it "
+                                    + "attempts to load an aggregate");
             }
         }
     }

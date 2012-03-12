@@ -46,7 +46,7 @@ public class CommandHandlerInvoker<T extends EventSourcedAggregateRoot>
                 unitOfWork.commit();
             } catch (Throwable throwable) {
                 entry.setExceptionResult(throwable);
-                unitOfWork.rollback();
+                unitOfWork.rollback(throwable);
             } finally {
                 preLoadedAggregate.remove();
             }

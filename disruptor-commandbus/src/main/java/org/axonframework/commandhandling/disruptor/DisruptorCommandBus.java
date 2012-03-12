@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.CommandBus;
@@ -28,9 +29,12 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.ConflictingAggregateVersionException;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -38,6 +42,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+
+import static java.lang.String.format;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
@@ -99,6 +105,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements CommandBus, Repository<T> {
 
+    private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
@@ -107,6 +114,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     private final ExecutorService executorService;
     private final boolean rescheduleOnCorruptState;
     private volatile boolean started = true;
+    private volatile boolean disruptorShutDown = false;
+    private final long coolingDownPeriod;
 
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
@@ -152,6 +161,25 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
                                                            configuration.getClaimStrategy(),
                                                            configuration.getWaitStrategy());
         commandHandlerInvoker = new CommandHandlerInvoker<T>();
+        disruptor.handleExceptionsWith(new ExceptionHandler() {
+            @Override
+            public void handleEventException(Throwable ex, long sequence, Object event) {
+                logger.error("Exception occurred while processing a {}.",
+                             ((CommandHandlingEntry) event).getCommand().getPayloadType().getSimpleName(),
+                             ex);
+            }
+
+            @Override
+            public void handleOnStartException(Throwable ex) {
+                logger.error("Failed to start the DisruptorCommandBus.", ex);
+                disruptor.shutdown();
+            }
+
+            @Override
+            public void handleOnShutdownException(Throwable ex) {
+                logger.error("Error while shutting down the DisruptorCommandBus", ex);
+            }
+        });
         disruptor.handleEventsWith(new CommandHandlerPreFetcher<T>(eventStore,
                                                                    aggregateFactory,
                                                                    commandHandlers,
@@ -161,17 +189,32 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
                  .then(commandHandlerInvoker)
                  .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore,
                                              eventBus, executor, configuration.getRollbackConfiguration()));
+        coolingDownPeriod = configuration.getCoolingDownPeriod();
         disruptor.start();
     }
 
     @Override
     public void dispatch(final CommandMessage<?> command) {
-        dispatch(command, null);
+        dispatch(command, new CommandCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                logger.warn("Command {} resulted in an exception:", command.getPayloadType().getSimpleName(), cause);
+            }
+        });
     }
 
     @Override
     public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         Assert.state(started, "CommandBus has been shut down. It is not accepting any Commands");
+        doDispatch(command, callback);
+    }
+
+    public <R> void doDispatch(CommandMessage command, CommandCallback<R> callback) {
+        Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or redispatch commands");
         RingBuffer<CommandHandlingEntry<T>> ringBuffer = disruptor.getRingBuffer();
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
@@ -204,6 +247,11 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     @Override
     public T load(Object aggregateIdentifier) {
         T aggregateRoot = commandHandlerInvoker.getPreLoadedAggregate();
+        if (aggregateRoot == null) {
+            throw new AggregateNotFoundException(aggregateIdentifier,
+                                                 format("No aggregate with identifier [%s] was found pre-load phase.",
+                                                        aggregateIdentifier.toString()));
+        }
         if (aggregateRoot.getIdentifier().equals(aggregateIdentifier)) {
             return aggregateRoot;
         } else {
@@ -222,7 +270,19 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
      * Configuration.
      */
     public void stop() {
+        if (!started) {
+            return;
+        }
         started = false;
+        long lastChangeDetected = System.currentTimeMillis();
+        long lastKnownCursor = disruptor.getRingBuffer().getCursor();
+        while (System.currentTimeMillis() - lastChangeDetected < coolingDownPeriod && !Thread.interrupted()) {
+            if (disruptor.getRingBuffer().getCursor() != lastKnownCursor) {
+                lastChangeDetected = System.currentTimeMillis();
+                lastKnownCursor = disruptor.getRingBuffer().getCursor();
+            }
+        }
+        disruptorShutDown = true;
         disruptor.shutdown();
         if (executorService != null) {
             executorService.shutdown();

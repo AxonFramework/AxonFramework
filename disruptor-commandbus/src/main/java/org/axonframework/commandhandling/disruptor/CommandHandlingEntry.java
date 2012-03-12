@@ -74,7 +74,8 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
-     * Returns the InterceptorChain for the publication process registered with this entry, or <code>null</code> if none
+     * Returns the InterceptorChain for the publication process registered with this entry, or <code>null</code> if
+     * none
      * is available.
      *
      * @return the InterceptorChain for the publication process registered with this entry
@@ -210,8 +211,17 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
      *
      * @return the identifier of the aggregate to recover
      */
-    public Object getRecoveringAggregateIdentifier() {
+    public Object getAggregateIdentifier() {
         return aggregateIdentifier;
+    }
+
+    /**
+     * Sets the identifier of the aggregate targeted with this entry
+     *
+     * @param aggregateIdentifier the identifier of the targeted aggregate
+     */
+    public void setAggregateIdentifier(Object aggregateIdentifier) {
+        this.aggregateIdentifier = aggregateIdentifier;
     }
 
     /**
