@@ -136,7 +136,8 @@ public class JGroupsConnector implements CommandBusConnector {
     private void updateMembership() throws MembershipUpdateFailedException {
         try {
             if (channel.isConnected()) {
-                channel.send(new Message(null, new JoinMessage(currentLoadFactor, new HashSet<String>(supportedCommandTypes)))
+                channel.send(new Message(null, new JoinMessage(currentLoadFactor, new HashSet<String>(
+                        supportedCommandTypes)))
                                      .setFlag(Message.Flag.RSVP));
             }
         } catch (Exception e) {
@@ -292,7 +293,6 @@ public class JGroupsConnector implements CommandBusConnector {
 
         private void processDispatchMessage(final Message msg, final DispatchMessage message) {
             final CommandMessage commandMessage = message.getCommandMessage(serializer);
-            CommandCallback<Object> callback;
             if (message.isExpectReply()) {
                 localSegment.dispatch(commandMessage, new ReplyingCallback(msg, commandMessage));
             } else {
