@@ -99,7 +99,7 @@ public class BinaryEntryInputStream {
         }
         byte[] bytesToRead = new byte[numberOfBytes];
         int bytesRead = in.read(bytesToRead);
-        return bytesRead == bytesToRead.length ? bytesToRead : null;
+        return bytesRead == bytesToRead.length ? bytesToRead : null; //NOSONAR
     }
 
     private int readFistNonWhitespaceCharacter() throws IOException {

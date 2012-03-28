@@ -77,7 +77,7 @@ public class DisruptorConfiguration {
      * @see com.lmax.disruptor.MultiThreadedClaimStrategy MultiThreadedClaimStrategy
      * @see com.lmax.disruptor.SingleThreadedClaimStrategy SingleThreadedClaimStrategy
      */
-    public DisruptorConfiguration setClaimStrategy(ClaimStrategy claimStrategy) {
+    public DisruptorConfiguration setClaimStrategy(ClaimStrategy claimStrategy) { //NOSONAR (setter may hide field)
         this.claimStrategy = claimStrategy;
         return this;
     }
@@ -110,7 +110,7 @@ public class DisruptorConfiguration {
      * @see com.lmax.disruptor.BusySpinWaitStrategy BusySpinWaitStrategy
      * @see com.lmax.disruptor.YieldingWaitStrategy YieldingWaitStrategy
      */
-    public DisruptorConfiguration setWaitStrategy(WaitStrategy waitStrategy) {
+    public DisruptorConfiguration setWaitStrategy(WaitStrategy waitStrategy) { //NOSONAR (setter may hide field)
         this.waitStrategy = waitStrategy;
         return this;
     }
@@ -137,7 +137,7 @@ public class DisruptorConfiguration {
      * @param executor the Executor that provides the processing resources
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setExecutor(Executor executor) {
+    public DisruptorConfiguration setExecutor(Executor executor) { //NOSONAR (setter may hide field)
         this.executor = executor;
         return this;
     }
@@ -161,7 +161,8 @@ public class DisruptorConfiguration {
      * @param invokerInterceptors The interceptors to invoke when handling an incoming command
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setInvokerInterceptors(List<CommandHandlerInterceptor> invokerInterceptors) {
+    public DisruptorConfiguration setInvokerInterceptors(
+            List<CommandHandlerInterceptor> invokerInterceptors) {  //NOSONAR (setter may hide field)
         this.invokerInterceptors.clear();
         this.invokerInterceptors.addAll(invokerInterceptors);
         return this;
@@ -183,7 +184,8 @@ public class DisruptorConfiguration {
      * @param publisherInterceptors The interceptors to invoke when handling an incoming command
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setPublisherInterceptors(List<CommandHandlerInterceptor> publisherInterceptors) {
+    public DisruptorConfiguration setPublisherInterceptors(
+            List<CommandHandlerInterceptor> publisherInterceptors) { //NOSONAR (setter may hide field)
         this.publisherInterceptors.clear();
         this.publisherInterceptors.addAll(publisherInterceptors);
         return this;
@@ -211,7 +213,8 @@ public class DisruptorConfiguration {
      * @param rollbackConfiguration the RollbackConfiguration indicating for the DisruptorCommandBus
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+    public DisruptorConfiguration setRollbackConfiguration(
+            RollbackConfiguration rollbackConfiguration) { //NOSONAR (setter may hide field)
         this.rollbackConfiguration = rollbackConfiguration;
         return this;
     }
@@ -238,7 +241,8 @@ public class DisruptorConfiguration {
      *         state.
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setRescheduleCommandsOnCorruptState(boolean rescheduleCommandsOnCorruptState) {
+    public DisruptorConfiguration setRescheduleCommandsOnCorruptState(
+            boolean rescheduleCommandsOnCorruptState) { //NOSONAR (setter may hide field)
         this.rescheduleCommandsOnCorruptState = rescheduleCommandsOnCorruptState;
         return this;
     }
@@ -264,8 +268,10 @@ public class DisruptorConfiguration {
      * Defaults to 1000 (1 second).
      *
      * @param coolingDownPeriod the cooling down period for the shutdown of the DisruptorCommandBus, in milliseconds.
+     * @return <code>this</code> for method chaining
      */
-    public void setCoolingDownPeriod(long coolingDownPeriod) {
+    public DisruptorConfiguration setCoolingDownPeriod(long coolingDownPeriod) { //NOSONAR (setter may hide field)
         this.coolingDownPeriod = coolingDownPeriod;
+        return this;
     }
 }
