@@ -180,12 +180,12 @@ public class DisruptorConfiguration {
      * Configures the CommandHandlerInterceptors to use with the DisruptorCommandBus during the publication of changes.
      * The interceptors are invoked by the thread that also stores and publishes the events.
      *
-     * @param invokerInterceptors The interceptors to invoke when handling an incoming command
+     * @param publisherInterceptors The interceptors to invoke when handling an incoming command
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setPublisherInterceptors(List<CommandHandlerInterceptor> invokerInterceptors) {
+    public DisruptorConfiguration setPublisherInterceptors(List<CommandHandlerInterceptor> publisherInterceptors) {
         this.publisherInterceptors.clear();
-        this.publisherInterceptors.addAll(invokerInterceptors);
+        this.publisherInterceptors.addAll(publisherInterceptors);
         return this;
     }
 

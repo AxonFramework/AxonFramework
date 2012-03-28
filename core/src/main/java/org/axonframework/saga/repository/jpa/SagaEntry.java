@@ -95,6 +95,6 @@ public class SagaEntry {
      * @return the serialized form of the Saga
      */
     public byte[] getSerializedSaga() {
-        return serializedSaga;
+        return serializedSaga; //NOSONAR
     }
 }

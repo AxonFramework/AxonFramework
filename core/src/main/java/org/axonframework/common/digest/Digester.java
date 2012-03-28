@@ -8,7 +8,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Utility class for generating hashes for values using several algorithms.
+ * Utility class for generating hashes for values using several algorithms. It uses the {@link MessageDigest} as
+ * underlying mechanism.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -17,6 +18,12 @@ public final class Digester {
 
     private MessageDigest messageDigest;
 
+    /**
+     * Creates a new Digester instance for the given <code>algorithm</code>.
+     *
+     * @param algorithm The algorithm to use, e.g. "MD5"
+     * @return a fully initialized Digester instance
+     */
     public static Digester newInstance(String algorithm) {
         try {
             return new Digester(MessageDigest.getInstance(algorithm));
@@ -25,13 +32,24 @@ public final class Digester {
         }
     }
 
+    /**
+     * Creates a new Digester instance for the MD5 Algorithm
+     *
+     * @return a Digester instance to create MD5 hashes
+     */
     public static Digester newMD5Instance() {
         return newInstance("MD5");
     }
 
-    public static String md5Hex(String item) {
+    /**
+     * Utility method that creates a hex string of the MD5 hash of the given <code>input</code>
+     *
+     * @param input The value to create a MD5 hash for
+     * @return The hex representation of the MD5 hash of given <code>input</code>
+     */
+    public static String md5Hex(String input) {
         try {
-            return newMD5Instance().update(item.getBytes("UTF-8")).digestHex();
+            return newMD5Instance().update(input.getBytes("UTF-8")).digestHex();
         } catch (UnsupportedEncodingException e) {
             throw new AxonConfigurationException("The UTF-8 encoding is not available on this environment", e);
         }
@@ -41,11 +59,24 @@ public final class Digester {
         this.messageDigest = messageDigest;
     }
 
+    /**
+     * Update the Digester with given <code>additionalData</code>.
+     *
+     * @param additionalData The data to add to the digest source
+     * @return <code>this</code> for method chaining
+     */
     public Digester update(byte[] additionalData) {
         messageDigest.update(additionalData);
         return this;
     }
 
+    /**
+     * Returns the hex representation of the digest of all data that has been provided so far.
+     *
+     * @return the hex representation of the digest of all data that has been provided so far
+     *
+     * @see #update(byte[])
+     */
     public String digestHex() {
         return hex(messageDigest.digest());
     }

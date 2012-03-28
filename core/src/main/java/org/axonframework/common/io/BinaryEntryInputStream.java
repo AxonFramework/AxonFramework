@@ -73,7 +73,7 @@ public class BinaryEntryInputStream {
     public String readString() throws IOException {
         int codePoint = readFistNonWhitespaceCharacter();
         if (codePoint < 0) {
-            return null;
+            return null; //NOSONAR
         }
         StringBuilder sb = new StringBuilder();
         while (!Character.isWhitespace(codePoint) && codePoint >= 0) {
@@ -95,7 +95,7 @@ public class BinaryEntryInputStream {
     public byte[] readBytes() throws IOException {
         int numberOfBytes = (int) readNumber();
         if (numberOfBytes < 0) {
-            return null;
+            return null; //NOSONAR
         }
         byte[] bytesToRead = new byte[numberOfBytes];
         int bytesRead = in.read(bytesToRead);

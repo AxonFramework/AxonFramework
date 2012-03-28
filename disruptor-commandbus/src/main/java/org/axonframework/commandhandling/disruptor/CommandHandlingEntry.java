@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
  * DataHolder for the DisruptorCommandBus. The CommandHandlingEntry maintains all information required for or produced
  * by the command handling process.
  *
+ * @param <T> The type of aggregate being handled
  * @author Allard Buijze
  * @since 2.0
  */
@@ -227,12 +228,12 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     /**
      * Resets this entry, preparing it for use for another command.
      *
-     * @param command  The new command the entry is used for
-     * @param callback The callback to report the result of command execution to
+     * @param newCommand  The new command the entry is used for
+     * @param newCallback The callback to report the result of command execution to
      */
-    public void reset(CommandMessage<?> command, BlacklistDetectingCallback callback) {
-        this.command = command;
-        this.callback = callback;
+    public void reset(CommandMessage<?> newCommand, BlacklistDetectingCallback newCallback) {
+        this.command = newCommand;
+        this.callback = newCallback;
         this.isRecoverEntry = false;
         this.aggregateIdentifier = null;
         result = null;
@@ -246,11 +247,11 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     /**
      * Resets this entry, preparing it for use as a recovery entry.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to recover
+     * @param newAggregateIdentifier The identifier of the aggregate to recover
      */
-    public void resetAsRecoverEntry(Object aggregateIdentifier) {
+    public void resetAsRecoverEntry(Object newAggregateIdentifier) {
         this.isRecoverEntry = true;
-        this.aggregateIdentifier = aggregateIdentifier;
+        this.aggregateIdentifier = newAggregateIdentifier;
         this.command = null;
         this.callback = null;
         result = null;

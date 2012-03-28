@@ -153,6 +153,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param object         The object to serialize
      * @param expectedFormat The format in which the serialized object must be returned
      * @param xStream        The XStream instance to serialize with
+     * @param <T>            The format in which the serialized object must be returned
      * @return The serialized object
      */
     protected abstract <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream);

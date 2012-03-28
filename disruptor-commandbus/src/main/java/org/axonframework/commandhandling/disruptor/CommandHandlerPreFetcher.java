@@ -39,6 +39,7 @@ import java.util.Map;
  * Component of the DisruptorCommandBus that looks up the command handler and prepares the data for the command's
  * execution. It loads the targeted aggregate and prepares the interceptor chain.
  *
+ * @param <T> The type of aggregate being handled
  * @author Allard Buijze
  * @since 2.0
  */

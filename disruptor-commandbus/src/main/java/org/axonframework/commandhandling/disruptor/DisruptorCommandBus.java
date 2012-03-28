@@ -100,6 +100,7 @@ import static java.lang.String.format;
  * this method severely impacts overall performance of the DisruptorCommandBus. A better performing alternative is, for
  * example, <a href="http://johannburkard.de/software/uuid/" target="_blank"><code>com.eaio.uuid.UUID</code></a>
  *
+ * @param <T> The type of aggregate for which commands are handled by this Command Bus.
  * @author Allard Buijze
  * @since 2.0
  */
@@ -195,16 +196,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
 
     @Override
     public void dispatch(final CommandMessage<?> command) {
-        dispatch(command, new CommandCallback<Object>() {
-            @Override
-            public void onSuccess(Object result) {
-            }
-
-            @Override
-            public void onFailure(Throwable cause) {
-                logger.warn("Command {} resulted in an exception:", command.getPayloadType().getSimpleName(), cause);
-            }
-        });
+        dispatch(command, null);
     }
 
     @Override
@@ -213,6 +205,14 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         doDispatch(command, callback);
     }
 
+    /**
+     * Forces a dispatch of a command. This method should be used with caution. It allows commands to be retried during
+     * the cooling down period of the disruptor.
+     *
+     * @param command  The command to dispatch
+     * @param callback The callback to notify when command handling is completed
+     * @param <R>      The expected return type of the command
+     */
     public <R> void doDispatch(CommandMessage command, CommandCallback<R> callback) {
         Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or redispatch commands");
         RingBuffer<CommandHandlingEntry<T>> ringBuffer = disruptor.getRingBuffer();
