@@ -32,8 +32,9 @@ import org.axonframework.unitofwork.UnitOfWork;
  * Work interceptor <em>before</em> the AuditingInterceptor. Failure to do so will result in an {@link
  * org.axonframework.common.AxonConfigurationException}.
  * <p/>
- * The auditing interceptor can only attach meta data to event whose {@link org.axonframework.domain.EventMessage#getMetaData()}
- * methods returns an instance of {@link org.axonframework.domain.MetaData}, which is the default behavior
+ * The auditing interceptor can only attach meta data to event whose {@link
+ * org.axonframework.domain.EventMessage#getMetaData()} methods returns an instance of {@link
+ * org.axonframework.domain.MetaData}, which is the default behavior
  * for any event implementation provided by Axon.
  *
  * @author Allard Buijze

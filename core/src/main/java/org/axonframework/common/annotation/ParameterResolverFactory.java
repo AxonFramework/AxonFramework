@@ -24,10 +24,10 @@ import java.util.ServiceLoader;
  */
 public abstract class ParameterResolverFactory {
 
-    private static final ServiceLoader<ParameterResolverFactory> factoryLoader =
+    private static final ServiceLoader<ParameterResolverFactory> FACTORY_LOADER =
             ServiceLoader.load(ParameterResolverFactory.class);
 
-    private static final DefaultParameterResolverFactory defaultFactory = new DefaultParameterResolverFactory();
+    private static final DefaultParameterResolverFactory DEFAULT_FACTORY = new DefaultParameterResolverFactory();
 
     /**
      * Iterates over all known ParameterResolverFactory implementations to create a ParameterResolver instance for the
@@ -43,12 +43,12 @@ public abstract class ParameterResolverFactory {
     public static ParameterResolver findParameterResolver(Annotation[] memberAnnotations, Class<?> parameterType,
                                                           Annotation[] parameterAnnotations) {
         ParameterResolver resolver = null;
-        Iterator<ParameterResolverFactory> factories = factoryLoader.iterator();
+        Iterator<ParameterResolverFactory> factories = FACTORY_LOADER.iterator();
         while (resolver == null && factories.hasNext()) {
             resolver = factories.next().createInstance(memberAnnotations, parameterType, parameterAnnotations);
         }
         if (resolver == null) {
-            resolver = defaultFactory.createInstance(memberAnnotations, parameterType, parameterAnnotations);
+            resolver = DEFAULT_FACTORY.createInstance(memberAnnotations, parameterType, parameterAnnotations);
         }
         return resolver;
     }
@@ -61,7 +61,7 @@ public abstract class ParameterResolverFactory {
      * @return a ParameterResolver that resolves the payload of a given message
      */
     public static ParameterResolver createPayloadResolver(Class<?> parameterType) {
-        return defaultFactory.newPayloadResolver(parameterType);
+        return DEFAULT_FACTORY.newPayloadResolver(parameterType);
     }
 
     /**

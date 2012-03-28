@@ -76,7 +76,8 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
             }
         }
 
-        // special case: methods with equal signature on EventListener must be rejected, because it interferes with the Proxy mechanism
+        /* special case: methods with equal signature on EventListener must be rejected,
+           because it interferes with the Proxy mechanism */
         if (method.getName().equals("handle")
                 && Arrays.equals(method.getParameterTypes(), new Class[]{EventMessage.class})) {
             throw new UnsupportedHandlerException(String.format(

@@ -49,7 +49,8 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     private final AnnotatedSagaManager sagaManager;
     private final List<Object> registeredResources = new LinkedList<Object>();
 
-    private Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<Object, AggregateEventPublisherImpl>();
+    private Map<Object, AggregateEventPublisherImpl> aggregatePublishers =
+            new HashMap<Object, AggregateEventPublisherImpl>();
     private FixtureExecutionResultImpl fixtureExecutionResult;
 
     /**

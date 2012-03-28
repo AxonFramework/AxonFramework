@@ -33,7 +33,8 @@ import java.util.List;
  */
 public class AggregateCommandHandlerInspector<T extends AggregateRoot> extends AbstractHandlerInspector {
 
-    private final List<ConstructorCommandMessageHandler<T>> constructorCommandHandlers = new LinkedList<ConstructorCommandMessageHandler<T>>();
+    private final List<ConstructorCommandMessageHandler<T>> constructorCommandHandlers =
+            new LinkedList<ConstructorCommandMessageHandler<T>>();
 
     /**
      * Initialize an AbstractHandlerInspector, where the given <code>annotationType</code> is used to annotate the

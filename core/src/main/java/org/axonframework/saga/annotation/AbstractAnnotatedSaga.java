@@ -23,7 +23,6 @@ import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * Implementation of the {@link Saga interface} that delegates incoming events to {@link
@@ -42,7 +41,9 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private volatile boolean isActive = true;
 
     /**
-     * Initialize the saga with a random identifier. The identifier used is a randomly generated {@link UUID}.
+     * Initialize the saga with a random identifier. The identifier used is provided by {@link
+     * org.axonframework.domain.IdentifierFactory#generateIdentifier()}, which defaults to a randomly generated {@link
+     * java.util.UUID}.
      */
     protected AbstractAnnotatedSaga() {
         this(IdentifierFactory.getInstance().generateIdentifier());
@@ -162,5 +163,4 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     protected void removeAssociationWith(String key, Number value) {
         removeAssociationWith(key, value.toString());
     }
-
 }

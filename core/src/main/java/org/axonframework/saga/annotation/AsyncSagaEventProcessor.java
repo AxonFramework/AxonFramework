@@ -88,9 +88,8 @@ final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingE
                 break;
             case IF_NONE_FOUND:
                 persistProcessedSagas(true);
-                boolean shouldCreate = entry.waitForSagaCreationVote(sagaInvoked, processorCount,
-                                                                     ownedByCurrentProcessor(entry.getNewSaga()
-                                                                                                  .getSagaIdentifier()));
+                boolean shouldCreate = entry.waitForSagaCreationVote(
+                        sagaInvoked, processorCount, ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier()));
                 if (shouldCreate) {
                     processedSagas.put(entry.getNewSaga().getSagaIdentifier(), entry.getNewSaga());
                     entry.getNewSaga().handle(entry.getPublishedEvent());
@@ -147,7 +146,7 @@ final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingE
     }
 
     private boolean ownedByCurrentProcessor(String sagaIdentifier) {
-        return processedSagas.containsKey(sagaIdentifier) ||
-                Math.abs(sagaIdentifier.hashCode() & Integer.MAX_VALUE) % processorCount == processorId;
+        return processedSagas.containsKey(sagaIdentifier)
+                || Math.abs(sagaIdentifier.hashCode() & Integer.MAX_VALUE) % processorCount == processorId;
     }
 }

@@ -28,8 +28,9 @@ import org.w3c.dom.Element;
 /**
  * The AnnotationConfigurationBeanDefinitionParser is responsible for parsing the annotation-config element from the
  * Axon namespace. The parser registers {@link org.springframework.beans.factory.config.BeanDefinition}s for an {@link
- * AnnotationCommandHandlerBeanPostProcessor} and an {@link org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor},
- * with optional configuration for an explicit {@link org.axonframework.commandhandling.CommandBus}, {@link
+ * AnnotationCommandHandlerBeanPostProcessor} and an
+ * {@link org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor}, with optional
+ * configuration for an explicit {@link org.axonframework.commandhandling.CommandBus}, {@link
  * org.axonframework.eventhandling.EventBus} and {@link java.util.concurrent.Executor} instance.
  *
  * @author Ben Z. Tels

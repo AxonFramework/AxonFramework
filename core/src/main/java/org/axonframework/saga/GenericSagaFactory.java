@@ -19,15 +19,19 @@ package org.axonframework.saga;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import static java.lang.String.format;
+
 /**
- * SagaFactory implementation that uses the default (no-arg) constructor on the saga to initialize. After instantiation,
- * its resources are injected using an optional {@link #setResourceInjector(ResourceInjector) resource injector}.
+ * SagaFactory implementation that uses the default (no-arg) constructor on the saga to initialize. After
+ * instantiation, its resources are injected using an optional {@link #setResourceInjector(ResourceInjector) resource
+ * injector}.
  *
  * @author Allard Buijze
  * @since 0.7
  */
 public class GenericSagaFactory implements SagaFactory {
 
+    private static final String UNSUITABLE_CTR_MSG = "[%s] is not a suitable type for the GenericSagaFactory. ";
     private ResourceInjector resourceInjector = NullResourceInjector.INSTANCE;
 
     @Override
@@ -37,21 +41,21 @@ public class GenericSagaFactory implements SagaFactory {
             resourceInjector.injectResources(instance);
             return instance;
         } catch (InstantiationException e) {
-            throw new IllegalArgumentException(String.format("[%s] is not a suitable type for the GenericSagaFactory. "
-                                                                     + "It needs an accessible default constructor.",
-                                                             sagaType.getSimpleName()), e);
+            throw new IllegalArgumentException(
+                    format(UNSUITABLE_CTR_MSG + "It needs an accessible default constructor.",
+                           sagaType.getSimpleName()), e);
         } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException(String.format("[%s] is not a suitable type for the GenericSagaFactory. "
-                                                                     + "The default constructor is not accessible.",
-                                                             sagaType.getSimpleName()), e);
+            throw new IllegalArgumentException(
+                    format(UNSUITABLE_CTR_MSG + "The default constructor is not accessible.",
+                           sagaType.getSimpleName()), e);
         } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException(String.format("[%s] is not a suitable type for the GenericSagaFactory. "
-                                                                     + "An exception occurred while invoking the default constructor.",
-                                                             sagaType.getSimpleName()), e);
+            throw new IllegalArgumentException(
+                    format(UNSUITABLE_CTR_MSG + "An exception occurred while invoking the default constructor.",
+                           sagaType.getSimpleName()), e);
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(String.format("[%s] is not a suitable type for the GenericSagaFactory. "
-                                                                     + "There must be an accessible default (no-arg) constructor.",
-                                                             sagaType.getSimpleName()), e);
+            throw new IllegalArgumentException(
+                    format(UNSUITABLE_CTR_MSG + "There must be an accessible default (no-arg) constructor.",
+                           sagaType.getSimpleName()), e);
         }
     }
 

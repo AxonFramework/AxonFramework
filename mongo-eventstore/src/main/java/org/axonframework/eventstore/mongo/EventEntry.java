@@ -132,6 +132,7 @@ class EventEntry {
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
      * @return The actual DomainEvent
      */
+    @SuppressWarnings("unchecked")
     public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
         Class<?> representationType = String.class;
         if (serializedPayload instanceof DBObject) {
@@ -143,11 +144,9 @@ class EventEntry {
                 sequenceNumber,
                 new DateTime(timeStamp),
                 new LazyDeserializingObject<Object>(
-                        new SimpleSerializedObject(serializedPayload, representationType, payoadType,
-                                                   payloadRevision),
+                        new SimpleSerializedObject(serializedPayload, representationType, payoadType, payloadRevision),
                         eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData,
-                                                                             representationType),
+                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData, representationType),
                                                       eventSerializer));
     }
 

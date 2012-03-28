@@ -75,12 +75,12 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     }
 
     /**
-     * Checks the aggregate for concurrent changes. Throws a {@link org.axonframework.repository.ConflictingModificationException}
-     * when conflicting changes have been detected.
+     * Checks the aggregate for concurrent changes. Throws a
+     * {@link org.axonframework.repository.ConflictingModificationException} when conflicting changes have been
+     * detected.
      * <p/>
      * This implementation throws a {@link ConflictingAggregateVersionException} if the expected version is not null
-     * and
-     * the version number of the aggregate does not match the expected version
+     * and the version number of the aggregate does not match the expected version
      *
      * @param aggregate       The loaded aggregate
      * @param expectedVersion The expected version of the aggregate

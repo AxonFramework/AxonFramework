@@ -109,7 +109,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
 
-    private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
+    private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers =
+            new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private final Disruptor<CommandHandlingEntry<T>> disruptor;
     private final CommandHandlerInvoker<T> commandHandlerInvoker;
     private final ExecutorService executorService;

@@ -28,7 +28,8 @@ import org.axonframework.eventstore.EventVisitor;
 public interface EventStoreManagement {
 
     /**
-     * Loads all events available in the event store and calls {@link org.axonframework.eventstore.EventVisitor#doWithEvent(org.axonframework.domain.DomainEventMessage)}
+     * Loads all events available in the event store and calls
+     * {@link org.axonframework.eventstore.EventVisitor#doWithEvent(org.axonframework.domain.DomainEventMessage)}
      * for each event found. Events of a single aggregate are guaranteed to be ordered by their sequence number.
      * <p/>
      * Implementations are encouraged, though not required, to supply events in the absolute chronological order.

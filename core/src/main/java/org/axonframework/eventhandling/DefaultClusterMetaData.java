@@ -34,7 +34,7 @@ public class DefaultClusterMetaData implements ClusterMetaData {
     @Override
     public Object getProperty(String key) {
         Object value = properties.get(key);
-        return value == NULL_REPLACEMENT ? null : value;
+        return value == NULL_REPLACEMENT ? null : value; // NOSONAR Intentional
     }
 
     @Override

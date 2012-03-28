@@ -37,8 +37,8 @@ public class LazyDeserializingObject<T> implements Serializable {
 
     private static final long serialVersionUID = -5533042142349963796L;
 
-    private transient final SerializedObject serializedObject;
-    private transient final Serializer payloadSerializer;
+    private final transient SerializedObject serializedObject;
+    private final transient Serializer payloadSerializer;
     private transient volatile Class<?> objectType;
     private volatile T deserialized;
 

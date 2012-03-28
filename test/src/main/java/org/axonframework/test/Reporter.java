@@ -118,12 +118,12 @@ class Reporter {
         StringBuilder sb = new StringBuilder("The command handler threw an unexpected exception");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("Expected <")
-          .append(expectation.toString())
-          .append("> but got <exception of type [")
-          .append(actualException.getClass().getSimpleName())
-          .append("]>. Stack trace follows:")
-          .append(NEWLINE);
+                .append("Expected <") //NOSONAR
+                .append(expectation.toString())
+                .append("> but got <exception of type [")
+                .append(actualException.getClass().getSimpleName())
+                .append("]>. Stack trace follows:")
+                .append(NEWLINE);
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
@@ -139,7 +139,7 @@ class Reporter {
         StringBuilder sb = new StringBuilder("The command handler returned an unexpected value");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("Expected <");
+          .append("Expected <"); //NOSONAR
         sb.append(expectation.toString());
         sb.append("> but got <");
         describe(actualReturnValue, sb);
@@ -158,7 +158,7 @@ class Reporter {
         StringBuilder sb = new StringBuilder("The command handler returned normally, but an exception was expected");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("Expected <");
+          .append("Expected <"); //NOSONAR
         sb.append(description.toString());
         sb.append("> but returned with <");
         describe(actualReturnValue, sb);
@@ -177,12 +177,12 @@ class Reporter {
         StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("Expected <")
-          .append(description.toString())
-          .append("> but got <exception of type [")
-          .append(actualException.getClass().getSimpleName())
-          .append("]>. Stacktrace follows: ")
-          .append(NEWLINE);
+                .append("Expected <") //NOSONAR
+                .append(description.toString())
+                .append("> but got <exception of type [")
+                .append(actualException.getClass().getSimpleName())
+                .append("]>. Stacktrace follows: ")
+                .append(NEWLINE);
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
@@ -214,12 +214,12 @@ class Reporter {
 
         sb.append("was not as expected.")
           .append(NEWLINE)
-          .append("Expected <")
-          .append(nullSafeToString(expected))
-          .append("> but got <")
-          .append(nullSafeToString(actual))
-          .append(">")
-          .append(NEWLINE);
+                .append("Expected <") //NOSONAR
+                .append(nullSafeToString(expected))
+                .append("> but got <")
+                .append(nullSafeToString(actual))
+                .append(">")
+                .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 

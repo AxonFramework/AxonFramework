@@ -42,7 +42,8 @@ class SnapshotEventEntry {
      * @param timeStamp       The ISO8601 timestamp of the event
      * @param offset          The offset that the event allows in the event log
      */
-    public SnapshotEventEntry(SerializedObject<byte[]> serializedEvent, long sequenceNumber, String timeStamp, long offset) {
+    public SnapshotEventEntry(SerializedObject<byte[]> serializedEvent, long sequenceNumber, String timeStamp,
+                              long offset) {
         this.offset = offset;
         this.timeStamp = timeStamp;
         this.serializedEvent = serializedEvent;

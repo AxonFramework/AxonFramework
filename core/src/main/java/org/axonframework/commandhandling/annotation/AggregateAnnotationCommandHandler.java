@@ -48,7 +48,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     private final AggregateCommandHandlerInspector<T> inspector;
     private final Repository<T> repository;
 
-    private final Map<Class<Object>, CommandHandler<Object>> registeredCommandHandlers = new HashMap<Class<Object>, CommandHandler<Object>>();
+    private final Map<Class<Object>, CommandHandler<Object>> registeredCommandHandlers =
+            new HashMap<Class<Object>, CommandHandler<Object>>();
     private final CommandTargetResolver commandTargetResolver;
 
     /**

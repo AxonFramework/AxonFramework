@@ -16,7 +16,8 @@ import java.util.concurrent.TimeoutException;
  * CommandMessages, if necessary. If the passed object is already a CommandMessage, it is dispatched as-is.
  * <p/>
  * The <code>sendAndWait</code> methods in this template throw any runtime exceptions and errors that resulted from
- * command execution as-is. Checked exceptions are wrapped in a {@link org.axonframework.commandhandling.CommandExecutionException}.
+ * command execution as-is. Checked exceptions are wrapped in a
+ * {@link org.axonframework.commandhandling.CommandExecutionException}.
  *
  * @author Allard Buijze
  * @since 1.3
@@ -43,7 +44,8 @@ public class CommandTemplate {
      * @return The result of the command handler execution
      *
      * @throws InterruptedException when the thread is interrupted while waiting
-     * @throws org.axonframework.commandhandling.CommandExecutionException when command execution threw a checked exception
+     * @throws org.axonframework.commandhandling.CommandExecutionException
+     *                              when command execution threw a checked exception
      */
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) throws InterruptedException {
@@ -62,7 +64,8 @@ public class CommandTemplate {
      *
      * @throws InterruptedException when the thread is interrupted while waiting
      * @throws TimeoutException     when the given timeout has expired while waiting for a result
-     * @throws org.axonframework.commandhandling.CommandExecutionException when command execution threw a checked exception
+     * @throws org.axonframework.commandhandling.CommandExecutionException
+     *                              when command execution threw a checked exception
      */
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) throws TimeoutException,

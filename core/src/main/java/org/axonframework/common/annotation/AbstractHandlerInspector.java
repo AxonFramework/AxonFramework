@@ -54,12 +54,12 @@ public abstract class AbstractHandlerInspector {
                 if (!handlers.add(eventHandlerMethod)) {
                     MethodMessageHandler existing = handlers.tailSet(eventHandlerMethod).first();
                     throw new UnsupportedHandlerException(
-                            String.format(
-                                    "The class %s contains two handler methods (%s and %s) that listen to the same Event type: %s",
-                                    method.getDeclaringClass().getSimpleName(),
-                                    eventHandlerMethod.getMethodName(),
-                                    existing.getMethodName(),
-                                    eventHandlerMethod.getPayloadType().getSimpleName()), method);
+                            String.format("The class %s contains two handler methods (%s and %s) that listen "
+                                                  + "to the same Event type: %s",
+                                          method.getDeclaringClass().getSimpleName(),
+                                          eventHandlerMethod.getMethodName(),
+                                          existing.getMethodName(),
+                                          eventHandlerMethod.getPayloadType().getSimpleName()), method);
                 }
             }
         }

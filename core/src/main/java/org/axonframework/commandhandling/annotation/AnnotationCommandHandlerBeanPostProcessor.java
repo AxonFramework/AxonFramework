@@ -62,9 +62,10 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
         if (commandBus == null) {
             Map<String, CommandBus> beans = getApplicationContext().getBeansOfType(CommandBus.class);
             if (beans.size() != 1) {
-                throw new IllegalStateException("If no specific CommandBus is provided, the application context must "
-                                                        + "contain exactly one bean of type CommandBus. The current application context has: "
-                                                        + beans.size());
+                throw new IllegalStateException(
+                        "If no specific CommandBus is provided, the application context must "
+                                + "contain exactly one bean of type CommandBus. The current application context has: "
+                                + beans.size());
             }
             this.commandBus = beans.entrySet().iterator().next().getValue();
         }

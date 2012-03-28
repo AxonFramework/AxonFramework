@@ -73,9 +73,10 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
         if (eventBus == null) {
             Map<String, EventBus> beans = getApplicationContext().getBeansOfType(EventBus.class);
             if (beans.size() != 1) {
-                throw new IllegalStateException("If no specific EventBus is provided, the application context must "
-                                                        + "contain exactly one bean of type EventBus. The current application context has: "
-                                                        + beans.size());
+                throw new IllegalStateException(
+                        "If no specific EventBus is provided, the application context must "
+                                + "contain exactly one bean of type EventBus. The current application context has: "
+                                + beans.size());
             }
             this.eventBus = beans.entrySet().iterator().next().getValue();
         }

@@ -120,7 +120,7 @@ public abstract class AbstractSagaRepository implements SagaRepository {
      * @return <code>true</code> if both references point to exactly the same instance
      */
     private boolean isSameInstance(Saga sagaInstance, Saga anotherSaga) {
-        return sagaInstance == anotherSaga;
+        return sagaInstance == anotherSaga; // NOSONAR (intentional)
     }
 
     @Override

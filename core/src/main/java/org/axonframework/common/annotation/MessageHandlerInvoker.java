@@ -91,7 +91,7 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
     /**
      * Callback used in cases where the handler did not find a suitable method to invoke.
      */
-    public static interface NoMethodFoundCallback<T extends Message> {
+    public interface NoMethodFoundCallback<T extends Message> {
 
         /**
          * Indicates what needs to happen when no handler is found for a given parameter. The default behavior is to

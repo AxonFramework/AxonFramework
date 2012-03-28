@@ -142,7 +142,8 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
                     boolean executionScheduled = scheduleDelayedExecution(waitTimeRemaining);
                     if (!executionScheduled) {
                         logger.warn("The provided executor does not seem to support delayed execution. Scheduling for "
-                                            + "immediate processing and expecting processing to wait if scheduled to soon.");
+                                            + "immediate processing and expecting processing to wait "
+                                            + "if scheduled to soon.");
                         executor.execute(this);
                     }
                 }
@@ -313,7 +314,7 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
 
     private void handleEventBatch(TransactionStatus status) {
         T event;
-        while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) {
+        while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) { // NOSONAR
             startTransactionIfNecessary(status);
             doHandle(event);
             status.recordEventProcessed();

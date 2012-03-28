@@ -34,6 +34,7 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     private static final long serialVersionUID = -7892913866303912970L;
     private static final MetaData EMPTY_META_DATA = new MetaData();
+    private static final String UNSUPPORTED_MUTATION_MSG = "Event meta-data is immutable.";
 
     private final Map<String, Object> values;
 
@@ -90,7 +91,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      */
     @Override
     public Object put(String key, Object value) {
-        throw new UnsupportedOperationException("Event meta-data is immutable.");
+        throw new UnsupportedOperationException(UNSUPPORTED_MUTATION_MSG);
     }
 
     /**
@@ -100,7 +101,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      */
     @Override
     public Object remove(Object key) {
-        throw new UnsupportedOperationException("Event meta-data is immutable.");
+        throw new UnsupportedOperationException(UNSUPPORTED_MUTATION_MSG);
     }
 
     /**
@@ -110,7 +111,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      */
     @Override
     public void putAll(Map<? extends String, ?> m) {
-        throw new UnsupportedOperationException("Event meta-data is immutable.");
+        throw new UnsupportedOperationException(UNSUPPORTED_MUTATION_MSG);
     }
 
     /**
@@ -120,7 +121,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      */
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("Event meta-data is immutable.");
+        throw new UnsupportedOperationException(UNSUPPORTED_MUTATION_MSG);
     }
 
     @Override

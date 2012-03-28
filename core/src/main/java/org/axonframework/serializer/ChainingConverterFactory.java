@@ -70,8 +70,8 @@ public class ChainingConverterFactory implements ConverterFactory {
     private <S, T> boolean canConvert(ContentTypeConverter converter, Class<S> sourceContentType,
                                       Class<T> targetContentType) {
         try {
-            if (converter.expectedSourceType().isAssignableFrom(sourceContentType) &&
-                    targetContentType.isAssignableFrom(converter.targetType())) {
+            if (converter.expectedSourceType().isAssignableFrom(sourceContentType)
+                    && targetContentType.isAssignableFrom(converter.targetType())) {
                 return true;
             }
             // we do this call to make sure target Type is on the classpath

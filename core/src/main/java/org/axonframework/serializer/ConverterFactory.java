@@ -20,7 +20,7 @@ public interface ConverterFactory {
      * @param <T>               The type of target data for which a converter must be available
      * @return <code>true</code> if a converter is available, otherwise <code>false</code>.
      */
-    public <S, T> boolean hasConverter(Class<S> sourceContentType, Class<T> targetContentType);
+    <S, T> boolean hasConverter(Class<S> sourceContentType, Class<T> targetContentType);
 
     /**
      * Returns a converter that is capable of converting IntermediateRepresentation object containing the given

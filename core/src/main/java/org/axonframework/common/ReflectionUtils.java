@@ -147,7 +147,7 @@ public abstract class ReflectionUtils {
      */
     @SuppressWarnings("unchecked")
     public static boolean explicitlyUnequal(Object value, Object otherValue) {
-        if (value == otherValue) {
+        if (value == otherValue) { // NOSONAR (The == comparison is intended here)
             return false;
         } else if (value == null || otherValue == null) {
             return true;

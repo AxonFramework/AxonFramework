@@ -91,14 +91,16 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
             this.typeIdentifier = prototypeBeanName;
         }
         if (!applicationContext.isPrototype(prototypeBeanName)) {
-            throw new IncompatibleAggregateException(format("Cannot initialize repository '%s'. "
-                                                                    + "The bean with name '%s' does not have the prototype scope.",
-                                                            beanName, prototypeBeanName));
+            throw new IncompatibleAggregateException(
+                    format("Cannot initialize repository '%s'. "
+                                   + "The bean with name '%s' does not have the prototype scope.",
+                           beanName, prototypeBeanName));
         }
         if (!EventSourcedAggregateRoot.class.isAssignableFrom(applicationContext.getType(prototypeBeanName))) {
-            throw new IncompatibleAggregateException(format("Cannot initialize repository '%s'. "
-                                                                    + "The bean with name '%s' does not extend from EventSourcingAggregateRoot.",
-                                                            beanName, prototypeBeanName));
+            throw new IncompatibleAggregateException(
+                    format("Cannot initialize repository '%s'. "
+                                   + "The bean with name '%s' does not extend from EventSourcingAggregateRoot.",
+                           beanName, prototypeBeanName));
         }
     }
 }

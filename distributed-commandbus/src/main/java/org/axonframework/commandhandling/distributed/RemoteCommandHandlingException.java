@@ -22,8 +22,8 @@ import org.axonframework.common.AxonException;
  * Exception indicating that an error has occurred while remotely handling a command. This may mean that a command was
  * dispatched, but the segment that handled the command is no longer available.
  * <p/>
- * The sender of the command <strong>cannot</strong> assume that the command has not been handled. It may, if the type of
- * command or the infrastructure allows it, try to dispatch the command again.
+ * The sender of the command <strong>cannot</strong> assume that the command has not been handled. It may, if the type
+ * of command or the infrastructure allows it, try to dispatch the command again.
  *
  * @author Allard Buijze
  * @since 2.0

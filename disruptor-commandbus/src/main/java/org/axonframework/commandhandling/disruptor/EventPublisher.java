@@ -119,7 +119,8 @@ public class EventPublisher<T extends EventSourcedAggregateRoot> implements Even
                 entry.getCallback(), null,
                 new AggregateStateCorruptedException(
                         unitOfWork.getAggregate(),
-                        format("Aggregate %s has been blacklisted and will be ignored until its state has been recovered.",
+                        format("Aggregate %s has been blacklisted and will be ignored until "
+                                       + "its state has been recovered.",
                                aggregateIdentifier))));
     }
 

@@ -74,7 +74,8 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     private static final String EVENT_STREAM_DECORATORS_PROPERTY = "eventStreamDecorators";
     private static final String SNAPSHOTTER_TRIGGER_PROPERTY = "snapshotterTrigger";
 
-    private final SnapshotterTriggerBeanDefinitionParser snapshotterTriggerParser = new SnapshotterTriggerBeanDefinitionParser();
+    private final SnapshotterTriggerBeanDefinitionParser snapshotterTriggerParser =
+            new SnapshotterTriggerBeanDefinitionParser();
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {

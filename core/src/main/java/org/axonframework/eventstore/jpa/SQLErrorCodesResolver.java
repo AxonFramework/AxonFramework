@@ -36,10 +36,18 @@ import javax.sql.DataSource;
  * it is an duplicate key constraint violation.
  * <p/>
  * SQL Code configuration is available for the following database engines, which may be identifier automatically via
- * the
- * data source: <ul> <li>HSQL DB</li> <li>MySQL</li> <li>Apache Derby</li> <li>DB2</li> <li>H2</li> <li>Informix
- * Dynamic
- * Server</li> <li>MS SQL Server</li> <li>Oracle</li> <li>PostgreSQL</li> <li>Sybase</li> </ul>
+ * the data source: <ul>
+ * <li>HSQL DB</li>
+ * <li>MySQL</li>
+ * <li>Apache Derby</li>
+ * <li>DB2</li>
+ * <li>H2</li>
+ * <li>Informix Dynamic Server</li>
+ * <li>MS SQL Server</li>
+ * <li>Oracle</li>
+ * <li>PostgreSQL</li>
+ * <li>Sybase</li>
+ * </ul>
  *
  * @author Martin Tilma
  * @author Allard Buijze
@@ -95,7 +103,8 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
      * database product name is used to resolve the database error codes. As an alternative you could set the property
      * databaseDuplicateKeyCodes
      * <p/>
-     * The form of the properies is expected to be:<br/> <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
+     * The form of the properies is expected to be:<br/>
+     * <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
      * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
      * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
      *
@@ -111,7 +120,8 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
      * Initialize the SQLErrorCodesResolver with the given <code>properties</code> and use the <code>dataSource</code>
      * to automatically retrieve the database product name.
      * <p/>
-     * The form of the properies is expected to be:<br/> <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
+     * The form of the properies is expected to be:<br/>
+     * <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
      * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
      * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
      *

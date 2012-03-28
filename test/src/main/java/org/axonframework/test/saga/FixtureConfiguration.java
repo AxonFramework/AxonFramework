@@ -43,7 +43,8 @@ public interface FixtureConfiguration {
     /**
      * Use this method to indicate that an aggregate with given identifier published certain events.
      * <p/>
-     * Can be chained to build natural sentences:<br/> <code>andThenAggregate(someIdentifier).published(someEvents)</code>
+     * Can be chained to build natural sentences:<br/>
+     * <code>andThenAggregate(someIdentifier).published(someEvents)</code>
      *
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send

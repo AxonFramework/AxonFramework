@@ -44,8 +44,8 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
     private final Object aggregateIdentifier;
     private final String eventIdentifier;
     private final DateTime timestamp;
-    private transient final LazyDeserializingObject<MetaData> serializedMetaData;
-    private transient final LazyDeserializingObject<T> serializedPayload;
+    private final transient LazyDeserializingObject<MetaData> serializedMetaData;
+    private final transient LazyDeserializingObject<T> serializedPayload;
 
     /**
      * Creates a new instance with given serialized <code>data</code>, with data to be deserialized with given

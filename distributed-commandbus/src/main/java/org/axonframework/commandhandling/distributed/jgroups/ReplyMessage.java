@@ -21,6 +21,7 @@ import java.io.ObjectOutput;
 public class ReplyMessage implements Streamable, Externalizable {
 
     private static final long serialVersionUID = 6955710928767199410L;
+    private static final String NULL = "_null";
 
     private String commandIdentifier;
     private boolean success;
@@ -125,10 +126,10 @@ public class ReplyMessage implements Streamable, Externalizable {
         out.writeUTF(commandIdentifier);
         out.writeBoolean(success);
         if (resultType == null) {
-            out.writeUTF("_null");
+            out.writeUTF(NULL);
         } else {
             out.writeUTF(resultType);
-            out.writeUTF(resultRevision == null ? "_null" : resultRevision);
+            out.writeUTF(resultRevision == null ? NULL : resultRevision);
             out.writeInt(serializedResult.length);
             out.write(serializedResult);
         }
@@ -139,11 +140,11 @@ public class ReplyMessage implements Streamable, Externalizable {
         commandIdentifier = in.readUTF();
         success = in.readBoolean();
         resultType = in.readUTF();
-        if ("_null".equals(resultType)) {
+        if (NULL.equals(resultType)) {
             resultType = null;
         } else {
             resultRevision = in.readUTF();
-            if ("_null".equals(resultRevision)) {
+            if (NULL.equals(resultRevision)) {
                 resultRevision = null;
             }
             serializedResult = new byte[in.readInt()];

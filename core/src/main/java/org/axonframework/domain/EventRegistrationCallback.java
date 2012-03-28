@@ -18,5 +18,5 @@ public interface EventRegistrationCallback {
      * @param <T>   The type of payload
      * @return the message to actually publish. May <em>not</em> be <code>null</code>.
      */
-    public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event);
+    <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event);
 }

@@ -33,9 +33,8 @@ import java.util.List;
  * typical command handler will require a repository. The test fixture can create a generic repository using the {@link
  * #createRepository(Class)} method. Alternatively, you can register your own repository using the {@link
  * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)} method. Registering the repository
- * will
- * cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by the
- * test.
+ * will cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by
+ * the test.
  * <p/>
  * Typical usage example:<br/> <code>
  * <pre>

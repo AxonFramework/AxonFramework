@@ -46,7 +46,8 @@ public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
-    private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions = new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
+    private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions =
+            new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
     private volatile Iterable<? extends CommandHandlerInterceptor> interceptors = Collections.emptyList();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();

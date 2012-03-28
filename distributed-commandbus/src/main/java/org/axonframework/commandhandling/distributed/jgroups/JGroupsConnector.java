@@ -77,7 +77,8 @@ public class JGroupsConnector implements CommandBusConnector {
     private final CommandBus localSegment;
     private final Serializer serializer;
     private final JoinCondition joinedCondition = new JoinCondition();
-    private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks = new ConcurrentHashMap<String, MemberAwareCommandCallback>();
+    private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks =
+            new ConcurrentHashMap<String, MemberAwareCommandCallback>();
     private final Set<String> supportedCommandTypes = new CopyOnWriteArraySet<String>();
     private volatile int currentLoadFactor;
     private final JGroupsConnector.MessageReceiver messageReceiver;

@@ -63,8 +63,8 @@ public final class IdentifierValidator {
         if (!getInstance().isValidIdentifier(aggregateIdentifier)) {
             throw new IllegalArgumentException("One of the events contains an unsuitable aggregate identifier "
                                                        + "for this EventStore implementation. See reference guide "
-                                                       + "for more information. Suspected class: " +
-                                                       aggregateIdentifier.getClass().getName());
+                                                       + "for more information. Suspected class: "
+                                                       + aggregateIdentifier.getClass().getName());
         }
     }
 

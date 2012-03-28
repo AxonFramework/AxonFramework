@@ -17,7 +17,8 @@ import org.axonframework.commandhandling.CommandMessage;
  */
 public class DistributedCommandBus implements CommandBus {
 
-    private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command on the DistributedCommandBus";
+    private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command "
+            + "on the DistributedCommandBus";
 
     private final RoutingStrategy routingStrategy;
     private final CommandBusConnector connector;
@@ -36,7 +37,7 @@ public class DistributedCommandBus implements CommandBus {
      * <code>routingStrategy</code> is used to calculate a routing key for each dispatched command. For a given
      * configuration of segments, commands resulting in the same routing key are routed to the same segment.
      *
-     * @param connector           the connector that connects the different command bus segments
+     * @param connector       the connector that connects the different command bus segments
      * @param routingStrategy the RoutingStrategy to define routing keys for each command
      */
     public DistributedCommandBus(CommandBusConnector connector, RoutingStrategy routingStrategy) {

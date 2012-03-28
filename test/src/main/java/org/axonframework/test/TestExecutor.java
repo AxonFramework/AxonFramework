@@ -27,9 +27,9 @@ public interface TestExecutor {
 
     /**
      * Dispatches the given command to the appropriate command handler and records all activity in the fixture for
-     * result validation. If the given <code>command</code> is a {@link org.axonframework.commandhandling.CommandMessage}
-     * instance, it will be dispatched as-is. Any other object will cause the given <code>command</code> to be wrapped
-     * in a {@code CommandMessage} as its payload.
+     * result validation. If the given <code>command</code> is a {@link
+     * org.axonframework.commandhandling.CommandMessage} instance, it will be dispatched as-is. Any other object will
+     * cause the given <code>command</code> to be wrapped in a {@code CommandMessage} as its payload.
      *
      * @param command The command to execute
      * @return a ResultValidator that can be used to validate the resulting actions of the command execution
