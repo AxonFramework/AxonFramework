@@ -45,8 +45,8 @@ public class EventContainer implements Serializable {
     private final List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
     private final Object aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
-    private transient Long lastSequenceNumber;
-    private transient List<EventRegistrationCallback> registrationCallbacks;
+    private transient Long lastSequenceNumber; // NOSONAR (intentionally not set by deserialization)
+    private transient List<EventRegistrationCallback> registrationCallbacks; // NOSONAR
 
     /**
      * Initialize an EventContainer for an aggregate with the given <code>aggregateIdentifier</code>. This identifier

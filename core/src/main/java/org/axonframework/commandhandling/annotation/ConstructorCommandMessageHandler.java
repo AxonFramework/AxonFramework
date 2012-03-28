@@ -104,7 +104,7 @@ final class ConstructorCommandMessageHandler<T extends AggregateRoot> extends Ab
         try {
             return constructor.newInstance(parameterValues);
         } catch (InstantiationException e) {
-            throw new InvocationTargetException(e.getCause());
+            throw new InvocationTargetException(e.getCause()); // NOSONAR
         }
     }
 }

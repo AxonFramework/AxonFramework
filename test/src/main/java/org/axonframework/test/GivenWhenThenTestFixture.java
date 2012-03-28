@@ -201,7 +201,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                 assertValidWorkingAggregateState(aggregate2);
             } catch (AggregateNotFoundException notFound) {
                 if (!workingAggregate.isDeleted()) {
-                    throw new AxonAssertionError("The working aggregate was not considered deleted, "
+                    throw new AxonAssertionError("The working aggregate was not considered deleted, " //NOSONAR
                                                          + "but the Repository cannot recover the state of the "
                                                          + "aggregate, as it is considered deleted there.");
                 }
