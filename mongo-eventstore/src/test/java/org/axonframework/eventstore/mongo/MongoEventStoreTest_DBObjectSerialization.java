@@ -79,7 +79,7 @@ public class MongoEventStoreTest_DBObjectSerialization {
             Assume.assumeNoException(e);
         }
         mongoTemplate = new DefaultMongoTemplate(mongo);
-        mongoTemplate.database().dropDatabase();
+        mongoTemplate.domainEventCollection().getDB().dropDatabase();
         aggregate1 = new StubAggregateRoot();
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();

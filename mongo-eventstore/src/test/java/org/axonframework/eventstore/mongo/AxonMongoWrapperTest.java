@@ -60,9 +60,6 @@ public class AxonMongoWrapperTest {
     public void testCustomProvidedNames() throws Exception {
         mongoTemplate = new DefaultMongoTemplate(mockMongo, "customdatabase", "customevents", "customsnapshots");
 
-        mongoTemplate.database();
-        verify(mockMongo).getDB("customdatabase");
-
         mongoTemplate.domainEventCollection();
         verify(mockDb).getCollection("customevents");
 
