@@ -23,9 +23,11 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 import org.junit.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -44,6 +46,7 @@ public class DomainEventEntryTest {
                                                                                    byte[].class);
     private Serializer mockSerializer;
     private MetaData metaData;
+    private UpcasterChain upcasterChain = new UpcasterChain(new ArrayList());
 
     @Before
     public void setUp() {
@@ -72,7 +75,7 @@ public class DomainEventEntryTest {
         assertEquals(2L, actualResult.getSequenceNumber());
         assertEquals(timestamp, actualResult.getTimestamp());
         assertEquals("test", actualResult.getType());
-        DomainEventMessage<?> domainEvent = actualResult.getDomainEvent(mockSerializer);
+        DomainEventMessage<?> domainEvent = actualResult.getDomainEvents(mockSerializer, upcasterChain).get(0);
         assertTrue(domainEvent instanceof SerializedDomainEventMessage);
         verify(mockSerializer, never()).deserialize(mockPayload);
         verify(mockSerializer, never()).deserialize(mockMetaData);

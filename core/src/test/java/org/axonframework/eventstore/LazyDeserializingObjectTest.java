@@ -19,6 +19,7 @@ package org.axonframework.eventstore;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
@@ -26,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collections;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -34,25 +36,35 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 public class LazyDeserializingObjectTest {
+    
+    private final static int INDEX_ON_UPCASTED_OBJECT = 0;
 
     private Serializer mockSerializer;
-    private SerializedObject mockSerializedObject;
-    private SerializedType mockSerializedType;
-    private String mockDeserializedObject = "I am a mock";
+    private LazyUpcastingObject mockSerializedObject;
+
+    private SerializedType mockUpcastedType;
+    private SerializedObject mockUpcastedObject;
+
+    private String mockDeserializedObject = "I'm a mock";
 
     @Before
     public void setUp() throws Exception {
         mockSerializer = mock(Serializer.class);
-        mockSerializedObject = mock(SerializedObject.class);
-        when(mockSerializer.classForType(mockSerializedType)).thenReturn(String.class);
-        when(mockSerializedObject.getType()).thenReturn(mockSerializedType);
-        when(mockSerializer.deserialize(mockSerializedObject)).thenReturn(mockDeserializedObject);
+        mockUpcastedType = mock(SerializedType.class);
+        mockUpcastedObject = new SimpleSerializedObject(mockDeserializedObject, mockDeserializedObject.getClass(), "Mock", "0");
+
+        mockSerializedObject = mock(LazyUpcastingObject.class);
+        when(mockSerializedObject.getTypes()).thenReturn(Collections.singletonList(mockUpcastedType));
+        when(mockSerializedObject.getObjects()).thenReturn(Collections.singletonList(mockUpcastedObject));
+
+        when(mockSerializer.classForType(mockSerializedObject.getTypes().get(INDEX_ON_UPCASTED_OBJECT))).thenReturn(String.class);
+        when(mockSerializer.deserialize(mockSerializedObject.getObjects().get(INDEX_ON_UPCASTED_OBJECT))).thenReturn(mockDeserializedObject);
     }
 
     @Test
     public void testLazilyDeserialized() {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockSerializedObject,
-                                                                                          mockSerializer);
+                                                                                          mockSerializer, INDEX_ON_UPCASTED_OBJECT);
         verify(mockSerializer, never()).deserialize(any(SerializedObject.class));
         assertEquals(String.class, testSubject.getType());
         assertFalse(testSubject.isDeserialized());
@@ -63,18 +75,18 @@ public class LazyDeserializingObjectTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testLazilyDeserialized_NullObject() {
-        new LazyDeserializingObject<Object>(null, mockSerializer);
+        new LazyDeserializingObject<Object>(null, mockSerializer, INDEX_ON_UPCASTED_OBJECT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testLazilyDeserialized_NullSerializer() {
-        new LazyDeserializingObject<Object>(mockSerializedObject, null);
+        new LazyDeserializingObject<Object>(mockSerializedObject, null, INDEX_ON_UPCASTED_OBJECT);
     }
 
     @Test
     public void testWithProvidedDeserializedInstance() {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockDeserializedObject);
-        assertEquals(String.class, testSubject.getType());
+        assertEquals(mockDeserializedObject.getClass(), testSubject.getType());
         assertSame(mockDeserializedObject, testSubject.getObject());
         assertTrue(testSubject.isDeserialized());
     }
@@ -88,15 +100,16 @@ public class LazyDeserializingObjectTest {
     @Test
     public void testSerializedProperly() throws IOException, ClassNotFoundException {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockSerializedObject,
-                                                                                          mockSerializer);
+                                                                                          mockSerializer,
+                                                                                          INDEX_ON_UPCASTED_OBJECT);
         verify(mockSerializer, never()).deserialize(any(SerializedObject.class));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(testSubject);
         oos.close();
         ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
-        LazyDeserializingObject<Object> actual = (LazyDeserializingObject<Object>) new ObjectInputStream(in)
-                .readObject();
+        LazyDeserializingObject<Object> actual =
+                (LazyDeserializingObject<Object>) new ObjectInputStream(in).readObject();
         assertEquals(mockDeserializedObject, actual.getObject());
         assertEquals(String.class, actual.getType());
         assertTrue(actual.isDeserialized());

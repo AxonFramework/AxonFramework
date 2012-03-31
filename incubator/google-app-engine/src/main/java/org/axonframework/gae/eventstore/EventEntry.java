@@ -22,16 +22,16 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.nio.charset.Charset;
+import java.util.List;
 
 /**
  * <p>Class that represents an event to store in the google app engine data store. </p>
@@ -100,23 +100,24 @@ public class EventEntry {
      * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
+     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
      * @return The actual DomainEvent
      */
-    public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(
-                eventIdentifier,
-                aggregateIdentifier,
-                sequenceNumber,
-                new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(new SimpleSerializedObject<byte[]>(serializedEvent.getBytes(UTF8),
-                                                                                       byte[].class,
-                                                                                       eventType,
-                                                                                       eventRevision),
-                                                    eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData<byte[]>(serializedMetaData.getBytes(UTF8),
-                                                                                     byte[].class),
-                                                      eventSerializer)
-        );
+    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer, UpcasterChain upcasterChain) {
+        return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
+                                                                      eventIdentifier,
+                                                                      aggregateIdentifier,
+                                                                      sequenceNumber,
+                                                                      new DateTime(timeStamp),
+                                                                      new SimpleSerializedObject(serializedEvent
+                                                                                                         .getBytes(UTF8),
+                                                                                                 byte[].class,
+                                                                                                 eventType,
+                                                                                                 eventRevision),
+                                                                      new SerializedMetaData(serializedMetaData
+                                                                                                     .getBytes(UTF8),
+                                                                                             byte[].class),
+                                                                      upcasterChain);
     }
 
     /**

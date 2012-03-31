@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ package org.axonframework.unitofwork;
  * The <code>UnitOfWorkFactory</code> interface is used to obtain UnitOfWork instances to manage activity in command
  * handling processes.
  * <p/>
- * All UnitOfWork instances returned by this factory have been started. It is the responsibility of the caller to either
+ * All UnitOfWork instances returned by this factory have been started. It is the responsibility of the caller to
+ * either
  * invoke commit or rollback on these instances when done.
  *
  * @author Allard Buijze
@@ -35,5 +36,4 @@ public interface UnitOfWorkFactory {
      * @return a new UnitOfWork instance, which has been started.
      */
     UnitOfWork createUnitOfWork();
-
 }

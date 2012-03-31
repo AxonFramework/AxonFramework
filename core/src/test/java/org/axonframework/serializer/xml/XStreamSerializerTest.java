@@ -19,16 +19,12 @@ package org.axonframework.serializer.xml;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.serializer.Revision;
 import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
-import org.axonframework.serializer.Upcaster;
-import org.dom4j.Document;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -114,28 +110,6 @@ public class XStreamSerializerTest {
      */
     @Test
     public void testSerializeWithSpecialCharacters_WithDom4JUpcasters() {
-        testSubject.setUpcasters(Arrays.<Upcaster>asList(new Upcaster() {
-
-            @Override
-            public boolean canUpcast(SerializedType serializedType) {
-                return true;
-            }
-
-            @Override
-            public Class<?> expectedRepresentationType() {
-                return Document.class;
-            }
-
-            @Override
-            public SerializedObject upcast(SerializedObject intermediateRepresentation) {
-                return intermediateRepresentation;
-            }
-
-            @Override
-            public SerializedType upcast(SerializedType serializedType) {
-                return serializedType;
-            }
-        }));
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
         TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
         assertArrayEquals(SPECIAL__CHAR__STRING.getBytes(), deserialized.getName().getBytes());
@@ -154,7 +128,6 @@ public class XStreamSerializerTest {
 
     @Revision("2")
     public static class RevisionSpecifiedEvent {
-
     }
 
     public static class TestEvent {

@@ -93,11 +93,7 @@ public class DefaultMongoTemplate implements MongoTemplate {
         return database().getCollection(snapshotEventsCollectionName);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DB database() {
+    private DB database() {
         return mongoDb.getDB(databaseName);
     }
 }

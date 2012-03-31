@@ -18,7 +18,6 @@ import org.joda.time.DateTime;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,7 +33,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
     private final XStream xStream;
     private final Charset charset;
-    private volatile UpcasterChain upcasters;
     private ConverterFactory converterFactory;
 
     /**
@@ -132,21 +130,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @SuppressWarnings({"unchecked"})
-    @Override
-    public <T> Object deserialize(SerializedObject<T> serializedObject) {
-        UpcasterChain currentUpcasterChain = upcasters; // create copy for concurrency reasons
-
-        SerializedObject current = serializedObject;
-        if (currentUpcasterChain != null) {
-            current = currentUpcasterChain.upcast(current);
-        }
-        return doDeserialize(current, xStream);
-    }
-
-    /**
      * Serialize the given <code>object</code> to the given <code>expectedFormat</code>. The subclass may use {@link
      * #convert(Class, Class, Object)} to convert the result of the serialization to the expected type.
      *
@@ -203,11 +186,15 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * {@inheritDoc}
      */
     @Override
+    public <T> Object deserialize(SerializedObject<T> serializedObject) {
+        return doDeserialize(serializedObject, xStream);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Class classForType(SerializedType type) {
-        UpcasterChain currentUpcasterChain = upcasters; // create copy for concurrency reasons
-        if (currentUpcasterChain != null) {
-            type = currentUpcasterChain.upcast(type);
-        }
         return xStream.getMapper().realClass(type.getName());
     }
 
@@ -290,20 +277,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return xStream.getMapper().serializedClass(type);
     }
 
-    /**
-     * Sets the upcasters which allow older revisions of serialized objects to be deserialized. Upcasters are evaluated
-     * in the order they are provided in the given List. That means that you should take special precaution when an
-     * upcaster expects another upcaster to have processed an event.
-     * <p/>
-     * Any upcaster that relies on another upcaster doing its work first, should be placed <em>after</em> that other
-     * upcaster in the given list. Thus for any <em>upcaster B</em> that relies on <em>upcaster A</em> to do its work
-     * first, the following must be true: <code>upcasters.indexOf(B) > upcasters.indexOf(A)</code>.
-     *
-     * @param upcasters the upcasters for this serializer.
-     */
-    public void setUpcasters(List<Upcaster> upcasters) {
-        this.upcasters = new UpcasterChain(converterFactory, upcasters);
-    }
 
     /**
      * XStream Converter to serialize DateTime classes as a String.

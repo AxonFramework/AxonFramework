@@ -64,6 +64,7 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
                 .thenReturn(new SimpleTransactionStatus(true));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testInitializeProxiedInstance() throws Throwable {
         SecurityContextHolder.setContext(new SecurityContext() {

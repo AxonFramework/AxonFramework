@@ -17,7 +17,6 @@
 package org.axonframework.eventstore;
 
 import org.axonframework.common.Assert;
-import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 
 import java.io.IOException;
@@ -26,45 +25,53 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * Represents a serialized object that can be deserialized upon request. Typically used as a wrapper class for keeping
+ * Represents a serialized object that can be deserializedObjects upon request. Typically used as a wrapper class for
+ * keeping
  * a SerializedObject and its Serializer together.
  *
  * @param <T> The type of object contained in the serialized object
  * @author Allard Buijze
+ * @author Frank Versnel
  * @since 2.0
  */
 public class LazyDeserializingObject<T> implements Serializable {
 
     private static final long serialVersionUID = -5533042142349963796L;
 
-    private final transient SerializedObject serializedObject;
-    private final transient Serializer payloadSerializer;
-    private transient volatile Class<?> objectType;
-    private volatile T deserialized;
+    private transient Serializer serializer;
+    private transient LazyUpcastingObject serializedObject;
+    private transient int indexOnDeserializedObject;
+    private transient volatile Class deserializedObjectType;
+
+    private volatile T deserializedObject;
 
     /**
-     * Creates an instance with the given <code>deserialized</code> object instance. Using this constructor will ensure
+     * Creates an instance with the given <code>deserializedObject</code> object instance. Using this constructor will
+     * ensure
      * that no deserialization is required when invoking the {@link #getType()} or {@link #getObject()} methods.
      *
-     * @param deserialized The deserialized object to return on {@link #getObject()}
+     * @param deserializedObject The deserialized object to return on {@link #getObject()}
      */
-    public LazyDeserializingObject(T deserialized) {
-        Assert.notNull(deserialized, "The given deserialized instance may not be null");
+    public LazyDeserializingObject(T deserializedObject) {
+        Assert.notNull(deserializedObject, "The given deserialized instance may not be null");
         serializedObject = null;
-        payloadSerializer = null;
-        this.deserialized = deserialized;
-        this.objectType = deserialized.getClass();
+        serializer = null;
+        this.deserializedObject = deserializedObject;
+        this.deserializedObjectType = deserializedObject.getClass();
     }
 
     /**
-     * @param serializedObject The serialized payload of the message
-     * @param serializer       The serializer to deserialize the payload data with
+     * @param serializedObject          The serialized payload of the message
+     * @param serializer                The serializer to deserialize the payload data with
+     * @param indexOnDeserializedObject the index on the deserialized object
      */
-    public LazyDeserializingObject(SerializedObject serializedObject, Serializer serializer) {
+    public LazyDeserializingObject(LazyUpcastingObject serializedObject, Serializer serializer,
+                                   int indexOnDeserializedObject) {
         Assert.notNull(serializedObject, "The given serializedObject may not be null");
         Assert.notNull(serializer, "The given serializer may not be null");
         this.serializedObject = serializedObject;
-        this.payloadSerializer = serializer;
+        this.serializer = serializer;
+        this.indexOnDeserializedObject = indexOnDeserializedObject;
     }
 
     /**
@@ -73,38 +80,44 @@ public class LazyDeserializingObject<T> implements Serializable {
      *
      * @return the class of the serialized object
      */
-    public Class<?> getType() {
-        if (objectType == null) {
-            objectType = payloadSerializer.classForType(serializedObject.getType());
+    public Class getType() {
+        if (deserializedObjectType == null) {
+            deserializedObjectType = serializer.classForType(serializedObject.getTypes()
+                                                                             .get(indexOnDeserializedObject));
         }
-        return objectType;
+        return deserializedObjectType;
     }
 
     /**
      * Deserializes the object and returns the result.
      *
-     * @return the deserialized object
+     * @return the deserialized objects
      */
     @SuppressWarnings("unchecked")
     public T getObject() {
         if (!isDeserialized()) {
-            deserialized = (T) payloadSerializer.deserialize(serializedObject);
+            deserializedObject = (T) serializer.deserialize(serializedObject.getObjects()
+                                                                            .get(indexOnDeserializedObject));
         }
-        if (objectType == null && deserialized != null) {
-            objectType = deserialized.getClass();
+        if (deserializedObjectType == null && deserializedObject != null) {
+            deserializedObjectType = extractType(deserializedObject);
         }
-        return deserialized;
+        return deserializedObject;
     }
 
     private void writeObject(ObjectOutputStream outputStream) throws IOException {
-        // make sure the contained object is deserialized
+        // make sure the contained object is deserializedObjects
         getObject();
         outputStream.defaultWriteObject();
     }
 
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
         inputStream.defaultReadObject();
-        objectType = deserialized.getClass();
+        deserializedObjectType = extractType(deserializedObject);
+    }
+
+    private Class extractType(T deserializedObject) {
+        return deserializedObject.getClass();
     }
 
     /**
@@ -114,6 +127,6 @@ public class LazyDeserializingObject<T> implements Serializable {
      * @return whether the contained object has been deserialized already.
      */
     public boolean isDeserialized() {
-        return deserialized != null;
+        return deserializedObject != null;
     }
 }

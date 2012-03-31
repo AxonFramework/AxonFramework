@@ -50,7 +50,8 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
     @Override
     protected void prepareEventStore() {
         DefaultMongoTemplate mongoTemplate = new DefaultMongoTemplate(mongoDb);
-        mongoTemplate.database().dropDatabase();
+        mongoTemplate.domainEventCollection().getDB().dropDatabase();
+        mongoTemplate.snapshotEventCollection().getDB().dropDatabase();
     }
 
     private class MongoBenchmark implements Runnable {

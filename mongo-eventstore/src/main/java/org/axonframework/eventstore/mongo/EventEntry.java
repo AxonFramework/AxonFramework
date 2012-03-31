@@ -20,14 +20,16 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.LazyDeserializingObject;
-import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
+
+import java.util.List;
+
+import static org.axonframework.eventstore.SerializedDomainEventMessage.createDomainEventMessages;
 
 /**
  * Data needed by different types of event logs.
@@ -130,24 +132,21 @@ class EventEntry {
      * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
      * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
+     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
      * @return The actual DomainEvent
      */
     @SuppressWarnings("unchecked")
-    public DomainEventMessage getDomainEvent(Serializer eventSerializer) {
+    public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer, UpcasterChain upcasterChain) {
         Class<?> representationType = String.class;
         if (serializedPayload instanceof DBObject) {
             representationType = DBObject.class;
         }
-        return new SerializedDomainEventMessage<Object>(
-                eventIdentifier,
-                aggregateIdentifier,
-                sequenceNumber,
-                new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(
-                        new SimpleSerializedObject(serializedPayload, representationType, payoadType, payloadRevision),
-                        eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData(serializedMetaData, representationType),
-                                                      eventSerializer));
+        return createDomainEventMessages(eventSerializer, eventIdentifier, aggregateIdentifier, sequenceNumber,
+                                         new DateTime(timeStamp),
+                                         new SimpleSerializedObject(serializedPayload, representationType,
+                                                                    payoadType, payloadRevision),
+                                         new SerializedMetaData(serializedMetaData, representationType),
+                                         upcasterChain);
     }
 
     /**

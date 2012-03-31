@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore.mongo;
 
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
 
 /**
@@ -41,11 +40,4 @@ public interface MongoTemplate {
      * @return DBCollection containing the snapshot events
      */
     DBCollection snapshotEventCollection();
-
-    /**
-     * Returns the database for the axon event store.
-     *
-     * @return DB The axon event store database
-     */
-    DB database();
 }

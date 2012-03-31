@@ -17,17 +17,17 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.util.Arrays;
+import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -100,22 +100,21 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * Reconstructs the DomainEvent using the given <code>eventSerializer</code>.
      *
      * @param eventSerializer The Serializer to deserialize the DomainEvent with.
+     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
      * @return The deserialized domain event
      */
-    public DomainEventMessage<?> getDomainEvent(Serializer eventSerializer) {
-        return new SerializedDomainEventMessage<Object>(
-                eventIdentifier,
-                aggregateIdentifier,
-                sequenceNumber,
-                new DateTime(timeStamp),
-                new LazyDeserializingObject<Object>(new SimpleSerializedObject<byte[]>(payload,
-                                                                                       byte[].class,
-                                                                                       payloadType,
-                                                                                       payloadRevision),
-                                                    eventSerializer),
-                new LazyDeserializingObject<MetaData>(new SerializedMetaData<byte[]>(metaData, byte[].class),
-                                                      eventSerializer)
-        );
+    public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer, UpcasterChain upcasterChain) {
+        return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
+                                                                      eventIdentifier,
+                                                                      aggregateIdentifier,
+                                                                      sequenceNumber,
+                                                                      new DateTime(timeStamp),
+                                                                      new SimpleSerializedObject(payload,
+                                                                                                 byte[].class,
+                                                                                                 payloadType,
+                                                                                                 payloadRevision),
+                                                                      new SerializedMetaData(metaData, byte[].class),
+                                                                      upcasterChain);
     }
 
     /**

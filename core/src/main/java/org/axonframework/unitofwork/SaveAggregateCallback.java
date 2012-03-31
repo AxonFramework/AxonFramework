@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2011. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import org.axonframework.domain.AggregateRoot;
  * Callback used by UnitOfWork instances to be invoked when the UnitOfWork wishes to store an aggregate. This callback
  * abstracts the actual storage mechanism away from the UnitOfWork itself.
  *
- * @author Allard Buijze
  * @param <T> The type of aggregate this callback handles
+ * @author Allard Buijze
  * @since 0.6
  */
 public interface SaveAggregateCallback<T extends AggregateRoot> {
@@ -34,5 +34,4 @@ public interface SaveAggregateCallback<T extends AggregateRoot> {
      * @param aggregate The aggregate to store
      */
     void save(T aggregate);
-
 }

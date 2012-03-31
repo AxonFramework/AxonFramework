@@ -42,18 +42,25 @@ public class ReflectionUtilsTest {
         Iterable<Field> actualFields = ReflectionUtils.fieldsOf(SomeSubType.class);
         int t = 0;
         for (Field actual : actualFields) {
+            if (actual.isSynthetic()) {
+                // this test is probably running with ByteCode manipulation. We ignore synthetic fields.
+                continue;
+            }
             switch (t++) {
                 case 0:
                     assertEquals("field3", actual.getName());
                     break;
                 case 1:
                 case 2:
-                    assertTrue("Expected either field1 or field2, but got " + actual.getName(),
-                               "field1".equals(actual.getName())
-                                       || "field2".equals(actual.getName()));
+                    assertTrue(
+                            "Expected either field1 or field2, but got " + actual.getName()
+                                    + " declared in " + actual.getDeclaringClass().getName(),
+                            "field1".equals(actual.getName())
+                                    || "field2".equals(actual.getName()));
                     break;
             }
         }
+        assertTrue(t >= 2);
     }
 
     @Test
@@ -61,18 +68,24 @@ public class ReflectionUtilsTest {
         Iterable<Method> actualMethods = ReflectionUtils.methodsOf(SomeSubType.class);
         int t = 0;
         for (Method actual : actualMethods) {
+            if (actual.isSynthetic()) {
+                //  this test is probably running with bytecode manipulation. We ignore synthetic methods.
+                continue;
+            }
             switch (t++) {
                 case 0:
                     assertEquals("getField3", actual.getName());
                     break;
                 case 1:
                 case 2:
-                    assertTrue("Expected either getField1 or getField2, but got " + actual.getName(),
+                    assertTrue("Expected either getField1 or getField2, but got " + actual.getName()
+                                       + " declared in " + actual.getDeclaringClass().getName(),
                                "getField1".equals(actual.getName())
                                        || "getField2".equals(actual.getName()));
                     break;
             }
         }
+        assertTrue(t >= 2);
     }
 
     @Test

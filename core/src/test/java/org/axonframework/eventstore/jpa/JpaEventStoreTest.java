@@ -56,6 +56,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Frank Versnel
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
@@ -508,7 +509,7 @@ public class JpaEventStoreTest {
     }
 
     private SerializedObject<byte[]> mockSerializedObject(byte[] bytes) {
-        return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "mock", "0");
+        return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "java.lang.String", "0");
     }
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {

@@ -30,6 +30,9 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.upcasting.Upcaster;
+import org.axonframework.upcasting.UpcasterChain;
+import org.axonframework.upcasting.UpcasterAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +43,13 @@ import java.util.List;
 /**
  * @author Jettro Coenradie
  */
-public class GaeEventStore implements SnapshotEventStore {
+public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
 
     private static final Logger logger = LoggerFactory.getLogger(GaeEventStore.class);
 
     private final Serializer eventSerializer;
     private final DatastoreService datastoreService;
+    private UpcasterChain upcasterChain = UpcasterChain.EMPTY;
 
     public GaeEventStore() {
         this(new XStreamSerializer());
@@ -72,7 +76,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.add(0, lastSnapshotEvent.getDomainEvent(eventSerializer));
+            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer, upcasterChain));
         }
 
         if (events.isEmpty()) {
@@ -113,7 +117,7 @@ public class GaeEventStore implements SnapshotEventStore {
 
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
         for (Entity entity : entities) {
-            events.add(new EventEntry(entity).getDomainEvent(eventSerializer));
+            events.addAll(new EventEntry(entity).getDomainEvent(eventSerializer, upcasterChain));
         }
         return events;
     }
@@ -127,5 +131,10 @@ public class GaeEventStore implements SnapshotEventStore {
             return new EventEntry(lastSnapshot);
         }
         return null;
+    }
+
+    @Override
+    public void setUpcasters(List<Upcaster> upcasters) {
+        this.upcasterChain = new UpcasterChain(upcasters);
     }
 }
