@@ -1,6 +1,5 @@
 package org.axonframework.eventstore;
 
-import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateTime;
 

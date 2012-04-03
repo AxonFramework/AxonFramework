@@ -22,6 +22,8 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
@@ -31,6 +33,7 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -104,20 +107,18 @@ public class EventEntry {
      * @return The actual DomainEvent
      */
     public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer, UpcasterChain upcasterChain) {
-        return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
-                                                                      eventIdentifier,
-                                                                      aggregateIdentifier,
-                                                                      sequenceNumber,
-                                                                      new DateTime(timeStamp),
-                                                                      new SimpleSerializedObject(serializedEvent
-                                                                                                         .getBytes(UTF8),
-                                                                                                 byte[].class,
-                                                                                                 eventType,
-                                                                                                 eventRevision),
-                                                                      new SerializedMetaData(serializedMetaData
-                                                                                                     .getBytes(UTF8),
-                                                                                             byte[].class),
-                                                                      upcasterChain);
+        List<SerializedObject> upcastEvents = upcasterChain.upcast(
+                new SimpleSerializedObject<String>(serializedEvent, String.class, eventType, eventRevision));
+        List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastEvents.size());
+        for (SerializedObject upcastEvent : upcastEvents) {
+            messages.add(new SerializedDomainEventMessage<Object>(
+                    eventIdentifier, aggregateIdentifier, sequenceNumber, new DateTime(timeStamp),
+                    new LazyDeserializingObject<Object>(upcastEvent, eventSerializer),
+                    new LazyDeserializingObject<MetaData>(new SerializedMetaData<String>(serializedMetaData,
+                                                                                         String.class),
+                                                          eventSerializer)));
+        }
+        return messages;
     }
 
     /**

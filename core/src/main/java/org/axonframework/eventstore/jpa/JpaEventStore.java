@@ -20,8 +20,10 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.LazyDeserializingObject;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -32,11 +34,13 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
-import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcasterAware;
+import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +80,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     private final Serializer eventSerializer;
     private final EventEntryStore eventEntryStore;
     private int batchSize = DEFAULT_BATCH_SIZE;
-    private UpcasterChain upcasterChain = UpcasterChain.EMPTY;
+    private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
     private final EntityManagerProvider entityManagerProvider;
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
 
@@ -214,14 +218,19 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
                                                                                        entityManager);
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entries.size());
         for (SerializedDomainEventData entry : entries) {
-            events.addAll(SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
-                                                                                 entry.getEventIdentifier(),
-                                                                                 identifier,
-                                                                                 entry.getSequenceNumber(),
-                                                                                 entry.getTimestamp(),
-                                                                                 entry.getPayload(),
-                                                                                 entry.getMetaData(),
-                                                                                 upcasterChain));
+            events.addAll(upcastAndDeserialize(entry, identifier));
+        }
+        return events;
+    }
+
+    private List<DomainEventMessage> upcastAndDeserialize(SerializedDomainEventData entry, Object identifier) {
+        List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload());
+        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
+        for (SerializedObject object : objects) {
+            events.add(new SerializedDomainEventMessage<Object>(
+                    entry.getEventIdentifier(), identifier, entry.getSequenceNumber(),
+                    entry.getTimestamp(), new LazyDeserializingObject<Object>(object, eventSerializer),
+                    new LazyDeserializingObject<MetaData>(entry.getMetaData(), eventSerializer)));
         }
         return events;
     }
@@ -274,11 +283,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         while (shouldContinue) {
             batch = eventEntryStore.fetchFilteredBatch(whereClause, parameters, first, batchSize, entityManager);
             for (SerializedDomainEventData entry : batch) {
-                List<DomainEventMessage> domainEventMessages =
-                        SerializedDomainEventMessage.createDomainEventMessages(entry,
-                                                                               eventSerializer,
-                                                                               eventSerializer,
-                                                                               upcasterChain);
+                List<DomainEventMessage> domainEventMessages = upcastAndDeserialize(entry,
+                                                                                    entry.getAggregateIdentifier());
                 for (DomainEventMessage domainEventMessage : domainEventMessages) {
                     visitor.doWithEvent(domainEventMessage);
                 }
@@ -329,7 +335,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
     @Override
     public void setUpcasters(List<Upcaster> upcasters) {
-        this.upcasterChain = new UpcasterChain(upcasters);
+        this.upcasterChain = new SimpleUpcasterChain(upcasters);
     }
 
     /**

@@ -32,6 +32,7 @@ import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteriaBuilder;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterAware;
 import org.axonframework.upcasting.UpcasterChain;
@@ -44,9 +45,8 @@ import javax.annotation.PostConstruct;
 
 /**
  * <p>Implementation of the <code>EventStore</code> based on a MongoDB instance or replica set. Sharding and pairing
- * are
- * not explicitly supported.</p> <p/> <p>This event store implementation needs a serializer as well as a {@see
- * MongoTemplate} to interact with the mongo database.</p> <p/> <p><strong>Warning:</strong> This implementation is
+ * are not explicitly supported.</p> <p>This event store implementation needs a serializer as well as a {@see
+ * MongoTemplate} to interact with the mongo database.</p> <p><strong>Warning:</strong> This implementation is
  * still in progress and may be subject to alterations. The implementation works, but has not been optimized to fully
  * leverage MongoDB's features, yet.</p>
  *
@@ -62,7 +62,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     private final MongoTemplate mongoTemplate;
     private final Serializer eventSerializer;
 
-    private UpcasterChain upcasterChain = UpcasterChain.EMPTY;
+    private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
 
     /**
      * Constructor that accepts a Serializer and the MongoTemplate.
@@ -115,6 +115,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
+        // TODO (Aon 2.0): Batch fetching should be left to Mongo driver
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
             events.addAll(0, lastSnapshotEvent.getDomainEvents(eventSerializer, upcasterChain));
@@ -147,6 +148,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         List<EventEntry> batch;
         boolean shouldContinue = true;
         DBObject filter = criteria == null ? null : ((MongoCriteria) criteria).asMongoObject();
+        // TODO (Aon 2.0): Batch fetching should be left to Mongo driver
         while (shouldContinue) {
             batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE, filter);
             for (EventEntry entry : batch) {
@@ -213,6 +215,6 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     @Override
     public void setUpcasters(List<Upcaster> upcasters) {
-        this.upcasterChain = new UpcasterChain(upcasters);
+        this.upcasterChain = new SimpleUpcasterChain(upcasters);
     }
 }

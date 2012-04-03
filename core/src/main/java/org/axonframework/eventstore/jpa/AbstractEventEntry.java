@@ -18,16 +18,12 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventstore.SerializedDomainEventData;
-import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
 import java.util.Arrays;
-import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -73,7 +69,7 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * Initialize an Event entry for the given <code>event</code>.
      *
      * @param type     The type identifier of the aggregate root the event belongs to
-     * @param event    The event to store in the eventstore
+     * @param event    The event to store in the EventStore
      * @param payload  The serialized payload of the Event
      * @param metaData The serialized metaData of the Event
      */
@@ -94,27 +90,6 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
      * Default constructor, as required by JPA specification. Do not use directly!
      */
     protected AbstractEventEntry() {
-    }
-
-    /**
-     * Reconstructs the DomainEvent using the given <code>eventSerializer</code>.
-     *
-     * @param eventSerializer The Serializer to deserialize the DomainEvent with.
-     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
-     * @return The deserialized domain event
-     */
-    public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer, UpcasterChain upcasterChain) {
-        return SerializedDomainEventMessage.createDomainEventMessages(eventSerializer,
-                                                                      eventIdentifier,
-                                                                      aggregateIdentifier,
-                                                                      sequenceNumber,
-                                                                      new DateTime(timeStamp),
-                                                                      new SimpleSerializedObject(payload,
-                                                                                                 byte[].class,
-                                                                                                 payloadType,
-                                                                                                 payloadRevision),
-                                                                      new SerializedMetaData(metaData, byte[].class),
-                                                                      upcasterChain);
     }
 
     /**

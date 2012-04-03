@@ -20,6 +20,9 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
+import org.axonframework.eventstore.LazyDeserializingObject;
+import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
@@ -27,9 +30,8 @@ import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
+import java.util.ArrayList;
 import java.util.List;
-
-import static org.axonframework.eventstore.SerializedDomainEventMessage.createDomainEventMessages;
 
 /**
  * Data needed by different types of event logs.
@@ -78,7 +80,7 @@ class EventEntry {
     private final String timeStamp;
     private final String aggregateType;
     private final Object serializedPayload;
-    private final String payoadType;
+    private final String payloadType;
     private final String payloadRevision;
     private final Object serializedMetaData;
     private final String eventIdentifier;
@@ -105,7 +107,7 @@ class EventEntry {
                 event.getMetaData(), serializationTarget);
 
         this.serializedPayload = serializedPayloadObject.getData();
-        this.payoadType = serializedPayloadObject.getType().getName();
+        this.payloadType = serializedPayloadObject.getType().getName();
         this.payloadRevision = serializedPayloadObject.getType().getRevision();
         this.serializedMetaData = serializedMetaDataObject.getData();
         this.timeStamp = event.getTimestamp().toString();
@@ -122,7 +124,7 @@ class EventEntry {
         this.serializedPayload = dbObject.get(SERIALIZED_PAYLOAD_PROPERTY);
         this.timeStamp = (String) dbObject.get(TIME_STAMP_PROPERTY);
         this.aggregateType = (String) dbObject.get(AGGREGATE_TYPE_PROPERTY);
-        this.payoadType = (String) dbObject.get(PAYLOAD_TYPE_PROPERTY);
+        this.payloadType = (String) dbObject.get(PAYLOAD_TYPE_PROPERTY);
         this.payloadRevision = (String) dbObject.get(PAYLOAD_REVISION_PROPERTY);
         this.serializedMetaData = dbObject.get(META_DATA_PROPERTY);
         this.eventIdentifier = (String) dbObject.get(EVENT_IDENTIFIER_PROPERTY);
@@ -137,16 +139,24 @@ class EventEntry {
      */
     @SuppressWarnings("unchecked")
     public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer, UpcasterChain upcasterChain) {
+        // TODO (2.0) Upcasting should be done inside the EventStore implementation. The entry should implement SerializedDomainEventData.
         Class<?> representationType = String.class;
         if (serializedPayload instanceof DBObject) {
             representationType = DBObject.class;
         }
-        return createDomainEventMessages(eventSerializer, eventIdentifier, aggregateIdentifier, sequenceNumber,
-                                         new DateTime(timeStamp),
-                                         new SimpleSerializedObject(serializedPayload, representationType,
-                                                                    payoadType, payloadRevision),
-                                         new SerializedMetaData(serializedMetaData, representationType),
-                                         upcasterChain);
+        List<SerializedObject> upcastObjects = upcasterChain.upcast(
+                new SimpleSerializedObject(serializedPayload, representationType, payloadType, payloadRevision));
+        List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastObjects.size());
+        for (SerializedObject upcastObject : upcastObjects) {
+            messages.add(new SerializedDomainEventMessage(eventIdentifier, aggregateIdentifier, sequenceNumber,
+                                                          new DateTime(timeStamp),
+                                                          new LazyDeserializingObject(upcastObject, eventSerializer),
+                                                          new LazyDeserializingObject<MetaData>(
+                                                                  new SerializedMetaData(serializedMetaData,
+                                                                                         representationType),
+                                                                  eventSerializer)));
+        }
+        return messages;
     }
 
     /**
@@ -170,7 +180,7 @@ class EventEntry {
                                    .add(SERIALIZED_PAYLOAD_PROPERTY, serializedPayload)
                                    .add(TIME_STAMP_PROPERTY, timeStamp)
                                    .add(AGGREGATE_TYPE_PROPERTY, aggregateType)
-                                   .add(PAYLOAD_TYPE_PROPERTY, payoadType)
+                                   .add(PAYLOAD_TYPE_PROPERTY, payloadType)
                                    .add(PAYLOAD_REVISION_PROPERTY, payloadRevision)
                                    .add(META_DATA_PROPERTY, serializedMetaData)
                                    .get();

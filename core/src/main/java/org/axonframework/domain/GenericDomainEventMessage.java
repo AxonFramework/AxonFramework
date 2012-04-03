@@ -41,8 +41,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param sequenceNumber      The message's sequence number
      * @param payload             The application-specific payload of the message
      */
-    public GenericDomainEventMessage(Object aggregateIdentifier, long sequenceNumber,
-                                     T payload) {
+    public GenericDomainEventMessage(Object aggregateIdentifier, long sequenceNumber, T payload) {
         this(aggregateIdentifier, sequenceNumber, payload, MetaData.emptyInstance());
     }
 

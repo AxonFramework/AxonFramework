@@ -101,7 +101,7 @@ public class AggregateSnapshot<T extends EventSourcedAggregateRoot> implements S
 
     @Override
     public String getIdentifier() {
-        return format("%s@%s", getAggregateIdentifier().toString(), getSequenceNumber());
+        return format("%s@%s", getAggregateIdentifier(), getSequenceNumber());
     }
 
     @Override

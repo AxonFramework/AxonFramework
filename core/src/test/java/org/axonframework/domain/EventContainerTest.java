@@ -32,7 +32,7 @@ public class EventContainerTest {
 
     @Test
     public void testAddEvent_IdAndSequenceNumberInitialized() {
-        final UUID identifier = UUID.randomUUID();
+        final String identifier = UUID.randomUUID().toString();
 
         EventContainer eventContainer = new EventContainer(identifier);
         assertEquals(identifier, eventContainer.getAggregateIdentifier());

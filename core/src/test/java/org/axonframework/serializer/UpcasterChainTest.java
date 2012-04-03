@@ -16,6 +16,7 @@
 
 package org.axonframework.serializer;
 
+import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
 import org.dom4j.Document;
@@ -53,38 +54,12 @@ public class UpcasterChainTest {
     }
 
     @Test
-    public void testUpcastType() {
-        Upcaster mockUpcaster12 = mock(Upcaster.class, "Type 1 to Type 2 upcaster");
-        Upcaster mockUpcasterFake = mock(Upcaster.class, "Fake upcaster");
-        Upcaster mockUpcaster23 = mock(Upcaster.class, "Type 2 to Type 3 upcaster");
-
-        when(mockUpcaster12.canUpcast(any(SerializedType.class))).thenReturn(false);
-        when(mockUpcaster23.canUpcast(any(SerializedType.class))).thenReturn(false);
-        when(mockUpcaster12.canUpcast(object1.getType())).thenReturn(true);
-        when(mockUpcaster12.upcast(object1.getType())).thenReturn(Arrays.asList(object2.getType()));
-
-        when(mockUpcaster23.canUpcast(object2.getType())).thenReturn(true);
-        when(mockUpcaster23.upcast(object2.getType())).thenReturn(Arrays.asList(object3.getType()));
-
-        UpcasterChain chain = new UpcasterChain(null, Arrays.asList(mockUpcaster12, mockUpcasterFake, mockUpcaster23));
-
-        List<SerializedType> actual1 = chain.upcast(object1.getType());
-        verify(mockUpcaster12).upcast(object1.getType());
-        verify(mockUpcaster23).upcast(object2.getType());
-        verify(mockUpcasterFake, never()).upcast(any(SerializedType.class));
-        assertEquals(object3.getType(), actual1.get(0));
-
-        List<SerializedType> actual2 = chain.upcast(object2.getType());
-        assertEquals(object3.getType(), actual2.get(0));
-    }
-
-    @Test
     public void testUpcastObject_NoTypeConversionRequired() {
         Upcaster mockUpcaster12 = new StubUpcaster(intermediate1.getType(), intermediate2, byte[].class);
         Upcaster mockUpcasterFake = mock(Upcaster.class, "Fake upcaster");
         Upcaster mockUpcaster23 = new StubUpcaster(intermediate2.getType(), intermediate3, byte[].class);
 
-        UpcasterChain chain = new UpcasterChain(null, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
+        UpcasterChain chain = new SimpleUpcasterChain(null, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
 
         List<SerializedObject> actual1 = chain.upcast(object1);
         assertEquals(object3.getType(), actual1.get(0).getType());
@@ -116,7 +91,7 @@ public class UpcasterChainTest {
         when(mockStreamToByteConverter.convert(intermediate2_stream))
                 .thenReturn(intermediate2_bytes);
 
-        UpcasterChain chain = new UpcasterChain(mockConverterFactory, mockUpcaster12);
+        UpcasterChain chain = new SimpleUpcasterChain(mockConverterFactory, mockUpcaster12);
 
         List<SerializedObject> actual1 = chain.upcast(object1);
         verify(mockConverterFactory).getConverter(byte[].class, InputStream.class);
@@ -135,7 +110,7 @@ public class UpcasterChainTest {
         when(mockConverterFactory.getConverter(isA(Class.class), isA(Class.class))).thenThrow(
                 mockException);
 
-        UpcasterChain chain = new UpcasterChain(mockConverterFactory, mockUpcaster12);
+        UpcasterChain chain = new SimpleUpcasterChain(mockConverterFactory, mockUpcaster12);
         try {
             chain.upcast(object1);
         } catch (CannotConvertBetweenTypesException e) {
@@ -148,7 +123,7 @@ public class UpcasterChainTest {
     public void testUpcastObjectToMultipleObjects() {
         Upcaster mockUpcaster = new StubUpcaster(intermediate1.getType(), byte[].class, intermediate2, intermediate3);
 
-        UpcasterChain chain = new UpcasterChain(null, mockUpcaster);
+        UpcasterChain chain = new SimpleUpcasterChain(null, mockUpcaster);
         List<SerializedObject> upcastedObjects = chain.upcast(object1);
 
         assertEquals(2, upcastedObjects.size());

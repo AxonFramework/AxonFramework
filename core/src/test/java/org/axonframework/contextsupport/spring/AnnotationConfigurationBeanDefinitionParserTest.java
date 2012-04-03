@@ -124,7 +124,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        UUID identifier = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
                                                                       new SimpleEvent(
                                                                               identifier), MetaData.emptyInstance()));
@@ -143,7 +143,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        UUID identifier = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
                                                                       new SimpleEvent(
                                                                               identifier), MetaData.emptyInstance()));
@@ -167,7 +167,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
-        UUID identifier = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
         sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
                                                                       new SimpleEvent(
                                                                               identifier), MetaData.emptyInstance()));
