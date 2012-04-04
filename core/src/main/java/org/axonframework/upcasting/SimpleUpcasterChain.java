@@ -16,17 +16,13 @@
 
 package org.axonframework.upcasting;
 
-import org.axonframework.serializer.ChainingConverterFactory;
-import org.axonframework.serializer.ContentTypeConverter;
 import org.axonframework.serializer.ConverterFactory;
 import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SerializedType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 
 /**
  * Represents a series of upcasters which are combined to upcast a {@link org.axonframework.serializer.SerializedObject}
@@ -40,10 +36,7 @@ import java.util.Queue;
  * @author Frank Versnel
  * @since 2.0
  */
-public class SimpleUpcasterChain implements UpcasterChain {
-
-    private final List<Upcaster> upcasters;
-    private final ConverterFactory converterFactory;
+public class SimpleUpcasterChain extends AbstractUpcasterChain {
 
     /**
      * Represents an empty UpcasterChain.
@@ -51,24 +44,24 @@ public class SimpleUpcasterChain implements UpcasterChain {
     public static final UpcasterChain EMPTY = new SimpleUpcasterChain(Collections.<Upcaster>emptyList());
 
     /**
-     * Initializes the UpcasterChain with a ChainingConverterFactory
+     * Initializes the UpcasterChain with given <code>upcasters</code> and a {@link
+     * org.axonframework.serializer.ChainingConverterFactory} to
+     * convert between content types.
      *
-     * @param upcasters The upcasters forming the chain (in given order)
+     * @param upcasters the upcasters to form the chain
      */
     public SimpleUpcasterChain(List<Upcaster> upcasters) {
-        this(new ChainingConverterFactory(), upcasters);
+        super(upcasters);
     }
 
     /**
-     * Initialize a chain of the given <code>upcasters</code> and using the given <code>converterFactory</code> to
-     * create converters for the intermediate representations used by the upcasters.
+     * Initializes the UpcasterChain with given <code>converterFactory</code> and <code>upcasters</code>.
      *
-     * @param converterFactory The factory providing ContentTypeConverter instances
-     * @param upcasters        The upcasters forming the chain (in given order)
+     * @param converterFactory The factory providing the converters to convert between content types
+     * @param upcasters        The upcasters to form this chain
      */
     public SimpleUpcasterChain(ConverterFactory converterFactory, List<Upcaster> upcasters) {
-        this.converterFactory = converterFactory;
-        this.upcasters = new ArrayList<Upcaster>(upcasters);
+        super(converterFactory, upcasters);
     }
 
     /**
@@ -83,58 +76,10 @@ public class SimpleUpcasterChain implements UpcasterChain {
     }
 
     @Override
-    public List<SerializedObject> upcast(SerializedObject serializedObject) {
-        return upcast(new LinkedList<Upcaster>(upcasters), serializedObject);
-    }
-
-    private List<SerializedObject> upcast(Queue<Upcaster> upcasterChain, SerializedObject current) {
-        // No upcasters are left in the queue, we're done.
-        if (upcasterChain.isEmpty()) {
-            return Collections.singletonList(current);
-        }
-        // There are still upcasters left to process.
-        else {
-            // Upcast the current IntermediateRepresentation.
-            Upcaster upcaster = upcasterChain.poll();
-            List<SerializedObject> unprocessedIntermediates = upcast(upcaster, current);
-
-            // Process all intermediates returned by the top upcaster exhaustively
-            List<SerializedObject> processedIntermediates = new ArrayList<SerializedObject>();
-            for (SerializedObject unprocessedIntermediate : unprocessedIntermediates) {
-                processedIntermediates.addAll(upcast(upcasterChain, unprocessedIntermediate));
-            }
-
-            return processedIntermediates;
-        }
-    }
-
-    /**
-     * Upcasts the given IntermediateRepresentation if the upcasters supports upcasting its type, otherwise returns
-     * a list with the unprocessed IntermediateRepresentation as its only element.
-     *
-     * @param upcaster the upcaster that should do the upcasting
-     * @param current  the IntermediateRepresentation that might be upcast
-     * @return the upcast IntermediateRepresentation, or the unprocessed IntermediateRepresentation if the upcaster
-     *         does not support upcasting the IntermediateRepresentation's type.
-     */
-    @SuppressWarnings({"unchecked"})
-    private List<SerializedObject> upcast(Upcaster upcaster, SerializedObject current) {
-        if (upcaster.canUpcast(current.getType())) {
-            current = ensureCorrectContentType(current, upcaster.expectedRepresentationType());
-            return upcaster.upcast(current);
-        } else {
-            return Collections.singletonList(current);
-        }
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private <T> SerializedObject<T> ensureCorrectContentType(SerializedObject<?> current,
-                                                             Class<T> expectedContentType) {
-        if (!expectedContentType.isAssignableFrom(current.getContentType())) {
-            ContentTypeConverter converter = converterFactory.getConverter(current.getContentType(),
-                                                                           expectedContentType);
-            current = converter.convert(current);
-        }
-        return (SerializedObject<T>) current;
+    protected <T> List<SerializedObject<?>> doUpcast(Upcaster<T> upcaster, SerializedObject<?> sourceObject,
+                                                     List<SerializedType> targetTypes) {
+        SerializedObject<T> converted = ensureCorrectContentType(sourceObject,
+                                                                 upcaster.expectedRepresentationType());
+        return upcaster.upcast(converted, targetTypes);
     }
 }

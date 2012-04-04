@@ -60,14 +60,15 @@ public interface Upcaster<T> {
     Class<T> expectedRepresentationType();
 
     /**
-     * Upcasts the given <code>intermediateRepresentation</code> into zero or more other representations.
-     * The returned representation must reflect the changes made by this upcaster by updating its SerializedType
-     * definition.
+     * Upcasts the given <code>intermediateRepresentation</code> into zero or more other representations. The returned
+     * list of Serialized Objects must match the given list of serialized types.
      *
      * @param intermediateRepresentation The representation of the object to upcast
+     * @param expectedTypes              The expected types of the returned serialized objects.
      * @return the new representation of the object
      */
-    List<SerializedObject<?>> upcast(SerializedObject<T> intermediateRepresentation);
+    List<SerializedObject<?>> upcast(SerializedObject<T> intermediateRepresentation,
+                                     List<SerializedType> expectedTypes);
 
     /**
      * Upcast the given <code>serializedType</code> into its new format. Generally, this involves increasing the

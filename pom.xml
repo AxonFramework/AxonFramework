@@ -53,6 +53,11 @@
     <profiles>
         <profile>
             <id>with-doc</id>
+            <activation>
+                <property>
+                    <name>allmodules</name>
+                </property>
+            </activation>
             <modules>
                 <module>documentation</module>
             </modules>
@@ -60,6 +65,9 @@
         <profile>
             <id>with-insight-plugin</id>
             <activation>
+                <property>
+                    <name>allmodules</name>
+                </property>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
@@ -96,6 +104,11 @@
         </profile>
         <profile>
             <id>with-incubator</id>
+            <activation>
+                <property>
+                    <name>allmodules</name>
+                </property>
+            </activation>
             <modules>
                 <module>incubator/redis</module>
             </modules>
