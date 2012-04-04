@@ -38,7 +38,6 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
-import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterAware;
 import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
@@ -334,8 +333,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     }
 
     @Override
-    public void setUpcasters(List<Upcaster> upcasters) {
-        this.upcasterChain = new SimpleUpcasterChain(upcasters);
+    public void setUpcasterChain(UpcasterChain upcasterChain) {
+        this.upcasterChain = upcasterChain;
     }
 
     /**

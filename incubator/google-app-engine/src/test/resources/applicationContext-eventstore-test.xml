@@ -21,9 +21,7 @@
 
     <bean id="eventStore" class="org.axonframework.gae.eventstore.GaeEventStore">
         <constructor-arg index="0" ref="xStreamEventSerializer"/>
-        <property name="upcasters" ref="upcasters"/>
     </bean>
-    <bean name="upcasters" class="java.util.ArrayList"/>
 
     <bean name="xStreamEventSerializer" class="org.axonframework.serializer.xml.XStreamSerializer">
         <constructor-arg index="0" type="com.thoughtworks.xstream.XStream" ref="xStream"/>

@@ -31,9 +31,8 @@ import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
-import org.axonframework.upcasting.Upcaster;
-import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcasterAware;
+import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,7 +134,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
     }
 
     @Override
-    public void setUpcasters(List<Upcaster> upcasters) {
-        this.upcasterChain = new SimpleUpcasterChain(upcasters);
+    public void setUpcasterChain(UpcasterChain upcasterChain) {
+        this.upcasterChain = upcasterChain;
     }
 }
