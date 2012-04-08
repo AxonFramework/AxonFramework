@@ -33,7 +33,6 @@ public class EqualsTest {
         DBObject actual = new Equals(new MongoProperty("property"), "someValue").asMongoObject();
         assertEquals(actual.keySet(), Collections.singleton("property"));
         assertEquals(actual.get("property"), "someValue");
-        System.out.println(actual.toString());
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -30,6 +30,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
 import org.junit.runner.*;
+import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -162,7 +163,10 @@ public class MongoEventStoreTest {
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThan(onePM), eventVisitor);
-        verify(eventVisitor, times(13 + 14)).doWithEvent(isA(DomainEventMessage.class));
+        ArgumentCaptor<DomainEventMessage> captor = ArgumentCaptor.forClass(DomainEventMessage.class);
+        verify(eventVisitor, times(13 + 14)).doWithEvent(captor.capture());
+        assertEquals(new DateTime(2011, 12, 18, 14, 0, 0, 0), captor.getAllValues().get(0).getTimestamp());
+        assertEquals(new DateTime(2011, 12, 18, 14, 0, 0, 1), captor.getAllValues().get(26).getTimestamp());
     }
 
     @Test

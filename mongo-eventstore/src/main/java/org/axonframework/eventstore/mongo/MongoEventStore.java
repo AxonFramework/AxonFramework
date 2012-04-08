@@ -22,7 +22,6 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -39,6 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import javax.annotation.PostConstruct;
 
@@ -55,12 +56,12 @@ import javax.annotation.PostConstruct;
 public class MongoEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStore.class);
-
-    private static final int EVENT_VISITOR_BATCH_SIZE = 50;
+    private static final String ORDER_ASC = "1";
+    private static final String ORDER_DESC = "-1";
 
     private final MongoTemplate mongoTemplate;
-    private final Serializer eventSerializer;
 
+    private final Serializer eventSerializer;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
 
     /**
@@ -114,17 +115,14 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
-        // TODO (Aon 2.0): Batch fetching should be left to Mongo driver
-        List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
-        if (lastSnapshotEvent != null) {
-            events.addAll(0, lastSnapshotEvent.getDomainEvents(eventSerializer, upcasterChain));
-        }
-
-        if (events.isEmpty()) {
+        final DBCursor dbCursor = mongoTemplate.domainEventCollection()
+                                               .find(EventEntry.forAggregate(type, identifier.toString(),
+                                                                             snapshotSequenceNumber + 1))
+                                               .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_ASC));
+        if (!dbCursor.hasNext() && lastSnapshotEvent == null) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-
-        return new SimpleDomainEventStream(events);
+        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotEvent);
     }
 
     @Override
@@ -143,55 +141,21 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     @Override
     public void visitEvents(Criteria criteria, EventVisitor visitor) {
-        int first = 0;
-        List<EventEntry> batch;
-        boolean shouldContinue = true;
         DBObject filter = criteria == null ? null : ((MongoCriteria) criteria).asMongoObject();
-        // TODO (Aon 2.0): Batch fetching should be left to Mongo driver
-        while (shouldContinue) {
-            batch = fetchBatch(first, EVENT_VISITOR_BATCH_SIZE, filter);
-            for (EventEntry entry : batch) {
-                for (DomainEventMessage event : entry.getDomainEvents(eventSerializer, upcasterChain)) {
-                    visitor.doWithEvent(event);
-                }
-            }
-            shouldContinue = (batch.size() >= EVENT_VISITOR_BATCH_SIZE);
-            first += EVENT_VISITOR_BATCH_SIZE;
-        }
-    }
-
-    private List<EventEntry> fetchBatch(int startPosition, int batchSize, DBObject filter) {
         DBObject sort = BasicDBObjectBuilder.start()
-                                            .add(EventEntry.TIME_STAMP_PROPERTY, -1)
-                                            .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1)
+                                            .add(EventEntry.TIME_STAMP_PROPERTY, ORDER_ASC)
+                                            .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_ASC)
                                             .get();
-        DBCursor batchDomainEvents = mongoTemplate.domainEventCollection().find(filter).sort(sort).limit(batchSize)
-                                                  .skip(startPosition);
-        List<EventEntry> entries = new ArrayList<EventEntry>();
-        while (batchDomainEvents.hasNext()) {
-            DBObject dbObject = batchDomainEvents.next();
-            entries.add(new EventEntry(dbObject));
+        DBCursor batchDomainEvents = mongoTemplate.domainEventCollection().find(filter).sort(sort);
+        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(batchDomainEvents, null);
+        while (events.hasNext()) {
+            visitor.doWithEvent(events.next());
         }
-        return entries;
     }
 
     @Override
     public MongoCriteriaBuilder newCriteriaBuilder() {
         return new MongoCriteriaBuilder();
-    }
-
-    private List<DomainEventMessage> readEventSegmentInternal(String type, Object identifier,
-                                                              long firstSequenceNumber) {
-
-        DBCursor dbCursor = mongoTemplate.domainEventCollection()
-                                         .find(EventEntry.forAggregate(type, identifier.toString(),
-                                                                       firstSequenceNumber))
-                                         .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, "1"));
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(dbCursor.size());
-        while (dbCursor.hasNext()) {
-            events.addAll(new EventEntry(dbCursor.next()).getDomainEvents(eventSerializer, upcasterChain));
-        }
-        return events;
     }
 
     private EventEntry loadLastSnapshotEvent(String type, Object identifier) {
@@ -201,7 +165,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                                   .get();
         DBCursor dbCursor = mongoTemplate.snapshotEventCollection()
                                          .find(mongoEntry)
-                                         .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, -1))
+                                         .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_DESC))
                                          .limit(1);
 
         if (!dbCursor.hasNext()) {
@@ -215,5 +179,55 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     @Override
     public void setUpcasterChain(UpcasterChain upcasterChain) {
         this.upcasterChain = upcasterChain;
+    }
+
+    private class CursorBackedDomainEventStream implements DomainEventStream {
+
+        private Iterator<DomainEventMessage> messagesToReturn = Collections.emptyIterator();
+        private DomainEventMessage next;
+        private final DBCursor dbCursor;
+
+        /**
+         * Initializes the DomainEventStream, streaming events obtained from the given <code>dbCursor</code> and
+         * optionally the given <code>lastSnapshotEvent</code>.
+         *
+         * @param dbCursor          The cursor providing access to the query results in the Mongo instance
+         * @param lastSnapshotEvent The last snapshot event read, or <code>null</code> if no snapshot is available
+         */
+        public CursorBackedDomainEventStream(DBCursor dbCursor, EventEntry lastSnapshotEvent) {
+            this.dbCursor = dbCursor;
+            if (lastSnapshotEvent != null) {
+                messagesToReturn = lastSnapshotEvent.getDomainEvents(eventSerializer, upcasterChain).iterator();
+            }
+            initializeNextItem();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public DomainEventMessage next() {
+            DomainEventMessage itemToReturn = next;
+            initializeNextItem();
+            return itemToReturn;
+        }
+
+        @Override
+        public DomainEventMessage peek() {
+            return next;
+        }
+
+        /**
+         * Ensures that the <code>next</code> points to the correct item, possibly reading from the dbCursor.
+         */
+        private void initializeNextItem() {
+            while (!messagesToReturn.hasNext() && dbCursor.hasNext()) {
+                messagesToReturn = new EventEntry(dbCursor.next()).getDomainEvents(eventSerializer, upcasterChain)
+                                                                  .iterator();
+            }
+            next = messagesToReturn.hasNext() ? messagesToReturn.next() : null;
+        }
     }
 }
