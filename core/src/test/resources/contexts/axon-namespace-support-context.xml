@@ -119,7 +119,27 @@
                           event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000"/>
 
     <axon:jpa-event-store id="eventStore2" data-source="dataSource" entity-manager-provider="myEntityManagerProvider"
-                          event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000"/>
+                          event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000">
+        <axon:upcasters converter-factory="converterFactory" strategy="eager">
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+            </bean>
+        </axon:upcasters>
+    </axon:jpa-event-store>
+
+    <axon:jpa-event-store id="eventStore3" data-source="dataSource" entity-manager-provider="myEntityManagerProvider"
+                          event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000">
+        <axon:upcasters>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+            </bean>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+            </bean>
+        </axon:upcasters>
+    </axon:jpa-event-store>
+
+    <bean id="converterFactory" class="org.axonframework.serializer.ChainingConverterFactory"/>
     <bean id="myEntityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
 
     <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer"/>

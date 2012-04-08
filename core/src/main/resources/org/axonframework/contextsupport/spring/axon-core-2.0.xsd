@@ -220,6 +220,17 @@
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="eventStoreType">
+                    <xsd:all>
+                        <xsd:element name="upcasters" type="upcasterChainType" minOccurs="0" maxOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Sets the Upcasters to use to transform old revisions of Events into
+                                    their current revision. The given upcasters are chained in order to allow each
+                                    instance to convert based on the outcome of any previous Upcasters.
+                                    Each of the beans defined inside this element must implement the Upcaster interface.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:all>
                     <xsd:attribute name="data-source" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Data Source that provides access to the backing database. This data
@@ -283,6 +294,38 @@
             </xsd:complexContent>
         </xsd:complexType>
     </xsd:element>
+
+    <xsd:complexType name="upcasterChainType">
+        <xsd:complexContent>
+            <xsd:extension base="beans:listOrSetType">
+                <xsd:attribute name="strategy" default="lazy">
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                            <xsd:enumeration value="eager"/>
+                            <xsd:enumeration value="lazy"/>
+                        </xsd:restriction>
+                    </xsd:simpleType>
+                </xsd:attribute>
+                <xsd:attribute name="converter-factory" type="xsd:string" use="optional">
+                    <xsd:annotation>
+                        <xsd:documentation>Reference to the ConverterFactory instance that
+                            should be used to convert SerializedObject content types to the
+                            expected type of each Upcaster. Defaults to a
+                            ChainingConverterFactory which auto-detects other ConverterFactory
+                            instances on the classpath, and is capable of combining them. See
+                            ChainingConverterFactory JavaDoc for more information.
+                        </xsd:documentation>
+                        <xsd:appinfo>
+                            <tool:annotation kind="ref">
+                                <tool:expected-type
+                                        type="org.axonframework.serializer.ConverterFactory"/>
+                            </tool:annotation>
+                        </xsd:appinfo>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
 
     <!-- ================================== -->
     <!-- == repository ==================== -->

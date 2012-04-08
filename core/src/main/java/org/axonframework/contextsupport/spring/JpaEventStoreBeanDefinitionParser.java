@@ -18,9 +18,11 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.eventstore.jpa.JpaEventStore;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 /**
@@ -36,6 +38,7 @@ import org.w3c.dom.Element;
  */
 public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
+    private UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
     /**
      * the event serializer attribute.
      */
@@ -45,6 +48,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
     private static final String MAX_SNAPHOTS_ARCHIVED_ATTRIBUTE = "max-snapshots-archived";
     private static final String BATCH_SIZE_ATTRIBUTE = "batch-size";
     private static final String ENTITY_MANAGER_PROVIDER = "entity-manager-provider";
+    private static final String UPCASTERS_ELEMENT = "upcasters";
 
     /**
      * {@inheritDoc}
@@ -64,7 +68,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         } else {
             builder.addConstructorArgValue(
                     BeanDefinitionBuilder.genericBeanDefinition(ContainerManagedEntityManagerProvider.class)
-                            .getBeanDefinition());
+                                         .getBeanDefinition());
         }
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {
             builder.addConstructorArgReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
@@ -81,6 +85,11 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         }
         if (element.hasAttribute(BATCH_SIZE_ATTRIBUTE)) {
             builder.addPropertyValue("batchSize", element.getAttribute(BATCH_SIZE_ATTRIBUTE));
+        }
+        Element upcasters = DomUtils.getChildElementByTagName(element, UPCASTERS_ELEMENT);
+        if (upcasters != null) {
+            BeanDefinition bd = upcasterChainParser.parse(upcasters, parserContext);
+            builder.addPropertyValue("upcasterChain", bd);
         }
     }
 }

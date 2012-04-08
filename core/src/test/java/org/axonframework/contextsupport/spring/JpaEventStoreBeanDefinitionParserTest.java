@@ -18,6 +18,8 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.upcasting.LazyUpcasterChain;
+import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
@@ -28,6 +30,8 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -55,5 +59,39 @@ public class JpaEventStoreBeanDefinitionParserTest {
 
         JpaEventStore jpaEventStore = beanFactory.getBean("eventStore", JpaEventStore.class);
         assertNotNull(jpaEventStore);
+    }
+
+    @Test
+    public void jpaEventStore_withGivenUpcasterChainStrategy() {
+        BeanDefinition definition = beanFactory.getBeanDefinition("eventStore2");
+        PropertyValue upcasterChain = definition.getPropertyValues().getPropertyValue("upcasterChain");
+        BeanDefinition upcasterChainDefinition = (BeanDefinition) upcasterChain.getValue();
+        assertEquals(SimpleUpcasterChain.class.getName(), upcasterChainDefinition.getBeanClassName());
+        assertEquals(2, upcasterChainDefinition.getConstructorArgumentValues().getArgumentCount());
+        ValueHolder converterFactory = upcasterChainDefinition.getConstructorArgumentValues()
+                                                              .getGenericArgumentValue(RuntimeBeanReference.class);
+        ValueHolder upcasterList = upcasterChainDefinition.getConstructorArgumentValues()
+                                                          .getGenericArgumentValue(List.class);
+        assertNotNull(upcasterList);
+        assertEquals(1, ((List) upcasterList.getValue()).size());
+        assertNotNull(converterFactory);
+        assertEquals("converterFactory", ((RuntimeBeanReference) converterFactory.getValue()).getBeanName());
+
+        assertNotNull(beanFactory.getBean("eventStore2"));
+    }
+
+    @Test
+    public void jpaEventStore_withDefaultUpcasterChainStrategy() {
+        BeanDefinition definition = beanFactory.getBeanDefinition("eventStore3");
+        PropertyValue upcasterChain = definition.getPropertyValues().getPropertyValue("upcasterChain");
+        BeanDefinition upcasterChainDefinition = (BeanDefinition) upcasterChain.getValue();
+        assertEquals(LazyUpcasterChain.class.getName(), upcasterChainDefinition.getBeanClassName());
+        assertEquals(1, upcasterChainDefinition.getConstructorArgumentValues().getArgumentCount());
+        ValueHolder upcasterList = upcasterChainDefinition.getConstructorArgumentValues()
+                                                          .getGenericArgumentValue(List.class);
+        assertNotNull(upcasterList);
+        assertEquals(2, ((List) upcasterList.getValue()).size());
+
+        assertNotNull(beanFactory.getBean("eventStore3"));
     }
 }
