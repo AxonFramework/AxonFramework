@@ -19,6 +19,7 @@ package org.axonframework.repository;
 import org.axonframework.domain.AbstractAggregateRoot;
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.StringAggregateIdentifier;
+import org.axonframework.domain.UUIDAggregateIdentifier;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.util.jpa.SimpleEntityManagerProvider;
@@ -64,6 +65,28 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
+    public void testLoadAggregate_NotFound() {
+        UUIDAggregateIdentifier aggregateIdentifier = new UUIDAggregateIdentifier();
+        try {
+            testSubject.load(aggregateIdentifier);
+            fail("Expected AggregateNotFoundException");
+        } catch (AggregateNotFoundException e) {
+            assertEquals(aggregateIdentifier, e.getAggregateIdentifier());
+        }
+    }
+
+    @Test
+    public void testLoadAggregate_WrongVersion() {
+        try {
+            testSubject.load(aggregateId, 2L);
+            fail("Expected ConflictingAggregateVersionException");
+        } catch (ConflictingAggregateVersionException e) {
+            assertEquals(2L, e.getExpectedVersion());
+            assertEquals(0L, e.getActualVersion());
+        }
+    }
+
+    @Test
     public void testPersistAggregate_DefaultFlushMode() {
         testSubject.doSaveWithLock(aggregate);
         verify(mockEntityManager).persist(aggregate);
@@ -85,11 +108,15 @@ public class GenericJpaRepositoryTest {
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager, never()).flush();
     }
-
     private class StubJpaAggregate extends AbstractAggregateRoot {
 
         private StubJpaAggregate(AggregateIdentifier identifier) {
             super(identifier);
+        }
+
+        @Override
+        public Long getVersion() {
+            return 0L;
         }
     }
 }
