@@ -22,6 +22,8 @@ import org.axonframework.util.jpa.EntityManagerProvider;
 
 import javax.persistence.EntityManager;
 
+import static java.lang.String.format;
+
 /**
  * Generic repository implementation that stores JPA annotated aggregates. These aggregates must implement {@link
  * org.axonframework.domain.AggregateRoot} and have the proper JPA Annotations.
@@ -99,7 +101,19 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
 
     @Override
     protected T doLoad(AggregateIdentifier aggregateIdentifier, Long expectedVersion) {
-        return entityManagerProvider.getEntityManager().find(aggregateType, aggregateIdentifier.asString());
+        T aggregate = entityManagerProvider.getEntityManager().find(aggregateType, aggregateIdentifier.asString());
+        if (aggregate == null) {
+            throw new AggregateNotFoundException(aggregateIdentifier, format(
+                    "Aggregate [%s] with identifier [%s] not found",
+                    aggregateType.getSimpleName(),
+                    aggregateIdentifier.asString()));
+        } else if (expectedVersion != null && aggregate.getVersion() != null
+                && !expectedVersion.equals(aggregate.getVersion())) {
+            throw new ConflictingAggregateVersionException(aggregateIdentifier,
+                                                           expectedVersion,
+                                                           aggregate.getVersion());
+        }
+        return aggregate;
     }
 
     /**
