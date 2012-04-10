@@ -257,9 +257,8 @@
                 Work only ensures that changes made to aggregates are stored upon successful
                 execution of a command handler. If an error occurs while storing an aggregate, any
                 aggregates already stored are not rolled back. If this is important to your
-                application (although it should be avoided as much as possible), consider using a
-                Transaction Interceptor on the command bus that attaches a transaction to the Unit
-                of Work.</para>
+                application, consider using a Transaction Interceptor on the command bus that
+                attaches a transaction to the Unit of Work.</para>
             <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses Spring's
                     <code>PlatformTransactionManager</code> to manage the actual transactions. A
                 transaction is committed after a successful commit of the Unit of Work, or rolled
