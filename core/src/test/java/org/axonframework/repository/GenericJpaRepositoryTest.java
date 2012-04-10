@@ -22,6 +22,7 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
 
+import java.util.UUID;
 import javax.persistence.EntityManager;
 
 import static org.junit.Assert.*;
@@ -62,6 +63,28 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
+    public void testLoadAggregate_NotFound() {
+        String aggregateIdentifier = UUID.randomUUID().toString();
+        try {
+            testSubject.load(aggregateIdentifier);
+            fail("Expected AggregateNotFoundException");
+        } catch (AggregateNotFoundException e) {
+            assertEquals(aggregateIdentifier, e.getAggregateIdentifier());
+        }
+    }
+
+    @Test
+    public void testLoadAggregate_WrongVersion() {
+        try {
+            testSubject.load(aggregateId, 2L);
+            fail("Expected ConflictingAggregateVersionException");
+        } catch (ConflictingAggregateVersionException e) {
+            assertEquals(2L, e.getExpectedVersion());
+            assertEquals(0L, e.getActualVersion());
+        }
+    }
+
+    @Test
     public void testPersistAggregate_DefaultFlushMode() {
         testSubject.doSaveWithLock(aggregate);
         verify(mockEntityManager).persist(aggregate);
@@ -83,7 +106,7 @@ public class GenericJpaRepositoryTest {
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager, never()).flush();
     }
-
+    
     private class StubJpaAggregate extends AbstractAggregateRoot {
 
         private final String identifier;
@@ -95,6 +118,11 @@ public class GenericJpaRepositoryTest {
         @Override
         public Object getIdentifier() {
             return identifier;
+        }
+
+        @Override
+        public Long getVersion() {
+            return 0L;
         }
     }
 }
