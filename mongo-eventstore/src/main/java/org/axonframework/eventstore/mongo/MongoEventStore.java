@@ -183,7 +183,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     private class CursorBackedDomainEventStream implements DomainEventStream {
 
-        private Iterator<DomainEventMessage> messagesToReturn = Collections.emptyIterator();
+        private Iterator<DomainEventMessage> messagesToReturn = Collections.<DomainEventMessage>emptyList().iterator();
         private DomainEventMessage next;
         private final DBCursor dbCursor;
 
