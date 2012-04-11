@@ -18,8 +18,15 @@ package org.axonframework.integrationtests.jpa;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.UUIDAggregateIdentifier;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.repository.GenericJpaRepository;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.util.jpa.SimpleEntityManagerProvider;
 import org.junit.*;
 import org.junit.runner.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +35,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -40,6 +49,8 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
     @PersistenceContext
     private EntityManager entityManager;
     private AggregateIdentifier id = new UUIDAggregateIdentifier();
+    @Autowired
+    private EventBus eventBus;
 
     @Test
     public void testSaveAndLoadAggregate() {
@@ -61,5 +72,31 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
 
         assertEquals(3, reloaded.getInvocationCount());
         assertEquals((Long) 2L, reloaded.getUncommittedEvents().next().getSequenceNumber());
+    }
+
+    @Test
+    public void testEventsPublishedCorrectly() {
+        EventListener mockListener = mock(EventListener.class);
+        GenericJpaRepository<SimpleJpaEventSourcedAggregate> repository = new GenericJpaRepository<SimpleJpaEventSourcedAggregate>(
+                new SimpleEntityManagerProvider(entityManager),
+                SimpleJpaEventSourcedAggregate.class);
+        repository.setEventBus(eventBus);
+
+        try {
+            eventBus.subscribe(mockListener);
+
+            DefaultUnitOfWork.startAndGet();
+            SimpleJpaEventSourcedAggregate aggregate = new SimpleJpaEventSourcedAggregate(id);
+            aggregate.doNothing();
+            aggregate.doNothing();
+            repository.add(aggregate);
+            CurrentUnitOfWork.commit();
+
+            verify(mockListener, times(0)).handle(isA(SomeEvent.class));
+            verify(mockListener, times(2)).handle(isA(NothingEvent.class));
+
+        } finally {
+            eventBus.unsubscribe(mockListener);
+        }
     }
 }

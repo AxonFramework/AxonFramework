@@ -43,6 +43,10 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
         apply(new SomeEvent());
     }
 
+    public void doNothing() {
+        apply(new NothingEvent());
+    }
+
     @EventHandler
     private void onSomeEvent(SomeEvent event) {
         counter++;
