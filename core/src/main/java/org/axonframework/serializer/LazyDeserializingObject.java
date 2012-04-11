@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore;
+package org.axonframework.serializer;
 
 import org.axonframework.common.Assert;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
 
 /**
  * Represents a serialized object that can be deserializedObjects upon request. Typically used as a wrapper class for

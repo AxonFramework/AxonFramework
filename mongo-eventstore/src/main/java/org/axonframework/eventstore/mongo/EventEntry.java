@@ -20,13 +20,13 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.LazyDeserializingObject;
-import org.axonframework.eventstore.SerializedDomainEventMessage;
+import org.axonframework.serializer.SerializedDomainEventData;
+import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
@@ -40,7 +40,7 @@ import java.util.List;
  * @author Jettro Coenradie
  * @since 2.0 (in incubator since 0.7)
  */
-class EventEntry {
+class EventEntry implements SerializedDomainEventData {
 
     /**
      * Property name in mongo for the Aggregate Identifier.
@@ -133,30 +133,46 @@ class EventEntry {
     /**
      * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
-     * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
-     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
-     * @return The actual DomainEvent
+     * @param actualAggregateIdentifier The actual aggregate identifier instance used to perform the lookup, or
+     *                                  <code>null</code> if unknown
+     * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
+     * @param upcasterChain             Set of upcasters to use when an event needs upcasting before de-serialization
+     * @return The actual DomainEventMessage instances stored in this entry
      */
     @SuppressWarnings("unchecked")
-    public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer, UpcasterChain upcasterChain) {
-        // TODO (2.0) Upcasting should be done inside the EventStore implementation. The entry should implement SerializedDomainEventData.
-        Class<?> representationType = String.class;
-        if (serializedPayload instanceof DBObject) {
-            representationType = DBObject.class;
-        }
+    public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
+                                                    UpcasterChain upcasterChain) {
+        Class<?> representationType = getRepresentationType();
         List<SerializedObject> upcastObjects = upcasterChain.upcast(
                 new SimpleSerializedObject(serializedPayload, representationType, payloadType, payloadRevision));
         List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastObjects.size());
         for (SerializedObject upcastObject : upcastObjects) {
-            messages.add(new SerializedDomainEventMessage(eventIdentifier, aggregateIdentifier, sequenceNumber,
-                                                          new DateTime(timeStamp),
-                                                          new LazyDeserializingObject(upcastObject, eventSerializer),
-                                                          new LazyDeserializingObject<MetaData>(
-                                                                  new SerializedMetaData(serializedMetaData,
-                                                                                         representationType),
-                                                                  eventSerializer)));
+            messages.add(new SerializedDomainEventMessage(
+                    new UpcastSerializedDomainEventData(this,
+                                                        actualAggregateIdentifier == null
+                                                                ? aggregateIdentifier : actualAggregateIdentifier,
+                                                        upcastObject),
+                    eventSerializer));
         }
         return messages;
+    }
+
+    private Class<?> getRepresentationType() {
+        Class<?> representationType = String.class;
+        if (serializedPayload instanceof DBObject) {
+            representationType = DBObject.class;
+        }
+        return representationType;
+    }
+
+    @Override
+    public String getEventIdentifier() {
+        return eventIdentifier;
+    }
+
+    @Override
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 
     /**
@@ -166,6 +182,23 @@ class EventEntry {
      */
     public long getSequenceNumber() {
         return sequenceNumber;
+    }
+
+    @Override
+    public DateTime getTimestamp() {
+        return new DateTime(timeStamp);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SerializedObject getMetaData() {
+        return new SerializedMetaData(serializedMetaData, getRepresentationType());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SerializedObject getPayload() {
+        return new SimpleSerializedObject(serializedPayload, getRepresentationType(), payloadType, payloadRevision);
     }
 
     /**

@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore;
+package org.axonframework.serializer;
 
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -37,6 +33,7 @@ public class LazyDeserializingObjectTest {
 
     private String mockDeserializedObject = "I'm a mock";
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
         mockSerializer = mock(Serializer.class);
@@ -47,6 +44,7 @@ public class LazyDeserializingObjectTest {
         when(mockSerializer.deserialize(mockObject)).thenReturn(mockDeserializedObject);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testLazilyDeserialized() {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockObject, mockSerializer);

@@ -23,11 +23,16 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
+import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
+import com.thoughtworks.xstream.core.util.ClassLoaderReference;
+import com.thoughtworks.xstream.core.util.CompositeClassLoader;
+import com.thoughtworks.xstream.io.xml.XppDriver;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.gae.serializer.GaeXStream;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
@@ -41,7 +46,10 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
+ * EventStore implementation that uses Google App Engine's DatastoreService to store Event Streams.
+ *
  * @author Jettro Coenradie
+ * @since 1.0
  */
 public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
 
@@ -51,10 +59,19 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
     private final DatastoreService datastoreService;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
 
+    /**
+     * Constructs an instance using a GAE compatible instance of the XStreamSerializer.
+     */
     public GaeEventStore() {
-        this(new XStreamSerializer());
+        this(new XStreamSerializer(new GaeXStream(new PureJavaReflectionProvider(), new XppDriver(),
+                                                  new ClassLoaderReference(new CompositeClassLoader()))));
     }
 
+    /**
+     * Constructs and instance using the given <code>eventSerializer</code>.
+     *
+     * @param eventSerializer The serializer to serialize payload and metadata of EventMessages with.
+     */
     public GaeEventStore(Serializer eventSerializer) {
         this.eventSerializer = eventSerializer;
         this.datastoreService = DatastoreServiceFactory.getDatastoreService();
@@ -76,7 +93,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
 
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.addAll(0, lastSnapshotEvent.getDomainEvent(eventSerializer, upcasterChain));
+            events.addAll(0, lastSnapshotEvent.getDomainEvent(identifier, eventSerializer, upcasterChain));
         }
 
         if (events.isEmpty()) {
@@ -117,7 +134,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
 
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
         for (Entity entity : entities) {
-            events.addAll(new EventEntry(entity).getDomainEvent(eventSerializer, upcasterChain));
+            events.addAll(new EventEntry(entity).getDomainEvent(identifier, eventSerializer, upcasterChain));
         }
         return events;
     }

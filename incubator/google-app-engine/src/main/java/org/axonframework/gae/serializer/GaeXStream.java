@@ -56,6 +56,7 @@ import com.thoughtworks.xstream.converters.reflection.ReflectionProvider;
 import com.thoughtworks.xstream.converters.reflection.SelfStreamingInstanceChecker;
 import com.thoughtworks.xstream.converters.reflection.SerializableConverter;
 import com.thoughtworks.xstream.core.util.ClassLoaderReference;
+import com.thoughtworks.xstream.core.util.CompositeClassLoader;
 import com.thoughtworks.xstream.io.xml.XppDriver;
 import com.thoughtworks.xstream.mapper.Mapper;
 
@@ -64,11 +65,15 @@ import com.thoughtworks.xstream.mapper.Mapper;
  */
 public class GaeXStream extends XStream {
 
+    public GaeXStream() {
+        this(new PureJavaReflectionProvider(), new XppDriver(),
+             new ClassLoaderReference(new CompositeClassLoader()));
+    }
+
     public GaeXStream(PureJavaReflectionProvider pureJavaReflectionProvider, XppDriver xppDriver,
                       ClassLoaderReference classLoaderReference) {
         super(pureJavaReflectionProvider, xppDriver, classLoaderReference);
     }
-
 
     @Override
     protected void setupConverters() {

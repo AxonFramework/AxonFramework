@@ -214,4 +214,17 @@ public class MetaData implements Map<String, Object>, Serializable {
         }
         return new MetaData(modified);
     }
+
+    /**
+     * Java Serialization specification method that will ensure that deserialization will maintain a single instance of
+     * empty MetaData.
+     *
+     * @return the MetaData instance to use after deserialization
+     */
+    protected Object readResolve() {
+        if (isEmpty()) {
+            return MetaData.emptyInstance();
+        }
+        return this;
+    }
 }

@@ -20,12 +20,8 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.axonframework.eventstore.LazyDeserializingObject;
-import org.axonframework.eventstore.SerializedDomainEventData;
-import org.axonframework.eventstore.SerializedDomainEventMessage;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.jpa.criteria.JpaCriteria;
 import org.axonframework.eventstore.jpa.criteria.JpaCriteriaBuilder;
@@ -34,10 +30,13 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.SerializedDomainEventData;
+import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
+import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterAware;
 import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
@@ -222,14 +221,13 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         return events;
     }
 
+    @SuppressWarnings("unchecked")
     private List<DomainEventMessage> upcastAndDeserialize(SerializedDomainEventData entry, Object identifier) {
         List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload());
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
         for (SerializedObject object : objects) {
             events.add(new SerializedDomainEventMessage<Object>(
-                    entry.getEventIdentifier(), identifier, entry.getSequenceNumber(),
-                    entry.getTimestamp(), new LazyDeserializingObject<Object>(object, eventSerializer),
-                    new LazyDeserializingObject<MetaData>(entry.getMetaData(), eventSerializer)));
+                    new UpcastSerializedDomainEventData(entry, identifier, object), eventSerializer));
         }
         return events;
     }

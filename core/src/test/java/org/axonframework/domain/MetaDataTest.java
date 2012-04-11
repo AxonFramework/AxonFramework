@@ -18,6 +18,11 @@ package org.axonframework.domain;
 
 import org.junit.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -84,6 +89,27 @@ public class MetaDataTest {
         // Map requires that Maps are equal, even if their implementation is different
         assertEquals(metaData2, metaDataValues);
         assertEquals(metaDataValues, metaData2);
+    }
+
+    @Test
+    public void testSerialization() throws IOException, ClassNotFoundException {
+        MetaData metaData1 = MetaData.from(Collections.singletonMap("Key1", "Value"));
+        MetaData metaData2 = MetaData.from(Collections.singletonMap("Key2", "Value"));
+        MetaData emptyMetaData = MetaData.emptyInstance();
+
+        assertEquals(metaData1, serialize(metaData1));
+        assertEquals(metaData2, serialize(metaData2));
+        assertSame(emptyMetaData, serialize(emptyMetaData));
+    }
+
+    private MetaData serialize(MetaData metaData1) throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(metaData1);
+        oos.close();
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        return (MetaData) ois.readObject();
     }
 
     @Test(expected = UnsupportedOperationException.class)

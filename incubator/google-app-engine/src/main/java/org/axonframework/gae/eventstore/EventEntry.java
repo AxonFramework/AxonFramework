@@ -22,26 +22,27 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.eventstore.LazyDeserializingObject;
-import org.axonframework.eventstore.SerializedDomainEventMessage;
+import org.axonframework.serializer.SerializedDomainEventData;
+import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>Class that represents an event to store in the google app engine data store. </p>
+ * Class that represents an event to store in the google app engine data store.
  *
  * @author Jettro Coenradie
+ * @author Allard Buijze
+ * @since 1.0
  */
-public class EventEntry {
+public class EventEntry implements SerializedDomainEventData<String> {
 
     private static final String AGGREGATE_IDENTIFIER = "aggregateIdentifier";
     private static final String SEQUENCE_NUMBER = "sequenceNumber";
@@ -50,6 +51,7 @@ public class EventEntry {
     private static final String EVENT_TYPE = "eventType";
     private static final String EVENT_REVISION = "eventRevision";
     private static final String META_DATA = "metaData";
+    private static final String AGGREGATE_TYPE = "aggregateType";
 
     private final String eventIdentifier;
     private final String aggregateIdentifier;
@@ -60,11 +62,6 @@ public class EventEntry {
     private final String eventRevision;
     private final String eventType;
     private final String serializedMetaData;
-
-    /**
-     * Charset used for the serialization is usually UTF-8, which is presented by this constant
-     */
-    protected static final Charset UTF8 = Charset.forName("UTF-8");
 
     /**
      * Constructor used to create a new event entry to store in Mongo
@@ -78,18 +75,22 @@ public class EventEntry {
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
-        SerializedObject<byte[]> serializedEvent = eventSerializer.serialize(event.getPayload(), byte[].class);
-        this.serializedEvent = new String(serializedEvent.getData(), UTF8);
+        SerializedObject<String> serializedEvent = eventSerializer.serialize(event.getPayload(), String.class);
+        this.serializedEvent = serializedEvent.getData();
         this.eventType = serializedEvent.getType().getName();
         this.eventRevision = serializedEvent.getType().getRevision();
-        this.serializedMetaData = new String(eventSerializer.serialize(event.getMetaData(), byte[].class).getData(),
-                                             UTF8);
+        this.serializedMetaData = eventSerializer.serialize(event.getMetaData(), String.class).getData();
         this.timeStamp = event.getTimestamp().toString();
     }
 
+    /**
+     * Reconstruct an EventEntry based on the given <code>entity</code>, which contains the k
+     *
+     * @param entity the entity containing the fields to build the entry with
+     */
     EventEntry(Entity entity) {
         this.eventIdentifier = entity.getKey().getName();
-        this.aggregateType = entity.getKey().getName();
+        this.aggregateType = (String) entity.getProperty(AGGREGATE_TYPE);
         this.aggregateIdentifier = (String) entity.getProperty(AGGREGATE_IDENTIFIER);
         this.sequenceNumber = (Long) entity.getProperty(SEQUENCE_NUMBER);
         this.serializedEvent = ((Text) entity.getProperty(SERIALIZED_EVENT)).getValue();
@@ -102,23 +103,36 @@ public class EventEntry {
     /**
      * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
-     * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
-     * @param upcasterChain   Set of upcasters to use when an event needs upcasting before de-serialization
-     * @return The actual DomainEvent
+     * @param actualAggregateIdentifier The actual aggregate identifier instance used to perform the lookup
+     * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
+     * @param upcasterChain             Set of upcasters to use when an event needs upcasting before de-serialization
+     * @return The actual DomainEventMessage instances stored in this entry
      */
-    public List<DomainEventMessage> getDomainEvent(Serializer eventSerializer, UpcasterChain upcasterChain) {
+    @SuppressWarnings("unchecked")
+    public List<DomainEventMessage> getDomainEvent(Object actualAggregateIdentifier, Serializer eventSerializer,
+                                                   UpcasterChain upcasterChain) {
         List<SerializedObject> upcastEvents = upcasterChain.upcast(
                 new SimpleSerializedObject<String>(serializedEvent, String.class, eventType, eventRevision));
         List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastEvents.size());
         for (SerializedObject upcastEvent : upcastEvents) {
             messages.add(new SerializedDomainEventMessage<Object>(
-                    eventIdentifier, aggregateIdentifier, sequenceNumber, new DateTime(timeStamp),
-                    new LazyDeserializingObject<Object>(upcastEvent, eventSerializer),
-                    new LazyDeserializingObject<MetaData>(new SerializedMetaData<String>(serializedMetaData,
-                                                                                         String.class),
-                                                          eventSerializer)));
+                    new UpcastSerializedDomainEventData(this,
+                                                        actualAggregateIdentifier == null
+                                                                ? aggregateIdentifier : actualAggregateIdentifier,
+                                                        upcastEvent),
+                    eventSerializer));
         }
         return messages;
+    }
+
+    @Override
+    public String getEventIdentifier() {
+        return eventIdentifier;
+    }
+
+    @Override
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 
     /**
@@ -130,10 +144,31 @@ public class EventEntry {
         return sequenceNumber;
     }
 
+    @Override
+    public DateTime getTimestamp() {
+        return new DateTime(timeStamp);
+    }
+
+    @Override
+    public SerializedObject<String> getMetaData() {
+        return new SerializedMetaData<String>(serializedMetaData, String.class);
+    }
+
+    @Override
+    public SerializedObject<String> getPayload() {
+        return new SimpleSerializedObject<String>(serializedEvent, String.class, eventType, eventRevision);
+    }
+
+    /**
+     * Returns this EventEntry as a Google App Engine Entity.
+     *
+     * @return A GAE Entity containing the data from this entry
+     */
     Entity asEntity() {
         Key key = KeyFactory.createKey(aggregateType, eventIdentifier);
         Entity entity = new Entity(key);
         entity.setProperty(AGGREGATE_IDENTIFIER, aggregateIdentifier);
+        entity.setProperty(AGGREGATE_TYPE, aggregateType);
         entity.setProperty(SEQUENCE_NUMBER, sequenceNumber);
         entity.setProperty(TIME_STAMP, timeStamp);
         entity.setProperty(SERIALIZED_EVENT, new Text(serializedEvent));
@@ -153,14 +188,23 @@ public class EventEntry {
      */
     static Query forAggregate(String type, String aggregateIdentifier, long firstSequenceNumber) {
         return new Query(type)
+                .addFilter(AGGREGATE_TYPE, Query.FilterOperator.EQUAL, type)
                 .addFilter(AGGREGATE_IDENTIFIER, Query.FilterOperator.EQUAL, aggregateIdentifier)
                 .addFilter(SEQUENCE_NUMBER, Query.FilterOperator.GREATER_THAN_OR_EQUAL, firstSequenceNumber)
                 .addSort(SEQUENCE_NUMBER, Query.SortDirection.ASCENDING);
     }
 
+    /**
+     * Builds a Query to select the latest snapshot event for a given aggregate
+     *
+     * @param type                The type identifier of the aggregate
+     * @param aggregateIdentifier The identifier of the aggregate
+     * @return the Query to find the latest snapshot
+     */
     static Query forLastSnapshot(String type, String aggregateIdentifier) {
         return new Query(type)
                 .addFilter(AGGREGATE_IDENTIFIER, Query.FilterOperator.EQUAL, aggregateIdentifier)
+                .addFilter(AGGREGATE_TYPE, Query.FilterOperator.EQUAL, type)
                 .addSort(SEQUENCE_NUMBER, Query.SortDirection.ASCENDING);
     }
 }

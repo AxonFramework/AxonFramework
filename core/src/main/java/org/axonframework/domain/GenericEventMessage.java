@@ -27,21 +27,15 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.0
  */
-public class GenericEventMessage<T> implements EventMessage<T> {
+public class GenericEventMessage<T> extends GenericMessage<T> implements EventMessage<T> {
 
     private static final long serialVersionUID = -8370948891267874107L;
 
-    // payloadType is stored separately, because of Object.getClass() performance
-    private final Class<T> payloadType;
-    private final String identifier;
     private final DateTime timestamp;
-    private final T payload;
-    private final MetaData metaData;
 
     /**
      * Returns the given event as an EventMessage. If <code>event</code> already implements EventMessage, it is
-     * returned
-     * as-is. Otherwise, the given <code>event</code> is wrapped into a GenericEventMessage as its payload.
+     * returned as-is. Otherwise, the given <code>event</code> is wrapped into a GenericEventMessage as its payload.
      *
      * @param event the event to wrap as EventMessage
      * @return an EventMessage containing given <code>event</code> as payload, or <code>event</code> if it already
@@ -71,13 +65,22 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * @param metaData The MetaData for the EventMessage
      * @see #asEventMessage(Object)
      */
-    @SuppressWarnings("unchecked")
     public GenericEventMessage(T payload, Map<String, Object> metaData) {
-        this.payloadType = (Class<T>) payload.getClass();
-        this.metaData = MetaData.from(metaData);
+        super(IdentifierFactory.getInstance().generateIdentifier(), payload, metaData);
         this.timestamp = new DateTime();
-        this.payload = payload;
-        this.identifier = IdentifierFactory.getInstance().generateIdentifier();
+    }
+
+    /**
+     * Constructor to reconstruct an EventMessage using existing data.
+     *
+     * @param identifier The identifier of the Message
+     * @param timestamp  The timestamp of the Message creation
+     * @param payload    The payload of the message
+     * @param metaData   The meta data of the message
+     */
+    public GenericEventMessage(String identifier, DateTime timestamp, T payload, Map<String, Object> metaData) {
+        super(identifier, payload, metaData);
+        this.timestamp = timestamp;
     }
 
     /**
@@ -87,38 +90,14 @@ public class GenericEventMessage<T> implements EventMessage<T> {
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
-    @SuppressWarnings("unchecked")
-    protected GenericEventMessage(EventMessage<T> original, Map<String, Object> metaData) {
-        this.metaData = MetaData.from(metaData);
+    private GenericEventMessage(GenericEventMessage<T> original, Map<String, Object> metaData) {
+        super(original.getIdentifier(), original.getPayload(), metaData);
         this.timestamp = original.getTimestamp();
-        this.payload = original.getPayload();
-        this.payloadType = (Class<T>) payload.getClass();
-        this.identifier = original.getIdentifier();
-    }
-
-    @Override
-    public String getIdentifier() {
-        return identifier;
     }
 
     @Override
     public DateTime getTimestamp() {
         return timestamp;
-    }
-
-    @Override
-    public MetaData getMetaData() {
-        return metaData;
-    }
-
-    @Override
-    public T getPayload() {
-        return payload;
-    }
-
-    @Override
-    public Class getPayloadType() {
-        return payloadType;
     }
 
     @Override

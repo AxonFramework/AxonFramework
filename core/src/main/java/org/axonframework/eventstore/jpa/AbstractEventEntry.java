@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;

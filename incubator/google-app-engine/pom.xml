@@ -33,7 +33,7 @@
     <description>The Google App Engine integration of Axon.</description>
 
     <properties>
-        <gae.version>1.5.0.1</gae.version>
+        <gae.version>1.6.4.1</gae.version>
     </properties>
 
     <dependencies>
@@ -76,6 +76,13 @@
             <groupId>com.google.appengine</groupId>
             <artifactId>appengine-testing</artifactId>
             <version>${gae.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- for some reason, compilation fails if the persistence-api is not on the classpath with GAE 1.6 -->
+            <groupId>javax.persistence</groupId>
+            <artifactId>persistence-api</artifactId>
+            <version>1.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

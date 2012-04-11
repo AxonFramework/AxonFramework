@@ -26,19 +26,26 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -112,6 +119,54 @@ public class MongoEventStoreTest {
             expectedSequenceNumber++;
         }
         assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
+    }
+
+
+    @DirtiesContext
+    @Test
+    public void testStoreAndLoadEvents_WithUpcaster() {
+        assertNotNull(testSubject);
+        UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
+        when(mockUpcasterChain.upcast(isA(SerializedObject.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
+                return Arrays.asList(serializedObject, serializedObject);
+            }
+        });
+
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+
+        testSubject.setUpcasterChain(mockUpcasterChain);
+
+        assertEquals((long) aggregate1.getUncommittedEventCount(),
+                     mongoTemplate.domainEventCollection().count());
+
+        // we store some more events to make sure only correct events are retrieved
+        testSubject.appendEvents("test", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<Object>(aggregate2.getIdentifier(),
+                                                      0,
+                                                      new Object(),
+                                                      Collections.singletonMap("key", (Object) "Value"))));
+
+        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
+        List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
+        while (events.hasNext()) {
+            DomainEventMessage event = events.next();
+            event.getPayload();
+            event.getMetaData();
+            actualEvents.add(event);
+        }
+
+        assertEquals(20, actualEvents.size());
+        for (int t = 0; t < 20; t = t + 2) {
+            assertEquals(actualEvents.get(t).getSequenceNumber(), actualEvents.get(t + 1).getSequenceNumber());
+            assertEquals(actualEvents.get(t).getAggregateIdentifier(),
+                         actualEvents.get(t + 1).getAggregateIdentifier());
+            assertEquals(actualEvents.get(t).getMetaData(), actualEvents.get(t + 1).getMetaData());
+            assertNotNull(actualEvents.get(t).getPayload());
+            assertNotNull(actualEvents.get(t + 1).getPayload());
+        }
     }
 
     @Test

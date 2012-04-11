@@ -16,6 +16,8 @@
 
 package org.axonframework.domain;
 
+import org.joda.time.DateTime;
+
 import java.util.Map;
 
 /**
@@ -62,14 +64,31 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     /**
+     * Constructor to reconstruct a DomainEventMessage using existing data.
+     *
+     * @param identifier          The identifier of the Message
+     * @param timestamp           The timestamp of the Message creation
+     * @param aggregateIdentifier The identifier of the aggregate from which the message originates
+     * @param sequenceNumber      The sequence number of the message withing the originating aggregate
+     * @param payload             The payload of the message
+     * @param metaData            The meta data of the message
+     */
+    public GenericDomainEventMessage(String identifier, DateTime timestamp, Object aggregateIdentifier,
+                                     long sequenceNumber, T payload, Map<String, Object> metaData) {
+        super(identifier, timestamp, payload, metaData);
+        this.aggregateIdentifier = aggregateIdentifier;
+        this.sequenceNumber = sequenceNumber;
+    }
+
+    /**
      * Copy constructor that allows creation of a new GenericDomainEventMessage with modified metaData. All information
      * from the <code>original</code> is copied, except for the metaData.
      *
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
-    protected GenericDomainEventMessage(GenericDomainEventMessage<T> original, Map<String, Object> metaData) {
-        super(original, metaData);
+    private GenericDomainEventMessage(GenericDomainEventMessage<T> original, Map<String, Object> metaData) {
+        super(original.getIdentifier(), original.getTimestamp(), original.getPayload(), metaData);
         this.aggregateIdentifier = original.getAggregateIdentifier();
         this.sequenceNumber = original.getSequenceNumber();
     }

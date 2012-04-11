@@ -122,7 +122,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         if (!dbCursor.hasNext() && lastSnapshotEvent == null) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotEvent);
+        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotEvent, identifier);
     }
 
     @Override
@@ -147,7 +147,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                             .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_ASC)
                                             .get();
         DBCursor batchDomainEvents = mongoTemplate.domainEventCollection().find(filter).sort(sort);
-        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(batchDomainEvents, null);
+        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(batchDomainEvents, null, null);
         while (events.hasNext()) {
             visitor.doWithEvent(events.next());
         }
@@ -186,18 +186,26 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         private Iterator<DomainEventMessage> messagesToReturn = Collections.<DomainEventMessage>emptyList().iterator();
         private DomainEventMessage next;
         private final DBCursor dbCursor;
+        private final Object actualAggregateIdentifier;
 
         /**
          * Initializes the DomainEventStream, streaming events obtained from the given <code>dbCursor</code> and
          * optionally the given <code>lastSnapshotEvent</code>.
          *
-         * @param dbCursor          The cursor providing access to the query results in the Mongo instance
-         * @param lastSnapshotEvent The last snapshot event read, or <code>null</code> if no snapshot is available
+         * @param dbCursor                  The cursor providing access to the query results in the Mongo instance
+         * @param lastSnapshotEvent         The last snapshot event read, or <code>null</code> if no snapshot is
+         *                                  available
+         * @param actualAggregateIdentifier The actual aggregateIdentifier instance used to perform the lookup, or
+         *                                  <code>null</code> if unknown
          */
-        public CursorBackedDomainEventStream(DBCursor dbCursor, EventEntry lastSnapshotEvent) {
+        public CursorBackedDomainEventStream(DBCursor dbCursor, EventEntry lastSnapshotEvent,
+                                             Object actualAggregateIdentifier) {
             this.dbCursor = dbCursor;
+            this.actualAggregateIdentifier = actualAggregateIdentifier;
             if (lastSnapshotEvent != null) {
-                messagesToReturn = lastSnapshotEvent.getDomainEvents(eventSerializer, upcasterChain).iterator();
+                messagesToReturn = lastSnapshotEvent.getDomainEvents(actualAggregateIdentifier,
+                                                                     eventSerializer,
+                                                                     upcasterChain).iterator();
             }
             initializeNextItem();
         }
@@ -224,7 +232,8 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
          */
         private void initializeNextItem() {
             while (!messagesToReturn.hasNext() && dbCursor.hasNext()) {
-                messagesToReturn = new EventEntry(dbCursor.next()).getDomainEvents(eventSerializer, upcasterChain)
+                messagesToReturn = new EventEntry(dbCursor.next()).getDomainEvents(actualAggregateIdentifier,
+                                                                                   eventSerializer, upcasterChain)
                                                                   .iterator();
             }
             next = messagesToReturn.hasNext() ? messagesToReturn.next() : null;
