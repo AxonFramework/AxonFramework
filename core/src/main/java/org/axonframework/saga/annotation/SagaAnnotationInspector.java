@@ -58,14 +58,17 @@ class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractH
         }
         Method handlerMethod = handler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
-        StartSaga startAnnotation = handlerMethod.getAnnotation(StartSaga.class);
-        EndSaga endAnnotation = handlerMethod.getAnnotation(EndSaga.class);
         String associationProperty = handlerAnnotation.associationProperty();
+        Object associationValue = getPropertyValue(event, associationProperty);
+        if (associationValue == null) {
+            return HandlerConfiguration.noHandler();
+        }
         String associationKey = handlerAnnotation.keyName().isEmpty()
                 ? associationProperty
                 : handlerAnnotation.keyName();
-        Object associationValue = getPropertyValue(event, associationProperty);
         AssociationValue association = new AssociationValue(associationKey, associationValue.toString());
+        StartSaga startAnnotation = handlerMethod.getAnnotation(StartSaga.class);
+        EndSaga endAnnotation = handlerMethod.getAnnotation(EndSaga.class);
         return new HandlerConfiguration(creationPolicy(startAnnotation),
                                         handlerMethod,
                                         endAnnotation != null,
