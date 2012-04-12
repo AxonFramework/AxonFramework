@@ -97,6 +97,11 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
+    public void testNullAssociationValueDoesNotThrowNullPointer() {
+        manager.handle(new StartingEvent(null));
+    }
+
+    @Test
     public void testLifeCycle_ExistingInstanceIgnoresEvent() {
         manager.handle(new StartingEvent("12"));
         manager.handle(new StubDomainEvent());
