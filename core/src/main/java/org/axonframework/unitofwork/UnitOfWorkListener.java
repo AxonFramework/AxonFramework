@@ -57,7 +57,7 @@ public interface UnitOfWorkListener {
      *
      * @param event The event about to be registered for publication
      * @param <T>   The type of payload of the EventMessage
-     * @return the (modified) event to register for publicatino
+     * @return the (modified) event to register for publication
      */
     <T> EventMessage<T> onEventRegistered(EventMessage<T> event);
 
