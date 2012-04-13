@@ -98,7 +98,7 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testNullAssociationValueDoesNotThrowNullPointer() {
-        manager.handle(new StartingEvent(null));
+        manager.handle(GenericEventMessage.asEventMessage(new StartingEvent(null)));
     }
 
     @Test
