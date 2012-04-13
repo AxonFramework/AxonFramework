@@ -27,13 +27,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 /**
  * Implementation of the UnitOfWork that buffers all published events until it is committed. Aggregates that have not
@@ -48,10 +46,9 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultUnitOfWork.class);
 
-    private final Map<AggregateRoot, AggregateEntry> registeredAggregates =
-            new LinkedHashMap<AggregateRoot, AggregateEntry>();
+    private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
     private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
-    private final Set<UnitOfWorkListener> listeners = new HashSet<UnitOfWorkListener>();
+    private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private Status dispatcherStatus = Status.READY;
 
     private static enum Status {
@@ -84,9 +81,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     @Override
     protected void doCommit() {
         publishEvents();
-
         commitInnerUnitOfWork();
-
         notifyListenersAfterCommit();
     }
 
@@ -121,10 +116,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     }
 
     private <T> EventMessage<T> invokeEventRegistrationListeners(EventMessage<T> event) {
-        for (UnitOfWorkListener listener : listeners) {
-            event = listener.onEventRegistered(event);
-        }
-        return event;
+        return listeners.onEventRegistered(event);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -140,9 +132,6 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     public void registerListener(UnitOfWorkListener listener) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Registering listener: {}", listener.getClass().getName());
-        }
         listeners.add(listener);
     }
 
@@ -163,26 +152,14 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     protected void notifyListenersRollback(Throwable cause) {
-        logger.debug("Notifying listeners of rollback");
-        for (UnitOfWorkListener listener : listeners) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] of rollback", listener.getClass().getName());
-            }
-            listener.onRollback(cause);
-        }
+        listeners.onRollback(cause);
     }
 
     /**
      * Send a {@link UnitOfWorkListener#afterCommit()} notification to all registered listeners.
      */
     protected void notifyListenersAfterCommit() {
-        logger.debug("Notifying listeners after commit");
-        for (UnitOfWorkListener listener : listeners) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] after commit", listener.getClass().getName());
-            }
-            listener.afterCommit();
-        }
+        listeners.afterCommit();
     }
 
     /**
@@ -227,31 +204,12 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     protected void notifyListenersPrepareCommit() {
-        logger.debug("Notifying listeners of commit request");
-        List<EventMessage> events = eventsToPublish();
-        for (UnitOfWorkListener listener : listeners) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] of upcoming commit", listener.getClass().getName());
-            }
-            listener.onPrepareCommit(registeredAggregates.keySet(), events);
-        }
-        logger.debug("Listeners successfully notified");
+        listeners.onPrepareCommit(registeredAggregates.keySet(), eventsToPublish());
     }
 
     @Override
     protected void notifyListenersCleanup() {
-        logger.debug("Notifying listeners of cleanup");
-        for (UnitOfWorkListener listener : listeners) {
-            try {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
-                }
-                listener.onCleanup();
-            } catch (RuntimeException e) {
-                logger.warn("Listener raised an exception on cleanup. Ignoring...", e);
-            }
-        }
-        logger.debug("Listeners successfully notified");
+        listeners.onCleanup();
     }
 
     private List<EventMessage> eventsToPublish() {
