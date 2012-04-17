@@ -60,6 +60,22 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
         sequenceNumber = domainEventData.getSequenceNumber();
     }
 
+    /**
+     * Wrapper constructor for wrapping a SerializedEventMessage as a SerializedDomainEventMessage, using given
+     * <code>aggregateIdentifier</code> and <code>sequenceNumber</code>. This constructor should be used to reconstruct
+     * an instance of an existing serialized Domain Event Message
+     *
+     * @param eventMessage        The eventMessage to wrap
+     * @param aggregateIdentifier The identifier of the aggregate that generated the message
+     * @param sequenceNumber      The sequence number of the generated event
+     */
+    public SerializedDomainEventMessage(SerializedEventMessage<T> eventMessage, Object aggregateIdentifier,
+                                        long sequenceNumber) {
+        this.eventMessage = eventMessage;
+        this.aggregateIdentifier = aggregateIdentifier;
+        this.sequenceNumber = sequenceNumber;
+    }
+
     private SerializedDomainEventMessage(SerializedDomainEventMessage<T> original, Map<String, Object> metaData) {
         eventMessage = original.eventMessage.withMetaData(metaData);
         this.aggregateIdentifier = original.getAggregateIdentifier();
