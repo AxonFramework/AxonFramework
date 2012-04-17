@@ -28,6 +28,7 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
+import org.axonframework.unitofwork.UnitOfWorkListenerCollection;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,8 +50,8 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private DomainEventStream eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
 
     private final List<EventMessage> eventsToPublish = new ArrayList<EventMessage>();
+    private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private EventSourcedAggregateRoot aggregate;
-    private List<UnitOfWorkListener> listeners = new ArrayList<UnitOfWorkListener>();
 
     /**
      * Initializes a UnitOfWork for execution of a command on the given <code>aggregate</code>.
@@ -74,9 +75,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * committed, but before any of the changes are made public.
      */
     public void onPrepareCommit() {
-        for (UnitOfWorkListener listener : listeners) {
-            listener.onPrepareCommit(Collections.<AggregateRoot>singleton(aggregate), eventsToPublish);
-        }
+        listeners.onPrepareCommit(Collections.<AggregateRoot>singleton(aggregate), eventsToPublish);
     }
 
     /**
@@ -84,9 +83,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * and published.
      */
     public void onAfterCommit() {
-        for (UnitOfWorkListener listener : listeners) {
-            listener.afterCommit();
-        }
+        listeners.afterCommit();
     }
 
     /**
@@ -94,9 +91,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * published and the after-commit cycle has been executed.
      */
     public void onCleanup() {
-        for (UnitOfWorkListener listener : listeners) {
-            listener.onCleanup();
-        }
+        listeners.onCleanup();
     }
 
     /**
@@ -106,9 +101,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * @param cause The cause of the rollback
      */
     public void onRollback(Throwable cause) {
-        for (UnitOfWorkListener listener : listeners) {
-            listener.onRollback(cause);
-        }
+        listeners.onRollback(cause);
     }
 
     @Override
@@ -137,7 +130,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
 
     @Override
     public void registerListener(UnitOfWorkListener listener) {
-        this.listeners.add(listener);
+        listeners.add(listener);
     }
 
     @SuppressWarnings("unchecked")
@@ -191,16 +184,8 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
 
     @Override
     public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
-        DomainEventMessage<T> message = (DomainEventMessage<T>) processListeners(event);
+        DomainEventMessage<T> message = (DomainEventMessage<T>) listeners.onEventRegistered(event);
         eventsToPublish.add(message);
-        return message;
-    }
-
-    private <T> EventMessage<T> processListeners(DomainEventMessage<T> event) {
-        EventMessage<T> message = event;
-        for (UnitOfWorkListener listener : listeners) {
-            message = listener.onEventRegistered(message);
-        }
         return message;
     }
 }
