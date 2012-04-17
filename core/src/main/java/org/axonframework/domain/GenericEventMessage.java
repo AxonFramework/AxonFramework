@@ -35,17 +35,23 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
 
     /**
      * Returns the given event as an EventMessage. If <code>event</code> already implements EventMessage, it is
-     * returned as-is. Otherwise, the given <code>event</code> is wrapped into a GenericEventMessage as its payload.
+     * returned as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the
+     * given message. Otherwise, the given <code>event</code> is wrapped into a GenericEventMessage as its payload.
      *
      * @param event the event to wrap as EventMessage
+     * @param <T>   The generic type of the expected payload of the resuling object
      * @return an EventMessage containing given <code>event</code> as payload, or <code>event</code> if it already
      *         implements EventMessage.
      */
-    public static EventMessage asEventMessage(Object event) {
+    @SuppressWarnings("unchecked")
+    public static <T> EventMessage<T> asEventMessage(Object event) {
         if (EventMessage.class.isInstance(event)) {
-            return (EventMessage) event;
+            return (EventMessage<T>) event;
+        } else if (event instanceof Message) {
+            Message message = (Message) event;
+            return new GenericEventMessage<T>((T) message.getPayload(), message.getMetaData());
         }
-        return new GenericEventMessage<Object>(event);
+        return new GenericEventMessage<T>((T) event);
     }
 
     /**

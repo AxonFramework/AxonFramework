@@ -30,6 +30,7 @@
         <module>integrationtests</module>
         <module>mongo-eventstore</module>
         <module>incubator/google-app-engine</module>
+        <module>amqp</module>
         <!--<module>migration</module>-->
     </modules>
     <packaging>pom</packaging>
