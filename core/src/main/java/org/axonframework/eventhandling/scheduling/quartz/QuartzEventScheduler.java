@@ -25,15 +25,21 @@ import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.util.Assert;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+
+import static org.quartz.JobKey.jobKey;
 
 /**
  * EventScheduler implementation that delegates scheduling and triggering to a Quartz Scheduler.
@@ -55,21 +61,59 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     @Override
     public ScheduleToken schedule(DateTime triggerDateTime, ApplicationEvent event) {
         Assert.state(initialized, "Scheduler is not yet initialized");
-        Object owner = event.getSource();
-        String jobIdentifier = JOB_NAME_PREFIX + event.getEventIdentifier().toString();
+        Object source = event.getSource();
+        String jobIdentifier = JOB_NAME_PREFIX + event.getEventIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
-            JobDetail jobDetail = new JobDetail(jobIdentifier, groupIdentifier, FireEventJob.class);
-            jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, event);
-            jobDetail.setDescription(String.format("%s, scheduled by %s.",
-                                                   event.getClass().getName(),
-                                                   owner.toString()));
-            scheduler.scheduleJob(jobDetail, new SimpleTrigger(event.getEventIdentifier().toString(),
-                                                               triggerDateTime.toDate()));
+            JobKey jobKey = jobKey(jobIdentifier, groupIdentifier);
+            JobDetail jobDetail = buildJobDetail(event, source, jobKey);
+            Trigger trigger = buildTrigger(triggerDateTime, jobKey);
+            scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
             throw new SchedulingException("An error occurred while setting a timer for a saga", e);
         }
         return tr;
+    }
+
+    /**
+     * Builds the JobDetail instance for Quartz, which defines the Job that needs to be executed when the trigger
+     * fires.
+     * <p/>
+     * The resulting JobDetail must be identified by the given <code>jobKey</code> and represent a Job that dispatches
+     * the given <code>event</code>.
+     * <p/>
+     * This method may be safely overridden to change behavior. Defaults to a JobDetail to fire a {@link FireEventJob}.
+     *
+     * @param event  The event to be scheduled for dispatch
+     * @param source The requesting the schedule
+     * @param jobKey The key of the Job to schedule
+     * @return a JobDetail describing the Job to be executed
+     */
+    protected JobDetail buildJobDetail(ApplicationEvent event, Object source, JobKey jobKey) {
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put(FireEventJob.EVENT_KEY, event);
+        return JobBuilder.newJob(FireEventJob.class)
+                         .withDescription(String.format("%s, scheduled by %s.",
+                                                        event.getClass().getName(),
+                                                        source.toString()))
+                         .withIdentity(jobKey)
+                         .usingJobData(jobDataMap)
+                         .build();
+    }
+
+    /**
+     * Builds a Trigger which fires the Job identified by <code>jobKey</code> at (or around) the given
+     * <code>triggerDateTime</code>.
+     *
+     * @param triggerDateTime The time at which a trigger was requested
+     * @param jobKey          The key of the job to be triggered
+     * @return a configured Trigger for the Job with key <code>jobKey</code>
+     */
+    protected Trigger buildTrigger(DateTime triggerDateTime, JobKey jobKey) {
+        return TriggerBuilder.newTrigger()
+                             .forJob(jobKey)
+                             .startAt(triggerDateTime.toDate())
+                             .build();
     }
 
     @Override
@@ -91,7 +135,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
 
         QuartzScheduleToken reference = (QuartzScheduleToken) scheduleToken;
         try {
-            if (!scheduler.deleteJob(reference.getJobIdentifier(), reference.getGroupIdentifier())) {
+            if (!scheduler.deleteJob(jobKey(reference.getJobIdentifier(), reference.getGroupIdentifier()))) {
                 logger.warn("The job belonging to this token could not be deleted.");
             }
         } catch (SchedulerException e) {

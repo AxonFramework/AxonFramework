@@ -25,9 +25,11 @@ import org.joda.time.Duration;
 import org.junit.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
+import org.quartz.impl.matchers.GroupMatcher;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -91,9 +93,9 @@ public class QuartzEventSchedulerTest {
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(new Duration(1000), new StubEvent(mockSaga));
-        assertEquals(1, scheduler.getJobNames(GROUP_ID).length);
+        assertEquals(1, scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(GROUP_ID)).size());
         testSubject.cancelSchedule(token);
-        assertEquals(0, scheduler.getJobNames(GROUP_ID).length);
+        assertEquals(0, scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(GROUP_ID)).size());
         scheduler.shutdown(true);
         verify(eventBus, never()).publish(isA(Event.class));
     }

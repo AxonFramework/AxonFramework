@@ -70,7 +70,7 @@ public class QuartzSagaTimerIntegrationTest {
     public void testJobExecutesInTime() throws InterruptedException, SchedulerException {
         final AtomicReference<JobExecutionException> jobExecutionResult = new AtomicReference<JobExecutionException>();
         final CountDownLatch jobExecutionLatch = new CountDownLatch(1);
-        scheduler.addGlobalJobListener(new JobListener() {
+        scheduler.getListenerManager().addJobListener(new JobListener() {
             @Override
             public String getName() {
                 return "job execution result validator";
