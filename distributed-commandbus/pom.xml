@@ -19,7 +19,7 @@
         <dependency>
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
-            <version>3.0.2.Final</version>
+            <version>3.0.9.Final</version>
             <optional>true</optional>
         </dependency>
         <dependency>

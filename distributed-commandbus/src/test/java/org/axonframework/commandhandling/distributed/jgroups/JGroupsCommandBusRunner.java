@@ -45,7 +45,12 @@ public class JGroupsCommandBusRunner {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.net.preferIPv4Stack", "true");
-        JChannel channel = new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_mcast.xml");
+        String protocol = "static";
+        if (args.length > 0) {
+            protocol = args[0];
+        }
+        JChannel channel = new JChannel(
+                "org/axonframework/commandhandling/distributed/jgroups/tcp_" + protocol + ".xml");
 
         connector = new JGroupsConnector(channel,
                                          "testing",
