@@ -1,37 +1,50 @@
 package org.axonframework.eventhandling.amqp;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
+import org.junit.runner.*;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeNoException;
+import static org.junit.Assume.*;
 
 /**
  * @author Allard Buijze
  */
+@ContextConfiguration(locations = "/META-INF/spring/messaging-context.xml")
+@RunWith(SpringJUnit4ClassRunner.class)
 public class AMQPTerminalTest {
 
-    private Connection connection;
-    private AMQPTerminal terminal;
+    private SpringAMQPTerminal terminal;
+
+    @Autowired
+    private CachingConnectionFactory connectionFactory;
+    @Autowired
+    private Serializer serializer;
+    @Autowired
+    @Qualifier("cluster1")
+    private SpringAMQPCluster cluster;
+    private static final int EVENT_COUNT = 1000;
+    private static final int THREAD_COUNT = 5;
 
     @Before
     public void setUp() throws Exception {
         try {
-            connection = new ConnectionFactory().newConnection();
-            Channel channel = connection.createChannel();
-            channel.queueDeclare("Axon.EventBus.Default", false, false, false, null);
+            Channel channel = connectionFactory.createConnection().createChannel(false);
             while (channel.basicGet("Axon.EventBus.Default", true) != null) {
             }
             if (channel.isOpen()) {
@@ -40,26 +53,14 @@ public class AMQPTerminalTest {
         } catch (IOException e) {
             assumeNoException(e);
         }
-        Serializer serializer = new XStreamSerializer();
-        terminal = new AMQPTerminal(connection, serializer, "Axon.EventBus.Default");
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        if (connection != null && connection.isOpen()) {
-            connection.createChannel().exchangeDelete("Axon.EventBus");
-            connection.createChannel().queueDelete("Axon.EventBus.Default");
-        }
-        terminal.disconnect();
+        terminal = new SpringAMQPTerminal(connectionFactory, serializer, "Axon.EventBus");
     }
 
     @Test
     public void testConnectAndDispatch_DefaultQueueAndExchange() throws Exception {
         final EventMessage<String> sentEvent = GenericEventMessage.asEventMessage("Hello world");
+        final CountDownLatch cdl = new CountDownLatch(EVENT_COUNT * THREAD_COUNT);
 
-        SimpleCluster cluster = new SimpleCluster();
-        terminal.onClusterCreated(cluster);
-        final CountDownLatch cdl = new CountDownLatch(1);
         cluster.subscribe(new EventListener() {
             @Override
             public void handle(EventMessage event) {
@@ -68,43 +69,39 @@ public class AMQPTerminalTest {
                 cdl.countDown();
             }
         });
-        terminal.connect();
 
-        terminal.publish(sentEvent);
+        List<Thread> threads = new ArrayList<Thread>();
+        for (int t=0; t < THREAD_COUNT ; t++) {
+            threads.add(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < EVENT_COUNT; i++) {
+                        boolean sent = false;
+                        while (!sent) {
+                            try {
+                                terminal.publish(sentEvent);
+                                sent = true;
+                            } catch (Exception e) {
+                                System.out.print(".");
+                                // continue trying...
+                            }
+                        }
+                    }
+                }
+            }));
+        }
 
-        cdl.await(1000, TimeUnit.MILLISECONDS);
+        for (Thread t: threads) {
+            t.start();
+        }
+
+        for (Thread t : threads) {
+            t.join();
+        }
+
+        while(!cdl.await(1, TimeUnit.SECONDS)) {
+            System.out.println("Waiting for more messages: " + cdl.getCount());
+        }
         assertEquals("Did not receive message in time", 0, cdl.getCount());
-    }
-
-    @Test
-    public void testConnectAndDispatch_TwoClustersOnDefaultQueueAndExchange() throws Exception {
-        SimpleCluster cluster1 = new SimpleCluster();
-        SimpleCluster cluster2 = new SimpleCluster();
-        terminal.onClusterCreated(cluster1);
-        terminal.onClusterCreated(cluster2);
-        final CountDownLatch cdl = new CountDownLatch(2);
-        cluster1.subscribe(new CountingEventListener(cdl));
-        cluster2.subscribe(new CountingEventListener(cdl));
-
-        terminal.connect();
-
-        terminal.publish(GenericEventMessage.asEventMessage("Hello world"));
-
-        cdl.await(1000, TimeUnit.MILLISECONDS);
-        assertEquals("Did not receive message in time. ", 0, cdl.getCount());
-    }
-
-    private static class CountingEventListener implements EventListener {
-
-        private final CountDownLatch cdl;
-
-        public CountingEventListener(CountDownLatch cdl) {
-            this.cdl = cdl;
-        }
-
-        @Override
-        public void handle(EventMessage event) {
-            cdl.countDown();
-        }
     }
 }

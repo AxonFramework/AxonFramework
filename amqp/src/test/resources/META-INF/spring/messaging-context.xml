@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd">
+
+    <rabbit:fanout-exchange id="eventBusExchange" name="Axon.EventBus" durable="true">
+        <rabbit:bindings>
+            <rabbit:binding queue="eventBusQueue"/>
+            <!--<rabbit:binding queue="anotherQueue"/>-->
+        </rabbit:bindings>
+    </rabbit:fanout-exchange>
+    <rabbit:queue id="eventBusQueue" name="Axon.EventBus.Default" durable="true"/>
+    <rabbit:queue id="anotherQueue" name="Axon.EventBus.Other" durable="true"/>
+
+    <rabbit:admin id="rabbitAdmin" connection-factory="connectionFactory"/>
+
+    <rabbit:connection-factory id="connectionFactory"/>
+
+    <rabbit:listener-container transaction-size="5000" prefetch="10000" acknowledge="auto" concurrency="5" connection-factory="connectionFactory">
+        <!--<rabbit:listener queues="anotherQueue" ref="cluster2"/>-->
+        <rabbit:listener queues="eventBusQueue" ref="cluster1"/>
+    </rabbit:listener-container>
+
+    <bean id="cluster1" class="org.axonframework.eventhandling.amqp.SpringAMQPCluster">
+        <constructor-arg ref="serializer"/>
+    </bean>
+
+    <bean id="cluster2" class="org.axonframework.eventhandling.amqp.SpringAMQPCluster">
+        <constructor-arg ref="serializer"/>
+    </bean>
+
+    <bean id="serializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
+</beans>
