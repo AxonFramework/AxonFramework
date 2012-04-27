@@ -31,15 +31,15 @@ import java.util.Set;
 public interface Cluster {
 
     /**
-     * Publishes the given Event to the members of this cluster.
+     * Publishes the given Events to the members of this cluster.
      * <p/>
      * Implementations may do this synchronously or asynchronously. Although {@link EventListener EventListeners} are
      * discouraged to throw exceptions, it is possible that they are propagated through this method invocation. In that
      * case, no guarantees can be given about the delivery of Events at all Cluster members.
      *
-     * @param event The Event to publish in the cluster
+     * @param events The Events to publish in the cluster
      */
-    void publish(EventMessage event);
+    void publish(EventMessage... events);
 
     /**
      * Subscribe the given {@code eventListener} to this cluster. If the listener is already subscribed, nothing

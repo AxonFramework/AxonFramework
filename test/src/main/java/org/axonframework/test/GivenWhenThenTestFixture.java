@@ -340,8 +340,8 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private class RecordingEventBus implements EventBus {
 
         @Override
-        public void publish(EventMessage event) {
-            publishedEvents.add(event);
+        public void publish(EventMessage... events) {
+            publishedEvents.addAll(Arrays.asList(events));
         }
 
         @Override

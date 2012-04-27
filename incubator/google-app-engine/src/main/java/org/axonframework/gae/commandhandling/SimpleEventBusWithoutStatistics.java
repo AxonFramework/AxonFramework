@@ -37,9 +37,20 @@ public class SimpleEventBusWithoutStatistics implements EventBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBusWithoutStatistics.class);
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
+    public void publish(EventMessage... events) {
+        for (EventMessage event : events) {
+            for (EventListener listener : listeners) {
+                if(logger.isDebugEnabled()) {
+                    logger.debug("Dispatching Event [{}] to EventListener [{}]",
+                                 event.getClass().getSimpleName(),
+                                 listener.getClass().getSimpleName());
+                }
+                listener.handle(event);
+            }
+        }
+    }
+
     @Override
     public void unsubscribe(EventListener eventListener) {
         if (listeners.remove(eventListener)) {
@@ -50,9 +61,6 @@ public class SimpleEventBusWithoutStatistics implements EventBus {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void subscribe(EventListener eventListener) {
         if (listeners.add(eventListener)) {
@@ -60,20 +68,6 @@ public class SimpleEventBusWithoutStatistics implements EventBus {
         } else {
             logger.info("EventListener [{}] not added. It was already subscribed",
                         eventListener.getClass().getSimpleName());
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void publish(EventMessage event) {
-
-        for (EventListener listener : listeners) {
-            logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                         event.getClass().getSimpleName(),
-                         listener.getClass().getSimpleName());
-            listener.handle(event);
         }
     }
 }

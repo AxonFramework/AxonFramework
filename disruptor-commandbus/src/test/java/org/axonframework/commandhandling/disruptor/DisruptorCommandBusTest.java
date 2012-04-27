@@ -475,7 +475,7 @@ public class DisruptorCommandBusTest {
         private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
 
         @Override
-        public void publish(EventMessage event) {
+        public void publish(EventMessage... events) {
             publisherCountDown.countDown();
         }
 

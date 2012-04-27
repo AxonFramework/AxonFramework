@@ -39,7 +39,7 @@ public class SpringAMQPCluster extends AbstractCluster implements MessageListene
      * This method does nothing. Internally dispatched messages are ignored.
      */
     @Override
-    public void publish(EventMessage event) {
+    public void publish(EventMessage... events) {
         // internally dispatched events are ignored
     }
 

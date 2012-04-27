@@ -31,12 +31,12 @@ import org.axonframework.domain.EventMessage;
 public interface EventBusTerminal {
 
     /**
-     * Publishes the given <code>event</code> to all clusters on the Event Bus. The terminal is responsible for the
+     * Publishes the given <code>events</code> to all clusters on the Event Bus. The terminal is responsible for the
      * delivery process, albeit local or remote.
      *
-     * @param event the event to publish
+     * @param events the collections of events to publish
      */
-    void publish(EventMessage event);
+    void publish(EventMessage... events);
 
     /**
      * Invoked when an Event Listener has been assigned to a cluster that was not yet known to the Event Bus. This
