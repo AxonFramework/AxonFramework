@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.Message;
@@ -49,6 +49,6 @@ public class CurrentUnitOfWorkParameterResolverFactory extends ParameterResolver
 
     @Override
     public boolean matches(Message message) {
-        return GenericCommandMessage.class.isInstance(message) && CurrentUnitOfWork.isStarted();
+        return CommandMessage.class.isInstance(message) && CurrentUnitOfWork.isStarted();
     }
 }
