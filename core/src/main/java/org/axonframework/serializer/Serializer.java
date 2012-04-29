@@ -59,12 +59,13 @@ public interface Serializer {
      * from the array or modified in any way. The resulting object instance is cast to the expected type.
      *
      * @param serializedObject the instance describing the type of object and the bytes providing the serialized data
-     * @param <T>              The data type of the serialized object
+     * @param <S>              The data type of the serialized object
+     * @param <T>              The expected deserialized type
      * @return the serialized object, cast to the expected type
      *
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.
      */
-    <T> Object deserialize(SerializedObject<T> serializedObject);
+    <S, T> T deserialize(SerializedObject<S> serializedObject);
 
     /**
      * Returns the class for the given type identifier. The result of this method must guarantee that the deserialized

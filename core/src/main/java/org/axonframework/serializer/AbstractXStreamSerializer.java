@@ -185,9 +185,10 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> Object deserialize(SerializedObject<T> serializedObject) {
-        return doDeserialize(serializedObject, xStream);
+    public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        return (T) doDeserialize(serializedObject, xStream);
     }
 
     /**

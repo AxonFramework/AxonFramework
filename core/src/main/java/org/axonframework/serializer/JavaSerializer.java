@@ -66,15 +66,16 @@ public class JavaSerializer implements Serializer {
         return (converterFactory.hasConverter(byte[].class, expectedRepresentation));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> Object deserialize(SerializedObject<T> serializedObject) {
+    public <S, T> T deserialize(SerializedObject<S> serializedObject) {
         SerializedObject<InputStream> converted = converterFactory.getConverter(serializedObject.getContentType(),
                                                                                 InputStream.class)
                                                                   .convert(serializedObject);
         InputStream stream = converted.getData();
         try {
             ObjectInputStream ois = new ObjectInputStream(stream);
-            return ois.readObject();
+            return (T) ois.readObject();
         } catch (ClassNotFoundException e) {
             throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         } catch (IOException e) {
