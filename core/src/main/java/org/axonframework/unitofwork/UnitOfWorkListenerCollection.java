@@ -75,7 +75,7 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
     public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
         EventMessage<T> newEvent = event;
         for (UnitOfWorkListener listener : listeners) {
-            newEvent = listener.onEventRegistered(event);
+            newEvent = listener.onEventRegistered(newEvent);
         }
         return newEvent;
     }
