@@ -25,15 +25,21 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+
+import static org.quartz.JobKey.jobKey;
 
 /**
  * EventScheduler implementation that delegates scheduling and triggering to a Quartz Scheduler.
@@ -59,15 +65,50 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
-            JobDetail jobDetail = new JobDetail(jobIdentifier, groupIdentifier, FireEventJob.class);
-            jobDetail.getJobDataMap().put(FireEventJob.EVENT_KEY, eventMessage);
-            jobDetail.setDescription(eventMessage.getPayloadType().getSimpleName());
-            scheduler.scheduleJob(jobDetail, new SimpleTrigger(eventMessage.getIdentifier(),
-                                                               triggerDateTime.toDate()));
+            JobDetail jobDetail = buildJobDetail(eventMessage, new JobKey(jobIdentifier, groupIdentifier));
+            scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
         } catch (SchedulerException e) {
             throw new SchedulingException("An error occurred while setting a timer for a saga", e);
         }
         return tr;
+    }
+
+    /**
+     * Builds the JobDetail instance for Quartz, which defines the Job that needs to be executed when the trigger
+     * fires.
+     * <p/>
+     * The resulting JobDetail must be identified by the given <code>jobKey</code> and represent a Job that dispatches
+     * the given <code>event</code>.
+     * <p/>
+     * This method may be safely overridden to change behavior. Defaults to a JobDetail to fire a {@link FireEventJob}.
+     *
+     * @param event  The event to be scheduled for dispatch
+     * @param jobKey The key of the Job to schedule
+     * @return a JobDetail describing the Job to be executed
+     */
+    protected JobDetail buildJobDetail(EventMessage event, JobKey jobKey) {
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put(FireEventJob.EVENT_KEY, event);
+        return JobBuilder.newJob(FireEventJob.class)
+                         .withDescription(event.getClass().getName())
+                         .withIdentity(jobKey)
+                         .usingJobData(jobDataMap)
+                         .build();
+    }
+
+    /**
+     * Builds a Trigger which fires the Job identified by <code>jobKey</code> at (or around) the given
+     * <code>triggerDateTime</code>.
+     *
+     * @param triggerDateTime The time at which a trigger was requested
+     * @param jobKey          The key of the job to be triggered
+     * @return a configured Trigger for the Job with key <code>jobKey</code>
+     */
+    protected Trigger buildTrigger(DateTime triggerDateTime, JobKey jobKey) {
+        return TriggerBuilder.newTrigger()
+                             .forJob(jobKey)
+                             .startAt(triggerDateTime.toDate())
+                             .build();
     }
 
     @Override
@@ -84,7 +125,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
 
         QuartzScheduleToken reference = (QuartzScheduleToken) scheduleToken;
         try {
-            if (!scheduler.deleteJob(reference.getJobIdentifier(), reference.getGroupIdentifier())) {
+            if (!scheduler.deleteJob(jobKey(reference.getJobIdentifier(), reference.getGroupIdentifier()))) {
                 logger.warn("The job belonging to this token could not be deleted.");
             }
         } catch (SchedulerException e) {

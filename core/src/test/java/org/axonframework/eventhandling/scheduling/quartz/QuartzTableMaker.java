@@ -69,11 +69,11 @@ public class QuartzTableMaker implements ApplicationContextAware {
             String script = IOUtils.toString(sqlResource.getInputStream());
             statements = Arrays.asList(script.split(";"));
             for (String statement : statements) {
-                while (statement.startsWith("#")) {
-                    statement = statement.split("\n", 2)[1];
+                while (statement.trim().startsWith("#")) {
+                    statement = statement.trim().split("\n", 2)[1];
                 }
                 if (statement.trim().length() > 0) {
-                    this.entityManager.createNativeQuery(statement).executeUpdate();
+                    this.entityManager.createNativeQuery(statement.trim()).executeUpdate();
                 }
             }
         } catch (IOException ex) {
@@ -114,5 +114,4 @@ public class QuartzTableMaker implements ApplicationContextAware {
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
-
 }
