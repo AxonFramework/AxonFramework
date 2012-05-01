@@ -71,7 +71,7 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
         Map<String, Object> auditData = auditDataProvider.provideAuditDataFor(command);
         if (!auditData.isEmpty()) {
-            event = event.withMetaData(event.getMetaData().mergedWith(auditData));
+            event = event.andMetaData(auditData);
         }
         return event;
     }

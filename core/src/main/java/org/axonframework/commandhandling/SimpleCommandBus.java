@@ -80,7 +80,8 @@ public class SimpleCommandBus implements CommandBus {
         } catch (Error e) {
             throw e;
         } catch (Throwable throwable) {
-            logger.error(format("Processing of a [%s] resulted in an exception: ", command.getClass().getSimpleName()),
+            logger.error("Processing of a {} resulted in an exception: ",
+                         command.getPayloadType().getSimpleName(),
                          throwable);
         }
     }
