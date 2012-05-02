@@ -49,6 +49,9 @@ public class EventCountSnapshotterTriggerTest {
 
     @Before
     public void setUp() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
         mockSnapshotter = mock(Snapshotter.class);
         testSubject = new EventCountSnapshotterTrigger();
         testSubject.setTrigger(3);
@@ -64,8 +67,16 @@ public class EventCountSnapshotterTriggerTest {
 
     @After
     public void tearDown() {
-        if (unitOfWork.isStarted()) {
-            unitOfWork.rollback();
+        try {
+            if (unitOfWork.isStarted()) {
+                unitOfWork.rollback();
+            }
+        } finally {
+            while (CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.get().rollback();
+                System.out.println(
+                        "Warning!! EventCountSnapshotterTriggerTest seems to no correctly close all UnitOfWork");
+            }
         }
     }
 

@@ -72,7 +72,12 @@ public class HybridJpaRepositoryTest {
     private EventListener eventListener;
 
     @Before
-    public void prepateUnitOfWork() {
+    public void prepareUnitOfWork() {
+        while (CurrentUnitOfWork.isStarted()) {
+            System.out.println(
+                    "Warning! EventCountSnapshotterTriggerTest was started while an active UnitOfWork was present");
+            CurrentUnitOfWork.get().rollback();
+        }
         eventListener = mock(EventListener.class);
         unitOfWork = DefaultUnitOfWork.startAndGet();
         eventBus.subscribe(eventListener);
@@ -81,8 +86,16 @@ public class HybridJpaRepositoryTest {
 
     @After
     public void clearUnitOfWork() {
-        if (unitOfWork.isStarted()) {
-            unitOfWork.rollback();
+        try {
+            if (unitOfWork.isStarted()) {
+                unitOfWork.rollback();
+            }
+        } finally {
+            while (CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.get().rollback();
+                System.out.println(
+                        "Warning!! EventCountSnapshotterTriggerTest seems to no correctly close all UnitOfWork");
+            }
         }
     }
 
