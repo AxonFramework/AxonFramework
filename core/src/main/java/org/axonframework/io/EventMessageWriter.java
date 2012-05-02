@@ -41,11 +41,10 @@ public class EventMessageWriter {
      * @throws IOException when any exception occurs writing to the underlying stream
      */
     public void writeEventMessage(EventMessage eventMessage) throws IOException {
-        EventMessageType messageType = EventMessageType.forMessage(eventMessage);
-        out.writeByte(messageType.getTypeByte());
+        out.writeByte(EventMessageType.forMessage(eventMessage).getTypeByte());
         out.writeUTF(eventMessage.getIdentifier());
         out.writeUTF(eventMessage.getTimestamp().toString());
-        if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
+        if (eventMessage instanceof DomainEventMessage) {
             DomainEventMessage domainEventMessage = (DomainEventMessage) eventMessage;
             out.writeUTF(domainEventMessage.getAggregateIdentifier().toString());
             out.writeLong(domainEventMessage.getSequenceNumber());

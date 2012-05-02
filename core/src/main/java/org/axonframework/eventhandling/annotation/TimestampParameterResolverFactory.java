@@ -31,7 +31,10 @@ public class TimestampParameterResolverFactory extends ParameterResolverFactory 
 
     @Override
     public DateTime resolveParameterValue(Message message) {
-        return ((EventMessage) message).getTimestamp();
+        if (message instanceof EventMessage) {
+            return ((EventMessage) message).getTimestamp();
+        }
+        return null;
     }
 
     @Override
