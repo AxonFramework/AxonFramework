@@ -8,6 +8,8 @@ import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBusTerminal;
 import org.axonframework.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -25,6 +27,7 @@ import java.io.IOException;
  */
 public class SpringAMQPTerminal implements EventBusTerminal {
 
+    private static final Logger logger = LoggerFactory.getLogger(SpringAMQPTerminal.class);
     private static final String DEFAULT_EXCHANGE_NAME = "Axon.EventBus";
 
     private final ConnectionFactory connectionFactory;
@@ -98,8 +101,7 @@ public class SpringAMQPTerminal implements EventBusTerminal {
             try {
                 channel.close();
             } catch (IOException e) {
-                System.out.println("That went wrong");
-                // whatever...
+                logger.debug("Unable to close channel. It might already be closed.", e);
             }
         }
     }
@@ -109,8 +111,8 @@ public class SpringAMQPTerminal implements EventBusTerminal {
      * overridden to change the properties used to send a message.
      *
      * @param channel The channel to dispatch the message on
-     * @param body The body of the message to dispatch
-     * @param props The default properties for the message
+     * @param body    The body of the message to dispatch
+     * @param props   The default properties for the message
      * @throws IOException any exception that occurs while dispatching the message
      */
     protected void doSendMessage(Channel channel, byte[] body, AMQP.BasicProperties props) throws IOException {
@@ -120,8 +122,8 @@ public class SpringAMQPTerminal implements EventBusTerminal {
     private void tryRollback(Channel channel) {
         try {
             channel.txRollback();
-        } catch (IOException e1) {
-            // whatever...
+        } catch (IOException e) {
+            logger.debug("Unable to rollback. The underlying channel might already be closed.", e);
         }
     }
 

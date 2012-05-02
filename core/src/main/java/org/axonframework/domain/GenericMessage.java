@@ -80,18 +80,18 @@ public class GenericMessage<T> implements Message<T> {
     }
 
     @Override
-    public GenericMessage<T> withMetaData(Map<String, Object> metaData) {
-        if (this.metaData.equals(metaData)) {
+    public GenericMessage<T> withMetaData(Map<String, Object> newMetaData) {
+        if (this.metaData.equals(newMetaData)) {
             return this;
         }
-        return new GenericMessage<T>(this, metaData);
+        return new GenericMessage<T>(this, newMetaData);
     }
 
     @Override
-    public GenericMessage<T> andMetaData(Map<String, Object> metaData) {
-        if (metaData.isEmpty()) {
+    public GenericMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+        if (additionalMetaData.isEmpty()) {
             return this;
         }
-        return new GenericMessage<T>(this, this.metaData.mergedWith(metaData));
+        return new GenericMessage<T>(this, this.metaData.mergedWith(additionalMetaData));
     }
 }

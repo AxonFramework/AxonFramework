@@ -104,19 +104,19 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public GenericDomainEventMessage<T> withMetaData(Map<String, Object> newMetaDataValues) {
-        if (getMetaData().equals(newMetaDataValues)) {
+    public GenericDomainEventMessage<T> withMetaData(Map<String, Object> newMetaData) {
+        if (getMetaData().equals(newMetaData)) {
             return this;
         }
-        return new GenericDomainEventMessage<T>(this, newMetaDataValues);
+        return new GenericDomainEventMessage<T>(this, newMetaData);
     }
 
     @Override
-    public GenericDomainEventMessage<T> andMetaData(Map<String, Object> additionalMetaDataValues) {
-        if (additionalMetaDataValues.isEmpty()) {
+    public GenericDomainEventMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+        if (additionalMetaData.isEmpty()) {
             return this;
         }
-        return new GenericDomainEventMessage<T>(this, getMetaData().mergedWith(additionalMetaDataValues));
+        return new GenericDomainEventMessage<T>(this, getMetaData().mergedWith(additionalMetaData));
     }
 
     @Override

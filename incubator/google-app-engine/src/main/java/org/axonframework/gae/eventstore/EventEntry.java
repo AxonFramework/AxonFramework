@@ -75,10 +75,10 @@ public class EventEntry implements SerializedDomainEventData<String> {
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
-        SerializedObject<String> serializedEvent = eventSerializer.serialize(event.getPayload(), String.class);
-        this.serializedEvent = serializedEvent.getData();
-        this.eventType = serializedEvent.getType().getName();
-        this.eventRevision = serializedEvent.getType().getRevision();
+        SerializedObject<String> serializedObject = eventSerializer.serialize(event.getPayload(), String.class);
+        this.serializedEvent = serializedObject.getData();
+        this.eventType = serializedObject.getType().getName();
+        this.eventRevision = serializedObject.getType().getRevision();
         this.serializedMetaData = eventSerializer.serialize(event.getMetaData(), String.class).getData();
         this.timeStamp = event.getTimestamp().toString();
     }

@@ -8,6 +8,7 @@ import org.joda.time.DateTime;
  * SerializedDomainEventData implementation that can be used to duplicate existing SerializedDomainEventData instances
  * after upcasting a payload.
  *
+ * @param <T> The data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
  */
@@ -58,6 +59,7 @@ public class UpcastSerializedDomainEventData<T> implements SerializedDomainEvent
         return original.getMetaData();
     }
 
+    @Override
     public SerializedObject<T> getPayload() {
         return upcastPayload;
     }

@@ -107,19 +107,19 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
     }
 
     @Override
-    public GenericEventMessage<T> withMetaData(Map<String, Object> newMetaDataValues) {
-        if (getMetaData().equals(newMetaDataValues)) {
+    public GenericEventMessage<T> withMetaData(Map<String, Object> newMetaData) {
+        if (getMetaData().equals(newMetaData)) {
             return this;
         }
-        return new GenericEventMessage<T>(this, newMetaDataValues);
+        return new GenericEventMessage<T>(this, newMetaData);
     }
 
     @Override
-    public GenericEventMessage<T> andMetaData(Map<String, Object> additionalMetaDataValues) {
-        if (additionalMetaDataValues.isEmpty()) {
+    public GenericEventMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+        if (additionalMetaData.isEmpty()) {
             return this;
         }
-        return new GenericEventMessage<T>(this, getMetaData().mergedWith(additionalMetaDataValues));
+        return new GenericEventMessage<T>(this, getMetaData().mergedWith(additionalMetaData));
     }
 
     @Override
