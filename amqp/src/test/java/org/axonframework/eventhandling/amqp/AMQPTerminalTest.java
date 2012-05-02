@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -50,7 +49,7 @@ public class AMQPTerminalTest {
             if (channel.isOpen()) {
                 channel.close();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             assumeNoException(e);
         }
         terminal = new SpringAMQPTerminal(connectionFactory, serializer, "Axon.EventBus");
@@ -71,7 +70,7 @@ public class AMQPTerminalTest {
         });
 
         List<Thread> threads = new ArrayList<Thread>();
-        for (int t=0; t < THREAD_COUNT ; t++) {
+        for (int t = 0; t < THREAD_COUNT; t++) {
             threads.add(new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -91,7 +90,7 @@ public class AMQPTerminalTest {
             }));
         }
 
-        for (Thread t: threads) {
+        for (Thread t : threads) {
             t.start();
         }
 
@@ -99,7 +98,7 @@ public class AMQPTerminalTest {
             t.join();
         }
 
-        while(!cdl.await(1, TimeUnit.SECONDS)) {
+        while (!cdl.await(1, TimeUnit.SECONDS)) {
             System.out.println("Waiting for more messages: " + cdl.getCount());
         }
         assertEquals("Did not receive message in time", 0, cdl.getCount());
