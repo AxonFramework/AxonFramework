@@ -100,14 +100,18 @@ public class SimpleEventBus implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void publish(EventMessage event) {
+    public void publish(EventMessage... events) {
         statistics.recordPublishedEvent();
-        if (listeners != null && !listeners.isEmpty()) {
-            for (EventListener listener : listeners) {
-                logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                             event.getClass().getSimpleName(),
-                             listener.getClass().getSimpleName());
-                listener.handle(event);
+        if (!listeners.isEmpty()) {
+            for(EventMessage event : events) {
+                for (EventListener listener : listeners) {
+                    if(logger.isDebugEnabled()) {
+                        logger.debug("Dispatching Event [{}] to EventListener [{}]",
+                                     event.getClass().getSimpleName(),
+                                     listener.getClass().getSimpleName());
+                    }
+                    listener.handle(event);
+                }
             }
         }
     }

@@ -29,9 +29,11 @@ import org.axonframework.domain.EventMessage;
 public class SimpleCluster extends AbstractCluster {
 
     @Override
-    public void publish(EventMessage event) {
-        for (EventListener eventListener : getMembers()) {
-            eventListener.handle(event);
+    public void publish(EventMessage... events) {
+        for(EventMessage event : events) {
+            for (EventListener eventListener : getMembers()) {
+                eventListener.handle(event);
+            }
         }
     }
 }

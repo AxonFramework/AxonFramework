@@ -82,11 +82,13 @@ public class SpringAMQPTerminal implements EventBusTerminal {
     }
 
     @Override
-    public void publish(EventMessage event) {
+    public void publish(EventMessage... events) {
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
-            doSendMessage(channel, asByteArray(event), isDurable ? DURABLE : null);
-            delegate.publish(event);
+            for (EventMessage event : events) {
+                doSendMessage(channel, asByteArray(event), isDurable ? DURABLE : null);
+            }
+            delegate.publish(events);
             if (isTransactional) {
                 channel.txCommit();
             }
@@ -171,7 +173,7 @@ public class SpringAMQPTerminal implements EventBusTerminal {
         public static final NoOpTerminal INSTANCE = new NoOpTerminal();
 
         @Override
-        public void publish(EventMessage event) {
+        public void publish(EventMessage... events) {
         }
 
         @Override

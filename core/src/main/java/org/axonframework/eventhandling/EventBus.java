@@ -21,28 +21,32 @@ import org.axonframework.domain.EventMessage;
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can
  * publish
- * their events. The event bus dispatches event to all subscribed listeners.
+ * their events. The event bus dispatches events to all subscribed listeners.
  * <p/>
  * Implementations may or may not dispatch the events to event listeners in the dispatching thread.
  *
  * @author Allard Buijze
  * @see EventListener
  * @see SimpleEventBus
+ * @see ClusteringEventBus
  * @since 0.1
  */
-
 public interface EventBus {
+
     /**
-     * Publish an event on this bus. It is dispatched to all subscribed event listeners.
+     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
+     * listeners.
+     * <p/>
+     * Implementations may treat the given <code>events</code> as a single batch and distribute the events as such to
+     * all subscribed EventListeners.
      *
-     * @param event the event to publish
+     * @param events The collection of events to publish
      */
-    void publish(EventMessage event);
+    void publish(EventMessage... events);
 
     /**
      * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events
-     * published
-     * to this bus.
+     * published to this bus.
      *
      * @param eventListener The event listener to subscribe
      */

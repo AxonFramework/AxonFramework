@@ -47,9 +47,13 @@ public class SpringIntegrationEventBus implements EventBus {
     private final ConcurrentMap<EventListener, MessageHandler> handlers =
             new ConcurrentHashMap<EventListener, MessageHandler>();
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
+    public void publish(EventMessage... events) {
+        for(EventMessage event : events) {
+            channel.send(new GenericMessage<Object>(event.getPayload(), event.getMetaData()));
+        }
+    }
+
     @Override
     public void unsubscribe(EventListener eventListener) {
         MessageHandler messageHandler = handlers.remove(eventListener);
@@ -58,9 +62,6 @@ public class SpringIntegrationEventBus implements EventBus {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void subscribe(EventListener eventListener) {
         MessageHandler messagehandler = new MessageHandlerAdapter(eventListener);
@@ -68,14 +69,6 @@ public class SpringIntegrationEventBus implements EventBus {
         if (oldHandler == null) {
             channel.subscribe(messagehandler);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void publish(EventMessage event) {
-        channel.send(new GenericMessage<Object>(event.getPayload(), event.getMetaData()));
     }
 
     /**
