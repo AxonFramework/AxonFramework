@@ -201,7 +201,7 @@ public class DBObjectHierarchicalStreamReader implements HierarchicalStreamReade
         return name.replaceAll("\\.", "/");
     }
 
-    private final class NameAwareObject {
+    private static final class NameAwareObject {
 
         private final String name;
         private final Object dbObject;
