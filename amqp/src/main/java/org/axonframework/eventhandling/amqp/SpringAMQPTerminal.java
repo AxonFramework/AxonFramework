@@ -82,7 +82,9 @@ public class SpringAMQPTerminal implements EventBusTerminal {
     public void publish(EventMessage... events) {
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
-            doSendMessage(channel, asByteArray(events), isDurable ? DURABLE : null);
+            for (EventMessage event : events) {
+                doSendMessage(channel, asByteArray(event), isDurable ? DURABLE : null);
+            }
             delegate.publish(events);
             if (isTransactional) {
                 channel.txCommit();
@@ -130,13 +132,11 @@ public class SpringAMQPTerminal implements EventBusTerminal {
         delegate.onClusterCreated(cluster);
     }
 
-    private byte[] asByteArray(EventMessage... events) {
+    private byte[] asByteArray(EventMessage event) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
-            for(EventMessage event : events) {
-                outputStream.writeEventMessage(event);
-            }
+            outputStream.writeEventMessage(event);
             return baos.toByteArray();
         } catch (IOException e) {
             // ByteArrayOutputStream doesn't throw IOException... anyway...
