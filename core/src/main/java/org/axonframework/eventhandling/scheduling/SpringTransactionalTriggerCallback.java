@@ -31,38 +31,28 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * @author Allard Buijze
  * @since 1.1
  */
-public class SpringTransactionalTriggerCallback implements EventTriggerCallback, InitializingBean {
+public class SpringTransactionalTriggerCallback extends TransactionalEventTriggerCallback<TransactionStatus>
+        implements InitializingBean {
 
-    private final ThreadLocal<TransactionStatus> transactions = new ThreadLocal<TransactionStatus>();
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
     @Override
-    public void beforePublication(ApplicationEvent event) {
-        transactions.set(transactionManager.getTransaction(transactionDefinition));
+    protected TransactionStatus startUnderlyingTransaction(ApplicationEvent event) {
+        return transactionManager.getTransaction(transactionDefinition);
     }
 
     @Override
-    public void afterPublicationSuccess() {
-        try {
-            TransactionStatus status = transactions.get();
-            if (status.isNewTransaction()) {
-                transactionManager.commit(status);
-            }
-        } finally {
-            transactions.remove();
+    protected void commitUnderlyingTransaction(TransactionStatus tx) {
+        if (tx.isNewTransaction()) {
+            transactionManager.commit(tx);
         }
     }
 
     @Override
-    public void afterPublicationFailure(RuntimeException cause) {
-        try {
-            TransactionStatus status = transactions.get();
-            if (status.isNewTransaction() && !status.isCompleted()) {
-                transactionManager.rollback(status);
-            }
-        } finally {
-            transactions.remove();
+    protected void rollbackUnderlyingTransaction(TransactionStatus tx) {
+        if (tx.isNewTransaction() && !tx.isCompleted()) {
+            transactionManager.rollback(tx);
         }
     }
 
