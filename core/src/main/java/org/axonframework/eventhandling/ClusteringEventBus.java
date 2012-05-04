@@ -85,8 +85,8 @@ public class ClusteringEventBus implements EventBus {
     }
 
     @Override
-    public void publish(EventMessage... event) {
-        terminal.publish(event);
+    public void publish(EventMessage... events) {
+        terminal.publish(events);
     }
 
     @Override
@@ -113,10 +113,8 @@ public class ClusteringEventBus implements EventBus {
 
         @Override
         public void publish(EventMessage... events) {
-            for(EventMessage event : events) {
-                for (Cluster cluster : clusters) {
-                    cluster.publish(event);
-                }
+            for (Cluster cluster : clusters) {
+                cluster.publish(events);
             }
         }
 

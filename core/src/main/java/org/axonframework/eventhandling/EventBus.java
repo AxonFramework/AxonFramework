@@ -28,6 +28,7 @@ import org.axonframework.domain.EventMessage;
  * @author Allard Buijze
  * @see EventListener
  * @see SimpleEventBus
+ * @see ClusteringEventBus
  * @since 0.1
  */
 public interface EventBus {
@@ -36,11 +37,8 @@ public interface EventBus {
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
      * listeners.
      * <p/>
-     * The events in the collection should be semantically coherent (they have make sense as a whole in the
-     * application's domain). The Event Bus can then treat them as such.
-     * This is especially useful to dispatch all events in a collection, or to dispatch none at all (when something
-     * goes
-     * wrong).
+     * Implementations may treat the given <code>events</code> as a single batch and distribute the events as such to
+     * all subscribed EventListeners.
      *
      * @param events The collection of events to publish
      */
@@ -48,8 +46,7 @@ public interface EventBus {
 
     /**
      * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events
-     * published
-     * to this bus.
+     * published to this bus.
      *
      * @param eventListener The event listener to subscribe
      */
