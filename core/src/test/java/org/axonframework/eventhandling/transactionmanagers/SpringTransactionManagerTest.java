@@ -18,12 +18,17 @@ package org.axonframework.eventhandling.transactionmanagers;
 
 import org.axonframework.eventhandling.RetryPolicy;
 import org.axonframework.eventhandling.TransactionStatus;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 
 import java.sql.SQLTimeoutException;
+import java.util.List;
+import java.util.Set;
 
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
@@ -45,6 +50,7 @@ public class SpringTransactionManagerTest {
         testSubject.setTransactionManager(transactionManager);
         when(transactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(underlyingTransactionStatus);
+        when(underlyingTransactionStatus.isNewTransaction()).thenReturn(true);
     }
 
     @Test
@@ -86,5 +92,25 @@ public class SpringTransactionManagerTest {
         inOrder.verify(transactionManager).getTransaction(isA(TransactionDefinition.class));
         inOrder.verify(mockTransactionStatus).setRetryPolicy(RetryPolicy.SKIP_FAILED_EVENT);
         inOrder.verify(transactionManager).commit(underlyingTransactionStatus);
+    }
+
+    @Test
+    public void testCleanupOfInnerUnitOfWorkInvokedAfterTxCommit() {
+        TransactionStatus mockTransactionStatus = mock(TransactionStatus.class);
+        testSubject.beforeTransaction(mockTransactionStatus);
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWorkListener mockUoWListener = mock(UnitOfWorkListener.class);
+        uow.registerListener(mockUoWListener);
+        uow.commit();
+        verify(mockUoWListener, never()).onCleanup();
+        when(mockTransactionStatus.isSuccessful()).thenReturn(true);
+        testSubject.afterTransaction(mockTransactionStatus);
+
+        InOrder inOrder = inOrder(mockUoWListener, transactionManager);
+
+        inOrder.verify(mockUoWListener).onPrepareCommit(isA(Set.class), isA(List.class));
+        inOrder.verify(mockUoWListener).afterCommit();
+        inOrder.verify(transactionManager).commit(underlyingTransactionStatus);
+        inOrder.verify(mockUoWListener).onCleanup();
     }
 }
