@@ -16,16 +16,9 @@
 
 package org.axonframework.eventhandling.transactionmanagers;
 
-import org.axonframework.eventhandling.RetryPolicy;
-import org.axonframework.eventhandling.TransactionManager;
-import org.axonframework.eventhandling.TransactionStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
-
-import java.sql.SQLRecoverableException;
-import java.sql.SQLTransientException;
 
 /**
  * TransactionManager implementation that uses a {@link org.springframework.transaction.PlatformTransactionManager} as
@@ -38,44 +31,29 @@ import java.sql.SQLTransientException;
  * @author Allard Buijze
  * @since 0.5
  */
-public class SpringTransactionManager implements TransactionManager {
-
-    private static final Logger logger = LoggerFactory.getLogger(SpringTransactionManager.class);
+public class SpringTransactionManager
+        extends AbstractTransactionManager<TransactionStatus> {
 
     private PlatformTransactionManager transactionManager;
 
-    private static final ThreadLocal<org.springframework.transaction.TransactionStatus> TRANSACTION =
-            new ThreadLocal<org.springframework.transaction.TransactionStatus>();
-
     @Override
-    public void beforeTransaction(TransactionStatus transactionStatus) {
-        transactionStatus.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
-        transactionStatus.setMaxTransactionSize(25);
-        TRANSACTION.set(transactionManager.getTransaction(new DefaultTransactionDefinition()));
+    protected TransactionStatus startUnderlyingTransaction(
+            org.axonframework.eventhandling.TransactionStatus transactionStatus) {
+        return transactionManager.getTransaction(new DefaultTransactionDefinition());
     }
 
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    public void afterTransaction(TransactionStatus transactionStatus) {
-        if (transactionStatus.isSuccessful()) {
-            transactionManager.commit(TRANSACTION.get());
-        } else {
-            logger.warn("Found failed transaction: [{}].", transactionStatus.getException().getClass().getSimpleName());
-            if (!isTransient(transactionStatus.getException())) {
-                logger.error("ERROR! Exception is not transient or recoverable! Committing transaction and "
-                                     + "skipping Event processing", transactionStatus.getException());
-                transactionStatus.setRetryPolicy(RetryPolicy.SKIP_FAILED_EVENT);
-                transactionManager.commit(TRANSACTION.get());
-            } else {
-                logger.warn("Performing rollback on transaction due to recoverable exception: [{}]",
-                            transactionStatus.getException().getClass().getSimpleName());
-                transactionStatus.setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
-                if (TRANSACTION.get() != null) {
-                    transactionManager.rollback(TRANSACTION.get());
-                }
-            }
+    protected void commitUnderlyingTransaction(TransactionStatus tx) {
+        if (tx.isNewTransaction()) {
+            transactionManager.commit(tx);
         }
-        TRANSACTION.remove();
+    }
+
+    @Override
+    protected void rollbackUnderlyingTransaction(TransactionStatus tx) {
+        if (tx.isNewTransaction()) {
+            transactionManager.rollback(tx);
+        }
     }
 
     /**
@@ -85,16 +63,5 @@ public class SpringTransactionManager implements TransactionManager {
      */
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
-    }
-
-    @SuppressWarnings({"SimplifiableIfStatement"})
-    private boolean isTransient(Throwable exception) {
-        if (exception instanceof SQLTransientException || exception instanceof SQLRecoverableException) {
-            return true;
-        }
-        if (exception.getCause() != null && exception.getCause() != exception) {
-            return isTransient(exception.getCause());
-        }
-        return false;
     }
 }
