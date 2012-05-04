@@ -22,7 +22,7 @@ public @interface MetaData {
     /**
      * The key of the MetaData field to inject.
      */
-    String key();
+    String value();
 
     /**
      * Indicates whether the MetaData must be available in order for the Message handler method to be invoked. Defaults

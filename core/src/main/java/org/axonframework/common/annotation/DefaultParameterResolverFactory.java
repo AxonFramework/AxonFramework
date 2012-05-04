@@ -54,15 +54,15 @@ class DefaultParameterResolverFactory extends ParameterResolverFactory {
 
         @Override
         public Object resolveParameterValue(Message message) {
-            return message.getMetaData().get(metaData.key());
+            return message.getMetaData().get(metaData.value());
         }
 
         @Override
         public boolean matches(Message message) {
             return !(parameterType.isPrimitive() || metaData.required())
                     || (
-                    message.getMetaData().containsKey(metaData.key())
-                            && parameterType.isInstance(message.getMetaData().get(metaData.key()))
+                    message.getMetaData().containsKey(metaData.value())
+                            && parameterType.isInstance(message.getMetaData().get(metaData.value()))
             );
         }
     }
@@ -105,6 +105,7 @@ class DefaultParameterResolverFactory extends ParameterResolverFactory {
     }
 
     private static class PayloadParameterResolver implements ParameterResolver {
+
         private final Class<?> payloadType;
 
         public PayloadParameterResolver(Class<?> payloadType) {

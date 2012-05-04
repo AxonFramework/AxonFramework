@@ -198,7 +198,7 @@ public class AnnotationEventHandlerInvokerTest {
 
         @EventHandler
         public void method3(StubEventOne event,
-                            @MetaData(key = "transactionStatus") TransactionStatus transactionStatus) {
+                            @MetaData("transactionStatus") TransactionStatus transactionStatus) {
             invocationCount3++;
         }
 

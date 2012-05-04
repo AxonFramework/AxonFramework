@@ -224,7 +224,7 @@ import static org.mockito.Mockito.*;
 
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
-                                             @org.axonframework.common.annotation.MetaData(key = "notExist") String value) {
+                                             @org.axonframework.common.annotation.MetaData("notExist") String value) {
             super(IdentifierFactory.getInstance().generateIdentifier());
             Assert.assertNotNull(unitOfWork);
             Assert.assertNull(value);
