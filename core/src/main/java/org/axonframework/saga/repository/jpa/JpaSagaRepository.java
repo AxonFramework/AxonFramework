@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityNotFoundException;
 
 /**
  * JPA implementation of the Saga Repository. It uses an {@link EntityManager} to persist the actual saga in a backing
@@ -143,15 +142,12 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected void deleteSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        try {
-            entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
-                         .setParameter("sagaId", saga.getSagaIdentifier())
-                         .executeUpdate();
-            entityManager.remove(entityManager.getReference(SagaEntry.class, saga.getSagaIdentifier()));
-        } catch (EntityNotFoundException e) {
-            logger.info("Could not delete SagaEntry {}, it appears to have already been deleted.",
-                        saga.getSagaIdentifier());
-        }
+        entityManager.createQuery("DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId")
+                     .setParameter("sagaId", saga.getSagaIdentifier())
+                     .executeUpdate();
+        entityManager.createQuery("DELETE FROM SagaEntry se WHERE se.id = :sagaIdentifier")
+                     .setParameter("sagaIdentifier", saga.getSagaIdentifier())
+                     .executeUpdate();
         entityManager.flush();
     }
 
