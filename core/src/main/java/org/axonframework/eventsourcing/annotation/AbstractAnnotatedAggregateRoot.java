@@ -19,8 +19,15 @@ package org.axonframework.eventsourcing.annotation;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.IncompatibleAggregateException;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import javax.persistence.MappedSuperclass;
+
+import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
+import static org.axonframework.common.ReflectionUtils.fieldsOf;
 
 /**
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
@@ -37,6 +44,7 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
 
     private static final long serialVersionUID = -1206026570158467937L;
     private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
+    private transient Field identifierField;
 
     /**
      * Initialize the aggregate root with a random identifier.
@@ -59,5 +67,57 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
             eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
         }
         eventHandlerInvoker.invokeEventHandlerMethod(event);
+    }
+
+    @Override
+    public Object getIdentifier() {
+        if (identifierField == null) {
+            identifierField = locateIdentifierField(this);
+        }
+        try {
+            return identifierField.get(this);
+        } catch (IllegalAccessException e) {
+            throw new IncompatibleAggregateException(format("The field [%s.%s] is not accessible.",
+                                                            getClass().getSimpleName(),
+                                                            identifierField.getName()), e);
+        }
+    }
+
+    @Override
+    protected void initialize(Object aggregateIdentifier) {
+        if (identifierField == null) {
+            identifierField = locateIdentifierField(this);
+        }
+        try {
+            identifierField.set(this, aggregateIdentifier);
+        } catch (IllegalAccessException e) {
+            throw new IncompatibleAggregateException("The aggregate class [%s] does not allow its Aggregate "
+                                                             + "Identifier field to be set. Make sure the Security "
+                                                             + "Manager allows access using reflection.");
+        }
+    }
+
+    private Field locateIdentifierField(AbstractAnnotatedAggregateRoot instance) {
+        for (Field candidate : fieldsOf(instance.getClass())) {
+            if (containsIdentifierAnotation(candidate.getAnnotations())) {
+                ensureAccessible(candidate);
+                return candidate;
+            }
+        }
+        throw new IncompatibleAggregateException(format("The aggregate class [%s] does not specify an Identifier. "
+                                                                + "Ensure that the field containing the aggregate "
+                                                                + "identifier is annotated with @AggregateIdentifier.",
+                                                        instance.getClass().getSimpleName()));
+    }
+
+    private boolean containsIdentifierAnotation(Annotation[] annotations) {
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof AggregateIdentifier) {
+                return true;
+            } else if ("java.persistence.Id".equals(annotation.getClass().getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

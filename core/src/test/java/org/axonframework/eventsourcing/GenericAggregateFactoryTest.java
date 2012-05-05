@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.junit.*;
 
 import java.util.UUID;
@@ -73,6 +74,10 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
+        protected void initialize(Object aggregateIdentifier) {
+        }
+
+        @Override
         public Object getIdentifier() {
             return "unsuitableAggregateId";
         }
@@ -81,13 +86,20 @@ public class GenericAggregateFactoryTest {
     private static class ExceptionThrowingAggregate
             extends AbstractEventSourcedAggregateRoot {
 
-        @AggregateInitializer
-        private ExceptionThrowingAggregate(Object uuid) {
+        @AggregateIdentifier
+        private String identifier;
+
+        private ExceptionThrowingAggregate() {
             throw new RuntimeException("Mock");
         }
 
         @Override
         protected void handle(DomainEventMessage event) {
+        }
+
+        @Override
+        protected void initialize(Object aggregateIdentifier) {
+            identifier = (String) aggregateIdentifier;
         }
 
         @Override

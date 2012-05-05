@@ -64,7 +64,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param eventStream    The event stream containing the aggregate's past events
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
-    protected abstract DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream);
+    protected abstract DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
+                                                         DomainEventStream eventStream);
 
     private final class CreateSnapshotTask implements Runnable {
 
@@ -79,7 +80,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         @Override
         public void run() {
             DomainEventStream eventStream = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
-            DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, eventStream);
+            DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, aggregateIdentifier, eventStream);
             if (snapshotEvent != null) {
                 eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
             }

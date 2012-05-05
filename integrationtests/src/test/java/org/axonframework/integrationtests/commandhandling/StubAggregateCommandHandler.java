@@ -32,7 +32,7 @@ public class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateCreated(CreateStubAggregateCommand command) {
-        repository.add(StubAggregate.create(command.getAggregateId()));
+        repository.add(new StubAggregate(command.getAggregateId()));
     }
 
     @CommandHandler

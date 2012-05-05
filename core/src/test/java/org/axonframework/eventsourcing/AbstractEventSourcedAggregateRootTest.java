@@ -36,12 +36,12 @@ import static org.junit.Assert.*;
 public class AbstractEventSourcedAggregateRootTest {
 
     private CompositeAggregateRoot testSubject;
-    private String identifier ="aggregateIdentifier";
+    private String identifier = "aggregateIdentifier";
 
     @Test
     public void testInitializeWithEvents() {
-        testSubject = new CompositeAggregateRoot(identifier);
-        testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
+        testSubject = new CompositeAggregateRoot();
+        testSubject.initializeState(identifier, new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
                 identifier,
                 (long) 243,
                 "Mock contents", MetaData
@@ -105,6 +105,14 @@ public class AbstractEventSourcedAggregateRootTest {
             this.identifier = identifier;
         }
 
+        public CompositeAggregateRoot() {
+        }
+
+        @Override
+        protected void initialize(Object aggregateIdentifier) {
+            identifier = (String) aggregateIdentifier;
+        }
+
         @Override
         protected void handle(DomainEventMessage event) {
             this.invocationCount++;
@@ -137,7 +145,6 @@ public class AbstractEventSourcedAggregateRootTest {
         public String getIdentifier() {
             return identifier;
         }
-
     }
 
     /**

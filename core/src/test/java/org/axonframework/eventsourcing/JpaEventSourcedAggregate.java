@@ -60,6 +60,11 @@ public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot 
     }
 
     @Override
+    protected void initialize(Object aggregateIdentifier) {
+        identifier = (String) aggregateIdentifier;
+    }
+
+    @Override
     public Object getIdentifier() {
         return identifier;
     }

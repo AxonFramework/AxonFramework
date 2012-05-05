@@ -36,7 +36,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
-import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.AggregateNotFoundException;
@@ -328,11 +327,13 @@ public class DisruptorCommandBusTest {
         private static final long serialVersionUID = 8192033940704210095L;
 
         private int timesDone = 0;
-        private final String identifier;
+        private String identifier;
 
-        @AggregateInitializer
         private StubAggregate(String identifier) {
             this.identifier = identifier;
+        }
+
+        public StubAggregate() {
         }
 
         @Override
@@ -346,6 +347,11 @@ public class DisruptorCommandBusTest {
 
         public void createFailingEvent() {
             apply(new FailingEvent());
+        }
+
+        @Override
+        protected void initialize(Object aggregateIdentifier) {
+            identifier = (String) aggregateIdentifier;
         }
 
         @Override

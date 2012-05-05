@@ -19,12 +19,12 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotterTrigger;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.repository.LockingStrategy;
 import org.junit.*;
 import org.junit.runner.*;
@@ -52,11 +52,13 @@ public class RepositoryBeanDefinitionParserTest {
      */
     public static class EventSourcedAggregateRootMock implements EventSourcedAggregateRoot {
 
+        @AggregateIdentifier
+        private String id;
+
         /**
          *
          */
-        @AggregateInitializer
-        public EventSourcedAggregateRootMock(final Object identifier) {
+        public EventSourcedAggregateRootMock() {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -117,7 +119,7 @@ public class RepositoryBeanDefinitionParserTest {
          * {@inheritDoc}
          */
         @Override
-        public void initializeState(DomainEventStream domainEventStream) {
+        public void initializeState(Object aggregateIdentifier, DomainEventStream domainEventStream) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
     }

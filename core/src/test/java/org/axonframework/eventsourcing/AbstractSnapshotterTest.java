@@ -42,8 +42,8 @@ public class AbstractSnapshotterTest {
         mockEventStore = mock(SnapshotEventStore.class);
         testSubject = new AbstractSnapshotter() {
             @Override
-            protected DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
-                Object aggregateIdentifier = eventStream.peek().getAggregateIdentifier();
+            protected DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
+                                                        DomainEventStream eventStream) {
                 long lastIdentifier = getLastIdentifierFrom(eventStream);
                 if (lastIdentifier <= 0) {
                     return null;

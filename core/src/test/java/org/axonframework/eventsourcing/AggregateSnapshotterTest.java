@@ -62,7 +62,8 @@ public class AggregateSnapshotterTest {
         when(aggregate.getIdentifier()).thenReturn(aggregateIdentifier);
         when(mockAggregateFactory.createAggregate(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
-        AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", eventStream);
+        AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", aggregateIdentifier,
+                                                                                    eventStream);
 
         verify(mockAggregateFactory).createAggregate(aggregateIdentifier, firstEvent);
         assertSame(aggregate, snapshot.getAggregate());
@@ -85,7 +86,8 @@ public class AggregateSnapshotterTest {
                 .thenThrow(new AssertionError("This invocation is not expected. When an aggregate snapshot is read, "
                                                       + "the aggregate should be extracted from there."));
 
-        AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", eventStream);
+        AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", aggregateIdentifier,
+                                                                                    eventStream);
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getAggregate());
 
         verify(mockAggregateFactory, never()).createAggregate(any(), any(DomainEventMessage.class));

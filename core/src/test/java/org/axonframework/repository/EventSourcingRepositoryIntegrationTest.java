@@ -168,7 +168,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private static class SimpleAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
-        private final UUID identifier;
+        private UUID identifier;
 
         private SimpleAggregateRoot() {
             identifier = UUID.randomUUID();
@@ -185,6 +185,11 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @Override
         protected void handle(DomainEventMessage event) {
+        }
+
+        @Override
+        protected void initialize(Object aggregateIdentifier) {
+            identifier = (UUID) aggregateIdentifier;
         }
 
         @Override

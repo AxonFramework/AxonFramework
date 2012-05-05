@@ -52,8 +52,9 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * @throws IllegalStateException if this aggregate was already initialized.
      */
     @Override
-    public void initializeState(DomainEventStream domainEventStream) {
+    public void initializeState(Object identifier, DomainEventStream domainEventStream) {
         Assert.state(getUncommittedEventCount() == 0, "Aggregate is already initialized");
+        initialize(identifier);
         long lastSequenceNumber = -1;
         while (domainEventStream.hasNext()) {
             DomainEventMessage event = domainEventStream.next();
@@ -129,6 +130,13 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * @param event The event to handle
      */
     protected abstract void handle(DomainEventMessage event);
+
+    /**
+     * Initialize the aggregate by setting the aggregate identifier.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate
+     */
+    protected abstract void initialize(Object aggregateIdentifier);
 
     @Override
     public Long getVersion() {

@@ -30,7 +30,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
-import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
@@ -97,9 +96,8 @@ public class DisruptorCommandBusBenchmark {
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
         private int timesDone = 0;
-        private final String identifier;
+        private String identifier;
 
-        @AggregateInitializer
         private StubAggregate(String identifier) {
             this.identifier = identifier;
         }
@@ -118,6 +116,11 @@ public class DisruptorCommandBusBenchmark {
             if (StubDomainEvent.class.isAssignableFrom(event.getPayloadType())) {
                 timesDone++;
             }
+        }
+
+        @Override
+        protected void initialize(Object aggregateIdentifier) {
+            identifier = (String) aggregateIdentifier;
         }
 
         @Override

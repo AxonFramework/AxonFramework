@@ -31,9 +31,9 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.LockingStrategy;
 import org.axonframework.repository.Repository;
@@ -319,20 +319,19 @@ public class SynchronousLoopbackTest {
         private static final long serialVersionUID = -2927751585905120260L;
 
         private int counter = 0;
-        private final UUID identifier;
 
-        @AggregateInitializer
+        @AggregateIdentifier
+        private UUID identifier;
+
         private CountingAggregate(UUID identifier) {
             this.identifier = identifier;
         }
 
-        public void setCounter(int newValue) {
-            apply(new CounterChangedEvent(newValue));
+        CountingAggregate() {
         }
 
-        @Override
-        public UUID getIdentifier() {
-            return identifier;
+        public void setCounter(int newValue) {
+            apply(new CounterChangedEvent(newValue));
         }
 
         @EventHandler

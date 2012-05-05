@@ -20,17 +20,15 @@ import org.axonframework.common.Assert;
 import org.axonframework.domain.DomainEventMessage;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.util.Set;
-import java.util.TreeSet;
 
+import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
- * Aggregate factory that uses a convention to create instances of aggregates. The type must declare an
- * {@link AggregateInitializer @AggregateInitializer} annotated constructor accepting the aggregate identifier used to
- * load the aggregate as single parameter. This constructor may not perform any initialization on the aggregate, other
- * than setting the identifier.
+ * Aggregate factory that uses a convention to create instances of aggregates. The type must declare a no-arg
+ * constructor accepting.
  * <p/>
  * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
  * GenericAggregateFactory will try to make it accessible. If that doesn't succeed, an exception is thrown.
@@ -42,8 +40,8 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implements AggregateFactory<T> {
 
     private final String typeIdentifier;
-    private final Set<Handler<T>> handlers = new TreeSet<Handler<T>>();
     private final Class<T> aggregateType;
+    private final Constructor<T> constructor;
 
     /**
      * Initialize the AggregateFactory for creating instances of the given <code>aggregateType</code>.
@@ -59,16 +57,13 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
         Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
         this.aggregateType = aggregateType;
         this.typeIdentifier = aggregateType.getSimpleName();
-        for (Constructor<?> constructor : aggregateType.getDeclaredConstructors()) {
-            if (constructor.getAnnotation(AggregateInitializer.class) != null) {
-                handlers.add(new Handler<T>(constructor));
-            }
-        }
-        if (handlers.isEmpty()) {
-            throw new IncompatibleAggregateException(String.format(
-                    "The aggregate [%s] does not have a suitable constructor. "
-                            + "See Javadoc of GenericAggregateFactory for more information.",
-                    aggregateType.getName()));
+        try {
+            Constructor<T> constructor = aggregateType.getDeclaredConstructor();
+            ensureAccessible(constructor);
+            this.constructor = constructor;
+        } catch (NoSuchMethodException e) {
+            throw new IncompatibleAggregateException(format("The aggregate [%s] doesn't provide a no-arg constructor.",
+                                                            aggregateType.getSimpleName()));
         }
     }
 
@@ -89,100 +84,27 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
         if (AggregateSnapshot.class.isInstance(firstEvent)) {
             return (T) ((AggregateSnapshot) firstEvent).getAggregate();
         } else {
-            for (Handler<T> handler : handlers) {
-                if (handler.matches(aggregateIdentifier)) {
-                    return handler.newInstance(aggregateIdentifier);
-                }
+            try {
+                return constructor.newInstance();
+            } catch (InstantiationException e) {
+                throw new IncompatibleAggregateException(format(
+                        "The aggregate [%s] does not have a suitable no-arg constructor.",
+                        aggregateType.getSimpleName()), e);
+            } catch (IllegalAccessException e) {
+                throw new IncompatibleAggregateException(format(
+                        "The aggregate no-arg constructor of the aggregate [%s] is not accessible. Please ensure that "
+                                + "the constructor is public or that the Security Manager allows access through "
+                                + "reflection.", aggregateType.getSimpleName()), e);
+            } catch (InvocationTargetException e) {
+                throw new IncompatibleAggregateException(format(
+                        "The no-arg constructor of [%s] threw an exception on invocation.",
+                        aggregateType.getSimpleName()), e);
             }
         }
-        throw new IncompatibleAggregateException(String.format(
-                "The aggregate [%s] does not have a suitable constructor. "
-                        + "See Javadoc of GenericAggregateFactory for more information.",
-                aggregateType.getSimpleName()));
     }
 
     @Override
     public String getTypeIdentifier() {
         return typeIdentifier;
-    }
-
-    private class Handler<T> implements Comparable<Handler> {
-
-        private final int payloadDepth;
-        private final String payloadName;
-        private Constructor<?> constructor;
-        private final Class parameterType;
-
-        public Handler(Constructor<?> constructor) {
-            this.constructor = constructor;
-            parameterType = constructor.getParameterTypes()[0];
-            payloadDepth = superClassCount(parameterType, Integer.MAX_VALUE);
-            payloadName = parameterType.getName();
-            ensureAccessible(constructor);
-        }
-
-        public boolean matches(Object parameter) {
-            return parameterType.isInstance(parameter);
-        }
-
-        @SuppressWarnings("unchecked")
-        public T newInstance(Object parameter) {
-            try {
-                return (T) constructor.newInstance(parameter);
-            } catch (Exception e) {
-                throw new IncompatibleAggregateException(String.format(
-                        "The constructor [%s] threw an exception", constructor.toString()), e);
-            }
-        }
-
-        private int superClassCount(Class<?> declaringClass, int interfaceScore) {
-            if (declaringClass.isInterface()) {
-                return interfaceScore;
-            }
-            int superClasses = 0;
-
-            while (declaringClass != null) {
-                superClasses++;
-                declaringClass = declaringClass.getSuperclass();
-            }
-            return superClasses;
-        }
-
-        @Override
-        public int compareTo(Handler o) {
-            if (payloadDepth != o.payloadDepth) {
-                return o.payloadDepth - payloadDepth;
-            } else {
-                return payloadName.compareTo(o.payloadName);
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            Handler that = (Handler) o;
-
-            if (payloadDepth != that.payloadDepth) {
-                return false;
-            }
-            if (!payloadName.equals(that.payloadName)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = payloadDepth;
-            result = 31 * result + payloadName.hashCode();
-            return result;
-        }
     }
 }

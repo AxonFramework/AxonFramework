@@ -17,8 +17,8 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 
 /**
  * @author Allard Buijze
@@ -26,17 +26,16 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 public class StubAggregate extends AbstractAnnotatedAggregateRoot {
 
     private int changeCounter;
-    private final Object identifier;
 
-    public static StubAggregate create(Object identifier) {
-        StubAggregate aggregate = new StubAggregate(identifier);
-        aggregate.apply(new StubAggregateCreatedEvent());
-        return aggregate;
+    @AggregateIdentifier
+    private Object identifier;
+
+    public StubAggregate(Object aggregateId) {
+        this.identifier = aggregateId;
+        apply(new StubAggregateCreatedEvent());
     }
 
-    @AggregateInitializer
-    StubAggregate(Object identifier) {
-        this.identifier = identifier;
+    StubAggregate() {
     }
 
     public void makeAChange() {
@@ -50,11 +49,6 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
     @Override
     public void markDeleted() {
         super.markDeleted();
-    }
-
-    @Override
-    public Object getIdentifier() {
-        return identifier;
     }
 
     @EventHandler

@@ -38,10 +38,10 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();
 
     @Override
-    protected DomainEventMessage createSnapshot(String typeIdentifier, DomainEventStream eventStream) {
+    protected DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
+                                                DomainEventStream eventStream) {
 
         DomainEventMessage firstEvent = eventStream.peek();
-        Object aggregateIdentifier = firstEvent.getAggregateIdentifier();
         EventSourcedAggregateRoot aggregate;
         if (firstEvent instanceof AggregateSnapshot) {
             aggregate = ((AggregateSnapshot) firstEvent).getAggregate();
@@ -49,7 +49,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
             AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
             aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         }
-        aggregate.initializeState(eventStream);
+        aggregate.initializeState(aggregateIdentifier, eventStream);
 
         return new AggregateSnapshot<EventSourcedAggregateRoot>(aggregate);
     }

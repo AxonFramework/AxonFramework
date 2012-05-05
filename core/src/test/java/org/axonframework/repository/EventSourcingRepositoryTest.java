@@ -314,7 +314,7 @@ public class EventSourcingRepositoryTest {
     private static class TestAggregate extends AbstractEventSourcedAggregateRoot {
 
         private List<EventMessage> handledEvents = new ArrayList<EventMessage>();
-        private final UUID identifier;
+        private UUID identifier;
 
         private TestAggregate(UUID identifier) {
             this.identifier = identifier;
@@ -328,6 +328,11 @@ public class EventSourcingRepositoryTest {
         @Override
         protected void handle(DomainEventMessage event) {
             handledEvents.add(event);
+        }
+
+        @Override
+        protected void initialize(Object aggregateIdentifier) {
+            identifier = (UUID) aggregateIdentifier;
         }
 
         public List<EventMessage> getHandledEvents() {

@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Jettro Coenradie
  */
 public class GaeSnapshotter implements Snapshotter, InitializingBean, ApplicationContextAware {
+
     private final static Logger logger = LoggerFactory.getLogger(GaeSnapshotter.class);
 
     private SnapshotEventStore eventStore;
@@ -60,9 +61,9 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         Queue queue = QueueFactory.getQueue("snapshotter");
 
         queue.add(TaskOptions.Builder.withUrl("/task/snapshot")
-                                     .param("typeIdentifier", typeIdentifier)
-                                     .param("aggregateIdentifier", aggregateIdentifier.toString())
-                                     .method(TaskOptions.Method.POST)
+                             .param("typeIdentifier", typeIdentifier)
+                             .param("aggregateIdentifier", aggregateIdentifier.toString())
+                             .method(TaskOptions.Method.POST)
         );
     }
 
@@ -91,7 +92,7 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         Object aggregateIdentifier = firstEvent.getAggregateIdentifier();
 
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
-        aggregate.initializeState(eventStream);
+        aggregate.initializeState(aggregateIdentifier, eventStream);
 
         return new AggregateSnapshot<EventSourcedAggregateRoot>(aggregate);
     }

@@ -18,8 +18,8 @@ package org.axonframework.test;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 
 import java.util.UUID;
 
@@ -31,12 +31,11 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     @SuppressWarnings("UnusedDeclaration")
     private transient int counter;
     private Integer lastNumber;
-    private final Object identifier;
+    @AggregateIdentifier
+    private Object identifier;
     private MyEntity entity;
 
-    @AggregateInitializer
-    public StandardAggregate(Object identifier) {
-        this.identifier = identifier;
+    public StandardAggregate() {
     }
 
     public StandardAggregate(int initialValue, Object aggregateIdentifier) {

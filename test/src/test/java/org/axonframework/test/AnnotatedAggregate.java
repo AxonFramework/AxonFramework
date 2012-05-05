@@ -19,8 +19,8 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 
 import java.util.UUID;
 
@@ -32,12 +32,15 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     @SuppressWarnings("UnusedDeclaration")
     private transient int counter;
     private Integer lastNumber;
-    private final Object identifier;
+    @AggregateIdentifier
+    private Object identifier;
     private MyEntity entity;
 
-    @AggregateInitializer
     public AnnotatedAggregate(Object identifier) {
         this.identifier = identifier;
+    }
+
+    public AnnotatedAggregate() {
     }
 
     @CommandHandler
