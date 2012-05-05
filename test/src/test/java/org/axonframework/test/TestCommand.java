@@ -16,11 +16,14 @@
 
 package org.axonframework.test;
 
+import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+
 /**
  * @author Allard Buijze
  */
 class TestCommand {
 
+    @TargetAggregateIdentifier
     private Object aggregateIdentifier;
 
     TestCommand(Object aggregateIdentifier) {

@@ -65,7 +65,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
                     format("Invalid command. It does not identify the target aggregate. "
                                    + "Make sure at least one of the fields or methods in the [%s] class contains the "
                                    + "@TargetAggregateIdentifier annotation and that it returns a non-null value.",
-                           command.getClass().getSimpleName()));
+                           command.getPayloadType().getSimpleName()));
         }
         return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
     }

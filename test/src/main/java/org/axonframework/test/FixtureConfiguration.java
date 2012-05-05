@@ -29,9 +29,12 @@ import java.util.List;
  * Interface describing the operations available on a test fixture in the configuration stage. This stage allows a test
  * case to prepare the fixture for test execution.
  * <p/>
- * In the preparation stage, you should register all components required for your test, mainly the command handler. A
- * typical command handler will require a repository. The test fixture can create a generic repository using the {@link
- * #createRepository(Class)} method. Alternatively, you can register your own repository using the {@link
+ * The fixture is initialized using a Command Handler that expects an <code>@CommandHandler</code> aggregate. If you
+ * have implemented your own command handler (either using annotations, or by implementing the {@link CommandHandler}
+ * interace), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
+ * #registerCommandHandler(Class, org.axonframework.commandhandling.CommandHandler)}, respectively. A typical command
+ * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
+ * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
  * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)} method. Registering the repository
  * will cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by
  * the test.
@@ -42,9 +45,9 @@ import java.util.List;
  * <br/>       private FixtureConfiguration fixture;
  * <br/>      {@code @}Before
  *     public void setUp() {
- *         fixture = Fixtures.newGivenWhenThenFixture();
+ *         fixture = Fixtures.newGivenWhenThenFixture(MyAggregate.class);
  *         MyCommandHandler commandHandler = new MyCommandHandler();
- *         commandHandler.setRepository(fixture.<strong>createRepository(MyAggregate.class)</strong>);
+ *         commandHandler.setRepository(fixture.<strong>getRepository()</strong>);
  *         fixture.<strong>registerAnnotatedCommandHandler(commandHandler)</strong>;
  *     }
  * <br/>      {@code @}Test
@@ -58,65 +61,57 @@ import java.util.List;
  * </pre>
  * </code>
  * <p/>
+ * If you use {@code @CommandHandler} annotations on the aggregate, you do not need to configure any additional command
+ * handlers. In that case, no configuration is required:
+ * <p/>
  * Providing the "given" events using the {@link #given(Object...)} or {@link
  * #given(java.util.List) given(List&lt;DomainEvent&gt;)} methods must be the last operation in the configuration
- * stage.
+ * stage. To indicate that no "given" events are available, just call <code>given()</code> with no parameters.
  * <p/>
  * Besides setting configuration, you can also use the FixtureConfiguration to get access to the configured components.
  * This allows you to (manually) inject the EventBus or any other component into you command handler, for example.
  *
+ * @param <T> The type of the aggregate under test
  * @author Allard Buijze
  * @since 0.6
  */
-public interface FixtureConfiguration {
-
-    /**
-     * Creates and registers a generic repository for the given <code>aggregateClass</code>. It is not recommended to
-     * use this method to create more than a single generic repository. If multiple repositories are created, the exact
-     * behavior is undefined.
-     *
-     * @param aggregateClass The class of the aggregate to create the repository for
-     * @param <T>            The type of the aggregate to create the repository for
-     * @return The generic repository, which has been registered with the fixture
-     *
-     * @see org.axonframework.eventsourcing.EventSourcingRepository
-     */
-    <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createRepository(Class<T> aggregateClass);
+public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
 
     /**
      * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository will be wired
-     * with
-     * an Event Store and Event Bus implementation suitable for this test fixture.
+     * with an Event Store and Event Bus implementation suitable for this test fixture.
      *
      * @param repository The repository to use in the test case
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration registerRepository(EventSourcingRepository<?> repository);
+    FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
 
     /**
      * Registers an <code>annotatedCommandHandler</code> with this fixture. This will register this command handler
-     * with
-     * the command bus used in this fixture.
+     * with the command bus used in this fixture.
      *
      * @param annotatedCommandHandler The command handler to register for this test
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration registerAnnotatedCommandHandler(Object annotatedCommandHandler);
+    FixtureConfiguration<T> registerAnnotatedCommandHandler(Object annotatedCommandHandler);
 
     /**
      * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the
-     * command
-     * bus used by this fixture.
+     * command bus used by this fixture.
      *
      * @param commandType    The type of command to register the handler for
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration registerCommandHandler(Class<?> commandType, CommandHandler commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(Class<?> commandType, CommandHandler commandHandler);
 
     /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
+     * <p/>
+     * If an item in the given <code>domainEvents</code> implements {@link org.axonframework.domain.Message}, the
+     * payload and meta data from that message are copied into a newly created Domain Event Message. Otherwise, a
+     * Domain Event Message with the item as payload and empty meta data is created.
      *
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
@@ -126,6 +121,10 @@ public interface FixtureConfiguration {
     /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
+     * <p/>
+     * If an item in the list implements {@link org.axonframework.domain.Message}, the payload and meta data from that
+     * message are copied into a newly created Domain Event Message. Otherwise, a Domain Event Message with the item
+     * as payload and empty meta data is created.
      *
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
@@ -149,15 +148,6 @@ public interface FixtureConfiguration {
      * @return a TestExecutor instance that can execute the test with this configuration
      */
     TestExecutor givenCommands(List<?> commands);
-
-    /**
-     * Returns the identifier of the aggregate that this fixture prepares. When commands need to load an aggregate
-     * using
-     * a specific identifier, use this method to obtain the correct identifier to use.
-     *
-     * @return the identifier of the aggregate prepared in this fixture
-     */
-    Object getAggregateIdentifier();
 
     /**
      * Returns the command bus used by this fixture. The command bus is provided for wiring purposes only, for example
@@ -191,15 +181,7 @@ public interface FixtureConfiguration {
      *
      * @return the repository used by this fixture
      */
-    EventSourcingRepository<?> getRepository();
-
-    /**
-     * Sets the aggregate identifier of the fixture to the given <code>aggregateIdentifier</code>. This allows for the
-     * use of aggregate identifiers that have a meaning inside the aggregate.
-     *
-     * @param aggregateIdentifier The aggregate identifier the fixture should use.s
-     */
-    void setAggregateIdentifier(Object aggregateIdentifier);
+    EventSourcingRepository<T> getRepository();
 
     /**
      * Sets whether or not the fixture should detect and report state changes that occur outside of Event Handler

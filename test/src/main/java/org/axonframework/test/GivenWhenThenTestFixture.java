@@ -23,12 +23,15 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.Message;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -56,7 +59,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import static java.lang.String.format;
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
@@ -69,11 +71,11 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @author Allard Buijze
  * @since 0.6
  */
-class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
+class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot> implements FixtureConfiguration<T>, TestExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(GivenWhenThenTestFixture.class);
 
-    private EventSourcingRepository<?> repository;
+    private EventSourcingRepository<T> repository;
     private SimpleCommandBus commandBus;
     private EventBus eventBus;
     private Object aggregateIdentifier;
@@ -88,26 +90,24 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     private boolean reportIllegalStateChange = true;
 
     /**
-     * Initializes a new given-when-then style test fixture.
+     * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
+     *
+     * @param aggregateType The aggregate to initialize the test fixture for
      */
-    GivenWhenThenTestFixture() {
+    public GivenWhenThenTestFixture(Class<T> aggregateType) {
         JmxConfiguration.getInstance().disableMonitoring();
-        aggregateIdentifier = UUID.randomUUID().toString();
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
         clearGivenWhenState();
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Override
-    public <T extends EventSourcedAggregateRoot> EventSourcingRepository<T> createRepository(Class<T> aggregateClass) {
-        registerRepository(new EventSourcingRepository<T>(aggregateClass));
-        return (EventSourcingRepository<T>) repository;
+        repository = new EventSourcingRepository<T>(aggregateType);
+        repository.setEventStore(eventStore);
+        repository.setEventBus(eventBus);
+        new AggregateAnnotationCommandHandler<T>(aggregateType, repository, commandBus).subscribe();
     }
 
     @Override
-    public FixtureConfiguration registerRepository(EventSourcingRepository<?> eventSourcingRepository) {
+    public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
         this.repository = eventSourcingRepository;
         eventSourcingRepository.setEventBus(eventBus);
         eventSourcingRepository.setEventStore(eventStore);
@@ -115,14 +115,14 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     @Override
-    public FixtureConfiguration registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
+    public FixtureConfiguration<T> registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
         AnnotationCommandHandlerAdapter.subscribe(annotatedCommandHandler, commandBus);
         return this;
     }
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public FixtureConfiguration registerCommandHandler(Class<?> commandType, CommandHandler commandHandler) {
+    public FixtureConfiguration<T> registerCommandHandler(Class<?> commandType, CommandHandler commandHandler) {
         commandBus.subscribe(commandType, commandHandler);
         return this;
     }
@@ -136,11 +136,14 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     public TestExecutor given(List<?> domainEvents) {
         clearGivenWhenState();
         for (Object event : domainEvents) {
-            this.givenEvents.add(new GenericDomainEventMessage<Object>(
-                    aggregateIdentifier,
-                    sequenceNumber++,
-                    event, null
-            ));
+            Object payload = event;
+            MetaData metaData = null;
+            if (event instanceof Message) {
+                payload = ((Message) event).getPayload();
+                metaData = ((Message) event).getMetaData();
+            }
+            this.givenEvents.add(new GenericDomainEventMessage<Object>(aggregateIdentifier, sequenceNumber++,
+                                                                       payload, metaData));
         }
         return this;
     }
@@ -265,17 +268,6 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     @Override
-    public Object getAggregateIdentifier() {
-        return aggregateIdentifier;
-    }
-
-    @Override
-    public void setAggregateIdentifier(Object aggregateIdentifier) {
-        validateIdentifier(aggregateIdentifier.getClass());
-        this.aggregateIdentifier = aggregateIdentifier;
-    }
-
-    @Override
     public void setReportIllegalStateChange(boolean reportIllegalStateChange) {
         this.reportIllegalStateChange = reportIllegalStateChange;
     }
@@ -296,7 +288,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
     }
 
     @Override
-    public EventSourcingRepository<?> getRepository() {
+    public EventSourcingRepository<T> getRepository() {
         return repository;
     }
 
@@ -319,21 +311,51 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
                                                              next.getSequenceNumber()));
                     }
                 }
+                if (aggregateIdentifier == null) {
+                    aggregateIdentifier = next.getAggregateIdentifier();
+                    injectAggregateIdentifier();
+                }
                 storedEvents.add(next);
             }
         }
 
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
-            if (!aggregateIdentifier.equals(identifier)) {
+            if (identifier != null) {
+                validateIdentifier(identifier.getClass());
+            }
+            if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
                 throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
                                                       + "to get the aggregate identifier to use");
+            } else if (aggregateIdentifier == null) {
+                aggregateIdentifier = identifier;
+                injectAggregateIdentifier();
             }
-            if (givenEvents.isEmpty()) {
+            List<DomainEventMessage> allEvents = new ArrayList<DomainEventMessage>(givenEvents);
+            allEvents.addAll(storedEvents);
+            if (allEvents.isEmpty()) {
                 throw new AggregateNotFoundException(identifier,
-                                                     "No 'given' events were configured for this aggregate.");
+                                                     "No 'given' events were configured for this aggregate, "
+                                                             + "nor have any events been stored.");
             }
-            return new SimpleDomainEventStream(givenEvents);
+            return new SimpleDomainEventStream(allEvents);
+        }
+
+        private void injectAggregateIdentifier() {
+            List<DomainEventMessage> oldEvents = new ArrayList<DomainEventMessage>(givenEvents);
+            givenEvents.clear();
+            for (DomainEventMessage oldEvent : oldEvents) {
+                if (oldEvent.getAggregateIdentifier() == null) {
+                    givenEvents.add(new GenericDomainEventMessage<Object>(oldEvent.getIdentifier(),
+                                                                          oldEvent.getTimestamp(),
+                                                                          aggregateIdentifier,
+                                                                          oldEvent.getSequenceNumber(),
+                                                                          oldEvent.getPayload(),
+                                                                          oldEvent.getMetaData()));
+                } else {
+                    givenEvents.add(oldEvent);
+                }
+            }
         }
     }
 
@@ -382,6 +404,7 @@ class GivenWhenThenTestFixture implements FixtureConfiguration, TestExecutor {
             this.eventSourceObject = eventSourceObject;
         }
 
+        @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
             if (this == o) {

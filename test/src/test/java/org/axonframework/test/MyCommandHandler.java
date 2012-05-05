@@ -27,10 +27,10 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
  */
 class MyCommandHandler {
 
-    private Repository<MyAggregate> repository;
+    private Repository<StandardAggregate> repository;
     private EventBus eventBus;
 
-    MyCommandHandler(Repository<MyAggregate> repository, EventBus eventBus) {
+    MyCommandHandler(Repository<StandardAggregate> repository, EventBus eventBus) {
         this.repository = repository;
         this.eventBus = eventBus;
     }
@@ -40,18 +40,18 @@ class MyCommandHandler {
 
     @CommandHandler
     public void createAggregate(CreateAggregateCommand command) {
-        repository.add(new MyAggregate(0, command.getAggregateIdentifier()));
+        repository.add(new StandardAggregate(0, command.getAggregateIdentifier()));
     }
 
     @CommandHandler
     public void handleTestCommand(TestCommand testCommand) {
-        MyAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
+        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
         aggregate.doSomething();
     }
 
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
-        MyAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
+        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
         aggregate.doSomething();
         eventBus.publish(new GenericEventMessage<MyApplicationEvent>(new MyApplicationEvent()));
         CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<MyApplicationEvent>(new MyApplicationEvent()),
@@ -61,7 +61,7 @@ class MyCommandHandler {
 
     @CommandHandler
     public void handleIllegalStateChange(IllegalStateChangeCommand command) {
-        MyAggregate aggregate = repository.load(command.getAggregateIdentifier());
+        StandardAggregate aggregate = repository.load(command.getAggregateIdentifier());
         aggregate.doSomethingIllegal(command.getNewIllegalValue());
     }
 
@@ -70,7 +70,7 @@ class MyCommandHandler {
         repository.load(command.getAggregateIdentifier()).delete();
     }
 
-    public void setRepository(Repository<MyAggregate> repository) {
+    public void setRepository(Repository<StandardAggregate> repository) {
         this.repository = repository;
     }
 }

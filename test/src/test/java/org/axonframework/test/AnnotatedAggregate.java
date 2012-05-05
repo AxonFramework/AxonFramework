@@ -16,15 +16,18 @@
 
 package org.axonframework.test;
 
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.AggregateInitializer;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
+import java.util.UUID;
+
 /**
  * @author Allard Buijze
  */
-class MyAggregate extends AbstractAnnotatedAggregateRoot {
+class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
     @SuppressWarnings("UnusedDeclaration")
     private transient int counter;
@@ -33,22 +36,26 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
     private MyEntity entity;
 
     @AggregateInitializer
-    public MyAggregate(Object identifier) {
+    public AnnotatedAggregate(Object identifier) {
         this.identifier = identifier;
     }
 
-    public MyAggregate(int initialValue, Object aggregateIdentifier) {
-        this.identifier = aggregateIdentifier;
-        apply(new MyEvent(initialValue));
+    @CommandHandler
+    public AnnotatedAggregate(CreateAggregateCommand command) {
+        this.identifier = command.getAggregateIdentifier() == null ?
+                UUID.randomUUID() : command.getAggregateIdentifier();
+        apply(new MyEvent(0));
     }
 
-    public void delete() {
+    @CommandHandler
+    public void delete(DeleteCommand command) {
         apply(new MyAggregateDeletedEvent());
     }
 
-    public void doSomethingIllegal(Integer newIllegalValue) {
+    @CommandHandler
+    public void doSomethingIllegal(IllegalStateChangeCommand command) {
         apply(new MyEvent(lastNumber + 1));
-        lastNumber = newIllegalValue;
+        lastNumber = command.getNewIllegalValue();
     }
 
     @EventHandler
@@ -69,7 +76,8 @@ class MyAggregate extends AbstractAnnotatedAggregateRoot {
         // we don't care about events
     }
 
-    public void doSomething() {
+    @CommandHandler
+    public void doSomething(TestCommand command) {
         // this state change should be accepted, since it happens on a transient value
         counter++;
         apply(new MyEvent(lastNumber + 1));

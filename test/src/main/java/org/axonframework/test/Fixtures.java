@@ -16,6 +16,8 @@
 
 package org.axonframework.test;
 
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+
 /**
  * Utility class providing access to fixture instances in the Axon Test module.
  *
@@ -32,9 +34,11 @@ public abstract class Fixtures {
      * Returns a new given-when-then style test fixture in configuration mode. See {@link
      * org.axonframework.test.FixtureConfiguration} for more detailed usage information.
      *
+     * @param aggregateType The aggregate under test
      * @return a new given-when-then style test fixture in configuration mode
      */
-    public static FixtureConfiguration newGivenWhenThenFixture() {
-        return new GivenWhenThenTestFixture();
+    public static <T extends EventSourcedAggregateRoot> FixtureConfiguration<T> newGivenWhenThenFixture(
+            Class<T> aggregateType) {
+        return new GivenWhenThenTestFixture<T>(aggregateType);
     }
 }

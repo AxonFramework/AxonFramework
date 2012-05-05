@@ -25,31 +25,28 @@ import org.junit.*;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
  */
-public class FixtureTest_Generic {
+public class FixtureTest_Annotated {
 
-    private FixtureConfiguration<StandardAggregate> fixture;
+    private FixtureConfiguration<AnnotatedAggregate> fixture;
 
     @Before
     public void setUp() {
-        fixture = Fixtures.newGivenWhenThenFixture(StandardAggregate.class);
+        fixture = Fixtures.newGivenWhenThenFixture(AnnotatedAggregate.class);
     }
 
     @Test
     public void testAggregateIdentifier_ServerGeneratedIdentifier() {
-        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.given()
                .when(new CreateAggregateCommand());
     }
 
     @Test
     public void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
-        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.given(new MyEvent(1), new MyEvent(2))
                .when(new TestCommand("AggregateId"))
                .expectEvents(new MyEvent(3));

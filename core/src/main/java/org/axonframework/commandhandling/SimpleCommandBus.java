@@ -102,7 +102,7 @@ public class SimpleCommandBus implements CommandBus {
         final CommandHandler handler = subscriptions.get(command.getPayloadType());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
-                                                          command.getClass().getSimpleName()));
+                                                          command.getPayloadType().getSimpleName()));
         }
         return handler;
     }

@@ -57,14 +57,14 @@ public final class IdentifierValidator {
      * If a mere boolean is required, consider using <code>getInstance().{@link
      * #isValidIdentifier(Class)}</code>.
      *
-     * @param aggregateIdentifier The identifier to validate
+     * @param aggregateIdentifierType The identifier to validate
      */
-    public static void validateIdentifier(Class<?> aggregateIdentifier) {
-        if (!getInstance().isValidIdentifier(aggregateIdentifier)) {
+    public static void validateIdentifier(Class<?> aggregateIdentifierType) {
+        if (!getInstance().isValidIdentifier(aggregateIdentifierType)) {
             throw new IllegalArgumentException("One of the events contains an unsuitable aggregate identifier "
                                                        + "for this EventStore implementation. See reference guide "
                                                        + "for more information. Suspected class: "
-                                                       + aggregateIdentifier.getClass().getName());
+                                                       + aggregateIdentifierType.getName());
         }
     }
 
