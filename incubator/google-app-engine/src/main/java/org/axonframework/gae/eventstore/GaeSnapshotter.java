@@ -21,6 +21,7 @@ import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshot;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -94,7 +95,9 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(aggregateIdentifier, eventStream);
 
-        return new AggregateSnapshot<EventSourcedAggregateRoot>(aggregate);
+        return new GenericDomainEventMessage<AggregateSnapshot>(
+                aggregate.getIdentifier(), aggregate.getVersion(),
+                new AggregateSnapshot<EventSourcedAggregateRoot>(aggregate));
     }
 
     @Override

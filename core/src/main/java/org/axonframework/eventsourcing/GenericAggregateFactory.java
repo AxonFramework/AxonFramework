@@ -81,8 +81,8 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
     @SuppressWarnings({"unchecked"})
     @Override
     public T createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
-        if (AggregateSnapshot.class.isInstance(firstEvent)) {
-            return (T) ((AggregateSnapshot) firstEvent).getAggregate();
+        if (AggregateSnapshot.class.isAssignableFrom(firstEvent.getPayloadType())) {
+            return (T) ((AggregateSnapshot) firstEvent.getPayload()).getAggregate();
         } else {
             try {
                 return constructor.newInstance();

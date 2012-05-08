@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.junit.*;
@@ -40,7 +41,7 @@ public class GenericAggregateFactoryTest {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<ExceptionThrowingAggregate>(ExceptionThrowingAggregate.class);
         try {
-            factory.createAggregate(UUID.randomUUID(), null);
+            factory.createAggregate(UUID.randomUUID(), new GenericDomainEventMessage(new Object(), 0, new Object()));
             fail("Expected IncompatibleAggregateException");
         } catch (IncompatibleAggregateException e) {
             // we got it
@@ -59,9 +60,11 @@ public class GenericAggregateFactoryTest {
         aggregate.doSomething();
         aggregate.commitEvents();
         AggregateSnapshot<StubAggregate> snapshot = new AggregateSnapshot<StubAggregate>(aggregate);
+        DomainEventMessage<AggregateSnapshot> snapshotMessage = new GenericDomainEventMessage<AggregateSnapshot>(
+                aggregate.getIdentifier(), aggregate.getVersion(), snapshot);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<StubAggregate>(StubAggregate.class);
         assertEquals("StubAggregate", factory.getTypeIdentifier());
-        assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshot));
+        assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshotMessage));
     }
 
     private static class UnsuitableAggregate extends AbstractEventSourcedAggregateRoot {

@@ -63,7 +63,7 @@ public class AggregateSnapshotterTest {
         when(mockAggregateFactory.createAggregate(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
         AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", aggregateIdentifier,
-                                                                                    eventStream);
+                                                                                    eventStream).getPayload();
 
         verify(mockAggregateFactory).createAggregate(aggregateIdentifier, firstEvent);
         assertSame(aggregate, snapshot.getAggregate());
@@ -76,7 +76,10 @@ public class AggregateSnapshotterTest {
         aggregate.doSomething();
         aggregate.commitEvents();
 
-        Snapshot<StubAggregate> first = new AggregateSnapshot<StubAggregate>(aggregate);
+        DomainEventMessage<AggregateSnapshot<StubAggregate>> first =
+                new GenericDomainEventMessage<AggregateSnapshot<StubAggregate>>(
+                        aggregate.getIdentifier(), aggregate.getVersion(),
+                        new AggregateSnapshot<StubAggregate>(aggregate));
         DomainEventMessage secondEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
                                                                                "Mock contents", MetaData.emptyInstance()
         );
@@ -87,7 +90,7 @@ public class AggregateSnapshotterTest {
                                                       + "the aggregate should be extracted from there."));
 
         AggregateSnapshot snapshot = (AggregateSnapshot) testSubject.createSnapshot("test", aggregateIdentifier,
-                                                                                    eventStream);
+                                                                                    eventStream).getPayload();
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getAggregate());
 
         verify(mockAggregateFactory, never()).createAggregate(any(), any(DomainEventMessage.class));
