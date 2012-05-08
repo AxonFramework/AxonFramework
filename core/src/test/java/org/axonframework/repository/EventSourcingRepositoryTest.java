@@ -110,6 +110,17 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
+    public void testLoad_FirstEventIsSnapshot() {
+        UUID identifier = UUID.randomUUID();
+        TestAggregate aggregate = new TestAggregate(identifier);
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(
+                new GenericDomainEventMessage<AggregateSnapshot<TestAggregate>>(
+                        identifier, 10, new AggregateSnapshot<TestAggregate>(aggregate))
+        ));
+        assertSame(aggregate, testSubject.load(identifier));
+    }
+
+    @Test
     public void testLoadWithAggregateSnapshot() {
         UUID identifier = UUID.randomUUID();
         TestAggregate simpleAggregate = new TestAggregate(identifier);

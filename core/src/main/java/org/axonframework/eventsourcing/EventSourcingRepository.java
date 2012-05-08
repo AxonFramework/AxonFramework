@@ -183,8 +183,8 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     @SuppressWarnings({"unchecked"})
     private T createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
         T aggregate;
-        if (AggregateSnapshot.class.isInstance(firstEvent)) {
-            aggregate = (T) ((AggregateSnapshot) firstEvent).getAggregate();
+        if (AggregateSnapshot.class.isAssignableFrom(firstEvent.getPayloadType())) {
+            aggregate = (T) ((AggregateSnapshot) firstEvent.getPayload()).getAggregate();
         } else {
             aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         }
