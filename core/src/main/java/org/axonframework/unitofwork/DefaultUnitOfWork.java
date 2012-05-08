@@ -107,7 +107,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         // register any events already available as uncommitted in the aggregate
         DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
         while (uncommittedEvents != null && uncommittedEvents.hasNext()) {
-            CurrentUnitOfWork.get().publishEvent(uncommittedEvents.next(), eventBus);
+            publishEvent(uncommittedEvents.next(), eventBus);
         }
 
         // listen for new events registered in the aggregate
