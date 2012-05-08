@@ -103,12 +103,14 @@ public class SimpleEventBus implements EventBus {
     public void publish(EventMessage... events) {
         statistics.recordPublishedEvent();
         if (!listeners.isEmpty()) {
-            for(EventMessage event : events) {
+            for (EventMessage event : events) {
                 for (EventListener listener : listeners) {
-                    if(logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled()) {
                         logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                                     event.getClass().getSimpleName(),
-                                     listener.getClass().getSimpleName());
+                                     event.getPayloadType().getSimpleName(),
+                                     listener instanceof EventListenerProxy
+                                             ? ((EventListenerProxy) listener).getTarget().getClass().getSimpleName()
+                                             : listener.getClass().getSimpleName());
                     }
                     listener.handle(event);
                 }

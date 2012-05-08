@@ -143,7 +143,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     public void publishEvent(EventMessage event, EventBus eventBus) {
         if (logger.isDebugEnabled()) {
             logger.debug("Staging event for publishing: [{}] on [{}]",
-                         event.getClass().getName(),
+                         event.getPayloadType().getName(),
                          eventBus.getClass().getName());
         }
         event = invokeEventRegistrationListeners(event);
@@ -178,7 +178,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
             EventEntry eventEntry = eventsToPublish.poll();
             if (logger.isDebugEnabled()) {
                 logger.debug("Publishing event [{}] to event bus [{}]",
-                             eventEntry.event.getClass().getName(),
+                             eventEntry.event.getPayloadType().getName(),
                              eventEntry.eventBus.getClass().getName());
             }
             eventEntry.publishEvent();

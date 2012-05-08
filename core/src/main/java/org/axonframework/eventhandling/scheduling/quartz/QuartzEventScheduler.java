@@ -90,7 +90,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(FireEventJob.EVENT_KEY, event);
         return JobBuilder.newJob(FireEventJob.class)
-                         .withDescription(event.getClass().getName())
+                         .withDescription(event.getPayloadType().getName())
                          .withIdentity(jobKey)
                          .usingJobData(jobDataMap)
                          .build();

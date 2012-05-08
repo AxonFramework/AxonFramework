@@ -91,7 +91,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
             if (suppressExceptions) {
                 logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
                                     saga.getClass().getSimpleName(),
-                                    event.getClass().getSimpleName()),
+                                    event.getPayloadType().getSimpleName()),
                              e);
             } else {
                 throw e;
