@@ -121,28 +121,6 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoadWithAggregateSnapshot() {
-        UUID identifier = UUID.randomUUID();
-        TestAggregate simpleAggregate = new TestAggregate(identifier);
-        simpleAggregate.apply(new GenericDomainEventMessage<String>(identifier, (long) 0,
-                                                                    "Mock contents", MetaData.emptyInstance()));
-        simpleAggregate.commitEvents();
-        AggregateSnapshot<AbstractEventSourcedAggregateRoot> snapshotEvent =
-                new AggregateSnapshot<AbstractEventSourcedAggregateRoot>(simpleAggregate);
-        when(mockEventStore.readEvents("test", identifier))
-                .thenReturn(new SimpleDomainEventStream(snapshotEvent, new GenericDomainEventMessage<String>(
-                        identifier,
-                        (long) 1,
-                        "Mock contents", MetaData
-                        .emptyInstance()
-                )));
-        EventSourcedAggregateRoot actual = testSubject.load(identifier, null);
-
-        assertSame(simpleAggregate, actual);
-        assertEquals(Long.valueOf(1), actual.getVersion());
-    }
-
-    @Test
     public void testLoadAndSaveWithConflictingChanges() {
         ConflictResolver conflictResolver = mock(ConflictResolver.class);
         UUID identifier = UUID.randomUUID();
