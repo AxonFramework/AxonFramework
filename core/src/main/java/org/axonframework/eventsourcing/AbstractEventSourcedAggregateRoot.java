@@ -21,6 +21,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.domain.AbstractAggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 
 import java.util.Collection;
@@ -88,8 +89,19 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * @param metaData     any meta-data that must be registered with the Event
      */
     protected void apply(Object eventPayload, MetaData metaData) {
-        DomainEventMessage event = registerEvent(metaData, eventPayload);
-        handleRecursively(event);
+        if (getIdentifier() == null) {
+            // workaround for aggregates that set the aggregate identifier in an Event Handler
+            if (getUncommittedEventCount() > 0 || getVersion() != null) {
+                throw new IncompatibleAggregateException("The Aggregate Identifier has not been initialized. "
+                                                                 + "It must be initialized at the latest when the "
+                                                                 + "first event is applied.");
+            }
+            handleRecursively(new GenericDomainEventMessage<Object>(null, 0, eventPayload, metaData));
+            registerEvent(metaData, eventPayload);
+        } else {
+            DomainEventMessage event = registerEvent(metaData, eventPayload);
+            handleRecursively(event);
+        }
     }
 
     private void handleRecursively(DomainEventMessage event) {

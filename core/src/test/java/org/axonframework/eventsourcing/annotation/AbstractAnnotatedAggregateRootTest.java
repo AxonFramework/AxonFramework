@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.junit.*;
 
 import java.util.UUID;
@@ -53,9 +52,11 @@ public class AbstractAnnotatedAggregateRootTest {
         assertEquals(0, testSubject.getUncommittedEventCount());
     }
 
-    @Test(expected = IncompatibleAggregateException.class)
-    public void testWrongIdentifierInitialization() {
-        new LateIdentifiedAggregate();
+    @Test
+    public void testIdentifierInitialization_LateInitialization() {
+        LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate();
+        assertEquals("lateIdentifier", aggregate.getIdentifier());
+        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
     }
 
     private static class LateIdentifiedAggregate extends AbstractAnnotatedAggregateRoot {
@@ -69,7 +70,7 @@ public class AbstractAnnotatedAggregateRootTest {
 
         @EventHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
-            aggregateIdentifier = "tooLate";
+            aggregateIdentifier = "lateIdentifier";
         }
     }
 
