@@ -111,7 +111,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
 
     private class CacheClearingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
 
-        private Object identifier;
+        private final Object identifier;
 
         public CacheClearingUnitOfWorkListener(Object identifier) {
             this.identifier = identifier;
