@@ -75,7 +75,13 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
             identifierField = locateIdentifierField(this);
         }
         try {
-            return identifierField.get(this);
+            Object identifier = identifierField.get(this);
+            if (identifier == null) {
+                throw new IncompatibleAggregateException(
+                        "AggregateIdentifier is unknown. "
+                                + "Make sure the Aggregate Identifier is initialized before applying events");
+            }
+            return identifier;
         } catch (IllegalAccessException e) {
             throw new IncompatibleAggregateException(format("The field [%s.%s] is not accessible.",
                                                             getClass().getSimpleName(),

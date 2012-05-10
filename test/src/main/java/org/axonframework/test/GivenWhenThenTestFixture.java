@@ -178,19 +178,7 @@ class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot> implements F
     }
 
     private void detectIllegalStateChanges() {
-        if (workingAggregate != null && reportIllegalStateChange) {
-            repository.setEventStore(new EventStore() {
-                @Override
-                public void appendEvents(String type, DomainEventStream events) {
-                }
-
-                @Override
-                public DomainEventStream readEvents(String type, Object identifier) {
-                    List<DomainEventMessage> eventsToStream = new ArrayList<DomainEventMessage>(givenEvents);
-                    eventsToStream.addAll(storedEvents);
-                    return new SimpleDomainEventStream(eventsToStream);
-                }
-            });
+        if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork uow = DefaultUnitOfWork.startAndGet();
             try {
                 EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
@@ -211,9 +199,6 @@ class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot> implements F
             } finally {
                 // rollback to prevent changes bing pushed to event store
                 uow.rollback();
-
-                // return to regular event store, just in case
-                repository.setEventStore(eventStore);
             }
         }
     }
