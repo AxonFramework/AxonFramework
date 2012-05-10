@@ -196,6 +196,10 @@ class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot> implements F
                                                          + "but the Repository cannot recover the state of the "
                                                          + "aggregate, as it is considered deleted there.");
                 }
+            } catch (RuntimeException e) {
+                logger.warn("An Exception occurred while detecting illegal state changes in {}.",
+                            workingAggregate.getClass().getName(),
+                            e);
             } finally {
                 // rollback to prevent changes bing pushed to event store
                 uow.rollback();
