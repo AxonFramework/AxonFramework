@@ -20,8 +20,8 @@ import java.io.IOException;
  */
 public class EventMessageWriter {
 
-    private final Serializer serializer;
-    private final DataOutput out;
+    protected final Serializer serializer;
+    protected final DataOutput out;
 
     /**
      * Creates a new EventMessageWriter writing data to the specified underlying <code>output</code>.

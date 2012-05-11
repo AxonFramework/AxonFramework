@@ -1,5 +1,6 @@
 package org.axonframework.io;
 
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedEventMessage;
@@ -9,7 +10,10 @@ import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 
 import java.io.DataInput;
+import java.io.EOFException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Reader that reads EventMessage instances written to the underlying input. Typically, these messages have been
