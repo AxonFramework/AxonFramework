@@ -31,9 +31,9 @@ import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * Component of the DisruptorCommandBus that looks up the command handler and prepares the data for the command's
@@ -47,8 +47,9 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
         implements EventHandler<CommandHandlingEntry<T>> {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandHandlerPreFetcher.class);
+    private static final Object PLACEHOLDER = new Object();
 
-    private final Map<Object, T> preLoadedAggregates = new HashMap<Object, T>();
+    private final Map<T, Object> preLoadedAggregates = new WeakHashMap<T, Object>();
     private final EventStore eventStore;
     private final AggregateFactory<T> aggregateFactory;
     private final Map<Class<?>, CommandHandler<?>> commandHandlers;
@@ -82,13 +83,22 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
     @Override
     public void onEvent(CommandHandlingEntry<T> entry, long sequence, boolean endOfBatch) throws Exception {
         if (entry.isRecoverEntry()) {
-            preLoadedAggregates.remove(entry.getAggregateIdentifier());
+            removeEntry(entry.getAggregateIdentifier());
         } else {
             preLoadAggregate(entry);
             resolveCommandHandler(entry);
             prepareInterceptorChain(entry);
             // make sure that any lazy initializing messages are initialized by now
             entry.getCommand().getPayload();
+        }
+    }
+
+    private void removeEntry(Object aggregateIdentifier) {
+        for (T entry : preLoadedAggregates.keySet()) {
+            if (aggregateIdentifier.equals(entry.getIdentifier())) {
+                preLoadedAggregates.remove(entry);
+                return;
+            }
         }
     }
 
@@ -106,8 +116,9 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
     private void preLoadAggregate(CommandHandlingEntry<T> entry) {
         Object aggregateIdentifier = commandTargetResolver.resolveTarget(entry.getCommand()).getIdentifier();
         entry.setAggregateIdentifier(aggregateIdentifier);
-        if (preLoadedAggregates.containsKey(aggregateIdentifier)) {
-            entry.setPreLoadedAggregate(preLoadedAggregates.get(aggregateIdentifier));
+        T foundAggregate = findPreLoadedAggregate(aggregateIdentifier);
+        if (foundAggregate != null) {
+            entry.setPreLoadedAggregate(foundAggregate);
         } else {
             try {
                 DomainEventStream events = eventStore.readEvents(aggregateFactory.getTypeIdentifier(),
@@ -115,7 +126,7 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
                 if (events.hasNext()) {
                     T aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
                     aggregateRoot.initializeState(aggregateIdentifier, events);
-                    preLoadedAggregates.put(aggregateIdentifier, aggregateRoot);
+                    preLoadedAggregates.put(aggregateRoot, PLACEHOLDER);
                     entry.setPreLoadedAggregate(aggregateRoot);
                 }
             } catch (AggregateNotFoundException e) {
@@ -125,6 +136,15 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
                                     + "attempts to load an aggregate");
             }
         }
+    }
+
+    private T findPreLoadedAggregate(Object aggregateIdentifier) {
+        for (T available : preLoadedAggregates.keySet()) {
+            if (aggregateIdentifier.equals(available.getIdentifier())) {
+                return available;
+            }
+        }
+        return null;
     }
 
     private void resolveCommandHandler(CommandHandlingEntry<T> entry) {
