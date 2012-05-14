@@ -21,6 +21,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.testutils.MockException;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
@@ -147,15 +148,15 @@ public class DefaultUnitOfWorkTest {
     @Test
     public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnPrepareCommit() {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        doThrow(new RuntimeException("Mock")).when(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class),
-                                                                                 anyListOf(EventMessage.class));
+        doThrow(new MockException()).when(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class),
+                                                                        anyListOf(EventMessage.class));
         testSubject.registerListener(mockListener);
         testSubject.start();
         try {
             testSubject.commit();
             fail("Expected exception");
         } catch (RuntimeException e) {
-            assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
+            assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
         verify(mockListener).onRollback(isA(RuntimeException.class));
@@ -167,7 +168,7 @@ public class DefaultUnitOfWorkTest {
     @Test
     public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnCommitAggregate() {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        doThrow(new RuntimeException("Mock")).when(callback).save(isA(AggregateRoot.class));
+        doThrow(new MockException()).when(callback).save(isA(AggregateRoot.class));
         testSubject.registerListener(mockListener);
         testSubject.registerAggregate(mockAggregateRoot, mockEventBus, callback);
         testSubject.start();
@@ -175,7 +176,7 @@ public class DefaultUnitOfWorkTest {
             testSubject.commit();
             fail("Expected exception");
         } catch (RuntimeException e) {
-            assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
+            assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
         verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
@@ -191,7 +192,7 @@ public class DefaultUnitOfWorkTest {
         when(mockListener.onEventRegistered(Matchers.<EventMessage<Object>>any()))
                 .thenAnswer(new ReturnFirstParameterAnswer());
 
-        doThrow(new RuntimeException("Mock")).when(mockEventBus).publish(isA(EventMessage.class));
+        doThrow(new MockException()).when(mockEventBus).publish(isA(EventMessage.class));
         testSubject.start();
         testSubject.registerListener(mockListener);
         testSubject.publishEvent(new GenericEventMessage<Object>(new Object()), mockEventBus);
@@ -205,7 +206,7 @@ public class DefaultUnitOfWorkTest {
                     return "Mock".equals(((RuntimeException) o).getMessage());
                 }
             });
-            assertEquals("Got an exception, but the wrong one", RuntimeException.class, e.getClass());
+            assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
         verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
@@ -281,6 +282,7 @@ public class DefaultUnitOfWorkTest {
     }
 
     private static class ReturnFirstParameterAnswer implements Answer<Object> {
+
         @Override
         public Object answer(InvocationOnMock invocation) throws Throwable {
             return invocation.getArguments()[0];

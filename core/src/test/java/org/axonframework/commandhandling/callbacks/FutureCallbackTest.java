@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.callbacks;
 
+import org.axonframework.testutils.MockException;
 import org.junit.*;
 
 import java.util.concurrent.ExecutionException;
@@ -72,7 +73,7 @@ public class FutureCallbackTest {
         });
         t.start();
         assertTrue(t.isAlive());
-        RuntimeException exception = new RuntimeException("Mock");
+        RuntimeException exception = new MockException();
         testSubject.onFailure(exception);
         t.join(THREAD_JOIN_TIMEOUT);
         assertTrue(resultFromParallelThread instanceof ExecutionException);

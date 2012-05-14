@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.testutils.MockException;
 import org.junit.*;
 
 import java.util.UUID;
@@ -93,7 +94,7 @@ public class GenericAggregateFactoryTest {
         private String identifier;
 
         private ExceptionThrowingAggregate() {
-            throw new RuntimeException("Mock");
+            throw new MockException();
         }
 
         @Override

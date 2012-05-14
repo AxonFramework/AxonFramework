@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.*;
@@ -63,7 +64,7 @@ public class SpringTransactionalInterceptorTest {
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testTransactionManagement_CommitFails() {
-        doThrow(new RuntimeException()).when(mockTransactionManager).commit(mockTransactionStatus);
+        doThrow(new MockException()).when(mockTransactionManager).commit(mockTransactionStatus);
         when(mockTransactionStatus.isCompleted()).thenReturn(true);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()));
         verify(mockTransactionManager).commit(mockTransactionStatus);
@@ -84,7 +85,7 @@ public class SpringTransactionalInterceptorTest {
     @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
     @Test
     public void testTransactionManagement_RuntimeException() throws Throwable {
-        final RuntimeException exception = new RuntimeException("Mock");
+        final RuntimeException exception = new MockException();
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenThrow(exception);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), new CommandCallback<Object>() {
             @Override
