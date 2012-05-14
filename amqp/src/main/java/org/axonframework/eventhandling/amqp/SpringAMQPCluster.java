@@ -8,6 +8,7 @@ import org.axonframework.eventhandling.DefaultClusterMetaData;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.io.EventMessageReader;
 import org.axonframework.serializer.Serializer;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageListener;
 import org.springframework.amqp.core.Queue;
@@ -238,5 +239,9 @@ public class SpringAMQPCluster implements Cluster, MessageListener,
 
     public void setMessagePropertiesConverter(MessagePropertiesConverter messagePropertiesConverter) {
         messageListenerContainer.setMessagePropertiesConverter(messagePropertiesConverter);
+    }
+
+    public void setAcknowledgeMode(AcknowledgeMode acknowledgeMode) {
+        messageListenerContainer.setAcknowledgeMode(acknowledgeMode);
     }
 }
