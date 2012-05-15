@@ -26,8 +26,8 @@
 
     <artifactId>axon-mongo</artifactId>
 
-    <name>Axon MongoDB EventStore</name>
-    <description>This module contains the Mongo event store.</description>
+    <name>Axon MongoDB Components</name>
+    <description>This module contains components that integrate with MongoDB.</description>
 
     <dependencies>
         <!-- Axon dependencies -->
