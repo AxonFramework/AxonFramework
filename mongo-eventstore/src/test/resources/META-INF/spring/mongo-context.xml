@@ -44,4 +44,15 @@
         <property name="connectionsPerHost" value="100"/>
     </bean>
 
+    <!-- Axon saga's -->
+    <bean id="springResourceInjector" class="org.axonframework.saga.spring.SpringResourceInjector"/>
+
+    <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
+        <constructor-arg ref="sagaMongoTemplate"/>
+    </bean>
+
+    <bean id="sagaMongoTemplate" class="org.axonframework.saga.repository.mongo.DefaultMongoTemplate">
+        <constructor-arg ref="mongoDb"/>
+    </bean>
+
 </beans>
