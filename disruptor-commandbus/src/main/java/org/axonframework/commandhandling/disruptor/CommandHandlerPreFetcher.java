@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
+import net.sf.jsr107cache.Cache;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
@@ -50,6 +51,7 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
     private static final Object PLACEHOLDER = new Object();
 
     private final Map<T, Object> preLoadedAggregates = new WeakHashMap<T, Object>();
+    private final Cache cache;
     private final EventStore eventStore;
     private final AggregateFactory<T> aggregateFactory;
     private final Map<Class<?>, CommandHandler<?>> commandHandlers;
@@ -66,18 +68,20 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
      * @param invokerInterceptors   The command handler interceptors to be invoked during command handler invocation
      * @param publisherInterceptors The command handler interceptors to be invoked during event publication
      * @param commandTargetResolver The instance that resolves the aggregate identifier for each incoming command
+     * @param cache                 The cache keeping references to loaded aggregates
      */
     CommandHandlerPreFetcher(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                              Map<Class<?>, CommandHandler<?>> commandHandlers,
                              List<CommandHandlerInterceptor> invokerInterceptors,
                              List<CommandHandlerInterceptor> publisherInterceptors,
-                             CommandTargetResolver commandTargetResolver) {
+                             CommandTargetResolver commandTargetResolver, Cache cache) {
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
         this.commandHandlers = commandHandlers;
         this.invokerInterceptors = invokerInterceptors;
         this.publisherInterceptors = publisherInterceptors;
         this.commandTargetResolver = commandTargetResolver;
+        this.cache = cache;
     }
 
     @Override
@@ -97,9 +101,9 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
         for (T entry : preLoadedAggregates.keySet()) {
             if (aggregateIdentifier.equals(entry.getIdentifier())) {
                 preLoadedAggregates.remove(entry);
-                return;
             }
         }
+        cache.remove(aggregateIdentifier);
     }
 
     private void prepareInterceptorChain(CommandHandlingEntry<T> entry) {
@@ -124,10 +128,9 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
                 DomainEventStream events = eventStore.readEvents(aggregateFactory.getTypeIdentifier(),
                                                                  aggregateIdentifier);
                 if (events.hasNext()) {
-                    T aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
-                    aggregateRoot.initializeState(aggregateIdentifier, events);
-                    preLoadedAggregates.put(aggregateRoot, PLACEHOLDER);
-                    entry.setPreLoadedAggregate(aggregateRoot);
+                    foundAggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
+                    foundAggregate.initializeState(aggregateIdentifier, events);
+                    entry.setPreLoadedAggregate(foundAggregate);
                 }
             } catch (AggregateNotFoundException e) {
                 logger.info("Aggregate to pre-load not found. Possibly involves an aggregate being created, "
@@ -136,15 +139,17 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
                                     + "attempts to load an aggregate");
             }
         }
+        preLoadedAggregates.put(foundAggregate, PLACEHOLDER);
     }
 
+    @SuppressWarnings("unchecked")
     private T findPreLoadedAggregate(Object aggregateIdentifier) {
         for (T available : preLoadedAggregates.keySet()) {
             if (aggregateIdentifier.equals(available.getIdentifier())) {
                 return available;
             }
         }
-        return null;
+        return (T) cache.get(aggregateIdentifier);
     }
 
     private void resolveCommandHandler(CommandHandlingEntry<T> entry) {
@@ -152,6 +157,12 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
         entry.setUnitOfWork(new DisruptorUnitOfWork(entry.getPreLoadedAggregate()));
     }
 
+    /**
+     * CommandHandler implementation that repeats the behavior given by the CommandHandler that previously executed a
+     * command.
+     *
+     * @param <T> The type of aggregate the command bus deals with
+     */
     private static class RepeatingCommandHandler<T extends EventSourcedAggregateRoot>
             implements CommandHandler<Object> {
 

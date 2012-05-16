@@ -187,7 +187,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
                                                                    commandHandlers,
                                                                    configuration.getInvokerInterceptors(),
                                                                    configuration.getPublisherInterceptors(),
-                                                                   commandTargetResolver))
+                                                                   commandTargetResolver,
+                                                                   configuration.getCache()))
                  .then(commandHandlerInvoker)
                  .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore,
                                              eventBus, executor, configuration.getRollbackConfiguration()));

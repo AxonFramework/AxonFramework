@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.common;
 
 import net.sf.jsr107cache.CacheException;
 import net.sf.jsr107cache.CacheListener;
@@ -36,7 +36,7 @@ public class NoCacheTest {
     @Test
     public void testCacheDoesNothing() throws CacheException {
         // this is pretty stupid, but we're testing that it does absolutely nothing
-        NoCache cache = new NoCache();
+        NoCache cache = NoCache.INSTANCE;
         cache.addListener(mock(CacheListener.class));
         cache.clear();
         cache.evict();
