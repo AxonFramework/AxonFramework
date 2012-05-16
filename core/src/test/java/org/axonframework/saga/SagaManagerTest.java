@@ -20,6 +20,7 @@ import org.apache.commons.collections.set.ListOrderedSet;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.testutils.MockException;
 import org.junit.*;
 
 import java.util.Arrays;
@@ -87,7 +88,7 @@ public class SagaManagerTest {
     public void testExceptionPropagated() {
         testSubject.setSuppressExceptions(false);
         EventMessage event = new GenericEventMessage<Object>(new Object());
-        doThrow(new RuntimeException("Mock")).when(mockSaga1).handle(event);
+        doThrow(new MockException()).when(mockSaga1).handle(event);
         try {
             testSubject.handle(event);
             fail("Expected exception to be propagated");
@@ -103,7 +104,7 @@ public class SagaManagerTest {
     @Test
     public void testExceptionSuppressed() {
         EventMessage event = new GenericEventMessage<Object>(new Object());
-        doThrow(new RuntimeException("Mock")).when(mockSaga1).handle(event);
+        doThrow(new MockException()).when(mockSaga1).handle(event);
 
         testSubject.handle(event);
 

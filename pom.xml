@@ -28,7 +28,7 @@
         <module>distributed-commandbus</module>
         <module>disruptor-commandbus</module>
         <module>integrationtests</module>
-        <module>mongo-eventstore</module>
+        <module>mongo</module>
         <module>incubator/google-app-engine</module>
         <module>amqp</module>
         <!--<module>migration</module>-->

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.common;
 
 import net.sf.jsr107cache.Cache;
 import net.sf.jsr107cache.CacheEntry;
@@ -34,7 +34,15 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.3
  */
-class NoCache implements Cache {
+public class NoCache implements Cache {
+
+    /**
+     * Creates a singleton reference the the NoCache implementation.
+     */
+    public static final NoCache INSTANCE = new NoCache();
+
+    private NoCache() {
+    }
 
     /**
      * {@inheritDoc}

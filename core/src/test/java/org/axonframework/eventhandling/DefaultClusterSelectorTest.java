@@ -42,4 +42,11 @@ public class DefaultClusterSelectorTest {
         assertSame(cluster1, cluster2);
         assertSame(cluster2, cluster3);
     }
+
+    @Test
+    public void testProvidedInstanceIsReturned() {
+        Cluster mock = mock(Cluster.class);
+        testSubject = new DefaultClusterSelector(mock);
+        assertSame(mock, testSubject.selectCluster(mock(EventListener.class)));
+    }
 }

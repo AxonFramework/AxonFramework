@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
@@ -92,7 +93,7 @@ public class AuditingInterceptorTest {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Test
     public void testInterceptCommand_FailedExecution() throws Throwable {
-        RuntimeException mockException = new RuntimeException("Mock");
+        RuntimeException mockException = new MockException();
         when(mockInterceptorChain.proceed())
                 .thenThrow(mockException);
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();

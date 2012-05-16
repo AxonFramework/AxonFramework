@@ -102,6 +102,9 @@ public class DisruptorCommandBusBenchmark {
             this.identifier = identifier;
         }
 
+        private StubAggregate() {
+        }
+
         @Override
         public Object getIdentifier() {
             return identifier;

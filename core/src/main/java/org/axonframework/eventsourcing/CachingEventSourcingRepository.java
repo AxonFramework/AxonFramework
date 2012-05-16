@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
+import org.axonframework.common.NoCache;
 import org.axonframework.repository.LockingStrategy;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -35,9 +36,7 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  */
 public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot> extends EventSourcingRepository<T> {
 
-    private static final NoCache DEFAULT_CACHE = new NoCache();
-
-    private Cache cache = DEFAULT_CACHE;
+    private Cache cache = NoCache.INSTANCE;
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.

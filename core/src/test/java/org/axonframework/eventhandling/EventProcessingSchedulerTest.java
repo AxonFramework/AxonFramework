@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.testutils.MockException;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
@@ -90,7 +91,7 @@ public class EventProcessingSchedulerTest {
             }
         };
 
-        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(event1);
+        doThrow(new MockException()).doNothing().when(listener).handle(event1);
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -130,7 +131,7 @@ public class EventProcessingSchedulerTest {
             }
         };
 
-        doThrow(new RuntimeException("Mock")).doNothing().when(listener).handle(event1);
+        doThrow(new MockException()).doNothing().when(listener).handle(event1);
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -178,7 +179,7 @@ public class EventProcessingSchedulerTest {
             }
         };
 
-        doThrow(new RuntimeException("Mock")).doNothing().when(listener)
+        doThrow(new MockException()).doNothing().when(listener)
                 .beforeTransaction(isA(TransactionStatus.class));
         doAnswer(new Answer() {
             @Override
@@ -230,7 +231,7 @@ public class EventProcessingSchedulerTest {
     private class MockEventListener implements EventListener, TransactionManager {
 
         private int failOnEvent;
-        private List<EventMessage<? extends Object>> handledEvents = new LinkedList<EventMessage<? extends Object>>();
+        private List<EventMessage<?>> handledEvents = new LinkedList<EventMessage<?>>();
         private RetryPolicy retryPolicy;
         private int transactionsStarted;
         private int transactionsSucceeded;
@@ -244,7 +245,7 @@ public class EventProcessingSchedulerTest {
         public void handle(EventMessage event) {
             handledEvents.add(event);
             if (--failOnEvent == 0) {
-                throw new RuntimeException("Mock exception");
+                throw new MockException();
             }
         }
 

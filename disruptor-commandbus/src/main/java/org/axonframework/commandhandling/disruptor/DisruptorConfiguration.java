@@ -20,9 +20,11 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.ClaimStrategy;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import net.sf.jsr107cache.Cache;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.commandhandling.RollbackOnUncheckedExceptionConfiguration;
+import org.axonframework.common.NoCache;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,11 +43,12 @@ public class DisruptorConfiguration {
     private ClaimStrategy claimStrategy;
     private WaitStrategy waitStrategy;
     private Executor executor;
-    private RollbackConfiguration rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
-    private boolean rescheduleCommandsOnCorruptState = true;
+    private RollbackConfiguration rollbackConfiguration;
+    private boolean rescheduleCommandsOnCorruptState;
+    private long coolingDownPeriod;
+    private Cache cache;
     private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
-    private long coolingDownPeriod = 1000;
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
@@ -54,6 +57,10 @@ public class DisruptorConfiguration {
     public DisruptorConfiguration() {
         this.claimStrategy = new MultiThreadedClaimStrategy(4096);
         this.waitStrategy = new BlockingWaitStrategy();
+        coolingDownPeriod = 1000;
+        cache = NoCache.INSTANCE;
+        rescheduleCommandsOnCorruptState = true;
+        rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
     }
 
     /**
@@ -272,6 +279,30 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setCoolingDownPeriod(long coolingDownPeriod) { //NOSONAR (setter may hide field)
         this.coolingDownPeriod = coolingDownPeriod;
+        return this;
+    }
+
+    /**
+     * Returns the cache used to store Aggregates loaded by the DisruptorCommandBus.
+     *
+     * @return the cache used to store Aggregates
+     */
+    public Cache getCache() {
+        return cache;
+    }
+
+    /**
+     * Sets the cache in which loaded aggregates will be stored. Aggregates that are not active in the CommandBus'
+     * buffer will be loaded from this cache. If they are not in the cache, a new instance will be constructed using
+     * Events from the Event Store.
+     * <p/>
+     * By default, no cache is used.
+     *
+     * @param cache The cache to store loaded aggregates in.
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setCache(Cache cache) { //NOSONAR (setter may hide field)
+        this.cache = cache;
         return this;
     }
 }

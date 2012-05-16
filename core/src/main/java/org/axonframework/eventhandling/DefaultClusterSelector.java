@@ -36,6 +36,15 @@ public class DefaultClusterSelector implements ClusterSelector {
     }
 
     /**
+     * Initializes the DefaultClusterSelector to assign the given <code>defaultCluster</code> to each listener.
+     *
+     * @param defaultCluster The Cluster to assign to each listener
+     */
+    public DefaultClusterSelector(Cluster defaultCluster) {
+        this.defaultCluster = defaultCluster;
+    }
+
+    /**
      * {@inheritDoc}
      * <p/>
      * This implementation always returns the same instance of {@link SimpleCluster}.
