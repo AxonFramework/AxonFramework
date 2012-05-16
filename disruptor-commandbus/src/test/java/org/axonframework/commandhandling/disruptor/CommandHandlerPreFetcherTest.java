@@ -104,6 +104,8 @@ public class CommandHandlerPreFetcherTest {
         testSubject.onEvent(entry, 0, true);
 
         verify(mockAggregateFactory).createAggregate(aggregateIdentifier, firstEvent);
+
+        assertEquals(mockAggregate, entry.getUnitOfWork().getAggregate());
     }
 
     @Test
@@ -117,6 +119,8 @@ public class CommandHandlerPreFetcherTest {
         testSubject.onEvent(entry, 0, true);
 
         verify(mockAggregateFactory, never()).createAggregate(any(), any(DomainEventMessage.class));
+
+        assertEquals(mockAggregate, entry.getUnitOfWork().getAggregate());
     }
 
     @Test
@@ -134,6 +138,8 @@ public class CommandHandlerPreFetcherTest {
 
         verify(mockCache, times(1)).get(any());
         verify(mockAggregateFactory, never()).createAggregate(any(), any(DomainEventMessage.class));
+
+        assertEquals(mockAggregate, entry.getUnitOfWork().getAggregate());
     }
 
     @Test
@@ -154,6 +160,8 @@ public class CommandHandlerPreFetcherTest {
         entry.reset(stubCommandMessage, mockCallback);
         testSubject.onEvent(entry, 2, true);
         verify(mockAggregateFactory, times(2)).createAggregate(aggregateIdentifier, firstEvent);
+
+        assertEquals(mockAggregate, entry.getUnitOfWork().getAggregate());
     }
 
 

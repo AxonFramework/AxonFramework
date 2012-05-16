@@ -139,7 +139,10 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
                                     + "attempts to load an aggregate");
             }
         }
-        preLoadedAggregates.put(foundAggregate, PLACEHOLDER);
+        if (foundAggregate != null) {
+            preLoadedAggregates.put(foundAggregate, PLACEHOLDER);
+            cache.put(aggregateIdentifier, foundAggregate);
+        }
     }
 
     @SuppressWarnings("unchecked")
