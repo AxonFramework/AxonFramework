@@ -37,10 +37,10 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ListenerContainerLifecycleManager extends ListenerContainerFactory
+public class ListenerContainerLifecycleManagerRenaming extends ListenerContainerFactory
         implements SmartLifecycle, DisposableBean {
 
-    private static final Logger logger = LoggerFactory.getLogger(ListenerContainerLifecycleManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(ListenerContainerLifecycleManagerRenaming.class);
 
     // guarded by "this"
     private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<String, SimpleMessageListenerContainer>();

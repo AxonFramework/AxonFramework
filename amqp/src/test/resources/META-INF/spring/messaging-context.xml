@@ -48,7 +48,7 @@
         </property>
     </bean>
 
-    <bean class="org.axonframework.eventhandling.amqp.spring.ListenerContainerLifecycleManager">
+    <bean class="org.axonframework.eventhandling.amqp.spring.ListenerContainerLifecycleManagerRenaming">
         <property name="serializer" ref="serializer"/>
         <property name="prefetchCount" value="100"/>
     </bean>
