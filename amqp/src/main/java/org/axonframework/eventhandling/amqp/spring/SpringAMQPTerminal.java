@@ -61,7 +61,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     private String exchangeName = DEFAULT_EXCHANGE_NAME;
     private boolean isTransactional = false;
     private boolean isDurable = false;
-    private ListenerContainerLifecycleManagerRenaming listenerContainerLifecycleManager;
+    private ListenerContainerLifecycleManager listenerContainerLifecycleManager;
     private QueueNameResolver queueNameResolver = new MetaDataPropertyQueueNameResolver(DEFAULT_QUEUE_NAME);
     private ApplicationContext applicationContext;
 
@@ -133,7 +133,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     @Override
     public void afterPropertiesSet() throws Exception {
         if (listenerContainerLifecycleManager == null) {
-            listenerContainerLifecycleManager = applicationContext.getBean(ListenerContainerLifecycleManagerRenaming.class);
+            listenerContainerLifecycleManager = applicationContext.getBean(ListenerContainerLifecycleManager.class);
         }
         if (connectionFactory == null) {
             connectionFactory = applicationContext.getBean(ConnectionFactory.class);
@@ -229,7 +229,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      *         the listenerContainerLifecycleManager to set
      */
     public void setListenerContainerLifecycleManager(
-            ListenerContainerLifecycleManagerRenaming listenerContainerLifecycleManager) {
+            ListenerContainerLifecycleManager listenerContainerLifecycleManager) {
         this.listenerContainerLifecycleManager = listenerContainerLifecycleManager;
     }
 
