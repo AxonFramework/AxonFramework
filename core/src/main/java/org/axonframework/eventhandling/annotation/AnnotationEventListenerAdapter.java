@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2011. Axon Framework
+ * Copyright (c) 2010-2012. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,7 +57,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     private final Executor executor;
     private final TransactionManager transactionManager;
     private final EventBus eventBus;
-    private final Object annotatedEventListener;
+    private final Class<?> listenerType;
 
     /**
      * Subscribe the given <code>annotatedEventListener</code> to the given <code>eventBus</code>.
@@ -111,7 +111,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @param eventBus               the event bus to register the event listener to
      */
     public AnnotationEventListenerAdapter(Object annotatedEventListener, Executor executor, EventBus eventBus) {
-        this.annotatedEventListener = annotatedEventListener;
+        this.listenerType = annotatedEventListener.getClass();
         EventListener adapter = new TargetEventListener(new AnnotationEventHandlerInvoker(annotatedEventListener));
         this.transactionManager = createTransactionManagerFor(annotatedEventListener);
         this.executor = executor;
@@ -225,13 +225,13 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
                                                    executor);
     }
 
-    private SequencingPolicy getSequencingPolicyFor(Object listener) {
+    private SequencingPolicy<? super EventMessage<?>> getSequencingPolicyFor(Object listener) {
         AsynchronousEventListener annotation = findAnnotation(listener.getClass(), AsynchronousEventListener.class);
         if (annotation == null) {
             return new SequentialPolicy();
         }
 
-        Class<? extends SequencingPolicy> policyClass = annotation.sequencingPolicyClass();
+        Class<? extends SequencingPolicy<? super EventMessage<?>>> policyClass = annotation.sequencingPolicyClass();
         try {
             return policyClass.newInstance();
         } catch (InstantiationException e) {
@@ -248,8 +248,8 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     }
 
     @Override
-    public Object getTarget() {
-        return annotatedEventListener;
+    public Class<?> getTargetType() {
+        return listenerType;
     }
 
     private static final class TargetEventListener implements EventListener {

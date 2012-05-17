@@ -1,15 +1,28 @@
-package org.axonframework.eventhandling.amqp;
+/*
+ * Copyright (c) 2010-2012. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import com.rabbitmq.client.Channel;
+package org.axonframework.eventhandling.amqp.spring;
+
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.serializer.Serializer;
 import org.junit.*;
 import org.junit.runner.*;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -19,7 +32,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.*;
 
 /**
  * @author Allard Buijze
@@ -28,39 +40,18 @@ import static org.junit.Assume.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 public class AMQPTerminalTest {
 
-    private SpringAMQPTerminal terminal;
+    @Autowired
+    private EventBus eventBus;
 
-    @Autowired
-    private CachingConnectionFactory connectionFactory;
-    @Autowired
-    private Serializer serializer;
-    @Autowired
-    @Qualifier("cluster1")
-    private SpringAMQPCluster cluster;
-    private static final int EVENT_COUNT = 1000;
-    private static final int THREAD_COUNT = 5;
-
-    @Before
-    public void setUp() throws Exception {
-        try {
-            Channel channel = connectionFactory.createConnection().createChannel(false);
-            while (channel.basicGet("Axon.EventBus.Default", true) != null) {
-            }
-            if (channel.isOpen()) {
-                channel.close();
-            }
-        } catch (Exception e) {
-            assumeNoException(e);
-        }
-        terminal = new SpringAMQPTerminal(connectionFactory, serializer, "Axon.EventBus");
-    }
+    private static final int EVENT_COUNT = 100;
+    private static final int THREAD_COUNT = 10;
 
     @Test
     public void testConnectAndDispatch_DefaultQueueAndExchange() throws Exception {
         final EventMessage<String> sentEvent = GenericEventMessage.asEventMessage("Hello world");
         final CountDownLatch cdl = new CountDownLatch(EVENT_COUNT * THREAD_COUNT);
 
-        cluster.subscribe(new EventListener() {
+        eventBus.subscribe(new EventListener() {
             @Override
             public void handle(EventMessage event) {
                 assertEquals(sentEvent.getPayload(), event.getPayload());
@@ -78,7 +69,7 @@ public class AMQPTerminalTest {
                         boolean sent = false;
                         while (!sent) {
                             try {
-                                terminal.publish(sentEvent);
+                                eventBus.publish(sentEvent);
                                 sent = true;
                             } catch (Exception e) {
                                 System.out.print(".");

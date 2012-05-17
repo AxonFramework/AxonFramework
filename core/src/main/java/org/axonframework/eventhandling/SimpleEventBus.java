@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010. Axon Framework
+ * Copyright (c) 2010-2012. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,13 +63,12 @@ public class SimpleEventBus implements EventBus {
      */
     @Override
     public void unsubscribe(EventListener eventListener) {
+        Class<?> listenerType = getActualListenerType(eventListener);
         if (listeners.remove(eventListener)) {
-            Object listener = getActualListenerFrom(eventListener);
-            statistics.recordUnregisteredListener(listener.getClass().getSimpleName());
-            logger.debug("EventListener {} unsubscribed successfully", eventListener.getClass().getSimpleName());
+            statistics.recordUnregisteredListener(listenerType.getSimpleName());
+            logger.debug("EventListener {} unsubscribed successfully", listenerType.getSimpleName());
         } else {
-            logger.info("EventListener {} not removed. It was already unsubscribed",
-                        eventListener.getClass().getSimpleName());
+            logger.info("EventListener {} not removed. It was already unsubscribed", listenerType.getSimpleName());
         }
     }
 
@@ -78,22 +77,23 @@ public class SimpleEventBus implements EventBus {
      */
     @Override
     public void subscribe(EventListener eventListener) {
+        Class<?> listenerType = getActualListenerType(eventListener);
         if (listeners.add(eventListener)) {
-            Object listener = getActualListenerFrom(eventListener);
-            statistics.listenerRegistered(listener.getClass().getSimpleName());
-            logger.debug("EventListener [{}] subscribed successfully", eventListener.getClass().getSimpleName());
+            statistics.listenerRegistered(listenerType.getSimpleName());
+            logger.debug("EventListener [{}] subscribed successfully", listenerType.getSimpleName());
         } else {
-            logger.info("EventListener [{}] not added. It was already subscribed",
-                        eventListener.getClass().getSimpleName());
+            logger.info("EventListener [{}] not added. It was already subscribed", listenerType.getSimpleName());
         }
     }
 
-    private Object getActualListenerFrom(EventListener eventListener) {
-        Object listener = eventListener;
-        while (listener instanceof EventListenerProxy) {
-            listener = ((EventListenerProxy) listener).getTarget();
+    private Class<?> getActualListenerType(EventListener eventListener) {
+        Class<?> listenerType;
+        if (eventListener instanceof EventListenerProxy) {
+            listenerType = ((EventListenerProxy) eventListener).getTargetType();
+        } else {
+            listenerType = eventListener.getClass();
         }
-        return listener;
+        return listenerType;
     }
 
     /**
@@ -109,7 +109,8 @@ public class SimpleEventBus implements EventBus {
                         logger.debug("Dispatching Event [{}] to EventListener [{}]",
                                      event.getPayloadType().getSimpleName(),
                                      listener instanceof EventListenerProxy
-                                             ? ((EventListenerProxy) listener).getTarget().getClass().getSimpleName()
+                                             ? ((EventListenerProxy) listener).getTargetType().getClass()
+                                                                              .getSimpleName()
                                              : listener.getClass().getSimpleName());
                     }
                     listener.handle(event);

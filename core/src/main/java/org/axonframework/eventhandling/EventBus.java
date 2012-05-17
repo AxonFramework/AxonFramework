@@ -47,8 +47,12 @@ public interface EventBus {
     /**
      * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events
      * published to this bus.
+     * <p/>
+     * If the given <code>eventListener</code> is already subscribed, nothing happens.
      *
      * @param eventListener The event listener to subscribe
+     * @throws EventListenerSubscriptionFailedException
+     *          if the listener could not be subscribed
      */
     void subscribe(EventListener eventListener);
 

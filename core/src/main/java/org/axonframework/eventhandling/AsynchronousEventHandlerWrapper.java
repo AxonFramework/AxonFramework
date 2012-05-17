@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011. Axon Framework
+ * Copyright (c) 2010-2012. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
         implements EventListenerProxy {
 
     private final EventListener eventListener;
+    private final Class<?> listenerType;
 
     /**
      * Initialize the AsynchronousEventHandlerWrapper for the given <code>eventListener</code> using the given
@@ -47,6 +48,11 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
                                            Executor executor) {
         super(executor, transactionManager, sequencingPolicy);
         this.eventListener = eventListener;
+        if (eventListener instanceof EventListenerProxy) {
+            this.listenerType = ((EventListenerProxy) eventListener).getTargetType();
+        } else {
+            this.listenerType = eventListener.getClass();
+        }
     }
 
     /**
@@ -65,6 +71,7 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
                                            SequencingPolicy<? super EventMessage> sequencingPolicy, Executor executor) {
         super(executor, sequencingPolicy);
         this.eventListener = eventListener;
+        this.listenerType = eventListener.getClass();
     }
 
     /**
@@ -78,8 +85,8 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
     }
 
     @Override
-    public Object getTarget() {
-        return eventListener;
+    public Class<?> getTargetType() {
+        return listenerType;
     }
 
     @Override
