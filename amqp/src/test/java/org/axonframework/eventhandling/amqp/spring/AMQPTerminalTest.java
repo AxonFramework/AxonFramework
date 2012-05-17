@@ -16,12 +16,14 @@
 
 package org.axonframework.eventhandling.amqp.spring;
 
+import com.rabbitmq.client.Channel;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.junit.*;
 import org.junit.runner.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -32,6 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
+import static org.junit.Assume.assumeNoException;
 
 /**
  * @author Allard Buijze
@@ -43,8 +46,23 @@ public class AMQPTerminalTest {
     @Autowired
     private EventBus eventBus;
 
+    @Autowired
+    private ConnectionFactory connectionFactory;
+
     private static final int EVENT_COUNT = 100;
     private static final int THREAD_COUNT = 10;
+
+    @Before
+    public void setUp() throws Exception {
+        try {
+            Channel channel = connectionFactory.createConnection().createChannel(false);
+            if (channel.isOpen()) {
+                channel.close();
+            }
+        } catch (Exception e) {
+            assumeNoException(e);
+        }
+    }
 
     @Test
     public void testConnectAndDispatch_DefaultQueueAndExchange() throws Exception {
