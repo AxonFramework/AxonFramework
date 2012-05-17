@@ -24,7 +24,9 @@ import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBusTerminal;
 import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
 import org.axonframework.eventhandling.amqp.MetaDataPropertyQueueNameResolver;
+import org.axonframework.eventhandling.amqp.PackageRougingKeyResolver;
 import org.axonframework.eventhandling.amqp.QueueNameResolver;
+import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
 import org.axonframework.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
@@ -63,6 +65,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     private boolean isDurable = false;
     private ListenerContainerLifecycleManager listenerContainerLifecycleManager;
     private QueueNameResolver queueNameResolver = new MetaDataPropertyQueueNameResolver(DEFAULT_QUEUE_NAME);
+    private RoutingKeyResolver routingKeyResolver = new PackageRougingKeyResolver();
     private ApplicationContext applicationContext;
 
     @Override
@@ -70,7 +73,10 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
             for (EventMessage event : events) {
-                doSendMessage(channel, asByteArray(event), isDurable ? DURABLE : null);
+                doSendMessage(channel,
+                              routingKeyResolver.resolveRoutingKey(event),
+                              asByteArray(event),
+                              isDurable ? DURABLE : null);
             }
             if (isTransactional) {
                 channel.txCommit();
@@ -95,13 +101,16 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      * Does the actual publishing of the given <code>body</code> on the given <code>channel</code>. This method can be
      * overridden to change the properties used to send a message.
      *
-     * @param channel The channel to dispatch the message on
-     * @param body    The body of the message to dispatch
-     * @param props   The default properties for the message
-     * @throws IOException any exception that occurs while dispatching the message
+     * @param channel    The channel to dispatch the message on
+     * @param routingKey The routing key for the message
+     * @param body       The body of the message to dispatch
+     * @param props      The default properties for the message   @throws IOException any exception that occurs while
+     *                   dispatching the message
+     * @throws java.io.IOException when an error occurs while writing the message
      */
-    protected void doSendMessage(Channel channel, byte[] body, AMQP.BasicProperties props) throws IOException {
-        channel.basicPublish(exchangeName, "", true, false, props, body);
+    protected void doSendMessage(Channel channel, String routingKey, byte[] body, AMQP.BasicProperties props)
+            throws IOException {
+        channel.basicPublish(exchangeName, routingKey, true, false, props, body);
     }
 
     private void tryRollback(Channel channel) {
@@ -217,6 +226,16 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      */
     public void setQueueNameResolver(QueueNameResolver queueNameResolver) {
         this.queueNameResolver = queueNameResolver;
+    }
+
+    /**
+     * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a {@link
+     * PackageRougingKeyResolver}, which uses the package name of the message's payload as a Routing Key.
+     *
+     * @param routingKeyResolver the RoutingKeyResolver to use
+     */
+    public void setRoutingKeyResolver(RoutingKeyResolver routingKeyResolver) {
+        this.routingKeyResolver = routingKeyResolver;
     }
 
     /**
