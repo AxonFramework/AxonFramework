@@ -28,7 +28,9 @@
                 <include>*:axon-integration</include>
                 <include>*:axon-core</include>
                 <include>*:axon-test</include>
+                <include>*:axon-amqp</include>
                 <include>*:axon-distributed-commandbus</include>
+                <include>*:axon-disruptor-commandbus</include>
             </includes>
             <binaries>
                 <outputDirectory>dist</outputDirectory>
