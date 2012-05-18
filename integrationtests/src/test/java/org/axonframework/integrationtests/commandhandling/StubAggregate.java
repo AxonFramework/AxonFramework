@@ -31,8 +31,7 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
     private Object identifier;
 
     public StubAggregate(Object aggregateId) {
-        this.identifier = aggregateId;
-        apply(new StubAggregateCreatedEvent());
+        apply(new StubAggregateCreatedEvent(aggregateId));
     }
 
     StubAggregate() {
@@ -53,6 +52,7 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
 
     @EventHandler
     private void onCreated(StubAggregateCreatedEvent event) {
+        this.identifier = event.getAggregateIdentifier();
         changeCounter = 0;
     }
 

@@ -85,7 +85,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
      *
      * @throws InterruptedException
      */
-    @Test
+    @Test(timeout = 30000)
     public void testConcurrentModifications() throws Exception {
         Log4jConfigurer.initLogging("classpath:log4j_silenced.properties");
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());

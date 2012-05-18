@@ -41,7 +41,7 @@ public class AbstractEventSourcedAggregateRootTest {
     @Test
     public void testInitializeWithEvents() {
         testSubject = new CompositeAggregateRoot();
-        testSubject.initializeState(identifier, new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
+        testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
                 identifier,
                 (long) 243,
                 "Mock contents", MetaData
@@ -109,12 +109,8 @@ public class AbstractEventSourcedAggregateRootTest {
         }
 
         @Override
-        protected void initialize(Object aggregateIdentifier) {
-            identifier = (String) aggregateIdentifier;
-        }
-
-        @Override
         protected void handle(DomainEventMessage event) {
+            this.identifier = (String) event.getAggregateIdentifier();
             this.invocationCount++;
             if (childEntity == null) {
                 childEntity = new SimpleEntity();

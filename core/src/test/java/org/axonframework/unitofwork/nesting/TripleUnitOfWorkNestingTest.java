@@ -78,8 +78,8 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
-    private static Object aggregateAIdentifier = "A";
-    private static Object aggregateBIdentifier = "B";
+    private static String aggregateAIdentifier = "A";
+    private static String aggregateBIdentifier = "B";
 
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private List<EventMessage<?>> handledMessages;
@@ -98,10 +98,10 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
         eventStore.appendEvents("AggregateA", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<CreateEvent>(aggregateAIdentifier, (long) 0,
-                                                           new CreateEvent(), MetaData.emptyInstance())));
+                                                           new CreateEvent(aggregateAIdentifier), MetaData.emptyInstance())));
         eventStore.appendEvents("AggregateB", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<CreateEvent>(aggregateBIdentifier, (long) 0,
-                                                           new CreateEvent(), MetaData.emptyInstance())));
+                                                           new CreateEvent(aggregateBIdentifier), MetaData.emptyInstance())));
         transactionManager.commit(tx);
         assertEquals(1, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
         assertEquals(1, toList(eventStore.readEvents("AggregateB", aggregateBIdentifier)).size());
@@ -206,6 +206,11 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
             return identifier;
         }
 
+        @EventHandler
+        private void handle(CreateEvent event) {
+            this.identifier = event.getIdentifier();
+        }
+
         public void doSomething(String stringCommand) {
             if ("hello".equalsIgnoreCase(stringCommand)) {
                 apply(new FirstEvent());
@@ -225,6 +230,11 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         public AggregateB() {
         }
 
+        @EventHandler
+        private void handle(CreateEvent event) {
+            this.identifier = event.getIdentifier();
+        }
+
         @Override
         public String getIdentifier() {
             return identifier;
@@ -237,6 +247,15 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
     private static class CreateEvent {
 
+        private String identifier;
+
+        public CreateEvent(String identifier) {
+            this.identifier = identifier;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
     }
 
     private class SendCommandTask implements Runnable {

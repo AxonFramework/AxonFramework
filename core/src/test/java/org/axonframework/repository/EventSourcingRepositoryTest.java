@@ -316,12 +316,8 @@ public class EventSourcingRepositoryTest {
 
         @Override
         protected void handle(DomainEventMessage event) {
+            identifier = (UUID) event.getAggregateIdentifier();
             handledEvents.add(event);
-        }
-
-        @Override
-        protected void initialize(Object aggregateIdentifier) {
-            identifier = (UUID) aggregateIdentifier;
         }
 
         public List<EventMessage> getHandledEvents() {

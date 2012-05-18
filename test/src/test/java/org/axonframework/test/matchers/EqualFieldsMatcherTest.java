@@ -30,10 +30,11 @@ public class EqualFieldsMatcherTest {
 
     private EqualFieldsMatcher<MyEvent> testSubject;
     private MyEvent expectedEvent;
+    private String aggregateId = "AggregateId";
 
     @Before
     public void setUp() {
-        expectedEvent = new MyEvent(1);
+        expectedEvent = new MyEvent(aggregateId, 1);
         testSubject = Matchers.equalTo(expectedEvent);
     }
 
@@ -44,7 +45,7 @@ public class EqualFieldsMatcherTest {
 
     @Test
     public void testMatches_EqualInstance() {
-        assertTrue(testSubject.matches(new MyEvent(1)));
+        assertTrue(testSubject.matches(new MyEvent(aggregateId, 1)));
     }
 
     @Test
@@ -54,13 +55,13 @@ public class EqualFieldsMatcherTest {
 
     @Test
     public void testMatches_WrongFieldValue() {
-        assertFalse(testSubject.matches(new MyEvent(2)));
+        assertFalse(testSubject.matches(new MyEvent(aggregateId, 2)));
         assertEquals("someValue", testSubject.getFailedField().getName());
     }
 
     @Test
     public void testMatches_WrongFieldValueInArray() {
-        assertFalse(testSubject.matches(new MyEvent(1, new byte[]{1, 2})));
+        assertFalse(testSubject.matches(new MyEvent(aggregateId, 1, new byte[]{1, 2})));
         assertEquals("someBytes", testSubject.getFailedField().getName());
     }
 
@@ -82,7 +83,7 @@ public class EqualFieldsMatcherTest {
 
     @Test
     public void testDescription_AfterMatchWithWrongFieldValue() {
-        testSubject.matches(new MyEvent(2));
+        testSubject.matches(new MyEvent(aggregateId, 2));
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         assertEquals("org.axonframework.test.MyEvent (failed on field 'someValue')", description.toString());

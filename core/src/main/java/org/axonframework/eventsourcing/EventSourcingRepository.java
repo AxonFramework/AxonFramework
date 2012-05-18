@@ -155,7 +155,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
 
         final T aggregate = createAggregate(aggregateIdentifier, events.peek());
         List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
-        aggregate.initializeState(aggregateIdentifier, new CapturingEventStream(events, unseenEvents, expectedVersion));
+        aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
         if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }

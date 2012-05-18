@@ -50,9 +50,9 @@ public class FixtureTest_Generic {
     @Test
     public void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
-        fixture.given(new MyEvent(1), new MyEvent(2))
+        fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                .when(new TestCommand("AggregateId"))
-               .expectEvents(new MyEvent(3));
+               .expectEvents(new MyEvent("AggregateId", 3));
 
         DomainEventStream events = fixture.getEventStore().readEvents("StandardAggregate", "AggregateId");
         for (int t=0;t<3;t++) {

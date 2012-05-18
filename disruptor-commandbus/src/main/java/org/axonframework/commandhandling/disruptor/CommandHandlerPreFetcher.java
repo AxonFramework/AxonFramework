@@ -129,7 +129,7 @@ public class CommandHandlerPreFetcher<T extends EventSourcedAggregateRoot>
                                                                  aggregateIdentifier);
                 if (events.hasNext()) {
                     foundAggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
-                    foundAggregate.initializeState(aggregateIdentifier, events);
+                    foundAggregate.initializeState(events);
                     entry.setPreLoadedAggregate(foundAggregate);
                 }
             } catch (AggregateNotFoundException e) {

@@ -324,7 +324,7 @@ public class SynchronousLoopbackTest {
         private UUID identifier;
 
         private CountingAggregate(UUID identifier) {
-            this.identifier = identifier;
+            apply(new AggregateCreatedEvent(identifier));
         }
 
         CountingAggregate() {
@@ -332,6 +332,11 @@ public class SynchronousLoopbackTest {
 
         public void setCounter(int newValue) {
             apply(new CounterChangedEvent(newValue));
+        }
+
+        @EventHandler
+        private void handleCreatedEvent(AggregateCreatedEvent event) {
+            this.identifier = event.getAggregateIdentifier();
         }
 
         @EventHandler

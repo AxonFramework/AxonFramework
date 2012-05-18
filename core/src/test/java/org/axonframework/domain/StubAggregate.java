@@ -46,12 +46,8 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
     @Override
     protected void handle(DomainEventMessage event) {
+        identifier = event.getAggregateIdentifier();
         invocationCount++;
-    }
-
-    @Override
-    protected void initialize(Object aggregateIdentifier) {
-        identifier = aggregateIdentifier;
     }
 
     public int getInvocationCount() {

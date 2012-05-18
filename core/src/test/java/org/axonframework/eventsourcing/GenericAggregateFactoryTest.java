@@ -78,10 +78,6 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        protected void initialize(Object aggregateIdentifier) {
-        }
-
-        @Override
         public Object getIdentifier() {
             return "unsuitableAggregateId";
         }
@@ -99,11 +95,6 @@ public class GenericAggregateFactoryTest {
 
         @Override
         protected void handle(DomainEventMessage event) {
-        }
-
-        @Override
-        protected void initialize(Object aggregateIdentifier) {
-            identifier = (String) aggregateIdentifier;
         }
 
         @Override

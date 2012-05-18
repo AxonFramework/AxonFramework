@@ -67,9 +67,9 @@ public class EventPublicationOrderTest {
     public void testPublicationOrderIsMaintained_AggregateAdded() {
         UUID aggregateId = UUID.randomUUID();
         when(eventStore.readEvents("StubAggregate", aggregateId))
-                .thenReturn(new SimpleDomainEventStream(new GenericDomainEventMessage<Object>(aggregateId,
-                                                                                              0,
-                                                                                              new Object())));
+                .thenReturn(new SimpleDomainEventStream(
+                        new GenericDomainEventMessage<Object>(aggregateId, 0,
+                                                              new StubAggregateCreatedEvent(aggregateId))));
         doAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -85,6 +85,7 @@ public class EventPublicationOrderTest {
     }
 
     private static class NotADomainEventMatcher extends BaseMatcher<EventMessage> {
+
         @Override
         public boolean matches(Object o) {
             return !(o instanceof DomainEventMessage);

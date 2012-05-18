@@ -93,7 +93,7 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         Object aggregateIdentifier = firstEvent.getAggregateIdentifier();
 
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
-        aggregate.initializeState(aggregateIdentifier, eventStream);
+        aggregate.initializeState(eventStream);
 
         return new GenericDomainEventMessage<AggregateSnapshot>(
                 aggregate.getIdentifier(), aggregate.getVersion(),

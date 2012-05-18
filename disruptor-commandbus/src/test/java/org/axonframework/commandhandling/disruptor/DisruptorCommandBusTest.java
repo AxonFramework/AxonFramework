@@ -350,12 +350,8 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        protected void initialize(Object aggregateIdentifier) {
-            identifier = (String) aggregateIdentifier;
-        }
-
-        @Override
         protected void handle(DomainEventMessage event) {
+            identifier = (String) event.getAggregateIdentifier();
             if (StubDomainEvent.class.isAssignableFrom(event.getPayloadType())) {
                 timesDone++;
             }

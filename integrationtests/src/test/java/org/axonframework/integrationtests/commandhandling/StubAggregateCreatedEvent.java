@@ -21,6 +21,13 @@ package org.axonframework.integrationtests.commandhandling;
  */
 public class StubAggregateCreatedEvent {
 
-    public StubAggregateCreatedEvent() {
+    private final Object aggregateIdentifier;
+
+    public StubAggregateCreatedEvent(Object aggregateIdentifier) {
+        this.aggregateIdentifier = aggregateIdentifier;
+    }
+
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 }

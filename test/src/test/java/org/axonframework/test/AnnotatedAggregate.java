@@ -45,9 +45,8 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
     @CommandHandler
     public AnnotatedAggregate(CreateAggregateCommand command) {
-        this.identifier = command.getAggregateIdentifier() == null ?
-                UUID.randomUUID() : command.getAggregateIdentifier();
-        apply(new MyEvent(0));
+        apply(new MyEvent(command.getAggregateIdentifier() == null ?
+                                  UUID.randomUUID() : command.getAggregateIdentifier(), 0));
     }
 
     @CommandHandler
@@ -57,12 +56,13 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
     @CommandHandler
     public void doSomethingIllegal(IllegalStateChangeCommand command) {
-        apply(new MyEvent(lastNumber + 1));
+        apply(new MyEvent(command.getAggregateIdentifier(), lastNumber + 1));
         lastNumber = command.getNewIllegalValue();
     }
 
     @EventHandler
     public void handleMyEvent(MyEvent event) {
+        identifier = event.getAggregateIdentifier();
         lastNumber = event.getSomeValue();
         if (entity == null) {
             entity = new MyEntity();
@@ -83,7 +83,7 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     public void doSomething(TestCommand command) {
         // this state change should be accepted, since it happens on a transient value
         counter++;
-        apply(new MyEvent(lastNumber + 1));
+        apply(new MyEvent(command.getAggregateIdentifier(), lastNumber + 1));
     }
 
     @Override

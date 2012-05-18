@@ -116,14 +116,10 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         protected void handle(DomainEventMessage event) {
+            identifier = (String) event.getAggregateIdentifier();
             if (StubDomainEvent.class.isAssignableFrom(event.getPayloadType())) {
                 timesDone++;
             }
-        }
-
-        @Override
-        protected void initialize(Object aggregateIdentifier) {
-            identifier = (String) aggregateIdentifier;
         }
 
         @Override

@@ -39,8 +39,7 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     public StandardAggregate(int initialValue, Object aggregateIdentifier) {
-        this.identifier = aggregateIdentifier == null ? UUID.randomUUID() : aggregateIdentifier;
-        apply(new MyEvent(initialValue));
+        apply(new MyEvent(aggregateIdentifier == null ? UUID.randomUUID() : aggregateIdentifier, initialValue));
     }
 
     public void delete() {
@@ -48,12 +47,13 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     public void doSomethingIllegal(Integer newIllegalValue) {
-        apply(new MyEvent(lastNumber + 1));
+        apply(new MyEvent(identifier, lastNumber + 1));
         lastNumber = newIllegalValue;
     }
 
     @EventHandler
     public void handleMyEvent(MyEvent event) {
+        identifier = event.getAggregateIdentifier();
         lastNumber = event.getSomeValue();
         if (entity == null) {
             entity = new MyEntity();
@@ -73,7 +73,7 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     public void doSomething() {
         // this state change should be accepted, since it happens on a transient value
         counter++;
-        apply(new MyEvent(lastNumber + 1));
+        apply(new MyEvent(identifier, lastNumber + 1));
     }
 
     @Override

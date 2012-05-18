@@ -119,7 +119,7 @@ public class RepositoryBeanDefinitionParserTest {
          * {@inheritDoc}
          */
         @Override
-        public void initializeState(Object aggregateIdentifier, DomainEventStream domainEventStream) {
+        public void initializeState(DomainEventStream domainEventStream) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
     }

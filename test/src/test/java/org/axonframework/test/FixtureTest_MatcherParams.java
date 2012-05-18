@@ -44,7 +44,7 @@ public class FixtureTest_MatcherParams {
     public void testFirstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                      fixture.getEventBus()))
-               .given(new MyEvent(1))
+               .given(new MyEvent("aggregateId", 1))
                .when(new TestCommand("aggregateId"))
                .expectReturnValue(new DoesMatch())
                .expectEventsMatching(sequenceOf(new DoesMatch<EventMessage>()));
@@ -52,7 +52,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_UnexpectedException() {
-        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
         try {
@@ -69,7 +70,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_UnexpectedReturnValue() {
-        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
         try {
@@ -87,7 +89,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_WrongReturnValue() {
-        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
         try {
@@ -103,7 +106,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_WrongExceptionType() {
-        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
         try {
@@ -120,7 +124,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_ExpectedPublishedSameAsStored() {
-        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
         try {
@@ -139,7 +144,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_EventDoesNotMatch() {
-        List<?> givenEvents = Arrays.asList(new MyEvent(1), new MyEvent(2), new MyEvent(3));
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
         try {

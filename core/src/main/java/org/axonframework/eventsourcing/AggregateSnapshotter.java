@@ -50,7 +50,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
             AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
             aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         }
-        aggregate.initializeState(aggregateIdentifier, eventStream);
+        aggregate.initializeState(eventStream);
 
         return new GenericDomainEventMessage<AggregateSnapshot>(
                 aggregate.getIdentifier(), aggregate.getVersion(),

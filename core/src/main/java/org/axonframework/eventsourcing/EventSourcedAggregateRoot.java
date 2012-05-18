@@ -34,10 +34,9 @@ public interface EventSourcedAggregateRoot extends AggregateRoot {
      * org.axonframework.domain.DomainEventStream}. A call to this method on an aggregate that has already been
      * initialized will result in an {@link IllegalStateException}.
      *
-     * @param aggregateIdentifier The identifier of the aggregate
      * @param domainEventStream   the event stream containing the events that describe the state changes of this
      *                            aggregate
      * @throws IllegalStateException if this aggregate was already initialized.
      */
-    void initializeState(Object aggregateIdentifier, DomainEventStream domainEventStream);
+    void initializeState(DomainEventStream domainEventStream);
 }

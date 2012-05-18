@@ -185,11 +185,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @Override
         protected void handle(DomainEventMessage event) {
-        }
-
-        @Override
-        protected void initialize(Object aggregateIdentifier) {
-            identifier = (UUID) aggregateIdentifier;
+            identifier = (UUID) event.getAggregateIdentifier();
         }
 
         @Override

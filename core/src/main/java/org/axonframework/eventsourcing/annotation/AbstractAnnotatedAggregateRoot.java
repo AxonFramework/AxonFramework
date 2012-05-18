@@ -83,20 +83,6 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
         }
     }
 
-    @Override
-    protected void initialize(Object aggregateIdentifier) {
-        if (identifierField == null) {
-            identifierField = locateIdentifierField(this);
-        }
-        try {
-            identifierField.set(this, aggregateIdentifier);
-        } catch (IllegalAccessException e) {
-            throw new IncompatibleAggregateException("The aggregate class [%s] does not allow its Aggregate "
-                                                             + "Identifier field to be set. Make sure the Security "
-                                                             + "Manager allows access using reflection.");
-        }
-    }
-
     private Field locateIdentifierField(AbstractAnnotatedAggregateRoot instance) {
         for (Field candidate : fieldsOf(instance.getClass())) {
             if (containsIdentifierAnotation(candidate.getAnnotations())) {

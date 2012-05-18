@@ -21,15 +21,16 @@ package org.axonframework.test;
  */
 public class MyEvent {
 
-    private static final long serialVersionUID = -8646752013150772644L;
     private final Integer someValue;
     private final byte[] someBytes;
+    private final Object aggregateIdentifier;
 
-    public MyEvent(Integer someValue) {
-        this(someValue, new byte[]{});
+    public MyEvent(Object aggregateIdentifier, Integer someValue) {
+        this(aggregateIdentifier, someValue, new byte[]{});
     }
 
-    public MyEvent(Integer someValue, byte[] someBytes) {
+    public MyEvent(Object aggregateIdentifier, Integer someValue, byte[] someBytes) {
+        this.aggregateIdentifier = aggregateIdentifier;
         this.someValue = someValue;
         this.someBytes = someBytes;
     }
@@ -40,5 +41,9 @@ public class MyEvent {
 
     public byte[] getSomeBytes() {
         return someBytes;
+    }
+
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 }
