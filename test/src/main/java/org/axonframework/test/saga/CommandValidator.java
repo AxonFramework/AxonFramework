@@ -104,7 +104,7 @@ class CommandValidator {
                         "Unexpected command at position %s (0-based). Expected <%s>, got <%s>",
                         counter,
                         expectedItem,
-                        actualItem));
+                        actualItem.getPayload()));
             }
             counter++;
         }
