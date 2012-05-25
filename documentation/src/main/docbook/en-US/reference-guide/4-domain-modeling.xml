@@ -187,30 +187,14 @@
                 <title>
                     <code>AbstractAggregateRoot</code>
                 </title>
-                <para>The
-                    <code>AbstractAggregateRoot</code>
-                    is a basic implementation that provides
-                    a
-                    <code>registerEvent(DomainEvent)</code>
-                    method that you can call in your
+                <para>The <code>AbstractAggregateRoot</code> is a basic implementation that provides
+                    a <code>registerEvent(DomainEvent)</code> method that you can call in your
                     business logic method to have an event added to the list of uncommitted events.
-                    The
-                    <code>AbstractAggregateRoot</code>
-                    will keep track of all uncommitted
+                    The <code>AbstractAggregateRoot</code> will keep track of all uncommitted
                     registered events and make sure they are forwarded to the event bus when the
-                    aggregate is saved to a repository.
-                </para>
-            </simplesect>
-            <simplesect>
-                <title><code>AbstractJpaAggregateRoot</code></title>
-                <para>The <code>AbstractJpaAggregateRoot</code> is a JPA-compatible implementation
-                    of the <code>AggregateRoot</code> interface. It has the annotation necessary to
-                    persist the aggregate's state and reconstruct it from database tables. It uses
-                    the <code>@Version</code> annotation on one of it's field to perform optimistic
-                    locking on the database level. Similar to the
-                    <code>AbstractAggregateRoot</code>, the <code>AbstractJpaAggregateRoot</code>
-                    keeps track of uncommitted events, which have been registered using
-                        <code>registerEvent(DomainEvent)</code>.</para>
+                    aggregate is saved to a repository. The <code>AbstractAggregateRoot</code> is a
+                    JPA-compatible implementation and can be used with a Jpa based ORM
+                    repository.</para>
             </simplesect>
         </sect2>
         <sect2>
