@@ -58,12 +58,10 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> implem
         this.aggregateType = aggregateType;
         this.typeIdentifier = aggregateType.getSimpleName();
         try {
-            Constructor<T> constructor = aggregateType.getDeclaredConstructor();
-            ensureAccessible(constructor);
-            this.constructor = constructor;
+            this.constructor = ensureAccessible(aggregateType.getDeclaredConstructor());
         } catch (NoSuchMethodException e) {
             throw new IncompatibleAggregateException(format("The aggregate [%s] doesn't provide a no-arg constructor.",
-                                                            aggregateType.getSimpleName()));
+                                                            aggregateType.getSimpleName()), e);
         }
     }
 

@@ -49,7 +49,7 @@ public class AsynchronousEventHandlerWrapper extends AsynchronousExecutionWrappe
         super(executor, transactionManager, sequencingPolicy);
         this.eventListener = eventListener;
         if (eventListener instanceof EventListenerProxy) {
-            this.listenerType = ((EventListenerProxy) eventListener).getTargetType();
+            this.listenerType = ((EventListenerProxy) eventListener).getTargetType(); // NOSONAR - False alarm
         } else {
             this.listenerType = eventListener.getClass();
         }

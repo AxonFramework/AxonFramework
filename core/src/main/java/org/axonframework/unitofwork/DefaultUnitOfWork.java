@@ -46,7 +46,8 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultUnitOfWork.class);
 
-    private final Map<AggregateRoot, AggregateEntry> registeredAggregates = new LinkedHashMap<AggregateRoot, AggregateEntry>();
+    private final Map<AggregateRoot, AggregateEntry> registeredAggregates =
+            new LinkedHashMap<AggregateRoot, AggregateEntry>();
     private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private Status dispatcherStatus = Status.READY;

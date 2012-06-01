@@ -31,6 +31,8 @@ import org.springframework.util.ErrorHandler;
 
 import java.util.concurrent.Executor;
 
+import static java.util.Arrays.copyOf;
+
 /**
  * Factory for SimpleMessageListenerContainer beans. All properties available on the SimpleMessageListenerContainer are
  * available on the factory. When {@link #createContainer()} is invoked, a new instance of {@link
@@ -172,7 +174,7 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
      * @see SimpleMessageListenerContainer#setAdviceChain(org.aopalliance.aop.Advice[])
      */
     public void setAdviceChain(Advice[] adviceChain) {
-        this.adviceChain = adviceChain;
+        this.adviceChain = copyOf(adviceChain, adviceChain.length);
     }
 
     /**

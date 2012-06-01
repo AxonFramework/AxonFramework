@@ -60,8 +60,9 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * available in the given <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is
      * not necessary or appropriate for the given event stream.
      *
-     * @param typeIdentifier The aggregate's type identifier
-     * @param eventStream    The event stream containing the aggregate's past events
+     * @param typeIdentifier      The aggregate's type identifier
+     * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
+     * @param eventStream         The event stream containing the aggregate's past events
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
     protected abstract DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,

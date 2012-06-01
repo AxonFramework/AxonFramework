@@ -71,8 +71,7 @@ public class EventContainer implements Serializable {
      * @return the DomainEventMessage added to the container
      */
     public <T> DomainEventMessage<T> addEvent(MetaData metaData, T payload) {
-        DomainEventMessage<T> event = new GenericDomainEventMessage<T>(aggregateIdentifier,
-                                                                       newSequenceNumber(),
+        DomainEventMessage<T> event = new GenericDomainEventMessage<T>(aggregateIdentifier, newSequenceNumber(),
                                                                        payload, metaData);
         if (registrationCallbacks != null) {
             for (EventRegistrationCallback callback : registrationCallbacks) {

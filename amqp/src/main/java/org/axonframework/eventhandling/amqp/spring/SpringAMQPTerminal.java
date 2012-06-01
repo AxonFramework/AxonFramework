@@ -122,9 +122,9 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     }
 
     @Override
-    public synchronized void onClusterCreated(final Cluster cluster) {
+    public void onClusterCreated(final Cluster cluster) {
         String queueName = queueNameResolver.resolveQueueName(cluster);
-        listenerContainerLifecycleManager.registerCluster(queueName, cluster);
+        getListenerContainerLifecycleManager().registerCluster(queueName, cluster);
     }
 
     private byte[] asByteArray(EventMessage event) {
@@ -141,15 +141,19 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        if (listenerContainerLifecycleManager == null) {
-            listenerContainerLifecycleManager = applicationContext.getBean(ListenerContainerLifecycleManager.class);
-        }
         if (connectionFactory == null) {
             connectionFactory = applicationContext.getBean(ConnectionFactory.class);
         }
         if (serializer == null) {
             serializer = applicationContext.getBean(Serializer.class);
         }
+    }
+
+    private synchronized ListenerContainerLifecycleManager getListenerContainerLifecycleManager() {
+        if (listenerContainerLifecycleManager == null) {
+            listenerContainerLifecycleManager = applicationContext.getBean(ListenerContainerLifecycleManager.class);
+        }
+        return listenerContainerLifecycleManager;
     }
 
     /**

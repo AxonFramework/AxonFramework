@@ -19,6 +19,7 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;

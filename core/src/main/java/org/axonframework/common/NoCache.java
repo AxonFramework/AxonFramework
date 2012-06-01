@@ -34,7 +34,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.3
  */
-public class NoCache implements Cache {
+public final class NoCache implements Cache {
 
     /**
      * Creates a singleton reference the the NoCache implementation.

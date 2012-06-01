@@ -65,9 +65,9 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
                                                                                                 .getMessageListener();
             existingListener.addCluster(cluster);
             if (started && logger.isWarnEnabled()) {
-                logger.warn(
-                        "A cluster was configured on queue [{}], while the Container for that queue was already processing events. "
-                                + "");
+                logger.warn("A cluster was configured on queue [{}], "
+                                    + "while the Container for that queue was already processing events."
+                                    + "This may lead to Events not being published to all Clusters");
             }
         } else {
             SimpleMessageListenerContainer newContainer = createContainer();

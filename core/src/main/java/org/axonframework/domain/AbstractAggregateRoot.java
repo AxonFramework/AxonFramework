@@ -16,8 +16,6 @@
 
 package org.axonframework.domain;
 
-import org.axonframework.eventsourcing.IncompatibleAggregateException;
-
 import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.MappedSuperclass;
@@ -161,7 +159,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
         if (eventContainer == null) {
             Object identifier = getIdentifier();
             if (identifier == null) {
-                throw new IncompatibleAggregateException(
+                throw new AggregateIdentifierNotInitializedException(
                         "AggregateIdentifier is unknown in ["+ getClass().getName() +"]. "
                                 + "Make sure the Aggregate Identifier is initialized before registering events.");
             }

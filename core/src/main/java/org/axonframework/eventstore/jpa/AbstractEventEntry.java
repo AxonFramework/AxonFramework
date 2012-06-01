@@ -44,24 +44,24 @@ abstract class AbstractEventEntry implements SerializedDomainEventData {
     @Id
     @GeneratedValue
     private Long id;
-    @Basic
+    @Basic(optional = false)
     private String eventIdentifier;
-    @Basic
+    @Basic(optional = false)
     private String aggregateIdentifier;
     @Basic
     private long sequenceNumber;
-    @Basic
+    @Basic(optional = false)
     private String timeStamp;
-    @Basic
+    @Basic(optional = false)
     private String type;
-    @Basic
+    @Basic(optional = false)
     private String payloadType;
     @Basic
     private String payloadRevision;
     @Basic
     @Lob
     private byte[] metaData;
-    @Basic
+    @Basic(optional = false)
     @Lob
     private byte[] payload;
 

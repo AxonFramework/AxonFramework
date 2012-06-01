@@ -51,16 +51,16 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
      * @param payload             The serialized representation of the event
      * @param metaData            The serialized representation of the meta data
      */
-    public SimpleSerializedDomainEventData(String eventIdentifier, String aggregateIdentifier, long sequenceNumber,
-                                           String timestamp, String payloadType, String payloadRevision, byte[] payload,
-                                           byte[] metaData) {
+    public SimpleSerializedDomainEventData(String eventIdentifier, String aggregateIdentifier, // NOSONAR
+                                           long sequenceNumber, String timestamp, String payloadType,
+                                           String payloadRevision, byte[] payload, byte[] metaData) {
         this.eventIdentifier = eventIdentifier;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
         this.timestamp = new DateTime(timestamp);
-        this.simpleSerializedObject = new SimpleSerializedObject<byte[]>(payload, byte[].class,
+        this.simpleSerializedObject = new SimpleSerializedObject<byte[]>(payload, byte[].class,  // NOSONAR
                                                                          payloadType, payloadRevision);
-        this.serializedMetaData = new SerializedMetaData<byte[]>(metaData, byte[].class);
+        this.serializedMetaData = new SerializedMetaData<byte[]>(metaData, byte[].class); // NOSONAR Ignore array copy
     }
 
     @Override

@@ -163,13 +163,16 @@ public abstract class ReflectionUtils {
      * Makes the given <code>member</code> accessible via reflection if it is not the case already.
      *
      * @param member The member (field, method, constructor, etc) to make accessible
+     * @return the given <code>member</code>, for easier method chaining
+     *
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
-    public static void ensureAccessible(AccessibleObject member) {
+    public static <T extends AccessibleObject> T ensureAccessible(T member) {
         if (!isAccessible(member)) {
             AccessController.doPrivileged(new MemberAccessibilityCallback(member));
         }
+        return member;
     }
 
     /**

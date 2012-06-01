@@ -115,9 +115,9 @@ public class JGroupsConnector implements CommandBusConnector {
      * members (proportionally) lower values will result in a less evenly distributed hash.
      *
      * @param loadFactor The load factor for this node.
-     * @throws Exception when an error occurs while connecting
+     * @throws ConnectionFailedException when an error occurs while connecting
      */
-    public synchronized void connect(int loadFactor) throws Exception {
+    public synchronized void connect(int loadFactor) throws ConnectionFailedException {
         this.currentLoadFactor = loadFactor;
         Assert.isTrue(loadFactor >= 0, "Load Factor must be a positive integer value.");
         Assert.isTrue(channel.getReceiver() == null || channel.getReceiver() == messageReceiver,
@@ -130,7 +130,7 @@ public class JGroupsConnector implements CommandBusConnector {
         } catch (Exception e) {
             joinedCondition.markJoined(false);
             channel.disconnect();
-            throw e;
+            throw new ConnectionFailedException("Failed to connect to JGroupsConnectorFactoryBean", e);
         }
     }
 

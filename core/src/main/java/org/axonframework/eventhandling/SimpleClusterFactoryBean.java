@@ -33,7 +33,7 @@ public class SimpleClusterFactoryBean implements FactoryBean<Cluster>, Initializ
 
     private SimpleCluster cluster;
     private Map<String, Object> metaDataValues;
-    private String name;
+    private String beanName;
 
     @Override
     public Cluster getObject() throws Exception {
@@ -53,7 +53,7 @@ public class SimpleClusterFactoryBean implements FactoryBean<Cluster>, Initializ
     @Override
     public void afterPropertiesSet() throws Exception {
         this.cluster = new SimpleCluster();
-        cluster.getMetaData().setProperty("ClusterName", name);
+        cluster.getMetaData().setProperty("ClusterName", beanName);
         for (Map.Entry<String, Object> entry : metaDataValues.entrySet()) {
             cluster.getMetaData().setProperty(entry.getKey(), entry.getValue());
         }
@@ -69,7 +69,7 @@ public class SimpleClusterFactoryBean implements FactoryBean<Cluster>, Initializ
     }
 
     @Override
-    public void setBeanName(String name) {
-        this.name = name;
+    public void setBeanName(String beanName) {
+        this.beanName = beanName;
     }
 }

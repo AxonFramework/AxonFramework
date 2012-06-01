@@ -77,14 +77,16 @@ public abstract class AbstractTransactionManager<T> implements TransactionManage
     /**
      * Commits the transaction described by <code>tx</code> in the underlying transaction manager.
      *
-     * @param tx The object returned by {@link #startUnderlyingTransaction(org.axonframework.eventhandling.TransactionStatus)}
+     * @param tx The object returned by {@link
+     *           #startUnderlyingTransaction(org.axonframework.eventhandling.TransactionStatus)}
      */
     protected abstract void commitUnderlyingTransaction(T tx);
 
     /**
      * Rolls back the transaction described by <code>tx</code> in the underlying transaction manager.
      *
-     * @param tx The object returned by {@link #startUnderlyingTransaction(org.axonframework.eventhandling.TransactionStatus)}
+     * @param tx The object returned by {@link
+     *           #startUnderlyingTransaction(org.axonframework.eventhandling.TransactionStatus)}
      */
     protected abstract void rollbackUnderlyingTransaction(T tx);
 

@@ -6,6 +6,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.JChannel;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -32,7 +33,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private CommandBus localSegment;
     private int loadFactor = 100;
     private JChannel channel;
-    private int phase = Integer.MAX_VALUE ;
+    private int phase = Integer.MAX_VALUE;
     private String beanName;
     private ApplicationContext applicationContext;
     private List<CommandHandlerInterceptor> interceptors;
@@ -139,7 +140,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
             connector.connect(loadFactor);
             connector.awaitJoined();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ConnectionFailedException("Could not start JGroups Connector", e);
         }
     }
 
