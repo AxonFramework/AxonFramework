@@ -4,8 +4,6 @@ import org.apache.commons.io.input.CountingInputStream;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.io.EventMessageReader;
-import org.axonframework.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
 
 import java.io.BufferedInputStream;
@@ -55,7 +53,8 @@ public class FileSystemSnapshotEventWriter {
             DataOutputStream dataOutputStream = new DataOutputStream(snapshotEventFile);
 
             dataOutputStream.writeLong(offset);
-            EventMessageWriter eventMessageWriter = new EventMessageWriter(dataOutputStream, eventSerializer);
+            FileSystemEventMessageWriter eventMessageWriter =
+                    new FileSystemEventMessageWriter(dataOutputStream, eventSerializer);
             eventMessageWriter.writeEventMessage(snapshotEvent);
         } catch (IOException e) {
             throw new EventStoreException("Error writing a snapshot event due to an IO exception", e);
@@ -76,12 +75,12 @@ public class FileSystemSnapshotEventWriter {
         CountingInputStream countingInputStream = null;
         try {
             countingInputStream = new CountingInputStream(new BufferedInputStream(eventFile));
-            EventMessageReader eventMessageReader =
-                    new EventMessageReader(new DataInputStream(countingInputStream), eventSerializer);
+            FileSystemEventMessageReader eventMessageReader =
+                    new FileSystemEventMessageReader(new DataInputStream(countingInputStream));
 
             long lastReadSequenceNumber = -1;
             while (lastReadSequenceNumber < snapshotEvent.getSequenceNumber()) {
-                DomainEventMessage entry = (DomainEventMessage) eventMessageReader.readEventMessage();
+                FileSystemEventEntry entry = eventMessageReader.readEventMessage();
                 lastReadSequenceNumber = entry.getSequenceNumber();
             }
 

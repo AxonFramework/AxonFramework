@@ -1,8 +1,8 @@
 package org.axonframework.eventstore.fs;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.io.EventMessageReader;
+import org.axonframework.serializer.SerializedDomainEventData;
+import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,14 +69,16 @@ public class FileSystemSnapshotEventReader {
 
     private FileSystemSnapshotEventEntry readLastSnapshotEntry() throws IOException {
         DataInputStream snapshotEventFileDataInputStream = new DataInputStream(snapshotEventFile);
-        EventMessageReader snapshotEventReader =
-                new EventMessageReader(snapshotEventFileDataInputStream, eventSerializer);
+        FileSystemEventMessageReader snapshotEventReader =
+                new FileSystemEventMessageReader(snapshotEventFileDataInputStream);
 
         FileSystemSnapshotEventEntry lastSnapshotEvent = null;
         while (snapshotEventFileDataInputStream.available() > 0) {
             long bytesToSkip = snapshotEventFileDataInputStream.readLong();
-            EventMessage snapshotEvent = snapshotEventReader.readEventMessage();
-            lastSnapshotEvent = new FileSystemSnapshotEventEntry((DomainEventMessage) snapshotEvent, bytesToSkip);
+            SerializedDomainEventData snapshotEventData = snapshotEventReader.readEventMessage();
+            SerializedDomainEventMessage<Object> snapshotEvent =
+                    new SerializedDomainEventMessage<Object>(snapshotEventData, eventSerializer);
+            lastSnapshotEvent = new FileSystemSnapshotEventEntry(snapshotEvent, bytesToSkip);
         }
 
         return lastSnapshotEvent;

@@ -23,24 +23,23 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.io.EventMessageReader;
-import org.axonframework.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.upcasting.SimpleUpcasterChain;
+import org.axonframework.upcasting.UpcasterAware;
+import org.axonframework.upcasting.UpcasterChain;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 
 /**
- * Implementation of the {@link org.axonframework.eventstore.EventStore} that serializes objects (by default using XStream) and
+ * Implementation of the {@link org.axonframework.eventstore.EventStore} that serializes objects (by default using
+ * XStream) and
  * writes them to files to disk. Each aggregate is represented by a single file.
  * <p/>
  * Use {@link EventFileResolver} to specify the directory where event files should be stored and written to.
@@ -52,10 +51,11 @@ import java.io.SequenceInputStream;
  * @author Frank Versnel
  * @since 0.5
  */
-public class FileSystemEventStore implements EventStore, SnapshotEventStore {
+public class FileSystemEventStore implements EventStore, SnapshotEventStore, UpcasterAware {
 
     private final Serializer eventSerializer;
     private final EventFileResolver eventFileResolver;
+    private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
 
     /**
      * Basic initialization of the event store. The actual serialization and deserialization is delegated to a {@link
@@ -71,7 +71,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
      * Initialize the FileSystemEventStore using the given <code>serializer</code>. The serializer must be capable of
      * serializing at least DomainEvents.
      *
-     * @param serializer The serializer capable of serializing (at least) DomainEvents
+     * @param serializer        The serializer capable of serializing (at least) DomainEvents
      * @param eventFileResolver The EventFileResolver providing access to event files
      */
     public FileSystemEventStore(Serializer serializer, EventFileResolver eventFileResolver) {
@@ -95,7 +95,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         try {
             DomainEventMessage next = eventsToStore.next();
             out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
-            EventMessageWriter eventMessageWriter = new EventMessageWriter(new DataOutputStream(out), eventSerializer);
+            FileSystemEventMessageWriter eventMessageWriter =
+                    new FileSystemEventMessageWriter(new DataOutputStream(out), eventSerializer);
             do {
                 eventMessageWriter.writeEventMessage(next);
                 if (eventsToStore.hasNext()) {
@@ -124,12 +125,13 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
             InputStream is = eventFileInputStream;
             if (snapshotEvent != null) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                EventMessageWriter snapshotEventMessageWriter =
-                        new EventMessageWriter(new DataOutputStream(baos), eventSerializer);
+                FileSystemEventMessageWriter snapshotEventMessageWriter =
+                        new FileSystemEventMessageWriter(new DataOutputStream(baos), eventSerializer);
                 snapshotEventMessageWriter.writeEventMessage(snapshotEvent);
                 is = new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), eventFileInputStream);
             }
-            return new BufferedReaderDomainEventStream(is, eventSerializer);
+
+            return new FileSystemBufferedReaderDomainEventStream(is, eventSerializer, upcasterChain);
         } catch (IOException e) {
             throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
@@ -137,6 +139,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
                                   type, aggregateIdentifier), e);
         }
     }
+
 
     /**
      * {@inheritDoc}
@@ -173,63 +176,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore {
         return snapshotEvent;
     }
 
-    /**
-     * DomainEventStream implementation that reads DomainEvents from an {@link InputStream}.
-     */
-    private static class BufferedReaderDomainEventStream implements DomainEventStream {
-
-        private DomainEventMessage next;
-        private final EventMessageReader eventMessageReader;
-
-        /**
-         * Initialize a BufferedReaderDomainEventStream using the given <code>inputStream</code> and
-         * <code>serializer</code>. The <code>inputStream</code> must provide a serialized DomainEvent, prefixed with a
-         * UTF-8 encoded number indicating the number of bytes to read and a number representing the sequence number of
-         * the event. In between each number and the serialized DomainEvent, there must be at least a single whitespace
-         * character.
-         * <p/>
-         * Example:<br/><code>1234 The serialized domain event using 1234 bytes...</code>
-         * <p/>
-         * The reader will be closed when the last event has been read from it, or when an exception occurs while
-         * reading or deserializing an event.
-         *
-         * @param inputStream The inputStream providing serialized DomainEvents
-         * @param serializer  The serializer to deserialize the DomainEvents
-         */
-        public BufferedReaderDomainEventStream(InputStream inputStream, Serializer serializer) {
-            this.eventMessageReader = new EventMessageReader(
-                    new DataInputStream(new BufferedInputStream(inputStream)), serializer);
-            this.next = doReadNext();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return next != null;
-        }
-
-        @Override
-        public DomainEventMessage next() {
-            DomainEventMessage toReturn = next;
-            next = doReadNext();
-            return toReturn;
-        }
-
-        @Override
-        public DomainEventMessage peek() {
-            return next;
-        }
-
-        private DomainEventMessage doReadNext() {
-            try {
-                return (DomainEventMessage) eventMessageReader.readEventMessage();
-            } catch (EOFException e) {
-                // No more events available
-                return null;
-            } catch (IOException e) {
-                throw new EventStoreException("An error occurred while reading from the underlying source", e);
-            } catch (RuntimeException e) {
-                throw e;
-            }
-        }
+    @Override
+    public void setUpcasterChain(UpcasterChain upcasterChain) {
+        this.upcasterChain = upcasterChain;
     }
 }
