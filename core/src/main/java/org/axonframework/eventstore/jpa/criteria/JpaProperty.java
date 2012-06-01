@@ -70,12 +70,12 @@ class JpaProperty implements Property {
 
     @Override
     public Criteria in(Object expression) {
-        return new In(this, expression);
+        return new CollectionOperator(this, "IN", expression);
     }
 
     @Override
     public Criteria notIn(Object expression) {
-        return new NotIn(this, expression);
+        return new CollectionOperator(this, "NOT IN", expression);
     }
 
     /**

@@ -17,24 +17,27 @@
 package org.axonframework.eventstore.jpa.criteria;
 
 /**
- * Implementation of the Or operator for the JPA Event Store.
+ * Implementation of a binary operator for the Jpa Event Store.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-class Or extends JpaCriteria {
+class BinaryOperator extends JpaCriteria {
 
     private final JpaCriteria criteria1;
     private final JpaCriteria criteria2;
+    private final String operator;
 
     /**
-     * Initializes an OR operator, where either of the given criteria must be <code>true</code>.
+     * Initializes a binary operator that matches against two criteria
      *
      * @param criteria1 One of the criteria to match
+     * @param operator  The binary operator to check the criteria with
      * @param criteria2 One of the criteria to match
      */
-    public Or(JpaCriteria criteria1, JpaCriteria criteria2) {
+    public BinaryOperator(JpaCriteria criteria1, String operator, JpaCriteria criteria2) {
         this.criteria1 = criteria1;
+        this.operator = operator;
         this.criteria2 = criteria2;
     }
 
@@ -42,7 +45,9 @@ class Or extends JpaCriteria {
     public void parse(String entryKey, StringBuilder whereClause, ParameterRegistry parameters) {
         whereClause.append("(");
         criteria1.parse(entryKey, whereClause, parameters);
-        whereClause.append(") OR (");
+        whereClause.append(") ")
+                   .append(operator)
+                   .append(" (");
         criteria2.parse(entryKey, whereClause, parameters);
         whereClause.append(")");
     }

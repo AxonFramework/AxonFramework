@@ -26,22 +26,120 @@ import static org.junit.Assert.*;
 public class JpaCriteriaBuilderTest {
 
     @Test
-    public void testBuildCriteria_ComplexStructure() throws Exception {
+    public void testBuildCriteria_ComplexStructureWithUnequalNull() throws Exception {
         JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
         JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan("less")
-                                                    .and(builder.property("property2").greaterThanEquals("gte"))
-                                                    .or(builder.property("property3").in(new String[]{"piet", "klaas"}))
+                                                    .and(builder.property("property2").greaterThan("gt"))
+                                                    .or(builder.property("property3").notIn(builder.property("collection")))
                                                     .or(builder.property("property4").isNot(null));
 
         StringBuilder query = new StringBuilder();
         ParameterRegistry parameters = new ParameterRegistry();
         criteria.parse("entry", query, parameters);
         assertEquals(
-                "(((entry.property < :param0) AND (entry.property2 >= :param1)) OR (entry.property3 IN (:param2))) OR (entry.property4 IS NOT NULL)",
+                "(((entry.property < :param0) AND (entry.property2 > :param1)) OR (entry.property3 NOT IN entry.collection)) OR (entry.property4 IS NOT NULL)",
+                query.toString());
+        assertEquals(2, parameters.getParameters().size());
+        assertEquals("less", parameters.getParameters().get("param0"));
+        assertEquals("gt", parameters.getParameters().get("param1"));
+    }
+
+    @Test
+    public void testBuildCriteria_ComplexStructureWithUnequalValue() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan("less")
+                                                    .and(builder.property("property2").greaterThanEquals("gte"))
+                                                    .or(builder.property("property3").in(new String[]{"piet", "klaas"}))
+                                                    .or(builder.property("property4").isNot("4"));
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+        assertEquals(
+                "(((entry.property < :param0) AND (entry.property2 >= :param1)) OR (entry.property3 IN (:param2))) OR (entry.property4 <> :param3)",
+                query.toString());
+        assertEquals(4, parameters.getParameters().size());
+        assertEquals("less", parameters.getParameters().get("param0"));
+        assertEquals("gte", parameters.getParameters().get("param1"));
+        assertEquals("4", parameters.getParameters().get("param3"));
+        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get("param2"));
+    }
+
+    @Test
+    public void testBuildCriteria_ComplexStructureWithUnequalProperty() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThanEquals("lte")
+                                                    .and(builder.property("property2").greaterThanEquals("gte"))
+                                                    .or(builder.property("property3").in(new String[]{"piet", "klaas"}))
+                                                    .or(builder.property("property4").isNot(builder.property("property4")));
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+        assertEquals(
+                "(((entry.property <= :param0) AND (entry.property2 >= :param1)) OR (entry.property3 IN (:param2))) OR (entry.property4 <> entry.property4)",
+                query.toString());
+        assertEquals(3, parameters.getParameters().size());
+        assertEquals("lte", parameters.getParameters().get("param0"));
+        assertEquals("gte", parameters.getParameters().get("param1"));
+        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get("param2"));
+    }
+    @Test
+    public void testBuildCriteria_ComplexStructureWithEqualNull() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan("less")
+                                                    .and(builder.property("property2").greaterThanEquals("gte"))
+                                                    .or(builder.property("property3").in(new String[]{"piet", "klaas"}))
+                                                    .or(builder.property("property4").is(null));
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+        assertEquals(
+                "(((entry.property < :param0) AND (entry.property2 >= :param1)) OR (entry.property3 IN (:param2))) OR (entry.property4 IS NULL)",
                 query.toString());
         assertEquals(3, parameters.getParameters().size());
         assertEquals("less", parameters.getParameters().get("param0"));
         assertEquals("gte", parameters.getParameters().get("param1"));
         assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get("param2"));
     }
-}
+
+    @Test
+    public void testBuildCriteria_ComplexStructureWithEqualValue() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan("less")
+                                                    .and(builder.property("property2").greaterThanEquals("gte"))
+                                                    .or(builder.property("property3").in(new String[]{"piet", "klaas"}))
+                                                    .or(builder.property("property4").is("4"));
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+        assertEquals(
+                "(((entry.property < :param0) AND (entry.property2 >= :param1)) OR (entry.property3 IN (:param2))) OR (entry.property4 = :param3)",
+                query.toString());
+        assertEquals(4, parameters.getParameters().size());
+        assertEquals("less", parameters.getParameters().get("param0"));
+        assertEquals("gte", parameters.getParameters().get("param1"));
+        assertEquals("4", parameters.getParameters().get("param3"));
+        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get("param2"));
+    }
+
+    @Test
+    public void testBuildCriteria_ComplexStructureWithEqualProperty() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan(builder.property("prop1"))
+                                                    .and(builder.property("property2").greaterThanEquals("gte"))
+                                                    .or(builder.property("property3").in(new String[]{"piet", "klaas"}))
+                                                    .or(builder.property("property4").is(builder.property("property4")));
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+        assertEquals(
+                "(((entry.property < entry.prop1) AND (entry.property2 >= :param0)) OR (entry.property3 IN (:param1))) OR (entry.property4 = entry.property4)",
+                query.toString());
+        assertEquals(2, parameters.getParameters().size());
+        assertEquals("gte", parameters.getParameters().get("param0"));
+        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get("param1"));
+    }}

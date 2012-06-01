@@ -77,12 +77,10 @@ public class JpaEventStoreTest {
 
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
-    private Object mockAggregateIdentifier;
 
     @Before
     public void setUp() {
-        mockAggregateIdentifier = UUID.randomUUID();
-        aggregate1 = new StubAggregateRoot(mockAggregateIdentifier);
+        aggregate1 = new StubAggregateRoot(UUID.randomUUID());
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
         }

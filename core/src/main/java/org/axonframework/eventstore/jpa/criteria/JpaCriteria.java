@@ -28,12 +28,12 @@ public abstract class JpaCriteria implements Criteria {
 
     @Override
     public JpaCriteria and(Criteria criteria) {
-        return new And(this, (JpaCriteria) criteria);
+        return new BinaryOperator(this, "AND", (JpaCriteria) criteria);
     }
 
     @Override
     public JpaCriteria or(Criteria criteria) {
-        return new Or(this, (JpaCriteria) criteria);
+        return new BinaryOperator(this, "OR", (JpaCriteria) criteria);
     }
 
     /**

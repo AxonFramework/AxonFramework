@@ -44,12 +44,13 @@ class Equals extends JpaCriteria {
         propertyName.parse(entryKey, whereClause);
         if (expression == null) {
             whereClause.append(" IS NULL");
-        } else if (expression instanceof JpaProperty) {
-            whereClause.append(" = ");
-            ((JpaProperty) expression).parse(entryKey, whereClause);
         } else {
-            whereClause.append(" = ")
-                       .append(parameters.register(expression.toString()));
+            whereClause.append(" = ");
+            if (expression instanceof JpaProperty) {
+                ((JpaProperty) expression).parse(entryKey, whereClause);
+            } else {
+                whereClause.append(parameters.register(expression.toString()));
+            }
         }
     }
 }
