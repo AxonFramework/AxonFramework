@@ -22,6 +22,8 @@ import org.junit.*;
 
 import java.util.UUID;
 
+import javax.persistence.Id;
+
 import static org.junit.Assert.*;
 
 /**
@@ -59,12 +61,34 @@ public class AbstractAnnotatedAggregateRootTest {
         assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
     }
 
+    @Test
+    public void testIdentifierInitialization_JavaxPersistenceId() {
+        JavaxPersistenceIdIdentifiedAggregate aggregate = new JavaxPersistenceIdIdentifiedAggregate();
+        assertEquals("lateIdentifier", aggregate.getIdentifier());
+        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
+    }
+
     private static class LateIdentifiedAggregate extends AbstractAnnotatedAggregateRoot {
 
         @AggregateIdentifier
         private String aggregateIdentifier;
 
         private LateIdentifiedAggregate() {
+            apply(new StubDomainEvent());
+        }
+
+        @EventHandler
+        public void myEventHandlerMethod(StubDomainEvent event) {
+            aggregateIdentifier = "lateIdentifier";
+        }
+    }
+
+private static class JavaxPersistenceIdIdentifiedAggregate extends AbstractAnnotatedAggregateRoot {
+
+        @Id
+        private String aggregateIdentifier;
+
+        private JavaxPersistenceIdIdentifiedAggregate() {
             apply(new StubDomainEvent());
         }
 

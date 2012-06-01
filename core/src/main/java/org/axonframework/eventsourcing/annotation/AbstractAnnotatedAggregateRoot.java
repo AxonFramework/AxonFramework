@@ -43,8 +43,8 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
 public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
     private static final long serialVersionUID = -1206026570158467937L;
-    private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
-    private transient Field identifierField;
+    private transient AnnotationEventHandlerInvoker eventHandlerInvoker; // NOSONAR
+    private transient Field identifierField; // NOSONAR
 
     /**
      * Initialize the aggregate root with a random identifier.
@@ -85,7 +85,7 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
 
     private Field locateIdentifierField(AbstractAnnotatedAggregateRoot instance) {
         for (Field candidate : fieldsOf(instance.getClass())) {
-            if (containsIdentifierAnotation(candidate.getAnnotations())) {
+            if (containsIdentifierAnnotation(candidate.getAnnotations())) {
                 ensureAccessible(candidate);
                 return candidate;
             }
@@ -96,11 +96,12 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
                                                         instance.getClass().getSimpleName()));
     }
 
-    private boolean containsIdentifierAnotation(Annotation[] annotations) {
+    private boolean containsIdentifierAnnotation(Annotation[] annotations) {
         for (Annotation annotation : annotations) {
             if (annotation instanceof AggregateIdentifier) {
                 return true;
-            } else if ("java.persistence.Id".equals(annotation.getClass().getName())) {
+            } else if (annotation.toString().startsWith("@javax.persistence.Id(")) {
+                // this way, the JPA annotations don't need to be on the classpath
                 return true;
             }
         }
