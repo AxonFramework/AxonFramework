@@ -1,0 +1,25 @@
+description = 'Axon Framework'
+
+allprojects {
+    group= 'org.axonframework'
+    version = '2.0-SNAPSHOT'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    sourceCompatibility = 1.5
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "1.0-rc-3"
+}
+
+File script(String name) {
+    project.file("gradle/${name}.gradle")
+}
+

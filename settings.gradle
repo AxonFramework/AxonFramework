@@ -1,0 +1,11 @@
+include 'amqp'
+include 'core'
+include 'disruptor-commandbus'
+include 'distributed-commandbus'
+include 'integration'
+include 'integrationtests'
+include 'axon-mongo'
+include 'spring-insight-plugin'
+include 'test'
+
+rootProject.name = 'axon'
