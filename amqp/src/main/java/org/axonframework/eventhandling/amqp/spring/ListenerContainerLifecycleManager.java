@@ -125,7 +125,7 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     }
 
     @Override
-    public void destroy() throws Exception {
+    public synchronized void destroy() throws Exception {
         for (SimpleMessageListenerContainer container : containerPerQueue.values()) {
             container.destroy();
         }

@@ -35,6 +35,7 @@ public abstract class Fixtures {
      * org.axonframework.test.FixtureConfiguration} for more detailed usage information.
      *
      * @param aggregateType The aggregate under test
+     * @param <T>           The type of aggregate tested in the fixture
      * @return a new given-when-then style test fixture in configuration mode
      */
     public static <T extends EventSourcedAggregateRoot> FixtureConfiguration<T> newGivenWhenThenFixture(

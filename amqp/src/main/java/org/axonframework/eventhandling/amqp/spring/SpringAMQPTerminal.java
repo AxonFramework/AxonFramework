@@ -149,7 +149,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         }
     }
 
-    private synchronized ListenerContainerLifecycleManager getListenerContainerLifecycleManager() {
+    private ListenerContainerLifecycleManager getListenerContainerLifecycleManager() {
         if (listenerContainerLifecycleManager == null) {
             listenerContainerLifecycleManager = applicationContext.getBean(ListenerContainerLifecycleManager.class);
         }

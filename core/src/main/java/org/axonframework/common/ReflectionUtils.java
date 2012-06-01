@@ -163,6 +163,7 @@ public abstract class ReflectionUtils {
      * Makes the given <code>member</code> accessible via reflection if it is not the case already.
      *
      * @param member The member (field, method, constructor, etc) to make accessible
+     * @param <T>    The type of member to make accessible
      * @return the given <code>member</code>, for easier method chaining
      *
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be

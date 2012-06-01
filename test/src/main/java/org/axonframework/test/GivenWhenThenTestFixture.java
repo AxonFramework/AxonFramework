@@ -68,6 +68,7 @@ import static org.axonframework.common.ReflectionUtils.*;
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
  * {@link org.axonframework.test.FixtureConfiguration}.
  *
+ * @param <T> The type of Aggregate tested in this Fixture
  * @author Allard Buijze
  * @since 0.6
  */
