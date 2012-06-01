@@ -59,9 +59,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         while (domainEventStream.hasNext()) {
             DomainEventMessage event = domainEventStream.next();
             lastSequenceNumber = event.getSequenceNumber();
-            if (!(event instanceof AggregateSnapshot)) {
-                handleRecursively(event);
-            }
+            handleRecursively(event);
         }
         initializeEventStream(lastSequenceNumber);
     }

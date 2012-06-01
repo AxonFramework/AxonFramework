@@ -160,7 +160,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
             Object identifier = getIdentifier();
             if (identifier == null) {
                 throw new AggregateIdentifierNotInitializedException(
-                        "AggregateIdentifier is unknown in ["+ getClass().getName() +"]. "
+                        "AggregateIdentifier is unknown in [" + getClass().getName() + "]. "
                                 + "Make sure the Aggregate Identifier is initialized before registering events.");
             }
             eventContainer = new EventContainer(identifier);
