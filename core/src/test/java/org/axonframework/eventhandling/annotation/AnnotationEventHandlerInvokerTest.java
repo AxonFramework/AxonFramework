@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TransactionStatus;
 import org.junit.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
@@ -51,13 +52,23 @@ public class AnnotationEventHandlerInvokerTest {
     }
 
     @Test
-    public void testInvokeEventHandler_InterfaceBased() {
+    public void testInvokeEventHandler_SuperClassTakesPrecedenceOverInterface() {
         ListeningToInterface handler = new ListeningToInterface();
         testSubject = new AnnotationEventHandlerInvoker(handler);
         testSubject.invokeEventHandlerMethod(new GenericEventMessage<StubEventTwo>(new StubEventTwo()));
 
-        assertEquals("Handler should not have been triggered. Calls", 0, handler.invocationCount2);
-        assertEquals("Handler should have been triggered by interface. Calls", 1, handler.invocationCount1);
+        assertEquals("Handler was not triggered. Do interfaces get priority over implementations?", 1, handler.invocationCount2);
+        assertEquals("The interface seemed to get priority over a superclass", 0, handler.invocationCount1);
+    }
+
+    @Test
+    public void testInvokeEventHandler_MatchesAgainstInterface() {
+        ListeningToInterface handler = new ListeningToInterface();
+        testSubject = new AnnotationEventHandlerInvoker(handler);
+        testSubject.invokeEventHandlerMethod(new GenericEventMessage<SomeInterface>(mock(SomeInterface.class)));
+
+        assertEquals("Wrong handler triggered", 0, handler.invocationCount2);
+        assertEquals("Expected match based on implemented interface", 1, handler.invocationCount1);
     }
 
     /*

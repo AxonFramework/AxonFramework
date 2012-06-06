@@ -139,7 +139,7 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
 
         private Score(Class payloadType, Class<?> declaringClass) {
             declarationDepth = superClassCount(declaringClass, 0);
-            payloadDepth = superClassCount(payloadType, Integer.MAX_VALUE);
+            payloadDepth = superClassCount(payloadType, -255);
             payloadName = payloadType.getName();
         }
 
