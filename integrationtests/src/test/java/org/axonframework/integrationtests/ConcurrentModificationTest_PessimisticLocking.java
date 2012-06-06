@@ -31,7 +31,6 @@ import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +51,6 @@ import static org.junit.Assert.*;
 @ContextConfiguration(locations = {
         "/META-INF/spring/infrastructure-context.xml",
         "/META-INF/spring/application-context-pessimistic.xml"})
-@Transactional
 public class ConcurrentModificationTest_PessimisticLocking {
 
     @Autowired

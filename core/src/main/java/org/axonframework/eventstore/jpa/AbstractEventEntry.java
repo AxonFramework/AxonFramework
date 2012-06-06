@@ -29,6 +29,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 /**
@@ -38,7 +39,8 @@ import javax.persistence.UniqueConstraint;
  * @since 0.5
  */
 @MappedSuperclass
-@UniqueConstraint(columnNames = {"eventIdentifier"})
+@Table(uniqueConstraints =
+       @UniqueConstraint(columnNames = {"eventIdentifier"}))
 abstract class AbstractEventEntry implements SerializedDomainEventData {
 
     @Id
