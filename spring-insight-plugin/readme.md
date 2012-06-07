@@ -15,7 +15,7 @@ check that the handle invocations take place in the context of their
 corresponding bus. Command and event types are captured, as well as additional
 metadata where available.
 
-Here's an example of a trace containing Axon frames: ![screenshot](screenshot.png)
+Here's an example of a trace containing Axon frames: ![screenshot](https://github.com/AxonFramework/AxonFramework/edit/master/spring-insight-plugin/screenshot.png)
 
 Usage
 -----
