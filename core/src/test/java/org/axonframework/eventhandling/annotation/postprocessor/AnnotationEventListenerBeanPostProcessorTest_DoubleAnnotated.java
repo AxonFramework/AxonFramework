@@ -71,7 +71,7 @@ public class AnnotationEventListenerBeanPostProcessorTest_DoubleAnnotated {
         verify(mockTransactionManager).commit(isA(TransactionStatus.class));
         assertEquals(1, transactionalListener.getInvocations());
 
-        assertTrue("Bean doesn't implemment EventListener", EventListener.class.isInstance(transactionalListener));
+        assertTrue("Bean doesn't implement EventListener", EventListener.class.isInstance(transactionalListener));
         ((EventListener) transactionalListener).handle(new GenericEventMessage<Object>(new Object()));
         assertEquals(2, transactionalListener.getInvocations());
     }

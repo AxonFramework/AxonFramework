@@ -25,7 +25,7 @@
                            http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd">
 
     <axon:annotation-config event-bus="eventBus" command-bus="commandBus"/>
-    <security:global-method-security secured-annotations="enabled"/>
+    <security:global-method-security proxy-target-class="true" secured-annotations="enabled"/>
 
     <axon:event-bus id="eventBus"/>
     <axon:command-bus id="commandBus"/>

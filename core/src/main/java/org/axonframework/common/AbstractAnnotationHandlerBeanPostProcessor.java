@@ -21,14 +21,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.IntroductionInfo;
 import org.springframework.aop.IntroductionInterceptor;
+import org.springframework.aop.framework.Advised;
+import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.util.ClassUtils;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,9 +69,38 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
         if (isPostProcessingCandidate(targetClass)) {
             Subscribable adapter = initializeAdapterFor(bean);
             managedAdapters.put(beanName, adapter);
-            return createAdapterProxy(targetClass, bean, adapter, getAdapterInterface());
+            return createAdapterProxy(targetClass, bean, adapter, getAdapterInterface(), true);
+        } else if (isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
+            // Java Proxy, find target and inspect that instance
+            try {
+                Object targetBean = ((Advised) bean).getTargetSource().getTarget();
+                // we want to invoke the Java Proxy if possible, so we create a CGLib proxy that does that for us
+                Object proxyInvokingBean = createJavaProxyInvoker(bean, targetBean);
+
+                Subscribable adapter = initializeAdapterFor(proxyInvokingBean);
+                managedAdapters.put(beanName, adapter);
+                return createAdapterProxy(targetClass, proxyInvokingBean, adapter, getAdapterInterface(), false);
+            } catch (Exception e) {
+                throw new AxonConfigurationException("Unable to wrap annotated handler.", e);
+            }
         }
         return bean;
+    }
+
+    /**
+     * Returns a Proxy that will redirect calls to the <code>javaProxy</code>, if possible. Alternatively, the
+     * <code>target</code> is invoked.
+     *
+     * @param javaProxy The java proxy to invoke, if possible.
+     * @param target    The actual implementation to invoke if the javaProxy provides no method implementation
+     * @return the proxy that will redirect the invocation to either the Java Proxy, or the target
+     */
+    private Object createJavaProxyInvoker(Object javaProxy, Object target) {
+        ProxyFactory pf = new ProxyFactory(target);
+        pf.addAdvice(new ProxyOrImplementationInvocationInterceptor(javaProxy, target));
+        pf.setProxyTargetClass(true);
+        pf.setExposeProxy(true);
+        return pf.getProxy(target.getClass().getClassLoader());
     }
 
     /**
@@ -115,11 +149,12 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
     protected abstract Subscribable initializeAdapterFor(Object bean);
 
     private Object createAdapterProxy(Class targetClass, Object annotatedHandler, final Object adapter,
-                                      final Class<?> adapterInterface) {
+                                      final Class<?> adapterInterface, boolean proxyTargetClass) {
         ProxyFactory pf = new ProxyFactory(annotatedHandler);
         pf.addAdvice(new AdapterIntroductionInterceptor(adapter, adapterInterface));
         pf.addInterface(adapterInterface);
-        pf.setProxyTargetClass(true);
+        pf.addInterface(Subscribable.class);
+        pf.setProxyTargetClass(proxyTargetClass);
         pf.setExposeProxy(true);
         return pf.getProxy(targetClass.getClassLoader());
     }
@@ -141,6 +176,53 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
         this.applicationContext = applicationContext;
     }
 
+    private static class ProxyOrImplementationInvocationInterceptor
+            implements IntroductionInfo, IntroductionInterceptor {
+
+        private final Object proxy;
+        private final Method[] proxyMethods;
+        private final Class[] interfaces;
+
+        private ProxyOrImplementationInvocationInterceptor(Object proxy, Object implementation) {
+            this.proxy = proxy;
+            this.proxyMethods = proxy.getClass().getDeclaredMethods();
+            this.interfaces = ClassUtils.getAllInterfaces(implementation);
+        }
+
+        @Override
+        public boolean implementsInterface(Class<?> intf) {
+            for (Class iFace : interfaces) {
+                if (intf.equals(iFace)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public Class[] getInterfaces() {
+            return interfaces;
+        }
+
+        @Override
+        public Object invoke(MethodInvocation invocation) throws Throwable {
+            try {
+                // if the method is declared on the proxy, invoke it there
+                for (Method proxyMethod : proxyMethods) {
+                    if (proxyMethod.getName().equals(invocation.getMethod().getName())
+                            && Arrays.equals(proxyMethod.getParameterTypes(),
+                                             invocation.getMethod().getParameterTypes())) {
+                        return proxyMethod.invoke(proxy, invocation.getArguments());
+                    }
+                }
+                // otherwise, invoke it on the original object
+                return invocation.proceed();
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        }
+    }
+
     private static class AdapterIntroductionInterceptor implements IntroductionInfo, IntroductionInterceptor {
 
         private final Object adapter;
@@ -153,12 +235,13 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
 
         @Override
         public boolean implementsInterface(Class<?> intf) {
-            return intf.equals(adapterInterface);
+            return intf.equals(adapterInterface) || Subscribable.class.equals(intf);
         }
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
-            if (invocation.getMethod().getDeclaringClass().equals(adapterInterface)) {
+            Class<?> declaringClass = invocation.getMethod().getDeclaringClass();
+            if (declaringClass.equals(adapterInterface) || Subscribable.class.equals(declaringClass)) {
                 try {
                     return invocation.getMethod().invoke(adapter, invocation.getArguments());
                 } catch (InvocationTargetException e) {
