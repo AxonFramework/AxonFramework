@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -68,20 +69,34 @@ public class FileSystemSnapshotEventReader {
     }
 
     private FileSystemSnapshotEventEntry readLastSnapshotEntry() throws IOException {
+        FileSystemSnapshotEventEntry lastSnapshotEvent = null;
         DataInputStream snapshotEventFileDataInputStream = new DataInputStream(snapshotEventFile);
+        FileSystemSnapshotEventEntry snapshotEvent;
+        do {
+            snapshotEvent = readSnapshotEventEntry(snapshotEventFileDataInputStream);
+
+            if (snapshotEvent != null) {
+                lastSnapshotEvent = snapshotEvent;
+            }
+        } while (snapshotEvent != null);
+
+        return lastSnapshotEvent;
+    }
+
+    private FileSystemSnapshotEventEntry readSnapshotEventEntry(DataInputStream snapshotEventFileDataInputStream)
+            throws IOException{
         FileSystemEventMessageReader snapshotEventReader =
                 new FileSystemEventMessageReader(snapshotEventFileDataInputStream);
-
-        FileSystemSnapshotEventEntry lastSnapshotEvent = null;
-        while (snapshotEventFileDataInputStream.available() > 0) {
+        try {
             long bytesToSkip = snapshotEventFileDataInputStream.readLong();
             SerializedDomainEventData snapshotEventData = snapshotEventReader.readEventMessage();
             SerializedDomainEventMessage<Object> snapshotEvent =
                     new SerializedDomainEventMessage<Object>(snapshotEventData, eventSerializer);
-            lastSnapshotEvent = new FileSystemSnapshotEventEntry(snapshotEvent, bytesToSkip);
+            return new FileSystemSnapshotEventEntry(snapshotEvent, bytesToSkip);
+        } catch (EOFException e) {
+            // No more events available
+            return null;
         }
-
-        return lastSnapshotEvent;
     }
 
     private static class FileSystemSnapshotEventEntry {
