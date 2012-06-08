@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see org.axonframework.eventhandling.SimpleEventBus
  * @since 0.6
  */
-class SimpleEventBusStatistics implements SimpleEventBusStatisticsMXBean {
+public class SimpleEventBusStatistics implements SimpleEventBusStatisticsMXBean {
 
     private AtomicLong listenerCount = new AtomicLong(0);
     private AtomicLong publishedEventCounter = new AtomicLong(0);

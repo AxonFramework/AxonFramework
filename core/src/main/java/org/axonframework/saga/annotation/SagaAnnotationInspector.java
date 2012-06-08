@@ -34,7 +34,7 @@ import java.util.Locale;
  * @author Allard Buijze
  * @since 0.7
  */
-class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractHandlerInspector {
+public class SagaAnnotationInspector<T extends AbstractAnnotatedSaga> extends AbstractHandlerInspector {
 
     /**
      * Initialize the inspector.

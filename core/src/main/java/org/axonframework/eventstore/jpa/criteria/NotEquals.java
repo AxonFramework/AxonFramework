@@ -22,7 +22,7 @@ package org.axonframework.eventstore.jpa.criteria;
  * @author Allard Buijze
  * @since 2.0
  */
-class NotEquals extends JpaCriteria {
+public class NotEquals extends JpaCriteria {
 
     private final JpaProperty property;
     private final Object expression;

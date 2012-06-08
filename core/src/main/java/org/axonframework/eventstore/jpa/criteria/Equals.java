@@ -22,7 +22,7 @@ package org.axonframework.eventstore.jpa.criteria;
  * @author Allard Buijze
  * @since 2.0
  */
-class Equals extends JpaCriteria {
+public class Equals extends JpaCriteria {
 
     private final JpaProperty propertyName;
     private final Object expression;

@@ -22,7 +22,7 @@ package org.axonframework.eventstore.jpa.criteria;
  * @author Allard Buijze
  * @since 2.0
  */
-class BinaryOperator extends JpaCriteria {
+public class BinaryOperator extends JpaCriteria {
 
     private final JpaCriteria criteria1;
     private final JpaCriteria criteria2;

@@ -26,7 +26,7 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 0.7
  */
-class QuartzScheduleToken implements ScheduleToken {
+public class QuartzScheduleToken implements ScheduleToken {
 
     private static final long serialVersionUID = 7798276124742118925L;
 

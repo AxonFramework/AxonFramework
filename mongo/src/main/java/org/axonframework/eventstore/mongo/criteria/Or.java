@@ -26,7 +26,7 @@ import com.mongodb.DBObject;
  * @author Allard Buijze
  * @since 2.0
  */
-class Or extends MongoCriteria {
+public class Or extends MongoCriteria {
 
     private final MongoCriteria criteria1;
     private final MongoCriteria criteria2;

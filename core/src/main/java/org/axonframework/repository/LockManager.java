@@ -24,7 +24,7 @@ import org.axonframework.domain.AggregateRoot;
  * @author Allard Buijze
  * @since 0.3
  */
-interface LockManager {
+public interface LockManager {
 
     /**
      * Make sure that the current thread holds a valid lock for the given aggregate.

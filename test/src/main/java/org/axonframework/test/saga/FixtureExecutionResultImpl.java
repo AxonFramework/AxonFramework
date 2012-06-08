@@ -39,7 +39,7 @@ import static org.hamcrest.CoreMatchers.any;
  * @author Allard Buijze
  * @since 1.1
  */
-class FixtureExecutionResultImpl implements FixtureExecutionResult {
+public class FixtureExecutionResultImpl implements FixtureExecutionResult {
 
     private final RepositoryContentValidator repositoryContentValidator;
     private final EventValidator eventValidator;

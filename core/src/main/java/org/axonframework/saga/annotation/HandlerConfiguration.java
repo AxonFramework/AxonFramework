@@ -26,7 +26,7 @@ import java.lang.reflect.Method;
  * @author Allard Buijze
  * @since 0.7
  */
-class HandlerConfiguration {
+public class HandlerConfiguration {
 
     private static final HandlerConfiguration NO_HANDLER_CONFIGURATION = new HandlerConfiguration();
 

@@ -41,7 +41,7 @@ import javax.persistence.UniqueConstraint;
 @MappedSuperclass
 @Table(uniqueConstraints =
        @UniqueConstraint(columnNames = {"eventIdentifier"}))
-abstract class AbstractEventEntry implements SerializedDomainEventData {
+public abstract class AbstractEventEntry implements SerializedDomainEventData {
 
     @Id
     @GeneratedValue

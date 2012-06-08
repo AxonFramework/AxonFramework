@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
  * @author Allard Buijze
  * @since 0.7
  */
-class SimpleScheduleToken implements ScheduleToken {
+public class SimpleScheduleToken implements ScheduleToken {
 
     private static final long serialVersionUID = -8118223354702247016L;
     private final String tokenId;

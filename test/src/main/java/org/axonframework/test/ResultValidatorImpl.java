@@ -36,7 +36,7 @@ import static org.hamcrest.CoreMatchers.*;
  * @author Allard Buijze
  * @since 0.7
  */
-class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
+public class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
 
     private final Collection<DomainEventMessage> storedEvents;
     private final Collection<EventMessage> publishedEvents;

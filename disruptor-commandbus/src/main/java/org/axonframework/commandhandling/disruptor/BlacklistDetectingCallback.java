@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * @author Allard Buijze
  * @since 2.0
  */
-class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
+public class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
         implements CommandCallback<R> {
 
     private static final Logger logger = LoggerFactory.getLogger(BlacklistDetectingCallback.class);

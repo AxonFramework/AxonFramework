@@ -26,7 +26,7 @@ import org.axonframework.common.Assert;
  * @author Allard Buijze
  * @since 2.0
  */
-class Equals extends MongoCriteria {
+public class Equals extends MongoCriteria {
 
     private final MongoProperty property;
     private final Object expression;

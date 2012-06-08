@@ -27,7 +27,8 @@ import javax.persistence.Entity;
  * @author Allard Buijze
  * @since 0.5
  */
-@Entity class SnapshotEventEntry extends AbstractEventEntry {
+@Entity
+public class SnapshotEventEntry extends AbstractEventEntry {
 
     /**
      * Default constructor, as required by JPA specification. Do not use directly!

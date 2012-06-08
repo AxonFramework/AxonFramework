@@ -27,7 +27,7 @@ import org.axonframework.common.Assert;
  * @author Allard Buijze
  * @since 2.0
  */
-class SimpleMongoOperator extends MongoCriteria {
+public class SimpleMongoOperator extends MongoCriteria {
 
     private final MongoProperty property;
     private final String operator;

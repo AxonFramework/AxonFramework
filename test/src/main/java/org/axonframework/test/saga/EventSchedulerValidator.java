@@ -33,7 +33,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-class EventSchedulerValidator {
+public class EventSchedulerValidator {
 
     private final StubEventScheduler eventScheduler;
 

@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Allard Buijze
  * @since 0.6
  */
-class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXBean {
+public class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXBean {
 
     private AtomicLong handlerCounter = new AtomicLong(0);
     private AtomicLong receivedCommandCounter = new AtomicLong(0);

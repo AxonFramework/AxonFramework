@@ -40,7 +40,7 @@ import java.util.List;
  * @author Jettro Coenradie
  * @since 2.0 (in incubator since 0.7)
  */
-class EventEntry implements SerializedDomainEventData {
+public class EventEntry implements SerializedDomainEventData {
 
     /**
      * Property name in mongo for the Aggregate Identifier.

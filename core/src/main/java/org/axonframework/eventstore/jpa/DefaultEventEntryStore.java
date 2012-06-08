@@ -34,7 +34,7 @@ import javax.persistence.Query;
  * @author Allard Buijze
  * @since 1.2
  */
-class DefaultEventEntryStore implements EventEntryStore {
+public class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
     public void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,

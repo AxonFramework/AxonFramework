@@ -36,7 +36,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  * @author Allard Buijze
  * @since 1.1
  */
-class CommandValidator {
+public class CommandValidator {
 
     private final RecordingCommandBus commandBus;
 

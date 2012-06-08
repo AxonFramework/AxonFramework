@@ -20,7 +20,7 @@ package org.axonframework.integration.adapter;
  * @author Allard Buijze
  * @since 0.4
  */
-class NoFilter implements EventFilter {
+public class NoFilter implements EventFilter {
 
     /**
      * {@inheritDoc}

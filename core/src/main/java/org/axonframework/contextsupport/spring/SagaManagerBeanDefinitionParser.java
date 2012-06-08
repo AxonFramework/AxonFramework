@@ -13,7 +13,7 @@ import org.w3c.dom.Element;
  * @author Allard Buijze
  * @since 2.0
  */
-class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParser {
+public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     private final AsyncSagaManagerBeanDefinitionParser async;
     private final SyncSagaManagerBeanDefinitionParser sync;

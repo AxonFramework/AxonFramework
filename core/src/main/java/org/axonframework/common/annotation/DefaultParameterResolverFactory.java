@@ -14,7 +14,7 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
  * @author Allard Buijze
  * @since 2.0
  */
-class DefaultParameterResolverFactory extends ParameterResolverFactory {
+public class DefaultParameterResolverFactory extends ParameterResolverFactory {
 
     @Override
     public ParameterResolver createInstance(Annotation[] methodAnnotations, Class<?> parameterType,

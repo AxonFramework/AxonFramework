@@ -41,7 +41,7 @@ import java.io.OutputStream;
  * @author Allard Buijze
  * @since 0.5
  */
-abstract class EventSerializationUtils {
+public abstract class EventSerializationUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(EventSerializationUtils.class);
 

@@ -25,7 +25,7 @@ import org.axonframework.eventstore.management.Property;
  * @author Allard Buijze
  * @since 2.0
  */
-class JpaProperty implements Property {
+public class JpaProperty implements Property {
 
     private final String propertyName;
 

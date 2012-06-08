@@ -24,7 +24,7 @@ import org.axonframework.eventstore.management.Property;
  * @author Allard Buijze
  * @since 2.0
  */
-class MongoProperty implements Property {
+public class MongoProperty implements Property {
 
     private final String propertyName;
 

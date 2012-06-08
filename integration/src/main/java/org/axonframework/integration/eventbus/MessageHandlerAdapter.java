@@ -27,7 +27,7 @@ import org.springframework.integration.core.MessageHandler;
  * @author Allard Buijze
  * @since 0.1
  */
-class MessageHandlerAdapter implements MessageHandler {
+public class MessageHandlerAdapter implements MessageHandler {
 
     private final EventListener eventListener;
 

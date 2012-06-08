@@ -29,7 +29,7 @@ import java.lang.reflect.InvocationTargetException;
  * @author Allard Buijze
  * @since 0.7
  */
-class SagaEventHandlerInvoker {
+public class SagaEventHandlerInvoker {
 
     private MessageHandlerInvoker invoker;
 

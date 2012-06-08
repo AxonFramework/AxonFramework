@@ -72,7 +72,8 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @author Allard Buijze
  * @since 0.6
  */
-class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot> implements FixtureConfiguration<T>, TestExecutor {
+public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
+        implements FixtureConfiguration<T>, TestExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(GivenWhenThenTestFixture.class);
 

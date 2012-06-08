@@ -22,7 +22,7 @@ package org.axonframework.eventstore.jpa.criteria;
  * @author Allard Buijze
  * @since 2.0
  */
-class SimpleOperator extends JpaCriteria {
+public class SimpleOperator extends JpaCriteria {
 
     private final JpaProperty propertyName;
     private final String operator;

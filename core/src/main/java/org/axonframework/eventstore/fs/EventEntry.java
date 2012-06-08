@@ -26,7 +26,7 @@ import org.axonframework.serializer.Serializer;
  * @author Allard Buijze
  * @since 0.5
  */
-class EventEntry {
+public class EventEntry {
 
     private final SerializedObject serializedEvent;
     private final long sequenceNumber;

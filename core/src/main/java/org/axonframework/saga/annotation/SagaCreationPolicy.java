@@ -22,7 +22,7 @@ package org.axonframework.saga.annotation;
  * @author Allard Buijze
  * @since 0.7
  */
-enum SagaCreationPolicy {
+public enum SagaCreationPolicy {
 
     /**
      * Never create a new Saga instance, even if none exists.

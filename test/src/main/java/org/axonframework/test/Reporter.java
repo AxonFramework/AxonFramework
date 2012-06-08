@@ -37,7 +37,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 0.6
  */
-class Reporter {
+public class Reporter {
 
     private static final String NEWLINE = System.getProperty("line.separator");
 

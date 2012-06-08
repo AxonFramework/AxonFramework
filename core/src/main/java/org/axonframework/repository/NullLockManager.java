@@ -26,7 +26,7 @@ import org.axonframework.domain.AggregateRoot;
  * @author Allard Buijze
  * @since 0.6
  */
-class NullLockManager implements LockManager {
+public class NullLockManager implements LockManager {
 
     /**
      * {@inheritDoc}

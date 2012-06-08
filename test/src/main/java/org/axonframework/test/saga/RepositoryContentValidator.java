@@ -32,7 +32,7 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 1.1
  */
-class RepositoryContentValidator {
+public class RepositoryContentValidator {
 
     private final InMemorySagaRepository sagaRepository;
     private final Class<? extends AbstractAnnotatedSaga> sagaType;

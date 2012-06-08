@@ -27,7 +27,7 @@ import org.axonframework.util.lock.IdentifierBasedLock;
  * @author Allard Buijze
  * @since 0.3
  */
-class PessimisticLockManager implements LockManager {
+public class PessimisticLockManager implements LockManager {
 
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
 

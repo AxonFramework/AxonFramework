@@ -25,7 +25,7 @@ import org.axonframework.serializer.SerializedObject;
  * @author Allard Buijze
  * @since 0.5
  */
-class SnapshotEventEntry {
+public class SnapshotEventEntry {
 
     private final SerializedObject<byte[]> serializedEvent;
     private final long offset;
