@@ -84,8 +84,12 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
 
     private List<DomainEventMessage> doReadNext() {
         try {
-            FileSystemEventEntry eventFromFile = eventMessageReader.readEventMessage();
-            return upcast(eventFromFile);
+            List<DomainEventMessage> upcastEvents;
+            do {
+                FileSystemEventEntry eventFromFile = eventMessageReader.readEventMessage();
+                upcastEvents = upcast(eventFromFile);
+            } while (upcastEvents.isEmpty());
+            return upcastEvents;
         } catch (EOFException e) {
             // No more events available
             return Collections.emptyList();
