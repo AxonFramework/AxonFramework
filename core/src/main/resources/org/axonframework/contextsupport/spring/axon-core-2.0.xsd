@@ -180,7 +180,7 @@
     <!-- ================================== -->
     <xsd:element name="filesystem-event-store">
         <xsd:annotation>
-            <xsd:documentation>Spring context schema extension for the definition of an EvenStore instance that stores
+            <xsd:documentation>Spring context schema extension for the definition of an EventStore instance that stores
                 events in files on the filesystem.
             </xsd:documentation>
             <xsd:appinfo>
@@ -192,6 +192,17 @@
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="eventStoreType">
+                    <xsd:all>
+                        <xsd:element name="upcasters" type="upcasterChainType" minOccurs="0" maxOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Sets the Upcasters to use to transform old revisions of Events into
+                                    their current revision. The given upcasters are chained in order to allow each
+                                    instance to convert based on the outcome of any previous Upcasters.
+                                    Each of the beans defined inside this element must implement the Upcaster interface.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:all>
                     <xsd:attribute name="base-dir" use="required" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>The base directory for this event store.
@@ -209,7 +220,7 @@
     <xsd:element name="jpa-event-store">
         <xsd:annotation>
             <xsd:documentation>Spring context schema extension for the definition
-                of an EvenStore instance.
+                of an EventStore instance.
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>

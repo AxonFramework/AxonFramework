@@ -17,10 +17,13 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventstore.fs.FileSystemEventStore;
+import org.axonframework.eventstore.fs.SimpleEventFileResolver;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
+
+import java.io.File;
 
 /**
  * The FileSystemEventStoreBeanDefinitionParser is responsible for parsing the <code>eventStore</code> element form the
@@ -60,10 +63,12 @@ public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBean
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {
             builder.addConstructorArgReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
         }
+
         String baseDirValue = element.getAttribute(BASE_DIR_ATTRIBUTE);
         if (!baseDirValue.endsWith("/")) {
             baseDirValue = baseDirValue + "/";
         }
-        builder.addPropertyValue("baseDir", baseDirValue);
+        SimpleEventFileResolver fileResolver = new SimpleEventFileResolver(new File(baseDirValue));
+        builder.addConstructorArgValue(fileResolver);
     }
 }
