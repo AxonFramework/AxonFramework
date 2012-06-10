@@ -21,11 +21,11 @@
        xmlns:security="http://www.springframework.org/schema/security"
        xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd
                            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
-                           http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+                           http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd">
 
     <axon:annotation-config event-bus="eventBus" command-bus="commandBus"/>
-    <security:global-method-security secured-annotations="enabled"/>
+    <security:global-method-security proxy-target-class="true" secured-annotations="enabled"/>
 
     <axon:event-bus id="eventBus"/>
     <axon:command-bus id="commandBus"/>
