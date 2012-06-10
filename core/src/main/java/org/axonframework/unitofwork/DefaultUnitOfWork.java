@@ -18,6 +18,7 @@ package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateIdentifier;
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
 import org.axonframework.eventhandling.EventBus;
 import org.slf4j.Logger;
@@ -231,6 +232,12 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         List<Event> events = new ArrayList<Event>(eventsToPublish.size());
         for (EventEntry entry : eventsToPublish) {
             events.add(entry.event);
+        }
+        for (AggregateRoot aggregate : registeredAggregates.keySet()) {
+            DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
+            while (uncommittedEvents != null && uncommittedEvents.hasNext()) {
+                events.add(uncommittedEvents.next());
+            }
         }
         return Collections.unmodifiableList(events);
     }

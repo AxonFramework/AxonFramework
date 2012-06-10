@@ -18,6 +18,7 @@ package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Event;
+import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -26,6 +27,8 @@ import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
@@ -67,6 +70,7 @@ public class DefaultUnitOfWorkTest {
                 return null;
             }
         }).when(mockEventBus).publish(isA(Event.class));
+        doReturn(new SimpleDomainEventStream(new StubDomainEvent())).when(mockAggregateRoot).getUncommittedEvents();
     }
 
     @After
@@ -100,6 +104,29 @@ public class DefaultUnitOfWorkTest {
         outer.rollback();
         assertTrue("The inner UoW wasn't properly rolled back", isRolledBack.get());
         assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+    }
+
+    @Test
+    public void testUnitOfWorkPassesAllEventsInPrepareCommit() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        final StubDomainEvent event = new StubDomainEvent();
+        uow.publishEvent(event, mockEventBus);
+        uow.registerAggregate(mockAggregateRoot, mock(SaveAggregateCallback.class));
+        UnitOfWorkListener listener = spy(new UnitOfWorkListenerAdapter() {
+            @Override
+            public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
+                assertTrue(aggregateRoots.size() == 1);
+                assertEquals(mockAggregateRoot, aggregateRoots.iterator().next());
+                assertEquals(2, events.size());
+                assertEquals(event, events.get(0));
+            }
+        });
+        uow.registerListener(listener);
+
+        uow.commit();
+
+        // make sure the listener is invoked
+        verify(listener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(Event.class));
     }
 
     @Test
