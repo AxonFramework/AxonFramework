@@ -73,6 +73,7 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
         if (!auditData.isEmpty()) {
             event = event.andMetaData(auditData);
         }
+        recordedEvents.add(event);
         return event;
     }
 
@@ -82,7 +83,7 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
 
     @Override
     public void onCleanup() {
-        // no resources to clean up
+        recordedEvents.clear();
     }
 
     /**
