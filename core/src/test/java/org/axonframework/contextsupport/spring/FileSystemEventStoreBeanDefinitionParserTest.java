@@ -53,6 +53,8 @@ public class FileSystemEventStoreBeanDefinitionParserTest {
 
         assertNotNull("File event resolver is missing",
                       definition.getConstructorArgumentValues().getArgumentValue(1, EventFileResolver.class));
+        assertNotNull("UpcasterChain is missing",
+                      definition.getPropertyValues().getPropertyValue("upcasterChain"));
 
         FileSystemEventStore fileEventStore = beanFactory.getBean("fileEventStore", FileSystemEventStore.class);
         assertNotNull(fileEventStore);
