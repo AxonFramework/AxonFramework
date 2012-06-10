@@ -52,9 +52,8 @@ public interface UnitOfWorkListener {
      * Invoked before aggregates are committed, and before any events are published. This phase can be used to do
      * validation or other activity that should be able to prevent event dispatching in certain circumstances.
      * <p/>
-     * Note that the given <code>events</code> may not contain the uncommitted domain events of each of the
-     * <code>aggregateRoots</code>. To retrieve all events, collect all uncommitted events from the aggregate roots and
-     * combine them with the list of events.
+     * The given <code>events</code> contains all events that will be published to an EventBus upon Unit of Work
+     * commit.
      *
      * @param aggregateRoots the aggregate roots being committed
      * @param events         Events that have been registered for dispatching with the UnitOfWork
