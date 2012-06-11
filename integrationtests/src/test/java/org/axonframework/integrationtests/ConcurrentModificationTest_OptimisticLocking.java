@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Log4jConfigurer;
 
 import java.util.ArrayList;
@@ -55,7 +54,6 @@ import static org.junit.Assert.*;
 @ContextConfiguration(locations = {
         "/META-INF/spring/infrastructure-context.xml",
         "/META-INF/spring/application-context-optimistic.xml"})
-@Transactional
 public class ConcurrentModificationTest_OptimisticLocking implements Thread.UncaughtExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ConcurrentModificationTest_OptimisticLocking.class);
