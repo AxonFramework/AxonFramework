@@ -83,7 +83,6 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
 
     @Override
     public void onCleanup() {
-        recordedEvents.clear();
     }
 
     /**

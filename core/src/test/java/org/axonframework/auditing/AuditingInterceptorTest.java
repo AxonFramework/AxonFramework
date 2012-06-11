@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.testutils.MockException;
@@ -27,7 +28,9 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.hamcrest.Description;
 import org.junit.*;
+import org.junit.internal.matchers.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -69,8 +72,7 @@ public class AuditingInterceptorTest {
 
     @Test
     public void testInterceptCommand_SuccessfulExecution() throws Throwable {
-        when(mockInterceptorChain.proceed())
-                .thenReturn("Return value");
+        when(mockInterceptorChain.proceed()).thenReturn("Return value");
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
@@ -85,7 +87,7 @@ public class AuditingInterceptorTest {
         uow.commit();
 
         verify(mockAuditDataProvider, atLeast(1)).provideAuditDataFor(command);
-        verify(mockAuditLogger, times(1)).logSuccessful(eq(command), any(Object.class), any(List.class));
+        verify(mockAuditLogger, times(1)).logSuccessful(eq(command), any(Object.class), listWithTwoEventMessages());
         DomainEventMessage eventFromAggregate = aggregate.getUncommittedEvents().next();
         assertEquals("value", eventFromAggregate.getMetaData().get("key"));
     }
@@ -113,6 +115,20 @@ public class AuditingInterceptorTest {
         uow.rollback(mockFailure);
         verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
         verify(mockAuditLogger, never()).logSuccessful(eq(command), any(Object.class), any(List.class));
-        verify(mockAuditLogger).logFailed(eq(command), eq(mockFailure), any(List.class));
+        verify(mockAuditLogger).logFailed(eq(command), eq(mockFailure), listWithTwoEventMessages());
+    }
+
+    private List<EventMessage> listWithTwoEventMessages() {
+        return argThat(new TypeSafeMatcher<List<EventMessage>>() {
+            @Override
+            public boolean matchesSafely(List<EventMessage> item) {
+                return item != null && item.size() == 2;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("A List with two EventMessages");
+            }
+        });
     }
 }
