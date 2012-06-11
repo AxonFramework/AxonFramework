@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.lang.String.format;
+
 /**
  * {@link EventBus} implementation that supports clustering of Event Listeners. Clusters are connected using {@link
  * EventBusTerminal EventBus Terminals}, which may either distribute Events locally, or remotely.
@@ -102,9 +104,14 @@ public class ClusteringEventBus implements EventBus {
     private synchronized Cluster clusterFor(EventListener eventListener) {
         Cluster cluster = clusterSelector.selectCluster(eventListener);
         if (cluster == null) {
-            throw new EventListenerSubscriptionFailedException("Unable to subscribe this listener to the Event Bus. "
-                                                          + "There is no suitable cluster for it. "
-                                                          + "Make sure the ClusterSelector is configured properly");
+            Class listenerType = eventListener.getClass();
+            if (eventListener instanceof EventListenerProxy) {
+                listenerType = ((EventListenerProxy) eventListener).getTargetType();
+            }
+            throw new EventListenerSubscriptionFailedException(format(
+                    "Unable to subscribe [%s] to the Event Bus. There is no suitable cluster for it. "
+                            + "Make sure the ClusterSelector is configured properly",
+                    listenerType.getName()));
         }
         if (clusters.add(cluster)) {
             terminal.onClusterCreated(cluster);

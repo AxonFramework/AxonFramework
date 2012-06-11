@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -41,10 +42,23 @@ import java.util.TreeMap;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ClassNamePrefixClusterSelector implements ClusterSelector {
+public class ClassNamePrefixClusterSelector extends AbstractClusterSelector {
 
     private final Map<String, Cluster> mappings;
     private final Cluster defaultCluster;
+
+    /**
+     * Initializes the ClassNamePrefixClusterSelector where classes starting with the given <code>prefix</code> will be
+     * mapped to the given <code>cluster</code>.
+     * <p/>
+     * This method is identical to {@link #ClassNamePrefixClusterSelector(java.util.Map)} with only a single mapping.
+     *
+     * @param prefix  The prefix of the fully qualified classname to match against
+     * @param cluster The cluster to choose if a match is found
+     */
+    public ClassNamePrefixClusterSelector(String prefix, Cluster cluster) {
+        this(Collections.singletonMap(prefix, cluster));
+    }
 
     /**
      * Initializes the ClassNamePrefixClusterSelector using the given <code>mappings</code>. If a name does not have a
@@ -70,13 +84,7 @@ public class ClassNamePrefixClusterSelector implements ClusterSelector {
     }
 
     @Override
-    public Cluster selectCluster(EventListener eventListener) {
-        Class<?> listenerType;
-        if (eventListener instanceof EventListenerProxy) {
-            listenerType = ((EventListenerProxy) eventListener).getTargetType();
-        } else {
-            listenerType = eventListener.getClass();
-        }
+    public Cluster doSelectCluster(EventListener eventListener, Class<?> listenerType) {
         String listenerName = listenerType.getName();
         for (Map.Entry<String, Cluster> entry : mappings.entrySet()) {
             if (listenerName.startsWith(entry.getKey())) {

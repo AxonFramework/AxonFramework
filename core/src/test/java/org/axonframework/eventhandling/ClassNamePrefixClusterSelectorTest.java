@@ -49,4 +49,50 @@ public class ClassNamePrefixClusterSelectorTest {
         assertSame(cluster1, actual);
     }
 
+    @Test
+    public void testInitializeWithSingleMapping() {
+        Cluster cluster1 = new SimpleCluster();
+
+        ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector("org.axonframework", cluster1);
+
+        Cluster actual = selector.selectCluster(new EventListener() {
+            @Override
+            public void handle(EventMessage event) {
+            }
+        });
+        assertSame(cluster1, actual);
+    }
+
+    @Test
+    public void testRevertsToDefaultWhenNoMappingFound() {
+        Cluster defaultCluster = new SimpleCluster();
+        Cluster cluster1 = new SimpleCluster();
+
+        Map<String, Cluster> mappings = new HashMap<String, Cluster>();
+        mappings.put("javax.", cluster1);
+        ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector(mappings, defaultCluster);
+
+        Cluster actual = selector.selectCluster(new EventListener() {
+            @Override
+            public void handle(EventMessage event) {
+            }
+        });
+        assertSame(defaultCluster, actual);
+    }
+
+    @Test
+    public void testReturnsNullWhenNoMappingFound() {
+        Cluster cluster1 = new SimpleCluster();
+
+        Map<String, Cluster> mappings = new HashMap<String, Cluster>();
+        mappings.put("javax.", cluster1);
+        ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector(mappings);
+
+        Cluster actual = selector.selectCluster(new EventListener() {
+            @Override
+            public void handle(EventMessage event) {
+            }
+        });
+        assertSame(null, actual);
+    }
 }

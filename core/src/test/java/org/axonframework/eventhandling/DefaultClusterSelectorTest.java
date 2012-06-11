@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.DefaultClusterSelector;
+import org.axonframework.eventhandling.EventListener;
 import org.junit.*;
 
 import static org.junit.Assert.*;
