@@ -97,6 +97,11 @@ public class JavaSerializer implements Serializer {
         }
     }
 
+    @Override
+    public SerializedType typeForClass(Class type) {
+        return new SimpleSerializedType(type.getName(), revisionOf(type));
+    }
+
     /**
      * Returns the revision number for the given <code>type</code>. The default implementation checks for an {@link
      * Revision @Revision} annotation, and returns <code>0</code> if none was found. This method can be safely

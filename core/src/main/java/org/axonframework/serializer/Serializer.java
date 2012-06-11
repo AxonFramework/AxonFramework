@@ -75,4 +75,13 @@ public interface Serializer {
      * @return the Class representing the type of the serialized Object.
      */
     Class classForType(SerializedType type);
+
+    /**
+     * Returns the type identifier for the given class. This is the type identifier of the Serialized object as
+     * returned by {@link #serialize(Object, Class)}.
+     *
+     * @param type Class representing the type of the serializable Object.
+     * @return The type identifier of the object
+     */
+    SerializedType typeForClass(Class type);
 }

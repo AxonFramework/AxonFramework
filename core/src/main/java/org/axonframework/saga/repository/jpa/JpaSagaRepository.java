@@ -113,6 +113,11 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
+    protected String typeOf(Class<? extends Saga> sagaClass) {
+        return serializer.typeForClass(sagaClass).getName();
+    }
+
+    @Override
     protected void storeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         entityManager.persist(new AssociationValueEntry(sagaType, sagaIdentifier, associationValue));

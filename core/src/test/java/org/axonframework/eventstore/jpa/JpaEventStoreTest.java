@@ -32,6 +32,7 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.SimpleSerializedType;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
@@ -238,6 +239,7 @@ public class JpaEventStoreTest {
         testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
         final Serializer serializer = new Serializer() {
 
+            @SuppressWarnings("unchecked")
             @Override
             public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
                 Assert.assertEquals(byte[].class, expectedType);
@@ -250,7 +252,7 @@ public class JpaEventStoreTest {
             }
 
             @Override
-            public Object deserialize(SerializedObject serializedObject) {
+            public <S, T> T deserialize(SerializedObject<S> serializedObject) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
@@ -261,6 +263,11 @@ public class JpaEventStoreTest {
                 } catch (ClassNotFoundException e) {
                     return null;
                 }
+            }
+
+            @Override
+            public SerializedType typeForClass(Class type) {
+                return new SimpleSerializedType(type.getName(), "");
             }
         };
         final DomainEventMessage<String> stubDomainEvent = new GenericDomainEventMessage<String>(
@@ -291,6 +298,7 @@ public class JpaEventStoreTest {
         testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
         final Serializer serializer = new Serializer() {
 
+            @SuppressWarnings("unchecked")
             @Override
             public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
                 // this will cause InstantiationError, since it is an interface
@@ -307,7 +315,7 @@ public class JpaEventStoreTest {
             }
 
             @Override
-            public Object deserialize(SerializedObject serializedObject) {
+            public <S, T> T deserialize(SerializedObject<S> serializedObject) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
@@ -318,6 +326,11 @@ public class JpaEventStoreTest {
                 } catch (ClassNotFoundException e) {
                     return null;
                 }
+            }
+
+            @Override
+            public SerializedType typeForClass(Class type) {
+                return new SimpleSerializedType(type.getName(), "");
             }
         };
         final DomainEventMessage<String> stubDomainEvent = new GenericDomainEventMessage<String>(

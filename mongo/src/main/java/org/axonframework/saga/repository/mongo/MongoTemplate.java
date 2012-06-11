@@ -13,6 +13,7 @@ import com.mongodb.DBCollection;
  * <p>Implementations of this interface must provide the connection to Mongo.</p>
  *
  * @author Jettro Coenradie
+ * @since 2.0
  */
 public interface MongoTemplate {
     /**
@@ -21,13 +22,6 @@ public interface MongoTemplate {
      * @return DBCollection containing the sagas
      */
     DBCollection sagaCollection();
-
-    /**
-     * Returns a reference to the collection containing the association instances.
-     *
-     * @return DBCollection containing the associations
-     */
-    DBCollection associationsCollection();
 
     /**
      * Returns the database for the axon sagas store.

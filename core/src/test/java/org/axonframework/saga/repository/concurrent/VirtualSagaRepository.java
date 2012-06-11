@@ -66,6 +66,11 @@ public class VirtualSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
+    protected String typeOf(Class<? extends Saga> sagaClass) {
+        return sagaClass.getName();
+    }
+
+    @Override
     protected void storeAssociationValue(AssociationValue newAssociationValue, String sagaType, String sagaIdentifier) {
         // we don't need this
     }

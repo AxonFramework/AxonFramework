@@ -64,7 +64,7 @@ public class AssociationValueMap {
                 // we've had all relevant items
                 break;
             }
-            if (associationValue.equals(item.getAssociationValue())) {
+            if (associationValue.equals(item.getAssociationValue()) && sagaType.equals(item.getSagaType())) {
                 identifiers.add(item.getSagaIdentifier());
             }
         }

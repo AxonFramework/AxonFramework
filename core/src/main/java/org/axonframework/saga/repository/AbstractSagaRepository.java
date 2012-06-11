@@ -105,9 +105,14 @@ public abstract class AbstractSagaRepository implements SagaRepository {
         return typeOf(saga.getClass());
     }
 
-    private String typeOf(Class<? extends Saga> sagaClass) {
-        return sagaClass.getSimpleName();
-    }
+    /**
+     * Returns the type identifier to use for the given <code>sagaClass</code>. This information is typically provided
+     * by the Serializer, if the repository stores serialized instances.
+     *
+     * @param sagaClass The type of saga to get the type identifier for.
+     * @return The type identifier to use for the given sagaClass
+     */
+    protected abstract String typeOf(Class<? extends Saga> sagaClass);
 
     /**
      * Returns <code>true</code> if the two parameters point to exactly the same object instance. This method will

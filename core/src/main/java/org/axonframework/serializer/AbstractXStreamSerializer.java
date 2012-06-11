@@ -215,6 +215,11 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return xStream.getMapper().realClass(type.getName());
     }
 
+    @Override
+    public SerializedType typeForClass(Class type) {
+        return new SimpleSerializedType(typeIdentifierOf(type), revisionOf(type));
+    }
+
     /**
      * Adds an alias to use instead of the fully qualified class name.
      *

@@ -176,7 +176,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
         this.applicationContext = applicationContext;
     }
 
-    private static class ProxyOrImplementationInvocationInterceptor
+    private static final class ProxyOrImplementationInvocationInterceptor
             implements IntroductionInfo, IntroductionInterceptor {
 
         private final Object proxy;
@@ -223,12 +223,12 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
         }
     }
 
-    private static class AdapterIntroductionInterceptor implements IntroductionInfo, IntroductionInterceptor {
+    private static final class AdapterIntroductionInterceptor implements IntroductionInfo, IntroductionInterceptor {
 
         private final Object adapter;
         private Class<?> adapterInterface;
 
-        public AdapterIntroductionInterceptor(Object adapter, Class<?> adapterInterface) {
+        private AdapterIntroductionInterceptor(Object adapter, Class<?> adapterInterface) {
             this.adapter = adapter;
             this.adapterInterface = adapterInterface;
         }

@@ -143,6 +143,7 @@ public class JpaSagaRepositoryTest {
         assertNotNull(entityManager.find(SagaEntry.class, identifier));
     }
 
+    @SuppressWarnings("UnusedAssignment")
     @Test
     @DirtiesContext
     public void testAddAndLoadSaga_MultipleHitsByAssociationValue() {
@@ -212,8 +213,8 @@ public class JpaSagaRepositoryTest {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga(identifier);
         entityManager.persist(new SagaEntry(saga, serializer));
-        entityManager.persist(new AssociationValueEntry("MyTestSaga", identifier, new AssociationValue("key",
-                                                                                                       "value")));
+        entityManager.persist(new AssociationValueEntry(serializer.typeForClass(saga.getClass()).getName(),
+                                                        identifier, new AssociationValue("key", "value")));
         entityManager.flush();
         entityManager.clear();
         Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
@@ -236,8 +237,8 @@ public class JpaSagaRepositoryTest {
         MyTestSaga saga = new MyTestSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
         entityManager.persist(new SagaEntry(saga, serializer));
-        entityManager.persist(new AssociationValueEntry("MyTestSaga", identifier, new AssociationValue("key",
-                                                                                                       "value")));
+        entityManager.persist(new AssociationValueEntry(serializer.typeForClass(saga.getClass()).getName(),
+                                                        identifier, new AssociationValue("key", "value")));
         entityManager.flush();
         entityManager.clear();
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
@@ -317,7 +318,6 @@ public class JpaSagaRepositoryTest {
     public static class MyOtherTestSaga extends AbstractAnnotatedSaga {
 
         private static final long serialVersionUID = -1562911263884220240L;
-        private int counter = 0;
 
         public MyOtherTestSaga(String identifier) {
             super(identifier);
@@ -325,10 +325,6 @@ public class JpaSagaRepositoryTest {
 
         public void registerAssociationValue(AssociationValue associationValue) {
             associateWith(associationValue);
-        }
-
-        public void removeAssociationValue(String key, String value) {
-            removeAssociationWith(key, value);
         }
     }
 
