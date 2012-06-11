@@ -22,18 +22,26 @@
         other types of queries should be performed against the query database, not the
         Repository.
     </para>
-    <para>In the Axon Framework, all repositories must implement the <code>Repository</code>
+    <para>In the Axon Framework, all repositories must implement the
+        <code>Repository</code>
         interface. This interface prescribes three methods:<code>load(identifier, version)</code>,
-            <code>load(identifier)</code> and<code>add(aggregate)</code>. The <code>load</code>
-        methods allows you to load aggregates from the repository. The optional <code>version</code>
-        parameter is used to detect concurrent modifications (see <xref
-            linkend="conflict-resolution"/>). <code>add</code> is used to register newly created
-        aggregates in the repository. </para>
+        <code>load(identifier)</code>
+        and<code>add(aggregate)</code>. The
+        <code>load</code>
+        methods allows you to load aggregates from the repository. The optional
+        <code>version</code>
+        parameter is used to detect concurrent modifications (see<xref
+                linkend="conflict-resolution"/>).
+        <code>add</code>
+        is used to register newly created
+        aggregates in the repository.
+    </para>
     <para>Depending on your underlying persistence storage and auditing needs, there are a number of
         base implementations that provide basic functionality needed by most repositories. Axon
         Framework makes a distinction between repositories that save the current state of the
-        aggregate (see <xref linkend="standard-repositories"/>), and those that store the events of
-        an aggregate (see <xref linkend="event-sourcing-repositories"/>). </para>
+        aggregate (see<xref linkend="standard-repositories"/>), and those that store the events of
+        an aggregate (see<xref linkend="event-sourcing-repositories"/>).
+    </para>
     <para>Note that the Repository interface does not prescribe a
         <code>delete(identifier)</code>
         method. Deleting aggregates is done by invoking the (protected)
@@ -53,10 +61,8 @@
         <code>AggregateNotFoundException</code>
         (or when possible, an
         <code>AggregateDeletedException</code>). Axon's standard repository implementations will
-        delete an aggregate from the repository, while event sourcing repositories will append a
-        special
-        <code>AggregateDeletedEvent</code>
-        to the event store.
+        delete an aggregate from the repository, while event sourcing repositories will throw an
+        Exception when an aggregate is marked deleted after initialization.
     </para>
     <sect1 xml:id="standard-repositories">
         <title>Standard repositories</title>
@@ -151,16 +157,15 @@
             Based on these events, the state of an aggregate can be restored at any time.
         </para>
         <simplesect>
-            <title>
-                <code>EventSourcingRepository</code>
-            </title>
+            <title>EventSourcingRepository</title>
             <para>The
                 <code>EventSourcingRepository</code>
                 implementation provides the basic
                 functionality needed by any event sourcing repository in the AxonFramework. It
                 depends on an
                 <code>EventStore</code>
-                (see<xref linkend="implementing-an-eventstore"/>), which abstracts the actual storage
+                (see<xref
+                        linkend="implementing-an-eventstore"/>), which abstracts the actual storage
                 mechanism for the events and an<code>AggregateFactory</code>, which is reponsible
                 for creating uninitialized aggregate instances.
             </para>
@@ -169,14 +174,14 @@
                 <code>EventSourcingRepository</code>
                 can
                 initialize is using the Events it loaded from the Event Store. Axon Framework comes
-                with a number of AggregateFactory implementations that you may use. If they do not
-                suffice, it is very easy to create your own implementation.
+                with a number of
+                <code>AggregateFactory</code>
+                implementations that you may use. If
+                they do not suffice, it is very easy to create your own implementation.
             </para>
         </simplesect>
         <simplesect>
-            <title>
-                <code>CachingEventSourcingRepository</code>
-            </title>
+            <title>CachingEventSourcingRepository</title>
             <para>Initializing aggregates based on the events can be a time-consuming effort,
                 compared to the direct aggregate loading of the simple repository implementations.
                 The
@@ -187,7 +192,7 @@
                 combination with a pessimistic locking strategy.
             </para>
             <note>
-                <para>Using a cache with optimistic locking would create undesired side-effects.
+                <para>Using a cache with optimistic locking could cause undesired side-effects.
                     Optimistic locking allows concurrent access to objects and will only fail when
                     two threads have concurrently made any modifications to that object. When using
                     a cache, both threads will receive the same instance of the object. They will
@@ -195,33 +200,27 @@
                     eachother.
                 </para>
             </note>
-        </simplesect>
-        <simplesect>
-            <title>
-                <code>GenericAggregateFactory</code>
-            </title>
+            <para>
+                <emphasis>GenericAggregateFactory</emphasis>
+            </para>
             <para>The
                 <code>GenericAggregateFactory</code>
                 is a special
                 <code>AggregateFactory</code>
                 implementation that can be used for any type of
-                Event Sourced Aggregate Root. There is however, a convention that these
-                <code>EventSourcedAggregateRoot</code>
-                classes must adhere to: the type must
-                declare an accessible constructor accepting an
-                <code>AggregateIdentifier</code>
-                as
-                single parameter. This constructor may not perform any initialization on the
-                aggregate, other than setting the identifier.
+                Event Sourced Aggregate Root. The
+                <code>GenericAggregateFactory</code>
+                creates an
+                instance of the Aggregate type the repository manages. The Aggregate class must be
+                non-abstract and declare a default no-arg constructor that does no initialization at
+                all.
             </para>
             <para>The GenericAggregateFactory is suitable for most scenarios where aggregates do not
                 need special injection of non-serializable resources.
             </para>
-        </simplesect>
-        <simplesect>
-            <title>
-                <code>SpringPrototypeAggregateFactory</code>
-            </title>
+            <para>
+                <emphasis>SpringPrototypeAggregateFactory</emphasis>
+            </para>
             <para>Depending on your architectural choices, it might be useful to inject dependencies
                 into your aggregates using Spring. You could, for example, inject query repositories
                 into your aggregate to ensure the existance (or inexistance) of certain
@@ -234,11 +233,9 @@
                 instantiate your aggregates. This will also inject any dependencies in your
                 aggregate.
             </para>
-        </simplesect>
-        <simplesect>
-            <title>Implementing your own
-                <code>AggregateFactory</code>
-            </title>
+            <para>
+                <emphasis>Implementing your own AggregateFactory</emphasis>
+            </para>
             <para>In some cases, the
                 <code>GenericAggregateFactory</code>
                 just doesn't deliver what
@@ -266,9 +263,7 @@
             </para>
         </simplesect>
         <simplesect>
-            <title>
-                <code>HybridJpaRepository</code>
-            </title>
+            <title>HybridJpaRepository</title>
             <para>The
                 <code>HybridJpaRepository</code>
                 is a combination of the
@@ -292,11 +287,13 @@
             aggregates. Typically, event stores are capable of storing events from multiple
             types of aggregates, but it is not a requirement.
         </para>
-        <para>Axon provides two implementations of event stores, both are capable of storing all
-            domain events (those that extend the <code>DomainEvent</code> class). These event stores
-            use a <code>Serializer</code> to serialize and deserialize the event. By default, Axon
+        <para>Axon provides a number of implementations of event stores, both are capable of storing
+            all domain events (those raised from an Aggregate). These event stores use a
+            <code>Serializer</code>
+            to serialize and deserialize the event. By default, Axon
             provides an implementation of the Event Serializer that serializes events to XML: the
-                <code>XStreamSerializer</code>. </para>
+            <code>XStreamSerializer</code>.
+        </para>
         <simplesect>
             <title>
                 <code>FileSystemEventStore</code>
@@ -308,29 +305,35 @@
                 event store is that is does not provide transaction support and doesn't cluster very
                 well. The only configuration needed is the location where the event store may store
                 its files and the serializer to use to actually serialize and deserialize the
-                events. Note that the provided url must end on a slash. This is due to the way
-                Spring's
-                <code>Resource</code>
-                implementations work.
+                events.
             </para>
         </simplesect>
         <simplesect>
             <title>
                 <code>JpaEventStore</code>
             </title>
-            <para>The <code>JpaEventStore</code> stores events in a JPA-compatible data source.
-                Unlike the file system version, the <code>JPAEventStore</code> supports
+            <para>The
+                <code>JpaEventStore</code>
+                stores events in a JPA-compatible data source.
+                Unlike the file system version, the
+                <code>JPAEventStore</code>
+                supports
                 transactions. The JPA Event Store stores events in so called entries. These entries
                 contain the serialized form of an event, as well as some fields where meta-data is
-                stored for fast lookup of these entries. To use the <code>JpaEventStore</code>, you
-                must have the <code>javax.persistence</code> annotations on your classpath. </para>
+                stored for fast lookup of these entries. To use the<code>JpaEventStore</code>, you
+                must have the JPA (<code>javax.persistence</code>) annotations on your
+                classpath.
+            </para>
             <para>By default, the event store needs you to configure your persistence context
                 (defined in
                 <code>META-INF/persistence.xml</code>
                 file) to contain the classes
                 <code>DomainEventEntry</code>
                 and
-                <code>SnapshotEventEntry</code> (both in the <code>org.axonframework.eventstore.jpa</code> package).
+                <code>SnapshotEventEntry</code>
+                (both in the
+                <code>org.axonframework.eventstore.jpa</code>
+                package).
             </para>
             <para>Below is an example configuration of a persistence context configuration:</para>
             <programlistingco>
@@ -388,34 +391,47 @@
             <para>By default, the JPA Event Store expects the application to have only a single,
                 container managed, persistence context. In many cases, however, an application has
                 more than one. In that case, you must provide an explicit
-                    <code>EntityManagerProvider</code> implementation that returns the
-                    <code>EntityManager</code> instance for the <code>EventStore</code> to use. This
+                <code>EntityManagerProvider</code>
+                implementation that returns the
+                <code>EntityManager</code>
+                instance for the
+                <code>EventStore</code>
+                to use. This
                 also allows for application managed persistence contexts to be used. It is the
-                    <code>EntityManagerProvider</code>'s responsiblity to provide a correct instance
-                of the <code>EntityManager</code>.</para>
-            <para>There are a few implementations of the <code>EntityManagerProvider</code>
-                available, each for different needs. The <code>SimpleEntityManagerProvider</code>
-                simply returns the <code>EntityManager</code> instance which is given to it at
+                <code>EntityManagerProvider</code>'s responsiblity to provide a correct instance
+                of the<code>EntityManager</code>.
+            </para>
+            <para>There are a few implementations of the
+                <code>EntityManagerProvider</code>
+                available, each for different needs. The
+                <code>SimpleEntityManagerProvider</code>
+                simply returns the
+                <code>EntityManager</code>
+                instance which is given to it at
                 construction time. This makes the implementation a simple option for Container
                 Managed Contexts. Alternatively, there is the
-                    <code>ContainerManagedEntityManagerProvider</code>, which returns the default
-                persistence context, and is used by default by the Jpa Event Store.</para>
+                <code>ContainerManagedEntityManagerProvider</code>, which returns the default
+                persistence context, and is used by default by the Jpa Event Store.
+            </para>
             <para>If you have a persistence unit called "myPersistenceUnit" which you wish to use in
-                the <code>JpaEventStore</code>, this is what the EntityManagerProvider
+                the<code>JpaEventStore</code>, this is what the EntityManagerProvider
                 implementation could look
-                like:<programlisting language="java">public class MyEntityManagerProvider implements EntityManagerProvider {
+                like:
+                <programlisting language="java">public class MyEntityManagerProvider implements EntityManagerProvider {
 
-    private EntityManager entityManager;
+                    private EntityManager entityManager;
 
-    @Override
-    public EntityManager getEntityManager() {
-        return entityManager;
-    }
+                    @Override
+                    public EntityManager getEntityManager() {
+                    return entityManager;
+                    }
 
-    @PersistenceContext(unitName = "myPersistenceUnit")
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }</programlisting></para>
+                    @PersistenceContext(unitName = "myPersistenceUnit")
+                    public void setEntityManager(EntityManager entityManager) {
+                    this.entityManager = entityManager;
+                    }
+                </programlisting>
+            </para>
         </simplesect>
         <simplesect>
             <title>Customizing the Event storage</title>
@@ -423,10 +439,10 @@
                 <code>DomainEventEntry</code>
                 and
                 <code>SnapshotEventEntry</code>
-                entities. While still will suffice in many
-                cases, you might encounter a situation where the meta-data provided by these
-                entities is not enough. Or you might want to store events of different aggregate
-                types in different tables.
+                entities. While this will suffice in many cases,
+                you might encounter a situation where the meta-data provided by these entities is
+                not enough. Or you might want to store events of different aggregate types in
+                different tables.
             </para>
             <para>If that is the case, you may provide your own implementation of
                 <code>EventEntryStore</code>
@@ -434,21 +450,27 @@
                 to provide implementations of methods that load and store serialized events. Check
                 the API Documentation of the
                 <code>EventEntryStore</code>
-                class for implementation requirements.
+                class for implementation
+                requirements.
                 <warning>
                     <title>Memory consumption warning</title>
                     <para>Note that persistence providers, such as Hibernate, use a first-level
                         cache on their EntityManager implementation. Typically, this means that all
                         entities used or returned in queries are attached to the EntityManager. They
                         are only cleared when the surrounding transaction is committed or an
-                        explicit "clear" in performed inside the transaction.
+                        explicit "clear" in performed inside the transaction. This is especially the
+                        case when the Queries are executed in the context of a transaction.
                     </para>
-                    <para>To work around this issue, make sure to exclusively query the serialized
-                        form (the <code>byte[]</code>) of events. Do not fetch the entire entity
-                        object. Alternatively, call <code>EntityManager.flush()</code> and
-                            <code>EntityManager.clear()</code> after fetching a batch of events.
-                        Failure to do so might result in <code>OutOfMemoryException</code>s when
-                        loading large streams of events. </para>
+                    <para>To work around this issue, make sure to exclusively query for non-entity
+                        objects. You can use JPA's "SELECT new SomeClass(parameters) FROM ..." style
+                        queries to work around this issue. Alternatively, call
+                        <code>EntityManager.flush()</code>
+                        and
+                        <code>EntityManager.clear()</code>
+                        after fetching a batch of events.
+                        Failure to do so might result in<code>OutOfMemoryException</code>s when
+                        loading large streams of events.
+                    </para>
                 </warning>
             </para>
         </simplesect>
@@ -456,23 +478,31 @@
             <title>Implementing your own event store</title>
             <para>If you have specific requirements for an event store, it is quite easy to
                 implement one using different underlying data sources. Reading and appending events
-                is done using a <code>DomainEventStream</code>, which is quite similar to iterator
-                implementations. </para>
+                is done using a<code>DomainEventStream</code>, which is quite similar to iterator
+                implementations.
+            </para>
             <tip>
-                <para>The <code>SimpleDomainEventStream</code> class will make the contents of a
-                    sequence ( <code>List</code> or <code>array</code>) of <code>DomainEvent</code>
-                    instances accessible as event stream. </para>
+                <para>The
+                    <code>SimpleDomainEventStream</code>
+                    class will make the contents of a
+                    sequence (
+                    <code>List</code>
+                    or<code>array</code>) of
+                    <code>DomainEvent</code>
+                    instances accessible as event stream.
+                </para>
             </tip>
         </simplesect>
         <simplesect>
             <title>Influencing the serialization process</title>
-            <para>Event Stores need a way to serialize the Domain Event to prepare it for storage.
-                By default, Axon uses the <code>XStreamSerializer</code>, which uses XStream
-                    (see<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://xstream.codehaus.org/"> xstream.codehaus.org</link>) to
-                serialize Domain Events into XML and vice versa. XStream is reasonably fast and is
-                more flexible than Java Serialization. Furthermore, the result of XStream
-                serialization is human readable. Quite useful for logging and debugging purposes. </para>
+            <para>Event Stores need a way to serialize the Event to prepare it for storage. By
+                default, Axon uses the<code>XStreamSerializer</code>, which uses XStream (see<link
+                        xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
+                        >xstream.codehaus.org</link>) to serialize Events into XML and vice versa.
+                XStream is reasonably fast and is more flexible than Java Serialization.
+                Furthermore, the result of XStream serialization is human readable. Quite useful for
+                logging and debugging purposes.
+            </para>
             <para>The XStreamSerializer can be configured. You can define aliases it should use
                 for certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
@@ -480,35 +510,43 @@
                         xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/">
                     xstream.codehaus.org</link>.
             </para>
-            <para>You may also implement your own Event Serializer, simply by creating a class that
-                implements <code>Serializer</code>, and configuring the Event Store to use that
-                implementation instead of the default. </para>
-        </simplesect>
-        <simplesect>
-            <title>Changing the definition of Events</title>
-            <para>It is not unlikely that a definition of an Event remains unchanged during the
-                entire lifespan of an application. New insights, changes in requirements and many
-                other factors can lead to modifications in Events. Since the Event Store is
-                considered a read and append-only data source, your application must be able to read
-                all events, regardless of when they have been added.
+            <para>You may also implement your own Serializer, simply by creating a class that
+                implements<code>Serializer</code>, and configuring the Event Store to use that
+                implementation instead of the default.
             </para>
-            <para>In Axon, Events have a revision, a numeric value that defaults to 0. If an Event
-                definition changes, you should update the revision number too. The deserialization
-                process can then be adapted when your application needs to cope with old revisions
-                of events. A class file for an Event only needs to support the latest revision. When
-                old revisions are deserialized, they can be "upcasted" to the newer revision. The
-                revision number of an Event is provided to the constructor on the abstract event
-                classes.  The revision of an event is passed as a parameter in the constructor of
-                    <code>DomainEvent</code>.</para>
-            <para>The <code>EventUpcaster</code> is responsible for transforming old events into the
-                last revision. Upcasters typically work on an intermediate representation of the
-                Event. In the case of the <code>XStreamEventSerializater</code>, this intermediate
-                representation is dom4j (see<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://dom4j.sourceforge.net/"> http://dom4j.sourceforge.net/</link>),
-                an easy to use java XML library that integrates nicely with XStream. The
-                    <code>EventUpcaster</code> can modify the XML structure of the event so that it
-                matches the new definition. </para>
         </simplesect>
+    </sect1>
+    <sect1>
+        <title>Event Upcasting</title>
+        <para>It is not unlikely that a definition of an Event remains unchanged during the
+            entire lifespan of an application. New insights, changes in requirements and many
+            other factors can lead to modifications in Events. Since the Event Store is
+            considered a read and append-only data source, your application must be able to read
+            all events, regardless of when they have been added.
+        </para>
+        <para>In Axon, Events have a revision, a string value that defaults to an empty string.
+            If an Event definition changes, you should update the revision too. The deserialization
+            process can then be adapted when your application needs to cope with old revisions of
+            events. A class file for an Event only needs to support the latest revision. When old
+            revisions are deserialized, they can be "upcasted" to the newer revision. The revision
+            of an Event is provided to the RevisionResolver.
+        </para>
+        <para><!--TODO: Describe implementations of Revision Resolvers.--></para>
+        <para>The
+            <code>EventUpcaster</code>
+            is responsible for transforming old events into the
+            last revision. Upcasters typically work on an intermediate representation of the
+            Event. Axon will automatically attempt the actual representation of the event to the
+            representation expected by the Upcaster. In the case of the
+            <code>XStreamSerializater</code>, you could use dom4j (see<link
+                    xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://dom4j.sourceforge.net/">http://dom4j.sourceforge.net/</link>),
+            an easy to use java XML library that integrates nicely with XStream. The
+            <code>EventUpcaster</code>
+            can modify the XML structure of the event so that it
+            matches the new definition.
+        </para>
+        <para><!--TODO: Describe ContentTypeConverters--></para>
     </sect1>
     <sect1 xml:id="using-snapshot-events">
         <title>Snapshotting</title>
@@ -614,11 +652,18 @@
                 streamed to the extracted aggregate instance.
             </para>
             <note>
-                <para>Do make sure that the <code>Serializer</code> instance you use (which defaults
-                    to the <code>XStreamSerializer</code>) is capable of serializing your
-                    aggregate. The <code>XStreamSerializer</code> requires you to use either a
+                <para>Do make sure that the
+                    <code>Serializer</code>
+                    instance you use (which defaults
+                    to the<code>XStreamSerializer</code>) is capable of serializing your
+                    aggregate. The
+                    <code>XStreamSerializer</code>
+                    requires you to use either a
                     Sun JVM, or your aggregate must either have an accessible default constructor or
-                    implement the <code>Serializable</code> interface.</para>
+                    implement the
+                    <code>Serializable</code>
+                    interface.
+                </para>
             </note>
             <para>The AbstractSnapshotter provides a basic set of properties that allow you to tweak
                 the way snapshots are created:
@@ -680,7 +725,7 @@
             <para>Spring users should use the
                 <code>SpringAggregateSnapshotter</code>
                 instead. See
-                <xref xmlns:xlink="http://www.w3.org/1999/xlink" linkend="spring-snapshotting"/>
+                <xref linkend="spring-snapshotting"/>
                 for more details about configuring snapshotting in Spring.
             </para>
         </sect2>
@@ -746,20 +791,20 @@
             <para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
-    // ... code omitted for brevity
+                    // ... code omitted for brevity
 
-    @EventHandler
-    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
-        // ...
-    }
+                    @EventHandler
+                    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
+                    // ...
+                    }
 
-    @EventHandler
-    protected void applySnapshot(MySnapshotEvent event) {
-        // the snapshot event should contain all relevant state
-        this.someState = event.someState;
-        this.otherState = event.otherState;
-    }
-}
+                    @EventHandler
+                    protected void applySnapshot(MySnapshotEvent event) {
+                    // the snapshot event should contain all relevant state
+                    this.someState = event.someState;
+                    this.otherState = event.otherState;
+                    }
+                    }
                 </programlisting>
             </para>
             <para>There is one type of snapshot event that is treated differently: the
@@ -824,15 +869,25 @@
             Sourcing Repositories offer support for more advanced conflict detection, as decribed in
             the paragraph above.
         </para>
-        <para>To enable advanced conflict detection, configure a <code>ConflictResolver</code> on
-            the <code>EventSourcingRepository</code>. This <code>ConflictResolver</code> is
+        <para>To enable advanced conflict detection, configure a
+            <code>ConflictResolver</code>
+            on
+            the<code>EventSourcingRepository</code>. This
+            <code>ConflictResolver</code>
+            is
             responsible for detecting conflicting modifications, based on the events representing
             these changes. Detecting these conflicts is a matter of comparing the two lists of
-            DomainEvents provided in the <code>resolveConflicts</code> method declared on the
-                <code>ConflictResolver</code>. If such a conflict is found, a
-                <code>ConflictingModificationException</code> (or better, a more explicit and
-            explanatory subclass of it) must be thrown. If the <code>ConflictResolver</code> returns
+            DomainEvents provided in the
+            <code>resolveConflicts</code>
+            method declared on the
+            <code>ConflictResolver</code>. If such a conflict is found, a
+            <code>ConflictingModificationException</code>
+            (or better, a more explicit and
+            explanatory subclass of it) must be thrown. If the
+            <code>ConflictResolver</code>
+            returns
             normally, the events are persisted, effectively meaning that the concurrent changes have
-            been merged. </para>
+            been merged.
+        </para>
     </sect1>
 </chapter>

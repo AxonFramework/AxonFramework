@@ -21,37 +21,58 @@
         fixtures to test your command handling logic and sagas. The production environment isn't as
         forgiving as a test environment, though. Aggregates tend to live longer, be used more
         frequently and concurrently. For the extra performance and stability, you're better off
-        tweaking the configuration to suit your specific needs. </para>
+        tweaking the configuration to suit your specific needs.
+    </para>
     <sect1>
         <title>Database Indexes</title>
         <para>If you have generated the tables automatically using your JPA implementation (e.g.
             Hibernate), you probably do not have all the right indexes set on your tables. Different
             usages of the Event Store require different indexes to be set for optimal performance.
             This list explains which fields are used for the different types of queries by the
-            default <code>EventEntryStore</code> implementation:</para>
+            default
+            <code>EventEntryStore</code>
+            implementation:
+        </para>
         <itemizedlist>
             <listitem>
-                <para>Normal operational use (storing and loading events): </para>
-                <para>Table 'DomainEventEntry', columns <code>type</code>,
-                        <code>aggregateIdentifier</code> and <code>sequenceNumber</code> (unique
-                    index)</para>
+                <para>Normal operational use (storing and loading events):</para>
+                <para>Table 'DomainEventEntry', columns<code>type</code>,
+                    <code>aggregateIdentifier</code>
+                    and
+                    <code>sequenceNumber</code>
+                    (unique
+                    index)
+                </para>
             </listitem>
             <listitem>
                 <para>Snapshotting:</para>
-                <para>Table 'SnapshotEventEntry', columns <code>type</code>,
-                        <code>aggregateIdentifier</code> and <code>sequenceNumber</code> (optionally
-                    a unique index)</para>
+                <para>Table 'SnapshotEventEntry', columns<code>type</code>,
+                    <code>aggregateIdentifier</code>
+                    and
+                    <code>sequenceNumber</code>
+                    (optionally
+                    a unique index)
+                </para>
             </listitem>
             <listitem>
                 <para>Replaying the Event Store contents</para>
-                <para>Table 'DomainEventEntry', column <code>timestamp</code> (optionally also
-                        <code>sequenceNumber</code>)</para>
+                <para>Table 'DomainEventEntry', column
+                    <code>timestamp</code>
+                    (optionally also
+                    <code>sequenceNumber</code>)
+                </para>
             </listitem>
             <listitem>
                 <para>Sagas</para>
-                <para>Table 'AssociationValueEntry', columns <code>associationKey</code> and
-                        <code>sagaId</code>,</para>
-                <para>Table 'SagaEntry', column <code>sagaId</code> (unique index)</para>
+                <para>Table 'AssociationValueEntry', columns
+                    <code>associationKey</code>
+                    and
+                    <code>sagaId</code>,
+                </para>
+                <para>Table 'SagaEntry', column
+                    <code>sagaId</code>
+                    (unique index)
+                </para>
             </listitem>
         </itemizedlist>
     </sect1>
@@ -60,26 +81,33 @@
         <para>A well designed command handling module should pose no problems when implementing
             caching. Especially when using Event Sourcing, loading an aggregate from an Event Store
             is an expensive operation. With a properly configured cache in place, loading an
-            aggregate can be converted into a pure in-memory process.</para>
-        <para>Here are a few guidelines that help you get the most out of your caching solution:<itemizedlist>
+            aggregate can be converted into a pure in-memory process.
+        </para>
+        <para>Here are a few guidelines that help you get the most out of your caching solution:
+            <itemizedlist>
                 <listitem>
                     <para>Make sure the Unit Of Work never needs to perform a rollback for
-                        functional reasons. </para>
+                        functional reasons.
+                    </para>
                     <para>A rollback means that an aggregate has reached an invalid state, and will
                         invalidate the cache. The next requrest will force the aggregate to be
                         reconstructed from its Events. If you use exceptions as a potential
                         (functional) return value, you can configure a
-                            <code>RollbackConfiguration</code> on your Command Bus. By default, the
-                        Unit Of Work will be rolled back on every exception.</para>
+                        <code>RollbackConfiguration</code>
+                        on your Command Bus. By default, the
+                        Unit Of Work will be rolled back on every exception.
+                    </para>
                 </listitem>
                 <listitem>
                     <para>All commands for a single aggregate must arrive on the machine that has
-                        the aggregate in its cache.</para>
+                        the aggregate in its cache.
+                    </para>
                     <para>This means that commands should be consistently routed to the same
                         machine, for as long as that machine is "healthy". Routing commands
                         consistently prevents the cache from going stale. A hit on a stale cache
                         will cause a command to be executed and fail at the moment events are stored
-                        in the event store.</para>
+                        in the event store.
+                    </para>
                 </listitem>
                 <listitem>
                     <para>Configure a sensible time to live / time to idle</para>
@@ -87,10 +115,12 @@
                         live, a matter of minutes. For a command handling component with consistent
                         routing, an eternal time-to-idle and time-to-live is the better default.
                         This prevents the need to re-initialize an aggregate based on its events,
-                        just because its cache entry expired.  The time-to-live of your cache should
-                        match the expected lifetime of your aggregate.</para>
+                        just because its cache entry expired. The time-to-live of your cache should
+                        match the expected lifetime of your aggregate.
+                    </para>
                 </listitem>
-            </itemizedlist></para>
+            </itemizedlist>
+        </para>
     </sect1>
     <sect1>
         <title>Snapshotting</title>
@@ -98,43 +128,56 @@
             snapshot represents the entire aggregate state at a certain moment in time. The process
             of snapshotting itself, however, also takes processing time. Therefor, there should be a
             balance in the time spent building snapshots and the time it saves by preventing a
-            number of events being read back in.</para>
+            number of events being read back in.
+        </para>
         <para>There is no default behavior for all types of applications. Some will specify a number
             of events after which a snapshot will be created, while other applications require a
             time-based snapshotting interval. Whatever way you choose for your application, make
-            sure snapshotting is in place if you have long-living aggregates.</para>
-        <para>See <xref linkend="using-snapshot-events"/> for more about snapshotting.</para>
+            sure snapshotting is in place if you have long-living aggregates.
+        </para>
+        <para>See
+            <xref linkend="using-snapshot-events"/>
+            for more about snapshotting.
+        </para>
     </sect1>
     <sect1>
         <title>Aggregate performance</title>
         <para>The actual structure of your aggregates has a large impact of the performance of
             command handling. Since Axon manages the concurrency around your aggregate instances,
             you don't need to use special locks or concurrent collections inside the
-            aggregates.</para>
+            aggregates.
+        </para>
         <simplesect>
-            <title>Override <code>getChildEntities</code></title>
+            <title>Override
+                <code>getChildEntities</code>
+            </title>
             <para>By default, the getChildEntities method in AbstractEventSourcedAggregateRoot and
                 AbstractEventSourcedEntity uses reflection to inspect all the fields of each entity
                 to find related entities. Especially when an aggregate contains large collections,
-                this inspection could take more time than desired.</para>
-            <para>To gain a performance benefit, you can override the <code>getChildEntities</code>
+                this inspection could take more time than desired.
+            </para>
+            <para>To gain a performance benefit, you can override the
+                <code>getChildEntities</code>
                 method and return the collection of child entities yourself. If an entity is a leaf
                 node (i.e. has no child entities), you may either return an empty collection or
-                    <code>null</code>.</para>
+                <code>null</code>.
+            </para>
         </simplesect>
     </sect1>
     <sect1>
         <title>Event Serializer tuning</title>
         <para>XStream is very configurable and extensible. If you just use a plain
-                <code>XStreamSerializer</code>, there are some quick wins ready to pick up.
+            <code>XStreamSerializer</code>, there are some quick wins ready to pick up.
             XStream allows you to configure aliases for package names and event class names. Aliases
             are typically much shorter (especially if you have long package names), making the
             serialized form of an event smaller. An since we're talking XML, character removed from
-            XML is twice the profit (one for the start tag, and one for the end tag).</para>
+            XML is twice the profit (one for the start tag, and one for the end tag).
+        </para>
         <para>A more advanced topic in XStream is creating custom converters. The default reflection
             based converters are simple, but do not generate the most compact XML. Always look
             carefully at the generated XML and see if all the information there is really needed to
-            reconstruct the original instance.</para>
+            reconstruct the original instance.
+        </para>
         <para>Avoid the use of upcasters when possible. XStream allows aliases to be used for
             fields, when they have changed name. Imagine revision 0 of an event, that used a field
             called "clientId". The business prefers the term "customer", so revision 1 was created
@@ -145,52 +188,74 @@
             corresponding XML element "customerId" (the second alias overrides the first). But if
             XStream encounters an XML element called "clientId", it is a known alias and will be
             resolved to field name "customerId". Check out the XStream documentation for more
-            information.</para>
+            information.
+        </para>
         <para>For ultimate performance, you're probably better off without reflection based
             mechanisms alltogether. In that case, it is probably wisest to create a customer
-            serialization mechanism. The <code>DataInputStream</code> and
-                <code>DataOutputStream</code> allow you to easilly write the contents of the Events
-            to an output stream. The <code>ByteArrayOutputStream</code> and
-                <code>ByteArrayInputStream</code> allow writing to and reading from byte arrays. The
-                <code>DomainEvent</code> class provides a constructor that you can use to do a full
-            reconstruction based on existing data: <code>DomainEvent(String eventIdentifier,
+            serialization mechanism. The
+            <code>DataInputStream</code>
+            and
+            <code>DataOutputStream</code>
+            allow you to easilly write the contents of the Events
+            to an output stream. The
+            <code>ByteArrayOutputStream</code>
+            and
+            <code>ByteArrayInputStream</code>
+            allow writing to and reading from byte arrays. The
+            <code>DomainEvent</code>
+            class provides a constructor that you can use to do a full
+            reconstruction based on existing data:<code>DomainEvent(String eventIdentifier,
                 DateTime creationTimeStamp, long eventRevision, long sequenceNumber,
-                AggregateIdentifier aggregateIdentifier)</code>.</para>
+                AggregateIdentifier aggregateIdentifier)</code>.
+        </para>
     </sect1>
-    <sect1>
+    <sect1 linkend="custom-identifier-generation">
         <title>Custom Identifier generation</title>
-        <para>The Axon Framework uses an <code>IdentifierFactory</code> to generate all the
-            identifiers, whether they are for Events or Aggregates. The default
-                <code>IdentifierFactory</code> uses randomly generated <code>java.util.UUID</code>
+        <para>The Axon Framework uses an
+            <code>IdentifierFactory</code>
+            to generate all the
+            identifiers, whether they are for Events or Commands. The default
+            <code>IdentifierFactory</code>
+            uses randomly generated
+            <code>java.util.UUID</code>
             based identifiers. Although they are very safe to use, the process to generate them
-            doesn't excell in performance.</para>
+            doesn't excell in performance.
+        </para>
         <para>IdentifierFactory is an abstract factory that uses Java's ServiceLoader (since Java 6)
             mechanism to find the implementation to use. This means you can create your own
             implementation of the factory and put the name of the implementation in a file called
-                "<code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>". Java's
+            "<code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>". Java's
             ServiceLoader mechanism will detect that file and attempt to create an instance of the
-            class named inside.</para>
-        <para>There are a few requirements for the <code>IdentifierFactory</code>. The
-            implementation must<itemizedlist>
+            class named inside.
+        </para>
+        <para>There are a few requirements for the<code>IdentifierFactory</code>. The
+            implementation must
+            <itemizedlist>
                 <listitem>
                     <para>have its fully qualified class name as the contents of the
-                            <code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>
-                        file on the classpath,</para>
+                        <code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>
+                        file on the classpath,
+                    </para>
                 </listitem>
                 <listitem>
                     <para>have an accessible zero-argument constructor,</para>
                 </listitem>
                 <listitem>
-                    <para>extend <code>IdentifierFactory</code>,</para>
+                    <para>extend<code>IdentifierFactory</code>,
+                    </para>
                 </listitem>
                 <listitem>
                     <para>be accessible by the context classloader of the application or by the
-                        classloader that loaded the <code>IdentifierFactory</code> class, and
-                        must</para>
+                        classloader that loaded the
+                        <code>IdentifierFactory</code>
+                        class, and
+                        must
+                    </para>
                 </listitem>
                 <listitem>
                     <para>be thread-safe.</para>
                 </listitem>
-            </itemizedlist></para>
+            </itemizedlist>
+        </para>
     </sect1>
 </chapter>

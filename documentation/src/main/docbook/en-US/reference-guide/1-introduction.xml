@@ -18,13 +18,17 @@
     <title>Introduction</title>
     <para>Axon is a lightweight framework that helps developers build scalable and extensible
         applications by addressing these concerns directly in the architecture. This reference guide
-        explains what Axon is, how it can help you and how you can use it.</para>
-    <para>If you want to know more about Axon and its background, continue reading in <xref
+        explains what Axon is, how it can help you and how you can use it.
+    </para>
+    <para>If you want to know more about Axon and its background, continue reading in<xref
             linkend="about-axon"/>. If you're eager to get started building your own application
-        using Axon, go quickly to <xref linkend="getting-started"/>. If you're interested in helping
-        out building the Axon Framework, <xref linkend="contributing"/> will contain the information
-        you require. All help is welcome. Finally, this chapter covers some legal concerns in <xref
-            linkend="license"/>. </para>
+        using Axon, go quickly to<xref linkend="getting-started"/>. If you're interested in helping
+        out building the Axon Framework,
+        <xref linkend="contributing"/>
+        will contain the information
+        you require. All help is welcome. Finally, this chapter covers some legal concerns in<xref
+                linkend="license"/>.
+    </para>
     <sect1 xml:id="about-axon">
         <title>Axon Framework Background</title>
         <sect2>
@@ -37,7 +41,8 @@
                 frustrating to find out that a seemingly easy-to-implement feature can require
                 development teams to take apart an entire application. Furthermore, today's
                 webapplications target an audience of potentially billions of people, making
-                scalability an indisputable requirement. </para>
+                scalability an indisputable requirement.
+            </para>
             <para>Although there are many applications and frameworks around that deal with
                 scalability issues, such as GigaSpaces and Terracotta, they share one fundamental
                 flaw. These stacks try to solve the scalability issues while letting developers
@@ -45,7 +50,8 @@
                 they even prevent or severely limit the use of a real domain model, forcing all
                 domain logic into services. Although that is faster to start building an
                 application, eventually this approach will cause complexity to increase and
-                development to slow down. </para>
+                development to slow down.
+            </para>
             <para>Greg Young, initiator of the Command Query Responsiblity Segregation (CQRS)
                 pattern addressed these issues by drastically changing the way applications are
                 architected. Instead of separating logic into separate layers, logic is separated
@@ -56,12 +62,15 @@
                 technical and non-technical requirements for each of them. When commands are
                 executed, the query components are (a)synchronously updated using events. This
                 mechanism of updates through events, is what makes this architecture is extensible,
-                scalable and ultimately more maintainable.<note>
+                scalable and ultimately more maintainable.
+                <note>
                     <para>A full explanation of CQRS is not within the scope of this document. If
                         you would like to have more background information about CQRS, visit the
                         Axon Framework website:<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                            ns1:href="http://www.axonframework.org/"> www.axonframework.org</link>.
-                        It contains links to background information. </para>
+                                                     ns1:href="http://www.axonframework.org/">
+                            www.axonframework.org</link>.
+                        It contains links to background information.
+                    </para>
                 </note>
             </para>
             <para>Since CQRS is so fundamentally different than the layered-architecture which
@@ -80,7 +89,8 @@
                 mechanism for events). Furthermore, Axon provides annotation support, which allows
                 you to build aggregates and event listeners withouth tying your code to Axon
                 specific logic. This allows you to focus on your business logic, instead of the
-                plumbing, and helps you to make your code easier to test in isolation. </para>
+                plumbing, and helps you to make your code easier to test in isolation.
+            </para>
             <para>Axon does not, in any way, try to hide the CQRS architecture or any of its
                 components from developers. Therefore, depending on team size, it is still advisable
                 to have one or more developers with a thorough understanding of CQRS on each team.
@@ -89,21 +99,25 @@
                 multi-threading concerns are typically hard to deal with, leading to hard-to-trace
                 bugs and sometimes complete application failure. When you have a tight deadline, you
                 probably don't even want to care about these concerns. Axon's code is thoroughly
-                tested to prevent these types of bugs.</para>
+                tested to prevent these types of bugs.
+            </para>
             <para>The Axon Framework consists of a number of modules (jars) that provide the tools
                 and components to build a scalable infrastructure. The Axon Core module provides the
                 basic API's for the different components, and simple implemenatinos that provide
                 solutions for single-JVM applications. The other modules address scalability or
-                high-performance issues, by providing specialized building blocks.</para>
+                high-performance issues, by providing specialized building blocks.
+            </para>
         </sect2>
         <sect2>
             <title>When to use Axon?</title>
             <para>Will each application benefit from Axon? Unfortunately not. Simple CRUD (Create,
                 Read, Update, Delete) applications which are not expected to scale will probably not
                 benefit from CQRS or Axon. Fortunately, there is a wide variety of applications that
-                does benefit from Axon. </para>
+                does benefit from Axon.
+            </para>
             <para>Applications that will most likely benefit from CQRS and Axon are those that show
-                one or more of the following characteristics: <itemizedlist>
+                one or more of the following characteristics:
+                <itemizedlist>
                     <listitem>
                         <para>The application is likely to be extended with new functionality during
                             a long period of time. For example, an online store might start off with
@@ -112,7 +126,8 @@
                             when items are sold. Even later, accounting can require financial
                             statistics of sales to be recorded, etc. Although it is hard to predict
                             how software projects will evolve in the future, the majority of this
-                            type of application is clearly presented as such. </para>
+                            type of application is clearly presented as such.
+                        </para>
                     </listitem>
                     <listitem>
                         <para>The application has a high read-to-write ratio. That means data is
@@ -120,7 +135,8 @@
                             for queries are different to those that are used for command validation,
                             it is possible to optimize these data sources for fast querying.
                             Duplicate data is no longer an issue, since events are published when
-                            data changes. </para>
+                            data changes.
+                        </para>
                     </listitem>
                     <listitem>
                         <para>The application presents data in many different formats. Many
@@ -132,7 +148,8 @@
                             information into reports that show data evolution over time. This,
                             again, is a different format of the same data. Using Axon, each data
                             source can be updated independently of each other on a real-time or
-                            scheduled basis. </para>
+                            scheduled basis.
+                        </para>
                     </listitem>
                     <listitem>
                         <para>When an application has clearly separated components with different
@@ -142,43 +159,53 @@
                             their order status. With Axon, these components can be deployed on
                             separate machines and scaled using different policies. They are kept
                             up-to-date using the events, which Axon will dispatch to all subscribed
-                            components, regardles of the machine they are deployed on. </para>
+                            components, regardles of the machine they are deployed on.
+                        </para>
                     </listitem>
                     <listitem>
                         <para>Integration with other applications can be cumbersome work. The strict
                             definition of an application's API using commands and events makes it
                             easier to integrate with external applications. Any application can send
-                            commands or listen to events generated by the application.</para>
+                            commands or listen to events generated by the application.
+                        </para>
                     </listitem>
-                </itemizedlist></para>
+                </itemizedlist>
+            </para>
         </sect2>
     </sect1>
     <sect1 xml:id="getting-started">
         <title>Getting started</title>
         <para>This section will explain how you can obtain the binaries for Axon to get started.
             There are currently two ways: either download the binaries from our website or configure
-            a repository for your build system (Maven, Gradle, etc). </para>
+            a repository for your build system (Maven, Gradle, etc).
+        </para>
         <sect2>
             <title>Download Axon</title>
-            <para>You can download the Axon Framework from our downloads page: <link
+            <para>You can download the Axon Framework from our downloads page:<link
                     xmlns:ns1="http://www.w3.org/1999/xlink"
                     ns1:href="http://www.axonframework.org/download"
-                    >axonframework.org/download</link>. </para>
+                    >axonframework.org/download</link>.
+            </para>
             <para>This page offers a number of downloads. Typically, you would want to use the
                 latest stable release. However, if you're eager to get started using the latest and
                 greatest features, you could consider using the snapshot releases instead. The
                 downloads page contains a number of assemblies for you to download. Some of them
                 only provide the Axon library itself, while others also provide the libraries that
                 Axon depends on. There is also a "full" zip file, which contains Axon, its
-                dependencies, the sources and the documentation, all in a single download. </para>
+                dependencies, the sources and the documentation, all in a single download.
+            </para>
             <para>If you really want to stay on the bleeding edge of development, you can clone the
-                Git repository: <uri>git://github.com/AxonFramework/AxonFramework.git</uri>, or visit <uri>https://github.com/AxonFramework/AxonFramework</uri> to browse the sources online. </para>
+                Git repository:<uri>git://github.com/AxonFramework/AxonFramework.git</uri>, or visit
+                <uri>https://github.com/AxonFramework/AxonFramework</uri>
+                to browse the sources online.
+            </para>
         </sect2>
         <sect2>
             <title>Configure Maven</title>
             <para>If you use maven as your build tool, you need to configure the correct
                 dependencies for your project. Add the following code in your dependencies
-                section:</para>
+                section:
+            </para>
             <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-core</artifactId>
@@ -187,24 +214,38 @@
             <para>Most of the features provided by the Axon Framework are optional and require
                 additional dependencies. We have chosen not to add these dependencies by default, as
                 they would potentially clutter your project with artifacts you don't need. This
-                section discusses these dependencies and describes in what scenarios you need them. </para>
+                section discusses these dependencies and describes in what scenarios you need them.
+            </para>
         </sect2>
         <sect2>
             <title>Infrastructure requirements</title>
             <para>Axon Framework doesn't impose many requirements on the infrastructure. It has been
                 built and tested against Java 6, making that more or less the only
-                requirement.</para>
+                requirement.
+            </para>
             <para>Since Axon doesn't create any connections or threads by itself, it is safe to run
                 on an Application Server. Axon abstracts all asynchronous behavior by using
-                    <code>Executor</code>s, meaning that you can easily pass a container managed
+                <code>Executor</code>s, meaning that you can easily pass a container managed
                 Thread Pool, for example. If you don't use an Application Server (e.g. Tomcat, Jetty
-                or a stand-alone app), you can use the <code>Executors</code> class or the Spring
-                Framework to create and configure Thread Pools.</para>
+                or a stand-alone app), you can use the
+                <code>Executors</code>
+                class or the Spring
+                Framework to create and configure Thread Pools.
+            </para>
         </sect2>
         <sect2>
             <title>Start coding</title>
             <para>TODO: Outline the steps needed to create an Axon based application. Refer to the
-                chapters in which these components are explained.</para>
+                chapters in which these components are explained.
+            </para>
+        </sect2>
+        <sect2>
+            <title>When you're stuck</title>
+            <para>TODO: Write a few lines about the mailinglist and support/trainings.</para>
+        </sect2>
+        <sect2>
+            <title>When you're stuck</title>
+            <para>TODO: Write a few lines about the mailinglist and support/trainings.</para>
         </sect2>
     </sect1>
     <sect1 xml:id="contributing">
@@ -212,44 +253,55 @@
         <para>Development on the Axon Framework is never finished. There will always be more
             features that we like to include in our framework to continue making development of
             scalabale and extensible application easier. This means we are constantly looking for
-            help in developing our framework. </para>
-        <para>There are a number of ways in which you can contribute to the Axon Framework: <itemizedlist>
+            help in developing our framework.
+        </para>
+        <para>There are a number of ways in which you can contribute to the Axon Framework:
+            <itemizedlist>
                 <listitem>
                     <para>You can report any bugs, feature requests or ideas about improvemens on
-                        our issue page: <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                            ns1:href="http://www.axonframework.org/issues"
-                            >axonframework.org/issues</link>. All ideas are welcome. Please be as
+                        our issue page:<link xmlns:ns1="http://www.w3.org/1999/xlink"
+                                             ns1:href="http://www.axonframework.org/issues"
+                                >axonframework.org/issues</link>. All ideas are welcome. Please be as
                         exact as possible when reporting bugs. This will help us reproduce and thus
-                        solve the problem faster. </para>
+                        solve the problem faster.
+                    </para>
                 </listitem>
                 <listitem>
                     <para>If you have created a component for your own application that you think
                         might be useful to include in the framework, send us a patch or a zip
                         containing the source code. We will evaluate it and try to fit it in the
                         framework. Please make sure code is properly documented using javadoc. This
-                        helps us to understand what is going on. </para>
+                        helps us to understand what is going on.
+                    </para>
                 </listitem>
                 <listitem>
                     <para>If you know of any other way you think you can help us, do not hesitate to
-                        send a message to the <link xmlns:xlink="http://www.w3.org/1999/xlink"
-                            xlink:href="mailto:axonframework@googlegroups.com"
-                            >Axon Framework mailinglist</link>.</para>
+                        send a message to the<link xmlns:xlink="http://www.w3.org/1999/xlink"
+                                                   xlink:href="mailto:axonframework@googlegroups.com"
+                                >Axon Framework mailinglist</link>.
+                    </para>
                 </listitem>
-            </itemizedlist></para>
+            </itemizedlist>
+        </para>
     </sect1>
     <sect1 xml:id="license">
         <title>License information</title>
         <para>The Axon Framework and its documentation are licensed under the Apache License,
-            Version 2.0. You may obtain a copy of the License at <link
-                xmlns:ns1="http://www.w3.org/1999/xlink"
-                ns1:href="http://www.apache.org/licenses/LICENSE-2.0" ns1:show="new"
-                >http://www.apache.org/licenses/LICENSE-2.0</link>. </para>
+            Version 2.0. You may obtain a copy of the License at<link
+                    xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://www.apache.org/licenses/LICENSE-2.0" ns1:show="new"
+                    >http://www.apache.org/licenses/LICENSE-2.0</link>.
+        </para>
         <para>Unless required by applicable law or agreed to in writing, software distributed under
             the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-            KIND, either express or implied. See the <link
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                xlink:href="http://www.apache.org/licenses/LICENSE-2.0" xlink:show="new"
-                >License</link> for the specific language governing permissions and limitations
-            under the License. </para>
+            KIND, either express or implied. See the
+            <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="http://www.apache.org/licenses/LICENSE-2.0" xlink:show="new"
+                    >License
+            </link>
+            for the specific language governing permissions and limitations
+            under the License.
+        </para>
     </sect1>
 </chapter>

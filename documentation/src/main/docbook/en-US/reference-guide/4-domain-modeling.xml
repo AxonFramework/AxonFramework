@@ -14,114 +14,107 @@
     ~ See the License for the specific language governing permissions and
     ~ limitations under the License.
 -->
-<chapter xml:id="domain-modeling" version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude">
+<chapter xml:id="domain-modeling" version="5.0" xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>Domain Modeling</title>
     <para>In a CQRS-based application, a Domain Model (as defined by Eric Evans and Martin Fowler)
         can be a very powerful mechanism to harness the complexity involved in the validation and
         execution of state changes. Although a typical Domain Model has a great number of building
         blocks, two of them play a major role when applied to CQRS: the Event and the
-        Aggregate.</para>
+        Aggregate.
+    </para>
     <para>The following sections will explain the role of these building blocks and how to implement
-        them using the Axon Framework.</para>
+        them using the Axon Framework.
+    </para>
     <sect1 xml:id="events">
         <title>Events</title>
-        <para>The Axon Framework makes a distinction between three types of events, each with a
-            clear use and type of origin. Regardless of their type, all events must implement the
-                <code>Event</code> interface or one of the more specific sub-types, Domain Events,
-            Application Events and System Events, each described in the sections below.</para>
-        <para>All events may carry data and meta-data. Typically, the data is added to each event as
-            fields in the event implementation. Meta-data, on the other hand is stored separately.
-            The Auditing interceptor uses this mechanism to attach meta-data to events for auditing
-            purposes. All Axon's implementations of Events allow the subclasses to attach arbitrary
-            information as meta-data.</para>
+        <para>Events are objects that describe something that has occurred in the application. A
+            typical source of events is the Aggregate. When something important has occurred within
+            the aggregate, it will raise an Event. In Axon Framework, Events can be any object. You
+            are highly encouraged to make sure all events are serializable.
+        </para>
+        <para>When Events are dispatched, Axon wraps them in a Message. The actual type of Message
+            used depends on the origin of the Event. When an Event is raised by an Aggregate, it is
+            wrapped in a
+            <code>DomainEventMessage</code>
+            (which extends<code>EventMesssage</code>).
+            All other Events are wrapped in an
+            <code>EventMessage.</code>
+            The
+            <code>EventMessage</code>
+            contains a unique Identifier for the event, as well as a
+            Timestamp and Meta Data. The
+            <code>DomainEventMessage</code>
+            also contains the
+            identifier of the aggregate that raised the Event and the sequence number which allows
+            the order of events to be reproduced.
+        </para>
+        <para>Even though the DomainEventMessage contains a reference to the Aggregate Identifier,
+            you should always include that identifier in the actual Event itself as well. The
+            identifier in the DomainEventMessage is meant for the EventStore and may not always
+            provide a reliable value for other purposes.
+        </para>
+        <para>The original Event object is stored as the Payload of an EventMessage. Next to the
+            payload, you can store information in the Meta Data of an Event Message. The intent of
+            the MetaData is to store additional information about an Event that is not primarily
+            intended as business information. Auditing information is a typical example. It allows
+            you to see under which circumstances an Event was raised, such as the User Account that
+            triggered the processing, or the name of the machine that processed the Event.
+        </para>
         <note>
             <para>In general, you should not base business decisions on information in the meta-data
-                of events. If that is the case, you might have information attached that should
-                really be part of the event's regular data instead. Meta-data is typically used for
-                auditing and tracing.</para>
-        </note>
-        <sect2 xml:id="domain-events">
-            <title>Domain Events</title>
-            <para>The most important type of event in any CQRS application is the domain event. It
-                represents an event that occurs inside your domain logic, such as a state change or
-                special notification of a certain state. The latter not being per definition a state
-                change. </para>
-            <para>In the Axon Framework, all domain events should extend the abstract
-                    <code>DomainEvent</code> class. This abstract class keeps track of the aggregate
-                they are generated by, and the sequence number of the event inside the aggregate.
-                This information is important for the Event Sourcing mechanism, as well as for event
-                handlers (see <xref linkend="event-listeners"/>) that need to know the origin of an
-                event. </para>
-            <para>Although not enforced, it is good practice to make domain events immutable,
-                preferably by making all fields final and by initializing the event within the
-                constructor. </para>
-            <note>
-                <para>Although Domain Events technically indicate a state change, you should try to
-                    capture the intention of the state in the event, too. A good practice is to use
-                    an abstract implementation of a domain event to capture the fact that certain
-                    state has changed, and use a concrete sub-implementation of that abstract class
-                    that indicates the intention of the change. For example, you could have an
-                    abstract <code>AddressChangedEvent</code>, and two implementations
-                        <code>ContactMovedEvent</code> and <code>AddressCorrectedEvent</code> that
-                    capture the intent of the state change. Some listeners don't care about the
-                    intent (e.g. database updating event listeners). These will listen to the
-                    abstract type. Other listeners do care about the intent and these will listen to
-                    the concrete subtypes (e.g. to send an address change confirmation email to the
-                    customer). </para>
-                <figure>
-                    <title>Adding intent to events</title>
-                    <mediaobject>
-                        <imageobject role="fo">
-                            <imagedata format="png" fileref="state-change-intent-hires.png"
-                                width="10cm"/>
-                        </imageobject>
-                        <imageobject role="html">
-                            <imagedata format="png" fileref="state-change-intent.png"/>
-                        </imageobject>
-                    </mediaobject>
-                </figure>
-            </note>
-            <para>There is a special type of <code>Event</code>, which has a special meaning: the
-                    <code>AggregateDeletedEvent</code>. This is a marker interface that indicates a
-                migration to a "deleted" state of the aggregate. Repositories must treat aggregates
-                that have applied such an event as deleted. Hence, loading an aggregate that has an
-                    <code>AggregateDeletedEvent</code> results in an exception.</para>
-            <para>Snapshot events are instances of <code>DomainEvent</code> with a special intent.
-                They are typically not dispatched via the event bus, but are used to summarize an
-                arbitrary number of events from the past into a single entry. This can drastically
-                improve performance when initializing an aggregate's state from a series of events.
-                See <xref linkend="using-snapshot-events"/> for more information about snapshot
-                events and their use.</para>
-        </sect2>
-        <sect2>
-            <title>Application Events</title>
-            <para>Application events are events that cannot be categorized as domain events, but do
-                have a significant importance for the application. When using application events,
-                check if the event is actually a domain event that you overlooked. Examples of
-                application events are the expiry of a user session, or the notification of an email
-                being successfully sent. The usefulness of these events depend on the type of
-                application you are creating.</para>
-            <para>In the Axon Framework, you can extend the abstract <code>ApplicationEvent</code>
-                class for application events. This class will generate a unique identifier and a
-                time stamp for the current event. Optionally, you can attach an object that acts as
-                the source of the event. This source is loosely referenced, which means that if the
-                garbage collector cleans up the source, or when the event is serialized and
-                de-serialized, the original source class is not available anymore. Instead, you will
-                have access to the type of source and the value of it's <code>toString()</code>
-                method.</para>
-        </sect2>
-        <sect2>
-            <title>System Events</title>
-            <para>The third type of event identified by Axon Framework is the System Event. These
-                events typically provide notifications of the status of the system. These events
-                could, for example, indicate that a subsystem is non-responsive or has raised an
-                exception.
+                of event messages. If that is the case, you might have information attached that
+                should really be part of the Event itself instead. Meta-data is typically used for
+                auditing and tracing.
             </para>
-            <para>All system events extend the abstract <code>SystemEvent</code> class. Upon
-                construction of this event, you may pass an exception, defining the cause of the
-                event, and a source object which is considered the source of the event. As with
-                application events, the source is loosely referenced from the event. </para>
-        </sect2>
+        </note>
+        <para>Although not enforced, it is good practice to make domain events immutable, preferably
+            by making all fields final and by initializing the event within the constructor.
+        </para>
+        <note>
+            <para>Although Domain Events technically indicate a state change, you should try to
+                capture the intention of the state in the event, too. A good practice is to use an
+                abstract implementation of a domain event to capture the fact that certain state has
+                changed, and use a concrete sub-implementation of that abstract class that indicates
+                the intention of the change. For example, you could have an abstract
+                <code>AddressChangedEvent</code>, and two implementations
+                <code>ContactMovedEvent</code>
+                and
+                <code>AddressCorrectedEvent</code>
+                that
+                capture the intent of the state change. Some listeners don't care about the intent
+                (e.g. database updating event listeners). These will listen to the abstract type.
+                Other listeners do care about the intent and these will listen to the concrete
+                subtypes (e.g. to send an address change confirmation email to the customer).
+            </para>
+            <figure>
+                <title>Adding intent to events</title>
+                <mediaobject>
+                    <imageobject role="fo">
+                        <imagedata format="png" fileref="state-change-intent-hires.png" width="10cm"
+                                />
+                    </imageobject>
+                    <imageobject role="html">
+                        <imagedata format="png" fileref="state-change-intent.png"/>
+                    </imageobject>
+                </mediaobject>
+            </figure>
+        </note>
+        <para>When dispatching an Event on the Event Bus, you will need to wrap it in an (Domain)
+            Event Message. The
+            <code>GenericEventMessage</code>
+            is an implementation that allows you
+            to wrap your Event in a Message. You can use the constructor, or the static
+            <code>asEventMessage</code>
+            method. The latter checks whether the given parameter
+            doesn't already implement the
+            <code>Message</code>
+            interface. If so, it is either
+            returned directly (if it implements<code>EventMessage</code>,) or it returns a new
+            <code>GenericEventMessage</code>
+            using the given<code>Message</code>'s payload and
+            Meta Data.
+        </para>
     </sect1>
     <sect1>
         <title>Aggregate</title>
@@ -131,121 +124,188 @@
         </para>
         <note>
             <para>The term "Aggregate" refers to the aggregate as defined by Evans in Domain Driven
-                Design: </para>
+                Design:
+            </para>
             <para>
                 <quote>A cluster of associated objects that are treated as a unit for the purpose of
                     data changes. External references are restricted to one member of the Aggregate,
                     designated as the root. A set of consistency rules applies within the
-                    Aggregate's boundaries. </quote>
+                    Aggregate's boundaries.
+                </quote>
             </para>
-            <para>A more extensive definition can be found on: <link
-                    xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://domaindrivendesign.org/freelinking/Aggregate"
-                    >http://domaindrivendesign.org/freelinking/Aggregate</link>. </para>
+            <para>A more extensive definition can be found on:<link
+                    xlink:href="http://domaindrivendesign.org/freelinking/Aggregate"
+                    >http://domaindrivendesign.org/freelinking/Aggregate</link>.
+            </para>
         </note>
         <para>For example, a "Contact" aggregate will contain two entities: contact and address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
             be done via the contact entity. In this case, the Contact entity is the appointed
-            aggregate root.</para>
-        <para>In Axon, aggregates are identified by an <code>AggregateIdentifier</code>. There are
-            two basic implementations of these identifiers: <code>UUIDAggregateIdentifier</code>,
-            which used Java's <code>UUID</code> to generate random identifiers, and the
-                <code>StringAggregateIdentifier</code>, which allows you to choose a
-                <code>String</code> which should be used as identifier. You can choose any
-            identifier type you like, and even create your own, as long as they have a valid String
-            representation.</para>
+            aggregate root.
+        </para>
+        <para>In Axon, aggregates are identified by an Aggregate Identifier. This may be any object,
+            but there are a few guidelines for good implementations of identifiers. Identifiers must:
+            <itemizedlist>
+                <listitem>
+                    <para>implement equals and hashCode to ensure good equality comparison with
+                        other instances,
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>implement a toString() method that provides a consistent result (equal
+                        identifiers should provide an equal toString() result), and
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>preferably be serializable.</para>
+                </listitem>
+            </itemizedlist>
+            The test fixtures (see<xref
+                    linkend="testing"/>) will verify these conditions and fail a test when an Aggregate
+            uses an incompatible identifier. Identifiers of type<code>String</code>,
+            <code>UUID</code>
+            and the numeric types are always suitable.
+        </para>
         <note>
             <para>It is considered a good practice to use randomly generated identifiers, as opposed
                 to sequenced ones. Using a sequence drastically reduces scalability of your
                 application, since machines need to keep each other up-to-date of the last used
                 sequence numbers. The chance of collisions with a UUID is very slim (a chance of
-                    10<superscript>−15</superscript>, if you generate 8.2 ×
-                    10<superscript>11</superscript> UUIDs).</para>
+                10<superscript>−15</superscript>, if you generate 8.2 ×
+                10
+                <superscript>11</superscript>
+                UUIDs).
+            </para>
             <para>Furthermore, be careful when using functional identifiers for aggregates. They
                 have a tendency to change, making it very hard to adapt your application
-                accordingly.</para>
+                accordingly.
+            </para>
         </note>
         <sect2>
             <title>Basic aggregate implementations</title>
             <simplesect>
                 <title>
-                    <code xmlns="http://docbook.org/ns/docbook">AggregateRoot</code>
+                    <code>AggregateRoot</code>
                 </title>
-                <para>In Axon, all aggregate roots must implement the <code>AggregateRoot</code>
+                <para>In Axon, all aggregate roots must implement the
+                    <code>AggregateRoot</code>
                     interface. This interface describes the basic operations needed by the
                     Repository to store and publish the generated domain events. However, Axon
                     Framework provides a number of abstract implementations that help you writing
-                    your own aggregates. </para>
+                    your own aggregates.
+                </para>
                 <note>
                     <para>Note that only the aggregate root needs to implement the
-                            <code>AggregateRoot</code> interface or implement one of the abstract
+                        <code>AggregateRoot</code>
+                        interface or implement one of the abstract
                         classes mentioned below. The other entities that are part of the aggregate
-                        do not have to implement any interfaces. </para>
+                        do not have to implement any interfaces.
+                    </para>
                 </note>
             </simplesect>
             <simplesect>
                 <title>
                     <code>AbstractAggregateRoot</code>
                 </title>
-                <para>The <code>AbstractAggregateRoot</code> is a basic implementation that provides
-                    a <code>registerEvent(DomainEvent)</code> method that you can call in your
+                <para>The
+                    <code>AbstractAggregateRoot</code>
+                    is a basic implementation that provides
+                    a
+                    <code>registerEvent(DomainEvent)</code>
+                    method that you can call in your
                     business logic method to have an event added to the list of uncommitted events.
-                    The <code>AbstractAggregateRoot</code> will keep track of all uncommitted
+                    The
+                    <code>AbstractAggregateRoot</code>
+                    will keep track of all uncommitted
                     registered events and make sure they are forwarded to the event bus when the
-                    aggregate is saved to a repository. The <code>AbstractAggregateRoot</code> is a
+                    aggregate is saved to a repository. The
+                    <code>AbstractAggregateRoot</code>
+                    is a
                     JPA-compatible implementation and can be used with a Jpa based ORM
-                    repository.</para>
+                    repository.
+                </para>
             </simplesect>
         </sect2>
         <sect2>
             <title>Event sourced aggregates</title>
             <para>Axon framework provides a few repository implementations that can use event
                 sourcing as storage method for aggregates. These repositories require that
-                aggregates implement the <code>EventSourcedAggregateRoot</code> interface. As with
+                aggregates implement the
+                <code>EventSourcedAggregateRoot</code>
+                interface. As with
                 most interfaces in Axon, we also provide one or more abstract implementations to
-                help you on your way. </para>
+                help you on your way.
+            </para>
             <simplesect>
                 <title>
                     <code>EventSourcedAggregateRoot</code>
                 </title>
-                <para>The interface <code>EventSourcedAggregateRoot</code> defines an extra method,
-                        <code>initializeState()</code>, on top of the <code>AggregateRoot</code>
+                <para>The interface
+                    <code>EventSourcedAggregateRoot</code>
+                    defines an extra method,
+                    <code>initializeState()</code>, on top of the
+                    <code>AggregateRoot</code>
                     interface. This method initializes an aggregate's state based on an event
-                    stream. </para>
+                    stream.
+                </para>
+                <para>Implementations of this interface must always have a default no-arg
+                    constructor. Axon Framework uses this constructor to create an empty Aggregate
+                    instance before initialize it using past Events. Failure to provide this
+                    constructor will result in an Exception when loading the Aggregate from a
+                    Repository.
+                </para>
             </simplesect>
             <simplesect>
                 <title>
                     <code>AbstractEventSourcedAggregateRoot</code>
                 </title>
-                <para>The <code>AbstractEventSourcedAggregateRoot</code> implements all methods on
-                    the <code>EventSourcedAggregateRoot</code> interface. It defines an abstract
-                        <code>handle()</code> method, which you need to implement with the actual
+                <para>The
+                    <code>AbstractEventSourcedAggregateRoot</code>
+                    implements all methods on
+                    the
+                    <code>EventSourcedAggregateRoot</code>
+                    interface. It defines an abstract
+                    <code>handle()</code>
+                    method, which you need to implement with the actual
                     logic to apply state changes based on domain events. When you extend the
-                        <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
-                    using <code>apply()</code>. This method will register the event to be committed
-                    when the aggregate is saved, and will call the <code>handle()</code> method with
-                    the event as parameter. You need to implement this <code>handle()</code> method
+                    <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
+                    using<code>apply()</code>. This method will register the event to be committed
+                    when the aggregate is saved, and will call the
+                    <code>handle()</code>
+                    method with
+                    the event as parameter. You need to implement this
+                    <code>handle()</code>
+                    method
                     to apply the state changes represented by that event. Below is a sample
-                    implementation of an aggregate.</para>
+                    implementation of an aggregate.
+                </para>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
-    private String someProperty;
+                    private String aggregateIdentifier;
+                    private String someProperty;
 
-    public MyAggregateRoot() {
-        apply(new MyAggregateCreatedEvent());
-    }
+                    public MyAggregateRoot(String id) {
+                    apply(new MyAggregateCreatedEvent(id));
+                    }
 
-    public MyAggregateRoot(UUID identifier) {
-        super(identifier);
-    }
+                    // constructor required for reconstruction
+                    protected MyAggregateRoot() {
+                    }
 
-    public void handle(DomainEvent event) {
-        if (event instanceof MyAggregateCreatedEvent) {
-            // do something with someProperty
-        }
-        // and more if-else-if logic here
-    }
-}                </programlisting>
+                    public void handle(DomainEvent event) {
+                    if (event.getPayload() instanceof MyAggregateCreatedEvent) {
+                    // make sure to always initialize the aggregate identifier
+                    this.aggregateIdentifier = ((String) this.getPayload()).getMyIdentifier();
+                    // do something with someProperty
+                    }
+                    // and more if-else-if logic here
+                    }
+
+                    public Object getAggregateIdentifier() {
+                    return aggregateIdentifier;
+                    }
+                    }
+                </programlisting>
             </simplesect>
             <simplesect xml:id="annotated-aggregate-root">
                 <title>
@@ -271,38 +331,55 @@
                     you.
                 </para>
                 <note>
-                    <para>Note that <code>@EventHandler</code> annotated methods on an
-                            <code>AbstractAnnotatedAggregateRoot</code> are only called when events
+                    <para>Note that
+                        <code>@EventHandler</code>
+                        annotated methods on an
+                        <code>AbstractAnnotatedAggregateRoot</code>
+                        are only called when events
                         are applied directly to the aggregate locally. This should not be confused
-                        with annotating event handler methods on <code>EventListener</code> classes,
+                        with annotating event handler methods on
+                        <code>EventListener</code>
+                        classes,
                         in which case event handler methods handle events dispatched by the
-                            <code>EventBus</code>. See <xref linkend="event-listeners"/>. </para>
+                        <code>EventBus</code>. See<xref linkend="event-listeners"/>.
+                    </para>
                 </note>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractAnnotatedAggregateRoot {
-    private String someProperty;
 
-    public MyAggregateRoot() {
-        apply(new MyAggregateCreatedEvent());
-    }
+                    @AggregateIdentifier
+                    private String aggregateIdentifier;
+                    private String someProperty;
 
-    public MyAggregateRoot(UUID identifier) {
-        super(identifier);
-    }
+                    public MyAggregateRoot(String id) {
+                    apply(new MyAggregateCreatedEvent(id));
+                    }
 
-    @EventHandler
-    private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
-        // do something with someProperty
-    }
-}</programlisting>
-                <para><code>@EventHandler</code> annotated methods are resolved using specific rules. These rules are thorougly explained in <xref linkend="annotated-event-handlers"/>.</para>
-                    <note>
-                        <title>Using private methods</title>
-                        <para>Event handler methods may be private, as long as the security settings of the JVM
-                            allow the Axon Framework to change the accessibility of the method. This allows you to
-                            clearly separate the public API of your aggregate, which exposes the methods that
-                            generate events, from the internal logic, which processes the events.</para>
-                    </note>
-                
+                    // constructor needed for reconstruction
+                    protected MyAggregateRoot() {
+                    }
+
+                    @EventHandler
+                    private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
+                    // make sure identifier is always initialized properly
+                    this.aggregateIdentifier = event.getMyAggregateIdentifier();
+                    // do something with someProperty
+                    }
+                    }
+                </programlisting>
+                <para>
+                    <code>@EventHandler</code>
+                    annotated methods are resolved using specific rules. These rules are thorougly explained in<xref
+                        linkend="annotated-event-handlers"/>.
+                </para>
+                <note>
+                    <title>Using private methods</title>
+                    <para>Event handler methods may be private, as long as the security settings of the JVM
+                        allow the Axon Framework to change the accessibility of the method. This allows you to
+                        clearly separate the public API of your aggregate, which exposes the methods that
+                        generate events, from the internal logic, which processes the events.
+                    </para>
+                </note>
+
             </simplesect>
         </sect2>
         <sect2>
@@ -311,44 +388,68 @@
                 aggregate root can provide. In that case, it important that the complexity is spread
                 over a number of entities within the aggregate. When using event sourcing, not only
                 the aggregate root needs to use event to trigger state transitions, but so does each
-                of the entities within that aggregate.</para>
+                of the entities within that aggregate.
+            </para>
             <para>Axon provides support for event sourcing in complex aggregate structures. All
                 entities other than the aggregate root need to extend from
-                    <code>AbstractEventSourcedEntity</code>. The
-                    <code>EventSourcedAggregateRoot</code> implementations provided by Axon
+                <code>AbstractEventSourcedEntity</code>. The
+                <code>EventSourcedAggregateRoot</code>
+                implementations provided by Axon
                 Framework are aware of these entities and will call their event handlers when
-                needed.</para>
+                needed.
+            </para>
             <para>When an entity (including the aggregate root) applies an Event, it is registered
                 with the Aggregate Root. The aggregate root applies the event locally first. Next,
                 it will evaluate all its fields for any implementations of
-                    <code>AbstractEventSourcedEntity</code> and handle the event on them. Each
-                entity does the same thing to its fields.</para>
+                <code>AbstractEventSourcedEntity</code>
+                and handle the event on them. Each
+                entity does the same thing to its fields.
+            </para>
             <para>To register an Event, the Entity must know about the Aggregate Root. Axon will
                 automatically register the Aggregate Root with an Entity before applying any Events
                 to it. This means that Entities (unlike usual in the Aggregate Root) should never
                 apply an Event in their constructor. Non-Aggregate Root Entities should be created
-                in an <code>@EventHandler</code> annotated method in their parent Entity (as
+                in an
+                <code>@EventHandler</code>
+                annotated method in their parent Entity (as
                 creation of an entity can be considered a state change of the Aggregate). Axon will
-                ensure that the Aggregate Root is properly registered in time.</para>
+                ensure that the Aggregate Root is properly registered in time.
+            </para>
             <para>Axon will automatically detect most of the child entities in the fields of an
-                Entity (albeit aggregate root or not). The following Entities are found:<itemizedlist>
+                Entity (albeit aggregate root or not). The following Entities are found:
+                <itemizedlist>
                     <listitem>
-                        <para>directly referenced in a field; </para>
+                        <para>directly referenced in a field;</para>
                     </listitem>
                     <listitem>
-                        <para>inside fields containing an <code>Iterable</code> (which includes all
-                            collections, such as <code>Set</code>, <code>List</code>, etc); </para>
+                        <para>inside fields containing an
+                            <code>Iterable</code>
+                            (which includes all
+                            collections, such as<code>Set</code>,<code>List</code>, etc);
+                        </para>
                     </listitem>
                     <listitem>
                         <para>inside both they keys and the values of fields containing a
-                                <code>java.util.Map</code></para>
+                            <code>java.util.Map</code>
+                        </para>
                     </listitem>
-                </itemizedlist>If you reference an Entity from any other location than the above
-                mentioned, you can override the <code>getChildEntities()</code> method. This method
-                should return a <code>Collection</code> of entities that should be notified of the
+                </itemizedlist>
+                If you reference an Entity from any other location than the above
+                mentioned, you can override the
+                <code>getChildEntities()</code>
+                method. This method
+                should return a
+                <code>Collection</code>
+                of entities that should be notified of the
                 Event. Note that each entity is invoked once for each time it is located in the
-                returned <code>Collection</code>.</para>
+                returned<code>Collection</code>.
+            </para>
+            <para>Note that in high-performance situations, the reflective approach to finding child
+                entities can be very costly. In that case, you should always override the
+                <code>getChildEntities()</code>
+                method.
+            </para>
         </sect2>
     </sect1>
-       
+
 </chapter>

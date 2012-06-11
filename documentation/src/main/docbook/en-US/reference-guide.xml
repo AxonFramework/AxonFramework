@@ -15,12 +15,9 @@
   ~ limitations under the License.
   -->
 
-<book version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink"
-      xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:svg="http://www.w3.org/2000/svg"
-      xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:html="http://www.w3.org/1999/xhtml"
-      xmlns:db="http://docbook.org/ns/docbook" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://docbook.org/ns/docbook http://docbook.org/xml/5.0/xsd/docbook.xsd
-                http://www.w3.org/1999/xlink http://docbook.org/xml/5.0/xsd/xlink.xsd">
+<book version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+        >
     <info>
         <title>Reference Guide</title>
         <authorgroup>
@@ -68,4 +65,5 @@
     <xi:include href="reference-guide/8-testing.xml"/>
     <xi:include href="reference-guide/9-using-spring.xml"/>
     <xi:include href="reference-guide/10-performance-tuning.xml"/>
+    <xi:include href="reference-guide/11-scaling-out.xml"/>
 </book>
