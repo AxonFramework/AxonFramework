@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2011. Axon Framework
+ * Copyright (c) 2010-2012. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,6 @@ import org.axonframework.eventstore.EventStore;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.*;
-import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
@@ -78,10 +77,9 @@ public class EventPublicationOrderTest {
             }
         }).when(eventBus).publish(isA(EventMessage.class));
         commandBus.dispatch(asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)));
-        InOrder inOrder = inOrder(eventBus);
-        inOrder.verify(eventBus).publish(isA(DomainEventMessage.class));
-        inOrder.verify(eventBus).publish(argThat(new NotADomainEventMatcher()));
-        inOrder.verify(eventBus).publish(isA(DomainEventMessage.class));
+        verify(eventBus).publish(isA(DomainEventMessage.class),
+                                 argThat(new NotADomainEventMatcher()),
+                                 isA(DomainEventMessage.class));
     }
 
     private static class NotADomainEventMatcher extends BaseMatcher<EventMessage> {

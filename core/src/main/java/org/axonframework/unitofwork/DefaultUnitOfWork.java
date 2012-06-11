@@ -27,11 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 /**
  * Implementation of the UnitOfWork that buffers all published events until it is committed. Aggregates that have not
@@ -48,7 +47,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates =
             new LinkedHashMap<AggregateRoot, AggregateEntry>();
-    private final Queue<EventEntry> eventsToPublish = new LinkedList<EventEntry>();
+    private final Map<EventBus, List<EventMessage<?>>> eventsToPublish = new HashMap<EventBus, List<EventMessage<?>>>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private Status dispatcherStatus = Status.READY;
 
@@ -137,11 +136,18 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     }
 
     private void doPublish(EventMessage event, EventBus eventBus) {
-        eventsToPublish.add(new EventEntry(event, eventBus));
+        eventsToPublishOn(eventBus).add(event);
+    }
+
+    private List<EventMessage<?>> eventsToPublishOn(EventBus eventBus) {
+        if (!eventsToPublish.containsKey(eventBus)) {
+            eventsToPublish.put(eventBus, new ArrayList<EventMessage<?>>());
+        }
+        return eventsToPublish.get(eventBus);
     }
 
     @Override
-    public void publishEvent(EventMessage event, EventBus eventBus) {
+    public void publishEvent(EventMessage<?> event, EventBus eventBus) {
         if (logger.isDebugEnabled()) {
             logger.debug("Staging event for publishing: [{}] on [{}]",
                          event.getPayloadType().getName(),
@@ -175,15 +181,19 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
             return;
         }
         dispatcherStatus = Status.DISPATCHING;
-        while (!eventsToPublish.isEmpty()) {
-            EventEntry eventEntry = eventsToPublish.poll();
+        for (Map.Entry<EventBus, List<EventMessage<?>>> entry : eventsToPublish.entrySet()) {
+            EventMessage[] messages = new EventMessage[entry.getValue().size()];
             if (logger.isDebugEnabled()) {
-                logger.debug("Publishing event [{}] to event bus [{}]",
-                             eventEntry.event.getPayloadType().getName(),
-                             eventEntry.eventBus.getClass().getName());
+                for (EventMessage message : messages) {
+                    logger.debug("Publishing event [{}] to event bus [{}]",
+                                 message.getPayloadType().getName(),
+                                 entry.getKey().getClass().getName());
+                }
             }
-            eventEntry.publishEvent();
+            entry.getKey().publish(entry.getValue().toArray(messages));
+            entry.getValue().clear();
         }
+
         logger.debug("All events successfully published.");
         dispatcherStatus = Status.READY;
     }
@@ -214,26 +224,11 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     }
 
     private List<EventMessage> eventsToPublish() {
-        List<EventMessage> events = new ArrayList<EventMessage>(eventsToPublish.size());
-        for (EventEntry entry : eventsToPublish) {
-            events.add(entry.event);
+        List<EventMessage> events = new ArrayList<EventMessage>();
+        for (Map.Entry<EventBus, List<EventMessage<?>>> entry : eventsToPublish.entrySet()) {
+            events.addAll(entry.getValue());
         }
         return Collections.unmodifiableList(events);
-    }
-
-    private static class EventEntry {
-
-        private final EventMessage event;
-        private final EventBus eventBus;
-
-        public EventEntry(EventMessage event, EventBus eventBus) {
-            this.event = event;
-            this.eventBus = eventBus;
-        }
-
-        public void publishEvent() {
-            eventBus.publish(event);
-        }
     }
 
     private static class AggregateEntry<T extends AggregateRoot> {

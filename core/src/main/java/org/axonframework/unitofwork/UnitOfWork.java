@@ -120,5 +120,5 @@ public interface UnitOfWork {
      * @param event    The event to be published on the event bus
      * @param eventBus The event bus on which to publish the event
      */
-    void publishEvent(EventMessage event, EventBus eventBus);
+    void publishEvent(EventMessage<?> event, EventBus eventBus);
 }

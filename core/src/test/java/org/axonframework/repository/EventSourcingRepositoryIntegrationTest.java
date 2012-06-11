@@ -72,7 +72,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
                    getSuccessfulModifications() >= 1);
         int expectedEventCount = getSuccessfulModifications() * 2;
         assertTrue("It seems that no events have been published at all", lastSequenceNumber >= 0);
-        verify(mockEventBus, times(expectedEventCount)).publish(isA(DomainEventMessage.class));
+        // we publish two events at the time
+        verify(mockEventBus, times(expectedEventCount / 2)).publish(isA(DomainEventMessage.class), isA(DomainEventMessage.class));
     }
 
     private int getSuccessfulModifications() {

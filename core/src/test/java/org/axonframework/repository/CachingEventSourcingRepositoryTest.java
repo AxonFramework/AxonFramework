@@ -91,7 +91,7 @@ public class CachingEventSourcingRepositoryTest {
             eventList.add(events.next());
         }
         assertEquals(2, eventList.size());
-        verify(mockEventBus, times(2)).publish(isA(EventMessage.class));
+        verify(mockEventBus).publish(isA(EventMessage.class), isA(EventMessage.class));
         cache.clear();
 
         reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
