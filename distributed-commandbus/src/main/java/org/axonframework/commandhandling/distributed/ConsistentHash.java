@@ -158,10 +158,15 @@ public class ConsistentHash implements Externalizable {
         StringWriter w = new StringWriter();
         w.append("ConsistentHash: {");
         Iterator<Map.Entry<String, MemberNode>> iterator = hashToMember.entrySet().iterator();
+        if (iterator.hasNext()) {
+            w.append("\n");
+        }
         while (iterator.hasNext()) {
             Map.Entry<String, MemberNode> entry = iterator.next();
-            w.append(entry.getKey() + " -> " + entry.getValue().getName());
-            w.append("(");
+            w.append(entry.getKey())
+             .append(" -> ")
+             .append(entry.getValue().getName())
+             .append("(");
             Iterator<String> commandIterator = entry.getValue().supportedCommands().iterator();
             while (commandIterator.hasNext()) {
                 w.append(commandIterator.next());
@@ -173,6 +178,7 @@ public class ConsistentHash implements Externalizable {
             if (iterator.hasNext()) {
                 w.append(", ");
             }
+            w.append("\n");
         }
         w.append("}");
         return w.toString();
@@ -227,6 +233,7 @@ public class ConsistentHash implements Externalizable {
             return Collections.unmodifiableSet(supportedCommandTypes);
         }
 
+        @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
             if (this == o) {

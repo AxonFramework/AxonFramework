@@ -55,7 +55,7 @@ public class ConsistentHashTest {
 
         actual = ConsistentHash.emptyRing().withAdditionalNode("Node", 2, singleton("String")).toString();
         assertEquals(
-                "ConsistentHash: {2d9aa5c8a1cef20eafd756e8c58f1b29 -> Node(String), dc17bfc640c5e43ec7ecdfa874e703b2 -> Node(String)}",
+                "ConsistentHash: {\n2d9aa5c8a1cef20eafd756e8c58f1b29 -> Node(String), \ndc17bfc640c5e43ec7ecdfa874e703b2 -> Node(String)\n}",
                 actual);
     }
 
