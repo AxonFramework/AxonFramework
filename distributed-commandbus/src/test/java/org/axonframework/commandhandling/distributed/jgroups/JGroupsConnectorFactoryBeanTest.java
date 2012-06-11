@@ -59,7 +59,6 @@ public class JGroupsConnectorFactoryBeanTest {
         verifyNew(JChannel.class).withArguments("tcp_mcast.xml");
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("beanName"), isA(
                 SimpleCommandBus.class), isA(Serializer.class));
-        verify(mockChannel).connect("beanName");
         verify(mockConnector).connect(100);
         verify(mockChannel, never()).close();
 
@@ -89,7 +88,6 @@ public class JGroupsConnectorFactoryBeanTest {
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("ClusterName"),
                                                         same(localSegment), same(serializer));
         verify(mockApplicationContext, never()).getBean(Serializer.class);
-        verify(mockChannel).connect("ClusterName");
         verify(mockConnector).connect(200);
         verify(mockChannel, never()).close();
 

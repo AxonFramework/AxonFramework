@@ -96,13 +96,9 @@ public class AuditingInterceptorTest {
     @Test
     public void testInterceptCommand_FailedExecution() throws Throwable {
         RuntimeException mockException = new MockException();
-        when(mockInterceptorChain.proceed())
-                .thenThrow(mockException);
+        when(mockInterceptorChain.proceed()).thenThrow(mockException);
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-        StubAggregate aggregate = new StubAggregate();
-        aggregate.doSomething();
-        aggregate.doSomething();
-        uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
+
         GenericCommandMessage command = new GenericCommandMessage("Command!");
         try {
             testSubject.handle(command, uow, mockInterceptorChain);
@@ -110,10 +106,15 @@ public class AuditingInterceptorTest {
             assertSame(mockException, e);
         }
 
-        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
+        StubAggregate aggregate = new StubAggregate();
+        uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
+        aggregate.doSomething();
+        aggregate.doSomething();
+
         RuntimeException mockFailure = new RuntimeException("mock");
         uow.rollback(mockFailure);
-        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
+
+        verify(mockAuditDataProvider, times(2)).provideAuditDataFor(any(CommandMessage.class));
         verify(mockAuditLogger, never()).logSuccessful(eq(command), any(Object.class), any(List.class));
         verify(mockAuditLogger).logFailed(eq(command), eq(mockFailure), listWithTwoEventMessages());
     }
