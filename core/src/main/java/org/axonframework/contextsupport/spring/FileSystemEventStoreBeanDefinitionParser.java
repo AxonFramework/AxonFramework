@@ -18,9 +18,11 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import java.io.File;
@@ -38,6 +40,8 @@ import java.io.File;
  */
 public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
+    private UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
+
     /**
      * The base directory attribute.
      */
@@ -46,6 +50,8 @@ public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBean
      * the event serializer attribute.
      */
     private static final String EVENT_SERIALIZER_ATTRIBUTE = "event-serializer";
+
+    private static final String UPCASTERS_ELEMENT = "upcasters";
 
     /**
      * {@inheritDoc}
@@ -70,5 +76,11 @@ public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBean
         }
         SimpleEventFileResolver fileResolver = new SimpleEventFileResolver(new File(baseDirValue));
         builder.addConstructorArgValue(fileResolver);
+
+        Element upcasters = DomUtils.getChildElementByTagName(element, UPCASTERS_ELEMENT);
+        if (upcasters != null) {
+            BeanDefinition bd = upcasterChainParser.parse(upcasters, parserContext);
+            builder.addPropertyValue("upcasterChain", bd);
+        }
     }
 }
