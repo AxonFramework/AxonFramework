@@ -7,6 +7,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
@@ -49,7 +50,7 @@ public class JGroupsConnectorTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(timeout = 30000)
     public void testConnectAndDispatchMessages_Balanced() throws Exception {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
@@ -87,13 +88,13 @@ public class JGroupsConnectorTest {
         verify(mockCommandBus2, atLeast(60)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
-    @Test(expected = ConnectionFailedException.class)
+    @Test(expected = ConnectionFailedException.class, timeout = 30000)
     public void testRingsProperlySynchronized_ChannelAlreadyConnectedToOtherCluster() throws Exception {
         channel1.connect("other");
         connector1.connect(20);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRingsProperlySynchronized_ChannelAlreadyConnected() throws Exception {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
@@ -130,9 +131,9 @@ public class JGroupsConnectorTest {
     }
 
     private void waitForConnectorSync() throws InterruptedException {
-        Thread.sleep(20);
         int t = 0;
-        while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
+        while (ConsistentHash.emptyRing().equals(connector1.getConsistentHash())
+                || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (t++ > 250) {
                 fail("Connectors did not manage to synchronize consistent hash ring within 5 seconds...");
