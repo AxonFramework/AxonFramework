@@ -6,7 +6,6 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.JChannel;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -136,7 +135,6 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     @Override
     public void start() {
         try {
-            channel.connect(clusterName);
             connector.connect(loadFactor);
             connector.awaitJoined();
         } catch (Exception e) {

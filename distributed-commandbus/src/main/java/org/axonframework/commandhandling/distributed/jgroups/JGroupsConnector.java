@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
@@ -125,7 +126,16 @@ public class JGroupsConnector implements CommandBusConnector {
                               + "Has the channel been reused with other Connectors?");
         try {
             channel.setReceiver(messageReceiver);
-            channel.connect(clusterName, null, 10000);
+            if (channel.isConnected() && !clusterName.equals(channel.getClusterName())) {
+                throw new AxonConfigurationException("The Channel that has been configured with this JGroupsConnector "
+                                                             + "is already connected to another cluster.");
+            } else if (channel.isConnected()) {
+                // we need to fetch state now that we have attached our MessageReceiver
+                channel.getState(null, 10000);
+            } else {
+                // we need to connect. This will automatically fetch state as well.
+                channel.connect(clusterName, null, 10000);
+            }
             updateMembership();
         } catch (Exception e) {
             joinedCondition.markJoined(false);

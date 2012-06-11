@@ -34,8 +34,8 @@ public class JGroupsConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        channel1 = connect();
-        channel2 = connect();
+        channel1 = createChannel();
+        channel2 = createChannel();
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
         connector1 = new JGroupsConnector(channel1, "test", mockCommandBus1, new XStreamSerializer());
@@ -87,9 +87,56 @@ public class JGroupsConnectorTest {
         verify(mockCommandBus2, atLeast(60)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
+    @Test(expected = ConnectionFailedException.class)
+    public void testRingsProperlySynchronized_ChannelAlreadyConnectedToOtherCluster() throws Exception {
+        channel1.connect("other");
+        connector1.connect(20);
+    }
+
+    @Test
+    public void testRingsProperlySynchronized_ChannelAlreadyConnected() throws Exception {
+        final AtomicInteger counter1 = new AtomicInteger(0);
+        final AtomicInteger counter2 = new AtomicInteger(0);
+
+        connector1.subscribe(String.class, new CountingCommandHandler(counter1));
+        channel1.connect("test");
+        connector1.connect(20);
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        connector2.subscribe(Long.class, new CountingCommandHandler(counter2));
+        channel2.connect("test");
+        connector2.connect(80);
+
+        assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
+
+        waitForConnectorSync();
+
+        FutureCallback<Object> callback1 = new FutureCallback<Object>();
+        connector1.send("1", new GenericCommandMessage<Object>("Hello"), callback1);
+        FutureCallback<?> callback2 = new FutureCallback();
+        connector1.send("1", new GenericCommandMessage<Object>(1L), callback2);
+
+        FutureCallback<Object> callback3 = new FutureCallback<Object>();
+        connector2.send("1", new GenericCommandMessage<String>("Hello"), callback3);
+        FutureCallback<?> callback4 = new FutureCallback();
+        connector2.send("1", new GenericCommandMessage<Long>(1L), callback4);
+
+        assertEquals("The Reply!", callback1.get());
+        assertEquals("The Reply!", callback2.get());
+        assertEquals("The Reply!", callback3.get());
+        assertEquals("The Reply!", callback4.get());
+
+        assertTrue(connector1.getConsistentHash().equals(connector2.getConsistentHash()));
+    }
+
     private void waitForConnectorSync() throws InterruptedException {
+        Thread.sleep(20);
+        int t = 0;
         while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
+            if (t++ > 250) {
+                fail("Connectors did not manage to synchronize consistent hash ring within 5 seconds...");
+            }
             Thread.sleep(20);
         }
     }
@@ -142,7 +189,7 @@ public class JGroupsConnectorTest {
         }
     }
 
-    private static JChannel connect() throws Exception {
+    private static JChannel createChannel() throws Exception {
         return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_static.xml");
     }
 
