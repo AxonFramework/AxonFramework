@@ -18,12 +18,15 @@ package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.DomainEvent;
+import org.axonframework.domain.Event;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.hamcrest.Description;
 import org.junit.*;
+import org.junit.internal.matchers.*;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -80,7 +83,17 @@ public class AuditingInterceptorTest {
         uow.commit();
 
         verify(mockAuditDataProvider, times(1)).provideAuditDataFor("Command!");
-        verify(mockAuditLogger, times(1)).logSuccessful(eq("Command!"), any(Object.class), any(List.class));
+        verify(mockAuditLogger, times(1)).logSuccessful(eq("Command!"), any(Object.class), argThat(new TypeSafeMatcher<List<Event>>() {
+            @Override
+            public boolean matchesSafely(List<Event> item) {
+                return item != null && item.size() == 2;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("A List with two Events");
+            }
+        }));
         DomainEvent eventFromAggregate = aggregate.getUncommittedEvents().next();
         assertEquals("value", eventFromAggregate.getMetaDataValue("key"));
     }

@@ -17,7 +17,6 @@
 package org.axonframework.auditing;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.Event;
 import org.axonframework.domain.EventMetaData;
 import org.axonframework.domain.MutableEventMetaData;
@@ -76,20 +75,8 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     @Override
     public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<Event> events) {
         Map<String, Serializable> auditData = auditDataProvider.provideAuditDataFor(command);
-        recordedEvents.addAll(collectEvents(aggregateRoots));
         recordedEvents.addAll(events);
         injectAuditData(auditData);
-    }
-
-    private List<Event> collectEvents(Set<AggregateRoot> aggregateRoots) {
-        List<Event> events = new ArrayList<Event>();
-        for (AggregateRoot aggregateRoot : aggregateRoots) {
-            DomainEventStream domainEventStream = aggregateRoot.getUncommittedEvents();
-            while (domainEventStream.hasNext()) {
-                events.add(domainEventStream.next());
-            }
-        }
-        return events;
     }
 
     private void injectAuditData(Map<String, Serializable> auditData) {
