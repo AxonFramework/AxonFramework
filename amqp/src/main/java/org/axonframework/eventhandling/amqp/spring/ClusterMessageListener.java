@@ -21,6 +21,8 @@ import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
 import org.axonframework.io.EventMessageReader;
 import org.axonframework.serializer.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageListener;
 
@@ -38,6 +40,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @since 2.0
  */
 public class ClusterMessageListener implements MessageListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClusterMessageListener.class);
 
     private final List<Cluster> clusters = new CopyOnWriteArrayList<Cluster>();
     private final Serializer serializer;
@@ -57,8 +61,10 @@ public class ClusterMessageListener implements MessageListener {
     @Override
     public void onMessage(Message message) {
         EventMessage eventMessage = fromByteArray(message.getBody());
-        for (Cluster cluster : clusters) {
-            cluster.publish(eventMessage);
+        if (eventMessage != null) {
+            for (Cluster cluster : clusters) {
+                cluster.publish(eventMessage);
+            }
         }
     }
 
@@ -78,6 +84,9 @@ public class ClusterMessageListener implements MessageListener {
             return in.readEventMessage();
         } catch (IOException e) {
             throw new EventPublicationFailedException("Failed to serialize an EventMessage", e);
+        } catch (RuntimeException e) {
+            logger.warn("Unable to deserialize an incoming message. Ignoring it.", e);
+            return null;
         }
     }
 }
