@@ -182,7 +182,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         }
         dispatcherStatus = Status.DISPATCHING;
         for (Map.Entry<EventBus, List<EventMessage<?>>> entry : eventsToPublish.entrySet()) {
-            EventMessage[] messages = new EventMessage[entry.getValue().size()];
+            EventMessage[] messages = entry.getValue().toArray(new EventMessage[] {});
             if (logger.isDebugEnabled()) {
                 for (EventMessage message : messages) {
                     logger.debug("Publishing event [{}] to event bus [{}]",
@@ -190,7 +190,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
                                  entry.getKey().getClass().getName());
                 }
             }
-            entry.getKey().publish(entry.getValue().toArray(messages));
+            entry.getKey().publish(messages);
             entry.getValue().clear();
         }
 
@@ -205,7 +205,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
             if (logger.isDebugEnabled()) {
                 logger.debug("Persisting changes to [{}], identifier: [{}]",
                              entry.aggregateRoot.getClass().getName(),
-                             entry.aggregateRoot.getIdentifier().toString());
+                             entry.aggregateRoot.getIdentifier());
             }
             entry.saveAggregate();
         }
