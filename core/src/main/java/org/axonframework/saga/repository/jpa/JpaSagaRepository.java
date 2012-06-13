@@ -159,9 +159,20 @@ public class JpaSagaRepository extends AbstractSagaRepository {
             logger.debug("Updating saga id {} as {}", saga.getSagaIdentifier(), new String(entry.getSerializedSaga(),
                                                                                            Charset.forName("UTF-8")));
         }
-        entityManager.merge(entry);
         if (useExplicitFlush) {
             entityManager.flush();
+        }
+        int updateCount = entityManager.createQuery(
+                "UPDATE SagaEntry s SET s.serializedSaga = :serializedSaga WHERE s.sagaId = :sagaId")
+                                       .setParameter("serializedSaga", entry.getSerializedSaga())
+                                       .setParameter("sagaId", entry.getSagaId())
+                                       .executeUpdate();
+        if (updateCount == 0) {
+            logger.warn("Expected to be able to update a Saga instance, but no rows were found. Inserting instead.");
+            entityManager.persist(entry);
+            if (useExplicitFlush) {
+                entityManager.flush();
+            }
         }
     }
 
