@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -181,18 +182,23 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
             return;
         }
         dispatcherStatus = Status.DISPATCHING;
-        for (Map.Entry<EventBus, List<EventMessage<?>>> entry : eventsToPublish.entrySet()) {
-            List<EventMessage<?>> messageList = entry.getValue();
-            EventMessage[] messages = messageList.toArray(new EventMessage[messageList.size()]);
-            if (logger.isDebugEnabled()) {
-                for (EventMessage message : messages) {
-                    logger.debug("Publishing event [{}] to event bus [{}]",
-                                 message.getPayloadType().getName(),
-                                 entry.getKey().getClass().getName());
+        while (!eventsToPublish.isEmpty()) {
+            Iterator<Map.Entry<EventBus, List<EventMessage<?>>>> iterator = eventsToPublish.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<EventBus, List<EventMessage<?>>> entry = iterator.next();
+                List<EventMessage<?>> messageList = entry.getValue();
+                EventMessage<?>[] messages = messageList.toArray(new EventMessage<?>[messageList.size()]);
+                if (logger.isDebugEnabled()) {
+                    for (EventMessage message : messages) {
+                        logger.debug("Publishing event [{}] to event bus [{}]",
+                                     message.getPayloadType().getName(),
+                                     entry.getKey());
+                    }
                 }
+                // remove this entry before publication in case a new event is registered with the UoW while publishing
+                iterator.remove();
+                entry.getKey().publish(messages);
             }
-            entry.getKey().publish(messages);
-            entry.getValue().clear();
         }
 
         logger.debug("All events successfully published.");
