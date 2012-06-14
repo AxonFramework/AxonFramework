@@ -182,7 +182,8 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         }
         dispatcherStatus = Status.DISPATCHING;
         for (Map.Entry<EventBus, List<EventMessage<?>>> entry : eventsToPublish.entrySet()) {
-            EventMessage[] messages = entry.getValue().toArray(new EventMessage[] {});
+            List<EventMessage<?>> messageList = entry.getValue();
+            EventMessage[] messages = messageList.toArray(new EventMessage[messageList.size()]);
             if (logger.isDebugEnabled()) {
                 for (EventMessage message : messages) {
                     logger.debug("Publishing event [{}] to event bus [{}]",
