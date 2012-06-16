@@ -35,10 +35,9 @@
     <para>This doesn't mean Command dispatching using explicit command object is the only right way
         to do it. The goal of Axon is not to prescribe a specific way of working, but to support you
         doing it your way. It is still possible to use a Service layer that you can invoke to
-        execute commands. The method will just need to start a unit of work (see<xref
-                linkend="unit-of-work"/>) and perform a
-        commit or rollback on it when the method is finished.
-    </para>
+        execute commands. The method will just need to start a unit of work (see <xref
+            linkend="unit-of-work"/>) and perform a commit or rollback on it when the method is
+        finished. </para>
     <para>The next sections provide an overview of the tasks related to creating a Command
         Handling infrastructure with the Axon Framework.
     </para>
@@ -54,44 +53,31 @@
         <sect2>
             <title>Dispatching commands</title>
             <para>The CommandBus provides two methods to dispatch commands to their respective
-                handler:
-                <code>dispatch(commandMessage, callback)</code>
-                and
-                <code>dispatch(commandMessage)</code>. The first parameter is the actual command
+                handler: <code>dispatch(commandMessage, callback)</code> and
+                    <code>dispatch(commandMessage)</code>. The first parameter is the actual command
                 to dispatch. The optional second parameter takes a callback that allows the
                 dispatching component to be notified when command handling is completed. This
-                callback has two methods:
-                <code>onSuccess()</code>
-                and<code>onFailure()</code>,
+                callback has two methods: <code>onSuccess()</code> and <code>onFailure()</code>,
                 which are called when command handling returned normally, or when it threw an
-                exception, respectively.
-            </para>
+                exception, respectively. </para>
             <para>The calling component may not assume that the callback is invoked in the same
                 thread that dispatched the command. If the calling thread depends on the result
-                before continuing (which is a highly discouraged approach), you can use the
-                <code>FutureCallback</code>. It is a combination of a
-                <code>Future</code>
-                (as
-                defined in the java.concurrent package) and Axon's
-                <code>CommandCallback</code>.
-            </para>
+                before continuing, you can use the <code>FutureCallback</code>. It is a combination
+                of a <code>Future</code> (as defined in the java.concurrent package) and Axon's
+                    <code>CommandCallback</code>. </para>
             <para>Best scalability is achieved when your application is not interested in the result
                 of a dispatched command at all. In that case, you should use the single-parameter
-                version of the
-                <code>dispatch</code>
-                method. If the<code>CommandBus</code>is fully
+                version of the <code>dispatch</code> method. If the <code>CommandBus</code> is fully
                 asynchronous, it will return immediately after the command has been successfully
                 dispatched. Your application will just have to guarantee that the command is
-                processed and with "positive outcome", sooner or later...
-            </para>
+                processed and with "positive outcome", sooner or later... </para>
             <simplesect>
                 <title>CommandTemplate</title>
                 <para>In many cases, however, your application will want to be able to wait for the
                     result of a command. Especially in the cases where guarantees are more important
                     than scalability and the user interface needs the outcome of the command. In
-                    such case, you can choose to use the<code>FutureCallback</code>, or the simpler
-                    alternative: the<code>CommandTemplate</code>.
-                </para>
+                    such case, you can choose to use the <code>FutureCallback</code>, or the simpler
+                    alternative: the <code>CommandTemplate</code>. </para>
                 <para>The
                     <code>CommandTemplate</code>
                     wraps a
@@ -144,21 +130,15 @@
         </sect2>
         <sect2>
             <title>DistributedCommandBus</title>
-            <para>Part of the
-                <emphasis>axon-distributed-commandbus</emphasis>
-                module is the
+            <para>Part of the <emphasis>axon-distributed-commandbus</emphasis> module is the
                 DistributedCommandBus. Unlike the SimpleCommandBus, this implementation is not
-                limited to a single JVM. In fact, all it can do is bridge the gap between multiple
-                VM's. It doesn't actually do any command processing itself.
-                <note>
+                limited to a single JVM. In fact, all it does is bridge the gap between multiple
+                VM's. It doesn't actually do any command processing itself. <note>
                     <title>Dependencies</title>
                     <para>The distributed command bus is not part of the Axon Framework Core module,
-                        but in the
-                        <emphasis>axon-distributed-commandbus</emphasis>
-                        module. If you
+                        but in the <emphasis>axon-distributed-commandbus</emphasis> module. If you
                         use Maven, make sure you have the appropriate dependencies set. The groupId
-                        and version are identifical to those of the Core module.
-                    </para>
+                        and version are identifical to those of the Core module. </para>
                 </note>
             </para>
             <para>The Distributed Command Bus consists of two major components: the connector and
@@ -170,19 +150,15 @@
                 interface.
             </para>
             <para>More information about how distribute a CommandBus over multiple
-                (virtual)machines, see<xref
-                        linkend="scaling-out"/>.
-            </para>
+                (virtual)machines, see <xref linkend="scaling-out"/>. </para>
         </sect2>
         <sect2>
             <title>DisruptorCommandBus</title>
-            <para>The SimpleCommandBus has resonable performance characteristics, especially when
-                you've gone through the performance tips in<xref
-                        linkend="performance-tuning"/>. The
-                fact that the SimpleCommandBus needs locking to prevent multiple threads from
+            <para>The SimpleCommandBus has reasonable performance characteristics, especially when
+                you've gone through the performance tips in <xref linkend="performance-tuning"/>.
+                The fact that the SimpleCommandBus needs locking to prevent multiple threads from
                 concurrently accessing the same aggregate causes processing overhead and lock
-                contention.
-            </para>
+                contention. </para>
             <para>The
                 <code>DisruptorCommandBus</code>
                 takes a different approach to multithreaded
@@ -200,33 +176,26 @@
                 will execute the command handler, changing an aggregate's state. The last thread
                 will store and publish the events to the Event Store and Event Bus.
             </para>
-            <para>While the
-                <code>DisruptorCommandBus</code>
-                outperforms the
-                <code>SimpleCommandBus</code>
-                by a factor 4(!), there are a few limitations:
-                <itemizedlist>
+            <para>While the <code>DisruptorCommandBus</code> easily outperforms the
+                    <code>SimpleCommandBus</code> by a factor 4(!), there are a few limitations: <itemizedlist>
                     <listitem>
                         <para>You can publish commands targeting a single Aggregate class, and this
                             must be an Event Sourced Aggregate. The reason is that this Command Bus
-                            also acts as a Repository for the aggreates processed by the
-                            Disruptor.
+                            also acts as a Repository for the aggreates processed by the Disruptor.
                         </para>
                     </listitem>
                     <listitem>
                         <para>A Command can only result in a state change in a single aggregate
                             instance. This limitation allows the Disruptor to optimize the loading
                             of the aggregate, which actually happens before the Command Handler is
-                            being invoked.
-                        </para>
+                            being invoked. </para>
                     </listitem>
                     <listitem>
                         <para>Commands should generally not cause a failure that requires a rollback
                             of the Unit of Work. When a rollback occurs, the DisruptorCommandBus
                             cannot guarantee that Commands are processed in the order they were
                             dispatched. Furthermore, it requires a retry of a number of other
-                            commands, causing unnecessary computations.
-                        </para>
+                            commands, causing unnecessary computations. </para>
                     </listitem>
                     <listitem>
                         <para>When creating a new Aggregate Instance, commands updating that created
@@ -234,14 +203,103 @@
                             aggregate is created, all commands will be executed exactly in the order
                             they were dispatched. To ensure the order, use a callback on the
                             creating command to wait for the aggregate being created. It shouldn't
-                            take more than a few milliseconds.
-                        </para>
+                            take more than a few milliseconds. </para>
                     </listitem>
                 </itemizedlist>
             </para>
             <simplesect>
                 <title>Configuring the DisruptorCommandBus</title>
-                <para>The DisruptorCommandBus</para>
+                <para>The DisruptorCommandBus is part of the
+                        <emphasis>axon-disruptor-commandbus</emphasis> module. If you use maven,
+                    make sure to add a dependency to that module. The <code>groupId</code> and
+                        <code>version</code> are identical to those of the Core module.</para>
+                <para>To construct a <code>DisruptorCommandBus</code> instance, you need an
+                        <code>AggregateFactory</code>, an <code>EventBus</code> and
+                        <code>EventStore</code>. These components are explained in <xref
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        linkend="repositories-and-eventstores"/> and <xref
+                        xmlns:xlink="http://www.w3.org/1999/xlink" linkend="event-bus"/>. Finally,
+                    you also need a <code>CommandTargetResolver</code>. This is a mechanism that
+                    tells the disruptor which aggregate is the target of a specific Command. There
+                    are two implementations provided by Axon: the
+                        <code>AnnotationCommandTargetResolver</code>, which uses annotations to
+                    describe the target, or the <code>MetaDataCommandTargetResolver</code>, which
+                    uses the Command's Meta Data fields. </para>
+                <para>Optionally, you can provide a <code>DisruptorConfiguration</code> instance,
+                    which allows you to tweak the configuration to optimize performance:<itemizedlist>
+                        <listitem>
+                            <para>ClaimStrategy: Sets the ClaimStrategy instance, which defines how
+                                a Thread dispatching a command can claim a "position" in the
+                                DisruptorCommandBus. Defaults to a MultiThreadedClaimStrategy with
+                                4096 positions, which is safe to use when multiple threads can
+                                publish to the CommandBus.</para>
+                        </listitem>
+                        <listitem>
+                            <para>WaitStrategy: The strategy to use when the processor threads (the
+                                three threads taking care of the actual processing) need to wait for
+                                eachother. The best WaitStrategy depends on the number of cores
+                                available in the machine, and the number of other processes running.
+                                If low latency is crucial, and the DisruptorCommandBus may claim
+                                three cores for itself, you can use the
+                                    <code>BusySpinWaitStrategy</code>. To make the Command Bus claim
+                                less of the CPU and allow other threads to do processing, use the
+                                    <code>YieldingWaitStrategy</code>. Finally, you can use the
+                                    <code>SleepingWaitStrategy</code> and
+                                    <code>BlockingWaitStrategy</code> to allow other processes a
+                                fair share of CPU. The latter is suitable if the Command Bus is not
+                                expected to be processing full-time. Defaults to the
+                                    <code>BlockingWaitStrategy</code>.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Executor: Sets the Executor that provides the Threads for the
+                                DisruptorCommandBus. This executor must be able to provide at least
+                                4 threads. 3 threads are claimed by the processing components of the
+                                DisruptorCommandBus. Extra threads are used to invoke callbacks and
+                                to schedule retries in case an Aggregate's state is detected to be
+                                corrupt. Defaults to a CachedThreadPool that provides threads from a
+                                thread group called "DisruptorCommandBus".</para>
+                        </listitem>
+                        <listitem>
+                            <para>InvokerInterceptors: Defines the
+                                    <code>CommandHandlerInterceptor</code>s that are to be used in
+                                the invocation process. This is the process that calls the actual
+                                Command Handler method.</para>
+                        </listitem>
+                        <listitem>
+                            <para>PublisherInterceptors: Defines the
+                                    <code>CommandHandlerInterceptor</code>s that are to be used in
+                                the publication process. This is the process that stores and
+                                publishes the generated events.</para>
+                        </listitem>
+                        <listitem>
+                            <para>RollbackConfiguration: Defines on which Exceptions a Unit of Work
+                                should be rolled back. Defaults to a configuration that rolls back
+                                on unchecked exceptions.</para>
+                        </listitem>
+                        <listitem>
+                            <para>RescheduleCommandsOnCorruptState: Indicates whether Commands that
+                                have been executed against an Aggregate that has been corrupted
+                                (e.g. because a Unit of Work was rolled back) should be rescheduled.
+                                If <code>false</code> the callback's <code>onFailure()</code> method
+                                will be invoked. If <code>true</code> (the default), the command
+                                will be rescheduled instead.</para>
+                        </listitem>
+                        <listitem>
+                            <para>CoolingDownPeriod: Sets the number of seconds to wait to make sure
+                                all commands are processed. During the cooling down period, no new
+                                commands are accepted, but existing commands are processed, and
+                                rescheduled when necessary. The cooling down period ensures that
+                                threads are available for rescheduling the commands and calling
+                                callbacks. Defaults to 1000 (1 second).</para>
+                        </listitem>
+                        <listitem>
+                            <para>Cache: Sets the cache that stores aggregate instances that have
+                                been reconstructed from the Event Store. Note that while the
+                                DisruptorEventBus is processing an Aggregate, it reuses that
+                                reference, avoiding any cache uses.  By default, no cache is
+                                used.</para>
+                        </listitem>
+                    </itemizedlist></para>
             </simplesect>
         </sect2>
     </sect1>
@@ -253,18 +311,15 @@
         </para>
         <sect2>
             <title>Creating a Command Handler</title>
-            <para>A Command Handler must implement the
-                <code>CommandHandler</code>
-                interface. This
+            <para>A Command Handler must implement the <code>CommandHandler</code> interface. This
                 interface declares only a single method:<code>Object handle(CommandMessage&lt;T>
                     command, UnitOfWork uow)</code>, where T is the type of Command this Handler can
-                process. The concept of the UnitOfWork is explained in<xref linkend="unit-of-work"
-                        />. Be weary when using return values. Typically, it is a bad idea to use return
+                process. The concept of the UnitOfWork is explained in <xref linkend="unit-of-work"
+                />. Be weary when using return values. Typically, it is a bad idea to use return
                 values to return server-generated identifiers. Consider using client-generated
                 (random) identifiers, such as UUIDs. They allow for a "fire and forget" style of
                 command handlers, where a client does not have to wait for a response. As return
-                value in such a case, you are recommended to simply return<code>null</code>.
-            </para>
+                value in such a case, you are recommended to simply return<code>null</code>. </para>
             <annotation>
                 <para><!--TODO: Explain the role and purpose of a Command Handler. Should it execute queries? Should it do validation?--></para>
             </annotation>
@@ -287,18 +342,13 @@
             <title>Annotation based handlers</title>
             <para>More often than not, a command handler will need to process several types of
                 closely related commands. With Axon's annotation support you can use any POJO as
-                command handler. Just add the
-                <code>@CommandHandler</code>
-                annotation to your
+                command handler. Just add the <code>@CommandHandler</code> annotation to your
                 methods to turn them into a command handler. These methods should declare the
                 command to process as the first parameter. They may take an optional second
-                parameter, which is the
-                <code>UnitOfWork</code>
-                for that command (see<xref
-                        linkend="unit-of-work"/>). Note that for each command type, there may only be
+                parameter, which is the <code>UnitOfWork</code> for that command (see <xref
+                    linkend="unit-of-work"/>). Note that for each command type, there may only be
                 one handler! This restriction counts for all handlers registered to the same command
-                bus.
-            </para>
+                bus. </para>
             <annotation>
                 <para><!--TODO: Describe the features of new annotation support. First parameter is either message or payload. Other parameters are dynamically resolved. Explain @MetaData annotation.--></para>
             </annotation>

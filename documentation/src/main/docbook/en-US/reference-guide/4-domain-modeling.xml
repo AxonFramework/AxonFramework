@@ -184,8 +184,7 @@
         <sect2>
             <title>Basic aggregate implementations</title>
             <simplesect>
-                <title>
-                    <code>AggregateRoot</code>
+                <title><code>AggregateRoot</code>
                 </title>
                 <para>In Axon, all aggregate roots must implement the
                     <code>AggregateRoot</code>
@@ -204,8 +203,7 @@
                 </note>
             </simplesect>
             <simplesect>
-                <title>
-                    <code>AbstractAggregateRoot</code>
+                <title><code>AbstractAggregateRoot</code>
                 </title>
                 <para>The
                     <code>AbstractAggregateRoot</code>
@@ -237,8 +235,7 @@
                 help you on your way.
             </para>
             <simplesect>
-                <title>
-                    <code>EventSourcedAggregateRoot</code>
+                <title><code>EventSourcedAggregateRoot</code>
                 </title>
                 <para>The interface
                     <code>EventSourcedAggregateRoot</code>
@@ -256,8 +253,7 @@
                 </para>
             </simplesect>
             <simplesect>
-                <title>
-                    <code>AbstractEventSourcedAggregateRoot</code>
+                <title><code>AbstractEventSourcedAggregateRoot</code>
                 </title>
                 <para>The
                     <code>AbstractEventSourcedAggregateRoot</code>
@@ -281,35 +277,33 @@
                 </para>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
-                    private String aggregateIdentifier;
-                    private String someProperty;
+    private String aggregateIdentifier;
+    private String someProperty;
 
-                    public MyAggregateRoot(String id) {
-                    apply(new MyAggregateCreatedEvent(id));
-                    }
+    public MyAggregateRoot(String id) {
+        apply(new MyAggregateCreatedEvent(id));
+    }
 
-                    // constructor required for reconstruction
-                    protected MyAggregateRoot() {
-                    }
+    // constructor required for reconstruction
+    protected MyAggregateRoot() {
+    }
 
-                    public void handle(DomainEvent event) {
-                    if (event.getPayload() instanceof MyAggregateCreatedEvent) {
-                    // make sure to always initialize the aggregate identifier
-                    this.aggregateIdentifier = ((String) this.getPayload()).getMyIdentifier();
-                    // do something with someProperty
-                    }
-                    // and more if-else-if logic here
-                    }
+    public void handle(DomainEvent event) {
+        if (event.getPayload() instanceof MyAggregateCreatedEvent) {
+            // make sure to always initialize the aggregate identifier
+            this.aggregateIdentifier = ((String) this.getPayload()).getMyIdentifier();
+            // do something with someProperty
+        }
+        // and more if-else-if logic here
+    }
 
-                    public Object getAggregateIdentifier() {
-                    return aggregateIdentifier;
-                    }
-                    }
-                </programlisting>
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
+    }
+}                </programlisting>
             </simplesect>
             <simplesect xml:id="annotated-aggregate-root">
-                <title>
-                    <code>AbstractAnnotatedAggregateRoot</code>
+                <title><code>AbstractAnnotatedAggregateRoot</code>
                 </title>
                 <para>As you see in the example above, the implementation of the
                     <code>handle()</code>
@@ -331,46 +325,37 @@
                     you.
                 </para>
                 <note>
-                    <para>Note that
-                        <code>@EventHandler</code>
-                        annotated methods on an
-                        <code>AbstractAnnotatedAggregateRoot</code>
-                        are only called when events
+                    <para>Note that <code>@EventHandler</code> annotated methods on an
+                            <code>AbstractAnnotatedAggregateRoot</code> are only called when events
                         are applied directly to the aggregate locally. This should not be confused
-                        with annotating event handler methods on
-                        <code>EventListener</code>
-                        classes,
+                        with annotating event handler methods on <code>EventListener</code> classes,
                         in which case event handler methods handle events dispatched by the
-                        <code>EventBus</code>. See<xref linkend="event-listeners"/>.
-                    </para>
+                            <code>EventBus</code>. See <xref linkend="event-listeners"/>. </para>
                 </note>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
-                    @AggregateIdentifier
-                    private String aggregateIdentifier;
-                    private String someProperty;
+    @AggregateIdentifier
+    private String aggregateIdentifier;
+    private String someProperty;
 
-                    public MyAggregateRoot(String id) {
-                    apply(new MyAggregateCreatedEvent(id));
-                    }
+    public MyAggregateRoot(String id) {
+        apply(new MyAggregateCreatedEvent(id));
+    }
 
-                    // constructor needed for reconstruction
-                    protected MyAggregateRoot() {
-                    }
+    // constructor needed for reconstruction
+    protected MyAggregateRoot() {
+    }
 
-                    @EventHandler
-                    private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
-                    // make sure identifier is always initialized properly
-                    this.aggregateIdentifier = event.getMyAggregateIdentifier();
-                    // do something with someProperty
-                    }
-                    }
-                </programlisting>
-                <para>
-                    <code>@EventHandler</code>
-                    annotated methods are resolved using specific rules. These rules are thorougly explained in<xref
-                        linkend="annotated-event-handlers"/>.
-                </para>
+    @EventHandler
+    private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
+        // make sure identifier is always initialized properly
+        this.aggregateIdentifier = event.getMyAggregateIdentifier();
+        // do something with someProperty
+    }
+}                </programlisting>
+                <para><code>@EventHandler</code> annotated methods are resolved using specific
+                    rules. These rules are thorougly explained in <xref
+                        linkend="annotated-event-handlers"/>. </para>
                 <note>
                     <title>Using private methods</title>
                     <para>Event handler methods may be private, as long as the security settings of the JVM
@@ -416,34 +401,24 @@
                 ensure that the Aggregate Root is properly registered in time.
             </para>
             <para>Axon will automatically detect most of the child entities in the fields of an
-                Entity (albeit aggregate root or not). The following Entities are found:
-                <itemizedlist>
+                Entity (albeit aggregate root or not). The following Entities are found: <itemizedlist>
                     <listitem>
                         <para>directly referenced in a field;</para>
                     </listitem>
                     <listitem>
-                        <para>inside fields containing an
-                            <code>Iterable</code>
-                            (which includes all
-                            collections, such as<code>Set</code>,<code>List</code>, etc);
-                        </para>
+                        <para>inside fields containing an <code>Iterable</code> (which includes all
+                            collections, such as <code>Set</code>, <code>List</code>, etc); </para>
                     </listitem>
                     <listitem>
                         <para>inside both they keys and the values of fields containing a
-                            <code>java.util.Map</code>
+                                <code>java.util.Map</code>
                         </para>
                     </listitem>
-                </itemizedlist>
-                If you reference an Entity from any other location than the above
-                mentioned, you can override the
-                <code>getChildEntities()</code>
-                method. This method
-                should return a
-                <code>Collection</code>
-                of entities that should be notified of the
+                </itemizedlist>If you reference an Entity from any other location than the above
+                mentioned, you can override the <code>getChildEntities()</code> method. This method
+                should return a <code>Collection</code> of entities that should be notified of the
                 Event. Note that each entity is invoked once for each time it is located in the
-                returned<code>Collection</code>.
-            </para>
+                returned <code>Collection</code>. </para>
             <para>Note that in high-performance situations, the reflective approach to finding child
                 entities can be very costly. In that case, you should always override the
                 <code>getChildEntities()</code>

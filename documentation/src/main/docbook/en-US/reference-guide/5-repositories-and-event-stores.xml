@@ -22,26 +22,18 @@
         other types of queries should be performed against the query database, not the
         Repository.
     </para>
-    <para>In the Axon Framework, all repositories must implement the
-        <code>Repository</code>
+    <para>In the Axon Framework, all repositories must implement the <code>Repository</code>
         interface. This interface prescribes three methods:<code>load(identifier, version)</code>,
-        <code>load(identifier)</code>
-        and<code>add(aggregate)</code>. The
-        <code>load</code>
-        methods allows you to load aggregates from the repository. The optional
-        <code>version</code>
-        parameter is used to detect concurrent modifications (see<xref
-                linkend="conflict-resolution"/>).
-        <code>add</code>
-        is used to register newly created
-        aggregates in the repository.
-    </para>
+            <code>load(identifier)</code> and<code>add(aggregate)</code>. The <code>load</code>
+        methods allows you to load aggregates from the repository. The optional <code>version</code>
+        parameter is used to detect concurrent modifications (see <xref
+            linkend="conflict-resolution"/>). <code>add</code> is used to register newly created
+        aggregates in the repository. </para>
     <para>Depending on your underlying persistence storage and auditing needs, there are a number of
         base implementations that provide basic functionality needed by most repositories. Axon
         Framework makes a distinction between repositories that save the current state of the
-        aggregate (see<xref linkend="standard-repositories"/>), and those that store the events of
-        an aggregate (see<xref linkend="event-sourcing-repositories"/>).
-    </para>
+        aggregate (see <xref linkend="standard-repositories"/>), and those that store the events of
+        an aggregate (see <xref linkend="event-sourcing-repositories"/>). </para>
     <para>Note that the Repository interface does not prescribe a
         <code>delete(identifier)</code>
         method. Deleting aggregates is done by invoking the (protected)
@@ -74,8 +66,7 @@
             repository.
         </para>
         <simplesect>
-            <title>
-                <code>AbstractRepository</code>
+            <title><code>AbstractRepository</code>
             </title>
             <para>The most basic implementation of the repository is AbstractRepository. It takes
                 care of the event publishing when an aggregate is saved. The actual persistence
@@ -84,8 +75,7 @@
             </para>
         </simplesect>
         <simplesect xml:id="locking-repository">
-            <title>
-                <code>LockingRepository</code>
+            <title><code>LockingRepository</code>
             </title>
             <para>If the underlying data store does not provide any locking mechanism to prevent
                 concurrent modifications of aggregates, consider using the abstract
@@ -135,8 +125,7 @@
             </para>
         </simplesect>
         <simplesect>
-            <title>
-                <code>GenericJpaRepository</code>
+            <title><code>GenericJpaRepository</code>
             </title>
             <para>This is a repository implementation that can store JPA compatible Aggregates, such
                 as
@@ -158,17 +147,12 @@
         </para>
         <simplesect>
             <title>EventSourcingRepository</title>
-            <para>The
-                <code>EventSourcingRepository</code>
-                implementation provides the basic
+            <para>The <code>EventSourcingRepository</code> implementation provides the basic
                 functionality needed by any event sourcing repository in the AxonFramework. It
-                depends on an
-                <code>EventStore</code>
-                (see<xref
-                        linkend="implementing-an-eventstore"/>), which abstracts the actual storage
+                depends on an <code>EventStore</code> (see <xref
+                    linkend="implementing-an-eventstore"/>), which abstracts the actual storage
                 mechanism for the events and an<code>AggregateFactory</code>, which is reponsible
-                for creating uninitialized aggregate instances.
-            </para>
+                for creating uninitialized aggregate instances. </para>
             <para>The AggregateFactory specifies which aggregate needs to be created and how. Once
                 an aggregate has been created, the
                 <code>EventSourcingRepository</code>
@@ -200,8 +184,7 @@
                     eachother.
                 </para>
             </note>
-            <para>
-                <emphasis>GenericAggregateFactory</emphasis>
+            <para><emphasis>GenericAggregateFactory</emphasis>
             </para>
             <para>The
                 <code>GenericAggregateFactory</code>
@@ -218,8 +201,7 @@
             <para>The GenericAggregateFactory is suitable for most scenarios where aggregates do not
                 need special injection of non-serializable resources.
             </para>
-            <para>
-                <emphasis>SpringPrototypeAggregateFactory</emphasis>
+            <para><emphasis>SpringPrototypeAggregateFactory</emphasis>
             </para>
             <para>Depending on your architectural choices, it might be useful to inject dependencies
                 into your aggregates using Spring. You could, for example, inject query repositories
@@ -233,22 +215,15 @@
                 instantiate your aggregates. This will also inject any dependencies in your
                 aggregate.
             </para>
-            <para>
-                <emphasis>Implementing your own AggregateFactory</emphasis>
+            <para><emphasis>Implementing your own AggregateFactory</emphasis>
             </para>
-            <para>In some cases, the
-                <code>GenericAggregateFactory</code>
-                just doesn't deliver what
+            <para>In some cases, the <code>GenericAggregateFactory</code> just doesn't deliver what
                 you need. For example, you could have an abstract aggregate type with multiple
-                implementations for different scenarios (e.g.
-                <code>PublicUserAccount</code>
-                and
-                <code>BackOfficeAccount</code>
-                both extending an<code>Account</code>). Instead
+                implementations for different scenarios (e.g. <code>PublicUserAccount</code> and
+                    <code>BackOfficeAccount</code> both extending an <code>Account</code>). Instead
                 of creating different repositories for each of the aggregates, you could use a
                 single repository, and configure an AggregateFactory that is aware of the different
-                implementations.
-            </para>
+                implementations. </para>
             <para>The AggregateFactory must specify the aggregate type identifier. This is a String
                 that the Event Store needs to figure out which events belong to which type of
                 aggregate. Typically, this name is deducted from the abstract super-aggregate. In
@@ -275,10 +250,9 @@
             </para>
             <para>This repository removes the need for Event Upcasters, making data migrations
                 potentially easier. Since the aggregates are event sourced, you keep the ability to
-                use the given-when-then test fixtures (see<xref linkend="testing"/>). On the other
+                use the given-when-then test fixtures (see <xref linkend="testing"/>). On the other
                 hand, since it doesn't use the event store for reading, it doesn't allow for
-                automated conflict resolution.
-            </para>
+                automated conflict resolution. </para>
         </simplesect>
     </sect1>
     <sect1 xml:id="implementing-an-eventstore">
@@ -295,8 +269,7 @@
             <code>XStreamSerializer</code>.
         </para>
         <simplesect>
-            <title>
-                <code>FileSystemEventStore</code>
+            <title><code>FileSystemEventStore</code>
             </title>
             <para>The
                 <code>FileSystemEventStore</code>
@@ -309,21 +282,14 @@
             </para>
         </simplesect>
         <simplesect>
-            <title>
-                <code>JpaEventStore</code>
+            <title><code>JpaEventStore</code>
             </title>
-            <para>The
-                <code>JpaEventStore</code>
-                stores events in a JPA-compatible data source.
-                Unlike the file system version, the
-                <code>JPAEventStore</code>
-                supports
+            <para>The <code>JpaEventStore</code> stores events in a JPA-compatible data source.
+                Unlike the file system version, the <code>JPAEventStore</code> supports
                 transactions. The JPA Event Store stores events in so called entries. These entries
                 contain the serialized form of an event, as well as some fields where meta-data is
-                stored for fast lookup of these entries. To use the<code>JpaEventStore</code>, you
-                must have the JPA (<code>javax.persistence</code>) annotations on your
-                classpath.
-            </para>
+                stored for fast lookup of these entries. To use the <code>JpaEventStore</code>, you
+                must have the JPA (<code>javax.persistence</code>) annotations on your classpath. </para>
             <para>By default, the event store needs you to configure your persistence context
                 (defined in
                 <code>META-INF/persistence.xml</code>
@@ -355,11 +321,8 @@
                         </para>
                     </callout>
                     <callout arearefs="domain-event-entry-co">
-                        <para>This line registers the
-                            <code>DomainEventEntry</code>
-                            (the class
-                            used by the<code>JpaEventStore</code>) with the persistence context.
-                        </para>
+                        <para>This line registers the <code>DomainEventEntry</code> (the class used
+                            by the <code>JpaEventStore</code>) with the persistence context. </para>
                     </callout>
                 </calloutlist>
             </programlistingco>
@@ -414,23 +377,21 @@
                 persistence context, and is used by default by the Jpa Event Store.
             </para>
             <para>If you have a persistence unit called "myPersistenceUnit" which you wish to use in
-                the<code>JpaEventStore</code>, this is what the EntityManagerProvider
-                implementation could look
-                like:
+                the <code>JpaEventStore</code>, this is what the EntityManagerProvider
+                implementation could look like:
                 <programlisting language="java">public class MyEntityManagerProvider implements EntityManagerProvider {
 
-                    private EntityManager entityManager;
+    private EntityManager entityManager;
 
-                    @Override
-                    public EntityManager getEntityManager() {
-                    return entityManager;
-                    }
+    @Override
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
 
-                    @PersistenceContext(unitName = "myPersistenceUnit")
-                    public void setEntityManager(EntityManager entityManager) {
-                    this.entityManager = entityManager;
-                    }
-                </programlisting>
+    @PersistenceContext(unitName = "myPersistenceUnit")
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }                </programlisting>
             </para>
         </simplesect>
         <simplesect>
@@ -464,13 +425,10 @@
                     <para>To work around this issue, make sure to exclusively query for non-entity
                         objects. You can use JPA's "SELECT new SomeClass(parameters) FROM ..." style
                         queries to work around this issue. Alternatively, call
-                        <code>EntityManager.flush()</code>
-                        and
-                        <code>EntityManager.clear()</code>
-                        after fetching a batch of events.
-                        Failure to do so might result in<code>OutOfMemoryException</code>s when
-                        loading large streams of events.
-                    </para>
+                            <code>EntityManager.flush()</code> and
+                            <code>EntityManager.clear()</code> after fetching a batch of events.
+                        Failure to do so might result in <code>OutOfMemoryException</code>s when
+                        loading large streams of events. </para>
                 </warning>
             </para>
         </simplesect>
@@ -482,38 +440,29 @@
                 implementations.
             </para>
             <tip>
-                <para>The
-                    <code>SimpleDomainEventStream</code>
-                    class will make the contents of a
-                    sequence (
-                    <code>List</code>
-                    or<code>array</code>) of
-                    <code>DomainEvent</code>
-                    instances accessible as event stream.
-                </para>
+                <para>The <code>SimpleDomainEventStream</code> class will make the contents of a
+                    sequence ( <code>List</code> or <code>array</code>) of <code>EventMessage</code>
+                    instances accessible as event stream. </para>
             </tip>
         </simplesect>
         <simplesect>
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Event to prepare it for storage. By
-                default, Axon uses the<code>XStreamSerializer</code>, which uses XStream (see<link
-                        xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
-                        >xstream.codehaus.org</link>) to serialize Events into XML and vice versa.
+                default, Axon uses the <code>XStreamSerializer</code>, which uses XStream (see <link
+                    xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
+                    >xstream.codehaus.org</link>) to serialize Events into XML and vice versa.
                 XStream is reasonably fast and is more flexible than Java Serialization.
                 Furthermore, the result of XStream serialization is human readable. Quite useful for
-                logging and debugging purposes.
-            </para>
-            <para>The XStreamSerializer can be configured. You can define aliases it should use
-                for certain packages, classes or even fields. Besides being a nice way to shorten
+                logging and debugging purposes. </para>
+            <para>The XStreamSerializer can be configured. You can define aliases it should use for
+                certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
-                change. For more information about aliases, visit the XStream website:<link
-                        xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/">
-                    xstream.codehaus.org</link>.
-            </para>
+                change. For more information about aliases, visit the XStream website: <link
+                    xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
+                    >xstream.codehaus.org</link>. </para>
             <para>You may also implement your own Serializer, simply by creating a class that
-                implements<code>Serializer</code>, and configuring the Event Store to use that
-                implementation instead of the default.
-            </para>
+                implements <code>Serializer</code>, and configuring the Event Store to use that
+                implementation instead of the default. </para>
         </simplesect>
     </sect1>
     <sect1>
@@ -532,20 +481,15 @@
             of an Event is provided to the RevisionResolver.
         </para>
         <para><!--TODO: Describe implementations of Revision Resolvers.--></para>
-        <para>The
-            <code>EventUpcaster</code>
-            is responsible for transforming old events into the
-            last revision. Upcasters typically work on an intermediate representation of the
-            Event. Axon will automatically attempt the actual representation of the event to the
+        <para>The <code>EventUpcaster</code> is responsible for transforming old events into the
+            last revision. Upcasters typically work on an intermediate representation of the Event.
+            Axon will automatically attempt the actual representation of the event to the
             representation expected by the Upcaster. In the case of the
-            <code>XStreamSerializater</code>, you could use dom4j (see<link
-                    xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://dom4j.sourceforge.net/">http://dom4j.sourceforge.net/</link>),
-            an easy to use java XML library that integrates nicely with XStream. The
-            <code>EventUpcaster</code>
-            can modify the XML structure of the event so that it
-            matches the new definition.
-        </para>
+                <code>XStreamSerializater</code>, you could use dom4j (see <link
+                xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://dom4j.sourceforge.net/"
+                >http://dom4j.sourceforge.net/</link>), an easy to use java XML library that
+            integrates nicely with XStream. The <code>EventUpcaster</code> can modify the XML
+            structure of the event so that it matches the new definition. </para>
         <para><!--TODO: Describe ContentTypeConverters--></para>
     </sect1>
     <sect1 xml:id="using-snapshot-events">
@@ -587,50 +531,32 @@
                 number of properties that allow you to tweak triggering:
                 <itemizedlist>
                     <listitem>
-                        <para>
-                            <code>Snapshotter</code>
-                            sets the actual snapshotter instance,
-                            responsible for creating and storing the actual snapshot event;
-                        </para>
+                        <para><code>Snapshotter</code> sets the actual snapshotter instance,
+                            responsible for creating and storing the actual snapshot event; </para>
                     </listitem>
                     <listitem>
-                        <para>
-                            <code>Trigger</code>
-                            sets the threshold at which to trigger snapshot
-                            creation;
-                        </para>
+                        <para><code>Trigger</code> sets the threshold at which to trigger snapshot
+                            creation; </para>
                     </listitem>
                     <listitem>
-                        <para>
-                            <code>ClearCountersAfterAppend</code>
-                            indicates whether you want to
+                        <para><code>ClearCountersAfterAppend</code> indicates whether you want to
                             clear counters when an aggregate is stored. The optimal setting of this
                             parameter depends mainly on your caching strategy. If you do not use
                             caching, there is no problem in removing event counts from memory. When
                             an aggregate is loaded, the events are loaded in, and counted again. If
                             you use a cache, however, you may lose track of counters. Defaults to
-                            <code>true</code>
-                            unless the
-                            <code>AggregateCache</code>
-                            or
-                            <code>AggregateCaches</code>
-                            is set, in which case it defaults to
-                            <code>false</code>.
-                        </para>
+                                <code>true</code> unless the <code>AggregateCache</code> or
+                                <code>AggregateCaches</code> is set, in which case it defaults to
+                                <code>false</code>. </para>
                     </listitem>
                     <listitem>
-                        <para>
-                            <code>AggregateCache</code>
-                            and
-                            <code>AggregateCaches</code>
-                            allows
+                        <para><code>AggregateCache</code> and <code>AggregateCaches</code> allows
                             you to register the cache or caches that you use to store aggregates in.
                             The snapshotter trigger will register itself as a listener on the cache.
                             If any aggregates are evicted, the snapshotter trigger will remove the
                             counters. This optimizes memory usage in the case your application has
                             many aggregates. Do note that the keys of the cache are expected to be
-                            the Aggregate Identifier.
-                        </para>
+                            the Aggregate Identifier. </para>
                     </listitem>
                 </itemizedlist>
             </para>
@@ -652,43 +578,26 @@
                 streamed to the extracted aggregate instance.
             </para>
             <note>
-                <para>Do make sure that the
-                    <code>Serializer</code>
-                    instance you use (which defaults
-                    to the<code>XStreamSerializer</code>) is capable of serializing your
-                    aggregate. The
-                    <code>XStreamSerializer</code>
-                    requires you to use either a
-                    Sun JVM, or your aggregate must either have an accessible default constructor or
-                    implement the
-                    <code>Serializable</code>
-                    interface.
-                </para>
+                <para>Do make sure that the <code>Serializer</code> instance you use (which defaults
+                    to the <code>XStreamSerializer</code>) is capable of serializing your aggregate.
+                    The <code>XStreamSerializer</code> requires you to use either a Sun JVM, or your
+                    aggregate must either have an accessible default constructor or implement the
+                        <code>Serializable</code> interface. </para>
             </note>
             <para>The AbstractSnapshotter provides a basic set of properties that allow you to tweak
                 the way snapshots are created:
                 <itemizedlist>
                     <listitem>
-                        <para>
-                            <code>EventStore</code>
-                            sets the event store that is used to load past
+                        <para><code>EventStore</code> sets the event store that is used to load past
                             events and store the snapshots. This event store must implement the
-                            <code>SnapshotEventStore</code>
-                            interface.
-                        </para>
+                                <code>SnapshotEventStore</code> interface. </para>
                     </listitem>
                     <listitem>
-                        <para>
-                            <code>Executor</code>
-                            sets the executor, such as a
-                            <code>ThreadPoolExecutor</code>
-                            that will provide the thread to
+                        <para><code>Executor</code> sets the executor, such as a
+                                <code>ThreadPoolExecutor</code> that will provide the thread to
                             process actual snapshot creation. By default, snapshots are created in
-                            the thread that calls the
-                            <code>scheduleSnapshot()</code>
-                            method, which
-                            is generally not recommended for production.
-                        </para>
+                            the thread that calls the <code>scheduleSnapshot()</code> method, which
+                            is generally not recommended for production. </para>
                     </listitem>
                 </itemizedlist>
             </para>
@@ -697,17 +606,13 @@
                 provides on more property:
                 <itemizedlist>
                     <listitem>
-                        <para>
-                            <code>AggregateFactories</code>
-                            is the property that allows you to set
+                        <para><code>AggregateFactories</code> is the property that allows you to set
                             the factories that will create instances of your aggregates. All Axon
-                            provided repositories implement the
-                            <code>AggregateFactory</code>
+                            provided repositories implement the <code>AggregateFactory</code>
                             interface, and are capable of processing
                             <code>AggregateSnapshot</code>s. Configuring multiple aggregate
                             factories allows you to use a single Snapshotter to create snapshots for
-                            a variety of aggregate types.
-                        </para>
+                            a variety of aggregate types. </para>
                     </listitem>
                 </itemizedlist>
             </para>
@@ -731,27 +636,17 @@
         </sect2>
         <sect2>
             <title>Storing Snapshot Events</title>
-            <para>Both the
-                <code>JpaEventStore</code>
-                and the
-                <code>FileSystemEventStore</code>
-                are
+            <para>Both the <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> are
                 capable of storing snapshot events. They provide a special method that allows a
-                <code>DomainEvent</code>
-                to be stored as a snapshot event. You have to
+                    <code>DomainEventMessage</code> to be stored as a snapshot event. You have to
                 initialize the snapshot event completely, including the aggregate identifier and the
                 sequence number. There is a special constructor on the
-                <code>DomainEvent</code>
-                for
-                this purpose. The sequence number must be equal to the sequence number of the last
-                event that was included in the state that the snapshot represents. In most cases,
-                you can use the
-                <code>getLastCommittedEventSequenceNumber()</code>
-                on the
-                <code>VersionedAggregate</code>
-                (which each event sourced aggregate implements)
-                to obtain the sequence number to use in the snapshot event.
-            </para>
+                    <code>GenericDomainEventMessage</code> for this purpose. The sequence number
+                must be equal to the sequence number of the last event that was included in the
+                state that the snapshot represents. In most cases, you can use the
+                    <code>getVersion()</code> on the <code>AggregateRoot</code> (which each event
+                sourced aggregate implements) to obtain the sequence number to use in the snapshot
+                event. </para>
             <para>When a snapshot is stored in the Event Store, it will automatically use that
                 snapshot to summarize all prior events and return it in their place. Both event
                 store implementations allow for concurrent creation of snapshots. This means they
@@ -791,21 +686,20 @@
             <para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
-                    // ... code omitted for brevity
+    // ... code omitted for brevity
 
-                    @EventHandler
-                    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
-                    // ...
-                    }
+    @EventHandler
+    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
+        // ...
+    }
 
-                    @EventHandler
-                    protected void applySnapshot(MySnapshotEvent event) {
-                    // the snapshot event should contain all relevant state
-                    this.someState = event.someState;
-                    this.otherState = event.otherState;
-                    }
-                    }
-                </programlisting>
+    @EventHandler
+    protected void applySnapshot(MySnapshotEvent event) {
+        // the snapshot event should contain all relevant state
+        this.someState = event.someState;
+        this.otherState = event.otherState;
+    }
+}                </programlisting>
             </para>
             <para>There is one type of snapshot event that is treated differently: the
                 <code>AggregateSnapshot</code>. This type of snapshot event contains the actual

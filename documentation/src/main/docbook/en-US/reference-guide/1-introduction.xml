@@ -20,15 +20,12 @@
         applications by addressing these concerns directly in the architecture. This reference guide
         explains what Axon is, how it can help you and how you can use it.
     </para>
-    <para>If you want to know more about Axon and its background, continue reading in<xref
+    <para>If you want to know more about Axon and its background, continue reading in <xref
             linkend="about-axon"/>. If you're eager to get started building your own application
-        using Axon, go quickly to<xref linkend="getting-started"/>. If you're interested in helping
-        out building the Axon Framework,
-        <xref linkend="contributing"/>
-        will contain the information
-        you require. All help is welcome. Finally, this chapter covers some legal concerns in<xref
-                linkend="license"/>.
-    </para>
+        using Axon, go quickly to <xref linkend="getting-started"/>. If you're interested in helping
+        out building the Axon Framework, <xref linkend="contributing"/> will contain the information
+        you require. All help is welcome. Finally, this chapter covers some legal concerns in <xref
+            linkend="license"/>. </para>
     <sect1 xml:id="about-axon">
         <title>Axon Framework Background</title>
         <sect2>
@@ -181,11 +178,10 @@
         </para>
         <sect2>
             <title>Download Axon</title>
-            <para>You can download the Axon Framework from our downloads page:<link
+            <para>You can download the Axon Framework from our downloads page: <link
                     xmlns:ns1="http://www.w3.org/1999/xlink"
                     ns1:href="http://www.axonframework.org/download"
-                    >axonframework.org/download</link>.
-            </para>
+                    >axonframework.org/download</link>. </para>
             <para>This page offers a number of downloads. Typically, you would want to use the
                 latest stable release. However, if you're eager to get started using the latest and
                 greatest features, you could consider using the snapshot releases instead. The
@@ -195,10 +191,9 @@
                 dependencies, the sources and the documentation, all in a single download.
             </para>
             <para>If you really want to stay on the bleeding edge of development, you can clone the
-                Git repository:<uri>git://github.com/AxonFramework/AxonFramework.git</uri>, or visit
-                <uri>https://github.com/AxonFramework/AxonFramework</uri>
-                to browse the sources online.
-            </para>
+                Git repository: <uri>git://github.com/AxonFramework/AxonFramework.git</uri>, or
+                visit <uri>https://github.com/AxonFramework/AxonFramework</uri> to browse the
+                sources online. </para>
         </sect2>
         <sect2>
             <title>Configure Maven</title>
@@ -220,9 +215,7 @@
         <sect2>
             <title>Infrastructure requirements</title>
             <para>Axon Framework doesn't impose many requirements on the infrastructure. It has been
-                built and tested against Java 6, making that more or less the only
-                requirement.
-            </para>
+                built and tested against Java 6, making that more or less the only requirement. </para>
             <para>Since Axon doesn't create any connections or threads by itself, it is safe to run
                 on an Application Server. Axon abstracts all asynchronous behavior by using
                 <code>Executor</code>s, meaning that you can easily pass a container managed
@@ -234,18 +227,21 @@
             </para>
         </sect2>
         <sect2>
-            <title>Start coding</title>
-            <para>TODO: Outline the steps needed to create an Axon based application. Refer to the
-                chapters in which these components are explained.
-            </para>
-        </sect2>
-        <sect2>
             <title>When you're stuck</title>
-            <para>TODO: Write a few lines about the mailinglist and support/trainings.</para>
-        </sect2>
-        <sect2>
-            <title>When you're stuck</title>
-            <para>TODO: Write a few lines about the mailinglist and support/trainings.</para>
+            <para>While implementing your application, you might run into problems, wonder about why
+                certain things are the way they are, or have some questions that need an answer. The
+                Axon Users mailinglist is there to help. Just send an email to <link
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="mailto:axonframework@googlegroups.com"
+                    >axonframework@googlegroups.com</link>. Other uses as well as contributors to
+                the Axon Framework are there to help with your issues.</para>
+            <para>If you find a bug, you can report them at <link
+                    xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://www.axonframework.org/issues">axonframework.org/issues</link>.
+                When reporting an issue, please make sure you clearly describe the problem. Explain
+                what you did, what the result was and what you expected to happen instead. If
+                possible, please provide a very simple Unit Test (JUnit) that shows the problem.
+                That makes fixing it a lot simpler.</para>
         </sect2>
     </sect1>
     <sect1 xml:id="contributing">

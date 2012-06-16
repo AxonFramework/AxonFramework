@@ -120,7 +120,7 @@
                 architecture. </para>
         </simplesect>
     </sect1>
-    <sect1>
+<!--    <sect1>
         <title>Working with Axon API's</title>
         <annotation>
             <para>TODO: Explain how Axon's API's work. Built for extension, customization. Explain
@@ -128,4 +128,4 @@
         </annotation>
         <para/>
     </sect1>
-</chapter>
+--></chapter>

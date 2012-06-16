@@ -383,25 +383,21 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                         <code>setRetryPolicy(RetryPolicy)</code> to tell the scheduler what to do in
                     such case. There are three policies, each for a specific scenario: <itemizedlist>
                         <listitem>
-                            <para>
-                                <code>RETRY_TRANSACTION</code> tells the event handler scheduler
+                            <para><code>RETRY_TRANSACTION</code> tells the event handler scheduler
                                 that the entire transaction should be retried. It will reschedule
                                 all the events in the current transaction for processing. This
                                 policy is suitable when the event listener processes events to a
-                                transactional data source that rolls back an entire transaction.
-                            </para>
+                                transactional data source that rolls back an entire transaction. </para>
                         </listitem>
                         <listitem>
-                            <para>
-                                <code>RETRY_LAST_EVENT</code> is the policy that tells the scheduler
-                                to only retry the last event in the transaction. This is suitable if
-                                the underlying data source does not support transactions or if the
-                                transaction was committed without the last event. </para>
+                            <para><code>RETRY_LAST_EVENT</code> is the policy that tells the
+                                scheduler to only retry the last event in the transaction. This is
+                                suitable if the underlying data source does not support transactions
+                                or if the transaction was committed without the last event. </para>
                         </listitem>
                         <listitem>
-                            <para>
-                                <code>SKIP_FAILED_EVENT</code> will tell the scheduler to ignore the
-                                exception and continue processing with the next event. The event
+                            <para><code>SKIP_FAILED_EVENT</code> will tell the scheduler to ignore
+                                the exception and continue processing with the next event. The event
                                 listener can still try to commit the underlying transaction to
                                 persist any changed made while processing other events in this
                                 transaction. This is the default policy. </para>
