@@ -8,3 +8,6 @@ target/
 .project
 .settings/
 events/
+build/
+.gradle/
+

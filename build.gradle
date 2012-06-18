@@ -13,13 +13,70 @@ subprojects {
     repositories {
         mavenCentral()
     }
+
+    dependencies {
+        compile 'org.slf4j:slf4j-api:1.6.1'
+
+        testCompile "org.springframework:spring-test:3.1.1.RELEASE"
+        testCompile "junit:junit-dep:4.10"
+        testCompile "org.mockito:mockito-core:1.8.5"
+        testCompile ("log4j:log4j:1.2.16") {
+            exclude module: 'jmxtools'
+            exclude module: 'jmxri'
+            exclude module: 'mail'
+            exclude module: 'jms'
+        }
+        testCompile "org.slf4j:slf4j-log4j12:1.6.1"
+
+        testRuntime "org.slf4j:jul-to-slf4j:1.6.1"
+        testRuntime "org.slf4j:jcl-over-slf4j:1.6.1"
+    }
+
+    configurations {
+        all*.exclude module: 'commons-logging'
+    }
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = "1.0-rc-3"
+    gradleVersion = "1.0"
 }
 
 File script(String name) {
     project.file("gradle/${name}.gradle")
 }
 
+
+project(':core') {
+    dependencies {
+        compile 'com.googlecode.disruptor:disruptor:2.10'
+        compile 'org.springframework:spring-context-support:3.1.1.RELEASE'
+        compile 'org.springframework:spring-orm:3.1.1.RELEASE'
+        compile 'joda-time:joda-time:1.6.2'
+        compile 'net.sf.jsr107cache:jsr107cache:1.1'
+        compile 'org.quartz-scheduler:quartz:2.1.4'
+        compile 'javax.persistence:persistence-api:1.0'
+        compile 'javax.validation:validation-api:1.0.0.GA'
+        compile 'com.thoughtworks.xstream:xstream:1.4.2'
+        compile 'commons-io:commons-io:1.4'
+        compile('dom4j:dom4j:1.6.1') {
+            exclude module: 'xml-apis'
+        }
+
+        testCompile 'org.springframework.security:spring-security-config:3.1.0.RELEASE'
+        testCompile 'cglib:cglib-nodep:2.2'
+        testCompile 'net.sf.ehcache:ehcache-jcache:1.2'
+        testCompile 'commons-collections:commons-collections:3.2.1'
+
+        testRuntime 'commons-codec:commons-codec:1.5'
+        testRuntime 'org.hibernate:hibernate-entitymanager:3.4.0.GA'
+        testRuntime('org.hibernate:hibernate-validator:4.0.2.GA') {
+            exclude module: 'jaxb-api'
+            exclude module: 'jaxb-impl'
+        }
+        testRuntime 'net.sf.ehcache:ehcache-core:2.4.7'
+        testRuntime 'org.hsqldb:hsqldb:2.2.8'
+        testRuntime 'mysql:mysql-connector-java:5.1.13'
+        testRuntime 'c3p0:c3p0:0.9.1.2'
+
+    }
+}
