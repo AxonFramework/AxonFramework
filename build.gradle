@@ -53,8 +53,11 @@ project(':core') {
         compile 'org.springframework:spring-orm:3.1.1.RELEASE'
         compile 'joda-time:joda-time:1.6.2'
         compile 'net.sf.jsr107cache:jsr107cache:1.1'
-        compile 'org.quartz-scheduler:quartz:2.1.4'
-        compile 'javax.persistence:persistence-api:1.0'
+        compile('org.quartz-scheduler:quartz:2.1.4') {
+            exclude module: 'c3p0'
+        }
+
+        compile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
         compile 'javax.validation:validation-api:1.0.0.GA'
         compile 'com.thoughtworks.xstream:xstream:1.4.2'
         compile 'commons-io:commons-io:1.4'
@@ -68,15 +71,58 @@ project(':core') {
         testCompile 'commons-collections:commons-collections:3.2.1'
 
         testRuntime 'commons-codec:commons-codec:1.5'
-        testRuntime 'org.hibernate:hibernate-entitymanager:3.4.0.GA'
-        testRuntime('org.hibernate:hibernate-validator:4.0.2.GA') {
+        testRuntime 'org.hibernate:hibernate-entitymanager:4.1.4.Final'
+        testRuntime('org.hibernate:hibernate-validator:4.3.0.Final') {
             exclude module: 'jaxb-api'
             exclude module: 'jaxb-impl'
         }
         testRuntime 'net.sf.ehcache:ehcache-core:2.4.7'
         testRuntime 'org.hsqldb:hsqldb:2.2.8'
-        testRuntime 'mysql:mysql-connector-java:5.1.13'
+        testRuntime 'mysql:mysql-connector-java:5.1.18'
         testRuntime 'c3p0:c3p0:0.9.1.2'
-
     }
 }
+
+project('integration') {
+    dependencies {
+        compile project(':core')
+        compile 'org.springframework.integration:spring-integration-core:2.0.5.RELEASE'
+    }
+}
+
+project('test') {
+    dependencies {
+        compile project(':core')
+        compile 'org.hamcrest:hamcrest-core:1.2.1'
+    }
+}
+
+project('distributed-commandbus') {
+    dependencies {
+        compile project(':core')
+        compile 'org.jgroups:jgroups:3.0.9.Final'
+
+        testCompile 'org.powermock:powermock-api-mockito:1.4.11'
+        testCompile 'org.powermock:powermock-module-junit4:1.4.11'
+    }
+}
+
+project('disruptor-commandbus') {
+    dependencies {
+        compile project(':core')
+        compile 'com.googlecode.disruptor:disruptor:2.10'
+
+        testCompile 'com.eaio.uuid:uuid:3.2'
+    }
+}
+
+project('integrationtests') {
+    dependencies {
+        compile project(':core')
+
+        testRuntime 'org.hibernate:hibernate-entitymanager:4.1.4.Final'
+        testRuntime 'c3p0:c3p0:0.9.1.2'
+    }
+}
+
+
