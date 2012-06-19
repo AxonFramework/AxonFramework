@@ -16,13 +16,15 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
+import org.axonframework.common.AxonException;
+
 /**
  * Exception indicating that a CommandBusConnector failed to connect to other instances.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public class ConnectionFailedException extends RuntimeException {
+public class ConnectionFailedException extends AxonException {
 
     private static final long serialVersionUID = -5193897502103028801L;
 
