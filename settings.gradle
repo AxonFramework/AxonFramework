@@ -4,7 +4,7 @@ include 'disruptor-commandbus'
 include 'distributed-commandbus'
 include 'integration'
 include 'integrationtests'
-include 'axon-mongo'
+include 'mongo'
 include 'spring-insight-plugin'
 include 'test'
 

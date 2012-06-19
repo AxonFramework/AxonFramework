@@ -11,6 +11,7 @@ subprojects {
     sourceCompatibility = 1.5
 
     repositories {
+        mavenLocal()
         mavenCentral()
     }
 
@@ -83,21 +84,21 @@ project(':core') {
     }
 }
 
-project('integration') {
+project(':integration') {
     dependencies {
         compile project(':core')
         compile 'org.springframework.integration:spring-integration-core:2.0.5.RELEASE'
     }
 }
 
-project('test') {
+project(':test') {
     dependencies {
         compile project(':core')
         compile 'org.hamcrest:hamcrest-core:1.2.1'
     }
 }
 
-project('distributed-commandbus') {
+project(':distributed-commandbus') {
     dependencies {
         compile project(':core')
         compile 'org.jgroups:jgroups:3.0.9.Final'
@@ -107,7 +108,7 @@ project('distributed-commandbus') {
     }
 }
 
-project('disruptor-commandbus') {
+project(':disruptor-commandbus') {
     dependencies {
         compile project(':core')
         compile 'com.googlecode.disruptor:disruptor:2.10'
@@ -116,12 +117,67 @@ project('disruptor-commandbus') {
     }
 }
 
-project('integrationtests') {
+project(':integrationtests') {
+    task testJar(type: Jar) {
+        classifier = 'tests'
+        from sourceSets.test.output
+    }
+
+    configurations {
+        tests
+    }
+
+    artifacts {
+        tests testJar
+    }
+
     dependencies {
         compile project(':core')
 
         testRuntime 'org.hibernate:hibernate-entitymanager:4.1.4.Final'
         testRuntime 'c3p0:c3p0:0.9.1.2'
+    }
+}
+
+project(':mongo') {
+    dependencies {
+        compile project(':core')
+        compile 'org.mongodb:mongo-java-driver:2.7.2'
+
+        testCompile project(path: ':integrationtests', configuration: 'tests')
+    }
+}
+
+project(':amqp') {
+    dependencies {
+        compile project(':core')
+        compile 'com.rabbitmq:amqp-client:2.8.1'
+        compile 'org.springframework.amqp:spring-rabbit:1.1.0.RELEASE'
+
+        testCompile 'org.powermock:powermock-api-mockito:1.4.11'
+        testCompile 'org.powermock:powermock-module-junit4:1.4.11'
+    }
+}
+
+project (':spring-insight-plugin') {
+    apply from: script('aspectj')
+
+    configurations {
+        testAgent
+    }
+
+    dependencies {
+        compile project(':core')
+        compile 'com.springsource.insight:insight-idk:1.5.0.RELEASE'
+
+        ajc 'org.aspectj:aspectjtools:1.6.11'
+
+        testAgent 'org.aspectj:aspectjweaver:1.6.11'
+    }
+
+    // defer resolution until execution time
+    test.doFirst {
+        jvmArgs "-javaagent:${configurations.testAgent.singleFile}"
     }
 }
 

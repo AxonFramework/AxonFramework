@@ -1,0 +1,24 @@
+apply plugin: 'java'
+
+configurations {
+    ajc
+    aspects
+    ajInpath
+}
+
+task compileJava(dependsOn: JavaPlugin.PROCESS_RESOURCES_TASK_NAME, overwrite: true)  {
+    dependsOn configurations.ajc.getTaskDependencyFromProjectDependency(true, "compileJava")
+
+    doLast{
+        ant.taskdef( resource:"org/aspectj/tools/ant/taskdefs/aspectjTaskdefs.properties", classpath: configurations.ajc.asPath)
+        ant.iajc(source:sourceCompatibility, target:targetCompatibility, destDir:sourceSets.main.output, maxmem:"512m", fork:"true",
+                aspectPath:configurations.aspects.asPath, inpath:configurations.ajInpath.asPath, sourceRootCopyFilter:"**/.svn/*,**/*.java",classpath:configurations.compile.asPath){
+
+            sourceroots{
+                sourceSets.main.java.srcDirs.each{
+                    pathelement(location:it.absolutePath)
+                }
+            }
+        }
+    }
+}
