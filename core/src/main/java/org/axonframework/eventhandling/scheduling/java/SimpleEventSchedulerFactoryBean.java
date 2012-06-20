@@ -35,7 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * <p/>
  * Note that this mechanism is non-persistent. Scheduled tasks will be lost when the JVM is shut down, unless special
  * measures have been taken to prevent that. For more flexible and powerful scheduling options, see {@link
- * org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler}.
+ * org.axonframework.eventhandling.scheduling.quartz.Quartz2EventScheduler}.
  *
  * @author Allard Buijze
  * @since 1.1

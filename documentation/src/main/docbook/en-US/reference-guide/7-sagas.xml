@@ -235,15 +235,21 @@
                     helper methods).</para>
             </simplesect>
             <simplesect>
-                <title><code>QuartzEventScheduler</code></title>
-                <para>The <code>QuartzEventScheduler</code> is a more reliable and enterprise-worthy
-                    implementation. Using Quartz as underlying scheduling mechanism, it provides
-                    more powerful features, such as persistence, clustering and misfire management.
-                    This means Event publication is guaranteed. It might be a little late, but it
-                    will be published.</para>
+                <title><code>Quartz2EventScheduler</code></title>
+                <para>The <code>Quartz2EventScheduler</code> is a more reliable and
+                    enterprise-worthy implementation. Using Quartz 2 as underlying scheduling
+                    mechanism, it provides more powerful features, such as persistence, clustering
+                    and misfire management. This means Event publication is guaranteed. It might be
+                    a little late, but it will be published.</para>
                 <para>It needs to be configured with a Quartz <code>Scheduler</code> and an
                         <code>EventBus</code>. Optionally, you may set the name of the group that
-                    Quartz jobs are scheduled in, which defaults to "AxonFramework-Events".</para>
+                    Quartz jobs are scheduled in, which defaults to "AxonFramework-Events".<note>
+                        <title>Quartz 1 support in Axon 1.4+</title>
+                        <para>Users of Quartz 1.x (which was the default support up to Axon 1.3) can
+                            use the <code>QuartzEventScheduler</code> instead. This class is
+                            contained in the module <emphasis>axon-quartz1</emphasis> since Axon
+                            version 1.4.</para>
+                    </note></para>
             </simplesect>
             <simplesect>
                 <title>Scheduled Events and Transactions</title>
@@ -256,7 +262,12 @@
                 <note>
                     <para>Spring users can use the <code>QuartzEventSchedulerFactoryBean</code> or
                             <code>SimpleEventSchedulerFactoryBean</code> for easier configuration.
-                        It allows you to set the PlatformTransactionManager directly.</para>
+                        It allows you to set the PlatformTransactionManager directly. The
+                            <code>QuartzEventSchedulerFactoryBean</code> will automatically detect
+                        the Quartz version in use, and will either register a
+                            <code>Quartz2EventScheduler</code>, or its Quartz 1 counterpart. In case
+                        you use Quartz 1, make sure the <emphasis>axon-quartz1</emphasis> module is
+                        on the classpath.</para>
                 </note>
             </simplesect>
         </sect2>

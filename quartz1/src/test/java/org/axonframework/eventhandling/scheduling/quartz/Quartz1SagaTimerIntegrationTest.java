@@ -18,8 +18,6 @@ package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.scheduling.SimpleTimingSaga;
-import org.axonframework.eventhandling.scheduling.StartingEvent;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaRepository;
 import org.junit.*;
@@ -43,7 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.util.TestUtils.setOf;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -51,8 +49,8 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "/META-INF/spring/saga-quartz-integration-test.xml")
-public class QuartzSagaTimerIntegrationTest {
+@ContextConfiguration(locations = "/META-INF/spring/saga-quartz1-integration-test.xml")
+public class Quartz1SagaTimerIntegrationTest {
 
     @Autowired
     private EventBus eventBus;
@@ -70,7 +68,7 @@ public class QuartzSagaTimerIntegrationTest {
     public void testJobExecutesInTime() throws InterruptedException, SchedulerException {
         final AtomicReference<JobExecutionException> jobExecutionResult = new AtomicReference<JobExecutionException>();
         final CountDownLatch jobExecutionLatch = new CountDownLatch(1);
-        scheduler.getListenerManager().addJobListener(new JobListener() {
+        scheduler.addGlobalJobListener(new JobListener() {
             @Override
             public String getName() {
                 return "job execution result validator";
@@ -102,8 +100,7 @@ public class QuartzSagaTimerIntegrationTest {
                         eventBus.publish(new StartingEvent(this, randomAssociationValue));
                         Set<SimpleTimingSaga> actualResult =
                                 repository.find(SimpleTimingSaga.class,
-                                                setOf(new AssociationValue("association",
-                                                                           randomAssociationValue)));
+                                                singleton(new AssociationValue("association", randomAssociationValue)));
                         assertEquals(1, actualResult.size());
                         return actualResult.iterator().next();
                     }

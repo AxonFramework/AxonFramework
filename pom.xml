@@ -27,6 +27,7 @@
         <module>integrationtests</module>
         <module>incubator/mongo</module>
         <module>incubator/google-app-engine</module>
+        <module>quartz1</module>
     </modules>
     <packaging>pom</packaging>
 

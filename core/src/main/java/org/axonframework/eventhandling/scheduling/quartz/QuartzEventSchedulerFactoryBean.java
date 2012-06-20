@@ -18,7 +18,9 @@ package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.SpringTransactionalTriggerCallback;
+import org.axonframework.util.AxonConfigurationException;
 import org.quartz.Scheduler;
+import org.quartz.core.QuartzScheduler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -28,34 +30,42 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 
 /**
- * Spring FactoryBean that creates a QuartzEventScheduler instance using resources found in the Spring Application
- * Context. The
- * QuartzEventScheduler delegates the actual scheduling and triggering to a Quartz Scheduler, making it more suitable
- * for long-term triggers and triggers that must survive a system restart.
+ * Spring FactoryBean that creates a Quartz EventScheduler instance using resources found in the Spring Application
+ * Context. The Quartz EventScheduler delegates the actual scheduling and triggering to a Quartz Scheduler, making it
+ * more suitable for long-term triggers and triggers that must survive a system restart.
+ * <p/>
+ * This implementation will automatically detect the Quartz version used. For Quartz 1 support, make sure the
+ * <em>axon-quartz1</em> module is on the classpath.
+ * <p/>
+ * Note that Quartz 1 support is deprecated and will be removed in Axon 2.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventScheduler>, InitializingBean,
+public class QuartzEventSchedulerFactoryBean implements FactoryBean<AbstractQuartzEventScheduler>, InitializingBean,
         ApplicationContextAware {
 
     private ApplicationContext applicationContext;
-    private QuartzEventScheduler eventScheduler;
+    private AbstractQuartzEventScheduler eventScheduler;
     private Scheduler scheduler;
     private EventBus eventBus;
     private String groupIdentifier;
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition;
 
-
     @Override
-    public QuartzEventScheduler getObject() throws Exception {
+    public AbstractQuartzEventScheduler getObject() throws Exception {
         return eventScheduler;
     }
 
     @Override
     public Class<?> getObjectType() {
-        return QuartzEventScheduler.class;
+        try {
+            return Quartz2EventScheduler.class.getClassLoader().loadClass(
+                    "org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler");
+        } catch (ClassNotFoundException e) {
+            return AbstractQuartzEventScheduler.class;
+        }
     }
 
     @Override
@@ -71,8 +81,19 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
         if (scheduler == null) {
             scheduler = applicationContext.getBean(Scheduler.class);
         }
-
-        eventScheduler = new QuartzEventScheduler();
+        if ("1".equals(QuartzScheduler.getVersionMajor())) {
+            try {
+                Class<?> schedulerClass = Quartz2EventScheduler.class.getClassLoader().loadClass(
+                        "org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler");
+                eventScheduler = (AbstractQuartzEventScheduler) schedulerClass.newInstance();
+            } catch (ClassNotFoundException e) {
+                throw new AxonConfigurationException(
+                        "No Axon support for Quartz 1. "
+                                + "Make sure the axon-quartz1 module is available on the classpath", e);
+            }
+        } else {
+            eventScheduler = new Quartz2EventScheduler();
+        }
         eventScheduler.setScheduler(scheduler);
         eventScheduler.setEventBus(eventBus);
         if (groupIdentifier != null) {
@@ -99,6 +120,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
      *
      * @param scheduler the backing Quartz Scheduler for this timer
      */
+
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
