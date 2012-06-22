@@ -45,19 +45,19 @@ import static org.mockito.Mockito.*;
  */
 public class FileSystemEventStoreTest {
 
-    private FileSystemEventStore eventStore;
     private Object aggregateIdentifier;
+    private File eventFileBaseDir;
 
     @Before
     public void setUp() {
-        eventStore = new FileSystemEventStore(new XStreamSerializer());
-        eventStore.setBaseDir(new File("target/"));
-
         aggregateIdentifier = UUID.randomUUID();
+        eventFileBaseDir = new File("target/");
     }
 
     @Test
     public void testSaveStreamAndReadBackIn() {
+        FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
+
         GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
                 aggregateIdentifier,
                 0,
@@ -86,6 +86,8 @@ public class FileSystemEventStoreTest {
     @Test
     // Issue #25: XStreamFileSystemEventStore fails when event data contains newline character
     public void testSaveStreamAndReadBackIn_NewLineInEvent() {
+        FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
+
         String description = "This is a description with a \n newline character and weird chars éçè\u6324.";
         StringBuilder stringBuilder = new StringBuilder(description);
         for (int i = 0; i < 100; i++) {
@@ -127,7 +129,7 @@ public class FileSystemEventStoreTest {
         when(mockInputStream.read()).thenThrow(exception);
         when(mockInputStream.read(Matchers.<byte[]>any())).thenThrow(exception);
         when(mockInputStream.read(Matchers.<byte[]>any(), anyInt(), anyInt())).thenThrow(exception);
-        eventStore.setEventFileResolver(mockEventFileResolver);
+        FileSystemEventStore eventStore = new FileSystemEventStore(mockEventFileResolver);
 
         try {
             eventStore.readEvents("test", UUID.randomUUID());
@@ -144,7 +146,7 @@ public class FileSystemEventStoreTest {
         EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
         when(mockEventFileResolver.openEventFileForWriting(isA(String.class), isA(Object.class)))
                 .thenThrow(exception);
-        eventStore.setEventFileResolver(mockEventFileResolver);
+        FileSystemEventStore eventStore = new FileSystemEventStore(mockEventFileResolver);
 
         GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
                 aggregateIdentifier,
@@ -170,6 +172,8 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testAppendSnapShot() {
+        FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
+
         AtomicInteger counter = new AtomicInteger(0);
 
         GenericDomainEventMessage<StubDomainEvent> snapshot1 = new GenericDomainEventMessage<StubDomainEvent>(
@@ -203,6 +207,8 @@ public class FileSystemEventStoreTest {
     }
 
     private void writeEvents(AtomicInteger counter, int numberOfEvents) {
+        FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
+
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
         for (int t = 0; t < numberOfEvents; t++) {
             GenericDomainEventMessage<StubDomainEvent> event = new GenericDomainEventMessage<StubDomainEvent>(

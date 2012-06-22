@@ -16,6 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
+import org.axonframework.eventstore.fs.EventFileResolver;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.serializer.Serializer;
 import org.junit.*;
@@ -44,14 +45,16 @@ public class FileSystemEventStoreBeanDefinitionParserTest {
         assertEquals("Wrong bean class", FileSystemEventStore.class.getName(), definition.getBeanClassName());
         assertNull("Entity manager should not have been defined", definition.getPropertyValues().getPropertyValue(
                 "entityManager"));
+
         ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(0, Serializer.class);
         assertNotNull("Event serializer reference is wrong", reference);
         RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
         assertEquals("Event serializer reference is wrong", "eventSerializer", beanReference.getBeanName());
-        assertNotNull("Base directory property is missing", definition.getPropertyValues().getPropertyValue("baseDir"));
-        assertEquals("Base directory property has wrong value",
-                     "/tmp/",
-                     definition.getPropertyValues().getPropertyValue("baseDir").getValue());
+
+        assertNotNull("File event resolver is missing",
+                      definition.getConstructorArgumentValues().getArgumentValue(1, EventFileResolver.class));
+        assertNotNull("UpcasterChain is missing",
+                      definition.getPropertyValues().getPropertyValue("upcasterChain"));
 
         FileSystemEventStore fileEventStore = beanFactory.getBean("fileEventStore", FileSystemEventStore.class);
         assertNotNull(fileEventStore);

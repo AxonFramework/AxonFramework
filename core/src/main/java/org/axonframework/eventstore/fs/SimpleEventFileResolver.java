@@ -100,8 +100,10 @@ public class SimpleEventFileResolver implements EventFileResolver {
 
         File typeSpecificDir = new File(baseDir, type);
         if (!typeSpecificDir.exists() && !typeSpecificDir.mkdirs()) {
-            throw new EventStoreException(
-                    "The given event store directory doesn't exist and could not be created");
+            if (!typeSpecificDir.exists()) {
+                throw new EventStoreException(
+                        "The given event store directory doesn't exist and could not be created");
+            }
         }
         return typeSpecificDir;
     }
