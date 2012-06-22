@@ -29,6 +29,8 @@ import org.axonframework.eventhandling.amqp.QueueNameResolver;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
 import org.axonframework.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Exchange;
@@ -70,15 +72,15 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
 
     @Override
     public void publish(EventMessage... events) {
-        Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
+        final Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
             for (EventMessage event : events) {
-                doSendMessage(channel,
-                              routingKeyResolver.resolveRoutingKey(event),
-                              asByteArray(event),
-                              isDurable ? DURABLE : null);
+                doSendMessage(channel, routingKeyResolver.resolveRoutingKey(event),
+                              asByteArray(event), isDurable ? DURABLE : null);
             }
-            if (isTransactional) {
+            if (CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.get().registerListener(new ChannelTransactionUnitOfWorkListener(channel));
+            } else if (isTransactional) {
                 channel.txCommit();
             }
         } catch (IOException e) {
@@ -89,11 +91,17 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         } catch (ShutdownSignalException e) {
             throw new EventPublicationFailedException("Failed to dispatch Events to the Message Broker.", e);
         } finally {
-            try {
-                channel.close();
-            } catch (IOException e) {
-                logger.debug("Unable to close channel. It might already be closed.", e);
+            if (!CurrentUnitOfWork.isStarted()) {
+                tryClose(channel);
             }
+        }
+    }
+
+    private void tryClose(Channel channel) {
+        try {
+            channel.close();
+        } catch (IOException e) {
+            logger.info("Unable to close channel. It might already be closed.", e);
         }
     }
 
@@ -259,5 +267,41 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    private class ChannelTransactionUnitOfWorkListener extends UnitOfWorkListenerAdapter {
+
+        private boolean isOpen;
+        private final Channel channel;
+
+        public ChannelTransactionUnitOfWorkListener(Channel channel) {
+            this.channel = channel;
+            isOpen = true;
+        }
+
+        @Override
+        public void afterCommit() {
+            if (isOpen) {
+                try {
+                    if (isTransactional) {
+                        channel.txCommit();
+                    }
+                } catch (IOException e) {
+                    logger.warn("Unable to commit transaction on channel.", e);
+                }
+                tryClose(channel);
+            }
+        }
+
+        @Override
+        public void onRollback(Throwable failureCause) {
+            try {
+                channel.txRollback();
+            } catch (IOException e) {
+                logger.warn("Unable to rollback transaction on channel.", e);
+            }
+            tryClose(channel);
+            isOpen = false;
+        }
     }
 }
