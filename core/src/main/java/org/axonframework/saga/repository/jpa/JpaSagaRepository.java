@@ -92,23 +92,22 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected void removeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        List<AssociationValueEntry> potentialCandidates = entityManager.createQuery(
-                "SELECT ae FROM AssociationValueEntry ae "
+        int updateCount = entityManager.createQuery(
+                "DELETE FROM AssociationValueEntry ae "
                         + "WHERE ae.associationKey = :associationKey "
+                        + "AND ae.associationValue = :associationValue "
                         + "AND ae.sagaType = :sagaType "
-                        + "AND  ae.sagaId = :sagaId")
-                                                                       .setParameter("associationKey",
-                                                                                     associationValue.getKey())
-                                                                       .setParameter("sagaType", sagaType)
-                                                                       .setParameter("sagaId", sagaIdentifier)
-                                                                       .getResultList();
-        for (AssociationValueEntry entry : potentialCandidates) {
-            if (associationValue.getValue().equals(entry.getAssociationValue().getValue())) {
-                entityManager.remove(entry);
-            }
-        }
-        if (useExplicitFlush) {
-            entityManager.flush();
+                        + "AND ae.sagaId = :sagaId")
+                                       .setParameter("associationKey", associationValue.getKey())
+                                       .setParameter("associationValue", associationValue.getValue())
+                                       .setParameter("sagaType", sagaType)
+                                       .setParameter("sagaId", sagaIdentifier)
+                                       .executeUpdate();
+        if (updateCount == 0 && logger.isWarnEnabled()) {
+            logger.warn("Wanted to remove association value, but it was already gone: sagaId= {}, key={}, value={}",
+                        new Object[]{sagaIdentifier,
+                                associationValue.getKey(),
+                                associationValue.getValue()});
         }
     }
 
