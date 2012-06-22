@@ -51,6 +51,8 @@ public class FileSystemEventMessageReader {
      * @throws java.io.EOFException when the end of the stream was reached before the message was entirely read
      */
     public SerializedDomainEventData readEventMessage() throws IOException {
+        // type byte for future use
+        in.readByte();
         String identifier = in.readUTF();
         String timestamp = in.readUTF();
         String aggregateIdentifier = in.readUTF();

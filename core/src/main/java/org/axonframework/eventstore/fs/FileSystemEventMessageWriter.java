@@ -36,6 +36,8 @@ public class FileSystemEventMessageWriter {
      * @throws java.io.IOException when any exception occurs writing to the underlying stream
      */
     public void writeEventMessage(DomainEventMessage eventMessage) throws IOException {
+        // type byte for future use
+        out.write(0);
         out.writeUTF(eventMessage.getIdentifier());
         out.writeUTF(eventMessage.getTimestamp().toString());
         out.writeUTF(eventMessage.getAggregateIdentifier().toString());
