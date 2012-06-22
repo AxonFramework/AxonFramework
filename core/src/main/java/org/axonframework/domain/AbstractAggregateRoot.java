@@ -26,11 +26,12 @@ import javax.persistence.Version;
  * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
  * events and maintains a version number based on the number of events generated.
  *
+ * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @since 0.6
  */
 @MappedSuperclass
-public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
+public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
 

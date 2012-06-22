@@ -24,7 +24,7 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
-public class Message extends AbstractAnnotatedAggregateRoot {
+public class Message extends AbstractAnnotatedAggregateRoot<UUID> {
 
     @AggregateIdentifier
     private UUID identifier;

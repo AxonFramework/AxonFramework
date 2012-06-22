@@ -23,11 +23,12 @@ import org.axonframework.domain.DomainEventStream;
  * Aggregate that can be initialized using a {@link org.axonframework.domain.DomainEventStream}. Aggregates that are
  * initialized using Event Sourcing should implement this interface.
  *
+ * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @see org.axonframework.eventsourcing.EventSourcingRepository
  * @since 0.3
  */
-public interface EventSourcedAggregateRoot extends AggregateRoot {
+public interface EventSourcedAggregateRoot<I> extends AggregateRoot<I> {
 
     /**
      * Initialize the state of this aggregate using the events in the provided {@link

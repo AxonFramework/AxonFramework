@@ -33,14 +33,15 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
  * org.axonframework.eventhandling.annotation.EventHandler} annotation.
  * <p/>
- * Implementations can call the {@link #apply(Object)} method to have an event applied. *
+ * Implementations can call the {@link #apply(Object)} method to have an event applied.
  *
+ * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
 @MappedSuperclass
-public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
+public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSourcedAggregateRoot<I> {
 
     private static final long serialVersionUID = -1206026570158467937L;
     private transient AnnotationEventHandlerInvoker eventHandlerInvoker; // NOSONAR
@@ -69,13 +70,14 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
         eventHandlerInvoker.invokeEventHandlerMethod(event);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object getIdentifier() {
+    public I getIdentifier() {
         if (identifierField == null) {
             identifierField = locateIdentifierField(this);
         }
         try {
-            return identifierField.get(this);
+            return (I) identifierField.get(this);
         } catch (IllegalAccessException e) {
             throw new IncompatibleAggregateException(format("The field [%s.%s] is not accessible.",
                                                             getClass().getSimpleName(),

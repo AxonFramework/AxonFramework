@@ -81,7 +81,7 @@ public class CommandHandlingBenchmark {
         System.out.println(String.format("Just did %d commands per second", ((COMMAND_COUNT * 1000) / (t2 - t1))));
     }
 
-    private static class MyAggregate extends AbstractAnnotatedAggregateRoot {
+    private static class MyAggregate extends AbstractAnnotatedAggregateRoot<UUID> {
 
         private final UUID identifier;
 

@@ -32,12 +32,13 @@ import javax.persistence.MappedSuperclass;
  * uncommitted events. It also provides convenience methods to initialize the state of the aggregate root based on a
  * {@link org.axonframework.domain.DomainEventStream}, which can be used for event sourcing.
  *
+ * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @since 0.1
  */
 @MappedSuperclass
-public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregateRoot
-        implements EventSourcedAggregateRoot {
+public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggregateRoot<I>
+        implements EventSourcedAggregateRoot<I> {
 
     private static final long serialVersionUID = 5868786029296883724L;
 
