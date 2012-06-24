@@ -188,8 +188,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         @Override
         public void run() {
             if (synchronizeSagaAccess) {
-                //Saga instance is unique (no two instances will exist inside a JVM with the same identifier)
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 lock.obtainLock(saga.getSagaIdentifier());
                 try {
                     invokeSagaHandler(event, saga);
