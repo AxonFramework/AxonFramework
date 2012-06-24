@@ -18,6 +18,7 @@ package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
@@ -126,13 +127,19 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected <T extends Saga> T loadSaga(Class<T> type, String sagaId) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        byte[] serializedSaga = (byte[]) entityManager
+        List<byte[]> serializedSagaList = (List<byte[]>) entityManager
                 .createQuery("SELECT se.serializedSaga FROM SagaEntry se WHERE se.sagaId = :sagaId")
                 .setParameter("sagaId", sagaId)
-                .getSingleResult();
+                .setMaxResults(1)
+                .getResultList();
+        if (serializedSagaList == null || serializedSagaList.isEmpty()) {
+            throw new NoSuchSagaException(type, sagaId);
+        }
+        byte[] serializedSaga = serializedSagaList.get(0);
         SerializedType serializedType = serializer.typeForClass(type);
         Saga loadedSaga = serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedSaga,
                                                                                     byte[].class,
