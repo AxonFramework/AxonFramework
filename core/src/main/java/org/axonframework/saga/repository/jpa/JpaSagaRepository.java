@@ -18,12 +18,13 @@ package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.serializer.JavaSerializer;
+import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,12 +129,16 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     @Override
     protected <T extends Saga> T loadSaga(Class<T> type, String sagaId) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        SagaEntry entry = entityManager.find(SagaEntry.class, sagaId);
-        if (entry == null) {
-            throw new NoSuchSagaException(type, sagaId);
-        }
-        Saga loadedSaga = entry.getSaga(serializer);
+        byte[] serializedSaga = (byte[]) entityManager
+                .createQuery("SELECT se.serializedSaga FROM SagaEntry se WHERE se.sagaId = :sagaId")
+                .setParameter("sagaId", sagaId)
+                .getSingleResult();
+        SerializedType serializedType = serializer.typeForClass(type);
+        Saga loadedSaga = serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedSaga,
+                                                                                    byte[].class,
+                                                                                    serializedType));
         if (!type.isInstance(loadedSaga)) {
+            logger.debug("Saga with id [{}] was of another type than expected. It is ignored.", sagaId);
             return null;
         }
         T storedSaga = type.cast(loadedSaga);
@@ -141,8 +146,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
             injector.injectResources(storedSaga);
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Loaded saga id {} as {}", sagaId, new String(entry.getSerializedSaga(),
-                                                                       Charset.forName("UTF-8")));
+            logger.debug("Loaded saga id [{}] of type [{}]", sagaId, loadedSaga.getClass().getName());
         }
         return storedSaga;
     }
