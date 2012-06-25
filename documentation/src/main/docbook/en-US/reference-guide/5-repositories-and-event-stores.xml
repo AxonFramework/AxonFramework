@@ -498,31 +498,31 @@
             implementations of the Upcaster Chain that come with Axon, and explain how the serialized
             representations of events affects how upcasters are written.
         </para>
-            <sect2>
-                <title>Writing an upcaster</title>
-                <para>To explain how to write an upcaster for Axon we'll walk through a small example,
-                    explaining the details of writing an upcaster as we go along.
-                </para>
-                <para>It so happens to be that there is an Event Store containing many
-                    <code>AdministrativeDetailsUpdated</code> events. New requirements have let to the introduction of two
-                    new events: <code>AddressUpdatedEvent</code> and <code>InsurancePolicyUpdatedEvent</code>. Previously though,
-                    all information in these two events was contained in the old
-                    <code>AdministrativeDetailsUpdatedEvent</code>, which is now deprecated. To nicely handle this
-                    situation we'll write an upcaster to transform the <code>AdministrativeDetailsUpdatedEvent</code>
-                    into an <code>AddressUpdatedEvent</code> and an <code>InsurancePolicyUpdatedEvent</code>.
-                </para>
-                <para>
-                    First we have to create a class that implements the <code>Upcaster</code>
-                    interface. We have to decide on which content type to work. For this example
-                    dom4j documents are used as they'll fit nicely with an event store that uses XML
-                    to store events. It also allows us to write an upcaster implementation that is
-                    easy to read.
-                </para>
-                <para>In Axon, Events have a revision, if the definition of an event changes, you should
-                    update the revision too. The revision can be used to check if an event is outdated and
-                    allows the upcaster to determine if it needs to be upcasted.
-                </para>
-                <programlisting language="java">import org.dom4j.Document;
+        <sect2>
+            <title>Writing an upcaster</title>
+            <para>To explain how to write an upcaster for Axon we'll walk through a small example,
+                explaining the details of writing an upcaster as we go along.
+            </para>
+            <para>It so happens to be that there is an Event Store containing many
+                <code>AdministrativeDetailsUpdated</code> events. New requirements have let to the introduction of two
+                new events: <code>AddressUpdatedEvent</code> and <code>InsurancePolicyUpdatedEvent</code>. Previously though,
+                all information in these two events was contained in the old
+                <code>AdministrativeDetailsUpdatedEvent</code>, which is now deprecated. To nicely handle this
+                situation we'll write an upcaster to transform the <code>AdministrativeDetailsUpdatedEvent</code>
+                into an <code>AddressUpdatedEvent</code> and an <code>InsurancePolicyUpdatedEvent</code>.
+            </para>
+            <para>
+                First we have to create a class that implements the <code>Upcaster</code>
+                interface. We have to decide on which content type to work. For this example
+                dom4j documents are used as they'll fit nicely with an event store that uses XML
+                to store events. It also allows us to write an upcaster implementation that is
+                easy to read.
+            </para>
+            <para>In Axon, Events have a revision, if the definition of an event changes, you should
+                update the revision too. The revision can be used to check if an event is outdated and
+                allows the upcaster to determine if it needs to be upcasted.
+            </para>
+            <programlisting language="java">import org.dom4j.Document;
                 
 public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Document&gt; {
 
@@ -549,80 +549,97 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         return Arrays.asList(addressUpdatedEventType, insurancePolicyUpdatedEventType);
     }
 }</programlisting>
-            </sect2>
-            <sect2>
-                <title>The Upcaster Chain</title>
-                <para>The Upcaster Chain is responsible for upcasting events by chaining the output
-                    of one upcaster to the next. It comes in the following two flavours: 
-                </para>
-                <orderedlist numeration="arabic">
-                    <listitem>
-                        <para>The <code>SimpleUpcasterChain</code> immediately upcasts all events given to
-                            it and returns them.
-                        </para>
-                    </listitem>
-                    <listitem>
-                        <para>The <code>LazyUpcasterChain</code> prepares the events to be upcasted but only
-                            upcasts the events that are actually used. Whether or not your application needs all
-                            events this can give you a significant performance benefit. In the worst case
-                            it's as slow as the SimpleUpcasterChain.  
-                            <!-- TODO Describe downside of LazyUpcasterChain -->
-                        </para>
-                    </listitem>
-                </orderedlist>
-            </sect2>
-            <sect2>
-                <title>Content type conversion</title>
-                <para><!--TODO: Describe ContentTypeConverters--></para> 
-                <para>An upcaster works on a given content type (e.g. dom4j's Document). To provide
-                    extra flexibility between upcasters, content types between chained upcasters may
-                    vary. Axon will try to convert between the content types automatically by using
-                    ContentTypeConverters. It will search for the shortest path from type
-                    <code>x</code> to type <code>y</code>, perform the conversion and pass the
-                    converted value into the requested upcaster. For performance reasons, conversion
-                    will only be performed if the <code>canUpcast</code> method on the receiving
-                    upcaster yields true.
-                </para>
-                <tip>
-                    <para>To achieve the best performance, ensure that all upcasters in the same
-                        chain (where one's output is another's input) work on the same content type.
+        </sect2>
+        <sect2>
+            <title>The Upcaster Chain</title>
+            <para>The Upcaster Chain is responsible for upcasting events by chaining the output
+                of one upcaster to the next. It comes in the following two flavours:
+            </para>
+            <orderedlist numeration="arabic">
+                <listitem>
+                    <para>The <code>SimpleUpcasterChain</code> immediately upcasts all events given to
+                        it and returns them.
                     </para>
-                </tip>
-                <para>If the content type conversion that you need is not provided by Axon you can
-                    always write one yourself using the ContentTypeConverter interface.
+                </listitem>
+                <listitem>
+                    <para>The <code>LazyUpcasterChain</code> prepares the events to be upcasted but only
+                        upcasts the events that are actually used. Whether or not your application needs all
+                        events this can give you a significant performance benefit. In the worst case
+                        it's as slow as the SimpleUpcasterChain.
+                        <!-- TODO Describe downside of LazyUpcasterChain -->
+                    </para>
+                </listitem>
+            </orderedlist>
+        </sect2>
+        <sect2>
+            <title>Content type conversion</title>
+            <para><!--TODO: Describe ContentTypeConverters--></para>
+            <para>An upcaster works on a given content type (e.g. dom4j's Document). To provide
+                extra flexibility between upcasters, content types between chained upcasters may
+                vary. Axon will try to convert between the content types automatically by using
+                ContentTypeConverters. It will search for the shortest path from type
+                <code>x</code> to type <code>y</code>, perform the conversion and pass the
+                converted value into the requested upcaster. For performance reasons, conversion
+                will only be performed if the <code>canUpcast</code> method on the receiving
+                upcaster yields true.
+            </para>
+            <tip>
+                <para>To achieve the best performance, ensure that all upcasters in the same
+                    chain (where one's output is another's input) work on the same content type.
                 </para>
-            </sect2>
-        </sect1> 
-        <sect1 xml:id="using-snapshot-events">
-        <title>Snapshotting</title> <para>When aggregates live for a long time, and their state
-            constantly changes, they will generate a large amount of events. Having to load all
-            these events in to rebuild an aggregate's state may have a big performance impact. The
-            snapshot event is a domain event with a special purpose: it summarises an arbitrary
-            amount of events into a single one. By regularly creating and storing a snapshot event,
-            the event store does not have to return long lists of events. Just the last snapshot
-            events and all events that occurred after the snapshot was made.  </para> <para>For
-            example, items in stock tend to change quite often. Each time an item is sold, an event
-            reduces the stock by one. Every time a shipment of new items comes in, the stock is
-            incremented by some larger number. If you sell a hundred items each day, you will
+            </tip>
+            <para>If the content type conversion that you need is not provided by Axon you can
+                always write one yourself using the ContentTypeConverter interface.
+            </para>
+        </sect2>
+    </sect1>
+    <sect1 xml:id="using-snapshot-events">
+        <title>Snapshotting</title>
+        <para>When aggregates live for a long time, and their state constantly changes, they will
+            generate a large amount of events. Having to load all these events in to rebuild an
+            aggregate's state may have a big performance impact. The snapshot event is a domain
+            event with a special purpose: it summarises an arbitrary amount of events into a single
+            one. By regularly creating and storing a snapshot event, the event store does not have
+            to return long lists of events. Just the last snapshot events and all events that
+            occurred after the snapshot was made.
+        </para>
+        <para>For example, items in stock tend to change quite often. Each time an item is sold, an
+            event reduces the stock by one. Every time a shipment of new items comes in, the stock
+            is incremented by some larger number. If you sell a hundred items each day, you will
             produce at least 100 events per day. After a few days, your system will spend too much
             time reading in all these events just to find out wheter it should raise an
             "ItemOutOfStockEvent". A single snapshot event could replace a lot of these events, just
-            by storing the current number of items in stock.  </para> <sect2> <title>Creating a
-                snapshot</title> <para>Snapshot creation can be triggered by a number of factors,
-                for example the number of events created since the last snapshot, the time to
-                initialize an aggregate exceeds a certain threshold, time-based, etc. Currently,
-                Axon provides a mechanism that allows you to trigger snapshots based on an event
-                count threshold.  </para> <para>The <code>EventCountSnapshotterTrigger</code>
-                provides the mechanism to trigger snapshot creation when the number of events needed
-                to load an aggregate exceeds a certain threshold. If the number of events needed to
-                load an aggregate exceeds a certain configurable threshold, the trigger tells a
-                <code>Snapshotter</code> to create a snapshot for the aggregate.  </para> <para>The
-                snapshot trigger is configured on an Event Sourcing Repository and has a number of
-                properties that allow you to tweak triggering: <itemizedlist> <listitem>
+            by storing the current number of items in stock.
+        </para>
+        <sect2>
+            <title>Creating a snapshot</title>
+            <para>Snapshot creation can be triggered by a number of factors, for example the number
+                of events created since the last snapshot, the time to initialize an aggregate
+                exceeds a certain threshold, time-based, etc. Currently, Axon provides a mechanism
+                that allows you to trigger snapshots based on an event count threshold.
+            </para>
+            <para>The
+                <code>EventCountSnapshotterTrigger</code>
+                provides the mechanism to trigger
+                snapshot creation when the number of events needed to load an aggregate exceeds a
+                certain threshold. If the number of events needed to load an aggregate exceeds a
+                certain configurable threshold, the trigger tells a
+                <code>Snapshotter</code>
+                to
+                create a snapshot for the aggregate.
+            </para>
+            <para>The snapshot trigger is configured on an Event Sourcing Repository and has a
+                number of properties that allow you to tweak triggering:
+                <itemizedlist>
+                    <listitem>
                         <para><code>Snapshotter</code> sets the actual snapshotter instance,
                             responsible for creating and storing the actual snapshot event; </para>
-                            </listitem> <listitem> <para><code>Trigger</code> sets the threshold at
-                            which to trigger snapshot creation; </para> </listitem> <listitem>
+                    </listitem>
+                    <listitem>
+                        <para><code>Trigger</code> sets the threshold at which to trigger snapshot
+                            creation; </para>
+                    </listitem>
+                    <listitem>
                         <para><code>ClearCountersAfterAppend</code> indicates whether you want to
                             clear counters when an aggregate is stored. The optimal setting of this
                             parameter depends mainly on your caching strategy. If you do not use
@@ -631,117 +648,159 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                             you use a cache, however, you may lose track of counters. Defaults to
                             <code>true</code> unless the <code>AggregateCache</code> or
                             <code>AggregateCaches</code> is set, in which case it defaults to
-                            <code>false</code>. </para> </listitem> <listitem>
+                            <code>false</code>. </para>
+                    </listitem>
+                    <listitem>
                         <para><code>AggregateCache</code> and <code>AggregateCaches</code> allows
                             you to register the cache or caches that you use to store aggregates in.
                             The snapshotter trigger will register itself as a listener on the cache.
                             If any aggregates are evicted, the snapshotter trigger will remove the
                             counters. This optimizes memory usage in the case your application has
                             many aggregates. Do note that the keys of the cache are expected to be
-                            the Aggregate Identifier. </para> </listitem> </itemizedlist> </para>
+                            the Aggregate Identifier. </para>
+                    </listitem>
+                </itemizedlist>
+            </para>
             <para>A Snapshotter is responsible for the actual creation of a snapshot. Typically,
                 snapshotting is a process that should disturb the operational processes as little as
                 possible. Therefore, it is recommended to run the snapshotter in a different thread.
-                The <code>Snapshotter</code> interface declares a single method:
-                <code>scheduleSnapshot()</code>, which takes the aggregate's type and identifier as
-                parameters.  </para> <para>Axon provides the<code>AggregateSnapshotter</code>, which
-                creates and stores <code>AggregateSnapshot</code> instances. This is a special type
-                of snapshot, since it contains the actual aggregate instance within it. The
-                repositories provided by Axon are aware of this type of snapshot, and will extract
-                the aggregate from it, instead of instantiating a new one. All events loaded after
-                the snapshot events are streamed to the extracted aggregate instance.  </para>
-            <note> <para>Do make sure that the <code>Serializer</code> instance you use (which
-                    defaults to the <code>XStreamSerializer</code>) is capable of serializing your
-                    aggregate.  The <code>XStreamSerializer</code> requires you to use either a Sun
-                    JVM, or your aggregate must either have an accessible default constructor or
-                    implement the <code>Serializable</code> interface. </para> </note> <para>The
-                AbstractSnapshotter provides a basic set of properties that allow you to tweak the
-                way snapshots are created: <itemizedlist> <listitem> <para><code>EventStore</code>
-                            sets the event store that is used to load past events and store the
-                            snapshots. This event store must implement the
-                            <code>SnapshotEventStore</code> interface. </para> </listitem>
-                    <listitem> <para><code>Executor</code> sets the executor, such as a
-                            <code>ThreadPoolExecutor</code> that will provide the thread to process
-                            actual snapshot creation. By default, snapshots are created in the
-                            thread that calls the <code>scheduleSnapshot()</code> method, which is
-                            generally not recommended for production. </para> </listitem>
-                            </itemizedlist> </para> <para>The <code>AggregateSnapshotter</code>
-                            provides on more property: <itemizedlist> <listitem>
-                                    <para><code>AggregateFactories</code> is the property that
-                                        allows you to set the factories that will create instances
-                                        of your aggregates. All Axon provided repositories implement
-                                        the <code>AggregateFactory</code> interface, and are capable
-                                        of processing <code>AggregateSnapshot</code>s. Configuring
-                                        multiple aggregate factories allows you to use a single
-                                        Snapshotter to create snapshots for a variety of aggregate
-                                        types. </para> </listitem> </itemizedlist> </para> <note>
-                            <para>If you use an executor that executes snapshot creation in another
-                                thread, make sure you configure the correct transaction management
-                                for your underlying event store, if necessary. Spring users can use
-                                the <code>SpringAggregateSnapshotter</code>, which allows you to
-                                configure a <code>PlatformTransactionManager</code>. The
-                                <code>SpringAggregateSnapshotter</code> will autowire all
-                                repositores, if they are not explicitly configured.  </para> </note>
-                        <para>Spring users should use the <code>SpringAggregateSnapshotter</code>
-                            instead. See <xref linkend="spring-snapshotting"/> for more details
-                            about configuring snapshotting in Spring.  </para> </sect2> <sect2>
-                        <title>Storing Snapshot Events</title> <para>Both the
-                            <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> are
-                            capable of storing snapshot events. They provide a special method that
-                            allows a <code>DomainEventMessage</code> to be stored as a snapshot
-                            event. You have to initialize the snapshot event completely, including
-                            the aggregate identifier and the sequence number. There is a special
-                            constructor on the <code>GenericDomainEventMessage</code> for this
-                            purpose. The sequence number must be equal to the sequence number of the
-                            last event that was included in the state that the snapshot represents.
-                            In most cases, you can use the <code>getVersion()</code> on the
-                            <code>AggregateRoot</code> (which each event sourced aggregate
-                            implements) to obtain the sequence number to use in the snapshot event.
-                            </para> <para>When a snapshot is stored in the Event Store, it will
-                            automatically use that snapshot to summarize all prior events and return
-                            it in their place. Both event store implementations allow for concurrent
-                            creation of snapshots. This means they allow snapshots to be stored
-                            while another process is adding Events for the same aggregate. This
-                            allows the snapshotting process to run as a separate process
-                            alltogether.  </para> <note> <para>Normally, you can archive all events
-                                once they are part of a snapshot event.  Snapshotted events will
-                                never be read in again by the event store in regular operational
-                                scenario's. However, if you want to be able to reconstruct aggregate
-                                state prior to the moment the snapshot was created, you must keep
-                                the events up to that date.  </para> </note> <para>Axon provides a
-                            special type of snapshot event: the <code>AggregateSnapshot</code>,
-                            which stores an entire aggregate as a snapshot. The motivation is
-                            simple: your aggregate should only contain the state relevant to take
-                            business decisions. This is exactly the information you want captured in
-                            a snapshot.  All Event Sourcing Repositories provided by Axon recognize
-                            the <code>AggregateSnapshot</code>, and will extract the aggregate from
-                            it. Beware that using this snapshot event requires that the event
-                            serialization mechanism needs to be able to serialize the aggregate.
-                            </para> </sect2> <sect2> <title>Initializing an Aggregate based on a
-                            Snapshot Event</title> <para>Every snapshot event is a
-                            <code>DomainEvent</code> instance. That means a snapshot event is
-                            handled just like any other domain event. When using annotations to
-                            demarcate event handers (<code>@EventHandler</code>), you can annotate a
-                            method that initializes full aggregate state based on a snapshot event.
-                            The code sample below shows how snapshot events are treated like any
-                            other domain event within the aggregate.  </para> <para> <programlisting
-                                language="java">public class MyAggregate extends
-                                AbstractAnnotatedAggregateRoot {
+                The
+                <code>Snapshotter</code>
+                interface declares a single method:
+                <code>scheduleSnapshot()</code>, which takes the aggregate's type and identifier
+                as parameters.
+            </para>
+            <para>Axon provides the<code>AggregateSnapshotter</code>, which creates and stores
+                <code>AggregateSnapshot</code>
+                instances. This is a special type of snapshot,
+                since it contains the actual aggregate instance within it. The repositories provided
+                by Axon are aware of this type of snapshot, and will extract the aggregate from it,
+                instead of instantiating a new one. All events loaded after the snapshot events are
+                streamed to the extracted aggregate instance.
+            </para>
+            <note>
+                <para>Do make sure that the <code>Serializer</code> instance you use (which defaults
+                    to the <code>XStreamSerializer</code>) is capable of serializing your aggregate.
+                    The <code>XStreamSerializer</code> requires you to use either a Sun JVM, or your
+                    aggregate must either have an accessible default constructor or implement the
+                    <code>Serializable</code> interface. </para>
+            </note>
+            <para>The AbstractSnapshotter provides a basic set of properties that allow you to tweak
+                the way snapshots are created:
+                <itemizedlist>
+                    <listitem>
+                        <para><code>EventStore</code> sets the event store that is used to load past
+                            events and store the snapshots. This event store must implement the
+                            <code>SnapshotEventStore</code> interface. </para>
+                    </listitem>
+                    <listitem>
+                        <para><code>Executor</code> sets the executor, such as a
+                            <code>ThreadPoolExecutor</code> that will provide the thread to
+                            process actual snapshot creation. By default, snapshots are created in
+                            the thread that calls the <code>scheduleSnapshot()</code> method, which
+                            is generally not recommended for production. </para>
+                    </listitem>
+                </itemizedlist>
+            </para>
+            <para>The
+                <code>AggregateSnapshotter</code>
+                provides on more property:
+                <itemizedlist>
+                    <listitem>
+                        <para><code>AggregateFactories</code> is the property that allows you to set
+                            the factories that will create instances of your aggregates. All Axon
+                            provided repositories implement the <code>AggregateFactory</code>
+                            interface, and are capable of processing
+                            <code>AggregateSnapshot</code>s. Configuring multiple aggregate
+                            factories allows you to use a single Snapshotter to create snapshots for
+                            a variety of aggregate types. </para>
+                    </listitem>
+                </itemizedlist>
+            </para>
+            <note>
+                <para>If you use an executor that executes snapshot creation in another thread, make
+                    sure you configure the correct transaction management for your underlying event
+                    store, if necessary. Spring users can use the
+                    <code>SpringAggregateSnapshotter</code>, which allows you to configure a
+                    <code>PlatformTransactionManager</code>. The
+                    <code>SpringAggregateSnapshotter</code>
+                    will autowire all repositores, if
+                    they are not explicitly configured.
+                </para>
+            </note>
+            <para>Spring users should use the
+                <code>SpringAggregateSnapshotter</code>
+                instead. See
+                <xref linkend="spring-snapshotting"/>
+                for more details about configuring snapshotting in Spring.
+            </para>
+        </sect2>
+        <sect2>
+            <title>Storing Snapshot Events</title>
+            <para>Both the <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> are
+                capable of storing snapshot events. They provide a special method that allows a
+                <code>DomainEventMessage</code> to be stored as a snapshot event. You have to
+                initialize the snapshot event completely, including the aggregate identifier and the
+                sequence number. There is a special constructor on the
+                <code>GenericDomainEventMessage</code> for this purpose. The sequence number
+                must be equal to the sequence number of the last event that was included in the
+                state that the snapshot represents. In most cases, you can use the
+                <code>getVersion()</code> on the <code>AggregateRoot</code> (which each event
+                sourced aggregate implements) to obtain the sequence number to use in the snapshot
+                event. </para>
+            <para>When a snapshot is stored in the Event Store, it will automatically use that
+                snapshot to summarize all prior events and return it in their place. Both event
+                store implementations allow for concurrent creation of snapshots. This means they
+                allow snapshots to be stored while another process is adding Events for the same
+                aggregate. This allows the snapshotting process to run as a separate process
+                alltogether.
+            </para>
+            <note>
+                <para>Normally, you can archive all events once they are part of a snapshot event.
+                    Snapshotted events will never be read in again by the event store in regular
+                    operational scenario's. However, if you want to be able to reconstruct aggregate
+                    state prior to the moment the snapshot was created, you must keep the events up
+                    to that date.
+                </para>
+            </note>
+            <para>Axon provides a special type of snapshot event: the
+                <code>AggregateSnapshot</code>, which stores an entire aggregate as a snapshot. The
+                motivation is simple: your aggregate should only contain the state relevant to take
+                business decisions. This is exactly the information you want captured in a snapshot.
+                All Event Sourcing Repositories provided by Axon recognize the
+                <code>AggregateSnapshot</code>, and will extract the aggregate from it. Beware
+                that using this snapshot event requires that the event serialization mechanism needs
+                to be able to serialize the aggregate.
+            </para>
+        </sect2>
+        <sect2>
+            <title>Initializing an Aggregate based on a Snapshot Event</title>
+            <para>Every snapshot event is a
+                <code>DomainEvent</code>
+                instance. That means a snapshot
+                event is handled just like any other domain event. When using annotations to
+                demarcate event handers (<code>@EventHandler</code>), you can annotate a method that
+                initializes full aggregate state based on a snapshot event. The code sample below
+                shows how snapshot events are treated like any other domain event within the
+                aggregate.
+            </para>
+            <para>
+                <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
-    // ... code omitted for brevity
+                    // ... code omitted for brevity
 
-    @EventHandler
-    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
-        // ...
-    }
+                    @EventHandler
+                    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
+                    // ...
+                    }
 
-    @EventHandler
-    protected void applySnapshot(MySnapshotEvent event) {
-        // the snapshot event should contain all relevant state
-        this.someState = event.someState;
-        this.otherState = event.otherState;
-    }
-}                </programlisting>
+                    @EventHandler
+                    protected void applySnapshot(MySnapshotEvent event) {
+                    // the snapshot event should contain all relevant state
+                    this.someState = event.someState;
+                    this.otherState = event.otherState;
+                    }
+                    }                </programlisting>
             </para>
             <para>There is one type of snapshot event that is treated differently: the
                 <code>AggregateSnapshot</code>. This type of snapshot event contains the actual
