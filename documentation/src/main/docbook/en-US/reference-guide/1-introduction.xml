@@ -251,53 +251,54 @@
             scalabale and extensible application easier. This means we are constantly looking for
             help in developing our framework.
         </para>
-        <para>There are a number of ways in which you can contribute to the Axon Framework:
-            <itemizedlist>
+        <para>There are a number of ways in which you can contribute to the Axon Framework: <itemizedlist>
                 <listitem>
                     <para>You can report any bugs, feature requests or ideas about improvemens on
-                        our issue page:<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                                             ns1:href="http://www.axonframework.org/issues"
-                                >axonframework.org/issues</link>. All ideas are welcome. Please be as
+                        our issue page: <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                            ns1:href="http://www.axonframework.org/issues"
+                            >axonframework.org/issues</link>. All ideas are welcome. Please be as
                         exact as possible when reporting bugs. This will help us reproduce and thus
-                        solve the problem faster.
-                    </para>
+                        solve the problem faster. </para>
                 </listitem>
                 <listitem>
                     <para>If you have created a component for your own application that you think
                         might be useful to include in the framework, send us a patch or a zip
                         containing the source code. We will evaluate it and try to fit it in the
                         framework. Please make sure code is properly documented using javadoc. This
-                        helps us to understand what is going on.
-                    </para>
+                        helps us to understand what is going on. </para>
                 </listitem>
                 <listitem>
                     <para>If you know of any other way you think you can help us, do not hesitate to
-                        send a message to the<link xmlns:xlink="http://www.w3.org/1999/xlink"
-                                                   xlink:href="mailto:axonframework@googlegroups.com"
-                                >Axon Framework mailinglist</link>.
-                    </para>
+                        send a message to the <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                            xlink:href="mailto:axonframework@googlegroups.com">Axon Framework
+                            mailinglist</link>. </para>
                 </listitem>
-            </itemizedlist>
-        </para>
+            </itemizedlist></para>
+    </sect1>
+    <sect1>
+        <title>Commercial Support</title>
+        <para>Axon Framework is open source and freely available for anyone to use. However, if you
+            have very specific requirements, or just want to be assured of someone to be standby to
+            help you in case of trouble, Orange11 provides several commercial support services for
+            Axon Framework. These services include Training, Consultancy and Operational Support and
+            are provided by the people that know Axon more than anyone else.</para>
+        <para>For more information about Orange11 and its services, visit <link
+                xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://www.orange11.nl"
+                >www.orange11.nl</link>.</para>
     </sect1>
     <sect1 xml:id="license">
         <title>License information</title>
         <para>The Axon Framework and its documentation are licensed under the Apache License,
-            Version 2.0. You may obtain a copy of the License at<link
-                    xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://www.apache.org/licenses/LICENSE-2.0" ns1:show="new"
-                    >http://www.apache.org/licenses/LICENSE-2.0</link>.
-        </para>
+            Version 2.0. You may obtain a copy of the License at <link
+                xmlns:ns1="http://www.w3.org/1999/xlink"
+                ns1:href="http://www.apache.org/licenses/LICENSE-2.0" ns1:show="new"
+                >http://www.apache.org/licenses/LICENSE-2.0</link>. </para>
         <para>Unless required by applicable law or agreed to in writing, software distributed under
             the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-            KIND, either express or implied. See the
-            <link
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
-                    xlink:href="http://www.apache.org/licenses/LICENSE-2.0" xlink:show="new"
-                    >License
-            </link>
-            for the specific language governing permissions and limitations
-            under the License.
-        </para>
+            KIND, either express or implied. See the <link
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="http://www.apache.org/licenses/LICENSE-2.0" xlink:show="new"
+                >License</link> for the specific language governing permissions and limitations
+            under the License. </para>
     </sect1>
 </chapter>

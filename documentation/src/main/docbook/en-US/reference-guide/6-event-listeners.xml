@@ -484,4 +484,8 @@ public class MyCustomPolicy implements EventSequencingPolicy {
             </simplesect>
         </sect2>
     </sect1>
+    <sect1>
+        <title>Distributing the Event Bus</title>
+        <para/>
+    </sect1>
 </chapter>

@@ -75,5 +75,4 @@
     <xi:include href="reference-guide/8-testing.xml"/>
     <xi:include href="reference-guide/9-using-spring.xml"/>
     <xi:include href="reference-guide/10-performance-tuning.xml"/>
-    <xi:include href="reference-guide/11-scaling-out.xml"/>
 </book>
