@@ -29,6 +29,7 @@
                 <include>*:axon-core</include>
                 <include>*:axon-test</include>
                 <include>*:axon-amqp</include>
+                <include>*:axon-mongo</include>
                 <include>*:axon-distributed-commandbus</include>
                 <include>*:axon-disruptor-commandbus</include>
             </includes>
