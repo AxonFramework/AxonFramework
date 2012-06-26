@@ -646,9 +646,9 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                             caching, there is no problem in removing event counts from memory. When
                             an aggregate is loaded, the events are loaded in, and counted again. If
                             you use a cache, however, you may lose track of counters. Defaults to
-                            <code>true</code> unless the <code>AggregateCache</code> or
-                            <code>AggregateCaches</code> is set, in which case it defaults to
-                            <code>false</code>. </para>
+                                <code>true</code> unless the <code>AggregateCache</code> or
+                                <code>AggregateCaches</code> is set, in which case it defaults to
+                                <code>false</code>. </para>
                     </listitem>
                     <listitem>
                         <para><code>AggregateCache</code> and <code>AggregateCaches</code> allows
@@ -683,7 +683,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                     to the <code>XStreamSerializer</code>) is capable of serializing your aggregate.
                     The <code>XStreamSerializer</code> requires you to use either a Sun JVM, or your
                     aggregate must either have an accessible default constructor or implement the
-                    <code>Serializable</code> interface. </para>
+                        <code>Serializable</code> interface. </para>
             </note>
             <para>The AbstractSnapshotter provides a basic set of properties that allow you to tweak
                 the way snapshots are created:
@@ -691,11 +691,11 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                     <listitem>
                         <para><code>EventStore</code> sets the event store that is used to load past
                             events and store the snapshots. This event store must implement the
-                            <code>SnapshotEventStore</code> interface. </para>
+                                <code>SnapshotEventStore</code> interface. </para>
                     </listitem>
                     <listitem>
                         <para><code>Executor</code> sets the executor, such as a
-                            <code>ThreadPoolExecutor</code> that will provide the thread to
+                                <code>ThreadPoolExecutor</code> that will provide the thread to
                             process actual snapshot creation. By default, snapshots are created in
                             the thread that calls the <code>scheduleSnapshot()</code> method, which
                             is generally not recommended for production. </para>
@@ -739,13 +739,13 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             <title>Storing Snapshot Events</title>
             <para>Both the <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> are
                 capable of storing snapshot events. They provide a special method that allows a
-                <code>DomainEventMessage</code> to be stored as a snapshot event. You have to
+                    <code>DomainEventMessage</code> to be stored as a snapshot event. You have to
                 initialize the snapshot event completely, including the aggregate identifier and the
                 sequence number. There is a special constructor on the
-                <code>GenericDomainEventMessage</code> for this purpose. The sequence number
+                    <code>GenericDomainEventMessage</code> for this purpose. The sequence number
                 must be equal to the sequence number of the last event that was included in the
                 state that the snapshot represents. In most cases, you can use the
-                <code>getVersion()</code> on the <code>AggregateRoot</code> (which each event
+                    <code>getVersion()</code> on the <code>AggregateRoot</code> (which each event
                 sourced aggregate implements) to obtain the sequence number to use in the snapshot
                 event. </para>
             <para>When a snapshot is stored in the Event Store, it will automatically use that
@@ -787,20 +787,20 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             <para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
-                    // ... code omitted for brevity
+    // ... code omitted for brevity
 
-                    @EventHandler
-                    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
-                    // ...
-                    }
+    @EventHandler
+    protected void handleSomeStateChangeEvent(MyDomainEvent event) {
+        // ...
+    }
 
-                    @EventHandler
-                    protected void applySnapshot(MySnapshotEvent event) {
-                    // the snapshot event should contain all relevant state
-                    this.someState = event.someState;
-                    this.otherState = event.otherState;
-                    }
-                    }                </programlisting>
+    @EventHandler
+    protected void applySnapshot(MySnapshotEvent event) {
+        // the snapshot event should contain all relevant state
+        this.someState = event.someState;
+        this.otherState = event.otherState;
+    }
+}                </programlisting>
             </para>
             <para>There is one type of snapshot event that is treated differently: the
                 <code>AggregateSnapshot</code>. This type of snapshot event contains the actual
