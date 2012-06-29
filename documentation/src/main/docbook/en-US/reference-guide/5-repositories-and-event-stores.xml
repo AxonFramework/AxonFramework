@@ -467,21 +467,18 @@
     </sect1>
     <sect1>
         <title>Event Upcasting</title>
-        <para>It is not unlikely that a definition of an Event remains unchanged during the
-            entire lifespan of an application. New insights, changes in requirements and many
-            other factors can lead to modifications in Events. Since the Event Store is
-            considered a read and append-only data source, your application must be able to read
-            all events, regardless of when they have been added. This is where the concept of
-            upcasting comes in.
+        <para>Due to the ever-changing nature of software applications it is likely that event
+            definitions change over time. Since the Event Store is considered a read and append-only
+            data source, your application must be able to read all events, regardless of when they
+            have been added. This is where upcasting comes in.
         </para>
         <para>Originally a concept of object-oriented programming, where: "a subclass gets casted to
-            it's superclass automatically when needed", upcasting can also be applied to event
-            sourcing. To upcast an event means to transform it from its original structure to
-            its new structure. 
-            Unlike OOP upcasting, event upcasting cannot be done in full automation because the
-            structure of the new event is unknown to the old event. Manually written Upcasters have
-            to be provided to specify how to upcast the old structure to the new structure. Once
-            this is done the rest of the process is carried out automatically.
+            it's superclass automatically when needed", the concept of upcasting can also be applied
+            to event sourcing. To upcast an event means to transform it from its original structure
+            to its new structure.  Unlike OOP upcasting, event upcasting cannot be done in full
+            automation because the structure of the new event is unknown to the old event. Manually
+            written Upcasters have to be provided to specify how to upcast the old structure to the
+            new structure. 
         </para>
         <para>Upcasters are classes that take one input event of revision <code>x</code> and output
             zero or more new events of revision <code>x + 1</code>. Moreover, upcasters are
@@ -495,13 +492,13 @@
             </para>
         </note>
         <para>In this section we'll explain how to write an upcaster, describe the two
-            implementations of the Upcaster Chain that come with Axon, and explain how the serialized
-            representations of events affects how upcasters are written.
+            implementations of the Upcaster Chain that come with Axon, and explain how the
+            serialized representations of events affects how upcasters are written.
         </para>
         <sect2>
             <title>Writing an upcaster</title>
             <para>To explain how to write an upcaster for Axon we'll walk through a small example,
-                explaining the details of writing an upcaster as we go along.
+                describing the details of writing an upcaster as we go along.
             </para>
             <para>It so happens to be that there is an Event Store containing many
                 <code>AdministrativeDetailsUpdated</code> events. New requirements have let to the introduction of two
@@ -513,42 +510,55 @@
             </para>
             <para>
                 First we have to create a class that implements the <code>Upcaster</code>
-                interface. We have to decide on which content type to work. For this example
+                interface. Then we have to decide on which content type to work. For this example
                 dom4j documents are used as they'll fit nicely with an event store that uses XML
-                to store events. It also allows us to write an upcaster implementation that is
-                easy to read.
+                to store events. 
             </para>
             <para>In Axon, Events have a revision, if the definition of an event changes, you should
-                update the revision too. The revision can be used to check if an event is outdated and
-                allows the upcaster to determine if it needs to be upcasted.
+                update its revision as well. The <code>canUpcast</code> method can then be used to
+                check if an event needs to be upcasted. In the example we return true on the
+                <code>canUpcast</code> method only when the incoming event has the type
+                <code>org.example.AdministrativeDetailsUpdatedEvent</code> and has revision number
+                0. Axon will take care of calling the Upcaster's <code>upcast</code> method if the
+                <code>canUpcast</code> method on that Upcaster returns true.
             </para>
             <programlisting language="java">import org.dom4j.Document;
                 
 public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Document&gt; {
 
+    @Override
     public boolean canUpcast(SerializedType serializedType) {
         return serializedType.getName().equals("org.example.AdministrativeDetailsUpdated") &amp;&amp;
                serializedType.getRevision().equals("0");
     }
 
+    @Override
     public Class&lt;Document&gt; expectedRepresentationType() {
         return Document.class;
     }
 
+    @Override
     public List&lt;SerializedObject&lt;Document&gt;&gt; upcast(SerializedObject&lt;Document&gt; intermediateRepresentation,
                                                    List&lt;SerializedType&gt; expectedTypes) {
         // TODO Add implementation of transformation: 
         // AdministrativeDetailsUpdated -> AddressUpdatedEvent, InsurancePolicyUpdatedEvent
     }
 
-    List&lt;SerializedType&gt; upcast(SerializedType serializedType) {
+    @Override
+    public List&lt;SerializedType&gt; upcast(SerializedType serializedType) {
         SerializedType addressUpdatedEventType = 
-                new SimpleSerializedType("org.example.AddressUpdatedEvent", 0);
+                new SimpleSerializedType("org.example.AddressUpdatedEvent", 1);
         SerializedType insurancePolicyUpdatedEventType = 
-                new SimpleSerializedType("org.example.InsurancePolicyUpdatedEvent", 0);
+                new SimpleSerializedType("org.example.InsurancePolicyUpdatedEvent", 1);
         return Arrays.asList(addressUpdatedEventType, insurancePolicyUpdatedEventType);
     }
 }</programlisting>
+            <para>Due to Java's type erasure we have to implement the
+                <code>expectedRepresentationType</code> method to provide Axon with runtime type
+                information on the content type by returning the <code>Class</code> object of the
+                content type.
+            </para>
+            <!-- TODO Explain the bread and butter of the upcast methods -->
         </sect2>
         <sect2>
             <title>The Upcaster Chain</title>
@@ -568,6 +578,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                         it's as slow as the SimpleUpcasterChain.
                         <!-- TODO Describe downside of LazyUpcasterChain -->
                     </para>
+                    <!-- TODO Explain when to choose which upcaster -->
                 </listitem>
             </orderedlist>
         </sect2>
