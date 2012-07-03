@@ -24,7 +24,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
      * Initialize the serializer with UTF-8 character set and a default XStream serializer.
      */
     public DBObjectXStreamSerializer() {
-        super();
+        super(new XStream());
     }
 
     /**
@@ -44,7 +44,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
      * @param charset The character set to use
      */
     public DBObjectXStreamSerializer(Charset charset) {
-        super(charset);
+        super(charset, new XStream());
     }
 
     /**
