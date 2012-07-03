@@ -45,8 +45,8 @@ public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStr
         if (!current.containsField(encodedName)) {
             current.put(encodedName, new BasicDBList());
         }
-        currentChildren = (List<DBObject>) current.get(encodedName);
         BasicDBObject node = new BasicDBObject();
+        currentChildren = (List<DBObject>) current.get(encodedName);
         currentChildren.add(node);
         itemStack.push(node);
         nameStack.push(encodedName);
@@ -62,12 +62,20 @@ public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStr
         itemStack.peek().put(VALUE_KEY, text);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void endNode() {
-        DBObject dbObject = itemStack.pop();
-        String name = nameStack.pop();
-        if (dbObject.keySet().size() == 1 && dbObject.containsField(VALUE_KEY)) {
-            itemStack.peek().put(name, dbObject.get(VALUE_KEY));
+        DBObject closingElement = itemStack.pop();
+        nameStack.pop();
+        // check whether this element has any compactable children
+        for (String closingElementChildName : closingElement.keySet()) {
+            Object closingElementChild = closingElement.get(closingElementChildName);
+            if (closingElementChild instanceof List && ((List) closingElementChild).size() == 1
+                    && ((List<DBObject>) closingElementChild).get(0).keySet().size() == 1
+                    && ((List<DBObject>) closingElementChild).get(0).keySet().contains(VALUE_KEY)) {
+                DBObject compactableElement = ((List<DBObject>) closingElementChild).get(0);
+                closingElement.put(closingElementChildName, compactableElement.get(VALUE_KEY));
+            }
         }
     }
 

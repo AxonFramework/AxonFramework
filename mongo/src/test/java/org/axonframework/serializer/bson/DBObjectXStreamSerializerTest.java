@@ -9,6 +9,10 @@ import org.joda.time.Period;
 import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -24,6 +28,31 @@ public class DBObjectXStreamSerializerTest {
     @Before
     public void setUp() {
         this.testSubject = new DBObjectXStreamSerializer();
+    }
+
+    @Test
+    public void testSerializeAndDeserializeDomainEventWithSetOfStrings() {
+        Set<String> strings = new HashSet<String>();
+        strings.add("a");
+        strings.add("b");
+        SerializedObject<byte[]> serializedEvent = testSubject.serialize(new SecondTestEvent(strings), byte[].class);
+
+        Object actualResult = testSubject.deserialize(serializedEvent);
+        assertTrue(actualResult instanceof SecondTestEvent);
+        SecondTestEvent actualEvent = (SecondTestEvent) actualResult;
+        assertEquals(strings, actualEvent.getStrings());
+    }
+
+    public static class SecondTestEvent {
+        private Set<String> strings;
+
+        public SecondTestEvent(Set<String> strings) {
+            this.strings = new HashSet<String>(strings);
+        }
+
+        public Set<String> getStrings() {
+            return strings;
+        }
     }
 
     @Test
@@ -109,6 +138,7 @@ public class DBObjectXStreamSerializerTest {
 
         private static final long serialVersionUID = 1657550542124835062L;
         private String name;
+        private List<String> someListOfString;
         private DateMidnight date;
         private DateTime dateTime;
         private Period period;
@@ -118,6 +148,9 @@ public class DBObjectXStreamSerializerTest {
             this.date = new DateMidnight();
             this.dateTime = new DateTime();
             this.period = new Period(100);
+            this.someListOfString = new ArrayList<String>();
+            someListOfString.add("First");
+            someListOfString.add("Second");
         }
 
         public String getName() {
