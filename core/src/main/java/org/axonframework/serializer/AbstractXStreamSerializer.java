@@ -52,13 +52,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     private ConverterFactory converterFactory;
 
     /**
-     * Initialize a generic serializer using the UTF-8 character set and a default XStream instance.
-     */
-    protected AbstractXStreamSerializer() {
-        this(DEFAULT_CHARSET_NAME);
-    }
-
-    /**
      * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
      * the serialization.
      *
@@ -66,16 +59,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      */
     protected AbstractXStreamSerializer(XStream xStream) {
         this(DEFAULT_CHARSET_NAME, xStream);
-    }
-
-    /**
-     * Initialize the serializer using the given <code>charset</code>. A default XStream instance (with {@link
-     * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
-     *
-     * @param charset The character set to use
-     */
-    public AbstractXStreamSerializer(Charset charset) {
-        this(charset, new XStream());
     }
 
     /**

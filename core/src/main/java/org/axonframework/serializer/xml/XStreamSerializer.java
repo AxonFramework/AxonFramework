@@ -17,7 +17,6 @@
 package org.axonframework.serializer.xml;
 
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.CompactWriter;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import org.axonframework.serializer.AbstractXStreamSerializer;
 import org.axonframework.serializer.ChainingConverterFactory;
@@ -50,6 +49,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
      */
     public XStreamSerializer() {
+        super(new XStream(new CompactDriver()));
     }
 
     /**
@@ -69,7 +69,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      * @param charset The character set to use
      */
     public XStreamSerializer(Charset charset) {
-        this(charset, new XStream());
+        this(charset, new XStream(new CompactDriver()));
     }
 
     /**
@@ -99,7 +99,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     @Override
     protected <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        xStream.marshal(object, new CompactWriter(new OutputStreamWriter(baos, getCharset())));
+        xStream.toXML(object, new OutputStreamWriter(baos, getCharset()));
         return convert(byte[].class, expectedFormat, baos.toByteArray());
     }
 
