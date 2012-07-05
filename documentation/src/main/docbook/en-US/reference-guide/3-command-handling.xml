@@ -109,27 +109,6 @@
                 cycles, check out the other CommandBus implementations. </para>
         </sect2>
         <sect2>
-            <title>DistributedCommandBus</title>
-            <para>Part of the <emphasis>axon-distributed-commandbus</emphasis> module is the
-                DistributedCommandBus. Unlike the SimpleCommandBus, this implementation is not
-                limited to a single JVM. In fact, all it does is bridge the gap between multiple
-                VM's. It doesn't actually do any command processing itself. <note>
-                    <title>Dependencies</title>
-                    <para>The distributed command bus is not part of the Axon Framework Core module,
-                        but in the <emphasis>axon-distributed-commandbus</emphasis> module. If you
-                        use Maven, make sure you have the appropriate dependencies set. The groupId
-                        and version are identifical to those of the Core module. </para>
-                </note>
-            </para>
-            <para>The Distributed Command Bus consists of two major components: the connector and
-                the "local segment". The latter is the Command Bus implementation that takes care of
-                the command that need to be processed on the local machine. The connector, on the
-                other hand, is the component that transfers the commands between the nodes.
-                Connectors must implement the <code>CommandBusConnector</code> interface. </para>
-            <para>More information about how distribute a CommandBus over multiple
-                (virtual)machines, see <xref linkend="scaling-out"/>. </para>
-        </sect2>
-        <sect2>
             <title>DisruptorCommandBus</title>
             <para>The SimpleCommandBus has reasonable performance characteristics, especially when
                 you've gone through the performance tips in <xref linkend="performance-tuning"/>.
@@ -644,6 +623,15 @@ try {
             not invoke any handlers at all. All it does is form a "bridge" between Command Bus
             implementations on different JVM's. Each instance of the
                 <code>DistributedCommandBus</code> on each JVM is called a "Segment".</para>
+        <para>
+            <note>
+                <title>Dependencies</title>
+                <para>The distributed command bus is not part of the Axon Framework Core module, but
+                    in the <emphasis>axon-distributed-commandbus</emphasis> module. If you use
+                    Maven, make sure you have the appropriate dependencies set. The groupId and
+                    version are identifical to those of the Core module. </para>
+            </note>
+        </para>
         <para>The DistributedCommandBus relies on two components: a CommandBusConnector, which
             implements the communication protocol between the JVM's, and the RoutingStrategy, which
             provides a Routing Key for each incoming Command. This Routing Key defines which segment

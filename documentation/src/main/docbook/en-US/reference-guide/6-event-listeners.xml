@@ -72,6 +72,13 @@
                     thread (similar to how the <code>SimpleEventBus</code> works). By providing a
                     custom implementation, you can arrange the Event Listeners into different
                     Cluster instances to suit the requirements of your architecture.</para>
+                <para>A number of <code>ClusterSelector</code> implementations are available. The
+                        <code>ClassNamePrefixClusterSelector</code>, for example, uses a mapping of
+                    package prefixes to decide which cluster is (most) suitable for an Event
+                    Listener. Similarly, the <code>ClassNamePatternClusterSelector</code> uses
+                    pattern matching to decide whether a given cluster is suitable. You can use the
+                        <code>CompositeClusterSelector</code> to combine several cluster selectors
+                    into a single one.</para>
                 <para>At this moment, there is a single implementation of the <code>Cluster</code>
                     interface: <code>SimpleCluster</code>. This implementation calls each
                     EventListener sequentially in the calling thread. By adding information in the
@@ -486,6 +493,104 @@ public class MyCustomPolicy implements EventSequencingPolicy {
     </sect1>
     <sect1>
         <title>Distributing the Event Bus</title>
-        <para/>
+        <para>In a distributed environment, it may be necessary to transport Event Messages between
+            JVM's. The ClusteringEventBus has a possiblity to define an
+                <code>EventBusTerminal</code>. This is an interface to a mechansim that publishes
+            Events to all relevant clusters. Some EventBusTerminal implementations allow
+            distribution of Events over multiple JVM's.</para>
+        <para>
+            <note>
+                <title>Background of the name "Terminal"</title>
+                <para>While most developers association the word "terminal" to a thin client
+                    computer connected to a mainframe, the association to make here is slightly
+                    different. In Neurology, an Axon Terminal is an endpoint of an Axon that
+                    transmits electronic impulses from one Neuron to another.</para>
+                <para>For more detailed information, see <link
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        xlink:href="http://en.wikipedia.org/wiki/Axon_terminal"
+                        >http://en.wikipedia.org/wiki/Axon_terminal</link>.</para>
+            </note>
+        </para>
+        <sect2>
+            <title>SpringAMQPTerminal</title>
+            <para>The Spring AMQP Terminal uses the Spring AMQP module to transmit events to an AMQP
+                compatible message broker, such as Rabbit MQ. It also connects local clusters to
+                queues on that message broker.</para>
+            <para>The configure the Spring AMQP Terminal, you need to specify a number of beans in
+                your application context:</para>
+            <itemizedlist>
+                <listitem>
+                    <para>The <code>ListenerContainerLifecycleManager</code> is responsible for
+                        creating ListenerContainers. These are the Spring classes that listen for
+                        messages on the AMQP Queues and forward them to the processing components.
+                        The <code>ListenerContainerLifecycleManager</code> allows you to configure
+                        the number of messages to process in a single transaction, the number of
+                        messages it may read ahead, etc.</para>
+                    <para>Note that the <code>ListenerContainerLifecycleManager</code> must be
+                        defined as a top-level bean.</para>
+                </listitem>
+                <listitem>
+                    <para>An AMQP <code>ConnectionFactory</code>, which creates the connections to
+                        the AMQP Message Broker. Spring provides the
+                            <code>CachingConnectionFactory</code>, which is a sensible
+                        default.</para>
+                </listitem>
+                <listitem>
+                    <para>The Spring AMQPTerminal itself, which connects the aforementioned
+                        components to the event publishers and event listeners. There is a large
+                        number of configuration options that allow you to tweak the terminal's behavior:
+                        <itemizedlist>
+                            <listitem>
+                                <para>transactional: indicates whether the messages should be
+                                    dispatched to the AMQP Broker inside a transaction. This is
+                                    especially useful when multiple events need to be sent either
+                                    completely, or not at all.</para>
+                            </listitem>
+                            <listitem>
+                                <para>durable: indicates whether messsages should be durable (i.e.
+                                    survive a Broker shutdown) or not. Obviously, message durability
+                                    involves a performance impact.</para>
+                            </listitem>
+                            <listitem>
+                                <para>connectionFactory: configures the ConnectionFactory to use.
+                                    Useful when the application context contains more than one
+                                    instance. Otherwise, the only available instance is
+                                    autowired.</para>
+                            </listitem>
+                            <listitem>
+                                <para>serializer: the serializer to serialize the MetaData and
+                                    Payload of EventMessages with. Defaults to an autowired
+                                    serializer.</para>
+                            </listitem>
+                            <listitem>
+                                <para>exchangeName or exchange: defines the exchange (either defined
+                                    by the name, or by a reference to an Exchange bean) to which
+                                    published Event Messages should be sent. Defaults to
+                                    "Axon.EventBus"</para>
+                            </listitem>
+                            <listitem>
+                                <para>queueNameResolver: defines the mechanism that chooses the
+                                    Queue that each Cluster should be connected to. Defaults to a
+                                    resolver that locates the property "AMQP.QueueName" or otherwise
+                                    "ClusterName" in the Meta Data of a Cluster. If both properties
+                                    are not available, it reverts to the Queue named
+                                        <emphasis>exchangeName</emphasis> + ".Default".</para>
+                            </listitem>
+                            <listitem>
+                                <para>routingKeyResolver: defines the mechanism that generates an
+                                    AMQP routing key for an outgoing Message. Defaults to a routing
+                                    key resolver that returns the package name of the Message's
+                                    payload. Routing keys can be used by echanges to define which
+                                    queues should receive a (copy of a) Message</para>
+                            </listitem>
+                            <listitem>
+                                <para>listenerContainerLifecycleManager: when the application
+                                    context contains more than one, defines which
+                                    listenerContainerLifecycleManager instance to use.</para>
+                            </listitem>
+                        </itemizedlist></para>
+                </listitem>
+            </itemizedlist>
+        </sect2>
     </sect1>
 </chapter>
