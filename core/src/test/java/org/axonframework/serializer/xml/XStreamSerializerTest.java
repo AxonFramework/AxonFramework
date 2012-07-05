@@ -24,6 +24,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.*;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 
 import static org.junit.Assert.*;
@@ -61,6 +62,14 @@ public class XStreamSerializerTest {
         StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
         assertTrue(asString.contains("axondomain"));
+    }
+
+    @Test
+    public void testRevisionNumber_FromSerialVersionUid() throws UnsupportedEncodingException {
+        SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent("name"), byte[].class);
+        assertNotNull(serialized);
+        assertEquals("1", serialized.getType().getRevision());
+        assertEquals(TestEvent.class.getName(), serialized.getType().getName());
     }
 
     @Test
@@ -130,9 +139,9 @@ public class XStreamSerializerTest {
     public static class RevisionSpecifiedEvent {
     }
 
-    public static class TestEvent {
+    public static class TestEvent implements Serializable {
 
-        private static final long serialVersionUID = 1657550542124835062L;
+        private static final long serialVersionUID = 1L;
         private String name;
         private DateMidnight date;
         private DateTime dateTime;

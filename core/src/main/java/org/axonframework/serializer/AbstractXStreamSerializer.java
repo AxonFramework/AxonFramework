@@ -31,6 +31,7 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.joda.time.DateTime;
 
+import java.io.ObjectStreamClass;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -178,7 +179,11 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      */
     protected String revisionOf(Class<?> type) {
         Revision revision = type.getAnnotation(Revision.class);
-        return revision == null ? null : revision.value();
+        if (revision != null) {
+            return revision.value();
+        }
+        ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
+        return objectStreamClass == null ? null : Long.toString(objectStreamClass.getSerialVersionUID());
     }
 
     /**
