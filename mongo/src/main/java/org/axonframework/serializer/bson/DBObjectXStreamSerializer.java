@@ -13,7 +13,9 @@ import org.axonframework.serializer.SerializedType;
 import java.nio.charset.Charset;
 
 /**
- * XStream based serializer implementation that serializes objects into a Binary JSON structure.
+ * XStream based serializer implementation that serializes objects into a Binary JSON structure. This serializer is
+ * originally meant for use with a MongoDB based Event Store. It escapes BSON Node names to prevent them containing
+ * periods (".").
  *
  * @author Allard Buijze
  * @since 2.0

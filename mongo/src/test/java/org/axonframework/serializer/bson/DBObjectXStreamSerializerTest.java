@@ -8,11 +8,10 @@ import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.junit.*;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -31,28 +30,18 @@ public class DBObjectXStreamSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeDomainEventWithSetOfStrings() {
-        Set<String> strings = new HashSet<String>();
-        strings.add("a");
-        strings.add("b");
-        SerializedObject<byte[]> serializedEvent = testSubject.serialize(new SecondTestEvent(strings), byte[].class);
+    public void testSerializeAndDeserializeDomainEventWithListOfObjects() {
+        List<Object> objectList = new ArrayList<Object>();
+        objectList.add("a");
+        objectList.add(1L);
+        objectList.add("b");
+        SerializedObject<String> serializedEvent = testSubject.serialize(new SecondTestEvent("eventName", objectList),
+                                                                         String.class);
 
         Object actualResult = testSubject.deserialize(serializedEvent);
         assertTrue(actualResult instanceof SecondTestEvent);
         SecondTestEvent actualEvent = (SecondTestEvent) actualResult;
-        assertEquals(strings, actualEvent.getStrings());
-    }
-
-    public static class SecondTestEvent {
-        private Set<String> strings;
-
-        public SecondTestEvent(Set<String> strings) {
-            this.strings = new HashSet<String>(strings);
-        }
-
-        public Set<String> getStrings() {
-            return strings;
-        }
+        assertEquals(objectList, actualEvent.getStrings());
     }
 
     @Test
@@ -102,7 +91,7 @@ public class DBObjectXStreamSerializerTest {
     }
 
     @Test
-    public void testRevisionNumber() throws UnsupportedEncodingException {
+    public void testRevisionNumber_FromAnnotation() throws UnsupportedEncodingException {
         SerializedObject<byte[]> serialized = testSubject.serialize(new RevisionSpecifiedEvent(), byte[].class);
         assertNotNull(serialized);
         assertEquals("2", serialized.getType().getRevision());
@@ -134,9 +123,23 @@ public class DBObjectXStreamSerializerTest {
 
     }
 
-    public static class TestEvent {
+    public static class SecondTestEvent extends TestEvent {
 
-        private static final long serialVersionUID = 1657550542124835062L;
+        private List<Object> objects;
+
+        public SecondTestEvent(String name, List<Object> objects) {
+            super(name);
+            this.objects = new ArrayList<Object>(objects);
+        }
+
+        public List<Object> getStrings() {
+            return objects;
+        }
+    }
+
+    public static class TestEvent implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         private String name;
         private List<String> someListOfString;
         private DateMidnight date;

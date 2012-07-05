@@ -1,13 +1,10 @@
 package org.axonframework.serializer.bson;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.thoughtworks.xstream.io.ExtendedHierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import org.axonframework.common.Assert;
 
-import java.util.List;
 import java.util.Stack;
 
 /**
@@ -19,10 +16,8 @@ import java.util.Stack;
  */
 public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStreamWriter {
 
-    private static final String ATTRIBUTE_PREFIX = "_";
-    private static final String VALUE_KEY = "_value";
-    private final Stack<DBObject> itemStack = new Stack<DBObject>();
-    private final Stack<String> nameStack = new Stack<String>();
+    private final Stack<BSONNode> itemStack = new Stack<BSONNode>();
+    private final DBObject root;
 
     /**
      * Initialize the writer to write the object structure to the given <code>root</code> DBObject.
@@ -33,49 +28,36 @@ public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStr
      */
     public DBObjectHierarchicalStreamWriter(DBObject root) {
         Assert.isTrue(root.keySet().isEmpty(), "The given root object must be empty.");
-        itemStack.push(root);
+        this.root = root;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void startNode(String name) {
-        String encodedName = encode(name);
-        DBObject current = itemStack.peek();
-        List<DBObject> currentChildren;
-        if (!current.containsField(encodedName)) {
-            current.put(encodedName, new BasicDBList());
+        if (itemStack.empty()) {
+            itemStack.push(new BSONNode(name));
+        } else {
+            itemStack.push(itemStack.peek().addChildNode(name));
         }
-        BasicDBObject node = new BasicDBObject();
-        currentChildren = (List<DBObject>) current.get(encodedName);
-        currentChildren.add(node);
-        itemStack.push(node);
-        nameStack.push(encodedName);
     }
 
     @Override
     public void addAttribute(String name, String value) {
-        itemStack.peek().put(ATTRIBUTE_PREFIX + encode(name), value);
+        itemStack.peek().setAttribute(name, value);
     }
 
     @Override
     public void setValue(String text) {
-        itemStack.peek().put(VALUE_KEY, text);
+        itemStack.peek().setValue(text);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void endNode() {
-        DBObject closingElement = itemStack.pop();
-        nameStack.pop();
-        // check whether this element has any compactable children
-        for (String closingElementChildName : closingElement.keySet()) {
-            Object closingElementChild = closingElement.get(closingElementChildName);
-            if (closingElementChild instanceof List && ((List) closingElementChild).size() == 1
-                    && ((List<DBObject>) closingElementChild).get(0).keySet().size() == 1
-                    && ((List<DBObject>) closingElementChild).get(0).keySet().contains(VALUE_KEY)) {
-                DBObject compactableElement = ((List<DBObject>) closingElementChild).get(0);
-                closingElement.put(closingElementChildName, compactableElement.get(VALUE_KEY));
-            }
+        BSONNode closingElement = itemStack.pop();
+        if (itemStack.isEmpty()) {
+            // we've popped the last one, so we're done
+            root.putAll(closingElement.asDBObject());
         }
     }
 
@@ -95,9 +77,5 @@ public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStr
     @Override
     public void startNode(String name, Class clazz) {
         startNode(name);
-    }
-
-    private String encode(String name) {
-        return name.replaceAll("\\.", "/");
     }
 }
