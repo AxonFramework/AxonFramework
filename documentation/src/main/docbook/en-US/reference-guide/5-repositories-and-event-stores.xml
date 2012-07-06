@@ -468,9 +468,9 @@
     <sect1>
         <title>Event Upcasting</title>
         <para>Due to the ever-changing nature of software applications it is likely that event
-            definitions change over time. Since the Event Store is considered a read and append-only
-            data source, your application must be able to read all events, regardless of when they
-            have been added. This is where upcasting comes in.
+            definitions also change over time. Since the Event Store is considered a read and
+            append-only data source, your application must be able to read all events, regardless of
+            when they have been added. This is where upcasting comes in.
         </para>
         <para>Originally a concept of object-oriented programming, where: "a subclass gets casted to
             it's superclass automatically when needed", the concept of upcasting can also be applied
@@ -508,20 +508,14 @@
                 situation we'll write an upcaster to transform the <code>AdministrativeDetailsUpdatedEvent</code>
                 into an <code>AddressUpdatedEvent</code> and an <code>InsurancePolicyUpdatedEvent</code>.
             </para>
-            <para>
-                First we have to create a class that implements the <code>Upcaster</code>
-                interface. Then we have to decide on which content type to work. For this example
-                dom4j documents are used as they'll fit nicely with an event store that uses XML
-                to store events. 
-            </para>
-            <para>In Axon, Events have a revision, if the definition of an event changes, you should
-                update its revision as well. The <code>canUpcast</code> method can then be used to
-                check if an event needs to be upcasted. In the example we return true on the
-                <code>canUpcast</code> method only when the incoming event has the type
-                <code>org.example.AdministrativeDetailsUpdatedEvent</code> and has revision number
-                0. Axon will take care of calling the Upcaster's <code>upcast</code> method if the
-                <code>canUpcast</code> method on that Upcaster returns true.
-            </para>
+            <para>Here is the code for an upcaster: <programlistingco>
+            <areaspec>
+                <area xml:id="content-type" coords="3 83"/>
+                <area xml:id="can-upcast" coords="6 63"/>
+                <area xml:id="expected-representation" coords="12 59"/>
+                <area xml:id="upcast-body" coords="18 90"/>
+                <area xml:id="upcast-type" coords="40 73"/>
+            </areaspec>
             <programlisting language="java">import org.dom4j.Document;
                 
 public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Document&gt; {
@@ -540,25 +534,74 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
     @Override
     public List&lt;SerializedObject&lt;Document&gt;&gt; upcast(SerializedObject&lt;Document&gt; intermediateRepresentation,
                                                    List&lt;SerializedType&gt; expectedTypes) {
-        // TODO Add implementation of transformation: 
-        // AdministrativeDetailsUpdated -> AddressUpdatedEvent, InsurancePolicyUpdatedEvent
+        Document administrativeDetailsUpdatedEvent = intermediateRepresentation.getData();
+
+        Document addressUpdatedEvent =
+                new DOMDocument(new DOMElement("org.example.InsurancePolicyUpdatedEvent"));
+        addressUpdatedEvent.getRootElement()
+                .add(administrativeDetailsUpdatedEvent.getRootElement().element("address"));
+
+        Document insurancePolicyUpdatedEvent =
+                new DOMDocument(new DOMElement("org.example.InsurancePolicyUpdatedEvent"));
+        insurancePolicyUpdatedEvent.getRootElement()
+                .add(administrativeDetailsUpdatedEvent.getRootElement().element("policy"));
+
+        List&lt;SerializedObject&lt;?&gt;&gt; upcastedEvents = new ArrayList&lt;SerializedObject&lt;?&gt;&gt;();
+        upcastedEvents.add(new SimpleSerializedObject&lt;Document&gt;(
+                addressUpdatedEvent, Document.class, expectedTypes.get(0)));
+        upcastedEvents.add(new SimpleSerializedObject&gt;Document&gt;(
+                insurancePolicyUpdatedEvent, Document.class, expectedTypes.get(1)));
+        return upcastedEvents;
     }
 
     @Override
     public List&lt;SerializedType&gt; upcast(SerializedType serializedType) {
         SerializedType addressUpdatedEventType = 
-                new SimpleSerializedType("org.example.AddressUpdatedEvent", 1);
+                new SimpleSerializedType("org.example.AddressUpdatedEvent", "1");
         SerializedType insurancePolicyUpdatedEventType = 
-                new SimpleSerializedType("org.example.InsurancePolicyUpdatedEvent", 1);
+                new SimpleSerializedType("org.example.InsurancePolicyUpdatedEvent", "1");
         return Arrays.asList(addressUpdatedEventType, insurancePolicyUpdatedEventType);
     }
 }</programlisting>
-            <para>Due to Java's type erasure we have to implement the
-                <code>expectedRepresentationType</code> method to provide Axon with runtime type
-                information on the content type by returning the <code>Class</code> object of the
-                content type.
-            </para>
-            <!-- TODO Explain the bread and butter of the upcast methods -->
+            <calloutlist>
+                <callout arearefs="content-type">
+                    <para>First we have to create a class that implements the <code>Upcaster</code>
+                    interface. Then we have to decide on which content type to work. For this example
+                    dom4j documents are used as they'll fit nicely with an event store that uses XML
+                    to store events.</para>
+                </callout>
+                <callout arearefs="can-upcast">
+                    <para>In Axon, Events have a revision, if the definition of an event changes, you should
+                    update its revision as well. The <code>canUpcast</code> method can then be used to
+                    check if an event needs to be upcasted. In the example we return true on the
+                    <code>canUpcast</code> method only when the incoming event has the type
+                    <code>org.example.AdministrativeDetailsUpdatedEvent</code> and has revision number
+                    0. Axon will take care of calling the Upcaster's <code>upcast</code> method if the
+                    <code>canUpcast</code> method on that Upcaster returns true.</para>
+                </callout>
+                <callout arearefs="expected-representation">
+                    <para>Due to Java's type erasure we have to implement the
+                    <code>expectedRepresentationType</code> method to provide Axon with runtime type
+                    information on the content type by returning the <code>Class</code> object of the
+                    content type. The content type is used at runtime to determine how the incoming
+                    event needs to be converted to provide the upcaster with the event with the
+                    correct type.</para>
+                </callout>
+                <callout arearefs="upcast-body">
+                    <para>
+                    By copying the address and policy element from the
+                    AdministrativeDetailsUpdatedEvent each into its own document, the event is
+                    upcasted. Deserializing the result would get us an instance of the
+                    InsurancePolicyUpdatedEvent and an instance of the AddressUpdatedEvent.</para>
+                </callout>
+                <callout arearefs="upcast-type">
+                    Upcasting can be expensive, possibly involving type conversion, deserialization
+                    and logic. Axon is smart enough to prevent this from happening when it is not
+                    neccesary through the concept of SerializedTypes. SerializedTypes provide Axon
+                    with the information to delay event upcasting until the application requires it. 
+                </callout>
+            </calloutlist>
+    </programlistingco></para>
         </sect2>
         <sect2>
             <title>The Upcaster Chain</title>
@@ -576,15 +619,21 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                         upcasts the events that are actually used. Whether or not your application needs all
                         events this can give you a significant performance benefit. In the worst case
                         it's as slow as the SimpleUpcasterChain.
-                        <!-- TODO Describe downside of LazyUpcasterChain -->
                     </para>
-                    <!-- TODO Explain when to choose which upcaster -->
+                    <para>The LazyUpcasterChain does not guarantee that your events are in fact
+                        upcasted. This is a problem if your upcasters depend on eachother, e.g. if
+                        one upcaster assumes that another upcaster has been called.
+                    </para>
                 </listitem>
             </orderedlist>
+            <para>The LazyUpcasterChain is a safe choice if your upcasters are stateless or do
+                not depend on other upcasters. Always consider using the LazyUpcasterChain since
+                it can provide a great performance benefit over the SimpleUpcasterChain. If you
+                want guaranteed upcasting in a strict order, use the SimpleUpcasterChain.
+            </para>
         </sect2>
         <sect2>
             <title>Content type conversion</title>
-            <para><!--TODO: Describe ContentTypeConverters--></para>
             <para>An upcaster works on a given content type (e.g. dom4j's Document). To provide
                 extra flexibility between upcasters, content types between chained upcasters may
                 vary. Axon will try to convert between the content types automatically by using
@@ -600,7 +649,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                 </para>
             </tip>
             <para>If the content type conversion that you need is not provided by Axon you can
-                always write one yourself using the ContentTypeConverter interface.
+                always write one yourself using the <code>ContentTypeConverter</code> interface.
             </para>
         </sect2>
     </sect1>
