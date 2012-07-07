@@ -518,7 +518,7 @@
             </areaspec>
             <programlisting language="java">import org.dom4j.Document;
                 
-public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Document&gt; {
+public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Document> {
 
     @Override
     public boolean canUpcast(SerializedType serializedType) {
@@ -527,13 +527,13 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
     }
 
     @Override
-    public Class&lt;Document&gt; expectedRepresentationType() {
+    public Class&lt;Document> expectedRepresentationType() {
         return Document.class;
     }
 
     @Override
-    public List&lt;SerializedObject&lt;Document&gt;&gt; upcast(SerializedObject&lt;Document&gt; intermediateRepresentation,
-                                                   List&lt;SerializedType&gt; expectedTypes) {
+    public List&lt;SerializedObject&lt;Document>> upcast(SerializedObject&lt;Document> intermediateRepresentation,
+                                                   List&lt;SerializedType> expectedTypes) {
         Document administrativeDetailsUpdatedEvent = intermediateRepresentation.getData();
 
         Document addressUpdatedEvent =
@@ -546,16 +546,16 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         insurancePolicyUpdatedEvent.getRootElement()
                 .add(administrativeDetailsUpdatedEvent.getRootElement().element("policy"));
 
-        List&lt;SerializedObject&lt;?&gt;&gt; upcastedEvents = new ArrayList&lt;SerializedObject&lt;?&gt;&gt;();
-        upcastedEvents.add(new SimpleSerializedObject&lt;Document&gt;(
+        List&lt;SerializedObject&lt;?>> upcastedEvents = new ArrayList&lt;SerializedObject&lt;?>>();
+        upcastedEvents.add(new SimpleSerializedObject&lt;Document>(
                 addressUpdatedEvent, Document.class, expectedTypes.get(0)));
-        upcastedEvents.add(new SimpleSerializedObject&gt;Document&gt;(
+        upcastedEvents.add(new SimpleSerializedObject>Document>(
                 insurancePolicyUpdatedEvent, Document.class, expectedTypes.get(1)));
         return upcastedEvents;
     }
 
     @Override
-    public List&lt;SerializedType&gt; upcast(SerializedType serializedType) {
+    public List&lt;SerializedType> upcast(SerializedType serializedType) {
         SerializedType addressUpdatedEventType = 
                 new SimpleSerializedType("org.example.AddressUpdatedEvent", "1");
         SerializedType insurancePolicyUpdatedEventType = 
@@ -595,10 +595,11 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                     InsurancePolicyUpdatedEvent and an instance of the AddressUpdatedEvent.</para>
                 </callout>
                 <callout arearefs="upcast-type">
+                    <para>
                     Upcasting can be expensive, possibly involving type conversion, deserialization
                     and logic. Axon is smart enough to prevent this from happening when it is not
                     neccesary through the concept of SerializedTypes. SerializedTypes provide Axon
-                    with the information to delay event upcasting until the application requires it. 
+                    with the information to delay event upcasting until the application requires it.</para> 
                 </callout>
             </calloutlist>
     </programlistingco></para>
@@ -608,24 +609,22 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             <para>The Upcaster Chain is responsible for upcasting events by chaining the output
                 of one upcaster to the next. It comes in the following two flavours:
             </para>
-            <orderedlist numeration="arabic">
+            <itemizedlist>
                 <listitem>
                     <para>The <code>SimpleUpcasterChain</code> immediately upcasts all events given to
                         it and returns them.
                     </para>
                 </listitem>
                 <listitem>
-                    <para>The <code>LazyUpcasterChain</code> prepares the events to be upcasted but only
-                        upcasts the events that are actually used. Whether or not your application needs all
-                        events this can give you a significant performance benefit. In the worst case
-                        it's as slow as the SimpleUpcasterChain.
-                    </para>
-                    <para>The LazyUpcasterChain does not guarantee that your events are in fact
-                        upcasted. This is a problem if your upcasters depend on eachother, e.g. if
-                        one upcaster assumes that another upcaster has been called.
-                    </para>
+                    <para>The <code>LazyUpcasterChain</code> prepares the events to be upcasted but
+                        only upcasts the events that are actually used. Whether or not your
+                        application needs all events this can give you a significant performance
+                        benefit. In the worst case it's as slow as the SimpleUpcasterChain. The
+                        LazyUpcasterChain does not guarantee that all the events in an Event Stream
+                        are in fact upcasted. When your upcasters rely on information from previous
+                        events, this may be a problem. </para>
                 </listitem>
-            </orderedlist>
+            </itemizedlist>
             <para>The LazyUpcasterChain is a safe choice if your upcasters are stateless or do
                 not depend on other upcasters. Always consider using the LazyUpcasterChain since
                 it can provide a great performance benefit over the SimpleUpcasterChain. If you
@@ -634,15 +633,13 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         </sect2>
         <sect2>
             <title>Content type conversion</title>
-            <para>An upcaster works on a given content type (e.g. dom4j's Document). To provide
-                extra flexibility between upcasters, content types between chained upcasters may
-                vary. Axon will try to convert between the content types automatically by using
-                ContentTypeConverters. It will search for the shortest path from type
-                <code>x</code> to type <code>y</code>, perform the conversion and pass the
-                converted value into the requested upcaster. For performance reasons, conversion
-                will only be performed if the <code>canUpcast</code> method on the receiving
-                upcaster yields true.
-            </para>
+            <para>An upcaster works on a given content type (e.g. dom4j Document). To provide extra
+                flexibility between upcasters, content types between chained upcasters may vary.
+                Axon will try to convert between the content types automatically by using
+                ContentTypeConverters. It will search for the shortest path from type <code>x</code>
+                to type <code>y</code>, perform the conversion and pass the converted value into the
+                requested upcaster. For performance reasons, conversion will only be performed if
+                the <code>canUpcast</code> method on the receiving upcaster yields true. </para>
             <tip>
                 <para>To achieve the best performance, ensure that all upcasters in the same
                     chain (where one's output is another's input) work on the same content type.
