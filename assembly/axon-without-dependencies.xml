@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2010. Axon Framework
+  ~ Copyright (c) 2010-2011. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -18,40 +18,46 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
-    <id>with-dependencies</id>
+    <id>without-dependencies</id>
     <formats>
         <format>zip</format>
     </formats>
-    <includeBaseDirectory>false</includeBaseDirectory>
     <moduleSets>
         <moduleSet>
             <includes>
                 <include>*:axon-integration</include>
                 <include>*:axon-core</include>
                 <include>*:axon-test</include>
+                <include>*:axon-amqp</include>
+                <include>*:axon-mongo</include>
                 <include>*:axon-distributed-commandbus</include>
+                <include>*:axon-disruptor-commandbus</include>
+                <include>*:insight-plugin-axon</include>
             </includes>
             <binaries>
-                <dependencySets>
-                    <dependencySet>
-                        <unpack>false</unpack>
-                        <outputDirectory>dependencies</outputDirectory>
-                        <excludes>
-                            <exclude>org.axonframework:*</exclude>
-                        </excludes>
-                    </dependencySet>
-                </dependencySets>
+                <outputDirectory>dist</outputDirectory>
                 <unpack>false</unpack>
             </binaries>
+            <sources>
+                <outputDirectoryMapping>sources/${module.artifactId}/src/</outputDirectoryMapping>
+            </sources>
         </moduleSet>
     </moduleSets>
-    <dependencySets>
-        <dependencySet>
-            <outputDirectory>dependencies</outputDirectory>
-            <unpack>false</unpack>
-        </dependencySet>
-    </dependencySets>
     <fileSets>
+        <fileSet>
+            <directory>documentation/target/docbook/publish/en-US/pdf/</directory>
+            <outputDirectory>documentation</outputDirectory>
+            <includes>
+                <include>reference-guide-*.pdf</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>documentation/target/</directory>
+            <outputDirectory>documentation</outputDirectory>
+            <includes>
+                <include>*html*.zip</include>
+            </includes>
+        </fileSet>
         <fileSet>
             <directory>/</directory>
             <outputDirectory>/</outputDirectory>
@@ -61,4 +67,11 @@
             </includes>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>target/${project.artifactId}-${project.version}-javadoc.jar</source>
+            <destName>axon-apidoc-${project.version}.zip</destName>
+            <outputDirectory>documentation</outputDirectory>
+        </file>
+    </files>
 </assembly>

@@ -32,6 +32,7 @@
                 <include>*:axon-mongo</include>
                 <include>*:axon-distributed-commandbus</include>
                 <include>*:axon-disruptor-commandbus</include>
+                <include>*:insight-plugin-axon</include>
             </includes>
             <binaries>
                 <outputDirectory>dist</outputDirectory>
