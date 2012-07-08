@@ -57,7 +57,7 @@ public class MongoSagaRepositoryTest {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
-        mongoTemplate.database().dropDatabase();
+        mongoTemplate.sagaCollection().drop();
     }
 
     @DirtiesContext

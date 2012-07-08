@@ -1,6 +1,5 @@
 package org.axonframework.saga.repository.mongo;
 
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
 
 /**
@@ -22,12 +21,5 @@ public interface MongoTemplate {
      * @return DBCollection containing the sagas
      */
     DBCollection sagaCollection();
-
-    /**
-     * Returns the database for the axon sagas store.
-     *
-     * @return DB The axon sagas database
-     */
-    DB database();
 
 }

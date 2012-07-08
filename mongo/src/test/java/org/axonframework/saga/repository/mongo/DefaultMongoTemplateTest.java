@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.mongo;
+package org.axonframework.saga.repository.mongo;
 
 import com.mongodb.DB;
 import com.mongodb.Mongo;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 /**
  * @author Jettro Coenradie
  */
-public class AxonMongoWrapperTest {
+public class DefaultMongoTemplateTest {
 
     private DefaultMongoTemplate mongoTemplate;
     private Mongo mockMongo;
@@ -35,35 +35,36 @@ public class AxonMongoWrapperTest {
     public void createFixtures() {
         mockMongo = mock(Mongo.class);
         mockDb = mock(DB.class);
-        mongoTemplate = new DefaultMongoTemplate(mockMongo);
         when(mockMongo.getDB(anyString())).thenReturn(mockDb);
+        mongoTemplate = new DefaultMongoTemplate(mockMongo);
     }
 
     @Test
-    public void testDomainEvents() throws Exception {
-        mongoTemplate.domainEventCollection();
+    public void testSagas() throws Exception {
+        mongoTemplate.sagaCollection();
 
         verify(mockMongo).getDB("axonframework");
-        verify(mockDb).getCollection("domainevents");
+        verify(mockDb).getCollection("sagas");
     }
 
     @Test
-    public void testSnapshotEvents() throws Exception {
+    public void testAuthentication() {
+        char[] password = "pw".toCharArray();
+        mongoTemplate = new DefaultMongoTemplate(mockMongo, "dbName", "saga", "username", password);
+        mongoTemplate.sagaCollection();
 
-        mongoTemplate.snapshotEventCollection();
-
-        verify(mockMongo).getDB("axonframework");
-        verify(mockDb).getCollection("snapshotevents");
+        verify(mockDb).authenticate("username", password);
     }
 
     @Test
     public void testCustomProvidedNames() throws Exception {
-        mongoTemplate = new DefaultMongoTemplate(mockMongo, "customdatabase", "customevents", "customsnapshots");
+        mongoTemplate = new DefaultMongoTemplate(mockMongo,
+                                                 "customdatabase",
+                                                 "customsagas",
+                                                 null,
+                                                 null);
 
-        mongoTemplate.domainEventCollection();
-        verify(mockDb).getCollection("customevents");
-
-        mongoTemplate.snapshotEventCollection();
-        verify(mockDb).getCollection("customevents");
+        mongoTemplate.sagaCollection();
+        verify(mockDb).getCollection("customsagas");
     }
 }

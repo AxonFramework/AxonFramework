@@ -1,8 +1,8 @@
 package org.axonframework.saga.repository.mongo;
 
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
+import org.axonframework.common.mongo.AuthenticatingMongoTemplate;
 
 /**
  * MongoTemplate instance providing access to the MongoDB Collection containing stored Sagas.
@@ -11,53 +11,43 @@ import com.mongodb.Mongo;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DefaultMongoTemplate implements MongoTemplate {
+public class DefaultMongoTemplate extends AuthenticatingMongoTemplate implements MongoTemplate {
 
     private static final String DEFAULT_SAGAS_COLLECTION_NAME = "sagas";
-    private static final String DEFAULT_AXONFRAMEWORK_DATABASE = "axonframework";
 
-    private String databaseName = DEFAULT_AXONFRAMEWORK_DATABASE;
-    private String sagasCollectionName = DEFAULT_SAGAS_COLLECTION_NAME;
-
-    private Mongo mongoDb;
+    private final String sagasCollectionName;
 
     /**
-     * Initialize a template for the given <code>mongoDb</code> instance.
+     * Initialize a template for the given <code>mongoDb</code> instance, using default database name ("axonframework")
+     * and collection name ("sagas).
      *
-     * @param mongoDb The Mongo instance providing access to the database
+     * @param mongo The Mongo instance providing access to the database
      */
-    public DefaultMongoTemplate(Mongo mongoDb) {
-        this.mongoDb = mongoDb;
+    public DefaultMongoTemplate(Mongo mongo) {
+        super(mongo, null, null);
+        this.sagasCollectionName = DEFAULT_SAGAS_COLLECTION_NAME;
+    }
+
+    /**
+     * Creates a template connecting to given <code>mongo</code> instance, and loads sagas in the collection with given
+     * <code>sagasCollectionName</code>, in a database with given <code>databaseName</code>. When not
+     * <code>null</code>, the given <code>userName</code> and <code>password</code> are used to authenticate against
+     * the database.
+     *
+     * @param mongo               The Mongo instance configured to connect to the Mongo Server
+     * @param databaseName        The name of the database containing the data
+     * @param sagasCollectionName The collection containing the saga instance
+     * @param userName            The username to authenticate with. Use <code>null</code> to skip authentication
+     * @param password            The password to authenticate with. Use <code>null</code> to skip authentication
+     */
+    public DefaultMongoTemplate(Mongo mongo, String databaseName, String sagasCollectionName,
+                                String userName, char[] password) {
+        super(mongo, databaseName, userName, password);
+        this.sagasCollectionName = sagasCollectionName;
     }
 
     @Override
     public DBCollection sagaCollection() {
         return database().getCollection(sagasCollectionName);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DB database() {
-        return mongoDb.getDB(databaseName);
-    }
-
-    /**
-     * Changes the name of the collection to store the sagas in.
-     *
-     * @param sagasCollectionName String containing the name of the collection containing the sagas
-     */
-    public void setSagasCollectionName(String sagasCollectionName) {
-        this.sagasCollectionName = sagasCollectionName;
-    }
-
-    /**
-     * Changes the name of the database where axon events will be stored.
-     *
-     * @param databaseName String containing the name of the database for axon events
-     */
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
     }
 }
