@@ -1,5 +1,6 @@
 package org.axonframework.commandhandling.distributed;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.junit.*;
@@ -24,9 +25,30 @@ public class AnnotationRoutingStrategyTest {
         assertEquals("SomeIdentifier", actual);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = CommandDispatchException.class)
     public void testGetRoutingKey_NullKey() throws Exception {
-        testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand(null)));
+        assertNull(testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand(null))));
+    }
+
+    @Test(expected = CommandDispatchException.class)
+    public void testGetRoutingKey_NoKey() throws Exception {
+        assertNull(testSubject.getRoutingKey(new GenericCommandMessage<Object>("Just a String")));
+    }
+
+    @Test
+    public void testGetRoutingKey_NullValueWithStaticPolicy() throws Exception {
+        testSubject = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.STATIC_KEY);
+        CommandMessage<Object> command = new GenericCommandMessage<Object>(new Object());
+        // two calls should provide the same result
+        assertEquals(testSubject.getRoutingKey(command), testSubject.getRoutingKey(command));
+    }
+
+    @Test
+    public void testGetRoutingKey_NullValueWithRandomPolicy() throws Exception {
+        testSubject = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
+        CommandMessage<Object> command = new GenericCommandMessage<Object>(new Object());
+        // two calls should provide the same result
+        assertFalse(testSubject.getRoutingKey(command).equals(testSubject.getRoutingKey(command)));
     }
 
     public static class StubCommand {
