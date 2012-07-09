@@ -645,6 +645,26 @@ try {
             uses the <code>@TargetAggregateIdentifier</code> annotation on the Command Messages
             payload to extract the Routing Key. Obviously, you can also provide your own
             implementation.</para>
+        <para>By default, the RoutingKeyResolver implementations will throw an exception when no key
+            can be resolved from a Command Message. This behavior can be altered by providing a
+            UnresolvedRoutingKeyPolicy in the constructor of the MetaDataRoutingStrategy or
+            AnnotationRoutingStrategy. There are three possible policies:<itemizedlist>
+                <listitem>
+                    <para>ERROR: This is the default, and will cause an exception to be thrown when
+                        a Routing Key is not available</para>
+                </listitem>
+                <listitem>
+                    <para>RANDOM_KEY: Will return a random value when a Routing Key cannot be
+                        resolved from the Command Message. This effectively means that those
+                        commands will be routed to a random segment of the Command Bus.</para>
+                </listitem>
+                <listitem>
+                    <para>STATIC_KEY: Will return a static key (being "unresolved") for unresolved
+                        Routing Keys. This effectively means that all those commands will be routed
+                        to the same segment, as long as the configuration of segments does not
+                        change.</para>
+                </listitem>
+            </itemizedlist></para>
         <sect2>
             <title>JGroupsConnector</title>
             <para>The <code>JGroupsConnector</code> uses (as the name already gives away) JGroups as
