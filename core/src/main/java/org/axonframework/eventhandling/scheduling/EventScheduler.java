@@ -33,8 +33,8 @@ public interface EventScheduler {
      * ScheduleToken can be used to cancel the planned publication.
      * <p/>
      * The given <code>event</code> may be any object, as well as an EventMessage. In the latter case, the instance
-     * provided is the message being dispatched. In the former case, the given <code>event</code> will be wrapped as
-     * the payload of an EventMessage.
+     * provided is the donor for the payload and Meta Data of the actual message being dispatched. In the former case,
+     * the given <code>event</code> will be wrapped as the payload of an EventMessage.
      *
      * @param triggerDateTime The moment to trigger publication of the event
      * @param event           The event to publish
@@ -44,12 +44,11 @@ public interface EventScheduler {
 
     /**
      * Schedule the given <code>event</code> for publication after the given <code>triggerDuration</code>.  The
-     * returned
-     * ScheduleToken can be used to cancel the planned publication.
+     * returned ScheduleToken can be used to cancel the planned publication.
      * <p/>
      * The given <code>event</code> may be any object, as well as an EventMessage. In the latter case, the instance
-     * provided is the message being dispatched. In the former case, the given <code>event</code> will be wrapped as
-     * the payload of an EventMessage.
+     * provided is the donor for the payload and Meta Data of the actual message being dispatched. In the former case,
+     * the given <code>event</code> will be wrapped as the payload of an EventMessage.
      *
      * @param triggerDuration The amount of time to wait before publishing the event
      * @param event           The event to publish

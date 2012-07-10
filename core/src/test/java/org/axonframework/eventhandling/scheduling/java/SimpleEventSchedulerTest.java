@@ -21,6 +21,8 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.Saga;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.joda.time.Duration;
 import org.junit.*;
 import org.mockito.invocation.*;
@@ -106,19 +108,43 @@ public class SimpleEventSchedulerTest {
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         EventMessage<Object> event1 = createEvent();
-        EventMessage<Object> event2 = createEvent();
+        final EventMessage<Object> event2 = createEvent();
         ScheduleToken token1 = testSubject.schedule(new Duration(100), event1);
         testSubject.schedule(new Duration(120), event2);
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);
-        verify(eventBus).publish(event2);
+        verify(eventBus).publish(argThat(new EqualPayloadMatcher(event2)));
         executorService.shutdown();
-        assertTrue("Executor refused to shutdown within a second", executorService.awaitTermination(1,
-                                                                                                    TimeUnit.SECONDS));
+        assertTrue("Executor refused to shutdown within a second",
+                   executorService.awaitTermination(1, TimeUnit.SECONDS));
     }
 
     private EventMessage<Object> createEvent() {
         return new GenericEventMessage<Object>(new Object());
+    }
+
+    private static class EqualPayloadMatcher extends BaseMatcher<EventMessage> {
+
+        private final EventMessage<Object> event2;
+
+        public EqualPayloadMatcher(EventMessage<Object> event2) {
+            this.event2 = event2;
+        }
+
+        @Override
+        public boolean matches(Object o) {
+            return (o instanceof EventMessage)
+                    && event2.getPayload().equals(((EventMessage) o).getPayload())
+                    && event2.getMetaData().equals(((EventMessage) o).getMetaData());
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("an EventMessage with payload equal to ")
+                       .appendValue(event2.getPayload())
+                       .appendText(" and MetaData equal to")
+                       .appendValue(event2.getMetaData());
+        }
     }
 }

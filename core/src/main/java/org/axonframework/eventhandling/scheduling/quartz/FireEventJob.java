@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
 import org.quartz.Job;
@@ -53,16 +54,17 @@ public class FireEventJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         logger.debug("Starting job to publish a scheduled event");
-        EventMessage event = (EventMessage) context.getJobDetail().getJobDataMap().get(EVENT_KEY);
+        Object event = context.getJobDetail().getJobDataMap().get(EVENT_KEY);
+        EventMessage<?> eventMessage = createMessage(event);
         try {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
             EventTriggerCallback eventTriggerCallback = (EventTriggerCallback) context.getScheduler().getContext().get(
                     TRIGGER_CALLBACK_KEY);
             if (eventTriggerCallback != null) {
-                eventTriggerCallback.beforePublication(event);
+                eventTriggerCallback.beforePublication(eventMessage);
             }
             try {
-                eventBus.publish(event);
+                eventBus.publish(eventMessage);
             } catch (RuntimeException e) {
                 if (eventTriggerCallback != null) {
                     eventTriggerCallback.afterPublicationFailure(e);
@@ -77,5 +79,23 @@ public class FireEventJob implements Job {
             logger.warn("Exception occurred while executing a scheduled job");
             throw new JobExecutionException(e);
         }
+    }
+
+    /**
+     * Creates a new message for the scheduled event. This ensures that a new identifier and timestamp will always
+     * be generated, so that the timestamp will reflect the actual moment the trigger occurred.
+     *
+     * @param event The actual event (either a payload or an entire message) to create the message from
+     * @return the message to publish
+     */
+    private EventMessage<?> createMessage(Object event) {
+        EventMessage<?> eventMessage;
+        if (event instanceof EventMessage) {
+            eventMessage = new GenericEventMessage<Object>(((EventMessage) event).getPayload(),
+                                                           ((EventMessage) event).getMetaData());
+        } else {
+            eventMessage = new GenericEventMessage<Object>(event);
+        }
+        return eventMessage;
     }
 }

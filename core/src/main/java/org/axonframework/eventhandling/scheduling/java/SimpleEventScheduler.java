@@ -95,8 +95,7 @@ public class SimpleEventScheduler implements EventScheduler {
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
         String tokenId = IdentifierFactory.getInstance().generateIdentifier();
-        EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
-        ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(eventMessage, tokenId),
+        ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(event, tokenId),
                                                              triggerDuration.getMillis(),
                                                              TimeUnit.MILLISECONDS);
         tokens.put(tokenId, future);
@@ -116,20 +115,21 @@ public class SimpleEventScheduler implements EventScheduler {
 
     private class PublishEventTask implements Runnable {
 
-        private final EventMessage event;
+        private final Object event;
         private final String tokenId;
 
-        public PublishEventTask(EventMessage event, String tokenId) {
+        public PublishEventTask(Object event, String tokenId) {
             this.event = event;
             this.tokenId = tokenId;
         }
 
         @Override
         public void run() {
-            logger.info("Triggered the publication of event [{}]", event.getPayloadType().getSimpleName());
-            eventTriggerCallback.beforePublication(event);
+            EventMessage<?> eventMessage = createMessage();
+            logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
+            eventTriggerCallback.beforePublication(eventMessage);
             try {
-                eventBus.publish(event);
+                eventBus.publish(eventMessage);
             } catch (RuntimeException e) {
                 eventTriggerCallback.afterPublicationFailure(e);
                 throw e;
@@ -137,6 +137,23 @@ public class SimpleEventScheduler implements EventScheduler {
                 tokens.remove(tokenId);
             }
             eventTriggerCallback.afterPublicationSuccess();
+        }
+
+        /**
+         * Creates a new message for the scheduled event. This ensures that a new identifier and timestamp will always
+         * be generated, so that the timestamp will reflect the actual moment the trigger occurred.
+         *
+         * @return the message to publish
+         */
+        private EventMessage<?> createMessage() {
+            EventMessage<?> eventMessage;
+            if (event instanceof EventMessage) {
+                eventMessage = new GenericEventMessage<Object>(((EventMessage) event).getPayload(),
+                                                               ((EventMessage) event).getMetaData());
+            } else {
+                eventMessage = new GenericEventMessage<Object>(event);
+            }
+            return eventMessage;
         }
     }
 
