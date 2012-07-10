@@ -18,17 +18,12 @@ package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
-import org.axonframework.io.EventMessageReader;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageListener;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -44,23 +39,29 @@ public class ClusterMessageListener implements MessageListener {
     private static final Logger logger = LoggerFactory.getLogger(ClusterMessageListener.class);
 
     private final List<Cluster> clusters = new CopyOnWriteArrayList<Cluster>();
-    private final Serializer serializer;
+    private final AMQPMessageConverter messageConverter;
 
     /**
      * Initializes a ClusterMessageListener with given <code>initialCluster</code> that uses given
      * <code>serializer</code> to deserialize the message's contents into an EventMessage.
      *
-     * @param initialCluster The first cluster to assign to the listener
-     * @param serializer     The serializer to deserialize the message payload with
+     * @param initialCluster   The first cluster to assign to the listener
+     * @param messageConverter The message converter to use to convert AMQP Messages to Event Messages
      */
-    public ClusterMessageListener(Cluster initialCluster, Serializer serializer) {
-        this.serializer = serializer;
+    public ClusterMessageListener(Cluster initialCluster, AMQPMessageConverter messageConverter) {
+        this.messageConverter = messageConverter;
         this.clusters.add(initialCluster);
     }
 
     @Override
     public void onMessage(Message message) {
-        EventMessage eventMessage = fromByteArray(message.getBody());
+        EventMessage eventMessage = null;
+        try {
+            eventMessage = messageConverter.readAMQPMessage(message.getBody(),
+                                                            message.getMessageProperties().getHeaders());
+        } catch (RuntimeException e) {
+            logger.warn("Unable to deserialize an incoming message. Ignoring it.", e);
+        }
         if (eventMessage != null) {
             for (Cluster cluster : clusters) {
                 cluster.publish(eventMessage);
@@ -75,18 +76,5 @@ public class ClusterMessageListener implements MessageListener {
      */
     public void addCluster(Cluster cluster) {
         clusters.add(cluster);
-    }
-
-    private EventMessage fromByteArray(byte[] payload) {
-        try {
-            EventMessageReader in = new EventMessageReader(new DataInputStream(new ByteArrayInputStream(payload)),
-                                                           serializer);
-            return in.readEventMessage();
-        } catch (IOException e) {
-            throw new EventPublicationFailedException("Failed to serialize an EventMessage", e);
-        } catch (RuntimeException e) {
-            logger.warn("Unable to deserialize an incoming message. Ignoring it.", e);
-            return null;
-        }
     }
 }

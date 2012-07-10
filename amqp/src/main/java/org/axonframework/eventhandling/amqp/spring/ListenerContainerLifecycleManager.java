@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +57,11 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
      * already exists, it is assigned to the existing listener. Clusters that have been registered with the same
      * <code>queueName</code> will each receive a copy of all message on that queue
      *
-     * @param queueName The name of the queue the cluster should receive messages from
-     * @param cluster   The cluster to forward messages to
+     * @param queueName        The name of the queue the cluster should receive messages from
+     * @param cluster          The cluster to forward messages to
+     * @param messageConverter The message converter to use to convert the AMQP Message to an Event Message
      */
-    public synchronized void registerCluster(String queueName, Cluster cluster) {
+    public synchronized void registerCluster(String queueName, Cluster cluster, AMQPMessageConverter messageConverter) {
         if (containerPerQueue.containsKey(queueName)) {
             ClusterMessageListener existingListener = (ClusterMessageListener) containerPerQueue.get(queueName)
                                                                                                 .getMessageListener();
@@ -72,7 +74,7 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
         } else {
             SimpleMessageListenerContainer newContainer = createContainer();
             newContainer.setQueueNames(queueName);
-            newContainer.setMessageListener(new ClusterMessageListener(cluster, serializer));
+            newContainer.setMessageListener(new ClusterMessageListener(cluster, messageConverter));
             containerPerQueue.put(queueName, newContainer);
             if (started) {
                 newContainer.start();

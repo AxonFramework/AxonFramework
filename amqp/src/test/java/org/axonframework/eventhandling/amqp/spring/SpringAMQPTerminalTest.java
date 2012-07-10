@@ -3,6 +3,7 @@ package org.axonframework.eventhandling.amqp.spring;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
@@ -35,8 +36,8 @@ public class SpringAMQPTerminalTest {
         serializer = mock(Serializer.class);
         testSubject.setConnectionFactory(connectionFactory);
         testSubject.setExchangeName("mockExchange");
-        testSubject.setSerializer(serializer);
         testSubject.setTransactional(true);
+        testSubject.setMessageConverter(new DefaultAMQPMessageConverter(serializer));
     }
 
     @After
@@ -60,7 +61,7 @@ public class SpringAMQPTerminalTest {
         testSubject.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
-                                                  eq(true), eq(false),
+                                                  eq(false), eq(false),
                                                   any(AMQP.BasicProperties.class), isA(byte[].class));
         verify(transactionalChannel).txCommit();
         verify(transactionalChannel).close();
@@ -82,7 +83,7 @@ public class SpringAMQPTerminalTest {
         testSubject.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
-                                                  eq(true), eq(false),
+                                                  eq(false), eq(false),
                                                   any(AMQP.BasicProperties.class), isA(byte[].class));
         verify(transactionalChannel, never()).txCommit();
         verify(transactionalChannel, never()).close();
@@ -108,7 +109,7 @@ public class SpringAMQPTerminalTest {
         testSubject.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
-                                                  eq(true), eq(false),
+                                                  eq(false), eq(false),
                                                   any(AMQP.BasicProperties.class), isA(byte[].class));
         verify(transactionalChannel, never()).txRollback();
         verify(transactionalChannel, never()).txCommit();

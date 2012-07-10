@@ -16,18 +16,20 @@
 
 package org.axonframework.eventhandling.amqp.spring;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBusTerminal;
+import org.axonframework.eventhandling.amqp.AMQPMessage;
+import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
+import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
 import org.axonframework.eventhandling.amqp.MetaDataPropertyQueueNameResolver;
-import org.axonframework.eventhandling.amqp.PackageRougingKeyResolver;
+import org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver;
 import org.axonframework.eventhandling.amqp.QueueNameResolver;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
-import org.axonframework.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -40,9 +42,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
@@ -58,25 +59,25 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     private static final Logger logger = LoggerFactory.getLogger(SpringAMQPTerminal.class);
     private static final String DEFAULT_EXCHANGE_NAME = "Axon.EventBus";
     private static final String DEFAULT_QUEUE_NAME = DEFAULT_EXCHANGE_NAME + ".Default";
-    private static final AMQP.BasicProperties DURABLE = new AMQP.BasicProperties.Builder().deliveryMode(2).build();
 
     private ConnectionFactory connectionFactory;
-    private Serializer serializer;
     private String exchangeName = DEFAULT_EXCHANGE_NAME;
     private boolean isTransactional = false;
-    private boolean isDurable = false;
+    private boolean isDurable = true;
     private ListenerContainerLifecycleManager listenerContainerLifecycleManager;
     private QueueNameResolver queueNameResolver = new MetaDataPropertyQueueNameResolver(DEFAULT_QUEUE_NAME);
-    private RoutingKeyResolver routingKeyResolver = new PackageRougingKeyResolver();
+    private AMQPMessageConverter messageConverter;
     private ApplicationContext applicationContext;
+    private Serializer serializer;
+    private RoutingKeyResolver routingKeyResolver;
 
     @Override
     public void publish(EventMessage... events) {
         final Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
             for (EventMessage event : events) {
-                doSendMessage(channel, routingKeyResolver.resolveRoutingKey(event),
-                              asByteArray(event), isDurable ? DURABLE : null);
+                AMQPMessage amqpMessage = messageConverter.createAMQPMessage(event);
+                doSendMessage(channel, amqpMessage);
             }
             if (CurrentUnitOfWork.isStarted()) {
                 CurrentUnitOfWork.get().registerListener(new ChannelTransactionUnitOfWorkListener(channel));
@@ -109,16 +110,14 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      * Does the actual publishing of the given <code>body</code> on the given <code>channel</code>. This method can be
      * overridden to change the properties used to send a message.
      *
-     * @param channel    The channel to dispatch the message on
-     * @param routingKey The routing key for the message
-     * @param body       The body of the message to dispatch
-     * @param props      The default properties for the message   @throws IOException any exception that occurs while
-     *                   dispatching the message
+     * @param channel     The channel to dispatch the message on
+     * @param amqpMessage The AMQPMessage describing the characteristics of the message to publish
      * @throws java.io.IOException when an error occurs while writing the message
      */
-    protected void doSendMessage(Channel channel, String routingKey, byte[] body, AMQP.BasicProperties props)
+    protected void doSendMessage(Channel channel, AMQPMessage amqpMessage)
             throws IOException {
-        channel.basicPublish(exchangeName, routingKey, true, false, props, body);
+        channel.basicPublish(exchangeName, amqpMessage.getRoutingKey(), amqpMessage.isMandatory(),
+                             amqpMessage.isImmediate(), amqpMessage.getProperties(), amqpMessage.getBody());
     }
 
     private void tryRollback(Channel channel) {
@@ -132,19 +131,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     @Override
     public void onClusterCreated(final Cluster cluster) {
         String queueName = queueNameResolver.resolveQueueName(cluster);
-        getListenerContainerLifecycleManager().registerCluster(queueName, cluster);
-    }
-
-    private byte[] asByteArray(EventMessage event) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
-            outputStream.writeEventMessage(event);
-            return baos.toByteArray();
-        } catch (IOException e) {
-            // ByteArrayOutputStream doesn't throw IOException... anyway...
-            throw new EventPublicationFailedException("Failed to serialize an EventMessage", e);
-        }
+        getListenerContainerLifecycleManager().registerCluster(queueName, cluster, messageConverter);
     }
 
     @Override
@@ -152,8 +139,25 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         if (connectionFactory == null) {
             connectionFactory = applicationContext.getBean(ConnectionFactory.class);
         }
-        if (serializer == null) {
-            serializer = applicationContext.getBean(Serializer.class);
+        if (messageConverter == null) {
+            if (serializer == null) {
+                serializer = applicationContext.getBean(Serializer.class);
+            }
+            if (routingKeyResolver == null) {
+                Map<String, RoutingKeyResolver> routingKeyResolverCandidates = applicationContext.getBeansOfType(
+                        RoutingKeyResolver.class);
+                if (routingKeyResolverCandidates.size() > 1) {
+                    throw new AxonConfigurationException("No MessageConverter was configured, but none can be created "
+                                                                 + "using autowired properties, as more than 1 "
+                                                                 + "RoutingKeyResolver is present in the "
+                                                                 + "ApplicationContent");
+                } else if (routingKeyResolverCandidates.size() == 1) {
+                    routingKeyResolver = routingKeyResolverCandidates.values().iterator().next();
+                } else {
+                    routingKeyResolver = new PackageRoutingKeyResolver();
+                }
+            }
+            messageConverter = new DefaultAMQPMessageConverter(serializer, routingKeyResolver, isDurable);
         }
     }
 
@@ -177,16 +181,6 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     }
 
     /**
-     * Whether or not messages should be marked as "durable" when sending them out. Durable messages suffer from a
-     * performance penalty, but will survive a reboot of the Message broker that stores them.
-     *
-     * @param durable whether or not messages should be durable
-     */
-    public void setDurable(boolean durable) {
-        isDurable = durable;
-    }
-
-    /**
      * Sets the ConnectionFactory providing the Connections and Channels to send messages on. The SpringAMQPTerminal
      * does not cache or reuse connections. Providing a ConnectionFactory instance that caches connections will prevent
      * new connections to be opened for each invocation to {@link #publish(org.axonframework.domain.EventMessage[])}
@@ -200,15 +194,55 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     }
 
     /**
+     * Sets the Message Converter that creates AMQP Messages from Event Messages and vice versa. Setting this property
+     * will ignore the "durable", "serializer" and "routingKeyResolver" properties, which just act as short hands to
+     * create a DefaultAMQPMessageConverter instance.
+     * <p/>
+     * Defaults to a DefaultAMQPMessageConverter.
+     *
+     * @param messageConverter The message converter to convert AMQP Messages to Event Messages and vice versa.
+     */
+    public void setMessageConverter(AMQPMessageConverter messageConverter) {
+        this.messageConverter = messageConverter;
+    }
+
+    /**
+     * Whether or not messages should be marked as "durable" when sending them out. Durable messages suffer from a
+     * performance penalty, but will survive a reboot of the Message broker that stores them.
+     * <p/>
+     * By default, messages are durable.
+     *
+     * @param durable whether or not messages should be durable
+     */
+    public void setDurable(boolean durable) {
+        isDurable = durable;
+    }
+
+    /**
      * Sets the serializer to serialize messages with when sending them to the Exchange.
      * <p/>
      * Defaults to an autowired serializer, which requires exactly 1 eligible serializer to be present in the
      * application context.
+     * <p/>
+     * This setting is ignored if a AMQPMessageConverter is configured.
      *
      * @param serializer the serializer to serialize message with
      */
     public void setSerializer(Serializer serializer) {
         this.serializer = serializer;
+    }
+
+    /**
+     * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a {@link
+     * org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver}, which uses the package name of the message's
+     * payload as a Routing Key.
+     * <p/>
+     * This setting is ignored if a AMQPMessageConverter is configured.
+     *
+     * @param routingKeyResolver the RoutingKeyResolver to use
+     */
+    public void setRoutingKeyResolver(RoutingKeyResolver routingKeyResolver) {
+        this.routingKeyResolver = routingKeyResolver;
     }
 
     /**
@@ -238,16 +272,6 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      */
     public void setQueueNameResolver(QueueNameResolver queueNameResolver) {
         this.queueNameResolver = queueNameResolver;
-    }
-
-    /**
-     * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a {@link
-     * PackageRougingKeyResolver}, which uses the package name of the message's payload as a Routing Key.
-     *
-     * @param routingKeyResolver the RoutingKeyResolver to use
-     */
-    public void setRoutingKeyResolver(RoutingKeyResolver routingKeyResolver) {
-        this.routingKeyResolver = routingKeyResolver;
     }
 
     /**

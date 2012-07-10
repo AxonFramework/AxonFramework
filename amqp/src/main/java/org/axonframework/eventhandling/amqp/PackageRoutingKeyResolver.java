@@ -24,7 +24,7 @@ import org.axonframework.domain.EventMessage;
  * @author Allard Buijze
  * @since 2.0
  */
-public class PackageRougingKeyResolver implements RoutingKeyResolver {
+public class PackageRoutingKeyResolver implements RoutingKeyResolver {
 
     @Override
     public String resolveRoutingKey(EventMessage event) {

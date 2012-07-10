@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.amqp.spring;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
@@ -26,6 +27,7 @@ import org.hamcrest.Description;
 import org.junit.*;
 import org.junit.internal.matchers.*;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -42,12 +44,13 @@ public class ClusterMessageListenerTest {
     public void testMessageListenerInvokesAllClusters() throws Exception {
         Serializer serializer = new XStreamSerializer();
         Cluster cluster = mock(Cluster.class);
-        ClusterMessageListener testSubject = new ClusterMessageListener(cluster, serializer);
+        ClusterMessageListener testSubject = new ClusterMessageListener(cluster,
+                                                                        new DefaultAMQPMessageConverter(serializer));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
         outputStream.writeEventMessage(new GenericEventMessage<String>("Event"));
-        testSubject.onMessage(new Message(baos.toByteArray(), null));
+        testSubject.onMessage(new Message(baos.toByteArray(), new MessageProperties()));
 
         verify(cluster).publish(argThat(new TypeSafeMatcher<EventMessage>() {
             @Override
@@ -66,13 +69,15 @@ public class ClusterMessageListenerTest {
     public void testMessageListenerIgnoredOnDeserializationFailure() throws Exception {
         Serializer serializer = new XStreamSerializer();
         Cluster cluster = mock(Cluster.class);
-        ClusterMessageListener testSubject = new ClusterMessageListener(cluster, serializer);
+        ClusterMessageListener testSubject = new ClusterMessageListener(cluster,
+                                                                        new DefaultAMQPMessageConverter(serializer));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
         outputStream.writeEventMessage(new GenericEventMessage<String>("Event"));
         byte[] body = baos.toByteArray();
-        body = new String(body, Charset.forName("UTF-8")).replace("string", "strong").getBytes(Charset.forName("UTF-8"));
+        body = new String(body, Charset.forName("UTF-8")).replace("string", "strong")
+                                                         .getBytes(Charset.forName("UTF-8"));
         testSubject.onMessage(new Message(body, null));
 
         verify(cluster, never()).publish(any(EventMessage.class));

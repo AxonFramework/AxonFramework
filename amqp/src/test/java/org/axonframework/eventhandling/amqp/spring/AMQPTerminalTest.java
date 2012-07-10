@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeNoException;
@@ -79,19 +80,20 @@ public class AMQPTerminalTest {
         });
 
         List<Thread> threads = new ArrayList<Thread>();
+        final AtomicBoolean failed = new AtomicBoolean(false);
         for (int t = 0; t < THREAD_COUNT; t++) {
             threads.add(new Thread(new Runnable() {
                 @Override
                 public void run() {
                     for (int i = 0; i < EVENT_COUNT; i++) {
                         boolean sent = false;
-                        while (!sent) {
+                        while (!sent && !failed.get()) {
                             try {
                                 eventBus.publish(sentEvent);
                                 sent = true;
                             } catch (Exception e) {
-                                System.out.print(".");
-                                // continue trying...
+                                e.printStackTrace();
+                                failed.set(true);
                             }
                         }
                     }
@@ -110,6 +112,7 @@ public class AMQPTerminalTest {
         while (!cdl.await(1, TimeUnit.SECONDS)) {
             System.out.println("Waiting for more messages: " + cdl.getCount());
         }
+        assertFalse("At least one failure was detected while publishing messages", failed.get());
         assertEquals("Did not receive message in time", 0, cdl.getCount());
     }
 }

@@ -26,13 +26,13 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class PackageRougingKeyResolverTest {
+public class PackageRoutingKeyResolverTest {
 
-    private PackageRougingKeyResolver testSubject;
+    private PackageRoutingKeyResolver testSubject;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new PackageRougingKeyResolver();
+        testSubject = new PackageRoutingKeyResolver();
     }
 
     @Test
