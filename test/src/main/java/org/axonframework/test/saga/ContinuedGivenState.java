@@ -40,6 +40,24 @@ public interface ContinuedGivenState {
     GivenAggregateEventPublisher andThenAggregate(Object aggregateIdentifier);
 
     /**
+     * Simulate time shifts in the current given state. This can be useful when the time between given events is of
+     * importance.
+     *
+     * @param elapsedTime The amount of time that will elapse
+     * @return an object that allows registration of the actual events to send
+     */
+    ContinuedGivenState andThenTimeElapses(Duration elapsedTime);
+
+    /**
+     * Simulate time shifts in the current given state. This can be useful when the time between given events is of
+     * importance.
+     *
+     * @param newDateTime The time to advance the clock to
+     * @return an object that allows registration of the actual events to send
+     */
+    ContinuedGivenState andThenTimeAdvancesTo(DateTime newDateTime);
+
+    /**
      * Indicates that the given <code>event</code> has been published in the past. This event is sent to the associated
      * sagas.
      *

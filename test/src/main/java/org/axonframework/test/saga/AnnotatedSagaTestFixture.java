@@ -116,6 +116,22 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
+    public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) {
+        for (EventMessage event : eventScheduler.advanceTime(elapsedTime)) {
+            sagaManager.handle(event);
+        }
+        return this;
+    }
+
+    @Override
+    public ContinuedGivenState andThenTimeAdvancesTo(final DateTime newDateTime) {
+        for (EventMessage event : eventScheduler.advanceTime(newDateTime)) {
+            sagaManager.handle(event);
+        }
+        return this;
+    }
+
+    @Override
     public ContinuedGivenState andThenAPublished(Object event) {
         sagaManager.handle(new GenericEventMessage<Object>(event));
         return this;
@@ -165,6 +181,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
         private void publish(Object... events) {
             DateTimeUtils.setCurrentMillisFixed(currentTime().getMillis());
+
             try {
                 for (Object event : events) {
                     sagaManager.handle(new GenericEventMessage<Object>(event));

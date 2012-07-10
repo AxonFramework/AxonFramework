@@ -99,6 +99,30 @@ public class AnnotatedSagaTest {
     }
 
     @Test
+    public void testFixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() {
+        UUID aggregate1 = UUID.randomUUID();
+        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
+        FixtureExecutionResult validator = fixture
+                // event schedules a TriggerEvent after 10 minutes from t0
+                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()))
+                // time shifts to t0+5
+                .andThenTimeElapses(Duration.standardMinutes(5))
+                // reset event schedules a TriggerEvent after 10 minutes from t0+5
+                .andThenAggregate(aggregate1).published(new ResetTriggerEvent(aggregate1.toString()))
+                // when time shifts to t0+10
+                .whenTimeElapses(Duration.standardMinutes(6));
+
+        validator.expectActiveSagas(1);
+        validator.expectAssociationWith("identifier", aggregate1);
+        // 6 minutes have passed since the 10minute timer was reset,
+        // so expect the timer to be scheduled for 4 minutes (t0 + 15)
+        validator.expectScheduledEventMatching(Duration.standardMinutes(4),
+                                               Matchers.eventWithPayload(CoreMatchers.any(Object.class)));
+        validator.expectNoDispatchedCommands();
+        validator.expectPublishedEvents();
+    }
+
+    @Test
     public void testFixtureApi_WhenTimeElapses() {
         UUID identifier = UUID.randomUUID();
         UUID identifier2 = UUID.randomUUID();
