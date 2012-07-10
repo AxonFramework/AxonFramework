@@ -18,7 +18,7 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.util.lock.IdentifierBasedLock;
+import org.axonframework.common.lock.IdentifierBasedLock;
 
 /**
  * Implementation of the {@link LockManager} that uses a pessimistic locking strategy. Calls to obtainLock will block

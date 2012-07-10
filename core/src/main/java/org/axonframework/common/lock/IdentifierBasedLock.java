@@ -1,4 +1,4 @@
-package org.axonframework.util.lock;
+package org.axonframework.common.lock;
 
 import org.axonframework.common.Assert;
 

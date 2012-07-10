@@ -21,7 +21,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
-import org.axonframework.util.lock.IdentifierBasedLock;
+import org.axonframework.common.lock.IdentifierBasedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
