@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
@@ -27,6 +28,7 @@ import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
@@ -37,7 +39,8 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-@SuppressWarnings({"unchecked"}) public class AggregateAnnotationCommandHandlerTest {
+@SuppressWarnings({"unchecked"})
+public class AggregateAnnotationCommandHandlerTest {
 
     private AggregateAnnotationCommandHandler<StubCommandAnnotatedAggregate> testSubject;
     private SimpleCommandBus commandBus;
@@ -50,6 +53,40 @@ import static org.mockito.Mockito.*;
         testSubject = AggregateAnnotationCommandHandler.subscribe(StubCommandAnnotatedAggregate.class,
                                                                   mockRepository,
                                                                   commandBus);
+    }
+
+    @Test
+    public void testAggregateConstructorThrowsException() {
+        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("parameter")), new VoidCallback() {
+            @Override
+            protected void onSuccess() {
+                fail("Expected exception");
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                assertEquals("parameter", cause.getMessage());
+            }
+        });
+    }
+
+    @Test
+    public void testAggregateCommandHandlerThrowsException() {
+        String aggregateIdentifier = "abc123";
+        when(mockRepository.load(eq(aggregateIdentifier), anyLong()))
+                .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
+        commandBus.dispatch(asCommandMessage(new FailingUpdateCommand(aggregateIdentifier, "parameter")),
+                            new VoidCallback() {
+            @Override
+            protected void onSuccess() {
+                fail("Expected exception");
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+                assertEquals("parameter", cause.getMessage());
+            }
+        });
     }
 
     @Test
@@ -231,6 +268,12 @@ import static org.mockito.Mockito.*;
             apply(new StubDomainEvent());
         }
 
+        @CommandHandler
+        public StubCommandAnnotatedAggregate(FailingCreateCommand createCommand) {
+            super(IdentifierFactory.getInstance().generateIdentifier());
+            throw new RuntimeException(createCommand.getParameter());
+        }
+
         public StubCommandAnnotatedAggregate(Object aggregateIdentifier) {
             super(aggregateIdentifier);
         }
@@ -259,6 +302,11 @@ import static org.mockito.Mockito.*;
         public String handleUpdate(UpdateCommandWithAnnotatedFieldAndIntegerVersion updateCommand) {
             return "Field with integer version works fine";
         }
+
+        @CommandHandler
+        public void handleFailingUpdate(FailingUpdateCommand updateCommand) {
+            throw new RuntimeException(updateCommand.getMessage());
+        }
     }
 
     private static class CreateCommand {
@@ -274,6 +322,13 @@ import static org.mockito.Mockito.*;
         }
     }
 
+    private static class FailingCreateCommand extends CreateCommand {
+
+        private FailingCreateCommand(String parameter) {
+            super(parameter);
+        }
+    }
+
     private static class UpdateCommandWithAnnotatedMethod {
 
         private String aggregateIdentifier;
@@ -285,6 +340,20 @@ import static org.mockito.Mockito.*;
         @TargetAggregateIdentifier
         public String getAggregateIdentifier() {
             return aggregateIdentifier;
+        }
+    }
+
+    private static class FailingUpdateCommand extends UpdateCommandWithAnnotatedField {
+
+        private final String message;
+
+        private FailingUpdateCommand(String aggregateIdentifier, String message) {
+            super(aggregateIdentifier);
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 

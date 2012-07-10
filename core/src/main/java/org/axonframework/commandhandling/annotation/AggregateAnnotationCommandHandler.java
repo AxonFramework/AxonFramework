@@ -27,6 +27,7 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.PostConstruct;
@@ -137,7 +138,11 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
                 @Override
                 public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
                     T aggregate = loadAggregate(command);
+                    try {
                     return commandHandler.invoke(aggregate, command);
+                    } catch (InvocationTargetException e) {
+                        throw e.getCause();
+                    }
                 }
             };
             commandBus.subscribe(commandHandler.getPayloadType(), handler);
@@ -164,8 +169,11 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
 
         @Override
         public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
-            repository.add(handler.invoke(null, command));
-            return null;
-        }
+            try {
+	            repository.add(handler.invoke(null, command));
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+            return null;        }
     }
 }
