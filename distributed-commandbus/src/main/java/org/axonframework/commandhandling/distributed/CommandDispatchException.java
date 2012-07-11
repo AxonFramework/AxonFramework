@@ -1,6 +1,6 @@
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.common.AxonTransientException;
+import org.axonframework.common.AxonException;
 
 /**
  * Exception indicating that an error has occurred while trying to dispatch a command to another (potentially remote)
@@ -12,7 +12,7 @@ import org.axonframework.common.AxonTransientException;
  * @author Allard Buijze
  * @since 2.0
  */
-public class CommandDispatchException extends AxonTransientException {
+public class CommandDispatchException extends AxonException {
 
     private static final long serialVersionUID = 4587368927394283730L;
 
