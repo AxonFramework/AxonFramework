@@ -153,7 +153,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
         }
 
-        final T aggregate = createAggregate(aggregateIdentifier, events.peek());
+        final T aggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
         List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
         aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
         if (aggregate.isDeleted()) {
@@ -178,17 +178,6 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             unseenEvents.add(domainEventStream.next());
         }
         return unseenEvents;
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private T createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
-        T aggregate;
-        if (AggregateSnapshot.class.isAssignableFrom(firstEvent.getPayloadType())) {
-            aggregate = (T) ((AggregateSnapshot) firstEvent.getPayload()).getAggregate();
-        } else {
-            aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
-        }
-        return aggregate;
     }
 
     /**

@@ -21,8 +21,8 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -195,10 +195,10 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
     }
 
-    private static class SimpleAggregateFactory implements AggregateFactory<SimpleAggregateRoot> {
+    private static class SimpleAggregateFactory extends AbstractAggregateFactory<SimpleAggregateRoot> {
 
         @Override
-        public SimpleAggregateRoot createAggregate(Object aggregateIdentifier,
+        public SimpleAggregateRoot doCreateAggregate(Object aggregateIdentifier,
                                                    DomainEventMessage firstEvent) {
             return new SimpleAggregateRoot((UUID) aggregateIdentifier);
         }

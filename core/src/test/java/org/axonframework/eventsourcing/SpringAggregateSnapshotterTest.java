@@ -54,19 +54,21 @@ public class SpringAggregateSnapshotterTest {
 
         testSubject = new SpringAggregateSnapshotter();
         testSubject.setApplicationContext(mockApplicationContext);
-        when(mockApplicationContext.getBeansOfType(AggregateFactory.class))
-                .thenReturn(Collections.<String, AggregateFactory>singletonMap("myFactory", new AggregateFactory() {
-                    @Override
-                    public EventSourcedAggregateRoot createAggregate(Object aggregateIdentifier,
-                                                                     DomainEventMessage firstEvent) {
-                        return new StubAggregate(aggregateIdentifier);
-                    }
+        when(mockApplicationContext.getBeansOfType(AggregateFactory.class)).thenReturn(
+                Collections.<String, AggregateFactory>singletonMap(
+                        "myFactory",
+                        new AbstractAggregateFactory() {
+                            @Override
+                            public EventSourcedAggregateRoot doCreateAggregate(Object aggregateIdentifier,
+                                                                               DomainEventMessage firstEvent) {
+                                return new StubAggregate(aggregateIdentifier);
+                            }
 
-                    @Override
-                    public String getTypeIdentifier() {
-                        return "stub";
-                    }
-                }));
+                            @Override
+                            public String getTypeIdentifier() {
+                                return "stub";
+                            }
+                        }));
         testSubject.setEventStore(mockEventStore);
         testSubject.afterPropertiesSet();
         mockTransactionManager = mock(PlatformTransactionManager.class);

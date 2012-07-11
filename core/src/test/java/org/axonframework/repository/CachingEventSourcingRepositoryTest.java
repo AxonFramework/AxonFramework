@@ -24,8 +24,8 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateDeletedException;
-import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -124,10 +124,10 @@ public class CachingEventSourcingRepositoryTest {
         CurrentUnitOfWork.commit();
     }
 
-    private static class StubAggregateFactory implements AggregateFactory<StubAggregate> {
+    private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {
 
         @Override
-        public StubAggregate createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
+        public StubAggregate doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
             return new StubAggregate(aggregateIdentifier);
         }
 

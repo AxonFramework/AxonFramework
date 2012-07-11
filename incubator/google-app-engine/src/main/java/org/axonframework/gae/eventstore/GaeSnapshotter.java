@@ -23,7 +23,6 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.AggregateSnapshot;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -95,9 +94,8 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(eventStream);
 
-        return new GenericDomainEventMessage<AggregateSnapshot>(
-                aggregate.getIdentifier(), aggregate.getVersion(),
-                new AggregateSnapshot<EventSourcedAggregateRoot>(aggregate));
+        return new GenericDomainEventMessage<EventSourcedAggregateRoot>(
+                aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
     }
 
     @Override

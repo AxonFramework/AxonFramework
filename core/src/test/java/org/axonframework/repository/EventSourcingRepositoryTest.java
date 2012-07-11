@@ -25,9 +25,8 @@ import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.AggregateSnapshot;
 import org.axonframework.eventsourcing.ConflictResolver;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -114,8 +113,7 @@ public class EventSourcingRepositoryTest {
         UUID identifier = UUID.randomUUID();
         TestAggregate aggregate = new TestAggregate(identifier);
         when(mockEventStore.readEvents("test", identifier)).thenReturn(new SimpleDomainEventStream(
-                new GenericDomainEventMessage<AggregateSnapshot<TestAggregate>>(
-                        identifier, 10, new AggregateSnapshot<TestAggregate>(aggregate))
+                new GenericDomainEventMessage<TestAggregate>(identifier, 10, aggregate)
         ));
         assertSame(aggregate, testSubject.load(identifier));
     }
@@ -286,10 +284,10 @@ public class EventSourcingRepositoryTest {
         inOrder.verify(decorator2.lastSpy).next();
     }
 
-    private static class SubtAggregateFactory implements AggregateFactory<TestAggregate> {
+    private static class SubtAggregateFactory extends AbstractAggregateFactory<TestAggregate> {
 
         @Override
-        public TestAggregate createAggregate(Object aggregateIdentifier,
+        public TestAggregate doCreateAggregate(Object aggregateIdentifier,
                                              DomainEventMessage firstEvent) {
             return new TestAggregate((UUID) aggregateIdentifier);
         }

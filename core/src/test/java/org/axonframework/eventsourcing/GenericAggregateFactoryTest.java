@@ -60,9 +60,8 @@ public class GenericAggregateFactoryTest {
         StubAggregate aggregate = new StubAggregate("stubId");
         aggregate.doSomething();
         aggregate.commitEvents();
-        AggregateSnapshot<StubAggregate> snapshot = new AggregateSnapshot<StubAggregate>(aggregate);
-        DomainEventMessage<AggregateSnapshot> snapshotMessage = new GenericDomainEventMessage<AggregateSnapshot>(
-                aggregate.getIdentifier(), aggregate.getVersion(), snapshot);
+        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<StubAggregate>(
+                aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<StubAggregate>(StubAggregate.class);
         assertEquals("StubAggregate", factory.getTypeIdentifier());
         assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshotMessage));

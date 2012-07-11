@@ -43,18 +43,12 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
                                                 DomainEventStream eventStream) {
 
         DomainEventMessage firstEvent = eventStream.peek();
-        EventSourcedAggregateRoot aggregate;
-        if (AggregateSnapshot.class.isAssignableFrom(firstEvent.getPayloadType())) {
-            aggregate = ((AggregateSnapshot) firstEvent.getPayload()).getAggregate();
-        } else {
-            AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
-            aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
-        }
+        AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
+        EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(eventStream);
 
-        return new GenericDomainEventMessage<AggregateSnapshot>(
-                aggregate.getIdentifier(), aggregate.getVersion(),
-                new AggregateSnapshot<EventSourcedAggregateRoot>(aggregate));
+        return new GenericDomainEventMessage<EventSourcedAggregateRoot>(
+                aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
     }
 
     /**

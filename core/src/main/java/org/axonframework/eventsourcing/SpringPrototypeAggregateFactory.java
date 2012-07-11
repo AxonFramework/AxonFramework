@@ -33,8 +33,8 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 1.2
  */
-public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot>
-        implements AggregateFactory<T>, InitializingBean, ApplicationContextAware, BeanNameAware {
+public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot> extends AbstractAggregateFactory<T>
+        implements InitializingBean, ApplicationContextAware, BeanNameAware {
 
     private String prototypeBeanName;
     private String typeIdentifier;
@@ -43,8 +43,14 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public T createAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
-        return (T) applicationContext.getBean(prototypeBeanName, aggregateIdentifier);
+    public T doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
+        return (T) applicationContext.getBean(prototypeBeanName);
+    }
+
+    @Override
+    protected T postProcessInstance(T aggregate) {
+        applicationContext.getAutowireCapableBeanFactory().configureBean(aggregate, prototypeBeanName);
+        return aggregate;
     }
 
     @Override
@@ -93,7 +99,7 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
         if (!applicationContext.isPrototype(prototypeBeanName)) {
             throw new IncompatibleAggregateException(
                     format("Cannot initialize repository '%s'. "
-                                   + "The bean with name '%s' does not have the prototype scope.",
+                                   + "The bean with name '%s' does not have the 'prototype' scope.",
                            beanName, prototypeBeanName));
         }
         if (!EventSourcedAggregateRoot.class.isAssignableFrom(applicationContext.getType(prototypeBeanName))) {
