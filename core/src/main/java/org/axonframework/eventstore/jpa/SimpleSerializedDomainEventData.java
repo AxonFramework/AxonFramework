@@ -42,17 +42,20 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
     /**
      * Initialize an instance using given properties.
      *
+     * Note that the given <code>timestamp</code> must be in a format supported by {@link} DateTime#DateTime(Object)}.
+     *
      * @param eventIdentifier     The identifier of the event
      * @param aggregateIdentifier The identifier of the aggregate
      * @param sequenceNumber      The sequence number of the event
-     * @param timestamp           The timestamp of the event
+     * @param timestamp           The timestamp of the event (format must be supported by {@link
+     *                            DateTime#DateTime(Object)})
      * @param payloadType         The type identifier of the serialized payload
      * @param payloadRevision     The revision number of the serialized payload
      * @param payload             The serialized representation of the event
      * @param metaData            The serialized representation of the meta data
      */
     public SimpleSerializedDomainEventData(String eventIdentifier, String aggregateIdentifier, // NOSONAR - Long ctor
-                                           long sequenceNumber, String timestamp, String payloadType,
+                                           long sequenceNumber, Object timestamp, String payloadType,
                                            String payloadRevision, byte[] payload, byte[] metaData) { // NOSONAR
         this.eventIdentifier = eventIdentifier;
         this.aggregateIdentifier = aggregateIdentifier;
