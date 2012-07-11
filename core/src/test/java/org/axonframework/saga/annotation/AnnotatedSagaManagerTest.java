@@ -116,7 +116,7 @@ public class AnnotatedSagaManagerTest {
     }
 
     private Set<MyTestSaga> repositoryContents(String lookupValue) {
-        return sagaRepository.find(MyTestSaga.class, setOf(new AssociationValue("myIdentifier", lookupValue)));
+        return sagaRepository.find(MyTestSaga.class, new AssociationValue("myIdentifier", lookupValue));
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {

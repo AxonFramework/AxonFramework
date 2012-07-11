@@ -43,11 +43,11 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValues) {
+    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
         if (!initialized) {
             initialize();
         }
-        return super.find(type, associationValues);
+        return super.find(type, associationValue);
     }
 
     @Override

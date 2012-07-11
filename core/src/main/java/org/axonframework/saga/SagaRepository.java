@@ -41,7 +41,7 @@ public interface SagaRepository {
      *         return
      *         <code>null</code>.
      */
-    <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValue);
+    <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue);
 
     /**
      * Loads a known Saga instance by its unique identifier. Returned Sagas must be {@link #commit(Saga) committed}

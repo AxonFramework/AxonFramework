@@ -25,9 +25,11 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Default implementation of the AssociationValues interface. This implementation is fully serializable. Registered
@@ -40,7 +42,7 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
 
     private static final long serialVersionUID = 8273718165811296962L;
 
-    private Set<AssociationValue> values = new HashSet<AssociationValue>();
+    private Set<AssociationValue> values = new TreeSet<AssociationValue>(new AssociationValueComparator());
     private transient Set<ChangeListener> handlers = new HashSet<ChangeListener>();
 
     @Override
@@ -155,4 +157,25 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
         handlers = new HashSet<ChangeListener>();
     }
 
+    private static class AssociationValueComparator implements Comparator<AssociationValue>, Serializable {
+
+        private static final long serialVersionUID = -7771326798202988182L;
+
+        @Override
+        public int compare(AssociationValue o1, AssociationValue o2) {
+            if (o1 == null && o2 == null) {
+                return 0;
+            } else if (o1 == null) {
+                return -1;
+            } else if (o2 == null) {
+                return 1;
+            }
+            int result = o1.getKey().compareTo(o2.getKey());
+            if (result == 0) {
+                return o1.getValue().compareTo(o2.getValue());
+            }
+            return result;
+
+        }
+    }
 }

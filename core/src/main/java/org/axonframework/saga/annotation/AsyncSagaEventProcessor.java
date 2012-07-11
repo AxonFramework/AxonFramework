@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -129,8 +128,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
 
     private boolean invokeExistingSagas(AsyncSagaProcessingEvent entry) {
         boolean sagaInvoked = false;
-        Set<? extends Saga> sagas = sagaRepository.find(entry.getSagaType(),
-                                                        Collections.singleton(entry.getAssociationValue()));
+        Set<? extends Saga> sagas = sagaRepository.find(entry.getSagaType(), entry.getAssociationValue());
         for (Saga saga : sagas) {
             if (ownedByCurrentProcessor(saga.getSagaIdentifier())) {
                 processedSagas.put(saga.getSagaIdentifier(), saga);

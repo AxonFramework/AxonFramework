@@ -60,7 +60,7 @@ public class ClusterMessageListener implements MessageListener {
             eventMessage = messageConverter.readAMQPMessage(message.getBody(),
                                                             message.getMessageProperties().getHeaders());
         } catch (RuntimeException e) {
-            logger.warn("Unable to deserialize an incoming message. Ignoring it.", e);
+            logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
         }
         if (eventMessage != null) {
             for (Cluster cluster : clusters) {

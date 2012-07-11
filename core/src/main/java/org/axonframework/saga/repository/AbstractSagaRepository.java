@@ -43,15 +43,9 @@ public abstract class AbstractSagaRepository implements SagaRepository {
     private final SagaCache sagaCache = new SagaCache();
 
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValues) {
-        Set<String> sagaIdentifiers = new HashSet<String>();
+    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
+        Set<String> sagaIdentifiers = associationValueMap.findSagas(typeOf(type), associationValue);
         Set<T> result = new HashSet<T>();
-        for (AssociationValue associationValue : associationValues) {
-            Set<String> identifiers = associationValueMap.findSagas(typeOf(type), associationValue);
-            if (identifiers != null) {
-                sagaIdentifiers.addAll(identifiers);
-            }
-        }
         if (!sagaIdentifiers.isEmpty()) {
             for (String sagaId : sagaIdentifiers) {
                 T cachedSaga = load(type, sagaId);

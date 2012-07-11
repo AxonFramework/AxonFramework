@@ -55,7 +55,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     private static final int DEFAULT_BUFFER_SIZE = 512;
     private static final int DEFAULT_PROCESSOR_COUNT = 1;
 
-    private final SagaAnnotationInspector[] sagaAnnotationInspectors;
+    private final SagaMethodMessageHandlerInspector[] sagaAnnotationInspectors;
     private final EventBus eventBus;
     private volatile Disruptor<AsyncSagaProcessingEvent> disruptor;
 
@@ -81,9 +81,9 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     @SuppressWarnings({"unchecked"})
     public AsyncAnnotatedSagaManager(EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         this.eventBus = eventBus;
-        sagaAnnotationInspectors = new SagaAnnotationInspector[sagaTypes.length];
+        sagaAnnotationInspectors = new SagaMethodMessageHandlerInspector[sagaTypes.length];
         for (int i = 0; i < sagaTypes.length; i++) {
-            sagaAnnotationInspectors[i] = new SagaAnnotationInspector(sagaTypes[i]);
+            sagaAnnotationInspectors[i] = SagaMethodMessageHandlerInspector.getInstance(sagaTypes[i]);
         }
     }
 
@@ -134,8 +134,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     @SuppressWarnings({"unchecked"})
     @Override
     public void handle(final EventMessage event) {
-        for (final SagaAnnotationInspector annotationInspector : sagaAnnotationInspectors) {
-            final HandlerConfiguration handler = annotationInspector.findHandlerConfiguration(event);
+        for (final SagaMethodMessageHandlerInspector annotationInspector : sagaAnnotationInspectors) {
+            final SagaMethodMessageHandler handler = annotationInspector.getMessageHandler(event);
             if (handler.isHandlerAvailable()) {
                 final AbstractAnnotatedSaga newSagaInstance;
                 switch (handler.getCreationPolicy()) {
@@ -156,17 +156,17 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
 
     @Override
     public Class<?> getTargetType() {
-        return sagaAnnotationInspectors[0].getTargetType();
+        return sagaAnnotationInspectors[0].getSagaType();
     }
 
     private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
         private final EventMessage event;
-        private final SagaAnnotationInspector annotationInspector;
-        private final HandlerConfiguration handler;
+        private final SagaMethodMessageHandlerInspector annotationInspector;
+        private final SagaMethodMessageHandler handler;
         private final AbstractAnnotatedSaga newSagaInstance;
 
-        private SagaProcessingEventTranslator(EventMessage event, SagaAnnotationInspector annotationInspector,
-                                              HandlerConfiguration handler,
+        private SagaProcessingEventTranslator(EventMessage event, SagaMethodMessageHandlerInspector annotationInspector,
+                                              SagaMethodMessageHandler handler,
                                               AbstractAnnotatedSaga newSagaInstance) {
             this.event = event;
             this.annotationInspector = annotationInspector;

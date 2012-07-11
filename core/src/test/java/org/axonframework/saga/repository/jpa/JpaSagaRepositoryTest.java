@@ -31,13 +31,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.axonframework.common.TestUtils.setOf;
 import static org.junit.Assert.*;
 
 /**
@@ -75,8 +73,7 @@ public class JpaSagaRepositoryTest {
         otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
         entityManager.flush();
         entityManager.clear();
-        Set<MyTestSaga> actual = repository.find(MyTestSaga.class, Collections.singleton(new AssociationValue("key",
-                                                                                                              "value")));
+        Set<MyTestSaga> actual = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, actual.size());
         assertEquals(MyTestSaga.class, actual.iterator().next().getClass());
     }
@@ -92,9 +89,7 @@ public class JpaSagaRepositoryTest {
         otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
         entityManager.flush();
         entityManager.clear();
-        Set<InexistentSaga> actual = repository.find(InexistentSaga.class, Collections.singleton(new AssociationValue(
-                "key",
-                "value")));
+        Set<InexistentSaga> actual = repository.find(InexistentSaga.class, new AssociationValue("key", "value"));
         assertTrue("Didn't expect any sagas", actual.isEmpty());
     }
 
@@ -111,8 +106,7 @@ public class JpaSagaRepositoryTest {
         repository.commit(testSaga);
         entityManager.flush();
         entityManager.clear();
-        Set<MyTestSaga> actual = repository.find(MyTestSaga.class,
-                                                 Collections.singleton(new AssociationValue("key", "value")));
+        Set<MyTestSaga> actual = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertTrue("Didn't expect any sagas", actual.isEmpty());
     }
 
@@ -135,7 +129,7 @@ public class JpaSagaRepositoryTest {
         MyTestSaga saga = new MyTestSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
         repository.add(saga);
-        Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
+        Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded.size());
         MyTestSaga loadedSaga = loaded.iterator().next();
         assertEquals(identifier, loadedSaga.getSagaIdentifier());
@@ -163,15 +157,14 @@ public class JpaSagaRepositoryTest {
         repository.purgeCache();
 
         // load saga1
-        Set<MyTestSaga> loaded1 = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
+        Set<MyTestSaga> loaded1 = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded1.size());
         MyTestSaga loadedSaga1 = loaded1.iterator().next();
         assertEquals(identifier1, loadedSaga1.getSagaIdentifier());
         assertNotNull(entityManager.find(SagaEntry.class, identifier1));
 
         // load saga2
-        Set<MyOtherTestSaga> loaded2 = repository.find(MyOtherTestSaga.class, setOf(new AssociationValue("key",
-                                                                                                         "value")));
+        Set<MyOtherTestSaga> loaded2 = repository.find(MyOtherTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded2.size());
         MyOtherTestSaga loadedSaga2 = loaded2.iterator().next();
         assertEquals(identifier2, loadedSaga2.getSagaIdentifier());
@@ -185,7 +178,7 @@ public class JpaSagaRepositoryTest {
         MyTestSaga saga = new MyTestSaga(identifier);
         repository.add(saga);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
-        Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
+        Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded.size());
         MyTestSaga loadedSaga = loaded.iterator().next();
         assertEquals(identifier, loadedSaga.getSagaIdentifier());
@@ -217,7 +210,7 @@ public class JpaSagaRepositoryTest {
                                                         identifier, new AssociationValue("key", "value")));
         entityManager.flush();
         entityManager.clear();
-        Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
+        Set<MyTestSaga> loaded = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded.size());
         MyTestSaga loadedSaga = loaded.iterator().next();
         assertEquals(identifier, loadedSaga.getSagaIdentifier());
@@ -243,7 +236,7 @@ public class JpaSagaRepositoryTest {
         entityManager.clear();
         MyTestSaga loaded = repository.load(MyTestSaga.class, identifier);
         loaded.removeAssociationValue("key", "value");
-        Set<MyTestSaga> found = repository.find(MyTestSaga.class, setOf(new AssociationValue("key", "value")));
+        Set<MyTestSaga> found = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(0, found.size());
     }
 

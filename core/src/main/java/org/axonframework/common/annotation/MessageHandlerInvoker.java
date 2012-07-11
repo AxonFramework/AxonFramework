@@ -27,9 +27,10 @@ import java.lang.reflect.InvocationTargetException;
  * @author Allard Buijze
  * @since 0.6
  */
-public final class MessageHandlerInvoker extends AbstractHandlerInspector {
+public final class MessageHandlerInvoker {
 
     private final Object target;
+    private final MethodMessageHandlerInspector inspector;
 
     /**
      * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
@@ -39,7 +40,7 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
      * @param annotationType The type of annotation used to demarcate the handler methods
      */
     public MessageHandlerInvoker(Object target, Class<? extends Annotation> annotationType) {
-        super(target.getClass(), annotationType);
+        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(), annotationType);
         this.target = target;
     }
 
@@ -79,6 +80,10 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
         return m.invoke(target, parameter);
     }
 
+    public MethodMessageHandler findHandlerMethod(Message parameter) {
+        return inspector.findHandlerMethod(parameter);
+    }
+
     /**
      * Returns the target on which handler methods are invoked.
      *
@@ -86,6 +91,10 @@ public final class MessageHandlerInvoker extends AbstractHandlerInspector {
      */
     public Object getTarget() {
         return target;
+    }
+
+    public Class getTargetType() {
+        return inspector.getTargetType();
     }
 
     /**

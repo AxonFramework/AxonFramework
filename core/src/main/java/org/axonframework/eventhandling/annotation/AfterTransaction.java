@@ -44,8 +44,11 @@ import java.lang.annotation.Target;
  * @see org.axonframework.eventhandling.TransactionStatus#isSuccessful()
  * @see org.axonframework.eventhandling.TransactionStatus#getException()
  * @since 0.3
+ * @deprecated Transaction management on the EventListener level is deprecated. Use a transaction aware Cluster
+ *             instead.
  */
 @Documented
+@Deprecated
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface AfterTransaction {

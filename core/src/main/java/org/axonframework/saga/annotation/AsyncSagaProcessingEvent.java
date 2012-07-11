@@ -30,7 +30,7 @@ import org.axonframework.saga.Saga;
 public class AsyncSagaProcessingEvent {
 
     private EventMessage publishedEvent;
-    private HandlerConfiguration handler;
+    private SagaMethodMessageHandler handler;
     private Class<? extends AbstractAnnotatedSaga> sagaType;
     private AbstractAnnotatedSaga newSaga;
     private final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
@@ -58,7 +58,7 @@ public class AsyncSagaProcessingEvent {
      *
      * @return the handler that can process the published Event
      */
-    public HandlerConfiguration getHandler() {
+    public SagaMethodMessageHandler getHandler() {
         return handler;
     }
 
@@ -67,7 +67,7 @@ public class AsyncSagaProcessingEvent {
      *
      * @param handler the handler that can process the published Event
      */
-    public void setHandler(HandlerConfiguration handler) {
+    public void setHandler(SagaMethodMessageHandler handler) {
         this.handler = handler;
     }
 
@@ -80,7 +80,7 @@ public class AsyncSagaProcessingEvent {
         if (handler == null) {
             return null;
         }
-        return handler.getAssociationValue();
+        return handler.getAssociationValue(publishedEvent);
     }
 
     /**

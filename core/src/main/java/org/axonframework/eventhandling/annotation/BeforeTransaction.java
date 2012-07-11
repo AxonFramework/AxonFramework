@@ -39,8 +39,11 @@ import java.lang.annotation.Target;
  * @author Allard Buijze
  * @see org.axonframework.eventhandling.TransactionStatus#setMaxTransactionSize(int)
  * @since 0.3
+ * @deprecated Transaction management on the EventListener level is deprecated. Use a transaction aware Cluster
+ *             instead.
  */
 @Documented
+@Deprecated
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface BeforeTransaction {

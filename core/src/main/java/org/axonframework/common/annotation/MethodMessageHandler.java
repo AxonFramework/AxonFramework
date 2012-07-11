@@ -28,7 +28,7 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
- * Represents a method recognized as a handler by the handler inspector (see {@link AbstractHandlerInspector}).
+ * Represents a method recognized as a handler by the handler inspector (see {@link MethodMessageHandlerInspector}).
  *
  * @author Allard Buijze
  * @since 2.0

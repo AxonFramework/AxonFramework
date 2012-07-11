@@ -38,8 +38,8 @@ import java.util.Set;
  */
 public class AnnotatedSagaManager extends AbstractSagaManager {
 
-    private final Set<SagaAnnotationInspector<? extends AbstractAnnotatedSaga>> managedSagaTypes =
-            new HashSet<SagaAnnotationInspector<? extends AbstractAnnotatedSaga>>();
+    private final Set<SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>> managedSagaTypes =
+            new HashSet<SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>>();
 
     /**
      * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
@@ -66,43 +66,45 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(eventBus, sagaRepository, sagaFactory);
         for (Class<? extends AbstractAnnotatedSaga> sagaClass : sagaClasses) {
-            managedSagaTypes
-                    .add(new SagaAnnotationInspector<AbstractAnnotatedSaga>((Class<AbstractAnnotatedSaga>) sagaClass));
+            managedSagaTypes.add(SagaMethodMessageHandlerInspector.getInstance(sagaClass));
         }
     }
 
     @Override
     protected Set<Saga> findSagas(EventMessage event) {
         Set<Saga> sagasFound = new HashSet<Saga>();
-        for (SagaAnnotationInspector<? extends AbstractAnnotatedSaga> entry : managedSagaTypes) {
+        for (SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> entry : managedSagaTypes) {
             sagasFound.addAll(findSagas(event, entry));
         }
         return sagasFound;
     }
 
     private <T extends AbstractAnnotatedSaga> Set<T> findSagas(EventMessage event,
-                                                               SagaAnnotationInspector<T> inspector) {
-        HandlerConfiguration configuration = inspector.findHandlerConfiguration(event);
+                                                               SagaMethodMessageHandlerInspector<T> inspector) {
+        SagaMethodMessageHandler configuration = inspector.getMessageHandler(event);
         if (!configuration.isHandlerAvailable()) {
             return Collections.emptySet();
         }
-        Set<AssociationValue> associationValues = new HashSet<AssociationValue>();
-        associationValues.add(configuration.getAssociationValue());
-        Set<T> sagasFound = getSagaRepository().find(inspector.getSagaType(), associationValues);
-        if ((sagasFound.isEmpty()
-                && configuration.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)
-                || configuration.getCreationPolicy() == SagaCreationPolicy.ALWAYS) {
-            T saga = createSaga(inspector.getSagaType());
-            sagasFound.add(saga);
-            saga.associateWith(configuration.getAssociationValue());
-            getSagaRepository().add(saga);
+        AssociationValue associationValue = configuration.getAssociationValue(event);
+        Set<T> sagasFound;
+        if (associationValue == null) {
+            sagasFound = Collections.emptySet();
+        } else {
+            sagasFound = getSagaRepository().find(inspector.getSagaType(), associationValue);
+            if ((sagasFound.isEmpty()
+                    && configuration.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)
+                    || configuration.getCreationPolicy() == SagaCreationPolicy.ALWAYS) {
+                T saga = createSaga(inspector.getSagaType());
+                sagasFound.add(saga);
+                saga.associateWith(associationValue);
+                getSagaRepository().add(saga);
+            }
         }
-
         return sagasFound;
     }
 
     @Override
     public Class<?> getTargetType() {
-        return managedSagaTypes.iterator().next().getTargetType();
+        return managedSagaTypes.iterator().next().getSagaType();
     }
 }

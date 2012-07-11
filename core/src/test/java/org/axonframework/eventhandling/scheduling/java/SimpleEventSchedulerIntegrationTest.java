@@ -37,7 +37,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.axonframework.common.TestUtils.setOf;
 import static org.junit.Assert.*;
 
 /**
@@ -69,8 +68,7 @@ public class SimpleEventSchedulerIntegrationTest {
                         eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(randomAssociationValue)));
                         Set<SimpleTimingSaga> actualResult =
                                 repository.find(SimpleTimingSaga.class,
-                                                setOf(new AssociationValue("association",
-                                                                           randomAssociationValue)));
+                                                new AssociationValue("association", randomAssociationValue));
                         assertEquals(1, actualResult.size());
                         return actualResult.iterator().next();
                     }

@@ -41,15 +41,20 @@ public class InMemorySagaRepository implements SagaRepository {
 
     private final ConcurrentMap<Class<?>, Set<Saga>> managedSagas = new ConcurrentHashMap<Class<?>, Set<Saga>>();
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, Set<AssociationValue> associationValues) {
+    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
         Set<T> result = new HashSet<T>();
-        for (AssociationValue associationValue : associationValues) {
-            result.addAll(find(type, associationValue));
+        List<Saga> sagasOfType = new ArrayList<Saga>(getSagasOfType(type));
+        for (Saga saga : sagasOfType) {
+            if (saga.getAssociationValues().contains(associationValue)) {
+                result.add((T) saga);
+            }
         }
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends Saga> T load(Class<T> type, String sagaIdentifier) {
         List<Saga> sagasOfType = new ArrayList<Saga>(getSagasOfType(type));
@@ -73,17 +78,6 @@ public class InMemorySagaRepository implements SagaRepository {
     @Override
     public void add(Saga saga) {
         commit(saga);
-    }
-
-    private <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
-        Set<T> result = new HashSet<T>();
-        List<Saga> sagasOfType = new ArrayList<Saga>(getSagasOfType(type));
-        for (Saga saga : sagasOfType) {
-            if (saga.getAssociationValues().contains(associationValue)) {
-                result.add((T) saga);
-            }
-        }
-        return result;
     }
 
     private Set<Saga> getSagasOfType(Class<?> type) {

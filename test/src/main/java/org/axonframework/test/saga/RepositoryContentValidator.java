@@ -21,7 +21,6 @@ import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.AxonAssertionError;
 
-import java.util.Collections;
 import java.util.Set;
 
 import static java.lang.String.format;
@@ -58,8 +57,7 @@ public class RepositoryContentValidator {
      */
     public void assertAssociationPresent(String associationKey, String associationValue) {
         Set<? extends AbstractAnnotatedSaga> associatedSagas =
-                sagaRepository.find(sagaType, Collections.singleton(new AssociationValue(associationKey,
-                                                                                         associationValue)));
+                sagaRepository.find(sagaType, new AssociationValue(associationKey, associationValue));
         if (associatedSagas.isEmpty()) {
             throw new AxonAssertionError(format(
                     "Expected a saga to be associated with key:<%s> value:<%s>, but found <none>",
@@ -77,8 +75,7 @@ public class RepositoryContentValidator {
      */
     public void assertNoAssociationPresent(String associationKey, String associationValue) {
         Set<? extends AbstractAnnotatedSaga> associatedSagas =
-                sagaRepository.find(sagaType, Collections.singleton(new AssociationValue(associationKey,
-                                                                                         associationValue)));
+                sagaRepository.find(sagaType, new AssociationValue(associationKey, associationValue));
         if (!associatedSagas.isEmpty()) {
             throw new AxonAssertionError(format(
                     "Expected a saga to be associated with key:<%s> value:<%s>, but found <%s>",

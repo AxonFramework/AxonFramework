@@ -21,4 +21,13 @@ package org.axonframework.test.saga;
  */
 public class TriggerExceptionWhileHandlingEvent {
 
+    private String identifier;
+
+    public TriggerExceptionWhileHandlingEvent(String identifier) {
+        this.identifier = identifier;
+    }
+
+    public String getIdentifier() {
+        return identifier;
+    }
 }
