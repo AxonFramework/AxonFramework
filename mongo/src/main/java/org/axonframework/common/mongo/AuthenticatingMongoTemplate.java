@@ -15,13 +15,12 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AuthenticatingMongoTemplate {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticatingMongoTemplate.class);
     private static final String DEFAULT_AXONFRAMEWORK_DATABASE = "axonframework";
 
     private final String userName;
     private final char[] password;
-
     private final DB database;
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticatingMongoTemplate.class);
 
     /**
      * Initializes the MongoTemplate to connect using the given <code>mongo</code> instance and a database with default
