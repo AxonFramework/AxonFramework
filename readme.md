@@ -1,4 +1,4 @@
 Welcome to the Axon Framework source repository
 ===============================================
 
-For more information, visit the website: http://www.axonframework.org
+For more information, visit our website: http://www.axonframework.org
