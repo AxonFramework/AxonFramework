@@ -63,6 +63,17 @@
                               use-explicit-flush="false" saga-serializer="sagaSerializer"
                               entity-manager-provider="myEntityManagerProvider"/>
 
+    <axon:cluster id="firstCluster" order="2">
+        <axon:meta-data>
+            <entry key="meta" value="value"/>
+        </axon:meta-data>
+        <axon:selectors>
+            <axon:package prefix="org.axonframework"/>
+        </axon:selectors>
+    </axon:cluster>
+
+    <axon:cluster id="defaultCluster" default="true" />
+
     <bean id="sagaSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 
     <bean id="commandTargetResolver" class="org.axonframework.testutils.MockitoMockFactoryBean">

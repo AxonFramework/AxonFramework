@@ -20,6 +20,7 @@ import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -32,7 +33,7 @@ import java.util.Map;
 public class SimpleClusterFactoryBean implements FactoryBean<Cluster>, InitializingBean, BeanNameAware {
 
     private SimpleCluster cluster;
-    private Map<String, Object> metaDataValues;
+    private Map<String, Object> metaDataValues = Collections.emptyMap();
     private String beanName;
 
     @Override

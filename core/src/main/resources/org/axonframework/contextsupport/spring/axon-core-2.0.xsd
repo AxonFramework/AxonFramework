@@ -32,22 +32,109 @@
     <xsd:element name="event-bus">
         <xsd:annotation>
             <xsd:documentation>
-                Spring context schema extension for the definition
-                of an EventBus instance.
+                Spring context schema extension for the definition of an EventBus instance.
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.eventhandling.SimpleEventBus"/>
+                    <tool:exports type="org.axonframework.eventhandling.ClusteringEventBus"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="beans:identifiedType">
-                    <xsd:attribute name="register-mbeans" type="xsd:boolean" use="optional">
+                    <xsd:attribute name="terminal" type="xsd:string" use="optional">
                         <xsd:annotation>
-                            <xsd:documentation>Indicate whether the mbeans should be registered or not. By default they
-                                are registered.
+                            <xsd:documentation>Reference to the EventBusTerminal implementation that publishes all
+                                EventMessages to all the Clusters, either in this VM or across VM's. Defaults to
+                                an instance that dispatches directly to all known local clusters (i.e. SimpleEventBus
+                                behavior).
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventhandling.EventBusTerminal"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="cluster-selector" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the ClusterSelector implementation that arranges
+                                EventListener into clusters. By default, auto-detects clusters defined in the
+                                application contexts. If none are present, reverts to a ClusterSelector implementation
+                                that puts all Event Listeners in a single Simple Cluster (i.e. SimpleEventBus behavior).
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventhandling.ClusterSelector"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="cluster">
+        <xsd:annotation>
+            <xsd:documentation>
+                Defines a Cluster to use with the Event Bus. The selectors define which Event Listeners will be selected
+                to join this cluster.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.eventhandling.Cluster"/>
+                    <tool:exports type="org.axonframework.eventhandling.ClusterSelector"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:all>
+                        <xsd:element ref="beans:bean" minOccurs="0"/>
+                        <xsd:element name="meta-data" type="beans:mapType" minOccurs="0"/>
+                        <xsd:element name="selectors" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+
+                                </xsd:documentation>
+                                <xsd:appinfo>
+                                    <tool:annotation>
+                                        <tool:exports type="org.axonframework.eventhandling.ClusterSelector"/>
+                                    </tool:annotation>
+                                </xsd:appinfo>
+                            </xsd:annotation>
+                            <xsd:complexType>
+                                <xsd:choice minOccurs="1" maxOccurs="unbounded">
+                                    <xsd:element name="instance-of" type="selectorInstanceOfType" minOccurs="0"
+                                                 maxOccurs="0"/>
+                                    <xsd:element name="class-name-matches"
+                                                 type="selectorClassNamePatternMatchType"/>
+                                    <xsd:element name="package" type="selectorPackagePrefixType"/>
+                                    <xsd:element name="annotation" type="selectorAnnotationType" minOccurs="0"
+                                                 maxOccurs="0"/>
+                                </xsd:choice>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:all>
+                    <xsd:attribute name="type" type="xsd:string"/>
+                    <xsd:attribute name="order" type="xsd:int">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Defines the relative order in which this cluster should be evaluated, compared to other
+                                clusters. When the order is identical to that of another cluster, the ordering happens
+                                based on the alphabetical order of their bean name.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="default" type="xsd:boolean" default="false">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Indicates whether this cluster should be selected as the default cluster. Only one
+                                cluster should have this set to true. If multiple clusters are configured as "default",
+                                the one with the lowest "order" will selected.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
@@ -55,6 +142,46 @@
             </xsd:complexContent>
         </xsd:complexType>
     </xsd:element>
+
+    <xsd:complexType name="selectorInstanceOfType">
+        <xsd:attribute name="type" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>The type of class that the EventListener must implement (or extend) in order to be
+                    selected for this cluster.
+                </xsd:documentation>
+                <xsd:appinfo>
+                    <tool:annotation>
+                        <tool:assignable-to type="java.lang.Object"/>
+                    </tool:annotation>
+                </xsd:appinfo>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="selectorClassNamePatternMatchType">
+        <xsd:annotation>
+            <xsd:documentation>Defines a selector that will match an Event Listeners class name against a pattern.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="pattern" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="selectorPackagePrefixType">
+        <xsd:annotation>
+            <xsd:documentation>Defines a selector that will match an Event Listeners class name using its package.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="prefix" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="selectorAnnotationType">
+        <xsd:annotation>
+            <xsd:documentation>Defines a selector that will match an Event Listeners class name if it is annotated with
+                a specific annotation.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:attribute name="type" type="xsd:string"/>
+    </xsd:complexType>
 
     <!-- ================================== -->
     <!-- ==== commandBus ================== -->

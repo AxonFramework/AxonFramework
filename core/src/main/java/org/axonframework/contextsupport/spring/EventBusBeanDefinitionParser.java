@@ -16,11 +16,15 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.AutowiringClusterSelector;
+import org.axonframework.eventhandling.ClusteringEventBus;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
 /**
@@ -34,15 +38,30 @@ import org.w3c.dom.Element;
  */
 public class EventBusBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
+    private static final String TERMINAL_ATTRIBUTE = "terminal";
+    private static final String CLUSTER_SELECTOR_REF = "cluster-selector";
+
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition eventBusDefinition = new GenericBeanDefinition();
-        eventBusDefinition.setBeanClass(SimpleEventBus.class);
+        eventBusDefinition.setBeanClass(ClusteringEventBus.class);
 
-        String attribute = element.getAttribute("register-mbeans");
+        String clusterSelectorRef = element.getAttribute(CLUSTER_SELECTOR_REF);
+        if (StringUtils.hasText(clusterSelectorRef)) {
+            eventBusDefinition.getConstructorArgumentValues()
+                              .addIndexedArgumentValue(0,
+                                                       new RuntimeBeanReference(clusterSelectorRef));
+        } else {
+            eventBusDefinition.getConstructorArgumentValues()
+                              .addIndexedArgumentValue(0, BeanDefinitionBuilder
+                                      .genericBeanDefinition(AutowiringClusterSelector.class).getBeanDefinition());
+        }
 
-        if (!"".equals(attribute)) {
-            eventBusDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, attribute);
+        String terminalRef = element.getAttribute(TERMINAL_ATTRIBUTE);
+        if (StringUtils.hasText(terminalRef)) {
+            eventBusDefinition.getConstructorArgumentValues()
+                              .addIndexedArgumentValue(1,
+                                                       new RuntimeBeanReference(terminalRef));
         }
 
         return eventBusDefinition;
