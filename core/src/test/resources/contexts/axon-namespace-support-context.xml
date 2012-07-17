@@ -69,6 +69,7 @@
         </axon:meta-data>
         <axon:selectors>
             <axon:package prefix="org.axonframework"/>
+            <axon:annotation type="java.lang.annotation.Inherited" />
         </axon:selectors>
     </axon:cluster>
 

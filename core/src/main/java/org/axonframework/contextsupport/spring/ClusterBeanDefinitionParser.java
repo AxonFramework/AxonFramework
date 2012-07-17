@@ -1,6 +1,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.AnnotationClusterSelector;
 import org.axonframework.eventhandling.ClassNamePatternClusterSelector;
 import org.axonframework.eventhandling.ClassNamePrefixClusterSelector;
 import org.axonframework.eventhandling.Cluster;
@@ -48,6 +49,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
     private static final String SELECTORS_ELEMENT = "selectors";
     private static final String SELECTOR_CLASS_NAME_MATCHES_ELEMENT = "class-name-matches";
     private static final String SELECTOR_PACKAGE_ELEMENT = "package";
+    private static final String SELECTOR_ANNOTATION_ELEMENT = "annotation";
 
     private static final String DEFAULT_SELECTOR_SUFFIX = "$defaultSelector";
     private static final String SELECTOR_SUFFIX = "$selector";
@@ -154,6 +156,11 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         } else if (SELECTOR_PACKAGE_ELEMENT.equals(nodeName)) {
             return BeanDefinitionBuilder.genericBeanDefinition(ClassNamePrefixClusterSelector.class)
                                         .addConstructorArgValue(item.getAttribute(PREFIX_ATTRIBUTE))
+                                        .addConstructorArgReference(clusterId)
+                                        .getBeanDefinition();
+        } else if (SELECTOR_ANNOTATION_ELEMENT.equals(nodeName)) {
+            return BeanDefinitionBuilder.genericBeanDefinition(AnnotationClusterSelector.class)
+                                        .addConstructorArgValue(item.getAttribute(TYPE_ATTRIBUTE))
                                         .addConstructorArgReference(clusterId)
                                         .getBeanDefinition();
         }

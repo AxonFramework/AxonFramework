@@ -108,13 +108,10 @@
                             </xsd:annotation>
                             <xsd:complexType>
                                 <xsd:choice minOccurs="1" maxOccurs="unbounded">
-                                    <xsd:element name="instance-of" type="selectorInstanceOfType" minOccurs="0"
-                                                 maxOccurs="0"/>
-                                    <xsd:element name="class-name-matches"
-                                                 type="selectorClassNamePatternMatchType"/>
+                                    <!--<xsd:element name="instance-of" type="selectorInstanceOfType"/>-->
+                                    <xsd:element name="class-name-matches" type="selectorClassNamePatternMatchType"/>
                                     <xsd:element name="package" type="selectorPackagePrefixType"/>
-                                    <xsd:element name="annotation" type="selectorAnnotationType" minOccurs="0"
-                                                 maxOccurs="0"/>
+                                    <xsd:element name="annotation" type="selectorAnnotationType"/>
                                 </xsd:choice>
                             </xsd:complexType>
                         </xsd:element>
@@ -180,7 +177,11 @@
                 a specific annotation.
             </xsd:documentation>
         </xsd:annotation>
-        <xsd:attribute name="type" type="xsd:string"/>
+        <xsd:attribute name="type" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>The type of annotation to find on the class.</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 
     <!-- ================================== -->
