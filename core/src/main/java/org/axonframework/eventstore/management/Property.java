@@ -82,6 +82,8 @@ public interface Property {
     /**
      * Returns a criteria instance where the property must be "in" the given <code>expression</code>. Some event stores
      * also allow the given expression to be a property.
+     * <p/>
+     * Note that the given <code>expression</code> must describe a collection of some sort.
      *
      * @param expression The expression to match against the property
      * @return a criteria instance describing a "is in" requirement.

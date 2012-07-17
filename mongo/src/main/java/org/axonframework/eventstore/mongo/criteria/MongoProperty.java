@@ -69,12 +69,12 @@ public class MongoProperty implements Property {
 
     @Override
     public MongoCriteria in(Object expression) {
-        return new SimpleMongoOperator(this, "$in", expression);
+        return new CollectionCriteria(this, "$in", expression);
     }
 
     @Override
     public MongoCriteria notIn(Object expression) {
-        return new SimpleMongoOperator(this, "$nin", expression);
+        return new CollectionCriteria(this, "$nin", expression);
     }
 
     /**
