@@ -40,15 +40,22 @@ public class RecordingCommandBus implements CommandBus {
     private ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions =
             new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private List<CommandMessage<?>> dispatchedCommands = new ArrayList<CommandMessage<?>>();
+    private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
     public void dispatch(CommandMessage<?> command) {
         dispatchedCommands.add(command);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         dispatchedCommands.add(command);
+        try {
+            callback.onSuccess((R) callbackBehavior.handle(command.getPayload(), command.getMetaData()));
+        } catch (Throwable throwable) {
+            callback.onFailure(throwable);
+        }
     }
 
     @Override
@@ -116,5 +123,15 @@ public class RecordingCommandBus implements CommandBus {
      */
     public List<CommandMessage<?>> getDispatchedCommands() {
         return dispatchedCommands;
+    }
+
+
+    /**
+     * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.
+     *
+     * @param callbackBehavior The instance deciding to how the callback should be invoked.
+     */
+    public void setCallbackBehavior(CallbackBehavior callbackBehavior) {
+        this.callbackBehavior = callbackBehavior;
     }
 }

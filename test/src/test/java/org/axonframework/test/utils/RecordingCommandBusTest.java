@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
@@ -31,6 +32,7 @@ import static org.junit.Assert.*;
  * @author Allard Buijze
  */
 public class RecordingCommandBusTest {
+
     private RecordingCommandBus testSubject;
 
     @Before
@@ -44,7 +46,34 @@ public class RecordingCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object>() {
             @Override
             public void onSuccess(Object result) {
+                assertNull("Expected default callback behavior to invoke onSuccess(null)", result);
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
                 fail("Didn't expect callack to be invoked");
+            }
+        });
+        //noinspection AssertEqualsBetweenInconvertibleTypes
+        List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
+        assertEquals(2, actual.size());
+        assertEquals("First", actual.get(0).getPayload());
+        assertEquals("Second", actual.get(1).getPayload());
+    }
+
+    @Test
+    public void testPublishCommandWithCallbackBehavior() {
+        testSubject.setCallbackBehavior(new CallbackBehavior() {
+            @Override
+            public Object handle(Object commandPayload, MetaData commandMetaData) throws Throwable {
+                return "callbackResult";
+            }
+        });
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object>() {
+            @Override
+            public void onSuccess(Object result) {
+                assertEquals("callbackResult", result);
             }
 
             @Override

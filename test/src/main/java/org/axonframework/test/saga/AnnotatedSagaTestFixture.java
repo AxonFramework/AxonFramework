@@ -26,6 +26,7 @@ import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.utils.AutowiredResourceInjector;
+import org.axonframework.test.utils.CallbackBehavior;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
@@ -52,6 +53,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     private Map<Object, AggregateEventPublisherImpl> aggregatePublishers =
             new HashMap<Object, AggregateEventPublisherImpl>();
     private FixtureExecutionResultImpl fixtureExecutionResult;
+    private final RecordingCommandBus commandBus;
 
     /**
      * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given <code>sagaType</code>.
@@ -69,7 +71,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         sagaManager.setSuppressExceptions(false);
 
         registeredResources.add(eventBus);
-        RecordingCommandBus commandBus = new RecordingCommandBus();
+        commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         fixtureExecutionResult = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus, commandBus,
@@ -97,6 +99,11 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     @Override
     public void registerResource(Object resource) {
         registeredResources.add(resource);
+    }
+
+    @Override
+    public void setCallbackBehavior(CallbackBehavior callbackBehavior) {
+        commandBus.setCallbackBehavior(callbackBehavior);
     }
 
     @Override
