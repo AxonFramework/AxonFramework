@@ -1,6 +1,5 @@
 package org.axonframework.serializer.bson;
 
-import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
 import org.axonframework.serializer.Revision;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateMidnight;
