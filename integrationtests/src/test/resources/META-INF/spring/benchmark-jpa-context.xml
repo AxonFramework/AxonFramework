@@ -16,9 +16,8 @@
   ~ limitations under the License.
   -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       ">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
     <bean id="eventStoreBenchMark"
           class="org.axonframework.integrationtests.eventstore.benchmark.jpa.JpaEventStoreBenchMark">
@@ -26,11 +25,7 @@
         <constructor-arg index="1" ref="transactionManager"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
-        <constructor-arg>
-            <bean class="org.axonframework.serializer.xml.XStreamSerializer"/>
-        </constructor-arg>
-    </bean>
+    <axon:jpa-event-store id="eventStore"/>
 
     <!-- Infrastructure configuration -->
 
@@ -63,6 +58,7 @@
         <property name="password" value="${jdbc.password}"/>
         <property name="maxPoolSize" value="150"/>
         <property name="minPoolSize" value="50"/>
+        <property name="initialPoolSize" value="100"/>
     </bean>
 
 </beans>

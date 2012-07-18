@@ -16,10 +16,9 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark.fs;
 
+import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
-
-import java.util.UUID;
 
 /**
  * @author Jettro Coenradie
@@ -50,7 +49,7 @@ public class FileSystemEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
         @Override
         public void run() {
-            final UUID aggregateId = UUID.randomUUID();
+            final String aggregateId = IdentifierFactory.getInstance().generateIdentifier();
             int eventSequence = 0;
             for (int t = 0; t < getTransactionCount(); t++) {
                 eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, fileSystemEventStore, eventSequence);
