@@ -111,6 +111,7 @@
             </activation>
             <modules>
                 <module>incubator/redis</module>
+                <module>incubator/cassandra</module>
             </modules>
         </profile>
     </profiles>
