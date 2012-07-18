@@ -39,6 +39,19 @@
             <artifactId>hector-core</artifactId>
             <version>1.1-0</version>
         </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-integrationtests</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
