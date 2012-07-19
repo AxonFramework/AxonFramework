@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import javax.persistence.EntityExistsException;
 import javax.sql.DataSource;
 
 /**
@@ -146,12 +147,20 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public boolean isDuplicateKeyViolation(Exception exception) {
+        if (causeIsEntityExistsException(exception)) {
+            return true;
+        }
         SQLException sqlException = findSQLException(exception);
         boolean isDuplicateKey = false;
         if (sqlException != null) {
             isDuplicateKey = duplicateKeyCodes.contains(sqlException.getErrorCode());
         }
         return isDuplicateKey;
+    }
+
+    private boolean causeIsEntityExistsException(Throwable exception) {
+        return exception instanceof EntityExistsException
+                || (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
     }
 
     private SQLException findSQLException(Throwable exception) {

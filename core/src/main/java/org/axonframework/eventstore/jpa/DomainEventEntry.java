@@ -19,10 +19,7 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 /**
  * JPA compliant wrapper around a DomainEvent. It stores a DomainEvent by extracting some of the information needed to
@@ -33,15 +30,12 @@ import javax.persistence.UniqueConstraint;
  * @since 0.5
  */
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"aggregateIdentifier", "sequenceNumber", "type"})})
 public class DomainEventEntry extends AbstractEventEntry {
 
     /**
      * Default constructor, as required by JPA specification. Do not use directly!
      */
     protected DomainEventEntry() {
-        super();
     }
 
     /**

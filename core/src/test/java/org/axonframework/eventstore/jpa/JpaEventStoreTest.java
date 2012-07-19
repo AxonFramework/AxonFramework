@@ -52,9 +52,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.PersistenceException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -495,10 +495,10 @@ public class JpaEventStoreTest {
                                                           "Mock contents", MetaData.emptyInstance())));
         } catch (ConcurrencyException ex) {
             fail("Didn't expect exception to be translated");
-        } catch (PersistenceException ex) {
+        } catch (EntityExistsException ex) {
             assertTrue("Got the right exception, "
-                               + "but the message doesn't seem to mention 'Constraint': " + ex.getMessage(),
-                       ex.getMessage().contains("Constraint"));
+                               + "but the message doesn't seem to mention 'DomainEventEntry': " + ex.getMessage(),
+                       ex.getMessage().contains("DomainEventEntry"));
         }
     }
 

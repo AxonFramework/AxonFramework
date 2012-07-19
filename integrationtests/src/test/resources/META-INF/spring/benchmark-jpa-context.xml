@@ -43,6 +43,11 @@
             </bean>
         </property>
         <property name="dataSource" ref="dataSource"/>
+        <property name="jpaPropertyMap">
+            <map>
+                <entry key="hibernate.jdbc.batch_size" value="20"/>
+            </map>
+        </property>
     </bean>
 
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
