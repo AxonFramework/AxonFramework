@@ -90,6 +90,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private long sequenceNumber = 0;
     private AggregateRoot workingAggregate;
     private boolean reportIllegalStateChange = true;
+    private final Class<T> aggregateType;
+    private boolean explicitCommandHandlersSet;
 
     /**
      * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
@@ -105,7 +107,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         repository = new EventSourcingRepository<T>(aggregateType);
         repository.setEventStore(eventStore);
         repository.setEventBus(eventBus);
-        new AggregateAnnotationCommandHandler<T>(aggregateType, repository, commandBus).subscribe();
+        this.aggregateType = aggregateType;
     }
 
     @Override
@@ -118,6 +120,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public FixtureConfiguration<T> registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
+        explicitCommandHandlersSet = true;
         AnnotationCommandHandlerAdapter.subscribe(annotatedCommandHandler, commandBus);
         return this;
     }
@@ -125,6 +128,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     @Override
     @SuppressWarnings({"unchecked"})
     public FixtureConfiguration<T> registerCommandHandler(Class<?> commandType, CommandHandler commandHandler) {
+        explicitCommandHandlersSet = true;
         commandBus.subscribe(commandType, commandHandler);
         return this;
     }
@@ -170,6 +174,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator when(Object command) {
+        finalizeConfiguration();
         ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
         commandBus.setInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
 
@@ -177,6 +182,12 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
         detectIllegalStateChanges();
         return resultValidator;
+    }
+
+    private void finalizeConfiguration() {
+        if (!explicitCommandHandlersSet) {
+            new AggregateAnnotationCommandHandler<T>(this.aggregateType, repository, commandBus).subscribe();
+        }
     }
 
     private void detectIllegalStateChanges() {
