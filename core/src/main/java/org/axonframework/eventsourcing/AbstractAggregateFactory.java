@@ -16,11 +16,11 @@ public abstract class AbstractAggregateFactory<T extends EventSourcedAggregateRo
     public final T createAggregate(Object aggregateIdentifier, DomainEventMessage<?> firstEvent) {
         T aggregate;
         if (EventSourcedAggregateRoot.class.isAssignableFrom(firstEvent.getPayloadType())) {
-            aggregate = postProcessInstance((T) firstEvent.getPayload());
+            aggregate = (T) firstEvent.getPayload();
         } else {
             aggregate = doCreateAggregate(aggregateIdentifier, firstEvent);
         }
-        return aggregate;
+        return postProcessInstance(aggregate);
     }
 
     /**
