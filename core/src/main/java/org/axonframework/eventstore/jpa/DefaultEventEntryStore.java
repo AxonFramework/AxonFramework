@@ -18,6 +18,7 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
+import org.joda.time.DateTime;
 
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +38,7 @@ import javax.persistence.Query;
 public class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
+    @SuppressWarnings({"unchecked"})
     public void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,
                              SerializedObject serializedMetaData, EntityManager entityManager) {
         entityManager.persist(new DomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData));
@@ -81,7 +83,11 @@ public class DefaultEventEntryStore implements EventEntryStore {
                                    .setFirstResult(startPosition)
                                    .setMaxResults(batchSize);
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-            query.setParameter(entry.getKey(), entry.getValue());
+            Object value = entry.getValue();
+            if (value != null && value instanceof DateTime) {
+                value = entry.getValue().toString();
+            }
+            query.setParameter(entry.getKey(), value);
         }
         return query.getResultList();
     }
