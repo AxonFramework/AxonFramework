@@ -18,12 +18,33 @@ package org.axonframework.eventstore.jpa.criteria;
 
 import org.junit.*;
 
+import java.util.Map;
+
 import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
  */
 public class JpaCriteriaBuilderTest {
+
+    @Test
+    public void testParameterTypeRetained() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan(1.0d)
+                .and(builder.property("property2").is(1L))
+                .or(builder.property("property3").isNot(1))
+                .or(builder.property("property4").is("1"));
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+
+        Map<String, Object> params = parameters.getParameters();
+        assertTrue(params.get("param0") instanceof Double);
+        assertTrue(params.get("param1") instanceof Long);
+        assertTrue(params.get("param2") instanceof Integer);
+        assertTrue(params.get("param3") instanceof String);
+    }
 
     @Test
     public void testBuildCriteria_ComplexStructureWithUnequalNull() throws Exception {
