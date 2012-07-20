@@ -49,7 +49,7 @@ public class NotEquals extends JpaCriteria {
             if (expression instanceof JpaProperty) {
                 ((JpaProperty) expression).parse(entryKey, whereClause);
             } else {
-                whereClause.append(parameters.register(expression.toString()));
+                whereClause.append(parameters.register(expression));
             }
         }
     }
