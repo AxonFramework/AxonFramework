@@ -18,9 +18,7 @@ package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -50,24 +48,17 @@ import static org.junit.Assert.*;
 public class DisruptorCommandBusBenchmark {
 
     private static final int COMMAND_COUNT = 50 * 1000 * 1000;
-    private static final String TARGET_AGGREGATE_PROPERTY = "target-aggregate";
 
     public static void main(String[] args) throws InterruptedException {
         CountingEventBus eventBus = new CountingEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
         DisruptorCommandBus<StubAggregate> commandBus =
-                new DisruptorCommandBus<StubAggregate>(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
-                                                       inMemoryEventStore,
-                                                       eventBus, new CommandTargetResolver() {
-                    @Override
-                    public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
-                        return new VersionedAggregateIdentifier(command.getMetaData().get(TARGET_AGGREGATE_PROPERTY),
-                                                                null);
-                    }
-                });
+                new DisruptorCommandBus<StubAggregate>(
+                        inMemoryEventStore,
+                                                       eventBus);
         commandBus.subscribe(StubCommand.class, stubHandler);
-        stubHandler.setRepository(commandBus);
+        stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
         inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
                 new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
@@ -75,9 +66,7 @@ public class DisruptorCommandBusBenchmark {
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
-                    new StubCommand(aggregateIdentifier),
-                    Collections.singletonMap(TARGET_AGGREGATE_PROPERTY,
-                                             (Object) aggregateIdentifier));
+                    new StubCommand(aggregateIdentifier));
             commandBus.dispatch(command);
         }
         System.out.println("Finished dispatching!");
@@ -95,7 +84,6 @@ public class DisruptorCommandBusBenchmark {
 
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
-        private int timesDone = 0;
         private String identifier;
 
         private StubAggregate(String identifier) {
@@ -117,9 +105,6 @@ public class DisruptorCommandBusBenchmark {
         @Override
         protected void handle(DomainEventMessage event) {
             identifier = (String) event.getAggregateIdentifier();
-            if (StubDomainEvent.class.isAssignableFrom(event.getPayloadType())) {
-                timesDone++;
-            }
         }
 
         @Override

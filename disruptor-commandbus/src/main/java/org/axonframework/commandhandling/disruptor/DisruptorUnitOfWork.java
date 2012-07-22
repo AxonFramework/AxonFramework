@@ -52,15 +52,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private final List<EventMessage> eventsToPublish = new ArrayList<EventMessage>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private EventSourcedAggregateRoot aggregate;
-
-    /**
-     * Initializes a UnitOfWork for execution of a command on the given <code>aggregate</code>.
-     *
-     * @param aggregate The aggregate on which a command is to be executed.
-     */
-    public DisruptorUnitOfWork(EventSourcedAggregateRoot aggregate) {
-        this.aggregate = aggregate;
-    }
+    private String aggregateType;
 
     @Override
     public void commit() {
@@ -137,16 +129,25 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
                                                          SaveAggregateCallback<T> saveAggregateCallback) {
-        if (aggregate == null) {
-            aggregate = (EventSourcedAggregateRoot) aggregateRoot;
+        if (aggregateType == null) {
+            throw new IllegalStateException(
+                    "Cannot register an aggregate if the aggregate type of this Unit of Work hasn't been set.");
         }
-        if (!aggregateRoot.getClass().isInstance(aggregate)
-                || !aggregate.getIdentifier().equals(aggregateRoot.getIdentifier())) {
-            throw new IllegalArgumentException("Cannot register an aggregate other than the preloaded aggregate. "
-                                                       + "This error typically occurs when an aggregate is loaded "
-                                                       + "which is not the aggregate targeted by the command");
+        if (aggregate != null && aggregateRoot != aggregate) {
+            throw new IllegalArgumentException(
+                    "Cannot register more than one aggregate in this Unit Of Work. Either ensure each command "
+                            + "executes against at most one aggregate, or use another Command Bus implementation.");
         }
+        aggregate = (EventSourcedAggregateRoot) aggregateRoot;
+        // register any events already available as uncommitted in the aggregate
+        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
+        while (uncommittedEvents != null && uncommittedEvents.hasNext()) {
+            publishEvent(uncommittedEvents.next(), eventBus);
+        }
+
+        // listen for new events registered in the aggregate
         aggregate.addEventRegistrationCallback(this);
+
         return (T) aggregate;
     }
 
@@ -187,5 +188,23 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         DomainEventMessage<T> message = (DomainEventMessage<T>) listeners.onEventRegistered(event);
         eventsToPublish.add(message);
         return message;
+    }
+
+    /**
+     * Returns the type identifier of the aggregate handled in this unit of work.
+     *
+     * @return the type identifier of the aggregate handled in this unit of work
+     */
+    public String getAggregateType() {
+        return aggregateType;
+    }
+
+    /**
+     * Sets the type identifier of the aggregate handled in this unit of work
+     *
+     * @param aggregateType the type identifier of the aggregate handled in this unit of work
+     */
+    public void setAggregateType(String aggregateType) {
+        this.aggregateType = aggregateType;
     }
 }

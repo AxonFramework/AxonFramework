@@ -23,7 +23,7 @@ public class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
 
     private final CommandCallback<R> delegate;
     private final CommandMessage command;
-    private final RingBuffer<CommandHandlingEntry<T>> ringBuffer;
+    private final RingBuffer<CommandHandlingEntry> ringBuffer;
     private final DisruptorCommandBus<T> commandBus;
     private boolean rescheduleOnCorruptState;
 
@@ -43,7 +43,7 @@ public class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
      *                                 state
      */
     public BlacklistDetectingCallback(CommandCallback<R> delegate, CommandMessage command,
-                                      RingBuffer<CommandHandlingEntry<T>> ringBuffer,
+                                      RingBuffer<CommandHandlingEntry> ringBuffer,
                                       DisruptorCommandBus<T> commandBus, boolean rescheduleOnCorruptState) {
         this.delegate = delegate;
         this.command = command;

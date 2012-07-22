@@ -18,33 +18,41 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventFactory;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.DefaultInterceptorChain;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.unitofwork.UnitOfWork;
+
+import java.util.List;
 
 /**
  * DataHolder for the DisruptorCommandBus. The CommandHandlingEntry maintains all information required for or produced
  * by the command handling process.
  *
- * @param <T> The type of aggregate being handled
  * @author Allard Buijze
  * @since 2.0
  */
-public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
+public class CommandHandlingEntry {
 
+    private final CommandHandler<Object> repeatingCommandHandler;
     private CommandMessage<?> command;
     private InterceptorChain invocationInterceptorChain;
     private InterceptorChain publisherInterceptorChain;
     private DisruptorUnitOfWork unitOfWork;
-    private T preLoadedAggregate;
-    private CommandHandler<?> commandHandler;
     private Throwable exceptionResult;
     private Object result;
     private BlacklistDetectingCallback callback;
-
     // for recovery of corrupt aggregates
     private boolean isRecoverEntry;
     private Object aggregateIdentifier;
+
+    /**
+     * Initializes the CommandHandlingEntry
+     */
+    public CommandHandlingEntry() {
+        repeatingCommandHandler = new RepeatingCommandHandler();
+    }
 
     /**
      * Returns the CommandMessage to be executed.
@@ -66,15 +74,6 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
-     * Registers the InterceptorChain to use for the command execution.
-     *
-     * @param interceptorChain the InterceptorChain to use for the command execution
-     */
-    public void setInvocationInterceptorChain(InterceptorChain interceptorChain) {
-        this.invocationInterceptorChain = interceptorChain;
-    }
-
-    /**
      * Returns the InterceptorChain for the publication process registered with this entry, or <code>null</code> if
      * none
      * is available.
@@ -86,66 +85,12 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
-     * Registers the InterceptorChain to use for the event publication.
-     *
-     * @param interceptorChain the InterceptorChain to use for the command execution
-     */
-    public void setPublisherInterceptorChain(InterceptorChain interceptorChain) {
-        this.publisherInterceptorChain = interceptorChain;
-    }
-
-    /**
      * Returns the UnitOfWork for the command execution.
      *
      * @return the UnitOfWork for the command execution
      */
     public DisruptorUnitOfWork getUnitOfWork() {
         return unitOfWork;
-    }
-
-    /**
-     * Registers the UnitOfWork to use for the command execution.
-     *
-     * @param unitOfWork the UnitOfWork to use for the command execution
-     */
-    public void setUnitOfWork(DisruptorUnitOfWork unitOfWork) {
-        this.unitOfWork = unitOfWork;
-    }
-
-    /**
-     * Returns the Aggregate that has been pre-loaded for the command execution.
-     *
-     * @return the Aggregate that has been pre-loaded for the command execution
-     */
-    public T getPreLoadedAggregate() {
-        return preLoadedAggregate;
-    }
-
-    /**
-     * Registers the Aggregate that has been pre-loaded for the command execution.
-     *
-     * @param preLoadedAggregate Aggregate the that has been pre-loaded for the command execution
-     */
-    public void setPreLoadedAggregate(T preLoadedAggregate) {
-        this.preLoadedAggregate = preLoadedAggregate;
-    }
-
-    /**
-     * Returns the Handler to execute the incoming command.
-     *
-     * @return the Handler to execute the incoming command
-     */
-    public CommandHandler getCommandHandler() {
-        return commandHandler;
-    }
-
-    /**
-     * Registers the Handler to execute the incoming command.
-     *
-     * @param commandHandler the Handler to execute the incoming command
-     */
-    public void setCommandHandler(CommandHandler commandHandler) {
-        this.commandHandler = commandHandler;
     }
 
     /**
@@ -177,7 +122,7 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
-     * Returns the result of the command's execution, or <code>null</code> if the commmand is not yet executed or
+     * Returns the result of the command's execution, or <code>null</code> if the command is not yet executed or
      * resulted in an exception.
      *
      * @return the result of the command's execution, if any
@@ -217,31 +162,32 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
     }
 
     /**
-     * Sets the identifier of the aggregate targeted with this entry
-     *
-     * @param aggregateIdentifier the identifier of the targeted aggregate
-     */
-    public void setAggregateIdentifier(Object aggregateIdentifier) {
-        this.aggregateIdentifier = aggregateIdentifier;
-    }
-
-    /**
      * Resets this entry, preparing it for use for another command.
      *
-     * @param newCommand  The new command the entry is used for
-     * @param newCallback The callback to report the result of command execution to
+     * @param newCommand            The new command the entry is used for
+     * @param newCommandHandler     The Command Handler responsible for handling <code>newCommand</code>
+     * @param newCallback           The callback to report the result of command execution to
+     * @param invokerInterceptors   The interceptors to invoke during the command handler invocation phase
+     * @param publisherInterceptors The interceptors to invoke during the publication phase
      */
-    public void reset(CommandMessage<?> newCommand, BlacklistDetectingCallback newCallback) {
+    public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler,
+                      BlacklistDetectingCallback newCallback, List<CommandHandlerInterceptor> invokerInterceptors,
+                      List<CommandHandlerInterceptor> publisherInterceptors) {
         this.command = newCommand;
         this.callback = newCallback;
         this.isRecoverEntry = false;
         this.aggregateIdentifier = null;
-        result = null;
-        exceptionResult = null;
-        commandHandler = null;
-        invocationInterceptorChain = null;
-        unitOfWork = null;
-        preLoadedAggregate = null;
+        this.result = null;
+        this.exceptionResult = null;
+        this.unitOfWork = new DisruptorUnitOfWork();
+        this.invocationInterceptorChain = new DefaultInterceptorChain(newCommand,
+                                                                      unitOfWork,
+                                                                      newCommandHandler,
+                                                                      invokerInterceptors);
+        this.publisherInterceptorChain = new DefaultInterceptorChain(newCommand,
+                                                                     unitOfWork,
+                                                                     repeatingCommandHandler,
+                                                                     publisherInterceptors);
     }
 
     /**
@@ -256,22 +202,29 @@ public class CommandHandlingEntry<T extends EventSourcedAggregateRoot> {
         this.callback = null;
         result = null;
         exceptionResult = null;
-        commandHandler = null;
         invocationInterceptorChain = null;
         unitOfWork = null;
-        preLoadedAggregate = null;
     }
 
     /**
      * Factory class for CommandHandlingEntry instances.
-     *
-     * @param <T> The type of aggregate the command bus processes commands for
      */
-    public static class Factory<T extends EventSourcedAggregateRoot> implements EventFactory<CommandHandlingEntry<T>> {
+    public static class Factory implements EventFactory<CommandHandlingEntry> {
 
         @Override
-        public CommandHandlingEntry<T> newInstance() {
-            return new CommandHandlingEntry<T>();
+        public CommandHandlingEntry newInstance() {
+            return new CommandHandlingEntry();
+        }
+    }
+
+    private class RepeatingCommandHandler implements CommandHandler<Object> {
+
+        @Override
+        public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+            if (exceptionResult != null) {
+                throw exceptionResult;
+            }
+            return result;
         }
     }
 }

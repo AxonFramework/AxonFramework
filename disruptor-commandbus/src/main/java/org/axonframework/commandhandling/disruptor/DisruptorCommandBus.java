@@ -16,46 +16,38 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.AggregateNotFoundException;
-import org.axonframework.repository.ConflictingAggregateVersionException;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
-import static java.lang.String.format;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
- * process in three steps which can be executed in different threads. The CommandBus is backed by a {@link Disruptor},
- * which ensures that these steps are executed sequentially in these threads, while minimizing locking and inter-thread
+ * process in two steps, which can be executed in different threads. The CommandBus is backed by a {@link Disruptor},
+ * which ensures that two steps are executed sequentially in these threads, while minimizing locking and inter-thread
  * communication.
  * <p/>
- * The process is split into three separate steps, each of which is executed in a different thread:
+ * The process is split into two separate steps, each of which is executed in a different thread:
  * <ol>
- * <li><em>CommandHandler resolution and aggregate pre-loading</em><br/>
- * This process finds the Command Handler for an incoming command, prepares the interceptor chains and makes sure the
- * targeted aggregate is loaded into the cache.</li>
  * <li><em>Command Handler execution</em><br/>This process invokes the command handler with the incoming command. The
  * result and changes to the aggregate are recorded for the next step.</li>
  * <li><em>Event storage and publication</em><br/>This process stores all generated domain events and publishes them
@@ -66,7 +58,7 @@ import static java.lang.String.format;
  * <em>Exceptions and recovery</em>
  * <p/>
  * This separation of process steps makes this implementation very efficient and highly performing. However, it does
- * not cope with exceptions very well. When an exception occurs, an Aggregate that has been pre-loaded is potentially
+ * not cope with exceptions very well. When an exception occurs, an Aggregate that has been loaded is potentially
  * corrupt. That means that an aggregate does not represent a state that can be reproduced by replaying its committed
  * events. Although this implementation will recover from this corrupt state, it may result in a number of commands
  * being rejected in the meantime. These command may be retried if the cause of the {@link
@@ -80,19 +72,19 @@ import static java.lang.String.format;
  * <em>Limitations of this implementation</em>
  * <p/>
  * Although this implementation allows applications to achieve extreme performance (over 1M commands on commodity
- * hardware), it does have some limitations. It currently only allows a single aggregate to be invoked during command
- * processing. Furthermore, the identifier of this aggregate must be made available in the command (see {@link
- * CommandTargetResolver}). Another limitation is that for each Aggregate Type, you will need to configure a separate
- * DisruptorCommandBus instance, as an instance is tied to a specific aggregate class.
+ * hardware), it does have some limitations. It only allows a single aggregate to be invoked during command processing.
+ * <p/>
+ * This implementation can only work with Event Sourced Aggregates.
  * <p/>
  * <em>Infrastructure considerations</em>
  * <p/>
- * This CommandBus implementation also implements {@link Repository} and requires this CommandBus to be injected as
- * repository into the CommandHandlers registered with this CommandBus. Using another repository will most likely
- * result in state changes being lost.
+ * This CommandBus implementation has special requirements for the Repositories being used during Command Processing.
+ * Therefore, the Repository instance to use in the Command Handler must be created using {@link
+ * #createRepository(org.axonframework.eventsourcing.AggregateFactory)}.
+ * Using another repository will most likely result in undefined behavior.
  * <p/>
- * The DisruptorCommandBus must have access to at least 4 threads, three of which are permanently used while the
- * DisruptorCommandBus is operational. At least on additional thread is required to invoke callbacks and initiate a
+ * The DisruptorCommandBus must have access to at least 3 threads, two of which are permanently used while the
+ * DisruptorCommandBus is operational. At least one additional thread is required to invoke callbacks and initiate a
  * recovery process in the case of exceptions.
  * <p/>
  * Consider providing an alternative {@link org.axonframework.domain.IdentifierFactory} implementation. The default
@@ -104,15 +96,17 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements CommandBus, Repository<T> {
+public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
 
     private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers =
             new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
-    private final Disruptor<CommandHandlingEntry<T>> disruptor;
-    private final CommandHandlerInvoker<T> commandHandlerInvoker;
+    private final Disruptor<CommandHandlingEntry> disruptor;
+    private final CommandHandlerInvoker commandHandlerInvoker;
+    private final List<CommandHandlerInterceptor> invokerInterceptors;
+    private final List<CommandHandlerInterceptor> publisherInterceptors;
     private final ExecutorService executorService;
     private final boolean rescheduleOnCorruptState;
     private volatile boolean started = true;
@@ -121,77 +115,47 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
 
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
-     * WaitStrategy on a RingBuffer of size 4096. The (3) Threads required for command execution are created
+     * WaitStrategy on a RingBuffer of size 4096. The (2) Threads required for command execution are created
      * immediately. Additional threads are used to invoke response callbacks and to initialize a recovery process in
      * the case of errors.
      *
-     * @param aggregateFactory      The factory providing uninitialized Aggregate instances for event sourcing
-     * @param eventStore            The EventStore where generated events must be stored
-     * @param eventBus              The EventBus where generated events must be published
-     * @param commandTargetResolver The CommandTargetResolver that resolves the aggregate identifier for incoming
-     *                              commands
+     * @param eventStore The EventStore where generated events must be stored
+     * @param eventBus   The EventBus where generated events must be published
      */
-    public DisruptorCommandBus(AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus,
-                               CommandTargetResolver commandTargetResolver) {
-        this(aggregateFactory, eventStore, eventBus, commandTargetResolver, new DisruptorConfiguration());
+    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus) {
+        this(eventStore, eventBus, new DisruptorConfiguration());
     }
 
     /**
-     * Initialize the DisruptorCommandBus with given resources and settings. The 3 Threads required for command
+     * Initialize the DisruptorCommandBus with given resources and settings. The Threads required for command
      * execution are immediately requested from the Configuration's Executor, if any. Otherwise, they are created.
      *
-     * @param aggregateFactory      The factory providing uninitialized Aggregate instances for event sourcing
-     * @param eventStore            The EventStore where generated events must be stored
-     * @param eventBus              The EventBus where generated events must be published
-     * @param configuration         The configuration for the command bus
-     * @param commandTargetResolver The CommandTargetResolver that resolves the aggregate identifier for incoming
-     *                              commands
+     * @param eventStore    The EventStore where generated events must be stored
+     * @param eventBus      The EventBus where generated events must be published
+     * @param configuration The configuration for the command bus
      */
     @SuppressWarnings("unchecked")
-    public DisruptorCommandBus(AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus,
-                               CommandTargetResolver commandTargetResolver, DisruptorConfiguration configuration) {
+    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus,
+                               DisruptorConfiguration configuration) {
         Executor executor = configuration.getExecutor();
         if (executor == null) {
-            executorService = Executors.newCachedThreadPool(new AxonThreadFactory(DISRUPTOR_THREAD_GROUP));
+            executorService = Executors.newCachedThreadPool(
+                    new AxonThreadFactory(Thread.MAX_PRIORITY, DISRUPTOR_THREAD_GROUP));
             executor = executorService;
         } else {
             executorService = null;
         }
         rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
-        disruptor = new Disruptor<CommandHandlingEntry<T>>(new CommandHandlingEntry.Factory<T>(),
-                                                           executor,
-                                                           configuration.getClaimStrategy(),
-                                                           configuration.getWaitStrategy());
-        commandHandlerInvoker = new CommandHandlerInvoker<T>();
-        disruptor.handleExceptionsWith(new ExceptionHandler() {
-            @Override
-            public void handleEventException(Throwable ex, long sequence, Object event) {
-                logger.error("Exception occurred while processing a {}.",
-                             ((CommandHandlingEntry) event).getCommand().getPayloadType().getSimpleName(),
-                             ex);
-            }
-
-            @Override
-            public void handleOnStartException(Throwable ex) {
-                logger.error("Failed to start the DisruptorCommandBus.", ex);
-                disruptor.shutdown();
-            }
-
-            @Override
-            public void handleOnShutdownException(Throwable ex) {
-                logger.error("Error while shutting down the DisruptorCommandBus", ex);
-            }
-        });
-        disruptor.handleEventsWith(new CommandHandlerPreFetcher<T>(eventStore,
-                                                                   aggregateFactory,
-                                                                   commandHandlers,
-                                                                   configuration.getInvokerInterceptors(),
-                                                                   configuration.getPublisherInterceptors(),
-                                                                   commandTargetResolver,
-                                                                   configuration.getCache()))
-                 .then(commandHandlerInvoker)
-                 .then(new EventPublisher<T>(aggregateFactory.getTypeIdentifier(), eventStore,
-                                             eventBus, executor, configuration.getRollbackConfiguration()));
+        invokerInterceptors = configuration.getInvokerInterceptors();
+        publisherInterceptors = configuration.getPublisherInterceptors();
+        disruptor = new Disruptor<CommandHandlingEntry>(new CommandHandlingEntry.Factory(),
+                                                        executor,
+                                                        configuration.getClaimStrategy(),
+                                                        configuration.getWaitStrategy());
+        commandHandlerInvoker = new CommandHandlerInvoker(eventStore, configuration.getCache());
+        disruptor.handleExceptionsWith(new ExceptionHandler());
+        disruptor.handleEventsWith(commandHandlerInvoker)
+                 .then(new EventPublisher(eventStore, eventBus, executor, configuration.getRollbackConfiguration()));
         coolingDownPeriod = configuration.getCoolingDownPeriod();
         disruptor.start();
     }
@@ -216,13 +180,30 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
      * @param <R>      The expected return type of the command
      */
     public <R> void doDispatch(CommandMessage command, CommandCallback<R> callback) {
-        Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or redispatch commands");
-        RingBuffer<CommandHandlingEntry<T>> ringBuffer = disruptor.getRingBuffer();
+        Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
+        RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
-        event.reset(command, new BlacklistDetectingCallback<T, R>(callback, command, disruptor.getRingBuffer(), this,
-                                                                  rescheduleOnCorruptState));
+        event.reset(command, commandHandlers.get(command.getPayloadType()),
+                    new BlacklistDetectingCallback<T, R>(callback, command, disruptor.getRingBuffer(), this,
+                                                         rescheduleOnCorruptState),
+                    invokerInterceptors, publisherInterceptors);
         ringBuffer.publish(sequence);
+    }
+
+    /**
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given
+     * <code>aggregateFactory</code>.
+     * <p/>
+     * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
+     * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
+     *
+     * @param aggregateFactory The factory creating uninitialized instances of the Aggregate
+     * @param <T>              The type of aggregate to create the repository for
+     * @return the repository that provides access to stored aggregates
+     */
+    public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
+        return commandHandlerInvoker.createRepository(aggregateFactory);
     }
 
     @Override
@@ -233,37 +214,6 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     @Override
     public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
         return commandHandlers.remove(commandType, handler);
-    }
-
-    @Override
-    public T load(Object aggregateIdentifier, Long expectedVersion) {
-        T aggregate = load(aggregateIdentifier);
-        if (expectedVersion != null && aggregate.getVersion() > expectedVersion) {
-            throw new ConflictingAggregateVersionException(aggregateIdentifier,
-                                                           expectedVersion,
-                                                           aggregate.getVersion());
-        }
-        return aggregate;
-    }
-
-    @Override
-    public T load(Object aggregateIdentifier) {
-        T aggregateRoot = commandHandlerInvoker.getPreLoadedAggregate();
-        if (aggregateRoot == null) {
-            throw new AggregateNotFoundException(aggregateIdentifier,
-                                                 format("No aggregate with identifier [%s] was found pre-load phase.",
-                                                        aggregateIdentifier.toString()));
-        }
-        if (aggregateRoot.getIdentifier().equals(aggregateIdentifier)) {
-            return aggregateRoot;
-        } else {
-            throw new UnsupportedOperationException("Not supported to load another aggregate than the pre-loaded one");
-        }
-    }
-
-    @Override
-    public void add(T aggregate) {
-        CurrentUnitOfWork.get().registerAggregate(aggregate, null, null);
     }
 
     /**
@@ -291,17 +241,24 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         }
     }
 
-    private static class AxonThreadFactory implements ThreadFactory {
+    private class ExceptionHandler implements com.lmax.disruptor.ExceptionHandler {
 
-        private final ThreadGroup groupName;
-
-        public AxonThreadFactory(ThreadGroup groupName) {
-            this.groupName = groupName;
+        @Override
+        public void handleEventException(Throwable ex, long sequence, Object event) {
+            logger.error("Exception occurred while processing a {}.",
+                         ((CommandHandlingEntry) event).getCommand().getPayloadType().getSimpleName(),
+                         ex);
         }
 
         @Override
-        public Thread newThread(Runnable r) {
-            return new Thread(groupName, r);
+        public void handleOnStartException(Throwable ex) {
+            logger.error("Failed to start the DisruptorCommandBus.", ex);
+            disruptor.shutdown();
+        }
+
+        @Override
+        public void handleOnShutdownException(Throwable ex) {
+            logger.error("Error while shutting down the DisruptorCommandBus", ex);
         }
     }
 }
