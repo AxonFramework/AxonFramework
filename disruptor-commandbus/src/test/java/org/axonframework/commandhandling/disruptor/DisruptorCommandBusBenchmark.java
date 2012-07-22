@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -140,6 +141,7 @@ public class DisruptorCommandBusBenchmark {
 
     private static class StubCommand {
 
+        @TargetAggregateIdentifier
         private Object agregateIdentifier;
 
         public StubCommand(Object agregateIdentifier) {

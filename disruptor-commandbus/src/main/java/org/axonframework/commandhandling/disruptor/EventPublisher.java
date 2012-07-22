@@ -52,7 +52,8 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private final EventBus eventBus;
     private final Executor executor;
     private final RollbackConfiguration rollbackConfiguration;
-    private final Set<String> blackListedAggregates = new HashSet<String>();
+    private final int segmentId;
+    private final Set<Object> blackListedAggregates = new HashSet<Object>();
     private final Map<CommandMessage, Object> failedCreateCommands = new WeakHashMap<CommandMessage, Object>();
 
     /**
@@ -63,14 +64,15 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
      * @param eventBus              The EventBus to publish events on
      * @param executor              The executor which schedules response reporting
      * @param rollbackConfiguration The configuration that indicates which exceptions should result in a UnitOfWork
-     *                              rollback
+     * @param segmentId             The ID of the segment this publisher should handle
      */
     public EventPublisher(EventStore eventStore, EventBus eventBus, Executor executor,
-                          RollbackConfiguration rollbackConfiguration) {
+                          RollbackConfiguration rollbackConfiguration, int segmentId) {
         this.eventStore = eventStore;
         this.eventBus = eventBus;
         this.executor = executor;
         this.rollbackConfiguration = rollbackConfiguration;
+        this.segmentId = segmentId;
     }
 
     @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
@@ -78,17 +80,19 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
         if (entry.isRecoverEntry()) {
             recoverAggregate(entry);
-        } else if (entry.getExceptionResult() instanceof AggregateNotFoundException
-                && failedCreateCommands.remove(entry.getCommand()) == null) {
-            // the command failed for the first time
-            reschedule(entry);
-        } else {
-            DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
-            EventSourcedAggregateRoot aggregate = unitOfWork.getAggregate();
-            if (aggregate != null && blackListedAggregates.contains(aggregate.getIdentifier().toString())) {
-                rejectExecution(entry, unitOfWork, entry.getAggregateIdentifier());
+        } else if (entry.getPublisherId() == segmentId) {
+            if (entry.getExceptionResult() instanceof AggregateNotFoundException
+                    && failedCreateCommands.remove(entry.getCommand()) == null) {
+                // the command failed for the first time
+                reschedule(entry);
             } else {
-                processPublication(entry, unitOfWork, aggregate);
+                DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
+                EventSourcedAggregateRoot aggregate = unitOfWork.getAggregate();
+                if (aggregate != null && blackListedAggregates.contains(aggregate.getIdentifier())) {
+                    rejectExecution(entry, unitOfWork, entry.getAggregateIdentifier());
+                } else {
+                    processPublication(entry, unitOfWork, aggregate);
+                }
             }
         }
     }
@@ -104,7 +108,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     private void recoverAggregate(CommandHandlingEntry entry) {
-        blackListedAggregates.remove(entry.getAggregateIdentifier().toString());
+        blackListedAggregates.remove(entry.getAggregateIdentifier());
         logger.info("Reset notification for {} received. The aggregate is removed from the blacklist",
                     entry.getAggregateIdentifier());
     }
@@ -186,7 +190,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private Throwable notifyBlacklisted(DisruptorUnitOfWork unitOfWork, Object aggregateIdentifier,
                                         Throwable cause) {
         Throwable exceptionResult;
-        blackListedAggregates.add(aggregateIdentifier.toString());
+        blackListedAggregates.add(aggregateIdentifier);
         exceptionResult = new AggregateBlacklistedException(
                 aggregateIdentifier,
                 format("Aggregate %s state corrupted. "

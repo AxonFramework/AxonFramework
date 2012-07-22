@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.LifecycleAware;
 import net.sf.jsr107cache.Cache;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -40,11 +41,28 @@ import java.util.concurrent.ConcurrentMap;
  * @author Allard Buijze
  * @since 2.0
  */
-public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry> {
+public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>, LifecycleAware {
 
     private final ConcurrentMap<String, DisruptorRepository> repositories = new ConcurrentHashMap<String, DisruptorRepository>();
     private final Cache cache;
+    private final int segmentId;
     private final EventStore eventStore;
+    private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<CommandHandlerInvoker>();
+
+    /**
+     * Returns the Repository instance for Aggregate with given <code>typeIdentifier</code> used by the
+     * CommandHandlerInvoker that is running on the current thread.
+     * <p/>
+     * Calling this method from any other thread will return <code>null</code>.
+     *
+     * @param typeIdentifier The type identifier of the aggregate
+     * @param <T>            The type of aggregate
+     * @return the repository instance for aggregate of given type
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends EventSourcedAggregateRoot> DisruptorRepository<T> getRepository(String typeIdentifier) {
+        return CURRENT_INVOKER.get().repositories.get(typeIdentifier);
+    }
 
     /**
      * Create an aggregate invoker instance that uses the given <code>eventStore</code> and <code>cache</code> to
@@ -52,17 +70,19 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      *
      * @param eventStore The event store providing access to events to reconstruct aggregates
      * @param cache      The cache temporarily storing aggregate instances
+     * @param segmentId  The id of the segment this invoker should handle
      */
-    public CommandHandlerInvoker(EventStore eventStore, Cache cache) {
+    public CommandHandlerInvoker(EventStore eventStore, Cache cache, int segmentId) {
         this.eventStore = eventStore;
         this.cache = cache;
+        this.segmentId = segmentId;
     }
 
     @Override
     public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
         if (entry.isRecoverEntry()) {
             removeEntry(entry.getAggregateIdentifier());
-        } else {
+        } else if (entry.getInvokerId() == segmentId) {
             DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
             unitOfWork.start();
             try {
@@ -101,7 +121,17 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         cache.remove(aggregateIdentifier);
     }
 
-    private class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
+    @Override
+    public void onStart() {
+        CURRENT_INVOKER.set(this);
+    }
+
+    @Override
+    public void onShutdown() {
+        CURRENT_INVOKER.remove();
+    }
+
+    class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
 
         private final Object VAL = new Object();
         private final EventStore eventStore;
@@ -165,9 +195,10 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
             unitOfWork.setAggregateType(typeIdentifier);
             unitOfWork.registerAggregate(aggregate, null, null);
+            preLoadedAggregates.put(aggregate, VAL);
         }
 
-        public void removeFromCache(Object aggregateIdentifier) {
+        private void removeFromCache(Object aggregateIdentifier) {
             for (T cachedAggregate : preLoadedAggregates.keySet()) {
                 if (aggregateIdentifier.equals(cachedAggregate.getIdentifier())) {
                     preLoadedAggregates.remove(cachedAggregate);

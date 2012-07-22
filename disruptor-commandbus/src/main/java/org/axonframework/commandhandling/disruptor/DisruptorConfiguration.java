@@ -22,8 +22,11 @@ import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import net.sf.jsr107cache.Cache;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.commandhandling.RollbackOnUncheckedExceptionConfiguration;
+import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
+import org.axonframework.common.Assert;
 import org.axonframework.common.NoCache;
 
 import java.util.ArrayList;
@@ -49,6 +52,9 @@ public class DisruptorConfiguration {
     private Cache cache;
     private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
+    private CommandTargetResolver commandTargetResolver;
+    private int invokerThreadCount = 1;
+    private int publisherThreadCount = 1;
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
@@ -61,6 +67,7 @@ public class DisruptorConfiguration {
         cache = NoCache.INSTANCE;
         rescheduleCommandsOnCorruptState = true;
         rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
+        commandTargetResolver = new AnnotationCommandTargetResolver();
     }
 
     /**
@@ -303,6 +310,79 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setCache(Cache cache) { //NOSONAR (setter may hide field)
         this.cache = cache;
+        return this;
+    }
+
+    /**
+     * Returns the CommandTargetResolver that is used to find out which Aggregate is to be invoked for a given Command.
+     *
+     * @return the CommandTargetResolver that is used to find out which Aggregate is to be invoked for a given Command
+     */
+    public CommandTargetResolver getCommandTargetResolver() {
+        return commandTargetResolver;
+    }
+
+    /**
+     * Sets the CommandTargetResolver that must be used to indicate which Aggregate instance will be invoked by an
+     * incoming command. The DisruptorCommandBus only uses this value if {@link #setInvokerThreadCount(int)
+     * invokerThreadCount} or {@link #setPublisherThreadCount(int) publisherThreadCount} are greater than 1.
+     * <p/>
+     * Defaults to an {@link AnnotationCommandTargetResolver} instance.
+     *
+     * @param commandTargetResolver The CommandTargetResolver to use to indicate which Aggregate instance is target of
+     *                              an incoming Command
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setCommandTargetResolver(CommandTargetResolver commandTargetResolver) {
+        this.commandTargetResolver = commandTargetResolver;
+        return this;
+    }
+
+    /**
+     * Returns the number of threads to use for Command Handler invocation.
+     *
+     * @return the number of threads to use for Command Handler invocation
+     */
+    public int getInvokerThreadCount() {
+        return invokerThreadCount;
+    }
+
+    /**
+     * Sets the number of Threads that should be used to invoke the Command Handlers. Defaults to 1.
+     * <p/>
+     * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount of
+     * I/O that the process requires. A good range, if no I/O is involved is <code>1 .. ([processor count] / 2)</code>.
+     *
+     * @param invokerThreadCount The number of Threads to use for Command Handler invocation
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setInvokerThreadCount(int invokerThreadCount) {
+        Assert.isTrue(invokerThreadCount > 0, "InvokerCount must be at least 1");
+        this.invokerThreadCount = invokerThreadCount;
+        return this;
+    }
+
+    /**
+     * Returns the number of threads to use for storing and publication of generated Events.
+     *
+     * @return the number of threads to use for storing and publication of generated Events
+     */
+    public int getPublisherThreadCount() {
+        return publisherThreadCount;
+    }
+
+    /**
+     * Sets the number of Threads that should be used to store and publish the generated Events. Defaults to 1.
+     * <p/>
+     * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount of
+     * I/O that the process requires. If no I/O is involved, a good starting value is <code>[processors / 2]</code>.
+     *
+     * @param publisherThreadCount The number of Threads to use for publishing
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setPublisherThreadCount(int publisherThreadCount) {
+        Assert.isTrue(invokerThreadCount > 0, "PublisherCount must be at least 1");
+        this.publisherThreadCount = publisherThreadCount;
         return this;
     }
 }

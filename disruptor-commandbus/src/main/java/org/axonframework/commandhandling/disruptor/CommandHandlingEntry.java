@@ -42,10 +42,12 @@ public class CommandHandlingEntry {
     private DisruptorUnitOfWork unitOfWork;
     private Throwable exceptionResult;
     private Object result;
+    private int publisherSegmentId;
     private BlacklistDetectingCallback callback;
     // for recovery of corrupt aggregates
     private boolean isRecoverEntry;
     private Object aggregateIdentifier;
+    private int invokerSegmentId;
 
     /**
      * Initializes the CommandHandlingEntry
@@ -162,18 +164,41 @@ public class CommandHandlingEntry {
     }
 
     /**
+     * Returns the Identifier of the invoker that is chosen to handle this entry.
+     *
+     * @return the Identifier of the invoker that is chosen to handle this entry
+     */
+    public int getInvokerId() {
+        return invokerSegmentId;
+    }
+
+    /**
+     * Returns the Identifier of the publisher that is chosen to handle this entry.
+     *
+     * @return the Identifier of the publisher that is chosen to handle this entry
+     */
+    public int getPublisherId() {
+        return publisherSegmentId;
+    }
+
+    /**
      * Resets this entry, preparing it for use for another command.
      *
      * @param newCommand            The new command the entry is used for
      * @param newCommandHandler     The Command Handler responsible for handling <code>newCommand</code>
+     * @param newInvokerSegmentId   The SegmentID of the invoker that should process this entry
+     * @param newPublisherSegmentId The SegmentID of the invoker that should process this entry
      * @param newCallback           The callback to report the result of command execution to
      * @param invokerInterceptors   The interceptors to invoke during the command handler invocation phase
      * @param publisherInterceptors The interceptors to invoke during the publication phase
      */
-    public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler,
+    public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler, int newInvokerSegmentId,
+                      int newPublisherSegmentId,
                       BlacklistDetectingCallback newCallback, List<CommandHandlerInterceptor> invokerInterceptors,
                       List<CommandHandlerInterceptor> publisherInterceptors) {
         this.command = newCommand;
+        this.invokerSegmentId = newInvokerSegmentId;
+        this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;
         this.isRecoverEntry = false;
         this.aggregateIdentifier = null;
@@ -204,6 +229,7 @@ public class CommandHandlingEntry {
         exceptionResult = null;
         invocationInterceptorChain = null;
         unitOfWork = null;
+        invokerSegmentId = -1;
     }
 
     /**
