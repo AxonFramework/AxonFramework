@@ -83,11 +83,11 @@ public class DisruptorCommandBusTest_MultiThreaded {
     }
 
     @SuppressWarnings("unchecked")
-    @Test(timeout = 10000)
+    @Test//(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Throwable {
         testSubject = new DisruptorCommandBus<StubAggregate>(
                 inMemoryEventStore, eventBus,
-                new DisruptorConfiguration().setClaimStrategy(new MultiThreadedClaimStrategy(8))
+                new DisruptorConfiguration().setClaimStrategy(new MultiThreadedClaimStrategy(4))
                                             .setWaitStrategy(new SleepingWaitStrategy())
                                             .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
                                             .setInvokerThreadCount(2)
@@ -99,14 +99,22 @@ public class DisruptorCommandBusTest_MultiThreaded {
                                                     .createRepository(new GenericAggregateFactory<StubAggregate>(
                                                             StubAggregate.class)));
         stubHandler.setRepository(spiedRepository);
-        final Map<Object, Object> aggregates = new ConcurrentHashMap<Object, Object>();
+        final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<Object, Object>();
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                aggregates.put(invocation.getArguments()[0], new Object());
+                garbageCollectionPrevention.put(invocation.getArguments()[0], new Object());
                 return invocation.callRealMethod();
             }
         }).when(spiedRepository).add(isA(StubAggregate.class));
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                Object aggregate = invocation.callRealMethod();
+                garbageCollectionPrevention.put(aggregate, new Object());
+                return aggregate;
+            }
+        }).when(spiedRepository).load(isA(Object.class));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
         when(mockUnitOfWorkListener.onEventRegistered(any(EventMessage.class))).thenAnswer(new Answer<Object>() {
             @Override
@@ -132,9 +140,11 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         testSubject.stop();
+        assertEquals(20, garbageCollectionPrevention.size());
         // only the commands executed after the failed ones will cause a readEvents() to occur
         assertEquals(10, inMemoryEventStore.loadCounter.get());
-        assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT), inMemoryEventStore.storedEventCounter.get());
+        assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
+                     inMemoryEventStore.storedEventCounter.get());
         verify(mockCallback, times(990)).onSuccess(any());
         verify(mockCallback, times(10)).onFailure(isA(RuntimeException.class));
     }
