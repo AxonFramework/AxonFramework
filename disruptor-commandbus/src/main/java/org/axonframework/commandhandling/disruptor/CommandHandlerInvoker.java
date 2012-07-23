@@ -28,6 +28,8 @@ import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.ConflictingAggregateVersionException;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -43,11 +45,13 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>, LifecycleAware {
 
+    private static final Logger logger = LoggerFactory.getLogger(CommandHandlerInvoker.class);
+    private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<CommandHandlerInvoker>();
+
     private final ConcurrentMap<String, DisruptorRepository> repositories = new ConcurrentHashMap<String, DisruptorRepository>();
     private final Cache cache;
     private final int segmentId;
     private final EventStore eventStore;
-    private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<CommandHandlerInvoker>();
 
     /**
      * Returns the Repository instance for Aggregate with given <code>typeIdentifier</code> used by the
@@ -136,7 +140,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private final Object VAL = new Object();
         private final EventStore eventStore;
         private final AggregateFactory<T> aggregateFactory;
-        private final Map<T, Object> preLoadedAggregates = new WeakHashMap<T, Object>();
+        private final Map<T, Object> firstLevelCache = new WeakHashMap<T, Object>();
         private final String typeIdentifier;
 
         private DisruptorRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore) {
@@ -159,12 +163,15 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         @Override
         public T load(Object aggregateIdentifier) {
             T aggregateRoot = null;
-            for (T cachedAggregate : preLoadedAggregates.keySet()) {
+            for (T cachedAggregate : firstLevelCache.keySet()) {
                 if (aggregateIdentifier.equals(cachedAggregate.getIdentifier())) {
+                    logger.debug("Aggregate {} found in first level cache", aggregateIdentifier);
                     aggregateRoot = cachedAggregate;
                 }
             }
             if (aggregateRoot == null) {
+                logger.debug("Aggregate {} not in first level cache, loading fresh one from Event Store",
+                             aggregateIdentifier);
                 try {
                     DomainEventStream events = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
                     if (events.hasNext()) {
@@ -180,12 +187,12 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                     + "attempts to load an aggregate",
                             e);
                 }
+                firstLevelCache.put(aggregateRoot, VAL);
             }
             if (aggregateRoot != null) {
                 DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
                 unitOfWork.setAggregateType(typeIdentifier);
                 unitOfWork.registerAggregate(aggregateRoot, null, null);
-                preLoadedAggregates.put(aggregateRoot, VAL);
             }
             return aggregateRoot;
         }
@@ -195,13 +202,15 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
             unitOfWork.setAggregateType(typeIdentifier);
             unitOfWork.registerAggregate(aggregate, null, null);
-            preLoadedAggregates.put(aggregate, VAL);
+            firstLevelCache.put(aggregate, VAL);
         }
 
         private void removeFromCache(Object aggregateIdentifier) {
-            for (T cachedAggregate : preLoadedAggregates.keySet()) {
+            for (T cachedAggregate : firstLevelCache.keySet()) {
                 if (aggregateIdentifier.equals(cachedAggregate.getIdentifier())) {
-                    preLoadedAggregates.remove(cachedAggregate);
+                    firstLevelCache.remove(cachedAggregate);
+                    logger.debug("Aggregate {} removed from first level cache for recovery purposes.",
+                                 aggregateIdentifier);
                     return;
                 }
             }

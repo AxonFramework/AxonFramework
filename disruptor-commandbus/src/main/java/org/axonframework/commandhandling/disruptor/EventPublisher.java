@@ -108,9 +108,10 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     private void recoverAggregate(CommandHandlingEntry entry) {
-        blackListedAggregates.remove(entry.getAggregateIdentifier());
-        logger.info("Reset notification for {} received. The aggregate is removed from the blacklist",
-                    entry.getAggregateIdentifier());
+        if (blackListedAggregates.remove(entry.getAggregateIdentifier())) {
+            logger.info("Reset notification for {} received. The aggregate is removed from the blacklist",
+                        entry.getAggregateIdentifier());
+        }
     }
 
     @SuppressWarnings("unchecked")
