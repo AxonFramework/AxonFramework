@@ -84,6 +84,10 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      */
     public void onCleanup() {
         listeners.onCleanup();
+
+        // clear the lists of events to make them garbage-collectible
+        eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
+        eventsToPublish.clear();
     }
 
     /**
