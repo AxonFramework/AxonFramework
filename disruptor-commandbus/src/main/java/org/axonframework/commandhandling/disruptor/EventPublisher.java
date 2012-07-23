@@ -201,7 +201,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         return exceptionResult;
     }
 
-    private class ReportResultTask<R> implements Runnable {
+    private static class ReportResultTask<R> implements Runnable {
 
         private final CommandCallback<R> callback;
         private final R result;

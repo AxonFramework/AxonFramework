@@ -115,7 +115,7 @@ public class FileSystemSnapshotEventReader {
         }
     }
 
-    private static class FileSystemSnapshotEventEntry {
+    private static final class FileSystemSnapshotEventEntry {
 
         private final DomainEventMessage eventMessage;
         private final long bytesToSkipInEventFile;

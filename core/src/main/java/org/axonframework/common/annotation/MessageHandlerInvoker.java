@@ -80,8 +80,15 @@ public final class MessageHandlerInvoker {
         return m.invoke(target, parameter);
     }
 
-    public MethodMessageHandler findHandlerMethod(Message parameter) {
-        return inspector.findHandlerMethod(parameter);
+    /**
+     * Finds the handler method that can handle the given <code>message</code>, or <code>null</code> if no such handler
+     * exists.
+     *
+     * @param message The message to find a handler for
+     * @return The handler for the given message, or <code>null</code> if none exists
+     */
+    public MethodMessageHandler findHandlerMethod(Message message) {
+        return inspector.findHandlerMethod(message);
     }
 
     /**
@@ -93,6 +100,12 @@ public final class MessageHandlerInvoker {
         return target;
     }
 
+    /**
+     * Returns the targetType on which handler methods are invoked. This is the runtime type of the object that
+     * contains the method that handles the messages (not per se the Class that declares the method).
+     *
+     * @return the targetType on which handler methods are invoked
+     */
     public Class getTargetType() {
         return inspector.getTargetType();
     }

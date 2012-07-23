@@ -6,6 +6,7 @@ import org.axonframework.domain.DomainEventMessage;
  * Abstract AggregateFactory implementation that is aware of snapshot events. If an incoming event is not a snapshot
  * event, creation is delegated to the subclass.
  *
+ * @param <T> The type of Aggregate created by this factory
  * @author Allard Buijze
  * @since 2.0
  */

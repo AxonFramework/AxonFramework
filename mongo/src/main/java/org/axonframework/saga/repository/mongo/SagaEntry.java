@@ -104,7 +104,7 @@ public class SagaEntry {
         return values;
     }
 
-    private List toDBList(Set<AssociationValue> associationValues) {
+    private static List toDBList(Set<AssociationValue> associationValues) {
         BasicDBList list = new BasicDBList();
         for (AssociationValue associationValue : associationValues) {
             list.add(new BasicDBObject(ASSOCIATION_KEY, associationValue.getKey())

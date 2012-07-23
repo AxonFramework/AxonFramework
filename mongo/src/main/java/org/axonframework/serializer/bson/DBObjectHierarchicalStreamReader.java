@@ -16,9 +16,6 @@ import java.util.Stack;
  */
 public class DBObjectHierarchicalStreamReader implements HierarchicalStreamReader {
 
-    private static final String ATTRIBUTE_PREFIX = "_";
-    private static final String VALUE_KEY = "_value";
-
     private final Stack<BSONNode> itemStack = new Stack<BSONNode>();
     private final Stack<Iterator<BSONNode>> childrenStack = new Stack<Iterator<BSONNode>>();
 

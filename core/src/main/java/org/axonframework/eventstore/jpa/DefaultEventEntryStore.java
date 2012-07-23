@@ -84,7 +84,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
                                    .setMaxResults(batchSize);
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
             Object value = entry.getValue();
-            if (value != null && value instanceof DateTime) {
+            if (value instanceof DateTime) {
                 value = entry.getValue().toString();
             }
             query.setParameter(entry.getKey(), value);

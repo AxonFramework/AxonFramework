@@ -130,4 +130,32 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
                       method.getDeclaringClass().getSimpleName(), method.getName(),
                       getPayloadType().getSimpleName(), method.toGenericString());
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        MethodMessageHandler that = (MethodMessageHandler) o;
+
+        if (!method.equals(that.method)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + method.hashCode();
+        return result;
+    }
 }

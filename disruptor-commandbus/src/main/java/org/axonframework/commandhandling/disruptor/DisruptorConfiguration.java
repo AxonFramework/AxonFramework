@@ -329,12 +329,12 @@ public class DisruptorConfiguration {
      * <p/>
      * Defaults to an {@link AnnotationCommandTargetResolver} instance.
      *
-     * @param commandTargetResolver The CommandTargetResolver to use to indicate which Aggregate instance is target of
-     *                              an incoming Command
+     * @param newCommandTargetResolver The CommandTargetResolver to use to indicate which Aggregate instance is target
+     *                                 of an incoming Command
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setCommandTargetResolver(CommandTargetResolver commandTargetResolver) {
-        this.commandTargetResolver = commandTargetResolver;
+    public DisruptorConfiguration setCommandTargetResolver(CommandTargetResolver newCommandTargetResolver) {
+        this.commandTargetResolver = newCommandTargetResolver;
         return this;
     }
 
@@ -353,12 +353,12 @@ public class DisruptorConfiguration {
      * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount of
      * I/O that the process requires. A good range, if no I/O is involved is <code>1 .. ([processor count] / 2)</code>.
      *
-     * @param invokerThreadCount The number of Threads to use for Command Handler invocation
+     * @param count The number of Threads to use for Command Handler invocation
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setInvokerThreadCount(int invokerThreadCount) {
-        Assert.isTrue(invokerThreadCount > 0, "InvokerCount must be at least 1");
-        this.invokerThreadCount = invokerThreadCount;
+    public DisruptorConfiguration setInvokerThreadCount(int count) {
+        Assert.isTrue(count > 0, "InvokerCount must be at least 1");
+        this.invokerThreadCount = count;
         return this;
     }
 
@@ -377,12 +377,12 @@ public class DisruptorConfiguration {
      * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount of
      * I/O that the process requires. If no I/O is involved, a good starting value is <code>[processors / 2]</code>.
      *
-     * @param publisherThreadCount The number of Threads to use for publishing
+     * @param count The number of Threads to use for publishing
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setPublisherThreadCount(int publisherThreadCount) {
+    public DisruptorConfiguration setPublisherThreadCount(int count) {
         Assert.isTrue(invokerThreadCount > 0, "PublisherCount must be at least 1");
-        this.publisherThreadCount = publisherThreadCount;
+        this.publisherThreadCount = count;
         return this;
     }
 }

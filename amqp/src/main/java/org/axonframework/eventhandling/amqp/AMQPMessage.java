@@ -24,7 +24,7 @@ public class AMQPMessage {
      * @param body       The body of the message
      * @param routingKey The routing key of the message
      */
-    public AMQPMessage(byte[] body, String routingKey) {
+    public AMQPMessage(byte[] body, String routingKey) { // NOSONAR
         this(body, routingKey, null, false, false);
     }
 
@@ -40,7 +40,7 @@ public class AMQPMessage {
      */
     public AMQPMessage(byte[] body, String routingKey, AMQP.BasicProperties properties,
                        boolean mandatory, boolean immediate) {
-        this.body = body;
+        this.body = body; // NOSONAR
         this.routingKey = routingKey;
         this.properties = properties;
         this.mandatory = mandatory;
@@ -52,7 +52,7 @@ public class AMQPMessage {
      *
      * @return the body of this message
      */
-    public byte[] getBody() {
+    public byte[] getBody() { //NOSONAR
         return body;
     }
 

@@ -47,6 +47,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
 
     private static final Logger logger = LoggerFactory.getLogger(CommandHandlerInvoker.class);
     private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<CommandHandlerInvoker>();
+    private static final Object PLACEHOLDER_VALUE = new Object();
 
     private final ConcurrentMap<String, DisruptorRepository> repositories = new ConcurrentHashMap<String, DisruptorRepository>();
     private final Cache cache;
@@ -135,9 +136,13 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         CURRENT_INVOKER.remove();
     }
 
-    class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
+    /**
+     * Repository implementation that is safe to use by a single CommandHandlerInvoker instance.
+     *
+     * @param <T> The type of aggregate stored in this repository
+     */
+    static class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
 
-        private final Object VAL = new Object();
         private final EventStore eventStore;
         private final AggregateFactory<T> aggregateFactory;
         private final Map<T, Object> firstLevelCache = new WeakHashMap<T, Object>();
@@ -187,7 +192,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                     + "attempts to load an aggregate",
                             e);
                 }
-                firstLevelCache.put(aggregateRoot, VAL);
+                firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
             }
             if (aggregateRoot != null) {
                 DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
@@ -202,7 +207,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
             unitOfWork.setAggregateType(typeIdentifier);
             unitOfWork.registerAggregate(aggregate, null, null);
-            firstLevelCache.put(aggregate, VAL);
+            firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
         }
 
         private void removeFromCache(Object aggregateIdentifier) {

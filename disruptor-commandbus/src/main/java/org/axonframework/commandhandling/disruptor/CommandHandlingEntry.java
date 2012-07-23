@@ -246,7 +246,7 @@ public class CommandHandlingEntry {
     private class RepeatingCommandHandler implements CommandHandler<Object> {
 
         @Override
-        public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<Object> commandMessage, UnitOfWork uow) throws Throwable {
             if (exceptionResult != null) {
                 throw exceptionResult;
             }

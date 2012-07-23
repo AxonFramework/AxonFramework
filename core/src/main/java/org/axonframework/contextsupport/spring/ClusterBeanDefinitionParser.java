@@ -167,7 +167,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         throw new AxonConfigurationException("No Cluster Selector known for element '" + item.getLocalName() + "'.");
     }
 
-    private static class MetaDataOverridingCluster implements FactoryBean<Cluster> {
+    private static final class MetaDataOverridingCluster implements FactoryBean<Cluster> {
 
         private Cluster delegate;
 
@@ -195,7 +195,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         }
     }
 
-    private static class OrderedClusterSelector implements Ordered, ClusterSelector {
+    private static final class OrderedClusterSelector implements Ordered, ClusterSelector {
 
         private int order;
         private List<ClusterSelector> selectors;

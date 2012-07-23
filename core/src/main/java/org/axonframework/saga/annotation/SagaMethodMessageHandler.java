@@ -35,7 +35,8 @@ import static java.lang.String.format;
  */
 public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHandler> {
 
-    private static final SagaMethodMessageHandler NO_HANDLER_CONFIGURATION = new SagaMethodMessageHandler();
+    private static final SagaMethodMessageHandler NO_HANDLER_CONFIGURATION =
+            new SagaMethodMessageHandler(SagaCreationPolicy.NONE, null, null, null);
 
     /**
      * Returns a SagaMethodMessageHandler indicating that a inspected method is *not* a SagaEventHandler.
@@ -50,13 +51,6 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     private final MethodMessageHandler handlerMethod;
     private final String associationKey;
     private final Method associationProperty;
-
-    private SagaMethodMessageHandler() {
-        handlerMethod = null;
-        creationPolicy = SagaCreationPolicy.NONE;
-        associationKey = null;
-        associationProperty = null;
-    }
 
     /**
      * Create a SagaMethodMessageHandler for the given <code>methodHandler</code>. The SagaMethodMessageHandler add
@@ -103,8 +97,8 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param associationKey      The association key configured for this handler
      * @param associationProperty The association property configured for this handler
      */
-    private SagaMethodMessageHandler(SagaCreationPolicy creationPolicy, MethodMessageHandler handler,
-                                     String associationKey, Method associationProperty) {
+    protected SagaMethodMessageHandler(SagaCreationPolicy creationPolicy, MethodMessageHandler handler,
+                                       String associationKey, Method associationProperty) {
         this.creationPolicy = creationPolicy;
         this.handlerMethod = handler;
         this.associationKey = associationKey;
@@ -179,5 +173,24 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
             return 1;
         }
         return handlerMethod.compareTo(o.handlerMethod);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SagaMethodMessageHandler that = (SagaMethodMessageHandler) o;
+
+        return !(handlerMethod != null ? !handlerMethod.equals(that.handlerMethod) : that.handlerMethod != null);
+    }
+
+    @Override
+    public int hashCode() {
+        return handlerMethod != null ? handlerMethod.hashCode() : 0;
     }
 }

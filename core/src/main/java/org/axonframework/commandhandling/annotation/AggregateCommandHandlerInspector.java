@@ -63,6 +63,11 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
         return constructorCommandHandlers;
     }
 
+    /**
+     * Returns the list of handlers found on target type.
+     *
+     * @return the list of handlers found on target type
+     */
     public List<MethodMessageHandler> getHandlers() {
         return inspector.getHandlers();
     }

@@ -59,7 +59,7 @@ public class AutowiringClusterSelector implements ClusterSelector, ApplicationCo
         }
     }
 
-    private static class OrderedClusterSelector implements Comparable<OrderedClusterSelector> {
+    private static final class OrderedClusterSelector implements Comparable<OrderedClusterSelector> {
 
         private final String name;
         private final ClusterSelector selector;
@@ -84,6 +84,27 @@ public class AutowiringClusterSelector implements ClusterSelector, ApplicationCo
             } else {
                 return this.order - o.order;
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            OrderedClusterSelector that = (OrderedClusterSelector) o;
+
+            return order == that.order && name.equals(that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name.hashCode();
+            result = 31 * result + order;
+            return result;
         }
     }
 }

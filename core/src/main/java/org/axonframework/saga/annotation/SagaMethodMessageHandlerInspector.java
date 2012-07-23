@@ -60,11 +60,11 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     }
 
     /**
-     * Initialize the inspector.
+     * Initialize the inspector to handle events for the given <code>sagaType</code>.
      *
      * @param sagaType The type of saga this inspector handles
      */
-    private SagaMethodMessageHandlerInspector(Class<T> sagaType) {
+    protected SagaMethodMessageHandlerInspector(Class<T> sagaType) {
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(sagaType,
                                                                                             SagaEventHandler.class);
         for (MethodMessageHandler handler : inspector.getHandlers()) {

@@ -116,12 +116,12 @@ public class BSONNode {
      * as child nodes with their name prefixed with "attr_". Attributes are represented as nodes that <em>always</em>
      * exclusively contain a value.
      *
-     * @param attributeName The name of the attribute to add
-     * @param value         The value of the attribute
+     * @param attributeName  The name of the attribute to add
+     * @param attributeValue The value of the attribute
      */
-    public void setAttribute(String attributeName, String value) {
+    public void setAttribute(String attributeName, String attributeValue) {
         BSONNode childNode = new BSONNode(attributeName);
-        childNode.setValue(value);
+        childNode.setValue(attributeValue);
         this.childNodes.add(childNode);
     }
 
