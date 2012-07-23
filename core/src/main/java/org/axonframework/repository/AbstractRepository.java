@@ -16,6 +16,7 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -40,13 +41,25 @@ import javax.annotation.Resource;
 public abstract class AbstractRepository<T extends AggregateRoot> implements Repository<T> {
 
     private EventBus eventBus;
+    private final Class<T> aggregateType;
     private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
+
+    /**
+     * Initializes a repository that stores aggregate of the given <code>aggregateType</code>. All aggregates in this
+     * repository must be <code>instanceOf</code> this aggregate type.
+     *
+     * @param aggregateType The type of aggregate stored in this repository
+     */
+    protected AbstractRepository(Class<T> aggregateType) {
+        this.aggregateType = aggregateType;
+    }
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void add(T aggregate) {
+        Assert.isTrue(aggregateType.isInstance(aggregate), "Unsuitable aggregate for this repository: wrong type");
         if (aggregate.getVersion() != null) {
             throw new IllegalArgumentException("Only newly created (unpersisted) aggregates may be added.");
         }
@@ -95,6 +108,15 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
                                                            expectedVersion,
                                                            aggregate.getVersion());
         }
+    }
+
+    /**
+     * Returns the aggregate type stored by this repository.
+     *
+     * @return the aggregate type stored by this repository
+     */
+    protected Class<T> getAggregateType() {
+        return aggregateType;
     }
 
     /**

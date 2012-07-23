@@ -53,4 +53,12 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
      * @return the type identifier of the aggregates this repository stores
      */
     String getTypeIdentifier();
+
+    /**
+     * Returns the type of aggregate this factory creates. All instances created by this factory must be an
+     * <code>instanceOf</code> this type.
+     *
+     * @return The type of aggregate created by this factory
+     */
+    Class<T> getAggregateType();
 }

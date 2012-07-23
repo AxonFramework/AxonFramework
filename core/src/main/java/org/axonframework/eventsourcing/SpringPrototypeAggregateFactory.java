@@ -40,6 +40,7 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
     private String typeIdentifier;
     private ApplicationContext applicationContext;
     private String beanName;
+    private Class<?> aggregateType;
 
     @SuppressWarnings({"unchecked"})
     @Override
@@ -56,6 +57,15 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
     @Override
     public String getTypeIdentifier() {
         return typeIdentifier;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Class<T> getAggregateType() {
+        if (aggregateType == null) {
+            aggregateType = applicationContext.getType(prototypeBeanName);
+        }
+        return (Class<T>) aggregateType;
     }
 
     /**
@@ -102,7 +112,8 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
                                    + "The bean with name '%s' does not have the 'prototype' scope.",
                            beanName, prototypeBeanName));
         }
-        if (!EventSourcedAggregateRoot.class.isAssignableFrom(applicationContext.getType(prototypeBeanName))) {
+        aggregateType = applicationContext.getType(prototypeBeanName);
+        if (!EventSourcedAggregateRoot.class.isAssignableFrom(aggregateType)) {
             throw new IncompatibleAggregateException(
                     format("Cannot initialize repository '%s'. "
                                    + "The bean with name '%s' does not extend from EventSourcingAggregateRoot.",

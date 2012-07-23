@@ -97,4 +97,9 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
     public String getTypeIdentifier() {
         return typeIdentifier;
     }
+
+    @Override
+    public Class<T> getAggregateType() {
+        return aggregateType;
+    }
 }

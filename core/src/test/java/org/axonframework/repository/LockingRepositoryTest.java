@@ -28,7 +28,9 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
 import org.mockito.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -201,6 +203,41 @@ public class LockingRepositoryTest {
             fail("This should have failed due to lacking lock");
         } catch (ConcurrencyException e) {
             // that's ok
+        }
+    }
+
+    static class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
+
+        private Map<Object, StubAggregate> store = new HashMap<Object, StubAggregate>();
+        private int saveCount;
+
+        public InMemoryLockingRepository(LockManager lockManager) {
+            super(StubAggregate.class, lockManager);
+        }
+
+        @Override
+        protected void doSaveWithLock(StubAggregate aggregate) {
+            store.put(aggregate.getIdentifier(), aggregate);
+            saveCount++;
+        }
+
+        @Override
+        protected void doDeleteWithLock(StubAggregate aggregate) {
+            store.remove(aggregate.getIdentifier());
+            saveCount++;
+        }
+
+        @Override
+        protected StubAggregate doLoad(Object aggregateIdentifier, Long expectedVersion) {
+            return store.get(aggregateIdentifier);
+        }
+
+        public int getSaveCount() {
+            return saveCount;
+        }
+
+        public void resetSaveCount() {
+            saveCount = 0;
         }
     }
 }

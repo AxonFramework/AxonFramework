@@ -41,7 +41,6 @@ import static java.lang.String.format;
 public class GenericJpaRepository<T extends AggregateRoot> extends LockingRepository<T> {
 
     private final EntityManagerProvider entityManagerProvider;
-    private final Class<T> aggregateType;
     private boolean forceFlushOnSave = true;
 
     /**
@@ -66,9 +65,8 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
                                 LockingStrategy lockingStrategy) {
-        super(lockingStrategy);
+        super(aggregateType, lockingStrategy);
         this.entityManagerProvider = entityManagerProvider;
-        this.aggregateType = aggregateType;
     }
 
     @Override
@@ -89,22 +87,13 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
         }
     }
 
-    /**
-     * Returns the aggregate type stored by this repository.
-     *
-     * @return the aggregate type stored by this repository
-     */
-    protected Class<T> getAggregateType() {
-        return aggregateType;
-    }
-
     @Override
     protected T doLoad(Object aggregateIdentifier, Long expectedVersion) {
-        T aggregate = entityManagerProvider.getEntityManager().find(aggregateType, aggregateIdentifier);
+        T aggregate = entityManagerProvider.getEntityManager().find(getAggregateType(), aggregateIdentifier);
         if (aggregate == null) {
             throw new AggregateNotFoundException(aggregateIdentifier, format(
                     "Aggregate [%s] with identifier [%s] not found",
-                    aggregateType.getSimpleName(),
+                    getAggregateType().getSimpleName(),
                     aggregateIdentifier));
         } else if (expectedVersion != null && aggregate.getVersion() != null
                 && !expectedVersion.equals(aggregate.getVersion())) {

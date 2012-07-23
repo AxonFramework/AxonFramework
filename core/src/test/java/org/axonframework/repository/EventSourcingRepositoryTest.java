@@ -296,6 +296,11 @@ public class EventSourcingRepositoryTest {
         public String getTypeIdentifier() {
             return "test";
         }
+
+        @Override
+        public Class<TestAggregate> getAggregateType() {
+            return TestAggregate.class;
+        }
     }
 
     private static class TestAggregate extends AbstractEventSourcedAggregateRoot {

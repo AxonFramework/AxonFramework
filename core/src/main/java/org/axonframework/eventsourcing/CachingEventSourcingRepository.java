@@ -43,7 +43,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * Optimistic locking is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
-     * @see org.axonframework.repository.LockingRepository#LockingRepository()
+     * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory) {
         super(aggregateFactory, LockingStrategy.PESSIMISTIC);
