@@ -39,18 +39,6 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         this.executor = executor;
     }
 
-    /**
-     * Initialize the AsynchronousCommandBus using the given <code>executor</code> and allowing you to optionally
-     * register MBeans containing statistics.
-     *
-     * @param executor       The executor that processes Command dispatching threads
-     * @param registerMBeans true to register the mbeans, false for not registering them.
-     */
-    public AsynchronousCommandBus(Executor executor, boolean registerMBeans) {
-        super(registerMBeans);
-        this.executor = executor;
-    }
-
     @Override
     public void dispatch(CommandMessage<?> command) {
         executor.execute(new DispatchCommand<Object>(command, null));

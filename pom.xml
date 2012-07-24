@@ -30,6 +30,7 @@
         <module>mongo</module>
         <module>incubator/google-app-engine</module>
         <module>amqp</module>
+        <module>monitoring-jmx</module>
         <!--<module>migration</module>-->
     </modules>
     <packaging>pom</packaging>

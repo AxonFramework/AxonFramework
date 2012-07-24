@@ -65,7 +65,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         eventScheduler = new StubEventScheduler();
         GenericSagaFactory genericSagaFactory = new GenericSagaFactory();
         genericSagaFactory.setResourceInjector(new AutowiredResourceInjector(registeredResources));
-        EventBus eventBus = new SimpleEventBus(false);
+        EventBus eventBus = new SimpleEventBus();
         InMemorySagaRepository sagaRepository = new InMemorySagaRepository();
         sagaManager = new AnnotatedSagaManager(sagaRepository, genericSagaFactory, eventBus, sagaType);
         sagaManager.setSuppressExceptions(false);

@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.monitoring.jmx.JmxConfiguration;
+import org.axonframework.monitoring.MonitorRegistry;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
@@ -54,21 +54,10 @@ public class SimpleCommandBus implements CommandBus {
     private RollbackConfiguration rollbackConfiguration = new RollbackOnAllExceptionsConfiguration();
 
     /**
-     * Initializes the SimpleCommandBus and registers the mbeans for management information.
+     * Initializes the SimpleCommandBus.
      */
     public SimpleCommandBus() {
-        this(true);
-    }
-
-    /**
-     * Initiates the SimpleCommandBus and makes the registration of mbeans for management information optional.
-     *
-     * @param registerMBeans true to register the mbeans, false for not registering them.
-     */
-    public SimpleCommandBus(boolean registerMBeans) {
-        if (registerMBeans) {
-            JmxConfiguration.getInstance().registerMBean(statistics, getClass());
-        }
+        MonitorRegistry.registerMonitoringBean(statistics);
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})

@@ -213,13 +213,6 @@
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:sequence>
-                    <xsd:attribute name="register-mbeans" type="xsd:boolean" use="optional">
-                        <xsd:annotation>
-                            <xsd:documentation>Indicate whether the mbeans should be registered or not. By default they
-                                are registered.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

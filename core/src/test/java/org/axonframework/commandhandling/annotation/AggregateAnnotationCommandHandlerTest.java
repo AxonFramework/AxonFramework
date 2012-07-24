@@ -48,7 +48,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        commandBus = spy(new SimpleCommandBus(false));
+        commandBus = spy(new SimpleCommandBus());
         mockRepository = mock(Repository.class);
         testSubject = AggregateAnnotationCommandHandler.subscribe(StubCommandAnnotatedAggregate.class,
                                                                   mockRepository,

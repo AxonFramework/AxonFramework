@@ -51,7 +51,7 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
     @Before
     public void setUp() throws Exception {
         repository = new VirtualSagaRepository();
-        eventBus = new SimpleEventBus(false);
+        eventBus = new SimpleEventBus();
     }
 
     @Test

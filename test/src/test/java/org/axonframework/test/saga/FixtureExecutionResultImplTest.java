@@ -48,7 +48,7 @@ public class FixtureExecutionResultImplTest {
     @Before
     public void setUp() throws Exception {
         commandBus = new RecordingCommandBus();
-        eventBus = new SimpleEventBus(false);
+        eventBus = new SimpleEventBus();
         eventScheduler = new StubEventScheduler();
         sagaRepository = new InMemorySagaRepository();
         testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,

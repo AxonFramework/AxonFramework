@@ -2,7 +2,6 @@ package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.jgroups.JChannel;
@@ -34,7 +33,6 @@ public class JGroupsConnectorFactoryBeanTest {
 
     @Before
     public void setUp() throws Exception {
-        JmxConfiguration.getInstance().disableMonitoring();
         mockApplicationContext = mock(ApplicationContext.class);
         mockChannel = mock(JChannel.class);
         mockConnector = mock(JGroupsConnector.class);
@@ -78,7 +76,7 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.setLoadFactor(200);
         XStreamSerializer serializer = new XStreamSerializer();
         testSubject.setSerializer(serializer);
-        SimpleCommandBus localSegment = new SimpleCommandBus(false);
+        SimpleCommandBus localSegment = new SimpleCommandBus();
         testSubject.setLocalSegment(localSegment);
         testSubject.afterPropertiesSet();
         testSubject.start();

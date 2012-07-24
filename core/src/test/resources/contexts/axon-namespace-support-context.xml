@@ -121,9 +121,7 @@
         </axon:interceptors>
     </axon:command-bus>
 
-    <axon:command-bus id="commandBus-mbeans-false" register-mbeans="false"/>
-
-    <axon:command-bus id="commandBus-mbeans-true" register-mbeans="true"/>
+    <axon:command-bus id="commandBus-simple"/>
 
     <axon:event-bus id="eventBus"/>
 

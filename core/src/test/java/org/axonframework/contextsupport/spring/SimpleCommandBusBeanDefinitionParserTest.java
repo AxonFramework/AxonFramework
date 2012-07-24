@@ -86,30 +86,12 @@ public class SimpleCommandBusBeanDefinitionParserTest {
 
     @Test
     public void commandBusElementTrueMBeans() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("commandBus-mbeans-true");
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("commandBus-simple");
         assertNotNull("Bean definition not created", beanDefinition);
         assertEquals("Wrong bean class", SimpleCommandBus.class.getName(), beanDefinition.getBeanClassName());
         assertEquals("wrong amount of constructor arguments"
-                , 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        Object constructorValue =
-                beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Boolean.class).getValue();
-        assertTrue("constructor value is wrong", Boolean.parseBoolean((String) constructorValue));
-        SimpleCommandBus commandBus = beanFactory.getBean("commandBus-mbeans-true", SimpleCommandBus.class);
+                , 0, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        SimpleCommandBus commandBus = beanFactory.getBean("commandBus-simple", SimpleCommandBus.class);
         assertNotNull(commandBus);
     }
-
-    @Test
-    public void commandBusElementFalseMBeans() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("commandBus-mbeans-false");
-        assertNotNull("Bean definition not created", beanDefinition);
-        assertEquals("Wrong bean class", SimpleCommandBus.class.getName(), beanDefinition.getBeanClassName());
-        assertEquals("wrong amount of constructor arguments"
-                , 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        Object constructorValue =
-                beanDefinition.getConstructorArgumentValues().getArgumentValue(0, Boolean.class).getValue();
-        assertFalse("constructor value is wrong", Boolean.parseBoolean((String) constructorValue));
-        SimpleCommandBus commandBus = beanFactory.getBean("commandBus-mbeans-false", SimpleCommandBus.class);
-        assertNotNull(commandBus);
-    }
-
 }

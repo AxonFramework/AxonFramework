@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.monitoring.jmx.JmxConfiguration;
+import org.axonframework.monitoring.MonitorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,18 +44,7 @@ public class SimpleEventBus implements EventBus {
      * Initializes the SimpleEventBus and registers the mbeans for management information.
      */
     public SimpleEventBus() {
-        this(true);
-    }
-
-    /**
-     * Initiates the SimpleEventBus and makes the registration of mbeans for management information optional.
-     *
-     * @param registerMBeans true to register the mbeans, false for not registering them.
-     */
-    public SimpleEventBus(boolean registerMBeans) {
-        if (registerMBeans) {
-            JmxConfiguration.getInstance().registerMBean(statistics, getClass());
-        }
+        MonitorRegistry.registerMonitoringBean(statistics);
     }
 
     /**

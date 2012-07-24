@@ -16,6 +16,7 @@
 
 package org.axonframework.monitoring.jmx;
 
+import org.axonframework.monitoring.MonitorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,46 +37,29 @@ import javax.management.StandardMBean;
  * @author Allard Buijze
  * @since 0.6
  */
-public final class JmxConfiguration {
+public final class JmxMonitorRegistry extends MonitorRegistry {
 
-    private static final Logger logger = LoggerFactory.getLogger(JmxConfiguration.class);
-    private static final JmxConfiguration INSTANCE = new JmxConfiguration();
+    private static final Logger logger = LoggerFactory.getLogger(JmxMonitorRegistry.class);
 
-    private MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-    private boolean enabled = true;
-
-    private JmxConfiguration() {
-    }
-
-    /**
-     * Returns the singleton instance of JmxConfiguration.
-     *
-     * @return the JmxConfiguration instance
-     */
-    public static JmxConfiguration getInstance() {
-        return INSTANCE;
-    }
+    private final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
     /**
      * Attempts to register the given <code>mBean</code> as an MBean with the default MBeanServer. If registration
      * fails, no exceptions are thrown. Instead, failure is logged and silently accepted.
      *
-     * @param mBean         The instance to register as MBean. Note that this instance needs to be MBean compliant.
-     *                      Otherwise, registration fails silently.
-     * @param monitoredType The type of object that the MBean represents. This type is used to construct the ObjectName
-     *                      of the MBean.
+     * @param mBean The instance to register as MBean. Note that this instance needs to be MBean compliant.
+     *              Otherwise, registration fails silently.
      */
-    public void registerMBean(Object mBean, Class<?> monitoredType) {
-        if (enabled) {
-            try {
-                mBeanServer.registerMBean(new StandardMBean(mBean, null, true), objectNameFor(monitoredType));
-            } catch (InstanceAlreadyExistsException e) {
-                logger.warn("Object {} has already been registered as an MBean", mBean);
-            } catch (MBeanRegistrationException e) {
-                logger.error("An error occurred registering an MBean", e);
-            } catch (NotCompliantMBeanException e) {
-                logger.error("Non-compliant MBean registered.", e);
-            }
+    @Override
+    public void registerBean(Object mBean) {
+        try {
+            mBeanServer.registerMBean(new StandardMBean(mBean, null, true), objectNameFor(mBean.getClass()));
+        } catch (InstanceAlreadyExistsException e) {
+            logger.warn("Object {} has already been registered as an MBean", mBean);
+        } catch (MBeanRegistrationException e) {
+            logger.error("An error occurred registering an MBean", e);
+        } catch (NotCompliantMBeanException e) {
+            logger.error("Non-compliant MBean registered.", e);
         }
     }
 
@@ -85,12 +69,5 @@ public final class JmxConfiguration {
         } catch (MalformedObjectNameException e) {
             throw new IllegalStateException("This JVM doesn't seem to accept perfectly normal ObjectNames");
         }
-    }
-
-    /**
-     * Disables monitoring. Any calls to {@link #registerMBean(Object, Class)} will be ignored.
-     */
-    public void disableMonitoring() {
-        this.enabled = false;
     }
 }

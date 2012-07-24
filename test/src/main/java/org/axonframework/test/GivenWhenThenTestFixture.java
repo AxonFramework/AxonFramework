@@ -39,7 +39,6 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.monitoring.jmx.JmxConfiguration;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -99,7 +98,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
      * @param aggregateType The aggregate to initialize the test fixture for
      */
     public GivenWhenThenTestFixture(Class<T> aggregateType) {
-        JmxConfiguration.getInstance().disableMonitoring();
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
