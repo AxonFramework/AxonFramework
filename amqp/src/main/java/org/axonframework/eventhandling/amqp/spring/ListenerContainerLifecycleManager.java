@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
-import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
@@ -49,7 +48,6 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     private boolean started = false;
 
     private int phase = Integer.MAX_VALUE;
-    private Serializer serializer;
 
     /**
      * Registers the given <code>cluster</code>, assigning it to a listener that listens to the given
@@ -148,26 +146,5 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
      */
     public void setPhase(int phase) {
         this.phase = phase;
-    }
-
-    /**
-     * Sets the serializer to use when deserializing messages received from the lister containers, before they are sent
-     * to their respective Clusters.
-     * <p/>
-     * Defaults to an autowired serializer, which requires exactly 1 eligible serializer to be present in the
-     * application context.
-     *
-     * @param serializer the serializer to deserialize messages with
-     */
-    public void setSerializer(Serializer serializer) {
-        this.serializer = serializer;
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        if (serializer == null) {
-            serializer = getApplicationContext().getBean(Serializer.class);
-        }
     }
 }

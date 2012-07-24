@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation.postprocessor;
+package org.axonframework.eventhandling.annotation;
 
 import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.domain.EventMessage;
@@ -23,10 +23,6 @@ import org.axonframework.domain.StubAggregate;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
-import org.axonframework.eventhandling.annotation.AsynchronousEventListener;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 

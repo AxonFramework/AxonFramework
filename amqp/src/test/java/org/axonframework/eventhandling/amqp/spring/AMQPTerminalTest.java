@@ -65,7 +65,7 @@ public class AMQPTerminalTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testConnectAndDispatch_DefaultQueueAndExchange() throws Exception {
         final EventMessage<String> sentEvent = GenericEventMessage.asEventMessage("Hello world");
         final CountDownLatch cdl = new CountDownLatch(EVENT_COUNT * THREAD_COUNT);

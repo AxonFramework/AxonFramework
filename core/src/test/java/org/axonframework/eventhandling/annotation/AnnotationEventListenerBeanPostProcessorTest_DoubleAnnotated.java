@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation.postprocessor;
+package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;

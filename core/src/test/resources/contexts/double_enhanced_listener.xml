@@ -30,7 +30,7 @@
     <axon:event-bus id="eventBus"/>
     <axon:command-bus id="commandBus"/>
 
-    <bean class="org.axonframework.eventhandling.annotation.postprocessor.TransactionalListener"/>
+    <bean class="org.axonframework.eventhandling.annotation.TransactionalListener"/>
     <bean class="org.axonframework.commandhandling.annotation.TransactionalCommandHandler"/>
 
     <bean id="transactionManager" class="org.axonframework.testutils.MockitoMockFactoryBean">

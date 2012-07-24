@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation.postprocessor;
+package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.springframework.transaction.annotation.Transactional;
 
 /**

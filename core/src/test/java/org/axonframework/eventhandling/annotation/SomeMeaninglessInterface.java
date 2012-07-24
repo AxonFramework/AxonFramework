@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation.postprocessor;
+package org.axonframework.eventhandling.annotation;
 
 /**
  * @author Allard Buijze

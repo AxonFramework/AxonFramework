@@ -18,7 +18,6 @@ package org.axonframework.contextsupport.spring;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -32,11 +31,10 @@ import org.springframework.context.ApplicationContextAware;
  * @author Allard Buijze
  * @since 1.0
  */
-public class AutowiredDependencyFactoryBean<T> implements FactoryBean<T>, ApplicationContextAware, InitializingBean {
+public class AutowiredDependencyFactoryBean<T> implements FactoryBean<T>, ApplicationContextAware {
 
     private ApplicationContext applicationContext;
     private final Class<T> beanType;
-    private T resolvedDependency;
 
     /**
      * Creates a factory bean that automatically resolved to a bean of the give <code>beanType</code>.
@@ -54,7 +52,7 @@ public class AutowiredDependencyFactoryBean<T> implements FactoryBean<T>, Applic
 
     @Override
     public T getObject() throws Exception {
-        return resolvedDependency;
+        return applicationContext.getBean(beanType);
     }
 
     @Override
@@ -67,8 +65,4 @@ public class AutowiredDependencyFactoryBean<T> implements FactoryBean<T>, Applic
         return true;
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        resolvedDependency = applicationContext.getBean(beanType);
-    }
 }
