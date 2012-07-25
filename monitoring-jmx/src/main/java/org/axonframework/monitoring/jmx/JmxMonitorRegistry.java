@@ -47,13 +47,14 @@ public final class JmxMonitorRegistry extends MonitorRegistry {
      * Attempts to register the given <code>mBean</code> as an MBean with the default MBeanServer. If registration
      * fails, no exceptions are thrown. Instead, failure is logged and silently accepted.
      *
-     * @param mBean The instance to register as MBean. Note that this instance needs to be MBean compliant.
-     *              Otherwise, registration fails silently.
+     * @param mBean         The instance to register as MBean. Note that this instance needs to be MBean compliant.
+     *                      Otherwise, registration fails silently.
+     * @param componentType The type of component that the monitoring bean provides information for
      */
     @Override
-    public void registerBean(Object mBean) {
+    public void registerBean(Object mBean, Class<?> componentType) {
         try {
-            mBeanServer.registerMBean(new StandardMBean(mBean, null, true), objectNameFor(mBean.getClass()));
+            mBeanServer.registerMBean(new StandardMBean(mBean, null, true), objectNameFor(componentType));
         } catch (InstanceAlreadyExistsException e) {
             logger.warn("Object {} has already been registered as an MBean", mBean);
         } catch (MBeanRegistrationException e) {
@@ -65,7 +66,12 @@ public final class JmxMonitorRegistry extends MonitorRegistry {
 
     private ObjectName objectNameFor(Class<?> clazz) {
         try {
-            return new ObjectName("org.axonframework", "type", clazz.getSimpleName());
+            ObjectName objectName = new ObjectName("org.axonframework", "type", clazz.getSimpleName());
+            int i = 1;
+            while (!mBeanServer.queryMBeans(objectName, null).isEmpty()) {
+                objectName = new ObjectName("org.axonframework", "type", clazz.getSimpleName() + "_" + i++);
+            }
+            return objectName;
         } catch (MalformedObjectNameException e) {
             throw new IllegalStateException("This JVM doesn't seem to accept perfectly normal ObjectNames");
         }

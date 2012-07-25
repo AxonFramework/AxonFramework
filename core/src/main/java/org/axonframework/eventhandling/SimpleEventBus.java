@@ -44,7 +44,7 @@ public class SimpleEventBus implements EventBus {
      * Initializes the SimpleEventBus and registers the mbeans for management information.
      */
     public SimpleEventBus() {
-        MonitorRegistry.registerMonitoringBean(statistics);
+        MonitorRegistry.registerMonitoringBean(statistics, SimpleEventBus.class);
     }
 
     /**

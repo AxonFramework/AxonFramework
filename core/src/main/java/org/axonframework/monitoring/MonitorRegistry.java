@@ -35,11 +35,12 @@ public abstract class MonitorRegistry {
      * occurs while registering the monitoringBean, it is ignored.
      *
      * @param monitoringBean The bean containing the monitoring information
+     * @param componentType  The type of component that the monitoring bean provides information for
      */
-    public static void registerMonitoringBean(Object monitoringBean) {
+    public static void registerMonitoringBean(Object monitoringBean, Class<?> componentType) {
         for (MonitorRegistry registry : registries) {
             try {
-                registry.registerBean(monitoringBean);
+                registry.registerBean(monitoringBean, componentType);
             } catch (Exception e) {
                 logger.warn("Exception when registering {} with {} ", new Object[]{monitoringBean, registry, e});
             } catch (Error e) {
@@ -53,6 +54,7 @@ public abstract class MonitorRegistry {
      * information and management services on its behalf.
      *
      * @param monitoringBean The bean to register
+     * @param componentType  The type of component that the monitoring bean provides information for
      */
-    protected abstract void registerBean(Object monitoringBean);
+    protected abstract void registerBean(Object monitoringBean, Class<?> componentType);
 }

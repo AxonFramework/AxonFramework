@@ -57,7 +57,7 @@ public class SimpleCommandBus implements CommandBus {
      * Initializes the SimpleCommandBus.
      */
     public SimpleCommandBus() {
-        MonitorRegistry.registerMonitoringBean(statistics);
+        MonitorRegistry.registerMonitoringBean(statistics, SimpleCommandBus.class);
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
