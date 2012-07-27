@@ -21,7 +21,9 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Allard Buijze
  * @since 1.3
+ * @deprecated Use the CommandGateway instead
  */
+@Deprecated
 public class CommandTemplate {
 
     private final CommandBus commandBus;

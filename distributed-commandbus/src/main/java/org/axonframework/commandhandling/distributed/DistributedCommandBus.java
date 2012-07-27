@@ -4,6 +4,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
@@ -19,6 +21,7 @@ public class DistributedCommandBus implements CommandBus {
 
     private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command "
             + "on the DistributedCommandBus";
+    private static final Logger logger = LoggerFactory.getLogger(DistributedCommandBus.class);
 
     private final RoutingStrategy routingStrategy;
     private final CommandBusConnector connector;
@@ -56,7 +59,7 @@ public class DistributedCommandBus implements CommandBus {
         try {
             connector.send(routingKey, command);
         } catch (Exception e) {
-            throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE, e);
+            logger.error(DISPATCH_ERROR_MESSAGE, e);
         }
     }
 
@@ -71,7 +74,7 @@ public class DistributedCommandBus implements CommandBus {
         try {
             connector.send(routingKey, command, callback);
         } catch (Exception e) {
-            throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE, e);
+            callback.onFailure(new CommandDispatchException(DISPATCH_ERROR_MESSAGE, e));
         }
     }
 

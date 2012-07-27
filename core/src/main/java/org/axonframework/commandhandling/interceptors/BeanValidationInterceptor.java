@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
@@ -30,11 +31,14 @@ import javax.validation.ValidatorFactory;
 /**
  * Interceptor that applies JSR303 bean validation on incoming commands. When validation on a command fails, a
  * JSR303ViolationException is thrown, holding the constraint violations.
+ * <p/>
+ * This interceptor can either be used as a {@link CommandHandlerInterceptor} or as a {@link
+ * CommandDispatchInterceptor}.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class BeanValidationInterceptor implements CommandHandlerInterceptor {
+public class BeanValidationInterceptor implements CommandHandlerInterceptor, CommandDispatchInterceptor {
 
     private final ValidatorFactory validatorFactory;
 
@@ -58,12 +62,17 @@ public class BeanValidationInterceptor implements CommandHandlerInterceptor {
     @Override
     public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain interceptorChain)
             throws Throwable {
+        return interceptorChain.proceed(handle(command));
+    }
+
+    @Override
+    public CommandMessage<?> handle(CommandMessage<?> command) {
         Validator validator = validatorFactory.getValidator();
         Set<ConstraintViolation<Object>> violations = validateCommand(command.getPayload(), validator);
         if (violations != null && !violations.isEmpty()) {
             throw new JSR303ViolationException("One or more JSR303 constraints were violated.", violations);
         }
-        return interceptorChain.proceed();
+        return command;
     }
 
     /**

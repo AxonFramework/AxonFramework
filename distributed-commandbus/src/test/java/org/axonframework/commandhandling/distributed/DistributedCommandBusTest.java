@@ -8,6 +8,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.junit.*;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -21,7 +22,7 @@ public class DistributedCommandBusTest {
     private RoutingStrategy mockRoutingStrategy;
     private CommandHandler<Object> mockHandler;
     private CommandMessage<?> message;
-    private CommandCallback<Object> callback;
+    private FutureCallback<Object> callback;
 
     @SuppressWarnings("unchecked")
     @Before
@@ -54,18 +55,25 @@ public class DistributedCommandBusTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test(expected = CommandDispatchException.class)
+    @Test
     public void testDispatchErrorIsPropagated_WithCallback() throws Exception {
         doThrow(new Exception()).when(mockConnector).send(anyString(),
                                                           any(CommandMessage.class),
                                                           any(CommandCallback.class));
         testSubject.dispatch(message, callback);
+        try {
+            callback.getResult();
+            fail("Expected Exception");
+        } catch (CommandDispatchException e) {
+            assertNotNull(e);
+        }
     }
 
-    @Test(expected = CommandDispatchException.class)
+    @Test
     public void testDispatchErrorIsPropagated_WithoutCallback() throws Exception {
-        doThrow(new Exception()).when(mockConnector).send(anyString(), any(CommandMessage.class));
+        doThrow(new Exception("Mock")).when(mockConnector).send(anyString(), any(CommandMessage.class));
         testSubject.dispatch(message);
+        // exception is logged.
     }
 
     @Test

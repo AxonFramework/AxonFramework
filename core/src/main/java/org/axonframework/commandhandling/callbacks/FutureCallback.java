@@ -62,7 +62,9 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      */
     @Override
     public R get() throws InterruptedException, ExecutionException {
-        latch.await();
+        if (!isDone()) {
+            latch.await();
+        }
         return getFutureResult();
     }
 
@@ -77,10 +79,13 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      * @throws InterruptedException if the current thread is interrupted while waiting
      * @throws TimeoutException     if the wait timed out
      * @throws ExecutionException   if the command handler threw an exception
+     * @see #getResult(long, java.util.concurrent.TimeUnit)
      */
     @Override
     public R get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException, ExecutionException {
-        wait(timeout, unit);
+        if (!isDone()) {
+            latch.await(timeout, unit);
+        }
         return getFutureResult();
     }
 
@@ -89,13 +94,24 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      * <p/>
      * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
      * checked exceptions are wrapped in a {@link CommandExecutionException}.
+     * <p/>
+     * If the thread is interrupted while waiting, the interrupt flag is set back on the thread, and <code>null</code>
+     * is returned. To distinguish between an interrupt and a <code>null</code> result, use the {@link #isDone()}
+     * method.
      *
      * @return the result of the command handler execution.
      *
-     * @throws InterruptedException if the current thread is interrupted while waiting
+     * @see #get()
      */
-    public R getResult() throws InterruptedException {
-        latch.await();
+    public R getResult() {
+        if (!isDone()) {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }
         return doGetResult();
     }
 
@@ -105,17 +121,30 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      * <p/>
      * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
      * checked exceptions are wrapped in a {@link CommandExecutionException}.
+     * <p/>
+     * If the timeout expired or the thread is interrupted before completion, <code>null</code> is returned. In case of
+     * an interrupt, the interrupt flag will have been set back on the thread. To distinguish between an interrupt and
+     * a
+     * <code>null</code> result, use the {@link #isDone()}
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the timeout argument
      * @return the result of the command handler execution.
-     *
-     * @throws InterruptedException if the current thread is interrupted while waiting
-     * @throws TimeoutException     if the wait timed out
      */
-    public R getResult(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
-        wait(timeout, unit);
+    public R getResult(long timeout, TimeUnit unit) {
+        if (!awaitCompletion(timeout, unit)) {
+            return null;
+        }
         return doGetResult();
+    }
+
+    public boolean awaitCompletion(long timeout, TimeUnit unit) {
+        try {
+            return isDone() || latch.await(timeout, unit);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     /**
@@ -169,12 +198,6 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
             throw new ExecutionException(failure);
         } else {
             return result;
-        }
-    }
-
-    private void wait(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
-        if (!latch.await(timeout, unit)) {
-            throw new TimeoutException("The timeout of the getResult operation was reached");
         }
     }
 }
