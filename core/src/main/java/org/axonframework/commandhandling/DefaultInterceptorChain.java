@@ -28,7 +28,7 @@ import java.util.Iterator;
  */
 public class DefaultInterceptorChain implements InterceptorChain {
 
-    private final CommandMessage<?> command;
+    private CommandMessage<?> command;
     private final CommandHandler handler;
     private Iterator<? extends CommandHandlerInterceptor> chain;
     private UnitOfWork unitOfWork;
@@ -56,6 +56,7 @@ public class DefaultInterceptorChain implements InterceptorChain {
     @SuppressWarnings({"unchecked"})
     @Override
     public Object proceed(CommandMessage<?> commandProceedWith) throws Throwable {
+        command = commandProceedWith;
         if (chain.hasNext()) {
             return chain.next().handle(commandProceedWith, unitOfWork, this);
         } else {
