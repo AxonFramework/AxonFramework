@@ -84,7 +84,7 @@ public interface Message<T> extends Serializable {
     Message<T> withMetaData(Map<String, Object> metaData);
 
     /**
-     * Returns a copy of this EventMessage with it MetaData merged with the given <code>metaData</code>. The payload
+     * Returns a copy of this Message with it MetaData merged with the given <code>metaData</code>. The payload
      * remains unchanged.
      *
      * @param metaData The MetaData to merge with

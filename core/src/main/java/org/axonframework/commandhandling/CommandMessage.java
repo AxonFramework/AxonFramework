@@ -18,6 +18,8 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.domain.Message;
 
+import java.util.Map;
+
 /**
  * Represents a Message carrying a command as its payload. These messages carry an intention to change application
  * state.
@@ -27,5 +29,26 @@ import org.axonframework.domain.Message;
  * @since 2.0
  */
 public interface CommandMessage<T> extends Message<T> {
+
+    /**
+     * Returns a copy of this CommandMessage with the given <code>metaData</code>. The payload remains unchanged.
+     * <p/>
+     * While the implementation returned may be different than the implementation of <code>this</code>, implementations
+     * must take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent
+     * errors further downstream.
+     *
+     * @param metaData The new MetaData for the Message
+     * @return a copy of this message with the given MetaData
+     */
+    CommandMessage<T> withMetaData(Map<String, Object> metaData);
+
+    /**
+     * Returns a copy of this CommandMessage with it MetaData merged with the given <code>metaData</code>. The payload
+     * remains unchanged.
+     *
+     * @param metaData The MetaData to merge with
+     * @return a copy of this message with the given MetaData
+     */
+    CommandMessage<T> andMetaData(Map<String, Object> metaData);
 
 }
