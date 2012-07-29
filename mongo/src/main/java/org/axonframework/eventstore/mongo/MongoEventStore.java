@@ -56,8 +56,8 @@ import javax.annotation.PostConstruct;
 public class MongoEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStore.class);
-    private static final String ORDER_ASC = "1";
-    private static final String ORDER_DESC = "-1";
+    private static final int ORDER_ASC = 1;
+    private static final int ORDER_DESC = -1;
 
     private final MongoTemplate mongoTemplate;
 
