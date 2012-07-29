@@ -186,6 +186,28 @@ public class MongoEventStoreTest {
 
         assertEquals(2, domainEvents.size());
     }
+    
+    @Test
+    public void testLoadWithMultipleSnapshotEvents() {
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        aggregate1.changeState();
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        aggregate1.changeState();
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+
+        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
+        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        while (actualEventStream.hasNext()) {
+            domainEvents.add(actualEventStream.next());
+        }
+
+        assertEquals(2, domainEvents.size());
+    }
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
