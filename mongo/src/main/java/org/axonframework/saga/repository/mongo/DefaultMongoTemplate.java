@@ -19,7 +19,7 @@ public class DefaultMongoTemplate extends AuthenticatingMongoTemplate implements
 
     /**
      * Initialize a template for the given <code>mongoDb</code> instance, using default database name ("axonframework")
-     * and collection name ("sagas).
+     * and collection name ("sagas").
      *
      * @param mongo The Mongo instance providing access to the database
      */

@@ -21,7 +21,7 @@ import com.mongodb.Mongo;
 import org.axonframework.common.mongo.AuthenticatingMongoTemplate;
 
 /**
- * Default implementation for the {@see MongoTemplate}. This implementation requires access to the configured {@see
+ * Default implementation for the {@link MongoTemplate}. This implementation requires access to the configured {@link
  * Mongo} object. You can influence the names of the collections used to store the events as well as the
  * snapshot events.
  *
