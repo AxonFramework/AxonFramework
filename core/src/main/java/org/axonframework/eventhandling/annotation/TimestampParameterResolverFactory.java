@@ -41,4 +41,9 @@ public class TimestampParameterResolverFactory extends ParameterResolverFactory 
     public boolean matches(Message message) {
         return message instanceof EventMessage;
     }
+
+    @Override
+    public boolean supportsPayloadResolution() {
+        return false;
+    }
 }

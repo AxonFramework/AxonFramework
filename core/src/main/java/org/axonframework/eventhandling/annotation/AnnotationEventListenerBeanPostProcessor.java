@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.common.AbstractAnnotationHandlerBeanPostProcessor;
+import org.axonframework.common.annotation.AbstractAnnotationHandlerBeanPostProcessor;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;

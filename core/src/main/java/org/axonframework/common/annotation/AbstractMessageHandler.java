@@ -111,9 +111,12 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         int parameters = parameterTypes.length;
         ParameterResolver[] parameterValueResolvers = new ParameterResolver[parameters];
         for (int i = 0; i < parameters; i++) {
+            // currently, the first parameter is considered the payload parameter
+            final boolean isPayloadParameter = i == 0;
             parameterValueResolvers[i] = ParameterResolverFactory.findParameterResolver(memberAnnotations,
                                                                                         parameterTypes[i],
-                                                                                        parameterAnnotations[i]);
+                                                                                        parameterAnnotations[i],
+                                                                                        isPayloadParameter);
         }
         if (parameterValueResolvers[0] == null) {
             parameterValueResolvers[0] = ParameterResolverFactory.createPayloadResolver(parameterTypes[0]);

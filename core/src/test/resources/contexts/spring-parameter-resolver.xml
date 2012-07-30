@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-2.0.xsd">
+
+    <!-- This should also register the parameter resolver -->
+    <axon:annotation-config />
+
+    <axon:command-bus id="commandBus"/>
+    <axon:event-bus id="eventBus"/>
+
+</beans>

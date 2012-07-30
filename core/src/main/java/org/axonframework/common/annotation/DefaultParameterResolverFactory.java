@@ -42,6 +42,11 @@ public class DefaultParameterResolverFactory extends ParameterResolverFactory {
         return new PayloadParameterResolver(parameterType);
     }
 
+    @Override
+    public boolean supportsPayloadResolution() {
+        return true;
+    }
+
     private static class AnnotatedMetaDataParameterResolver implements ParameterResolver {
 
         private final MetaData metaData;

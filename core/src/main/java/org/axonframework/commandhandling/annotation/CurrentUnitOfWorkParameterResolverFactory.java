@@ -51,4 +51,9 @@ public class CurrentUnitOfWorkParameterResolverFactory extends ParameterResolver
     public boolean matches(Message message) {
         return CommandMessage.class.isInstance(message) && CurrentUnitOfWork.isStarted();
     }
+
+    @Override
+    public boolean supportsPayloadResolution() {
+        return false;
+    }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
+import org.axonframework.common.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -67,7 +68,14 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         registerAnnotationCommandHandlerBeanPostProcessor(element, parserContext);
         registerAnnotationEventListenerBeanPostProcessor(element, parserContext);
+        registerAnnotationHandlerResourceInjectingPostProcessor(parserContext);
         return null;
+    }
+
+    private void registerAnnotationHandlerResourceInjectingPostProcessor(ParserContext parserContext) {
+        GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
+        beanDefinition.setBeanClass(SpringBeanParameterResolverFactory.class);
+        parserContext.getRegistry().registerBeanDefinition("beanParameterResolverFactory", beanDefinition);
     }
 
     /**

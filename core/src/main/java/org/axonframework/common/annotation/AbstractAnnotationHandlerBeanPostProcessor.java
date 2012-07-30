@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.common.annotation;
 
 import org.aopalliance.intercept.MethodInvocation;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Subscribable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.IntroductionInfo;
