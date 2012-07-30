@@ -84,7 +84,9 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
     @Override
     public R get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException, ExecutionException {
         if (!isDone()) {
-            latch.await(timeout, unit);
+            if(!latch.await(timeout, unit)) {
+                throw new TimeoutException("A Timeout occurred while waiting for a Command Callback");
+            }
         }
         return getFutureResult();
     }

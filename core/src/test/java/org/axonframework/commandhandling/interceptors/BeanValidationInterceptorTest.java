@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -47,8 +48,9 @@ public class BeanValidationInterceptorTest {
 
     @Test
     public void testValidateSimpleObject() throws Throwable {
-        testSubject.handle(new GenericCommandMessage<Object>("Simple instance"), uow, mockInterceptorChain);
-        verify(mockInterceptorChain).proceed();
+        final GenericCommandMessage<Object> command = new GenericCommandMessage<Object>("Simple instance");
+        testSubject.handle(command, uow, mockInterceptorChain);
+        verify(mockInterceptorChain).proceed(same(command));
     }
 
     @Test
@@ -61,14 +63,16 @@ public class BeanValidationInterceptorTest {
             assertFalse(e.getViolations().isEmpty());
         }
         verify(mockInterceptorChain, never()).proceed();
+        verify(mockInterceptorChain, never()).proceed(isA(CommandMessage.class));
     }
 
     @Test
     public void testValidateAnnotatedObject_LegalValue() throws Throwable {
-        testSubject.handle(new GenericCommandMessage<Object>(new JSR303AnnotatedInstance("abc")),
-                           uow, mockInterceptorChain);
+        final GenericCommandMessage<Object> commandMessage =
+                new GenericCommandMessage<Object>(new JSR303AnnotatedInstance("abc"));
+        testSubject.handle(commandMessage, uow, mockInterceptorChain);
 
-        verify(mockInterceptorChain).proceed();
+        verify(mockInterceptorChain).proceed(same(commandMessage));
     }
 
     @Test
@@ -81,6 +85,7 @@ public class BeanValidationInterceptorTest {
             assertFalse(e.getViolations().isEmpty());
         }
         verify(mockInterceptorChain, never()).proceed();
+        verify(mockInterceptorChain, never()).proceed(isA(CommandMessage.class));
     }
 
     @Test

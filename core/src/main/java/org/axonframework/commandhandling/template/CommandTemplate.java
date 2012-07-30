@@ -21,7 +21,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Allard Buijze
  * @since 1.3
- * @deprecated Use the CommandGateway instead
+ * @deprecated Use the {@link org.axonframework.commandhandling.gateway.CommandGateway} instead
  */
 @Deprecated
 public class CommandTemplate {
@@ -72,7 +72,12 @@ public class CommandTemplate {
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) throws TimeoutException,
                                                                                  InterruptedException {
-        return (R) doSend(command).getResult(timeout, unit);
+        final FutureCallback<R> callback = doSend(command);
+        if (callback.awaitCompletion(timeout, unit)) {
+            return callback.getResult();
+        } else {
+            throw new TimeoutException("A timeout occurred while waiting for the Command Execution result");
+        }
     }
 
     /**
