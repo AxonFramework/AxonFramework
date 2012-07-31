@@ -176,13 +176,12 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
 
         @SuppressWarnings({"unchecked"})
         @Override
-        public AsyncSagaProcessingEvent translateTo(AsyncSagaProcessingEvent entry, long sequence) {
+        public void translateTo(AsyncSagaProcessingEvent entry, long sequence) {
             entry.clear();
             entry.setPublishedEvent(event);
             entry.setSagaType(annotationInspector.getSagaType());
             entry.setHandler(handler);
             entry.setNewSaga(newSagaInstance);
-            return entry;
         }
     }
 
