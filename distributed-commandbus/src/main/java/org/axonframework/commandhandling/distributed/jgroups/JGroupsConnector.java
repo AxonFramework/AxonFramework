@@ -32,14 +32,9 @@ import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
-import org.jgroups.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -125,18 +120,19 @@ public class JGroupsConnector implements CommandBusConnector {
                       "The given channel already has a receiver configured. "
                               + "Has the channel been reused with other Connectors?");
         try {
-            channel.setReceiver(messageReceiver);
             if (channel.isConnected() && !clusterName.equals(channel.getClusterName())) {
                 throw new AxonConfigurationException("The Channel that has been configured with this JGroupsConnector "
-                                                             + "is already connected to another cluster.");
-            } else if (channel.isConnected()) {
-                // we need to fetch state now that we have attached our MessageReceiver
-                channel.getState(null, 10000);
-            } else {
-                // we need to connect. This will automatically fetch state as well.
-                channel.connect(clusterName, null, 10000);
+                                                             + "is already connected, but not through this cluster");
+            } else if (channel.isConnected() && channel.getReceiver() != messageReceiver) {
+                logger.warn("The given channel was already connected, but not properly configured to process incoming "
+                                    + "messages. Reconnecting to ensure proper state. To prevent this warning, provide"
+                                    + "a Channel that is not connected.");
+                channel.disconnect();
             }
-            updateMembership();
+            channel.setReceiver(messageReceiver);
+            channel.connect(clusterName, null, 10000);
+            // send update to entire cluster
+            sendMembershipUpdate(null);
         } catch (Exception e) {
             joinedCondition.markJoined(false);
             channel.disconnect();
@@ -144,11 +140,11 @@ public class JGroupsConnector implements CommandBusConnector {
         }
     }
 
-    private void updateMembership() throws MembershipUpdateFailedException {
+    private void sendMembershipUpdate(Address dest) throws MembershipUpdateFailedException {
         try {
             if (channel.isConnected()) {
-                channel.send(new Message(null, new JoinMessage(currentLoadFactor, new HashSet<String>(
-                        supportedCommandTypes)))
+                channel.send(new Message(dest, new JoinMessage(currentLoadFactor,
+                                                               new HashSet<String>(supportedCommandTypes)))
                                      .setFlag(Message.Flag.RSVP));
             }
         } catch (Exception e) {
@@ -211,7 +207,7 @@ public class JGroupsConnector implements CommandBusConnector {
     public synchronized <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler) {
         localSegment.subscribe(commandType, handler);
         if (supportedCommandTypes.add(commandType.getName())) {
-            updateMembership();
+            sendMembershipUpdate(null);
         }
     }
 
@@ -219,7 +215,7 @@ public class JGroupsConnector implements CommandBusConnector {
     public synchronized <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
         if (localSegment.unsubscribe(commandType, handler)) {
             if (supportedCommandTypes.remove(commandType.getName())) {
-                updateMembership();
+                sendMembershipUpdate(null);
             }
             return true;
         }
@@ -246,15 +242,7 @@ public class JGroupsConnector implements CommandBusConnector {
 
     private class MessageReceiver extends ReceiverAdapter {
 
-        @Override
-        public void getState(OutputStream ostream) throws Exception {
-            Util.objectToStream(consistentHash, new DataOutputStream(ostream));
-        }
-
-        @Override
-        public void setState(InputStream istream) throws Exception {
-            consistentHash = (ConsistentHash) Util.objectFromStream(new DataInputStream(istream));
-        }
+        private volatile View currentView;
 
         @Override
         public void viewAccepted(View view) {
@@ -281,6 +269,18 @@ public class JGroupsConnector implements CommandBusConnector {
                             messagesLost);
                 }
             }
+            if (!view.equals(currentView)) {
+                for (Address member : view.getMembers()) {
+                    if (currentView == null || !currentView.containsMember(member)) {
+                        // we don't need logging if
+                        if (logger.isWarnEnabled() && !channel.getAddress().equals(member)) {
+                            logger.warn("New member detected: [{}]. Sending it my configuration.", member.toString());
+                        }
+                        sendMembershipUpdate(member);
+                    }
+                }
+            }
+            currentView = view;
         }
 
         @Override

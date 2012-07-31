@@ -57,9 +57,9 @@
          oob_thread_pool.queue_max_size="100"
          oob_thread_pool.rejection_policy="run"/>
 
-    <TCPGOSSIP initial_hosts="127.0.0.1[12001]" num_initial_members="2" timeout="3000"/>
-    <MERGE2 min_interval="10000"
-            max_interval="30000"/>
+    <TCPGOSSIP initial_hosts="127.0.0.1[12001]" num_initial_members="2" timeout="1500"/>
+    <MERGE2 min_interval="1000"
+            max_interval="3000"/>
     <FD_SOCK/>
     <FD timeout="3000" max_tries="3"/>
     <VERIFY_SUSPECT timeout="1500"/>
