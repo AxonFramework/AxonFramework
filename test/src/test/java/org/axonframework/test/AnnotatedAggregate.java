@@ -18,11 +18,14 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 
 import java.util.UUID;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Allard Buijze
@@ -44,7 +47,8 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @CommandHandler
-    public AnnotatedAggregate(CreateAggregateCommand command) {
+    public AnnotatedAggregate(CreateAggregateCommand command, EventBus eventBus) {
+        assertNotNull("Expected EventBus to be injected as resource", eventBus);
         apply(new MyEvent(command.getAggregateIdentifier() == null ?
                                   UUID.randomUUID() : command.getAggregateIdentifier(), 0));
     }

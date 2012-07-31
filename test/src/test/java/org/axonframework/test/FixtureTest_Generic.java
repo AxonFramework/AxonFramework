@@ -47,6 +47,12 @@ public class FixtureTest_Generic {
                .when(new CreateAggregateCommand());
     }
 
+    @Test(expected = FixtureExecutionException.class)
+    public void testInjectResources_CommandHandlerAlreadyRegistered() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
+        fixture.registerInjectableResource("I am injectable");
+    }
+
     @Test
     public void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));

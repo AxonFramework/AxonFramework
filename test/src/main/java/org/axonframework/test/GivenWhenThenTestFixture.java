@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.common.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -91,6 +92,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private boolean reportIllegalStateChange = true;
     private final Class<T> aggregateType;
     private boolean explicitCommandHandlersSet;
+    private final List<Object> injectableResources = new ArrayList<Object>();
 
     /**
      * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
@@ -119,6 +121,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     @Override
     public FixtureConfiguration<T> registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
         explicitCommandHandlersSet = true;
+        registerInjectableResources();
         AnnotationCommandHandlerAdapter.subscribe(annotatedCommandHandler, commandBus);
         return this;
     }
@@ -127,7 +130,26 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     @SuppressWarnings({"unchecked"})
     public FixtureConfiguration<T> registerCommandHandler(Class<?> commandType, CommandHandler commandHandler) {
         explicitCommandHandlersSet = true;
+        registerInjectableResources();
         commandBus.subscribe(commandType, commandHandler);
+        return this;
+    }
+
+    private void registerInjectableResources() {
+        injectableResources.add(commandBus);
+        injectableResources.add(eventBus);
+        SimpleResourceParameterResolverFactory.register(injectableResources);
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerInjectableResource(Object resource) {
+        if (explicitCommandHandlersSet) {
+            throw new FixtureExecutionException("Cannot inject resources after command handler has been created. "
+                                                        + "Configure all resource before calling "
+                                                        + "registerCommandHandler() or "
+                                                        + "registerAnnotatedCommandHandler()");
+        }
+        injectableResources.add(resource);
         return this;
     }
 
@@ -183,9 +205,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     private void finalizeConfiguration() {
+        registerInjectableResources();
         if (!explicitCommandHandlersSet) {
             new AggregateAnnotationCommandHandler<T>(this.aggregateType, repository, commandBus).subscribe();
         }
+        explicitCommandHandlersSet = true;
     }
 
     private void detectIllegalStateChanges() {

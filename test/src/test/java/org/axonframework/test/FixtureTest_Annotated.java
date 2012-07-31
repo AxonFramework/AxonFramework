@@ -52,12 +52,20 @@ public class FixtureTest_Annotated {
                .expectEvents(new MyEvent("AggregateId", 3));
 
         DomainEventStream events = fixture.getEventStore().readEvents("StandardAggregate", "AggregateId");
-        for (int t=0;t<3;t++) {
+        for (int t = 0; t < 3; t++) {
             assertTrue(events.hasNext());
             DomainEventMessage next = events.next();
             assertEquals("AggregateId", next.getAggregateIdentifier());
             assertEquals(t, next.getSequenceNumber());
         }
+    }
+
+    @Test(expected = FixtureExecutionException.class)
+    public void testAggregate_InjectCustomResourceAfterCreatingAnnotatedHandler() {
+        // a 'when' will cause command handlers to be registered.
+        fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2)).
+                when(new CreateAggregateCommand());
+        fixture.registerInjectableResource("I am injectable");
     }
 
     @Test(expected = EventStoreException.class)
