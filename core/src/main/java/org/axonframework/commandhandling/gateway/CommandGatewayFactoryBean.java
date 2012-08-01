@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -29,26 +30,33 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 /**
- * FactoryBean that creates a DefaultCommandGateway instance. In contrary to the DefaultCommandGateway itself, this
- * factory bean allows for setter injection, making it easier to configure in Spring application contexts.
+ * FactoryBean that creates a gateway instance for any given (compatible) interface. If no explicit interface is
+ * provided, the {@link CommandGateway} interface is assumed.
+ * <p/>
+ * For details about the structure of compatible interfaces, see {@link GatewayProxyFactory}.
  *
+ * @param <T> The type of gateway to be created by this factory bean. Note that the correct interface must also be set
+ *            using {@link #setGatewayInterface(Class)}. Failure to do so may result in class cast execptions.
  * @author Allard Buijze
+ * @see GatewayProxyFactory
  * @since 2.0
  */
-public class CommandGatewayFactoryBean implements FactoryBean<CommandGateway>, InitializingBean {
+public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, InitializingBean {
 
     private CommandBus commandBus;
     private RetryScheduler retryScheduler;
     private List<CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
+    private T gateway;
+    private Class<T> gatewayInterface;
 
     @Override
-    public CommandGateway getObject() throws Exception {
-        return new DefaultCommandGateway(commandBus, retryScheduler, dispatchInterceptors);
+    public T getObject() throws Exception {
+        return gateway;
     }
 
     @Override
     public Class<?> getObjectType() {
-        return CommandGateway.class;
+        return gatewayInterface == null ? CommandGateway.class : gatewayInterface;
     }
 
     @Override
@@ -61,6 +69,8 @@ public class CommandGatewayFactoryBean implements FactoryBean<CommandGateway>, I
         if (commandBus == null) {
             throw new AxonConfigurationException("CommandBus may not be null");
         }
+        gateway = (T) new GatewayProxyFactory(commandBus, retryScheduler, dispatchInterceptors)
+                .createGateway(gatewayInterface == null ? CommandGateway.class : gatewayInterface);
     }
 
     /**
@@ -81,6 +91,20 @@ public class CommandGatewayFactoryBean implements FactoryBean<CommandGateway>, I
      */
     public void setRetryScheduler(RetryScheduler retryScheduler) {
         this.retryScheduler = retryScheduler;
+    }
+
+    /**
+     * Sets the interface that describes the gateway instance to describe. If no interface is provided, it defaults to
+     * {@link CommandGateway}.
+     *
+     * @param gatewayInterface The interface describing the gateway
+     * @throws IllegalArgumentException if the given <code>gatewayInterface</code> is <code>null</code> or not an
+     *                                  interface.
+     */
+    public void setGatewayInterface(Class<T> gatewayInterface) {
+        Assert.notNull(gatewayInterface, "The given gateway interface may not be null");
+        Assert.isTrue(gatewayInterface.isInterface(), "The given gateway interface must be an interface");
+        this.gatewayInterface = gatewayInterface;
     }
 
     /**
