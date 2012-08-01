@@ -18,10 +18,15 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
@@ -41,6 +46,7 @@ public class DistributedCommandBus implements CommandBus {
 
     private final RoutingStrategy routingStrategy;
     private final CommandBusConnector connector;
+    private final List<CommandDispatchInterceptor> dispatchInterceptors = new CopyOnWriteArrayList<CommandDispatchInterceptor>();
 
     /**
      * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingStrategy}.
@@ -71,6 +77,7 @@ public class DistributedCommandBus implements CommandBus {
      */
     @Override
     public void dispatch(CommandMessage<?> command) {
+        command = intercept(command);
         String routingKey = routingStrategy.getRoutingKey(command);
         try {
             connector.send(routingKey, command);
@@ -86,12 +93,20 @@ public class DistributedCommandBus implements CommandBus {
      */
     @Override
     public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
+        command = intercept(command);
         String routingKey = routingStrategy.getRoutingKey(command);
         try {
             connector.send(routingKey, command, callback);
         } catch (Exception e) {
             callback.onFailure(new CommandDispatchException(DISPATCH_ERROR_MESSAGE, e));
         }
+    }
+
+    private CommandMessage<?> intercept(CommandMessage<?> command) {
+        for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
+            command = interceptor.handle(command);
+        }
+        return command;
     }
 
     /**
@@ -112,5 +127,19 @@ public class DistributedCommandBus implements CommandBus {
     @Override
     public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
         return connector.unsubscribe(commandType, handler);
+    }
+
+    /**
+     * Sets the interceptors that intercept commands just prior to dispatching them.
+     * <p/>
+     * This operation is only guaranteed to be thread safe if no commands are dispatched during the invocation of this
+     * method. Doing so may result in commands not being intercepted at all while replacing the interceptors. Once this
+     * operation returns, all commands are guaranteed to be processed by the given interceptors.
+     *
+     * @param dispatchInterceptors The interceptors to intercepts commands with
+     */
+    public void setCommandDispatchInterceptors(Collection<CommandDispatchInterceptor> dispatchInterceptors) {
+        this.dispatchInterceptors.clear();
+        this.dispatchInterceptors.addAll(dispatchInterceptors);
     }
 }

@@ -18,11 +18,16 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.junit.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
+
+import java.util.Collections;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -32,13 +37,14 @@ import static org.mockito.Mockito.*;
  */
 public class DistributedCommandBusTest {
 
-    private CommandBus testSubject;
+    private DistributedCommandBus testSubject;
     private CommandBus mockLocalSegment;
     private CommandBusConnector mockConnector;
     private RoutingStrategy mockRoutingStrategy;
     private CommandHandler<Object> mockHandler;
     private CommandMessage<?> message;
     private FutureCallback<Object> callback;
+    private CommandDispatchInterceptor mockDispatchInterceptor;
 
     @SuppressWarnings("unchecked")
     @Before
@@ -52,6 +58,14 @@ public class DistributedCommandBusTest {
         mockHandler = mock(CommandHandler.class);
         message = new GenericCommandMessage<Object>(new Object());
         callback = new FutureCallback<Object>();
+        mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
+        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return invocation.getArguments()[0];
+            }
+        });
+        testSubject.setCommandDispatchInterceptors(Collections.singleton(mockDispatchInterceptor));
     }
 
     @Test
@@ -60,6 +74,7 @@ public class DistributedCommandBusTest {
 
         verify(mockRoutingStrategy).getRoutingKey(message);
         verify(mockConnector).send("key", message, callback);
+        verify(mockDispatchInterceptor).handle(message);
     }
 
     @Test
@@ -68,6 +83,7 @@ public class DistributedCommandBusTest {
 
         verify(mockRoutingStrategy).getRoutingKey(message);
         verify(mockConnector).send("key", message);
+        verify(mockDispatchInterceptor).handle(message);
     }
 
     @SuppressWarnings("unchecked")
