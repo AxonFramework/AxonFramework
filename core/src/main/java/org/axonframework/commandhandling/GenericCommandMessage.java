@@ -82,7 +82,7 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      * @param command     the payload for the Message
      * @param newMetaData The meta data for this message
      */
-    public GenericCommandMessage(String identifier, T command, Map<String, Object> newMetaData) {
+    public GenericCommandMessage(String identifier, T command, Map<String, ?> newMetaData) {
         this.identifier = identifier;
         this.command = command;
         this.metaData = MetaData.from(newMetaData);
@@ -95,8 +95,7 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
-    protected GenericCommandMessage(GenericCommandMessage<T> original,
-                                    Map<String, Object> metaData) {
+    protected GenericCommandMessage(GenericCommandMessage<T> original, Map<String, ?> metaData) {
         this.identifier = original.getIdentifier();
         this.command = original.getPayload();
         this.metaData = MetaData.from(metaData);
@@ -123,7 +122,7 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     }
 
     @Override
-    public GenericCommandMessage<T> withMetaData(Map<String, Object> newMetaData) {
+    public GenericCommandMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (getMetaData().equals(newMetaData)) {
             return this;
         }
@@ -131,7 +130,7 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     }
 
     @Override
-    public GenericCommandMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+    public GenericCommandMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
         if (additionalMetaData.isEmpty()) {
             return this;
         }

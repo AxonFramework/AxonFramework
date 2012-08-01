@@ -57,7 +57,7 @@ public class SerializedMessage<T> implements Message<T> {
         this.serializedPayload = new LazyDeserializingObject<T>(serializedPayload, serializer);
     }
 
-    private SerializedMessage(SerializedMessage<T> message, Map<String, Object> metaData) {
+    private SerializedMessage(SerializedMessage<T> message, Map<String, ?> metaData) {
         this.identifier = message.getIdentifier();
         this.serializedMetaData = new LazyDeserializingObject<MetaData>(MetaData.from(metaData));
         this.serializedPayload = message.serializedPayload;
@@ -85,7 +85,7 @@ public class SerializedMessage<T> implements Message<T> {
     }
 
     @Override
-    public SerializedMessage<T> withMetaData(Map<String, Object> metaData) {
+    public SerializedMessage<T> withMetaData(Map<String, ?> metaData) {
         if (this.serializedMetaData.getObject().equals(metaData)) {
             return this;
         }
@@ -93,7 +93,7 @@ public class SerializedMessage<T> implements Message<T> {
     }
 
     @Override
-    public SerializedMessage<T> andMetaData(Map<String, Object> metaData) {
+    public SerializedMessage<T> andMetaData(Map<String, ?> metaData) {
         if (metaData.isEmpty()) {
             return this;
         }

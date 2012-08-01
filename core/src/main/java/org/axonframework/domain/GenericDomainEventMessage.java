@@ -57,7 +57,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param metaData            The MetaData to attach to the message
      */
     public GenericDomainEventMessage(Object aggregateIdentifier, long sequenceNumber,
-                                     T payload, Map<String, Object> metaData) {
+                                     T payload, Map<String, ?> metaData) {
         super(payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -74,7 +74,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param metaData            The meta data of the message
      */
     public GenericDomainEventMessage(String identifier, DateTime timestamp, Object aggregateIdentifier,
-                                     long sequenceNumber, T payload, Map<String, Object> metaData) {
+                                     long sequenceNumber, T payload, Map<String, ?> metaData) {
         super(identifier, timestamp, payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -87,7 +87,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
-    private GenericDomainEventMessage(GenericDomainEventMessage<T> original, Map<String, Object> metaData) {
+    private GenericDomainEventMessage(GenericDomainEventMessage<T> original, Map<String, ?> metaData) {
         super(original.getIdentifier(), original.getTimestamp(), original.getPayload(), metaData);
         this.aggregateIdentifier = original.getAggregateIdentifier();
         this.sequenceNumber = original.getSequenceNumber();
@@ -104,7 +104,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public GenericDomainEventMessage<T> withMetaData(Map<String, Object> newMetaData) {
+    public GenericDomainEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (getMetaData().equals(newMetaData)) {
             return this;
         }
@@ -112,7 +112,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public GenericDomainEventMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+    public GenericDomainEventMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
         if (additionalMetaData.isEmpty()) {
             return this;
         }

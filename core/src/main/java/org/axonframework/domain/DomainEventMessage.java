@@ -56,7 +56,7 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> withMetaData(Map<String, Object> metaData);
+    DomainEventMessage<T> withMetaData(Map<String, ?> metaData);
 
     /**
      * Returns a copy of this DomainEventMessage with its MetaData merged with the given <code>metaData</code>. The
@@ -68,5 +68,5 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> andMetaData(Map<String, Object> metaData);
+    DomainEventMessage<T> andMetaData(Map<String, ?> metaData);
 }

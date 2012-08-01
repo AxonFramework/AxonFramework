@@ -76,7 +76,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
         this.sequenceNumber = sequenceNumber;
     }
 
-    private SerializedDomainEventMessage(SerializedDomainEventMessage<T> original, Map<String, Object> metaData) {
+    private SerializedDomainEventMessage(SerializedDomainEventMessage<T> original, Map<String, ?> metaData) {
         eventMessage = original.eventMessage.withMetaData(metaData);
         this.aggregateIdentifier = original.getAggregateIdentifier();
         this.sequenceNumber = original.getSequenceNumber();
@@ -93,7 +93,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
     }
 
     @Override
-    public DomainEventMessage<T> withMetaData(Map<String, Object> newMetaData) {
+    public DomainEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (eventMessage.isPayloadDeserialized()) {
             return new GenericDomainEventMessage<T>(aggregateIdentifier, sequenceNumber,
                                                     getPayload(), newMetaData);
@@ -108,7 +108,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
      * This method will force the MetaData to be deserialized if not already done.
      */
     @Override
-    public DomainEventMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+    public DomainEventMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
         MetaData newMetaData = getMetaData().mergedWith(additionalMetaData);
         return withMetaData(newMetaData);
     }

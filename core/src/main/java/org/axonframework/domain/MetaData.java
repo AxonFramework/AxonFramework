@@ -187,7 +187,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @return a MetaData instance containing values of <code>this</code>, combined with the given
      *         <code>additionalEntries</code>
      */
-    public MetaData mergedWith(Map<String, Object> additionalEntries) {
+    public MetaData mergedWith(Map<String, ?> additionalEntries) {
         if (additionalEntries.isEmpty()) {
             return this;
         }

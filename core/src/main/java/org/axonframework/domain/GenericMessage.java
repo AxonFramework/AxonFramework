@@ -50,7 +50,7 @@ public class GenericMessage<T> implements Message<T> {
      * @param payload  The payload for the message
      * @param metaData The meta data for the message
      */
-    public GenericMessage(T payload, Map<String, Object> metaData) {
+    public GenericMessage(T payload, Map<String, ?> metaData) {
         this(IdentifierFactory.getInstance().generateIdentifier(), payload, MetaData.from(metaData));
     }
 
@@ -61,14 +61,14 @@ public class GenericMessage<T> implements Message<T> {
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
      */
-    public GenericMessage(String identifier, T payload, Map<String, Object> metaData) {
+    public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
         this.identifier = identifier;
         this.metaData = MetaData.from(metaData);
         this.payload = payload;
         this.payloadType = payload.getClass();
     }
 
-    private GenericMessage(GenericMessage<T> original, Map<String, Object> metaData) {
+    private GenericMessage(GenericMessage<T> original, Map<String, ?> metaData) {
         this.identifier = original.getIdentifier();
         this.payload = original.getPayload();
         this.payloadType = payload.getClass();
@@ -96,7 +96,7 @@ public class GenericMessage<T> implements Message<T> {
     }
 
     @Override
-    public GenericMessage<T> withMetaData(Map<String, Object> newMetaData) {
+    public GenericMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (this.metaData.equals(newMetaData)) {
             return this;
         }
@@ -104,7 +104,7 @@ public class GenericMessage<T> implements Message<T> {
     }
 
     @Override
-    public GenericMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+    public GenericMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
         if (additionalMetaData.isEmpty()) {
             return this;
         }

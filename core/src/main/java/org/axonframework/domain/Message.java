@@ -81,7 +81,7 @@ public interface Message<T> extends Serializable {
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
-    Message<T> withMetaData(Map<String, Object> metaData);
+    Message<T> withMetaData(Map<String, ?> metaData);
 
     /**
      * Returns a copy of this Message with it MetaData merged with the given <code>metaData</code>. The payload
@@ -90,5 +90,5 @@ public interface Message<T> extends Serializable {
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
-    Message<T> andMetaData(Map<String, Object> metaData);
+    Message<T> andMetaData(Map<String, ?> metaData);
 }

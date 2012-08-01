@@ -56,7 +56,7 @@ public class SerializedEventMessage<T> implements EventMessage<T> {
         this.timestamp = timestamp;
     }
 
-    private SerializedEventMessage(SerializedEventMessage<T> original, Map<String, Object> metaData) {
+    private SerializedEventMessage(SerializedEventMessage<T> original, Map<String, ?> metaData) {
         message = original.message.withMetaData(metaData);
         this.timestamp = original.getTimestamp();
     }
@@ -88,7 +88,7 @@ public class SerializedEventMessage<T> implements EventMessage<T> {
     }
 
     @Override
-    public SerializedEventMessage<T> withMetaData(Map<String, Object> newMetaData) {
+    public SerializedEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (getMetaData().equals(newMetaData)) {
             return this;
         } else {
@@ -97,7 +97,7 @@ public class SerializedEventMessage<T> implements EventMessage<T> {
     }
 
     @Override
-    public EventMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+    public EventMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
         MetaData newMetaData = getMetaData().mergedWith(additionalMetaData);
         return withMetaData(newMetaData);
     }

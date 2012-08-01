@@ -63,7 +63,7 @@ public interface EventMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> withMetaData(Map<String, Object> metaData);
+    EventMessage<T> withMetaData(Map<String, ?> metaData);
 
     /**
      * Returns a copy of this EventMessage with it MetaData merged with the given <code>metaData</code>. The payload,
@@ -73,5 +73,5 @@ public interface EventMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> andMetaData(Map<String, Object> metaData);
+    EventMessage<T> andMetaData(Map<String, ?> metaData);
 }

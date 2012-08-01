@@ -71,7 +71,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      * @param metaData The MetaData for the EventMessage
      * @see #asEventMessage(Object)
      */
-    public GenericEventMessage(T payload, Map<String, Object> metaData) {
+    public GenericEventMessage(T payload, Map<String, ?> metaData) {
         super(IdentifierFactory.getInstance().generateIdentifier(), payload, metaData);
         this.timestamp = new DateTime();
     }
@@ -84,7 +84,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
      */
-    public GenericEventMessage(String identifier, DateTime timestamp, T payload, Map<String, Object> metaData) {
+    public GenericEventMessage(String identifier, DateTime timestamp, T payload, Map<String, ?> metaData) {
         super(identifier, payload, metaData);
         this.timestamp = timestamp;
     }
@@ -96,7 +96,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      * @param original The original message
      * @param metaData The MetaData for the new message
      */
-    private GenericEventMessage(GenericEventMessage<T> original, Map<String, Object> metaData) {
+    private GenericEventMessage(GenericEventMessage<T> original, Map<String, ?> metaData) {
         super(original.getIdentifier(), original.getPayload(), metaData);
         this.timestamp = original.getTimestamp();
     }
@@ -107,7 +107,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
     }
 
     @Override
-    public GenericEventMessage<T> withMetaData(Map<String, Object> newMetaData) {
+    public GenericEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (getMetaData().equals(newMetaData)) {
             return this;
         }
@@ -115,7 +115,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
     }
 
     @Override
-    public GenericEventMessage<T> andMetaData(Map<String, Object> additionalMetaData) {
+    public GenericEventMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
         if (additionalMetaData.isEmpty()) {
             return this;
         }

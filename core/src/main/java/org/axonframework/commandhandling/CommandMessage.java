@@ -40,7 +40,7 @@ public interface CommandMessage<T> extends Message<T> {
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
-    CommandMessage<T> withMetaData(Map<String, Object> metaData);
+    CommandMessage<T> withMetaData(Map<String, ?> metaData);
 
     /**
      * Returns a copy of this CommandMessage with it MetaData merged with the given <code>metaData</code>. The payload
@@ -49,6 +49,6 @@ public interface CommandMessage<T> extends Message<T> {
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
-    CommandMessage<T> andMetaData(Map<String, Object> metaData);
+    CommandMessage<T> andMetaData(Map<String, ?> metaData);
 
 }
