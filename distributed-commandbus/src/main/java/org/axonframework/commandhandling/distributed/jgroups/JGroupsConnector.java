@@ -332,7 +332,7 @@ public class JGroupsConnector implements CommandBusConnector {
 
             consistentHash = consistentHash.withAdditionalNode(channelName, joinMessage.getLoadFactor(),
                                                                joinMessage.getCommandTypes());
-            if (logger.isInfoEnabled()) {
+            if (logger.isInfoEnabled() && !msg.getSrc().equals(channel.getAddress())) {
                 logger.info("{} joined with load factor: {}", msg.getSrc(), joinMessage.getLoadFactor());
             }
 
