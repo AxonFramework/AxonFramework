@@ -98,7 +98,7 @@ public class DistributedCommandBus implements CommandBus {
         try {
             connector.send(routingKey, command, callback);
         } catch (Exception e) {
-            callback.onFailure(new CommandDispatchException(DISPATCH_ERROR_MESSAGE, e));
+            callback.onFailure(new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e));
         }
     }
 
