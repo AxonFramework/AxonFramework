@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
@@ -54,7 +55,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     private ResourceInjector injector;
     private Serializer serializer;
     private volatile boolean useExplicitFlush = true;
-    private volatile boolean initialized = false;
 
     /**
      * Initializes a Saga Repository with a <code>JavaSerializer</code>.
@@ -68,25 +68,16 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @Override
     public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
-        if (!initialized) {
-            initialize();
-        }
         return super.find(type, associationValue);
     }
 
     @Override
     public void add(Saga saga) {
-        if (!initialized) {
-            initialize();
-        }
         super.add(saga);
     }
 
     @Override
     public void commit(Saga saga) {
-        if (!initialized) {
-            initialize();
-        }
         super.commit(saga);
     }
 
@@ -159,6 +150,21 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
+    protected Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type, AssociationValue associationValue) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        List<String> entries =
+                entityManager.createQuery("SELECT ae.sagaId FROM AssociationValueEntry ae "
+                                                  + "WHERE ae.associationKey = :associationKey "
+                                                  + "AND ae.associationValue = :associationValue "
+                                                  + "AND ae.sagaType = :sagaType")
+                             .setParameter("associationKey", associationValue.getKey())
+                             .setParameter("associationValue", associationValue.getValue())
+                             .setParameter("sagaType", typeOf(type))
+                             .getResultList();
+        return new TreeSet<String>(entries);
+    }
+
+    @Override
     protected void deleteSaga(Saga saga) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         try {
@@ -213,25 +219,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         }
         if (useExplicitFlush) {
             entityManager.flush();
-        }
-    }
-
-    /**
-     * Initializes the repository by loading all AssociationValues in memory. Failure to initialize properly might
-     * result in Saga instance not being found based on their <code>AssociationValue</code>s.
-     */
-    @SuppressWarnings({"unchecked"})
-    private synchronized void initialize() {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        if (!initialized) {
-            List<AssociationValueEntry> entries =
-                    entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae").getResultList();
-            getAssociationValueMap().clear();
-            for (AssociationValueEntry entry : entries) {
-                AssociationValue associationValue = entry.getAssociationValue();
-                getAssociationValueMap().add(associationValue, entry.getSagaType(), entry.getSagaIdentifier());
-            }
-            initialized = true;
         }
     }
 

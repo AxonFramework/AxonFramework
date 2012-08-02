@@ -26,7 +26,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -38,6 +40,7 @@ public class VirtualSagaRepository extends AbstractSagaRepository {
 
     private ConcurrentMap<String, byte[]> storage = new ConcurrentHashMap<String, byte[]>();
     private List<Saga> deletedSagas = new CopyOnWriteArrayList<Saga>();
+    private ConcurrentMap<AssociationValue, String> associations = new ConcurrentHashMap<AssociationValue, String>();
 
     @Override
     protected <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier) {
@@ -71,13 +74,22 @@ public class VirtualSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
+    protected Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type, AssociationValue associationValue) {
+        final String id = associations.get(associationValue);
+        if (id != null) {
+            return Collections.singleton(id);
+        }
+        return Collections.emptySet();
+    }
+
+    @Override
     protected void storeAssociationValue(AssociationValue newAssociationValue, String sagaType, String sagaIdentifier) {
-        // we don't need this
+        associations.put(newAssociationValue, sagaIdentifier);
     }
 
     @Override
     protected void removeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
-        // we don't need this
+        associations.remove(associationValue);
     }
 
     public <T extends Saga> List<T> getDeletedSagas(Class<T> type) {

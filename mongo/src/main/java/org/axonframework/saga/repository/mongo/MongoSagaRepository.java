@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.repository.mongo;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
@@ -27,8 +28,8 @@ import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.serializer.JavaSerializer;
 import org.axonframework.serializer.Serializer;
 
-import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.annotation.Resource;
 
 /**
@@ -45,8 +46,6 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     private Serializer serializer;
     private ResourceInjector injector;
 
-    private volatile boolean initialized = false;
-
     /**
      * Initializes the Repository, using given <code>mongoTemplate</code> to access the collections containing the
      * stored Saga instances.
@@ -59,52 +58,19 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
-        if (!initialized) {
-            initialize();
-        }
-        return super.find(type, associationValue);
-    }
+    protected Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type, AssociationValue associationValue) {
+        final BasicDBList value = new BasicDBList();
+        value.add(new BasicDBObject("associations.key", associationValue.getKey()));
+        value.add(new BasicDBObject("associations.value", associationValue.getValue()));
+        value.add(new BasicDBObject("sagaType", typeOf(type)));
 
-    @Override
-    public void add(Saga saga) {
-        if (!initialized) {
-            initialize();
+        DBCursor dbCursor = mongoTemplate.sagaCollection().find(new BasicDBObject("$and", value),
+                                                                new BasicDBObject("sagaIdentifier", 1));
+        Set<String> found = new TreeSet<String>();
+        while (dbCursor.hasNext()) {
+            found.add((String) dbCursor.next().get("sagaIdentifier"));
         }
-        super.add(saga);
-    }
-
-    @Override
-    public void commit(Saga saga) {
-        if (!initialized) {
-            initialize();
-        }
-        super.commit(saga);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @SuppressWarnings("unchecked")
-    private synchronized void initialize() {
-        if (!initialized) {
-            DBCursor dbCursor = mongoTemplate.sagaCollection().find(null,
-                                                                    new BasicDBObject("associations", 1)
-                                                                            .append("sagaIdentifier", 1)
-                                                                            .append("sagaType", 1));
-            getAssociationValueMap().clear();
-            while (dbCursor.hasNext()) {
-                DBObject next = dbCursor.next();
-                List<DBObject> associations = (List<DBObject>) next.get("associations");
-                if (associations != null) {
-                    String sagaId = (String) next.get("sagaIdentifier");
-                    String sagaType = (String) next.get("sagaType");
-                    for (DBObject association : associations) {
-                        getAssociationValueMap().add(new AssociationValue((String) association.get("key"),
-                                                                          (String) association.get("value")),
-                                                     sagaType, sagaId);
-                    }
-                }
-            }
-            initialized = true;
-        }
+        return found;
     }
 
     @Override

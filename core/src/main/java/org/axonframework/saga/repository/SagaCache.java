@@ -20,7 +20,9 @@ import org.axonframework.saga.Saga;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -129,5 +131,16 @@ public class SagaCache {
             backingCache.remove(sagaIdentifier, reference);
         }
         return value;
+    }
+
+    public <T extends Saga> Set<T> getAll(Class<T> type) {
+        Set<T> sagas = new HashSet<T>();
+        for (Map.Entry<String, Reference<Saga>> entry : backingCache.entrySet()) {
+            Saga saga = getOrPurge(entry.getKey(), entry.getValue());
+            if (type.isInstance(saga)) {
+                sagas.add((T) saga);
+            }
+        }
+        return sagas;
     }
 }
