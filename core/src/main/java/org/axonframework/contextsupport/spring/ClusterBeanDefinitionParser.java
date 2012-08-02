@@ -101,13 +101,17 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
         String clusterId = resolveId(element, clusterBean, parserContext);
 
-        parseClusterSelector(element, parserContext, clusterId);
-        parseDefaultSelector(element, parserContext, clusterId);
+        boolean hasSelectors = parseClusterSelector(element, parserContext, clusterId);
+        boolean hasDefault = parseDefaultSelector(element, parserContext, clusterId);
+
+        if (!hasSelectors && !hasDefault) {
+            throw new AxonConfigurationException("Cluster with id '" + clusterId + "' is not a default cluster, nor defines any selectors");
+        }
 
         return clusterBean;
     }
 
-    private void parseClusterSelector(Element element, ParserContext parserContext, String clusterId) {
+    private boolean parseClusterSelector(Element element, ParserContext parserContext, String clusterId) {
         AbstractBeanDefinition selector = new GenericBeanDefinition();
         selector.setBeanClass(OrderedClusterSelector.class);
 
@@ -121,15 +125,18 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         selector.getConstructorArgumentValues().addIndexedArgumentValue(0, order);
 
         Element selectorsElement = DomUtils.getChildElementByTagName(element, SELECTORS_ELEMENT);
+        List<BeanDefinition> selectors = new ManagedList<BeanDefinition>();
         if (selectorsElement != null) {
-            List<BeanDefinition> selectors = parseSelectors(selectorsElement, clusterId);
+            selectors.addAll(parseSelectors(selectorsElement, clusterId));
             parserContext.getRegistry().registerBeanDefinition(clusterId + SELECTOR_SUFFIX, selector);
             selector.getConstructorArgumentValues().addIndexedArgumentValue(1, selectors);
         }
+        return !selectors.isEmpty();
     }
 
-    private void parseDefaultSelector(Element element, ParserContext parserContext, String clusterId) {
-        if (Boolean.parseBoolean(element.getAttribute(DEFAULT_ATTRIBUTE))) {
+    private boolean parseDefaultSelector(Element element, ParserContext parserContext, String clusterId) {
+        final boolean isDefault = Boolean.parseBoolean(element.getAttribute(DEFAULT_ATTRIBUTE));
+        if (isDefault) {
             AbstractBeanDefinition defaultSelector = new GenericBeanDefinition();
             defaultSelector.setBeanClass(OrderedClusterSelector.class);
             defaultSelector.getConstructorArgumentValues().addIndexedArgumentValue(0, Ordered.LOWEST_PRECEDENCE);
@@ -140,6 +147,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             defaultSelector.getConstructorArgumentValues().addIndexedArgumentValue(1, definitions);
             parserContext.getRegistry().registerBeanDefinition(clusterId + DEFAULT_SELECTOR_SUFFIX, defaultSelector);
         }
+        return isDefault;
     }
 
     private Map parseMetaData(Element element, ParserContext parserContext, AbstractBeanDefinition beanDefinition) {
