@@ -188,6 +188,7 @@ public class JGroupsConnector implements CommandBusConnector {
     @Override
     public <R> void send(String routingKey, CommandMessage<?> commandMessage, CommandCallback<R> callback)
             throws Exception {
+        Assert.isTrue(awaitJoined(5, TimeUnit.SECONDS), "This Connector did not properly join the Cluster yet.");
         String destination = consistentHash.getMember(routingKey, commandMessage.getPayloadType().getName());
         if (destination == null) {
             throw new CommandDispatchException("No node known to accept " + commandMessage.getPayloadType().getName());
@@ -199,6 +200,7 @@ public class JGroupsConnector implements CommandBusConnector {
 
     @Override
     public void send(String routingKey, CommandMessage<?> commandMessage) throws Exception {
+        Assert.isTrue(awaitJoined(5, TimeUnit.SECONDS), "This Connector did not properly join the Cluster yet.");
         String destination = consistentHash.getMember(routingKey, commandMessage.getPayloadType().getName());
         if (destination == null) {
             throw new CommandDispatchException("No node known to accept " + commandMessage.getPayloadType().getName());
