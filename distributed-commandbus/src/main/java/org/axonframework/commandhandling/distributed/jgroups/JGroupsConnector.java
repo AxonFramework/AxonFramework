@@ -32,9 +32,14 @@ import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
+import org.jgroups.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -120,17 +125,16 @@ public class JGroupsConnector implements CommandBusConnector {
                       "The given channel already has a receiver configured. "
                               + "Has the channel been reused with other Connectors?");
         try {
+            channel.setReceiver(messageReceiver);
             if (channel.isConnected() && !clusterName.equals(channel.getClusterName())) {
                 throw new AxonConfigurationException("The Channel that has been configured with this JGroupsConnector "
                                                              + "is already connected, but not through this cluster");
-            } else if (channel.isConnected() && channel.getReceiver() != messageReceiver) {
-                logger.warn("The given channel was already connected, but not properly configured to process incoming "
-                                    + "messages. Reconnecting to ensure proper state. To prevent this warning, provide"
-                                    + "a Channel that is not connected.");
-                channel.disconnect();
+            } else if (channel.isConnected()) {
+                // we need to fetch state now that we have attached our MessageReceiver
+                channel.getState(null, 10000);
+            } else {
+                channel.connect(clusterName, null, 10000);
             }
-            channel.setReceiver(messageReceiver);
-            channel.connect(clusterName, null, 10000);
             // send update to entire cluster
             sendMembershipUpdate(null);
         } catch (Exception e) {
@@ -243,6 +247,16 @@ public class JGroupsConnector implements CommandBusConnector {
     private class MessageReceiver extends ReceiverAdapter {
 
         private volatile View currentView;
+
+        @Override
+        public void getState(OutputStream ostream) throws Exception {
+            Util.objectToStream(consistentHash, new DataOutputStream(ostream));
+        }
+
+        @Override
+        public void setState(InputStream istream) throws Exception {
+            consistentHash = (ConsistentHash) Util.objectFromStream(new DataInputStream(istream));
+        }
 
         @Override
         public void viewAccepted(View view) {

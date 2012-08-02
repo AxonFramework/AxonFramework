@@ -152,7 +152,7 @@ public class JGroupsConnectorTest {
                 || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (t++ > 250) {
-                fail("Connectors did not manage to synchronize consistent hash ring within 5 seconds...");
+                assertEquals(connector1.getConsistentHash().toString(), connector2.getConsistentHash().toString());
             }
             Thread.sleep(20);
         }
