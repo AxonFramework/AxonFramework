@@ -43,15 +43,15 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PrepareForTest({ListenerContainerFactory.class, SimpleMessageListenerContainer.class})
 public class ListenerContainerFactoryTest {
 
-    private SimpleMessageListenerContainer mockContainer;
+    private ExtendedMessageListenerContainer mockContainer;
     private ListenerContainerFactory testSubject;
     private ConnectionFactory mockConnectionFactory;
 
     @Before
     public void setUp() throws Exception {
         mockConnectionFactory = mock(ConnectionFactory.class);
-        mockContainer = PowerMockito.mock(SimpleMessageListenerContainer.class);
-        whenNew(SimpleMessageListenerContainer.class).withNoArguments().thenReturn(mockContainer);
+        mockContainer = PowerMockito.mock(ExtendedMessageListenerContainer.class);
+        whenNew(ExtendedMessageListenerContainer.class).withNoArguments().thenReturn(mockContainer);
         testSubject = new ListenerContainerFactory();
         testSubject.setConnectionFactory(mockConnectionFactory);
         PowerMockito.doNothing().when(mockContainer).afterPropertiesSet();
@@ -85,6 +85,7 @@ public class ListenerContainerFactoryTest {
         testSubject.setReceiveTimeout(6000);
         testSubject.setRecoveryInterval(6500);
         testSubject.setShutdownTimeout(3000);
+        testSubject.setExclusive(false);
         Executor mockTaskExecutor = mock(Executor.class);
         testSubject.setTaskExecutor(mockTaskExecutor);
         DefaultTransactionAttribute transactionAttribute = new DefaultTransactionAttribute();
@@ -108,6 +109,7 @@ public class ListenerContainerFactoryTest {
         verify(mockContainer).setReceiveTimeout(6000);
         verify(mockContainer).setRecoveryInterval(6500);
         verify(mockContainer).setShutdownTimeout(3000);
+        verify(mockContainer).setExclusive(false);
         verify(mockContainer).setTaskExecutor(mockTaskExecutor);
         verify(mockContainer).setTransactionAttribute(transactionAttribute);
         verify(mockContainer).setTransactionManager(mockTransactionManager);

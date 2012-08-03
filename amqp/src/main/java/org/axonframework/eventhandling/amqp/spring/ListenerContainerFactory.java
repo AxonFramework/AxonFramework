@@ -62,6 +62,7 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
     private TransactionAttribute transactionAttribute;
     private MessagePropertiesConverter messagePropertiesConverter;
     private AcknowledgeMode acknowledgeMode;
+    private Boolean exclusive;
 
     /**
      * Creates a new SimpleMessageListenerContainer, initialized with the properties set on this factory.
@@ -69,7 +70,7 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
      * @return a fully initialized (but not started!) SimpleMessageListenerContainer instance.
      */
     public SimpleMessageListenerContainer createContainer() {
-        SimpleMessageListenerContainer newContainer = new SimpleMessageListenerContainer();
+        ExtendedMessageListenerContainer newContainer = new ExtendedMessageListenerContainer();
         newContainer.setConnectionFactory(connectionFactory);
         if (transactionManager != null) {
             newContainer.setChannelTransacted(true);
@@ -110,6 +111,9 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
         }
         if (acknowledgeMode != null) {
             newContainer.setAcknowledgeMode(acknowledgeMode);
+        }
+        if (exclusive != null) {
+            newContainer.setExclusive(exclusive);
         }
         newContainer.afterPropertiesSet();
         return newContainer;
@@ -276,5 +280,18 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
         if (connectionFactory == null) {
             connectionFactory = applicationContext.getBean(ConnectionFactory.class);
         }
+    }
+
+    /**
+     * Sets whether the listener container created by this factory should be exclusive. That means it will not allow
+     * other listeners to connect to the same queue. If a non-exclusive listener is already connected to the queue,
+     * this listener is rejected.
+     * <p/>
+     * By default, listeners are exclusive.
+     *
+     * @param exclusive Whether the created container should be an exclusive listener
+     */
+    public void setExclusive(boolean exclusive) {
+        this.exclusive = exclusive;
     }
 }
