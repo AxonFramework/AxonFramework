@@ -289,10 +289,12 @@ public class JGroupsConnector implements CommandBusConnector {
                 for (Address member : view.getMembers()) {
                     if (currentView == null || !currentView.containsMember(member)) {
                         // we only want to log messages of other nodes
-                        if (logger.isInfoEnabled() && !channel.getAddress().equals(member)) {
-                            logger.info("New member detected: [{}]. Sending it my configuration.", member.toString());
+                        if (!channel.getAddress().equals(member)) {
+                            if (logger.isInfoEnabled()) {
+                                logger.info("New member detected: [{}]. Sending it my configuration.", member.toString());
+                            }
+                            sendMembershipUpdate(member);
                         }
-                        sendMembershipUpdate(member);
                     }
                 }
             }
