@@ -33,7 +33,6 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 import java.util.Collections;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -128,12 +127,8 @@ public class SpringAggregateSnapshotterTest {
                 .thenReturn(existingTransaction);
         doThrow(new RuntimeException("Stub"))
                 .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEventMessage.class));
-        try {
-            testSubject.scheduleSnapshot("stub", aggregateIdentifier);
-            fail("Expected exception to be propagated");
-        } catch (RuntimeException e) {
-            // expected
-        }
+
+        testSubject.scheduleSnapshot("stub", aggregateIdentifier);
 
         verify(mockEventStore).appendSnapshotEvent(eq("stub"), eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
@@ -149,12 +144,8 @@ public class SpringAggregateSnapshotterTest {
                 .thenReturn(existingTransaction);
         doThrow(new RuntimeException("Stub"))
                 .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEventMessage.class));
-        try {
-            testSubject.scheduleSnapshot("stub", aggregateIdentifier);
-            fail("Expected exception to be propagated");
-        } catch (RuntimeException e) {
-            // expected
-        }
+
+        testSubject.scheduleSnapshot("stub", aggregateIdentifier);
 
         verify(mockEventStore).appendSnapshotEvent(eq("stub"), eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
