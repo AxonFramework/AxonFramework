@@ -20,6 +20,8 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executor;
 import javax.annotation.Resource;
@@ -36,12 +38,14 @@ import javax.annotation.Resource;
  */
 public abstract class AbstractSnapshotter implements Snapshotter {
 
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSnapshotter.class);
+
     private SnapshotEventStore eventStore;
     private Executor executor = DirectExecutor.INSTANCE;
 
     @Override
     public void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier) {
-        executor.execute(createSnapshotterTask(typeIdentifier, aggregateIdentifier));
+        executor.execute(new SilentTask(createSnapshotterTask(typeIdentifier, aggregateIdentifier)));
     }
 
     /**
@@ -125,5 +129,28 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      */
     protected Executor getExecutor() {
         return executor;
+    }
+
+    private static class SilentTask implements Runnable {
+
+        private final Runnable snapshotterTask;
+
+        public SilentTask(Runnable snapshotterTask) {
+            this.snapshotterTask = snapshotterTask;
+        }
+
+        @Override
+        public void run() {
+            try {
+                snapshotterTask.run();
+            } catch (RuntimeException e) {
+                if (logger.isDebugEnabled()) {
+                    logger.warn("An attempt to create and store a snapshot resulted in an exception:", e);
+                } else {
+                    logger.warn("An attempt to create and store a snapshot resulted in an exception. "
+                                        + "Exception summary: {}", e);
+                }
+            }
+        }
     }
 }
