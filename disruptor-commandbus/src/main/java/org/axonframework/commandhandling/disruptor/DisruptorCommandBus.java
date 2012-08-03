@@ -20,6 +20,7 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
@@ -106,6 +107,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
             new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private final Disruptor<CommandHandlingEntry> disruptor;
     private final CommandHandlerInvoker[] commandHandlerInvokers;
+    private final List<CommandDispatchInterceptor> dispatchInterceptors;
     private final List<CommandHandlerInterceptor> invokerInterceptors;
     private final List<CommandHandlerInterceptor> publisherInterceptors;
     private final ExecutorService executorService;
@@ -151,6 +153,7 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
         invokerInterceptors = configuration.getInvokerInterceptors();
         publisherInterceptors = configuration.getPublisherInterceptors();
+        dispatchInterceptors = configuration.getDispatchInterceptors();
         disruptor = new Disruptor<CommandHandlingEntry>(new CommandHandlingEntry.Factory(),
                                                         executor,
                                                         configuration.getClaimStrategy(),
@@ -181,7 +184,11 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
     @Override
     public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         Assert.state(started, "CommandBus has been shut down. It is not accepting any Commands");
-        doDispatch(command, callback);
+        CommandMessage<?> commandToDispatch = command;
+        for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
+            commandToDispatch = interceptor.handle(commandToDispatch);
+        }
+        doDispatch(commandToDispatch, callback);
     }
 
     /**

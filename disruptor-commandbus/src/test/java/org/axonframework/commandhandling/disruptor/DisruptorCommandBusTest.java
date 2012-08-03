@@ -20,6 +20,7 @@ import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
@@ -96,11 +97,14 @@ public class DisruptorCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testCallbackInvokedBeforeUnitOfWorkCleanup() throws Throwable {
-        CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
+        CommandHandlerInterceptor mockHandlerInterceptor = mock(CommandHandlerInterceptor.class);
+        CommandDispatchInterceptor mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
+        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new FirstParameter());
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus<StubAggregate>(
                 inMemoryEventStore, eventBus,
-                new DisruptorConfiguration().setInvokerInterceptors(Arrays.asList(mockInterceptor))
+                new DisruptorConfiguration().setInvokerInterceptors(Arrays.asList(mockHandlerInterceptor))
+                                            .setDispatchInterceptors(Arrays.asList(mockDispatchInterceptor))
                                             .setClaimStrategy(new SingleThreadedClaimStrategy(8))
                                             .setWaitStrategy(new SleepingWaitStrategy())
                                             .setExecutor(customExecutor)
@@ -116,7 +120,9 @@ public class DisruptorCommandBusTest {
                 return invocation.getArguments()[0];
             }
         });
-        when(mockInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class)))
+        when(mockHandlerInterceptor.handle(any(CommandMessage.class),
+                                           any(UnitOfWork.class),
+                                           any(InterceptorChain.class)))
                 .thenAnswer(new Answer<Object>() {
                     @Override
                     public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -133,10 +139,11 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        InOrder inOrder = inOrder(mockInterceptor, mockUnitOfWorkListener, mockCallback);
-        inOrder.verify(mockInterceptor).handle(any(CommandMessage.class),
-                                               any(UnitOfWork.class),
-                                               any(InterceptorChain.class));
+        InOrder inOrder = inOrder(mockDispatchInterceptor, mockHandlerInterceptor, mockUnitOfWorkListener, mockCallback);
+        inOrder.verify(mockDispatchInterceptor).handle(isA(CommandMessage.class));
+        inOrder.verify(mockHandlerInterceptor).handle(any(CommandMessage.class),
+                                                      any(UnitOfWork.class),
+                                                      any(InterceptorChain.class));
         inOrder.verify(mockUnitOfWorkListener).onPrepareCommit(any(Set.class), any(List.class));
         inOrder.verify(mockUnitOfWorkListener).afterCommit();
         inOrder.verify(mockUnitOfWorkListener).onCleanup();
@@ -493,5 +500,13 @@ public class DisruptorCommandBusTest {
      */
     static class FailingEvent {
 
+    }
+
+    private static class FirstParameter implements Answer<Object> {
+
+        @Override
+        public Object answer(InvocationOnMock invocation) throws Throwable {
+            return invocation.getArguments()[0];
+        }
     }
 }

@@ -30,7 +30,7 @@
     </bean>
 
     <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
-        <property name="interceptors">
+        <property name="handlerInterceptors">
             <list>
                 <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
                     <property name="transactionManager" ref="transactionManager"/>

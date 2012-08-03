@@ -196,7 +196,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     public ResultValidator when(Object command) {
         finalizeConfiguration();
         ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
-        commandBus.setInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
+        commandBus.setHandlerInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(command), resultValidator);
 

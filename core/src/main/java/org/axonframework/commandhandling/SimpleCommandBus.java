@@ -23,6 +23,7 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,8 @@ public class SimpleCommandBus implements CommandBus {
     private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions =
             new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
     private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
-    private volatile Iterable<? extends CommandHandlerInterceptor> interceptors = Collections.emptyList();
+    private volatile Iterable<? extends CommandHandlerInterceptor> handlerInterceptors = Collections.emptyList();
+    private volatile Iterable<? extends CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private RollbackConfiguration rollbackConfiguration = new RollbackOnAllExceptionsConfiguration();
 
@@ -63,21 +65,38 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void dispatch(CommandMessage<?> command) {
-        CommandHandler commandHandler = findCommandHandlerFor(command);
-        try {
-            doDispatch(command, commandHandler);
-        } catch (Error e) {
-            throw e;
-        } catch (Throwable throwable) {
-            logger.error("Processing of a {} resulted in an exception: ",
-                         command.getPayloadType().getSimpleName(),
-                         throwable);
-        }
+
+        doDispatch(intercept(command), new LogErrorCallback<Object>(command));
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public <R> void dispatch(CommandMessage<?> command, final CommandCallback<R> callback) {
+        doDispatch(intercept(command), callback);
+    }
+
+    /**
+     * Invokes all the dispatch interceptors.
+     *
+     * @param command The original command being dispatched
+     * @return The command to actually dispatch
+     */
+    protected CommandMessage<?> intercept(CommandMessage<?> command) {
+        CommandMessage<?> commandToDispatch = command;
+        for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
+            commandToDispatch = interceptor.handle(commandToDispatch);
+        }
+        return commandToDispatch;
+    }
+
+    /**
+     * Performs the actual dispatching logic. The dispatch interceptors must have been invoked at this point.
+     *
+     * @param command  The actual command to dispatch to the handler
+     * @param callback The callback to notify of the result
+     * @param <R>      The type of result expected from the command handler
+     */
+    @SuppressWarnings({"unchecked"})
+    protected <R> void doDispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         CommandHandler handler = findCommandHandlerFor(command);
         try {
             Object result = doDispatch(command, handler);
@@ -100,7 +119,7 @@ public class SimpleCommandBus implements CommandBus {
         logger.debug("Dispatching command [{}]", command.getPayload());
         statistics.recordReceivedCommand();
         UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
-        InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, interceptors);
+        InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, handlerInterceptors);
 
         Object returnValue;
         try {
@@ -146,13 +165,22 @@ public class SimpleCommandBus implements CommandBus {
 
     /**
      * Registers the given list of interceptors to the command bus. All incoming commands will pass through the
-     * interceptors at the given order before the command is passed to the handler for processing. After handling, the
-     * <code>afterCommandHandling</code> methods are invoked on the interceptors in the reverse order.
+     * interceptors at the given order before the command is passed to the handler for processing.
      *
-     * @param interceptors The interceptors to invoke when commands are dispatched
+     * @param handlerInterceptors The interceptors to invoke when commands are handled
      */
-    public void setInterceptors(List<? extends CommandHandlerInterceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void setHandlerInterceptors(List<? extends CommandHandlerInterceptor> handlerInterceptors) {
+        this.handlerInterceptors = new ArrayList<CommandHandlerInterceptor>(handlerInterceptors);
+    }
+
+    /**
+     * Registers the given list of dispatch interceptors to the command bus. All incoming commands will pass through
+     * the interceptors at the given order before the command is dispatched toward the command handler.
+     *
+     * @param dispatchInterceptors The interceptors to invoke when commands are dispatched
+     */
+    public void setDispatchInterceptors(List<? extends CommandDispatchInterceptor> dispatchInterceptors) {
+        this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(dispatchInterceptors);
     }
 
     /**
@@ -187,5 +215,35 @@ public class SimpleCommandBus implements CommandBus {
      */
     public void setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
         this.rollbackConfiguration = rollbackConfiguration;
+    }
+
+    /**
+     * Callback that logs error messages, but ignored return values.
+     *
+     * @param <R> The return type expected
+     */
+    private static class LogErrorCallback<R> implements CommandCallback<R> {
+
+        private final CommandMessage<?> command;
+
+        /**
+         * Initialize a callback that logs error for the given <code>command</code>
+         *
+         * @param command The command being dispatched
+         */
+        private LogErrorCallback(CommandMessage<?> command) {
+            this.command = command;
+        }
+
+        @Override
+        public void onSuccess(R result) {
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+            logger.error("Processing of a {} resulted in an exception: ",
+                         command.getPayloadType().getSimpleName(),
+                         cause);
+        }
     }
 }

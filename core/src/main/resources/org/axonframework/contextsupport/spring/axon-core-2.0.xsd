@@ -203,16 +203,24 @@
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="beans:identifiedType">
-                    <xsd:sequence>
-                        <xsd:element name="interceptors" type="beans:listOrSetType"
+                    <xsd:all>
+                        <xsd:element name="dispatchInterceptors" type="beans:listOrSetType"
                                      minOccurs="0" maxOccurs="1">
                             <xsd:annotation>
-                                <xsd:documentation>A list of interceptors to be registered with
+                                <xsd:documentation>A list of dispatch interceptors to be registered with
                                     the command bus.
                                 </xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>
-                    </xsd:sequence>
+                        <xsd:element name="handlerInterceptors" type="beans:listOrSetType"
+                                     minOccurs="0" maxOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>A list of handler interceptors to be registered with
+                                    the command bus.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:all>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

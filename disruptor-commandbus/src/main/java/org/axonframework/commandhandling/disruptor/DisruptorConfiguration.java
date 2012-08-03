@@ -21,6 +21,7 @@ import com.lmax.disruptor.ClaimStrategy;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import net.sf.jsr107cache.Cache;
+import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.RollbackConfiguration;
@@ -52,6 +53,7 @@ public class DisruptorConfiguration {
     private Cache cache;
     private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
+    private final List<CommandDispatchInterceptor> dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>();
     private CommandTargetResolver commandTargetResolver;
     private int invokerThreadCount = 1;
     private int publisherThreadCount = 1;
@@ -202,6 +204,29 @@ public class DisruptorConfiguration {
             List<CommandHandlerInterceptor> publisherInterceptors) { //NOSONAR (setter may hide field)
         this.publisherInterceptors.clear();
         this.publisherInterceptors.addAll(publisherInterceptors);
+        return this;
+    }
+
+    /**
+     * Returns the dispatch interceptors for the DisruptorCommandBus.
+     *
+     * @return the dispatch interceptors for the DisruptorCommandBus
+     */
+    public List<CommandDispatchInterceptor> getDispatchInterceptors() {
+        return dispatchInterceptors;
+    }
+
+    /**
+     * Configures the CommandDispatchInterceptor to use with the DisruptorCommandBus when commands are dispatched.
+     * The interceptors are invoked by the thread that provides the commands to the command bus.
+     *
+     * @param dispatchInterceptors The dispatch interceptors to invoke when dispatching a command
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setDispatchInterceptors(
+            List<CommandDispatchInterceptor> dispatchInterceptors) { //NOSONAR (setter may hide field)
+        this.dispatchInterceptors.clear();
+        this.dispatchInterceptors.addAll(dispatchInterceptors);
         return this;
     }
 

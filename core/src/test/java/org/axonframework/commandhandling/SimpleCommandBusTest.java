@@ -199,7 +199,7 @@ public class SimpleCommandBusTest {
                                                      (UnitOfWork) invocation.getArguments()[1]);
                     }
                 });
-        testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
+        testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);
 
@@ -248,7 +248,7 @@ public class SimpleCommandBusTest {
                     }
                 });
 
-        testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
+        testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class)))
                 .thenThrow(new RuntimeException("Faking failed command handling"));
         testSubject.subscribe(String.class, commandHandler);
@@ -287,7 +287,7 @@ public class SimpleCommandBusTest {
                                                        (InterceptorChain) invocation.getArguments()[2]);
                     }
                 });
-        testSubject.setInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
+        testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         CommandHandler<String> commandHandler = mock(CommandHandler.class);
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class, commandHandler);

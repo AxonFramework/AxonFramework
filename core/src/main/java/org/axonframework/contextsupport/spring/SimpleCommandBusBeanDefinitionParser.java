@@ -51,7 +51,8 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
         }
 
 
-        parseInterceptorConfiguration(element, parserContext, commandBusDefinition);
+        parseDispatchInterceptorConfiguration(element, parserContext, commandBusDefinition);
+        parseHandlerInterceptorConfiguration(element, parserContext, commandBusDefinition);
 
         return commandBusDefinition;
     }
@@ -63,13 +64,30 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
      * @param parserContext        The running {@link ParserContext}.
      * @param commandBusDefinition The {@link org.springframework.beans.factory.config.BeanDefinition} being built.
      */
-    private void parseInterceptorConfiguration(Element element, ParserContext parserContext,
-                                               GenericBeanDefinition commandBusDefinition) {
-        Element interceptorsElement = DomUtils.getChildElementByTagName(element, "interceptors");
+    private void parseHandlerInterceptorConfiguration(Element element, ParserContext parserContext,
+                                                       GenericBeanDefinition commandBusDefinition) {
+        Element interceptorsElement = DomUtils.getChildElementByTagName(element, "handlerInterceptors");
         if (interceptorsElement != null) {
             List<?> interceptorsList = parserContext.getDelegate().parseListElement(interceptorsElement,
                                                                                     commandBusDefinition);
-            commandBusDefinition.getPropertyValues().add("interceptors", interceptorsList);
+            commandBusDefinition.getPropertyValues().add("handlerInterceptors", interceptorsList);
+        }
+    }
+
+    /**
+     * Handles any optional interceptor-related configuration.
+     *
+     * @param element              The {@link Element} being parsed.
+     * @param parserContext        The running {@link ParserContext}.
+     * @param commandBusDefinition The {@link org.springframework.beans.factory.config.BeanDefinition} being built.
+     */
+    private void parseDispatchInterceptorConfiguration(Element element, ParserContext parserContext,
+                                                       GenericBeanDefinition commandBusDefinition) {
+        Element interceptorsElement = DomUtils.getChildElementByTagName(element, "dispatchInterceptors");
+        if (interceptorsElement != null) {
+            List<?> interceptorsList = parserContext.getDelegate().parseListElement(interceptorsElement,
+                                                                                    commandBusDefinition);
+            commandBusDefinition.getPropertyValues().add("dispatchInterceptors", interceptorsList);
         }
     }
 }

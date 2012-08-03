@@ -56,7 +56,7 @@ public class SpringTransactionalInterceptorTest {
         SpringTransactionalInterceptor testSubject = new SpringTransactionalInterceptor();
         testSubject.setTransactionManager(mockTransactionManager);
         commandBus = new SimpleCommandBus();
-        commandBus.setInterceptors(Arrays.asList(testSubject));
+        commandBus.setHandlerInterceptors(Arrays.asList(testSubject));
         commandHandler = mock(CommandHandler.class);
         commandBus.subscribe(Object.class, commandHandler);
     }

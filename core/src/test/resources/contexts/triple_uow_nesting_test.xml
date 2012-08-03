@@ -24,11 +24,11 @@
 
     <axon:event-bus id="eventBus"/>
     <axon:command-bus id="commandBus">
-        <axon:interceptors>
+        <axon:handlerInterceptors>
             <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
                 <property name="transactionManager" ref="transactionManager"/>
             </bean>
-        </axon:interceptors>
+        </axon:handlerInterceptors>
     </axon:command-bus>
 
     <bean class="org.axonframework.unitofwork.nesting.TripleUnitOfWorkNestingTest$MyCommandHandler">

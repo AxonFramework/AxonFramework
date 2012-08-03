@@ -73,7 +73,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         if (localSegment == null) {
             SimpleCommandBus bus = new SimpleCommandBus();
             if (interceptors != null && !interceptors.isEmpty()) {
-                bus.setInterceptors(interceptors);
+                bus.setHandlerInterceptors(interceptors);
             }
             localSegment = bus;
         }

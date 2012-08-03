@@ -16,6 +16,9 @@
 
 package org.axonframework.commandhandling;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,6 +40,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AsynchronousCommandBus extends SimpleCommandBus {
 
+    private static final Logger logger = LoggerFactory.getLogger(AsynchronousCommandBus.class);
     private final Executor executor;
 
     /**
@@ -56,12 +60,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     }
 
     @Override
-    public void dispatch(CommandMessage<?> command) {
-        executor.execute(new DispatchCommand<Object>(command, null));
-    }
-
-    @Override
-    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
+    protected <R> void doDispatch(CommandMessage<?> command, CommandCallback<R> callback) {
         executor.execute(new DispatchCommand<R>(command, callback));
     }
 
@@ -93,11 +92,38 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
 
         @Override
         public void run() {
-            if (callback == null) {
-                AsynchronousCommandBus.super.dispatch(command);
-            } else {
-                AsynchronousCommandBus.super.dispatch(command, callback);
-            }
+            AsynchronousCommandBus.super.doDispatch(command, callback);
         }
     }
+
+    /**
+     * Callback that logs error messages, but ignored return values.
+     *
+     * @param <R> The return type expected
+     */
+    private static class LogErrorCallback<R> implements CommandCallback<R> {
+
+        private final CommandMessage<?> command;
+
+        /**
+         * Initialize a callback that logs error for the given <code>command</code>
+         *
+         * @param command The command being dispatched
+         */
+        private LogErrorCallback(CommandMessage<?> command) {
+            this.command = command;
+        }
+
+        @Override
+        public void onSuccess(R result) {
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+            logger.error("Processing of a {} resulted in an exception: ",
+                         command.getPayloadType().getSimpleName(),
+                         cause);
+        }
+    }
+
 }

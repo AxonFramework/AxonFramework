@@ -104,22 +104,24 @@
     </bean>
 
     <axon:command-bus id="commandBus-embedded-ref">
-        <axon:interceptors>
+        <axon:handlerInterceptors>
             <ref local="commandBusInterceptor"/>
-        </axon:interceptors>
+        </axon:handlerInterceptors>
+        <axon:dispatchInterceptors>
+            <ref local="dispatchInterceptor"/>
+        </axon:dispatchInterceptors>
     </axon:command-bus>
 
     <axon:command-bus id="commandBus-embedded-interceptor-bean">
-        <axon:interceptors>
+        <axon:dispatchInterceptors>
+            <bean class="org.axonframework.contextsupport.spring.StubDispatchInterceptor"/>
+        </axon:dispatchInterceptors>
+        <axon:handlerInterceptors>
             <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor"/>
-        </axon:interceptors>
+        </axon:handlerInterceptors>
     </axon:command-bus>
 
-    <axon:command-bus id="commandBus-interceptor-attribute">
-        <axon:interceptors>
-            <ref bean="commandBusInterceptor"/>
-        </axon:interceptors>
-    </axon:command-bus>
+    <bean id="dispatchInterceptor" class="org.axonframework.contextsupport.spring.StubDispatchInterceptor"/>
 
     <axon:command-bus id="commandBus-simple"/>
 

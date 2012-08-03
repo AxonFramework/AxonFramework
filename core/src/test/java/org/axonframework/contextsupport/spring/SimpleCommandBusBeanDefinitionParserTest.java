@@ -18,8 +18,8 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -29,8 +29,6 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -45,29 +43,21 @@ public class SimpleCommandBusBeanDefinitionParserTest {
     public void embeddedRefInterceptorDefinitionTest() {
         BeanDefinition commandBusEmbeddedRef = beanFactory.getBeanDefinition("commandBus-embedded-ref");
         assertNotNull("Bean definition not created correctly", commandBusEmbeddedRef);
-        PropertyValue propertyValue = commandBusEmbeddedRef.getPropertyValues().getPropertyValue("interceptors");
-        assertNotNull("No definition for the interceptor", propertyValue);
-        ManagedList<?> list = (ManagedList<?>) propertyValue.getValue();
+        PropertyValue handlerInterceptors = commandBusEmbeddedRef.getPropertyValues().getPropertyValue("handlerInterceptors");
+        assertNotNull("No definition for the interceptor", handlerInterceptors);
+        ManagedList<?> list = (ManagedList<?>) handlerInterceptors.getValue();
         assertTrue(RuntimeBeanReference.class.isInstance(list.get(0)));
         RuntimeBeanReference beanReference = (RuntimeBeanReference) list.get(0);
         assertEquals("commandBusInterceptor", beanReference.getBeanName());
 
+        PropertyValue dispatchInterceptors = commandBusEmbeddedRef.getPropertyValues().getPropertyValue("dispatchInterceptors");
+        assertNotNull("No definition for the interceptor", dispatchInterceptors);
+        list = (ManagedList<?>) dispatchInterceptors.getValue();
+        assertTrue(RuntimeBeanReference.class.isInstance(list.get(0)));
+        beanReference = (RuntimeBeanReference) list.get(0);
+        assertEquals("dispatchInterceptor", beanReference.getBeanName());
+
         CommandBus commandBus = beanFactory.getBean("commandBus-embedded-ref", CommandBus.class);
-        assertNotNull(commandBus);
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Test
-    public void interceptorAttrinbuteDefinitionTest() {
-        BeanDefinition commandBusAttribute = beanFactory.getBeanDefinition("commandBus-interceptor-attribute");
-        assertNotNull("Bean definition not created correctly", commandBusAttribute);
-        PropertyValue propertyValue = commandBusAttribute.getPropertyValues().getPropertyValue("interceptors");
-        assertNotNull("No definition for the interceptor", propertyValue);
-        assertEquals(1, ((List) propertyValue.getValue()).size());
-        List<RuntimeBeanReference> beanReferences = (List<RuntimeBeanReference>) propertyValue.getValue();
-        assertEquals("commandBusInterceptor", beanReferences.get(0).getBeanName());
-
-        CommandBus commandBus = beanFactory.getBean("commandBus-interceptor-attribute", CommandBus.class);
         assertNotNull(commandBus);
     }
 
@@ -75,9 +65,14 @@ public class SimpleCommandBusBeanDefinitionParserTest {
     public void embeddedInterceptorBeanInterceptorDefinitionTest() {
         BeanDefinition commandBusEmbeddedBean = beanFactory.getBeanDefinition("commandBus-embedded-interceptor-bean");
         assertNotNull("Bean definition not created correctly", commandBusEmbeddedBean);
-        PropertyValue propertyValue = commandBusEmbeddedBean.getPropertyValues().getPropertyValue("interceptors");
-        assertNotNull("No definition for the interceptor", propertyValue);
-        ManagedList<?> list = (ManagedList<?>) propertyValue.getValue();
+        PropertyValue handlerInterceptors = commandBusEmbeddedBean.getPropertyValues().getPropertyValue("handlerInterceptors");
+        assertNotNull("No definition for the interceptor", handlerInterceptors);
+        ManagedList<?> list = (ManagedList<?>) handlerInterceptors.getValue();
+        assertTrue(BeanDefinitionHolder.class.isInstance(list.get(0)));
+
+        PropertyValue dispatchInterceptors = commandBusEmbeddedBean.getPropertyValues().getPropertyValue("dispatchInterceptors");
+        assertNotNull("No definition for the interceptor", dispatchInterceptors);
+        list = (ManagedList<?>) handlerInterceptors.getValue();
         assertTrue(BeanDefinitionHolder.class.isInstance(list.get(0)));
 
         CommandBus commandBus = beanFactory.getBean("commandBus-embedded-interceptor-bean", CommandBus.class);
