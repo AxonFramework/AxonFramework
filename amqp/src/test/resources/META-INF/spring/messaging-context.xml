@@ -29,7 +29,7 @@
 
     <rabbit:admin id="rabbitAdmin" auto-startup="true" connection-factory="connectionFactory"/>
 
-    <rabbit:connection-factory id="connectionFactory" />
+    <rabbit:connection-factory id="connectionFactory"/>
 
     <bean class="org.axonframework.eventhandling.ClusteringEventBus">
         <constructor-arg>
@@ -43,13 +43,21 @@
     <bean id="cluster1" class="org.axonframework.eventhandling.SimpleClusterFactoryBean">
         <property name="metaDataValues">
             <map>
-                <entry key="AMQP.QueueName" value="Axon.EventBus.Default"/>
+                <entry key="AMQP.Config">
+                    <bean class="org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration">
+                        <property name="queueName" value="Axon.EventBus.Default"/>
+                    </bean>
+                </entry>
             </map>
         </property>
     </bean>
 
     <bean class="org.axonframework.eventhandling.amqp.spring.ListenerContainerLifecycleManager">
-        <property name="prefetchCount" value="100"/>
+        <property name="defaultConfiguration">
+            <bean class="org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration">
+                <property name="prefetchCount" value="100"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="terminal" class="org.axonframework.eventhandling.amqp.spring.SpringAMQPTerminal">

@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling.amqp.spring;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,7 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<String, SimpleMessageListenerContainer>();
     // guarded by "this"
     private boolean started = false;
+    private SpringAMQPConsumerConfiguration defaultConfiguration;
 
     private int phase = Integer.MAX_VALUE;
 
@@ -55,11 +58,20 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
      * already exists, it is assigned to the existing listener. Clusters that have been registered with the same
      * <code>queueName</code> will each receive a copy of all message on that queue
      *
-     * @param queueName        The name of the queue the cluster should receive messages from
      * @param cluster          The cluster to forward messages to
+     * @param config           The configuration object for the cluster
      * @param messageConverter The message converter to use to convert the AMQP Message to an Event Message
      */
-    public synchronized void registerCluster(String queueName, Cluster cluster, AMQPMessageConverter messageConverter) {
+    public synchronized void registerCluster(Cluster cluster, AMQPConsumerConfiguration config,
+                                             AMQPMessageConverter messageConverter) {
+        SpringAMQPConsumerConfiguration amqpConfig = SpringAMQPConsumerConfiguration.wrap(config);
+        amqpConfig.setDefaults(defaultConfiguration);
+        String queueName = amqpConfig.getQueueName();
+        if (queueName == null) {
+            throw new AxonConfigurationException("The Cluster does not define a Queue Name, "
+                                                         + "nor is there a default Queue Name configured in the "
+                                                         + "ListenerContainerLifeCycleManager");
+        }
         if (containerPerQueue.containsKey(queueName)) {
             ClusterMessageListener existingListener = (ClusterMessageListener) containerPerQueue.get(queueName)
                                                                                                 .getMessageListener();
@@ -70,7 +82,7 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
                                     + "This may lead to Events not being published to all Clusters");
             }
         } else {
-            SimpleMessageListenerContainer newContainer = createContainer();
+            SimpleMessageListenerContainer newContainer = createContainer(amqpConfig);
             newContainer.setQueueNames(queueName);
             newContainer.setMessageListener(new ClusterMessageListener(cluster, messageConverter));
             containerPerQueue.put(queueName, newContainer);
@@ -146,5 +158,15 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
      */
     public void setPhase(int phase) {
         this.phase = phase;
+    }
+
+    /**
+     * Sets the configuration with the entries to use as defaults in case a registered cluster does not provide
+     * explicit values.
+     *
+     * @param defaultConfiguration The configuration instance containing defaults for each registered cluster
+     */
+    public void setDefaultConfiguration(SpringAMQPConsumerConfiguration defaultConfiguration) {
+        this.defaultConfiguration = defaultConfiguration;
     }
 }

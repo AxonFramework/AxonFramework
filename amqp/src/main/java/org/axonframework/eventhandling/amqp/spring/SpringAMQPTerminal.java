@@ -21,14 +21,15 @@ import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventBusTerminal;
+import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.AMQPMessage;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
+import org.axonframework.eventhandling.amqp.DefaultAMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
-import org.axonframework.eventhandling.amqp.MetaDataPropertyQueueNameResolver;
 import org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver;
-import org.axonframework.eventhandling.amqp.QueueNameResolver;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -44,6 +45,9 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
 import java.util.Map;
+
+import static org.axonframework.eventhandling.ClusterMetaData.CLUSTER_NAME_PROPERTY;
+import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQP_CONFIG_PROPERTY;
 
 /**
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
@@ -65,7 +69,6 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     private boolean isTransactional = false;
     private boolean isDurable = true;
     private ListenerContainerLifecycleManager listenerContainerLifecycleManager;
-    private QueueNameResolver queueNameResolver = new MetaDataPropertyQueueNameResolver(DEFAULT_QUEUE_NAME);
     private AMQPMessageConverter messageConverter;
     private ApplicationContext applicationContext;
     private Serializer serializer;
@@ -130,8 +133,16 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
 
     @Override
     public void onClusterCreated(final Cluster cluster) {
-        String queueName = queueNameResolver.resolveQueueName(cluster);
-        getListenerContainerLifecycleManager().registerCluster(queueName, cluster, messageConverter);
+        ClusterMetaData clusterMetaData = cluster.getMetaData();
+        AMQPConsumerConfiguration config;
+        if (clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
+            config = (AMQPConsumerConfiguration) clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY);
+        } else if (clusterMetaData.getProperty(CLUSTER_NAME_PROPERTY) instanceof String) {
+            config = new DefaultAMQPConsumerConfiguration((String) clusterMetaData.getProperty(CLUSTER_NAME_PROPERTY));
+        } else {
+            config = new DefaultAMQPConsumerConfiguration(null);
+        }
+        getListenerContainerLifecycleManager().registerCluster(cluster, config, messageConverter);
     }
 
     @Override
@@ -262,16 +273,6 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      */
     public void setExchange(Exchange exchange) {
         this.exchangeName = exchange.getName();
-    }
-
-    /**
-     * Sets the QueueNameResolver that provides the name of the Queue for each of the Clusters connected to this
-     * terminal. Defaults to a {@link MetaDataPropertyQueueNameResolver}.
-     *
-     * @param queueNameResolver the Queue Name Resolver to set
-     */
-    public void setQueueNameResolver(QueueNameResolver queueNameResolver) {
-        this.queueNameResolver = queueNameResolver;
     }
 
     /**

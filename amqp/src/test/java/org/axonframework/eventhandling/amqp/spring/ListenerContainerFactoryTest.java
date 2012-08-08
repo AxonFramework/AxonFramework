@@ -59,7 +59,7 @@ public class ListenerContainerFactoryTest {
 
     @Test
     public void testListenerContainerKeepsDefaults() throws Exception {
-        SimpleMessageListenerContainer actual = testSubject.createContainer();
+        SimpleMessageListenerContainer actual = testSubject.createContainer(new SpringAMQPConsumerConfiguration());
 
         // just to make sure PowerMock was correctly configured
         assertSame(mockContainer, actual);
@@ -71,30 +71,32 @@ public class ListenerContainerFactoryTest {
 
     @Test
     public void testListenerContainerFullyConfigured() {
-        testSubject.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        SpringAMQPConsumerConfiguration config = new SpringAMQPConsumerConfiguration();
+
+        config.setAcknowledgeMode(AcknowledgeMode.AUTO);
         Advice[] adviceChain = new Advice[0];
-        testSubject.setAdviceChain(adviceChain);
-        testSubject.setConcurrentConsumers(5);
+        config.setAdviceChain(adviceChain);
+        config.setConcurrentConsumers(5);
         ConnectionFactory mockConnectionFactory = mock(ConnectionFactory.class);
         testSubject.setConnectionFactory(mockConnectionFactory);
         ErrorHandler mockErrorHandler = mock(ErrorHandler.class);
-        testSubject.setErrorHandler(mockErrorHandler);
+        config.setErrorHandler(mockErrorHandler);
         MessagePropertiesConverter mockMessagePropertiesConverter = mock(MessagePropertiesConverter.class);
-        testSubject.setMessagePropertiesConverter(mockMessagePropertiesConverter);
-        testSubject.setPrefetchCount(6);
-        testSubject.setReceiveTimeout(6000);
-        testSubject.setRecoveryInterval(6500);
-        testSubject.setShutdownTimeout(3000);
-        testSubject.setExclusive(false);
+        config.setMessagePropertiesConverter(mockMessagePropertiesConverter);
+        config.setPrefetchCount(6);
+        config.setReceiveTimeout(6000L);
+        config.setRecoveryInterval(6500L);
+        config.setShutdownTimeout(3000L);
+        config.setExclusive(false);
         Executor mockTaskExecutor = mock(Executor.class);
-        testSubject.setTaskExecutor(mockTaskExecutor);
+        config.setTaskExecutor(mockTaskExecutor);
         DefaultTransactionAttribute transactionAttribute = new DefaultTransactionAttribute();
-        testSubject.setTransactionAttribute(transactionAttribute);
+        config.setTransactionAttribute(transactionAttribute);
         PlatformTransactionManager mockTransactionManager = mock(PlatformTransactionManager.class);
-        testSubject.setTransactionManager(mockTransactionManager);
-        testSubject.setTxSize(100);
+        config.setTransactionManager(mockTransactionManager);
+        config.setTxSize(100);
 
-        SimpleMessageListenerContainer actual = testSubject.createContainer();
+        SimpleMessageListenerContainer actual = testSubject.createContainer(config);
 
         // just to make sure PowerMock was correctly configured
         assertSame(mockContainer, actual);
