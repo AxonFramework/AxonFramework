@@ -16,9 +16,11 @@
 
 package org.axonframework.common.lock;
 
-import org.axonframework.common.Assert;
-
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -36,6 +38,21 @@ import java.util.concurrent.locks.ReentrantLock;
 public class IdentifierBasedLock {
 
     private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<String, DisposableLock>();
+
+    private Set<Thread> threadsWaitingForMyLocks(Thread owner) {
+        Set<Thread> waitingThreads = new HashSet<Thread>();
+        for (DisposableLock disposableLock : locks.values()) {
+            if (disposableLock.isHeldBy(owner)) {
+                final Collection<Thread> c = disposableLock.queuedThreads();
+                for (Thread thread : c) {
+                    if (waitingThreads.add(thread)) {
+                        waitingThreads.addAll(threadsWaitingForMyLocks(thread));
+                    }
+                }
+            }
+        }
+        return waitingThreads;
+    }
 
     /**
      * Indicates whether the current thread hold a lock for the given <code>identifier</code>.
@@ -76,9 +93,15 @@ public class IdentifierBasedLock {
      * @throws IllegalMonitorStateException if a lock was obtained, but is not currently held by the current thread
      */
     public void releaseLock(String identifier) {
-        Assert.state(locks.containsKey(identifier), "No lock for this identifier was ever obtained");
+        if (!locks.containsKey(identifier)) {
+            throw new LockAcquisitionFailedException("No lock for this identifier was ever obtained");
+        }
         DisposableLock lock = lockFor(identifier);
-        lock.unlock(identifier);
+        try {
+            lock.unlock(identifier);
+        } catch (IllegalMonitorStateException e) {
+            throw new LockAcquisitionFailedException("Could not release this lock", e);
+        }
     }
 
     private boolean isLockAvailableFor(String identifier) {
@@ -96,12 +119,12 @@ public class IdentifierBasedLock {
 
     private final class DisposableLock {
 
-        private final ReentrantLock lock;
+        private final PubliclyOwnedReentrantLock lock;
         // guarded by "lock"
         private volatile boolean isClosed = false;
 
         private DisposableLock() {
-            this.lock = new ReentrantLock();
+            this.lock = new PubliclyOwnedReentrantLock();
         }
 
         private boolean isHeldByCurrentThread() {
@@ -109,17 +132,37 @@ public class IdentifierBasedLock {
         }
 
         private void unlock(String identifier) {
-            lock.unlock();
-            disposeIfUnused(identifier);
+            try {
+                lock.unlock();
+            } finally {
+                disposeIfUnused(identifier);
+            }
         }
 
         private boolean lock() {
-            lock.lock();
+            try {
+                do {
+                    checkForDeadlock();
+                } while (!lock.tryLock(100, TimeUnit.MILLISECONDS));
+            } catch (InterruptedException e) {
+                throw new LockAcquisitionFailedException("Thread was interrupted", e);
+            }
             if (isClosed) {
                 lock.unlock();
                 return false;
             }
             return true;
+        }
+
+        private void checkForDeadlock() {
+            if (!lock.isHeldByCurrentThread() && lock.isLocked()) {
+                for (Thread thread : threadsWaitingForMyLocks(Thread.currentThread())) {
+                    if (lock.isHeldBy(thread)) {
+                        throw new DeadlockException(
+                                "An imminent deadlock was detected while attempting to acquire a lock");
+                    }
+                }
+            }
         }
 
         private void disposeIfUnused(String identifier) {
@@ -134,6 +177,26 @@ public class IdentifierBasedLock {
                     lock.unlock();
                 }
             }
+        }
+
+        public Collection<Thread> queuedThreads() {
+            return lock.getQueuedThreads();
+        }
+
+        public boolean isHeldBy(Thread owner) {
+            return lock.isHeldBy(owner);
+        }
+    }
+
+    private final class PubliclyOwnedReentrantLock extends ReentrantLock {
+
+        @Override
+        public Collection<Thread> getQueuedThreads() {
+            return super.getQueuedThreads();
+        }
+
+        public boolean isHeldBy(Thread thread) {
+            return thread.equals(getOwner());
         }
     }
 }
