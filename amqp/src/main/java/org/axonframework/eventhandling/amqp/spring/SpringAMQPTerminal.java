@@ -62,7 +62,6 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAMQPTerminal.class);
     private static final String DEFAULT_EXCHANGE_NAME = "Axon.EventBus";
-    private static final String DEFAULT_QUEUE_NAME = DEFAULT_EXCHANGE_NAME + ".Default";
 
     private ConnectionFactory connectionFactory;
     private String exchangeName = DEFAULT_EXCHANGE_NAME;
@@ -222,6 +221,10 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      * performance penalty, but will survive a reboot of the Message broker that stores them.
      * <p/>
      * By default, messages are durable.
+     * <p/>
+     * Note that this setting is ignored if a {@link
+     * #setMessageConverter(org.axonframework.eventhandling.amqp.AMQPMessageConverter) MessageConverter} is provided.
+     * In that case, the message converter must add the properties to reflect the required durability setting.
      *
      * @param durable whether or not messages should be durable
      */
@@ -235,7 +238,8 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      * Defaults to an autowired serializer, which requires exactly 1 eligible serializer to be present in the
      * application context.
      * <p/>
-     * This setting is ignored if a AMQPMessageConverter is configured.
+     * This setting is ignored if a {@link
+     * #setMessageConverter(org.axonframework.eventhandling.amqp.AMQPMessageConverter) MessageConverter} is configured.
      *
      * @param serializer the serializer to serialize message with
      */
@@ -248,7 +252,8 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      * org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver}, which uses the package name of the message's
      * payload as a Routing Key.
      * <p/>
-     * This setting is ignored if a AMQPMessageConverter is configured.
+     * This setting is ignored if a {@link
+     * #setMessageConverter(org.axonframework.eventhandling.amqp.AMQPMessageConverter) MessageConverter} is configured.
      *
      * @param routingKeyResolver the RoutingKeyResolver to use
      */

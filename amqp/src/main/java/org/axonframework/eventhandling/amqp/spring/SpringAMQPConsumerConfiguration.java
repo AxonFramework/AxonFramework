@@ -75,7 +75,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
 
     @Override
     public String getQueueName() {
-        return queueName != null ? queueName : defaults.getQueueName();
+        return queueName != null ? queueName : defaults == null ? null : defaults.getQueueName();
     }
 
     /**

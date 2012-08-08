@@ -78,8 +78,9 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
             existingListener.addCluster(cluster);
             if (started && logger.isWarnEnabled()) {
                 logger.warn("A cluster was configured on queue [{}], "
-                                    + "while the Container for that queue was already processing events."
-                                    + "This may lead to Events not being published to all Clusters");
+                                    + "while the Container for that queue was already processing events. "
+                                    + "This may lead to Events not being published to all Clusters",
+                            queueName);
             }
         } else {
             SimpleMessageListenerContainer newContainer = createContainer(amqpConfig);
