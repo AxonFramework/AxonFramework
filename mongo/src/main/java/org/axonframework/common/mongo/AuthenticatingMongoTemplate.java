@@ -61,8 +61,8 @@ public abstract class AuthenticatingMongoTemplate {
      * @param userName     The username to authenticate with. Use <code>null</code> to skip authentication
      * @param password     The password to authenticate with. Use <code>null</code> to skip authentication
      */
-    protected AuthenticatingMongoTemplate(Mongo mongo, String databaseName, String userName, // NOSONAR
-                                          char[] password) {
+    protected AuthenticatingMongoTemplate(Mongo mongo, String databaseName, String userName,
+                                          char[] password) { // NOSONAR
         this.database = mongo.getDB(databaseName);
         this.userName = userName;
         this.password = password;

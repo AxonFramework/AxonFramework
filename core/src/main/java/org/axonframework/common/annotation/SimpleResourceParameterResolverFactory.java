@@ -35,7 +35,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SimpleResourceParameterResolverFactory extends ParameterResolverFactory {
+public final class SimpleResourceParameterResolverFactory extends ParameterResolverFactory {
 
     private final List<?> injectableResources;
 

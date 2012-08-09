@@ -38,6 +38,7 @@ public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
 
     private ApplicationContext applicationContext;
 
+    @SuppressWarnings("SuspiciousMethodCalls")
     @Override
     protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                                Annotation[] parameterAnnotations) {
@@ -47,11 +48,11 @@ public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
         } else if (beansFound.size() > 1) {
             final AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
             if (beanFactory instanceof ConfigurableListableBeanFactory) {
-                for (String beanName : beansFound.keySet()) {
+                for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
                     final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
-                    if (clBeanFactory.containsBeanDefinition(beanName)
-                            && clBeanFactory.getBeanDefinition(beanName).isPrimary()) {
-                        return new FixedValueParameterResolver<Object>(beansFound.get(beanName));
+                    if (clBeanFactory.containsBeanDefinition(bean.getKey())
+                            && clBeanFactory.getBeanDefinition(bean.getKey()).isPrimary()) {
+                        return new FixedValueParameterResolver<Object>(beansFound.get(bean.getValue()));
                     }
                 }
             }
