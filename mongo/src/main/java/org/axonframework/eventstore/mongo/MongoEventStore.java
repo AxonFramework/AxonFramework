@@ -16,8 +16,6 @@
 
 package org.axonframework.eventstore.mongo;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
@@ -56,27 +54,27 @@ import javax.annotation.PostConstruct;
 public class MongoEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStore.class);
-    private static final int ORDER_ASC = 1;
-    private static final int ORDER_DESC = -1;
 
     private final MongoTemplate mongoTemplate;
 
     private final Serializer eventSerializer;
+    private final StorageStrategy storageStrategy;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
 
     /**
-     * Constructor that accepts a Serializer and the MongoTemplate.
+     * Constructor that accepts a Serializer and the MongoTemplate. A Document-Per-Event storage strategy is used,
+     * causing each event to be stored in a separate Mongo Document.
      *
      * @param eventSerializer Your own Serializer
      * @param mongo           Mongo instance to obtain the database and the collections.
      */
     public MongoEventStore(Serializer eventSerializer, MongoTemplate mongo) {
-        this.eventSerializer = eventSerializer;
-        this.mongoTemplate = mongo;
+        this(mongo, eventSerializer, new DocumentPerEventStorageStrategy());
     }
 
     /**
-     * Constructor that uses the default Serializer.
+     * Constructor that uses the default Serializer. A Document-Per-Event storage strategy is used, causing each event
+     * to be stored in a separate Mongo Document.
      *
      * @param mongo MongoTemplate instance to obtain the database and the collections.
      */
@@ -85,50 +83,74 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     }
 
     /**
+     * Constructor that accepts a MongoTemplate and a custom StorageStrategy.
+     *
+     * @param mongoTemplate   The template giving access to the required collections
+     * @param storageStrategy The strategy for storing and retrieving events from the collections
+     */
+    public MongoEventStore(MongoTemplate mongoTemplate, StorageStrategy storageStrategy) {
+        this(mongoTemplate, new XStreamSerializer(), storageStrategy);
+    }
+
+    /**
+     * Initialize the mongo event store with given <code>mongoTemplate</code>, <code>eventSerializer</code> and
+     * <code>storageStrategy</code>.
+     *
+     * @param mongoTemplate   The template giving access to the required collections
+     * @param eventSerializer The serializer to serialize events with
+     * @param storageStrategy The strategy for storing and retrieving events from the collections
+     */
+    public MongoEventStore(MongoTemplate mongoTemplate, Serializer eventSerializer, StorageStrategy storageStrategy) {
+        this.eventSerializer = eventSerializer;
+        this.mongoTemplate = mongoTemplate;
+        this.storageStrategy = storageStrategy;
+    }
+
+    /**
      * Make sure an index is created on the collection that stores domain events.
      */
     @PostConstruct
     public void ensureIndexes() {
-        mongoTemplate.domainEventCollection().ensureIndex(EventEntry.UNIQUE_INDEX, "uniqueAggregateIndex", true);
+        storageStrategy.ensureIndexes(mongoTemplate.domainEventCollection(), mongoTemplate.snapshotEventCollection());
     }
 
     @Override
     public void appendEvents(String type, DomainEventStream events) {
-        List<DBObject> entries = new ArrayList<DBObject>();
+        List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
         while (events.hasNext()) {
-            DomainEventMessage event = events.next();
-            EventEntry entry = new EventEntry(type, event, eventSerializer);
-            entries.add(entry.asDBObject());
+            messages.add(events.next());
         }
-        mongoTemplate.domainEventCollection().insert(entries.toArray(new DBObject[entries.size()]));
+
+        mongoTemplate.domainEventCollection().insert(storageStrategy.createDocuments(type, eventSerializer, messages));
 
         if (logger.isDebugEnabled()) {
-            logger.debug("{} events appended", new Object[]{entries.size()});
+            logger.debug("{} events appended", new Object[]{messages.size()});
         }
     }
 
     @Override
     public DomainEventStream readEvents(String type, Object identifier) {
         long snapshotSequenceNumber = -1;
-        EventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
-        if (lastSnapshotEvent != null) {
-            snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
+        List<DomainEventMessage> lastSnapshotCommit = loadLastSnapshotEvent(type, identifier);
+        if (lastSnapshotCommit != null && !lastSnapshotCommit.isEmpty()) {
+            snapshotSequenceNumber = lastSnapshotCommit.get(0).getSequenceNumber();
         }
+        final DBCursor dbCursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
+                                                             type,
+                                                             identifier.toString(),
+                                                             snapshotSequenceNumber + 1);
 
-        final DBCursor dbCursor = mongoTemplate.domainEventCollection()
-                                               .find(EventEntry.forAggregate(type, identifier.toString(),
-                                                                             snapshotSequenceNumber + 1))
-                                               .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_ASC));
-        if (!dbCursor.hasNext() && lastSnapshotEvent == null) {
+        if (!dbCursor.hasNext() && lastSnapshotCommit == null) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotEvent, identifier);
+        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier);
     }
 
     @Override
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
-        EventEntry snapshotEventEntry = new EventEntry(type, snapshotEvent, eventSerializer);
-        mongoTemplate.snapshotEventCollection().insert(snapshotEventEntry.asDBObject());
+        final DBObject dbObject = storageStrategy.createDocuments(type, eventSerializer,
+                                                                  Collections.singletonList(snapshotEvent))[0];
+        mongoTemplate.snapshotEventCollection().insert(dbObject);
         if (logger.isDebugEnabled()) {
             logger.debug("snapshot event of type {} appended.");
         }
@@ -141,13 +163,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     @Override
     public void visitEvents(Criteria criteria, EventVisitor visitor) {
-        DBObject filter = criteria == null ? null : ((MongoCriteria) criteria).asMongoObject();
-        DBObject sort = BasicDBObjectBuilder.start()
-                                            .add(EventEntry.TIME_STAMP_PROPERTY, ORDER_ASC)
-                                            .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_ASC)
-                                            .get();
-        DBCursor batchDomainEvents = mongoTemplate.domainEventCollection().find(filter).sort(sort);
-        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(batchDomainEvents, null, null);
+        DBCursor cursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
+                                                                (MongoCriteria) criteria);
+        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null);
         while (events.hasNext()) {
             visitor.doWithEvent(events.next());
         }
@@ -158,22 +176,16 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         return new MongoCriteriaBuilder();
     }
 
-    private EventEntry loadLastSnapshotEvent(String type, Object identifier) {
-        DBObject mongoEntry = BasicDBObjectBuilder.start()
-                                                  .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, identifier.toString())
-                                                  .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
-                                                  .get();
-        DBCursor dbCursor = mongoTemplate.snapshotEventCollection()
-                                         .find(mongoEntry)
-                                         .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_DESC))
-                                         .limit(1);
-
+    private List<DomainEventMessage> loadLastSnapshotEvent(String type, Object identifier) {
+        DBCursor dbCursor = storageStrategy.findLastSnapshot(mongoTemplate.snapshotEventCollection(),
+                                                             type,
+                                                             identifier.toString());
         if (!dbCursor.hasNext()) {
             return null;
         }
         DBObject first = dbCursor.next();
 
-        return new EventEntry(first);
+        return storageStrategy.extractEventMessages(first, identifier, eventSerializer, upcasterChain);
     }
 
     @Override
@@ -193,19 +205,17 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
          * optionally the given <code>lastSnapshotEvent</code>.
          *
          * @param dbCursor                  The cursor providing access to the query results in the Mongo instance
-         * @param lastSnapshotEvent         The last snapshot event read, or <code>null</code> if no snapshot is
+         * @param lastSnapshotCommit        The last snapshot event read, or <code>null</code> if no snapshot is
          *                                  available
          * @param actualAggregateIdentifier The actual aggregateIdentifier instance used to perform the lookup, or
          *                                  <code>null</code> if unknown
          */
-        public CursorBackedDomainEventStream(DBCursor dbCursor, EventEntry lastSnapshotEvent,
+        public CursorBackedDomainEventStream(DBCursor dbCursor, List<DomainEventMessage> lastSnapshotCommit,
                                              Object actualAggregateIdentifier) {
             this.dbCursor = dbCursor;
             this.actualAggregateIdentifier = actualAggregateIdentifier;
-            if (lastSnapshotEvent != null) {
-                messagesToReturn = lastSnapshotEvent.getDomainEvents(actualAggregateIdentifier,
-                                                                     eventSerializer,
-                                                                     upcasterChain).iterator();
+            if (lastSnapshotCommit != null) {
+                messagesToReturn = lastSnapshotCommit.iterator();
             }
             initializeNextItem();
         }
@@ -232,9 +242,8 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
          */
         private void initializeNextItem() {
             while (!messagesToReturn.hasNext() && dbCursor.hasNext()) {
-                messagesToReturn = new EventEntry(dbCursor.next()).getDomainEvents(actualAggregateIdentifier,
-                                                                                   eventSerializer, upcasterChain)
-                                                                  .iterator();
+                messagesToReturn = storageStrategy.extractEventMessages(dbCursor.next(), actualAggregateIdentifier,
+                                                                        eventSerializer, upcasterChain).iterator();
             }
             next = messagesToReturn.hasNext() ? messagesToReturn.next() : null;
         }
