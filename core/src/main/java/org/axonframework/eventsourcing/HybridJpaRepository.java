@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.GenericJpaRepository;
 import org.axonframework.repository.LockManager;
@@ -34,7 +35,7 @@ import org.axonframework.repository.NullLockManager;
  * @author Allard Buijze
  * @since 1.0
  */
-public class HybridJpaRepository<T extends EventSourcedAggregateRoot> extends GenericJpaRepository<T> {
+public class HybridJpaRepository<T extends AggregateRoot> extends GenericJpaRepository<T> {
 
     private EventStore eventStore;
     private String aggregateTypeIdentifier;

@@ -69,11 +69,11 @@
         </axon:meta-data>
         <axon:selectors>
             <axon:package prefix="org.axonframework"/>
-            <axon:annotation type="java.lang.annotation.Inherited" />
+            <axon:annotation type="java.lang.annotation.Inherited"/>
         </axon:selectors>
     </axon:cluster>
 
-    <axon:cluster id="defaultCluster" default="true" />
+    <axon:cluster id="defaultCluster" default="true"/>
 
     <bean id="sagaSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 
@@ -188,13 +188,34 @@
         <axon:snapshotter-trigger event-count-threshold="50" snapshotter-ref="snapshotter"/>
     </axon:event-sourcing-repository>
 
+    <axon:jpa-repository id="simpleJpaRepository"
+                         aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
+
+    <axon:jpa-repository id="optimisticJpaRepository" locking-strategy="OPTIMISTIC"
+                         aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
+
+    <axon:jpa-repository id="fullyDefinedJpaRepository" entity-manager-provider="customEntityManagerProvider"
+                         event-bus="eventBus" event-store="eventStore" lock-manager="nullLockManager"
+                         aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
+
     <bean id="mockCache" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="net.sf.jsr107cache.Cache"/>
+    </bean>
+
+    <bean id="customEntityManagerProvider" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.common.jpa.EntityManagerProvider"/>
     </bean>
 
     <axon:event-sourcing-repository id="defaultStrategyRepository"
                                     aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
                                     event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver"/>
+
+    <axon:jpa-repository id="jpaRepository" event-bus="eventBus"
+                         aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
+
+    <axon:jpa-repository id="hybridJpaRepository" event-bus="eventBus" event-store="eventStore"
+                         entity-manager-provider="customEntityManagerProvider"
+                         aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
 
     <bean id="taskExecutor"
           class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">

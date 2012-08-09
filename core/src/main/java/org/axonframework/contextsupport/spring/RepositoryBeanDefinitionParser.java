@@ -21,10 +21,6 @@ import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.LockManager;
-import org.axonframework.repository.NullLockManager;
-import org.axonframework.repository.OptimisticLockManager;
-import org.axonframework.repository.PessimisticLockManager;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -163,17 +159,8 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
             builder.getConstructorArgumentValues().addGenericArgumentValue(new RuntimeBeanReference(lockManager));
         } else if (element.hasAttribute(LOCKING_STRATEGY_ATTRIBUTE)) {
             LockingStrategy strategy = LockingStrategy.valueOf(element.getAttribute(LOCKING_STRATEGY_ATTRIBUTE));
-            LockManager lockManager;
-            switch (strategy) {
-                case NO_LOCKING:
-                    lockManager = new NullLockManager();
-                    break;
-                case OPTIMISTIC:
-                    lockManager = new OptimisticLockManager();
-                    break;
-                default:
-                    lockManager = new PessimisticLockManager();
-            }
+            GenericBeanDefinition lockManager = new GenericBeanDefinition();
+            lockManager.setBeanClass(strategy.getLockManagerType());
             builder.getConstructorArgumentValues().addGenericArgumentValue(lockManager);
         }
     }
@@ -197,15 +184,5 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
             throw new IllegalArgumentException(
                     "No class of name " + aggregateRootTypeString + " was found on the classpath", e);
         }
-    }
-
-    /**
-     * Enum indicating possible locking strategies for repositories.
-     */
-    private static enum LockingStrategy {
-
-        OPTIMISTIC,
-        PESSIMISTIC,
-        NO_LOCKING
     }
 }
