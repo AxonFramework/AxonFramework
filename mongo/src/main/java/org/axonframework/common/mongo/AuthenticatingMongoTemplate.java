@@ -61,7 +61,8 @@ public abstract class AuthenticatingMongoTemplate {
      * @param userName     The username to authenticate with. Use <code>null</code> to skip authentication
      * @param password     The password to authenticate with. Use <code>null</code> to skip authentication
      */
-    protected AuthenticatingMongoTemplate(Mongo mongo, String databaseName, String userName, char[] password) {
+    protected AuthenticatingMongoTemplate(Mongo mongo, String databaseName, String userName, // NOSONAR
+                                          char[] password) {
         this.database = mongo.getDB(databaseName);
         this.userName = userName;
         this.password = password;
@@ -80,10 +81,10 @@ public abstract class AuthenticatingMongoTemplate {
      * @see DB#authenticate(String, char[])
      */
     protected DB database() {
-        if (!database.isAuthenticated() && (userName != null || password != null)) {
-            if (!database.authenticate(userName, password)) {
-                logger.warn("Failed to authenticate user '{}' against database. Incorrect credentials.", userName);
-            }
+        if (!database.isAuthenticated()
+                && (userName != null || password != null)
+                && !database.authenticate(userName, password)) {
+            logger.warn("Failed to authenticate user '{}' against database. Incorrect credentials.", userName);
         }
         return database;
     }

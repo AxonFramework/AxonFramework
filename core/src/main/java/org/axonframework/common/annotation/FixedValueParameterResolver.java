@@ -22,6 +22,7 @@ import org.axonframework.domain.Message;
  * ParameterResolver implementation that injects a fixed value. Useful for injecting parameter values that do not rely
  * on information contained in the incoming message itself.
  *
+ * @param <T> The type of value resolved by this parameter
  * @author Allard Buijze
  * @since 2.0
  */

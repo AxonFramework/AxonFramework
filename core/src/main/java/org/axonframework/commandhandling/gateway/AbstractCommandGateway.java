@@ -32,10 +32,20 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
  */
 public abstract class AbstractCommandGateway {
 
-    protected final CommandBus commandBus;
-    protected final RetryScheduler retryScheduler;
-    protected final List<CommandDispatchInterceptor> dispatchInterceptors;
+    private final CommandBus commandBus;
+    private final RetryScheduler retryScheduler;
+    private final List<CommandDispatchInterceptor> dispatchInterceptors;
 
+
+    /**
+     * Initialize the AbstractCommandGateway with given <code>commandBus</code>, <code>retryScheduler</code> and
+     * <code>commandDispatchInterceptors</code>.
+     *
+     * @param commandBus                  The command bus on which to dispatch events
+     * @param retryScheduler              The scheduler capable of performing retries of failed commands. May be
+     *                                    <code>null</code> when to prevent retries.
+     * @param commandDispatchInterceptors The interceptors to invoke when dispatching a command
+     */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
                                      List<CommandDispatchInterceptor> commandDispatchInterceptors) {
         this.commandBus = commandBus;
@@ -43,6 +53,13 @@ public abstract class AbstractCommandGateway {
         this.retryScheduler = retryScheduler;
     }
 
+    /**
+     * Sends the given <code>command</code>, and invokes the <code>callback</code> when the command is processed.
+     *
+     * @param command  The command to dispatch
+     * @param callback The callback to notify with the processing result
+     * @param <R>      The type of response expected from the command
+     */
     protected <R> void send(Object command, CommandCallback<R> callback) {
         CommandMessage commandMessage = processInterceptors(asCommandMessage(command));
         CommandCallback<R> commandCallback = callback;
@@ -52,6 +69,12 @@ public abstract class AbstractCommandGateway {
         commandBus.dispatch(commandMessage, commandCallback);
     }
 
+    /**
+     * Invokes all the dispatch interceptors and returns the CommandMessage instance that should be dispatched.
+     *
+     * @param commandMessage The incoming command message
+     * @return The command message to dispatch
+     */
     protected CommandMessage processInterceptors(CommandMessage commandMessage) {
         CommandMessage message = commandMessage;
         for (CommandDispatchInterceptor dispatchInterceptor : dispatchInterceptors) {
@@ -60,6 +83,13 @@ public abstract class AbstractCommandGateway {
         return message;
     }
 
+    /**
+     * Dispatches a command and returns a Future from which the processing results can be retrieved.
+     *
+     * @param command The command to dispatch
+     * @param <R>     The expected result of the command
+     * @return a future providing access to the command's result
+     */
     protected <R> FutureCallback<R> doSend(Object command) {
         FutureCallback<R> futureCallback = new FutureCallback<R>();
         send(command, futureCallback);

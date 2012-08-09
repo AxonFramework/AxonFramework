@@ -99,11 +99,8 @@ public class SimpleEventFileResolver implements EventFileResolver {
     private File getBaseDirForType(String type) throws IOException {
 
         File typeSpecificDir = new File(baseDir, type);
-        if (!typeSpecificDir.exists() && !typeSpecificDir.mkdirs()) {
-            if (!typeSpecificDir.exists()) {
-                throw new EventStoreException(
-                        "The given event store directory doesn't exist and could not be created");
-            }
+        if (!typeSpecificDir.exists() && !typeSpecificDir.mkdirs() && !typeSpecificDir.exists()) {
+            throw new EventStoreException("The given event store directory doesn't exist and could not be created");
         }
         return typeSpecificDir;
     }

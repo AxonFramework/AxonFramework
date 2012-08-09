@@ -44,7 +44,7 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
     /**
      * Creates a new SimpleMessageListenerContainer, initialized with the properties set on this factory.
      *
-     * @param config
+     * @param config The container-specific configuration for the new container
      * @return a fully initialized (but not started!) SimpleMessageListenerContainer instance.
      */
     public SimpleMessageListenerContainer createContainer(SpringAMQPConsumerConfiguration config) {

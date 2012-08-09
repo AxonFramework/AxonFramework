@@ -71,7 +71,7 @@ public class SimpleResourceParameterResolverFactory extends ParameterResolverFac
         return null;
     }
 
-    private static class SimpleResourceParameterResolver implements ParameterResolver {
+    private static final class SimpleResourceParameterResolver implements ParameterResolver {
 
         private final Object resource;
 

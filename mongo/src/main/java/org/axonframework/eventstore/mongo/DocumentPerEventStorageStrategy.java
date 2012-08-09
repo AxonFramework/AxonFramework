@@ -122,7 +122,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
      * @author Jettro Coenradie
      * @since 2.0 (in incubator since 0.7)
      */
-    private static class EventEntry implements SerializedDomainEventData {
+    private static final class EventEntry implements SerializedDomainEventData {
 
         /**
          * Property name in mongo for the Aggregate Identifier.

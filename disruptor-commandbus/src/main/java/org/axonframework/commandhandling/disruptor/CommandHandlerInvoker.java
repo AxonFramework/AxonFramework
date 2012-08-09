@@ -141,7 +141,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      *
      * @param <T> The type of aggregate stored in this repository
      */
-    static class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
+    static final class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
 
         private final EventStore eventStore;
         private final AggregateFactory<T> aggregateFactory;

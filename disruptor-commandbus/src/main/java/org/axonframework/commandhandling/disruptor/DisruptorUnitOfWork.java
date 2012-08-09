@@ -137,7 +137,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
             throw new IllegalStateException(
                     "Cannot register an aggregate if the aggregate type of this Unit of Work hasn't been set.");
         }
-        if (aggregate != null && aggregateRoot != aggregate) {
+        if (aggregate != null && aggregateRoot != aggregate) { // NOSONAR - Intentional equality check
             throw new IllegalArgumentException(
                     "Cannot register more than one aggregate in this Unit Of Work. Either ensure each command "
                             + "executes against at most one aggregate, or use another Command Bus implementation.");

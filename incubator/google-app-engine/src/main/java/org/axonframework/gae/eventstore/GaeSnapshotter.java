@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GaeSnapshotter implements Snapshotter, InitializingBean, ApplicationContextAware {
 
-    private final static Logger logger = LoggerFactory.getLogger(GaeSnapshotter.class);
+    private static final Logger logger = LoggerFactory.getLogger(GaeSnapshotter.class);
 
     private SnapshotEventStore eventStore;
     private Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();

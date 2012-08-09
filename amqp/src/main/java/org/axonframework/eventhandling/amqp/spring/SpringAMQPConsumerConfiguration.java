@@ -85,8 +85,8 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
      * @return the TransactionManager configured in this instance, or by the default configuration
      */
     public PlatformTransactionManager getTransactionManager() {
-        return transactionManager != null ? transactionManager :
-                defaults == null ? null : defaults.getTransactionManager();
+        return transactionManager != null ? transactionManager
+                : defaults == null ? null : defaults.getTransactionManager();
     }
 
     /**
@@ -111,7 +111,8 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
 
     /**
      * Returns the Prefetch Count configured in this instance, or the one provided by the {@link
-     * #setDefaults(org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration) default configuration} if not explicitly provided.
+     * #setDefaults(org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration)
+     * default configuration} if not explicitly provided.
      *
      * @return the Prefetch Count configured in this instance, or by the default configuration
      */
@@ -147,8 +148,8 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
      * @return the Concurrent Consumers configured in this instance, or by the default configuration
      */
     public Integer getConcurrentConsumers() {
-        return concurrentConsumers != null ? concurrentConsumers :
-                defaults == null ? null : defaults.getConcurrentConsumers();
+        return concurrentConsumers != null ? concurrentConsumers
+                : defaults == null ? null : defaults.getConcurrentConsumers();
     }
 
     /**
@@ -188,8 +189,8 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
      * @return the TransactionAttribute configured in this instance, or by the default configuration
      */
     public TransactionAttribute getTransactionAttribute() {
-        return transactionAttribute != null ? transactionAttribute :
-                defaults == null ? null : defaults.getTransactionAttribute();
+        return transactionAttribute != null ? transactionAttribute
+                : defaults == null ? null : defaults.getTransactionAttribute();
     }
 
     /**
@@ -199,8 +200,8 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
      * @return the MessagePropertiesConverter configured in this instance, or by the default configuration
      */
     public MessagePropertiesConverter getMessagePropertiesConverter() {
-        return messagePropertiesConverter != null ? messagePropertiesConverter :
-                defaults == null ? null : defaults.getMessagePropertiesConverter();
+        return messagePropertiesConverter != null ? messagePropertiesConverter
+                : defaults == null ? null : defaults.getMessagePropertiesConverter();
     }
 
     /**
@@ -231,7 +232,8 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     /**
      * Sets the PlatformTransactionManager to use for the cluster. Setting the transaction manager will also mark
      * used channels as transacted (see
-     * {@link org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setChannelTransacted(boolean)}).
+     * {@link org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setChannelTransacted(boolean)
+     * setChannelTransacted()}).
      *
      * @param transactionManager The transaction manager to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setTransactionManager(org.springframework.transaction.PlatformTransactionManager)

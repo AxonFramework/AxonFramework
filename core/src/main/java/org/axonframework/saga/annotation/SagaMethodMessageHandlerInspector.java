@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> {
 
-    private static final ConcurrentMap<Class<?>, SagaMethodMessageHandlerInspector> inspectors = new ConcurrentHashMap<Class<?>, SagaMethodMessageHandlerInspector>();
+    private static final ConcurrentMap<Class<?>, SagaMethodMessageHandlerInspector> INSPECTORS = new ConcurrentHashMap<Class<?>, SagaMethodMessageHandlerInspector>();
 
     private final Set<SagaMethodMessageHandler> handlers = new TreeSet<SagaMethodMessageHandler>();
     private final Class<T> sagaType;
@@ -51,10 +51,10 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     @SuppressWarnings("unchecked")
     public static <T extends AbstractAnnotatedSaga> SagaMethodMessageHandlerInspector<T> getInstance(
             Class<T> sagaType) {
-        SagaMethodMessageHandlerInspector<T> sagaInspector = inspectors.get(sagaType);
+        SagaMethodMessageHandlerInspector<T> sagaInspector = INSPECTORS.get(sagaType);
         if (sagaInspector == null) {
             sagaInspector = new SagaMethodMessageHandlerInspector<T>(sagaType);
-            inspectors.putIfAbsent(sagaType, sagaInspector);
+            INSPECTORS.putIfAbsent(sagaType, sagaInspector);
         }
         return sagaInspector;
     }

@@ -129,7 +129,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
      * @author Jettro Coenradie
      * @since 2.0 (in incubator since 0.7)
      */
-    private static class CommitEntry {
+    private static final class CommitEntry {
 
         private static final String AGGREGATE_IDENTIFIER_PROPERTY = "aggregateIdentifier";
         private static final String SEQUENCE_NUMBER_PROPERTY = "sequenceNumber";
@@ -315,7 +315,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
     /**
      * Represents an entry for a single event inside a commit
      */
-    private static class EventEntry {
+    private static final class EventEntry {
 
         private static final String SERIALIZED_PAYLOAD_PROPERTY = "serializedPayload";
         private static final String PAYLOAD_TYPE_PROPERTY = "payloadType";

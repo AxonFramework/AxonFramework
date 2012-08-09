@@ -9,7 +9,7 @@ public interface AMQPConsumerConfiguration {
      * The key of the property in the Cluster Meta Data that reflects the AMQPConsumerConfiguration instance for that
      * cluster
      */
-    public static final String AMQP_CONFIG_PROPERTY = "AMQP.Config";
+    String AMQP_CONFIG_PROPERTY = "AMQP.Config";
 
     /**
      * Returns the Queue Name the Cluster should be connected to, or <code>null</code> if no explicit cluster is

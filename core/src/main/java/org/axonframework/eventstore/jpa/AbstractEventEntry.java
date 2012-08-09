@@ -198,11 +198,10 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
 
         @Override
         public String toString() {
-            return "PK{" +
-                    "type='" + type + '\'' +
-                    ", aggregateIdentifier='" + aggregateIdentifier + '\'' +
-                    ", sequenceNumber=" + sequenceNumber +
-                    '}';
+            return "PK{type='" + type + '\''
+                    + ", aggregateIdentifier='" + aggregateIdentifier + '\''
+                    + ", sequenceNumber=" + sequenceNumber
+                    + '}';
         }
     }
 }

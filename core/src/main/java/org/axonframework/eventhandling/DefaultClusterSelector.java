@@ -16,11 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.ClusterSelector;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.SimpleCluster;
-
 /**
  * ClusterSelector implementation that always selects the same cluster. This implementation
  * can serve as delegate for other cluster selectors for event listeners that do not belong to a specific cluster.
@@ -33,8 +28,8 @@ public class DefaultClusterSelector implements ClusterSelector {
     private final Cluster defaultCluster;
 
     /**
-     * Initializes the DefaultClusterSelector using a {@link org.axonframework.eventhandling.SimpleCluster}, to which this instance will assign all
-     * Event Listeners.
+     * Initializes the DefaultClusterSelector using a {@link org.axonframework.eventhandling.SimpleCluster}, to which
+     * this instance will assign all Event Listeners.
      */
     public DefaultClusterSelector() {
         this.defaultCluster = new SimpleCluster();

@@ -104,6 +104,14 @@ public abstract class AbstractSagaRepository implements SagaRepository {
         return typeOf(saga.getClass());
     }
 
+    /**
+     * Finds the identifiers of the sagas of given <code>type</code> associated with the given
+     * <code>associationValue</code>.
+     *
+     * @param type             The type of saga to find identifiers for
+     * @param associationValue The value the saga must be associated with
+     * @return The identifiers of sagas associated with the given <code>associationValue</code>
+     */
     protected abstract Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type,
                                                                  AssociationValue associationValue);
 

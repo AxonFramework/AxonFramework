@@ -97,11 +97,7 @@ public class IdentifierBasedLock {
             throw new LockAcquisitionFailedException("No lock for this identifier was ever obtained");
         }
         DisposableLock lock = lockFor(identifier);
-        try {
-            lock.unlock(identifier);
-        } catch (IllegalMonitorStateException e) {
-            throw new LockAcquisitionFailedException("Could not release this lock", e);
-        }
+        lock.unlock(identifier);
     }
 
     private boolean isLockAvailableFor(String identifier) {
@@ -190,8 +186,10 @@ public class IdentifierBasedLock {
 
     private final class PubliclyOwnedReentrantLock extends ReentrantLock {
 
+        private static final long serialVersionUID = -2259228494514612163L;
+
         @Override
-        public Collection<Thread> getQueuedThreads() {
+        public Collection<Thread> getQueuedThreads() { // NOSONAR
             return super.getQueuedThreads();
         }
 

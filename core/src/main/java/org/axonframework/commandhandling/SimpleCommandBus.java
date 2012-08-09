@@ -222,7 +222,7 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param <R> The return type expected
      */
-    private static class LogErrorCallback<R> implements CommandCallback<R> {
+    private static final class LogErrorCallback<R> implements CommandCallback<R> {
 
         private final CommandMessage<?> command;
 

@@ -136,10 +136,10 @@ public class DistributedCommandBus implements CommandBus {
      * method. Doing so may result in commands not being intercepted at all while replacing the interceptors. Once this
      * operation returns, all commands are guaranteed to be processed by the given interceptors.
      *
-     * @param dispatchInterceptors The interceptors to intercepts commands with
+     * @param newDispatchInterceptors The interceptors to intercepts commands with
      */
-    public void setCommandDispatchInterceptors(Collection<CommandDispatchInterceptor> dispatchInterceptors) {
+    public void setCommandDispatchInterceptors(Collection<CommandDispatchInterceptor> newDispatchInterceptors) {
         this.dispatchInterceptors.clear();
-        this.dispatchInterceptors.addAll(dispatchInterceptors);
+        this.dispatchInterceptors.addAll(newDispatchInterceptors);
     }
 }

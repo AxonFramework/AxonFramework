@@ -42,7 +42,7 @@ public final class MethodMessageHandlerInspector {
     private final Class<?> targetType;
     private final SortedSet<MethodMessageHandler> handlers = new TreeSet<MethodMessageHandler>();
 
-    private static final ConcurrentMap<String, MethodMessageHandlerInspector> inspectors =
+    private static final ConcurrentMap<String, MethodMessageHandlerInspector> INSPECTORS =
             new ConcurrentHashMap<String, MethodMessageHandlerInspector>();
 
     /**
@@ -56,10 +56,10 @@ public final class MethodMessageHandlerInspector {
     public static MethodMessageHandlerInspector getInstance(Class<?> handlerClass,
                                                             Class<? extends Annotation> annotationType) {
         String key = annotationType.getName() + "@" + handlerClass.getName();
-        MethodMessageHandlerInspector inspector = inspectors.get(key);
+        MethodMessageHandlerInspector inspector = INSPECTORS.get(key);
         if (inspector == null) {
-            inspectors.putIfAbsent(key, new MethodMessageHandlerInspector(handlerClass, annotationType));
-            inspector = inspectors.get(key);
+            INSPECTORS.putIfAbsent(key, new MethodMessageHandlerInspector(handlerClass, annotationType));
+            inspector = INSPECTORS.get(key);
         }
         return inspector;
     }

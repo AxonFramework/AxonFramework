@@ -24,14 +24,24 @@ import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Class or method level annotation that indicates the calling thread should not wait longer than the provided timeout
+ * for the results of a command.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface Timeout {
 
-    TimeUnit unit() default TimeUnit.MILLISECONDS;
-
+    /**
+     * Indicates the amount of time the dispatching thread may wait for a result.
+     */
     int value();
+
+    /**
+     * Indicates the unit in which the timeout is declared. Defaults to milliseconds.
+     */
+    TimeUnit unit() default TimeUnit.MILLISECONDS;
 }

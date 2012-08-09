@@ -54,7 +54,7 @@ public class AMQPMessage {
      * @param immediate  Whether the message must be delivered immediately (i.e. a Consumer must be connected and
      *                   capable of reading the message right away).
      */
-    public AMQPMessage(byte[] body, String routingKey, AMQP.BasicProperties properties,
+    public AMQPMessage(byte[] body, String routingKey, AMQP.BasicProperties properties, //NOSONAR
                        boolean mandatory, boolean immediate) {
         this.body = body; // NOSONAR
         this.routingKey = routingKey;
@@ -68,8 +68,8 @@ public class AMQPMessage {
      *
      * @return the body of this message
      */
-    public byte[] getBody() { //NOSONAR
-        return body;
+    public byte[] getBody() {
+        return body; //NOSONAR
     }
 
     /**

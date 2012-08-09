@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Wrapper around a map of String to Saga that keeps Weak References to the saga instances. As long as any references to
+ * Wrapper around a map of String to Saga that keeps Weak References to the saga instances. As long as any references
+ * to
  * a Saga exist, this SagaCache will return that instance when it is looked up using its identifier.
  * <p/>
  * When all references to a Saga are cleared, the garbage collector <em>may</em> clear any unreferenced saga instances
@@ -37,7 +38,8 @@ import java.util.concurrent.ConcurrentMap;
  * remove any empty entries, use the {@link #purge()} method. Empty entries are also cleared when accessed (cache
  * misses).
  * <p/>
- * Note that the primary purpose of this cache is <em>not</em> to improve performance, but to prevent multiple instances
+ * Note that the primary purpose of this cache is <em>not</em> to improve performance, but to prevent multiple
+ * instances
  * of the same conceptual saga (i.e. having the same identifier) from being active in the JVM.
  *
  * @author Allard Buijze
@@ -67,7 +69,8 @@ public class SagaCache {
 
     /**
      * Puts the given <code>saga</code> in this cache, if no saga with the same identifier already exists. The return
-     * value provides a reference to the cached saga instance. This may either be the same as <code>saga</code> (in case
+     * value provides a reference to the cached saga instance. This may either be the same as <code>saga</code> (in
+     * case
      * the given saga was successfully stored in the cache), or another instance.
      * <p/>
      * Callers of <code>put</code> should <em>always</em> use the returned reference for further processing and regard
@@ -133,6 +136,14 @@ public class SagaCache {
         return value;
     }
 
+    /**
+     * Returns all sagas contained in the cache of the given type, or a subclass thereof.
+     *
+     * @param type The type of saga to return
+     * @param <T>  The type of saga to return
+     * @return a set of all sagas of given type
+     */
+    @SuppressWarnings("unchecked")
     public <T extends Saga> Set<T> getAll(Class<T> type) {
         Set<T> sagas = new HashSet<T>();
         for (Map.Entry<String, Reference<Saga>> entry : backingCache.entrySet()) {

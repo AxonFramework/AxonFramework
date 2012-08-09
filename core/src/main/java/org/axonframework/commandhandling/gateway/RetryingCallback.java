@@ -29,6 +29,7 @@ import java.util.List;
  * Generally, it is not necessary to use this class directly. It is used by CommandGateway implementations to support
  * retrying of commands.
  *
+ * @param <R> The type of return value expected by the callback
  * @author Allard Buijze
  * @see DefaultCommandGateway
  * @since 2.0
@@ -71,12 +72,12 @@ public class RetryingCallback<R> implements CommandCallback<R> {
     public void onFailure(Throwable cause) {
         history.add(simplify(cause));
         try {
-        if (!(cause instanceof RuntimeException)
-                || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
-                                                 new ArrayList<Class<? extends Throwable>[]>(history),
-                                                 dispatchCommand)) {
-            delegate.onFailure(cause);
-        }
+            if (!(cause instanceof RuntimeException)
+                    || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
+                                                     new ArrayList<Class<? extends Throwable>[]>(history),
+                                                     dispatchCommand)) {
+                delegate.onFailure(cause);
+            }
         } catch (Exception e) {
             delegate.onFailure(e);
         }

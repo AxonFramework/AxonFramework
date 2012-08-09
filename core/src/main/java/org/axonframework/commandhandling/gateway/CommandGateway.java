@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 public interface CommandGateway {
 
     /**
-     * , and have the result of the command's execution reported to the given
+     * Sends the given <code>command</code>, and have the result of the command's execution reported to the given
      * <code>callback</code>.
      * <p/>
      * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the

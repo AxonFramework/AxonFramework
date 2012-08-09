@@ -16,10 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.ClusterSelector;
-import org.axonframework.eventhandling.EventListener;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

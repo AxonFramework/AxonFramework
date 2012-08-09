@@ -167,7 +167,7 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
      *
      * @param defaultConfiguration The configuration instance containing defaults for each registered cluster
      */
-    public void setDefaultConfiguration(SpringAMQPConsumerConfiguration defaultConfiguration) {
+    public synchronized void setDefaultConfiguration(SpringAMQPConsumerConfiguration defaultConfiguration) {
         this.defaultConfiguration = defaultConfiguration;
     }
 }

@@ -71,16 +71,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         return super.find(type, associationValue);
     }
 
-    @Override
-    public void add(Saga saga) {
-        super.add(saga);
-    }
-
-    @Override
-    public void commit(Saga saga) {
-        super.commit(saga);
-    }
-
     @SuppressWarnings({"unchecked"})
     @Override
     protected void removeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
