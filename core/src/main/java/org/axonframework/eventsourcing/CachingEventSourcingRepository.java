@@ -18,7 +18,8 @@ package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
 import org.axonframework.common.NoCache;
-import org.axonframework.repository.LockingStrategy;
+import org.axonframework.repository.LockManager;
+import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
@@ -46,7 +47,20 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory) {
-        super(aggregateFactory, LockingStrategy.PESSIMISTIC);
+        this(aggregateFactory, new PessimisticLockManager());
+    }
+
+    /**
+     * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
+     *
+     * Note that an optimistic locking strategy is not compatible with caching.
+     *
+     * @param aggregateFactory The factory for new aggregate instances
+     * @param lockManager      The lock manager restricting concurrent access to aggregate instances
+     * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
+     */
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, LockManager lockManager) {
+        super(aggregateFactory, lockManager);
     }
 
     /**

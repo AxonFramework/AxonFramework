@@ -57,41 +57,16 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      * @param aggregateType The type of aggregate stored in this repository
      */
     protected LockingRepository(Class<T> aggregateType) {
-        this(aggregateType, LockingStrategy.PESSIMISTIC);
+        this(aggregateType, new PessimisticLockManager());
     }
 
     /**
-     * Initialize the repository with the given <code>lockingStrategy</code>.
-     *
-     * @param aggregateType The type of aggregate stored in this repository
-     * @param lockingStrategy the locking strategy to use
-     */
-    protected LockingRepository(Class<T> aggregateType, LockingStrategy lockingStrategy) {
-        super(aggregateType);
-        switch (lockingStrategy) {
-            case PESSIMISTIC:
-                lockManager = new PessimisticLockManager();
-                break;
-            case OPTIMISTIC:
-                lockManager = new OptimisticLockManager();
-                break;
-            case NO_LOCKING:
-                lockManager = new NullLockManager();
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        String.format("This repository implementation does not support the [%s] locking strategy",
-                                      lockingStrategy.name()));
-        }
-    }
-
-    /**
-     * Utility constructor for testing.
+     * Initialize the repository with the given <code>lockManager</code>.
      *
      * @param aggregateType The type of aggregate stored in this repository
      * @param lockManager the lock manager to use
      */
-    LockingRepository(Class<T> aggregateType, LockManager lockManager) {
+    protected LockingRepository(Class<T> aggregateType, LockManager lockManager) {
         super(aggregateType);
         this.lockManager = lockManager;
     }

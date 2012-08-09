@@ -513,7 +513,8 @@
                     </xsd:attribute>
                     <xsd:attribute name="locking-strategy" use="optional" default="PESSIMISTIC">
                         <xsd:annotation>
-                            <xsd:documentation>The locking strategy used by this repository (default: PESSIMISTIC).
+                            <xsd:documentation>The locking strategy used by this repository (default: PESSIMISTIC). This
+                                value is ignored if a lock-manager is provided.
                             </xsd:documentation>
                         </xsd:annotation>
                         <xsd:simpleType>
@@ -523,6 +524,20 @@
                                 <xsd:enumeration value="NO_LOCKING"/>
                             </xsd:restriction>
                         </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="lock-manager" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>The lock manager used by this repository (defaults to a
+                                PessimisticLockManager instance). Setting a value for this attribute will cause any
+                                value submitted in locking-strategy to be ignored.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.axonframework.repository.LockManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="event-store" use="optional" type="xsd:string">
                         <xsd:annotation>

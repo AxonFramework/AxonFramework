@@ -19,7 +19,8 @@ package org.axonframework.eventsourcing;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.GenericJpaRepository;
-import org.axonframework.repository.LockingStrategy;
+import org.axonframework.repository.LockManager;
+import org.axonframework.repository.NullLockManager;
 
 /**
  * Repository that stores both a (JPA based) relational model of the current state of an aggregate and the events
@@ -61,36 +62,36 @@ public class HybridJpaRepository<T extends EventSourcedAggregateRoot> extends Ge
      */
     public HybridJpaRepository(EntityManagerProvider entityManagerProvider,
                                Class<T> aggregateType, String aggregateTypeIdentifier) {
-        this(entityManagerProvider, aggregateType, aggregateTypeIdentifier, LockingStrategy.NO_LOCKING);
+        this(entityManagerProvider, aggregateType, aggregateTypeIdentifier, new NullLockManager());
     }
 
     /**
      * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> and a locking
-     * mechanism based on the given <code>lockingStrategy</code>.
+     * mechanism based on the given <code>lockManager</code>.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      * @param aggregateType         The type of aggregate stored in this repository.
-     * @param lockingStrategy       The locking strategy to use when loading and storing aggregates
+     * @param lockManager       The locking strategy to use when loading and storing aggregates
      */
     public HybridJpaRepository(EntityManagerProvider entityManagerProvider,
-                               Class<T> aggregateType, LockingStrategy lockingStrategy) {
-        this(entityManagerProvider, aggregateType, aggregateType.getSimpleName(), lockingStrategy);
+                               Class<T> aggregateType, LockManager lockManager) {
+        this(entityManagerProvider, aggregateType, aggregateType.getSimpleName(), lockManager);
     }
 
     /**
      * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> and a locking
-     * mechanism based on the given <code>lockingStrategy</code>.
+     * mechanism based on the given <code>lockManager</code>.
      *
      * @param entityManagerProvider   The EntityManagerProvider providing the EntityManager instance for this
      *                                repository
      * @param aggregateType           The type of aggregate stored in this repository.
      * @param aggregateTypeIdentifier The type identifier to store events with
-     * @param lockingStrategy         The locking strategy to use when loading and storing aggregates
+     * @param lockManager         The locking strategy to use when loading and storing aggregates
      */
     public HybridJpaRepository(EntityManagerProvider entityManagerProvider,
                                Class<T> aggregateType, String aggregateTypeIdentifier,
-                               LockingStrategy lockingStrategy) {
-        super(entityManagerProvider, aggregateType, lockingStrategy);
+                               LockManager lockManager) {
+        super(entityManagerProvider, aggregateType, lockManager);
         this.aggregateTypeIdentifier = aggregateTypeIdentifier;
     }
 

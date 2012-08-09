@@ -21,7 +21,10 @@ import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.LockingStrategy;
+import org.axonframework.repository.LockManager;
+import org.axonframework.repository.NullLockManager;
+import org.axonframework.repository.OptimisticLockManager;
+import org.axonframework.repository.PessimisticLockManager;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -62,6 +65,11 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      * The locking strategy attribute name.
      */
     private static final String LOCKING_STRATEGY_ATTRIBUTE = "locking-strategy";
+
+    /**
+     * The lock manager attribute name
+     */
+    private static final String LOCK_MANAGER_ATTRIBUTE = "lock-manager";
     /**
      * The aggregate root type attribute name.
      */
@@ -84,8 +92,8 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
             repositoryDefinition.setBeanClass(CachingEventSourcingRepository.class);
         } else {
             repositoryDefinition.setBeanClass(EventSourcingRepository.class);
-            parseLockingStrategy(element, repositoryDefinition);
         }
+        parseLockingStrategy(element, repositoryDefinition);
 
         parseAggregateRootType(element, repositoryDefinition);
         parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues(),
@@ -150,9 +158,23 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      *                construct the {@link org.springframework.beans.factory.config.BeanDefinition}.
      */
     private void parseLockingStrategy(Element element, GenericBeanDefinition builder) {
-        if (element.hasAttribute(LOCKING_STRATEGY_ATTRIBUTE)) {
+        if (element.hasAttribute(LOCK_MANAGER_ATTRIBUTE)) {
+            String lockManager = element.getAttribute(LOCK_MANAGER_ATTRIBUTE);
+            builder.getConstructorArgumentValues().addGenericArgumentValue(new RuntimeBeanReference(lockManager));
+        } else if (element.hasAttribute(LOCKING_STRATEGY_ATTRIBUTE)) {
             LockingStrategy strategy = LockingStrategy.valueOf(element.getAttribute(LOCKING_STRATEGY_ATTRIBUTE));
-            builder.getConstructorArgumentValues().addGenericArgumentValue(strategy);
+            LockManager lockManager;
+            switch (strategy) {
+                case NO_LOCKING:
+                    lockManager = new NullLockManager();
+                    break;
+                case OPTIMISTIC:
+                    lockManager = new OptimisticLockManager();
+                    break;
+                default:
+                    lockManager = new PessimisticLockManager();
+            }
+            builder.getConstructorArgumentValues().addGenericArgumentValue(lockManager);
         }
     }
 
@@ -175,5 +197,15 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
             throw new IllegalArgumentException(
                     "No class of name " + aggregateRootTypeString + " was found on the classpath", e);
         }
+    }
+
+    /**
+     * Enum indicating possible locking strategies for repositories.
+     */
+    private static enum LockingStrategy {
+
+        OPTIMISTIC,
+        PESSIMISTIC,
+        NO_LOCKING
     }
 }

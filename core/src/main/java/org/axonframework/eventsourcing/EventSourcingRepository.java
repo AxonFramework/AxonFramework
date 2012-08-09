@@ -23,8 +23,8 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.repository.LockManager;
 import org.axonframework.repository.LockingRepository;
-import org.axonframework.repository.LockingStrategy;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
@@ -83,11 +83,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * Initialize a repository with the given locking strategy.
      *
      * @param aggregateFactory The factory for new aggregate instances
-     * @param lockingStrategy  the locking strategy to apply to this
+     * @param lockManager  the locking strategy to apply to this repository
      */
     public EventSourcingRepository(final AggregateFactory<T> aggregateFactory,
-                                   final LockingStrategy lockingStrategy) {
-        super(aggregateFactory.getAggregateType(), lockingStrategy);
+                                   final LockManager lockManager) {
+        super(aggregateFactory.getAggregateType(), lockManager);
         this.aggregateFactory = aggregateFactory;
     }
 
@@ -96,11 +96,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * instances.
      *
      * @param aggregateType   The type of aggregate to store in this repository
-     * @param lockingStrategy the locking strategy to apply to this
+     * @param lockManager the locking strategy to apply to this
      */
     public EventSourcingRepository(final Class<T> aggregateType,
-                                   final LockingStrategy lockingStrategy) {
-        this(new GenericAggregateFactory<T>(aggregateType), lockingStrategy);
+                                   final LockManager lockManager) {
+        this(new GenericAggregateFactory<T>(aggregateType), lockManager);
     }
 
     /**

@@ -35,7 +35,9 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.LockingStrategy;
+import org.axonframework.repository.LockManager;
+import org.axonframework.repository.OptimisticLockManager;
+import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.repository.Repository;
 import org.junit.*;
 
@@ -102,7 +104,7 @@ public class SynchronousLoopbackTest {
         };
     }
 
-    protected void initializeRepository(LockingStrategy lockingStrategy) {
+    protected void initializeRepository(LockManager lockingStrategy) {
         EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<CountingAggregate>(
                 CountingAggregate.class,
                 lockingStrategy);
@@ -114,7 +116,7 @@ public class SynchronousLoopbackTest {
 
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
-        initializeRepository(LockingStrategy.PESSIMISTIC);
+        initializeRepository(new PessimisticLockManager());
         EventListener el = new EventListener() {
             @Override
             public void handle(EventMessage event) {
@@ -151,7 +153,7 @@ public class SynchronousLoopbackTest {
 
     @Test
     public void testLoopBackKeepsProperEventOrder_OptimisticLocking() throws Throwable {
-        initializeRepository(LockingStrategy.OPTIMISTIC);
+        initializeRepository(new OptimisticLockManager());
         EventListener el = new EventListener() {
             @Override
             public void handle(EventMessage event) {
@@ -188,7 +190,7 @@ public class SynchronousLoopbackTest {
 
     @Test
     public void testLoopBackKeepsProperEventOrder_OptimisticLocking_ProcessingFails() throws Throwable {
-        initializeRepository(LockingStrategy.OPTIMISTIC);
+        initializeRepository(new OptimisticLockManager());
         EventListener el = new EventListener() {
             @Override
             public void handle(EventMessage event) {
@@ -228,7 +230,7 @@ public class SynchronousLoopbackTest {
 
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() throws Throwable {
-        initializeRepository(LockingStrategy.PESSIMISTIC);
+        initializeRepository(new PessimisticLockManager());
         EventListener el = new EventListener() {
             @Override
             public void handle(EventMessage event) {

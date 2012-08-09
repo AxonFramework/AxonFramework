@@ -182,7 +182,7 @@
         </axon:event-processors>
     </axon:event-sourcing-repository>
 
-    <axon:event-sourcing-repository id="testCacheRepository" cache-ref="mockCache"
+    <axon:event-sourcing-repository id="testCacheRepository" cache-ref="mockCache" lock-manager="nullLockManager"
                                     aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
                                     event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver">
         <axon:snapshotter-trigger event-count-threshold="50" snapshotter-ref="snapshotter"/>
@@ -204,6 +204,8 @@
     </bean>
 
     <bean id="conflictResolver" class="org.axonframework.eventsourcing.conflictresolvers.AcceptAllConflictResolver"/>
+
+    <bean id="nullLockManager" class="org.axonframework.repository.NullLockManager"/>
 
     <axon:snapshotter id="snapshotter" event-store="eventStore" transaction-manager="transactionManager"
                       executor="taskExecutor"/>

@@ -51,21 +51,20 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      * @param aggregateType         the aggregate type this repository manages
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType) {
-        this(entityManagerProvider, aggregateType, LockingStrategy.NO_LOCKING);
+        this(entityManagerProvider, aggregateType, new NullLockManager());
     }
 
     /**
      * Initialize a repository  for storing aggregates of the given <code>aggregateType</code> with an additional
-     * <code>
-     * lockingStrategy</code>.
+     * <code> lockManager</code>.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      * @param aggregateType         the aggregate type this repository manages
-     * @param lockingStrategy       the additional locking strategy for this repository
+     * @param lockManager           the additional locking strategy for this repository
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                LockingStrategy lockingStrategy) {
-        super(aggregateType, lockingStrategy);
+                                LockManager lockManager) {
+        super(aggregateType, lockManager);
         this.entityManagerProvider = entityManagerProvider;
     }
 

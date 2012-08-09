@@ -54,7 +54,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     @Test(timeout = 60000)
     public void testPessimisticLocking() throws Throwable {
-        initializeRepository(LockingStrategy.PESSIMISTIC);
+        initializeRepository(new PessimisticLockManager());
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
 
         // with pessimistic locking, all modifications are guaranteed successful
@@ -66,7 +66,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     @Test(timeout = 60000)
     public void testOptimisticLocking() throws Throwable {
         // unfortunately, we cannot use @Before on the setUp, because of the TemporaryFolder
-        initializeRepository(LockingStrategy.OPTIMISTIC);
+        initializeRepository(new OptimisticLockManager());
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
         assertTrue("Expected at least one successful modification. Got " + getSuccessfulModifications(),
                    getSuccessfulModifications() >= 1);
@@ -80,7 +80,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         return CONCURRENT_MODIFIERS - uncaughtExceptions.size();
     }
 
-    private void initializeRepository(LockingStrategy strategy) {
+    private void initializeRepository(LockManager strategy) {
         repository = new EventSourcingRepository<SimpleAggregateRoot>(new SimpleAggregateFactory(), strategy);
         eventStore = new InMemoryEventStore();
         repository.setEventStore(eventStore);
