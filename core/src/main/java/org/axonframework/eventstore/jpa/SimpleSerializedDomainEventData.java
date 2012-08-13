@@ -50,7 +50,7 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
      * @param timestamp           The timestamp of the event (format must be supported by {@link
      *                            DateTime#DateTime(Object)})
      * @param payloadType         The type identifier of the serialized payload
-     * @param payloadRevision     The revision number of the serialized payload
+     * @param payloadRevision     The revision of the serialized payload
      * @param payload             The serialized representation of the event
      * @param metaData            The serialized representation of the meta data
      */

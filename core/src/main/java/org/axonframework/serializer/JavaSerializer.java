@@ -103,16 +103,16 @@ public class JavaSerializer implements Serializer {
     }
 
     /**
-     * Returns the revision number for the given <code>type</code>. The default implementation checks for an {@link
+     * Returns the revision for the given <code>type</code>. The default implementation checks for an {@link
      * Revision @Revision} annotation, and returns <code>0</code> if none was found. This method can be safely
      * overridden by subclasses.
      * <p/>
-     * The revision number is used by upcasters to decide whether they need to process a certain serialized event.
-     * Generally, the revision number needs to be increased each time the structure of an event has been changed in an
+     * The revision is used by upcasters to decide whether they need to process a certain serialized event.
+     * Generally, the revision needs to be increased each time the structure of an event has been changed in an
      * incompatible manner.
      *
-     * @param type The type for which to return the revision number
-     * @return the revision number for the given <code>type</code>
+     * @param type The type for which to return the revision
+     * @return the revision for the given <code>type</code>
      */
     protected String revisionOf(Class<?> type) {
         Revision revision = type.getAnnotation(Revision.class);

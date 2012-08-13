@@ -35,7 +35,7 @@ public class SimpleSerializedType implements SerializedType {
      * Initialize with given <code>objectType</code> and <code>revisionNumber</code>
      *
      * @param objectType     The description of the serialized object's type
-     * @param revisionNumber The revision number of the serialized object's type
+     * @param revisionNumber The revision of the serialized object's type
      */
     public SimpleSerializedType(String objectType, String revisionNumber) {
         Assert.notNull(objectType, "objectType cannot be null");

@@ -23,6 +23,7 @@ import org.axonframework.common.SerializationException;
 import org.axonframework.serializer.AbstractXStreamSerializer;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ConverterFactory;
+import org.axonframework.serializer.RevisionResolver;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 
@@ -40,6 +41,9 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
 
     /**
      * Initialize the serializer with UTF-8 character set and a default XStream serializer.
+     * <p/>
+     * An {@link org.axonframework.serializer.AnnotationRevisionResolver} is used to resolve revision for serialized
+     * objects.
      */
     public DBObjectXStreamSerializer() {
         super(new XStream());
@@ -48,6 +52,9 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     /**
      * Initialize the serializer using the UTF-8 character set. The provided XStream instance  is used to perform
      * the serialization.
+     * <p/>
+     * An {@link org.axonframework.serializer.AnnotationRevisionResolver} is used to resolve the revision for
+     * serialized objects.
      *
      * @param xStream XStream instance to use
      */
@@ -56,8 +63,23 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
+     * Initialize the serializer using the UTF-8 character set. The provided XStream instance  is used to perform
+     * the serialization, while the given <code>revisionResolver</code> is used to resolve the revision of the
+     * serialized object.
+     *
+     * @param xStream          The XStream instance to serialize objects with
+     * @param revisionResolver The instance to resolve revisions with
+     */
+    public DBObjectXStreamSerializer(XStream xStream, RevisionResolver revisionResolver) {
+        super(xStream, revisionResolver);
+    }
+
+    /**
      * Initialize the serializer using the given <code>charset</code>. A default XStream instance (with {@link
      * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
+     * <p/>
+     * An {@link org.axonframework.serializer.AnnotationRevisionResolver} is used to resolve the revision for
+     * serialized objects.
      *
      * @param charset The character set to use
      */
@@ -68,6 +90,9 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     /**
      * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
      * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     * <p/>
+     * An {@link org.axonframework.serializer.AnnotationRevisionResolver} is used to resolve the revision for
+     * serialized objects.
      *
      * @param charset The character set to use
      * @param xStream The XStream instance to use
@@ -77,15 +102,30 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
+     * Initialize the serializer using the given <code>charset</code>, <code>xStream</code> and
+     * <code>revisionResolver</code> instance. The <code>xStream</code> instance is configured with several converters
+     * for the most common types in Axon.
+     *
+     * @param charset          The character set to use
+     * @param xStream          The XStream instance to use
+     * @param revisionResolver The instance to resolve revisions with
+     */
+    public DBObjectXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
+        super(charset, xStream, revisionResolver);
+    }
+
+    /**
      * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
      * given <code>converterFactory</code> instance is used to convert between serialized representation types.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
+     * @param revisionResolver The strategy to use to resolve the revision of an object
      * @param converterFactory The converter factory to provide the converters
      */
-    public DBObjectXStreamSerializer(Charset charset, XStream xStream, ConverterFactory converterFactory) {
-        super(charset, xStream, converterFactory);
+    public DBObjectXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
+                                     ConverterFactory converterFactory) {
+        super(charset, xStream, revisionResolver, converterFactory);
     }
 
     @Override

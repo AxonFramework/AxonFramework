@@ -18,6 +18,8 @@ package org.axonframework.domain;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
+import org.axonframework.serializer.AnnotationRevisionResolver;
+import org.axonframework.serializer.SerialVersionUIDRevisionResolver;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
@@ -42,7 +44,7 @@ public class JavaSerializationTest {
     @Test
     public void testSerialize_XStreamWithPureJavaReflectionProvider() {
         XStream xstream = new XStream(new PureJavaReflectionProvider());
-        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
+        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream, new SerialVersionUIDRevisionResolver());
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(UUID.randomUUID());
         aggregateRoot.doSomething();
@@ -58,7 +60,7 @@ public class JavaSerializationTest {
     @Test
     public void testSerialize_XStreamWithDefaultReflectionProvider() {
         XStream xstream = new XStream();
-        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream);
+        XStreamSerializer serializer = new XStreamSerializer(UTF8, xstream, new AnnotationRevisionResolver());
 
         StubAnnotatedAggregate aggregateRoot = new StubAnnotatedAggregate(UUID.randomUUID());
         aggregateRoot.doSomething();

@@ -65,14 +65,6 @@ public class XStreamSerializerTest {
     }
 
     @Test
-    public void testRevisionNumber_FromSerialVersionUid() throws UnsupportedEncodingException {
-        SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent("name"), byte[].class);
-        assertNotNull(serialized);
-        assertEquals("1", serialized.getType().getRevision());
-        assertEquals(TestEvent.class.getName(), serialized.getType().getName());
-    }
-
-    @Test
     public void testAlias() throws UnsupportedEncodingException {
         testSubject.addAlias("stub", StubDomainEvent.class);
 

@@ -21,6 +21,7 @@ import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import org.axonframework.serializer.AbstractXStreamSerializer;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ConverterFactory;
+import org.axonframework.serializer.RevisionResolver;
 import org.axonframework.serializer.SerializedObject;
 import org.dom4j.Document;
 
@@ -53,6 +54,16 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
+     * Initialize a generic serializer using the UTF-8 character set. A default XStream instance (with {@link
+     * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
+     *
+     * @param revisionResolver The strategy to use to resolve the revision of an object
+     */
+    public XStreamSerializer(RevisionResolver revisionResolver) {
+        this(new XStream(new CompactDriver()), revisionResolver);
+    }
+
+    /**
      * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
      * the serialization.
      *
@@ -63,24 +74,36 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
+     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
+     * the serialization.
+     *
+     * @param xStream          XStream instance to use
+     * @param revisionResolver The strategy to use to resolve the revision of an object
+     */
+    public XStreamSerializer(XStream xStream, RevisionResolver revisionResolver) {
+        super(xStream, revisionResolver);
+    }
+
+    /**
      * Initialize the serializer using the given <code>charset</code>. A default XStream instance (with {@link
      * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
      *
      * @param charset The character set to use
      */
     public XStreamSerializer(Charset charset) {
-        this(charset, new XStream(new CompactDriver()));
+        super(charset, new XStream(new CompactDriver()));
     }
 
     /**
      * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
      * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
      *
-     * @param charset The character set to use
-     * @param xStream The XStream instance to use
+     * @param charset          The character set to use
+     * @param xStream          The XStream instance to use
+     * @param revisionResolver The strategy to use to resolve the revision of an object
      */
-    public XStreamSerializer(Charset charset, XStream xStream) {
-        super(charset, xStream);
+    public XStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
+        super(charset, xStream, revisionResolver);
     }
 
     /**
@@ -90,10 +113,12 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
+     * @param revisionResolver The strategy to use to resolve the revision of an object
      * @param converterFactory The factory providing the converter instances for upcasters
      */
-    public XStreamSerializer(Charset charset, XStream xStream, ConverterFactory converterFactory) {
-        super(charset, xStream, converterFactory);
+    public XStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
+                             ConverterFactory converterFactory) {
+        super(charset, xStream, revisionResolver, converterFactory);
     }
 
     @Override

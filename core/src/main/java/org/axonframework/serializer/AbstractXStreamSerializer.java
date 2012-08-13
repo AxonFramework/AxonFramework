@@ -24,14 +24,13 @@ import com.thoughtworks.xstream.converters.collections.MapConverter;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.Mapper;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.SerializationException;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.joda.time.DateTime;
 
-import java.io.ObjectStreamClass;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -48,51 +47,76 @@ import java.util.UUID;
 public abstract class AbstractXStreamSerializer implements Serializer {
 
     private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
+
     private final XStream xStream;
     private final Charset charset;
-    private ConverterFactory converterFactory;
+    private final RevisionResolver revisionResolver;
+    private final ConverterFactory converterFactory;
+
+    /**
+     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
+     * the serialization.
+     * <p/>
+     * An {@link AnnotationRevisionResolver} is used to resolve the revision for serialized objects.
+     *
+     * @param xStream XStream instance to use
+     */
+    protected AbstractXStreamSerializer(XStream xStream) {
+        this(xStream, new AnnotationRevisionResolver());
+    }
 
     /**
      * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
      * the serialization.
      *
-     * @param xStream XStream instance to use
+     * @param xStream          XStream instance to use
+     * @param revisionResolver The strategy to use to resolve the revision of an object
      */
-    protected AbstractXStreamSerializer(XStream xStream) {
-        this(DEFAULT_CHARSET_NAME, xStream);
+    protected AbstractXStreamSerializer(XStream xStream, RevisionResolver revisionResolver) {
+        this(DEFAULT_CHARSET_NAME, xStream, revisionResolver);
+    }
+
+    /**
+     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
+     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     * <p/>
+     * An {@link AnnotationRevisionResolver} is used to resolve revision for serialized objects.
+     *
+     * @param charset The character set to use
+     * @param xStream The XStream instance to use
+     */
+    protected AbstractXStreamSerializer(Charset charset, XStream xStream) {
+        this(charset, xStream, new AnnotationRevisionResolver(), new ChainingConverterFactory());
     }
 
     /**
      * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
      * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
      *
-     * @param charset The character set to use
-     * @param xStream The XStream instance to use
+     * @param charset          The character set to use
+     * @param xStream          The XStream instance to use
+     * @param revisionResolver The strategy to use to resolve the revision of an object
      */
-    public AbstractXStreamSerializer(Charset charset, XStream xStream) {
-        this(charset, xStream, new ChainingConverterFactory());
+    protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
+        this(charset, xStream, revisionResolver, new ChainingConverterFactory());
     }
 
     /**
-     * Registers any converters that are specific to the type of content written by this serializer.
-     *
-     * @param converterFactory the ConverterFactory to register the converters with
-     */
-    protected abstract void registerConverters(ChainingConverterFactory converterFactory);
-
-    /**
-     * Initialize the serializer using the given <code>charset</code>, <code>xStream</code> instance and
-     * <code>converterFactory</code>. The <code>xStream</code> instance is configured with several converters for the
-     * most common types in Axon.
+     * Initialize the serializer using the given <code>charset</code>, <code>xStream</code> instance,
+     * <code>revisionResolver</code> and <code>converterFactory</code>. The <code>xStream</code> instance is configured
+     * with several converters for the most common types in Axon.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
+     * @param revisionResolver The strategy to use to resolve the revision of an object
      * @param converterFactory The ConverterFactory providing the necessary content converters
      */
-    public AbstractXStreamSerializer(Charset charset, XStream xStream, ConverterFactory converterFactory) {
+    protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
+                                        ConverterFactory converterFactory) {
         this.charset = charset;
         this.xStream = xStream;
         this.converterFactory = converterFactory;
+        this.revisionResolver = revisionResolver;
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
         }
@@ -103,16 +127,23 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
         xStream.alias("domain-event", GenericDomainEventMessage.class);
         xStream.alias("event", GenericEventMessage.class);
+        xStream.alias("command", GenericCommandMessage.class);
 
         // for backward compatibility
         xStream.alias("localDateTime", DateTime.class);
         xStream.alias("dateTime", DateTime.class);
         xStream.alias("uuid", UUID.class);
-        xStream.useAttributeFor("eventRevision", EventMessage.class);
 
         xStream.alias("meta-data", MetaData.class);
         xStream.registerConverter(new MetaDataConverter(xStream.getMapper()));
     }
+
+    /**
+     * Registers any converters that are specific to the type of content written by this serializer.
+     *
+     * @param converterFactory the ConverterFactory to register the converters with
+     */
+    protected abstract void registerConverters(ChainingConverterFactory converterFactory);
 
     @Override
     public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
@@ -165,25 +196,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return getConverterFactory().getConverter(sourceType, targetType).convert(source);
     }
 
-    /**
-     * Returns the revision number for the given <code>type</code>. The default implementation checks for an {@link
-     * Revision @Revision} annotation, and returns <code>0</code> if none was found. This method can be safely
-     * overridden by subclasses.
-     * <p/>
-     * The revision number is used by upcasters to decide whether they need to process a certain serialized event.
-     * Generally, the revision number needs to be increased each time the structure of an event has been changed in an
-     * incompatible manner.
-     *
-     * @param type The type for which to return the revision number
-     * @return the revision number for the given <code>type</code>
-     */
-    protected String revisionOf(Class<?> type) {
-        Revision revision = type.getAnnotation(Revision.class);
-        if (revision != null) {
-            return revision.value();
-        }
-        ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
-        return objectStreamClass == null ? null : Long.toString(objectStreamClass.getSerialVersionUID());
+    private String revisionOf(Class<?> type) {
+        return revisionResolver.revisionOf(type);
     }
 
     /**
@@ -221,7 +235,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
     /**
      * Add an alias for a package. This allows long package names to be shortened considerably. Will also use the alias
-     * for subpackages of the provided package.
+     * for sub-packages of the provided package.
      * <p/>
      * E.g. an alias of "axoncore" for the package "org.axonframework.core" will use "axoncore.repository" for the
      * package "org.axonframework.core.repository".
@@ -283,7 +297,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param type The type to get the type identifier of
      * @return A String containing the type identifier of the given class
      */
-    protected String typeIdentifierOf(Class<?> type) {
+    private String typeIdentifierOf(Class<?> type) {
         return xStream.getMapper().serializedClass(type);
     }
 

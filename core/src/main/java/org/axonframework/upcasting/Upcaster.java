@@ -72,9 +72,9 @@ public interface Upcaster<T> {
 
     /**
      * Upcast the given <code>serializedType</code> into its new format. Generally, this involves increasing the
-     * revision number. Sometimes, it is also necessary to alter the type's name (in case of a renamed class, for
-     * example). The order and the size of the list returned has to match with the order and size of the list of the
-     * upcasted IntermediateRepresentations by this upcaster.
+     * revision. Sometimes, it is also necessary to alter the type's name (in case of a renamed class, for example).
+     * The order and the size of the list returned has to match with the order and size of the list of the upcast
+     * IntermediateRepresentations by this upcaster.
      *
      * @param serializedType The serialized type to upcast
      * @return the upcast serialized type
