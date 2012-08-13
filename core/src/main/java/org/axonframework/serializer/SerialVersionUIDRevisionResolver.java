@@ -25,7 +25,7 @@ import java.io.ObjectStreamClass;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SerialVersionUIDRevisionResolverTemp implements RevisionResolver {
+public class SerialVersionUIDRevisionResolver implements RevisionResolver {
 
     @Override
     public String revisionOf(Class<?> payloadType) {
