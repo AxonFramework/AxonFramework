@@ -11,11 +11,11 @@ import static org.junit.Assert.*;
  */
 public class SerialVersionUIDRevisionResolverTest {
 
-    private SerialVersionUIDRevisionResolver testSubject;
+    private SerialVersionUIDRevisionResolverTemp testSubject;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new SerialVersionUIDRevisionResolver();
+        testSubject = new SerialVersionUIDRevisionResolverTemp();
     }
 
     @Test
