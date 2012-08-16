@@ -63,7 +63,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     private CountingEventBus eventBus;
     private StubHandler stubHandler;
     private InMemoryEventStore inMemoryEventStore;
-    private DisruptorCommandBus<StubAggregate> testSubject;
+    private DisruptorCommandBus testSubject;
     private String[] aggregateIdentifier;
 
     @Before
@@ -85,7 +85,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     @SuppressWarnings("unchecked")
     @Test//(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Throwable {
-        testSubject = new DisruptorCommandBus<StubAggregate>(
+        testSubject = new DisruptorCommandBus(
                 inMemoryEventStore, eventBus,
                 new DisruptorConfiguration().setClaimStrategy(new MultiThreadedClaimStrategy(4))
                                             .setWaitStrategy(new SleepingWaitStrategy())

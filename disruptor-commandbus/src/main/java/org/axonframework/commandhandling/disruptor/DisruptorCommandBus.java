@@ -94,11 +94,10 @@ import java.util.concurrent.Executors;
  * this method severely impacts overall performance of the DisruptorCommandBus. A better performing alternative is, for
  * example, <a href="http://johannburkard.de/software/uuid/" target="_blank"><code>com.eaio.uuid.UUID</code></a>
  *
- * @param <T> The type of aggregate for which commands are handled by this Command Bus.
  * @author Allard Buijze
  * @since 2.0
  */
-public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements CommandBus {
+public class DisruptorCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
@@ -219,8 +218,8 @@ public class DisruptorCommandBus<T extends EventSourcedAggregateRoot> implements
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
         event.reset(command, commandHandlers.get(command.getPayloadType()), invokerSegment, publisherSegment,
-                    new BlacklistDetectingCallback<T, R>(callback, command, disruptor.getRingBuffer(), this,
-                                                         rescheduleOnCorruptState),
+                    new BlacklistDetectingCallback<R>(callback, command, disruptor.getRingBuffer(), this,
+                                                      rescheduleOnCorruptState),
                     invokerInterceptors, publisherInterceptors);
         ringBuffer.publish(sequence);
     }

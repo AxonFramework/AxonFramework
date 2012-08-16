@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.RingBuffer;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ import org.slf4j.LoggerFactory;
  * @author Allard Buijze
  * @since 2.0
  */
-public class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
+public class BlacklistDetectingCallback<R>
         implements CommandCallback<R> {
 
     private static final Logger logger = LoggerFactory.getLogger(BlacklistDetectingCallback.class);
@@ -40,7 +39,7 @@ public class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
     private final CommandCallback<R> delegate;
     private final CommandMessage command;
     private final RingBuffer<CommandHandlingEntry> ringBuffer;
-    private final DisruptorCommandBus<T> commandBus;
+    private final DisruptorCommandBus commandBus;
     private boolean rescheduleOnCorruptState;
 
     /**
@@ -60,7 +59,7 @@ public class BlacklistDetectingCallback<T extends EventSourcedAggregateRoot, R>
      */
     public BlacklistDetectingCallback(CommandCallback<R> delegate, CommandMessage command,
                                       RingBuffer<CommandHandlingEntry> ringBuffer,
-                                      DisruptorCommandBus<T> commandBus, boolean rescheduleOnCorruptState) {
+                                      DisruptorCommandBus commandBus, boolean rescheduleOnCorruptState) {
         this.delegate = delegate;
         this.command = command;
         this.ringBuffer = ringBuffer;

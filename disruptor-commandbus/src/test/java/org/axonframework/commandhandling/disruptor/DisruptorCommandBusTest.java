@@ -75,7 +75,7 @@ public class DisruptorCommandBusTest {
     private CountingEventBus eventBus;
     private StubHandler stubHandler;
     private InMemoryEventStore inMemoryEventStore;
-    private DisruptorCommandBus<StubAggregate> testSubject;
+    private DisruptorCommandBus testSubject;
     private String aggregateIdentifier;
 
     @Before
@@ -101,7 +101,7 @@ public class DisruptorCommandBusTest {
         CommandDispatchInterceptor mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
         when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new FirstParameter());
         ExecutorService customExecutor = Executors.newCachedThreadPool();
-        testSubject = new DisruptorCommandBus<StubAggregate>(
+        testSubject = new DisruptorCommandBus(
                 inMemoryEventStore, eventBus,
                 new DisruptorConfiguration().setInvokerInterceptors(Arrays.asList(mockHandlerInterceptor))
                                             .setDispatchInterceptors(Arrays.asList(mockDispatchInterceptor))
@@ -139,7 +139,10 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        InOrder inOrder = inOrder(mockDispatchInterceptor, mockHandlerInterceptor, mockUnitOfWorkListener, mockCallback);
+        InOrder inOrder = inOrder(mockDispatchInterceptor,
+                                  mockHandlerInterceptor,
+                                  mockUnitOfWorkListener,
+                                  mockCallback);
         inOrder.verify(mockDispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(mockHandlerInterceptor).handle(any(CommandMessage.class),
                                                       any(UnitOfWork.class),
@@ -189,7 +192,7 @@ public class DisruptorCommandBusTest {
                                              GenericCommandMessage<ErrorCommand> errorCommand)
             throws Throwable {
         inMemoryEventStore.storedEvents.clear();
-        testSubject = new DisruptorCommandBus<StubAggregate>(
+        testSubject = new DisruptorCommandBus(
                 inMemoryEventStore, eventBus,
                 new DisruptorConfiguration().setInvokerInterceptors(Arrays.asList(mockInterceptor))
                                             .setClaimStrategy(new MultiThreadedClaimStrategy(8))
@@ -239,12 +242,12 @@ public class DisruptorCommandBusTest {
         inMemoryEventStore.storedEvents.clear();
         eventBus = mock(CountingEventBus.class);
 
-        testSubject = new DisruptorCommandBus<StubAggregate>(inMemoryEventStore, eventBus,
-                                                             new DisruptorConfiguration()
-                                                                     .setClaimStrategy(new SingleThreadedClaimStrategy(8))
-                                                                     .setWaitStrategy(new SleepingWaitStrategy())
-                                                                     .setInvokerThreadCount(2)
-                                                                     .setPublisherThreadCount(3));
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus,
+                                              new DisruptorConfiguration()
+                                                      .setClaimStrategy(new SingleThreadedClaimStrategy(8))
+                                                      .setWaitStrategy(new SleepingWaitStrategy())
+                                                      .setInvokerThreadCount(2)
+                                                      .setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class, stubHandler);
         testSubject.subscribe(CreateCommand.class, stubHandler);
         testSubject.subscribe(ErrorCommand.class, stubHandler);
@@ -266,10 +269,7 @@ public class DisruptorCommandBusTest {
 
     @Test(expected = IllegalStateException.class)
     public void testCommandRejectedAfterShutdown() throws InterruptedException {
-        testSubject = new DisruptorCommandBus<StubAggregate>(
-                inMemoryEventStore,
-                eventBus
-        );
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus);
         testSubject.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
@@ -280,10 +280,7 @@ public class DisruptorCommandBusTest {
 
     @Test
     public void testCommandProcessedAndEventsStored() throws InterruptedException {
-        testSubject = new DisruptorCommandBus<StubAggregate>(
-                inMemoryEventStore,
-                eventBus
-        );
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus);
         testSubject.subscribe(StubCommand.class, stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
@@ -303,10 +300,7 @@ public class DisruptorCommandBusTest {
     @Test(timeout = 10000)
     public void testCommandsAgainstInexistentAggregatesOnlyRetriedOnce() throws Throwable {
         inMemoryEventStore.storedEvents.clear();
-        testSubject = new DisruptorCommandBus<StubAggregate>(
-                inMemoryEventStore,
-                eventBus
-        );
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         StubHandler spy = spy(stubHandler);
