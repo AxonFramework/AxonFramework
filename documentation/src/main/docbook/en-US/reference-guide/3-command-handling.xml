@@ -41,6 +41,140 @@
     <para>The next sections provide an overview of the tasks related to creating a Command
         Handling infrastructure with the Axon Framework.
     </para>
+    <sect1>
+        <title>The Command Gateway</title>
+        <para>The Command Gateway is a conventient interface towards the Command dispatching
+            mechanism. While you are not required to use a Gateway to dispatch Commands, it is
+            generally the easiest option to do so. </para>
+        <para>There are two ways to use a CommandGateway. The first is to use the
+                <code>CommandGateway</code> interface and <code>DefaultCommandGateway</code>
+            implementation provided by Axon. The command gateway provides a number of methods that
+            allow you to send a command and wait for a result either synchronously, with a timeout
+            or asynchronously.</para>
+        <para>The other option is perhaps the most flexible of all. You can turn almost any
+            interface into a Command Gateway using the <code>GatewayProxyFactory</code>. This allows
+            you to define your application's interface using strong typing and declaring your own
+            (checked) business exceptions.</para>
+        <sect2>
+            <title>Configuring the CommandGateway</title>
+            <para>Independent of the whether a custom gateway or the one provided by Axon is used,
+                it needs to be configured with at least access to the Command Bus. In addition, the
+                CommandGateway can be configured with a <code>RetryScheduler</code> and any number
+                of <code>CommandDispatchInterceptor</code>s.</para>
+            <para>The <code>RetryScheduler</code> is capable of scheduling retries when command
+                execution has failed. The IntervalRetryScheduler is an implementation that will
+                retry a given command at set intervals until it succeeds, or a maximum number of
+                retries is done. When a command fails due to an exception that is explicitly
+                non-transient, no retries are done at all. Note that the retry scheduler is only
+                invoked when a command fails due to a RuntimeException. Checked exceptions are
+                regarded "business exception" and will never trigger a retry.</para>
+            <para><code>CommandDispatchInterceptor</code>s allow modification of
+                    <code>CommandMessage</code>s prior to dispatching them to the Command Bus. In
+                contrast to <code>CommandDispatchInterceptor</code>s configured on the CommandBus,
+                these interceptors are only invoked when messages are sent through this gateway. The
+                interceptors can be used to attach meta data to a command or do validation, for
+                example.</para>
+        </sect2>
+        <sect2>
+            <title>Creating a Custom CommandGateway</title>
+            <para>The GatewayProxyFactory creates an instance of a CommandGateway based on an
+                interface class. The behavior of each method is based on the parameter types, return
+                type and declared exception. Using this gateway is not only convenient, it makes
+                testing a lot easier by allowing you to mock your interface where needed.</para>
+            <para>This is how parameter affect the behavior of the CommandGateway:</para>
+            <itemizedlist>
+                <listitem>
+                    <para>The first parameter is expected to be the actual command object to
+                        dispatch.</para>
+                </listitem>
+                <listitem>
+                    <para>Parameters annotated with <code>@MetaData</code> will have their value
+                        assigned to the meta data field with the identifier passed as annotation
+                        parameter</para>
+                </listitem>
+                <listitem>
+                    <para>The last two parameters may be of types <code>long</code> (or
+                            <code>int</code>) and <code>TimeUnit</code>. In that case the method
+                        will block at most as long as these parameters indicate. How the method
+                        reacts on a timeout depends on the exceptions declared on the method (see
+                        below). Note that if other properties of the method prevent blocking
+                        altogether, a timeout will enver occur.</para>
+                </listitem>
+            </itemizedlist>
+            <para>The declared return value of a method will also affect its behavior:</para>
+            <itemizedlist>
+                <listitem>
+                    <para>A <code>void</code> return type will cause the method to return
+                        immediately, unless there are other indications on the method that one would
+                        want to wait, such as a timeout or declared exceptions.</para>
+                </listitem>
+                <listitem>
+                    <para>A Future return type will cause the method to return immediately. You can
+                        access the result of the Command Handler using the Future instance returned
+                        from the method. Exceptions and timeouts declared on the method are
+                        ignored.</para>
+                </listitem>
+                <listitem>
+                    <para>Any other return type will cause the method to block until a result is
+                        available. The result is cast to the return type (causing a
+                        ClassCastException if the types don't match).</para>
+                </listitem>
+            </itemizedlist>
+            <para>Exceptions have the following effect:</para>
+            <itemizedlist>
+                <listitem>
+                    <para>Any declared checked exception will be thrown if the Command Handler (or
+                        an interceptor) threw an exceptions of that type. If a checked exception is
+                        thrown that has not been declared, it is wrapped in a
+                            <code>CommandExecutionException</code>.</para>
+                </listitem>
+                <listitem>
+                    <para>When a timeout occurs, the default behavior is to return null from the
+                        method. This can be changed by declaring a TimeoutException. If this
+                        exception is declared, a TimeoutException is thrown instead.</para>
+                </listitem>
+                <listitem>
+                    <para>When a Thread is interrupted while waiting for a result, the default
+                        behavior is to return null. In that case, the interrupted flag is set back
+                        on the Thread. By declaring an InterruptedException on the method, this
+                        behavior is changed to throw that exception instead. The interrupt flag is
+                        removed when the exception is thrown, consistent with the java
+                        specification.</para>
+                </listitem>
+                <listitem>
+                    <para>Other Runtime Exceptions may be declared on the method, but will not have
+                        any effect other than clarification to the API user.</para>
+                </listitem>
+            </itemizedlist>
+            <para>Finaly, there is the possiblity to use annotations:</para>
+            <itemizedlist>
+                <listitem>
+                    <para>As specified in the parameter section, the <code>@MetaData</code>
+                        annotation on a parameter will have the value of that parameter added as
+                        meta data value. The key of the meta data entry is provided as parameter to
+                        the annotation.</para>
+                </listitem>
+                <listitem>
+                    <para>Methods annotated with <code>@Timeout</code> will block at most the
+                        indicated amount of time. This annotation is ignored if the method declares
+                        timeout parameters.</para>
+                </listitem>
+                <listitem>
+                    <para>Classes annotated with <code>@Timeout</code> will cause all methods
+                        declared in that class to block at most the indicated amount of time, unless
+                        they are annotated with their own <code>@Timeout</code> annotation or
+                        specify timeout parameters.</para>
+                </listitem>
+            </itemizedlist>
+            <simplesect>
+                <title>Configuring a custom Command Gateway Spring</title>
+                <para>When using Spring, the easiest way to create a custom Command Gateway is by
+                    using the <code>CommandGatewayFactoryBean</code>. It uses setter injection,
+                    making it easier to configure. Only the "commandBus" property is
+                    mandatory.</para>
+            </simplesect>
+        </sect2>
+    </sect1>
     <sect1 xml:id="command-bus">
         <title>The Command Bus</title>
         <para>The Command Bus is the mechanism that dispatches commands to their respective Command
@@ -70,23 +204,6 @@
                 asynchronous, it will return immediately after the command has been successfully
                 dispatched. Your application will just have to guarantee that the command is
                 processed and with "positive outcome", sooner or later... </para>
-            <simplesect>
-                <title>CommandTemplate</title>
-                <para>In many cases, however, your application will want to be able to wait for the
-                    result of a command. Especially in the cases where guarantees are more important
-                    than scalability and the user interface needs the outcome of the command. In
-                    such case, you can choose to use the <code>FutureCallback</code>, or the simpler
-                    alternative: the <code>CommandTemplate</code>. </para>
-                <para>The <code>CommandTemplate</code> wraps a <code>CommandBus</code> and allows
-                    some "send and wait" type operations to be executed using a single method call.
-                    Some methods allow you to specify a timeout. If no response has been received
-                    before the timeout has expired, an exception is thrown. Note that the time
-                    starts counting when the <code>dispatch</code> method of the
-                        <code>CommandBus</code> has returned. In the case of the
-                        <code>SimpleCommandBus</code>, timeouts are ignored, since the
-                        <code>dispatch</code> method only returns <emphasis>after</emphasis> the
-                    callbacks have been notified. </para>
-            </simplesect>
         </sect2>
         <sect2>
             <title>SimpleCommandBus</title>
@@ -124,23 +241,21 @@
                     >http://code.google.com/p/disruptor</link>), a small framework for concurrent
                 programming, to achieve much better performance, by just taking a different approach
                 to multithreading. Instead of doing the processing in the calling thread, the tasks
-                are handed of to two threads, that each take care of a part of the processing. The
-                first thread will pre-load the aggregate for the Command Handler. The second thread
-                will execute the command handler, changing an aggregate's state. The last thread
-                will store and publish the events to the Event Store and Event Bus. </para>
+                are handed of to two groups of threads, that each take care of a part of the
+                processing. The first group of threads will execute the command handler, changing an
+                aggregate's state. The second group will store and publish the events to the Event
+                Store and Event Bus. </para>
             <para>While the <code>DisruptorCommandBus</code> easily outperforms the
                     <code>SimpleCommandBus</code> by a factor 4(!), there are a few limitations: <itemizedlist>
                     <listitem>
-                        <para>You can publish commands targeting a single Aggregate class, and this
-                            must be an Event Sourced Aggregate. The reason is that this Command Bus
-                            also acts as a Repository for the aggreates processed by the Disruptor.
-                        </para>
+                        <para>The DisruptorCommandBus only supports Event Sourced Aggregates. This
+                            Command Bus also acts as a Repository for the aggreates processed by the
+                            Disruptor. To get a reference to the Repository, use
+                                <code>createRepository(AggregateFactory)</code>.</para>
                     </listitem>
                     <listitem>
                         <para>A Command can only result in a state change in a single aggregate
-                            instance. This limitation allows the Disruptor to optimize the loading
-                            of the aggregate, which actually happens before the Command Handler is
-                            being invoked. </para>
+                            instance. </para>
                     </listitem>
                     <listitem>
                         <para>Commands should generally not cause a failure that requires a rollback
@@ -157,8 +272,7 @@
                             creating command to wait for the aggregate being created. It shouldn't
                             take more than a few milliseconds. </para>
                     </listitem>
-                </itemizedlist>
-            </para>
+                </itemizedlist></para>
             <simplesect>
                 <title>Configuring the DisruptorCommandBus</title>
                 <para>The DisruptorCommandBus is part of the
@@ -182,9 +296,10 @@
                         <listitem>
                             <para>ClaimStrategy: Sets the ClaimStrategy instance, which defines how
                                 a Thread dispatching a command can claim a "position" in the
-                                DisruptorCommandBus. Defaults to a MultiThreadedClaimStrategy with
-                                4096 positions, which is safe to use when multiple threads can
-                                publish to the CommandBus.</para>
+                                DisruptorCommandBus. Defaults to a
+                                    <code>MultiThreadedClaimStrategy</code> with 4096 positions,
+                                which is safe to use when multiple threads can publish to the
+                                CommandBus.</para>
                         </listitem>
                         <listitem>
                             <para>WaitStrategy: The strategy to use when the processor threads (the
@@ -250,6 +365,16 @@
                                 DisruptorEventBus is processing an Aggregate, it reuses that
                                 reference, avoiding any cache uses. By default, no cache is
                                 used.</para>
+                        </listitem>
+                        <listitem>
+                            <para>InvokerThreadCount: The number of threads to assign to the
+                                invocation of command handlers. A good starting point is half the
+                                number of cores in the machine.</para>
+                        </listitem>
+                        <listitem>
+                            <para>PublisherThreadCount: The number of threads to use to publish
+                                events. A good starting point is half the number of cores, and could
+                                be increased if a lot of time is spent in IO.</para>
                         </listitem>
                     </itemizedlist></para>
             </simplesect>
@@ -508,106 +633,103 @@ try {
         </simplesect>
     </sect1>
     <sect1 xml:id="command-handler-interceptors">
-        <title>Command Handler Interceptors</title>
+        <title>Command Interceptors</title>
         <para>One of the advantages of using a command bus is the ability to undertake action based
             on all incoming commands. Examples are logging or authentication, which you might want
-            to do regardless of the type of command. This is done using Command Handler
-            Interceptors. These interceptors can take action both before and after command
-            processing. Interceptors can even block command processing altogether, for example for
-            security reasons.
-        </para>
-        <para>Interceptors must implement the <code>CommandHandlerInterceptor</code> interface. This
-            interface declares one method, <code>handle</code>, that takes three parameters: the
-            command message, the current <code>UnitOfWork</code> and an
-                <code>InterceptorChain</code>. The <code>InterceptorChain</code> is used to continue
-            the dispatching process. </para>
-        <sect2 xml:id="transactional-interceptor">
-            <title>Transaction management</title>
-            <para>The command handling process can be considered an atomic procedure; it should
-                either be processed entirely, or not at all. Axon Framework uses the Unit Of Work to
-                track actions performed by the command handlers. After the command handler
-                completed, Axon will try to commit the actions registered with the Unit Of Work.
-                This involves storing modified aggregates (see <xref linkend="domain-modeling"/>) in
-                their respective repository (see <xref linkend="repositories-and-event-stores"/>)
-                and publishing events on the Event Bus (see <xref linkend="event-processing"/>). </para>
-            <para>The Unit Of Work, however, it is not a replacement for a transaction. The Unit Of
-                Work only ensures that changes made to aggregates are stored upon successful
-                execution of a command handler. If an error occurs while storing an aggregate, any
-                aggregates already stored are not rolled back. If this is important to your
-                application, consider using a Transaction Interceptor on the command bus that
-                attaches a transaction to the Unit of Work.
-            </para>
-            <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses Spring's
-                    <code>PlatformTransactionManager</code> to manage the actual transactions. A
-                transaction is committed after a successful commit of the Unit of Work, or rolled
-                back as the Unit of Work is rolled back. </para>
+            to do regardless of the type of command. This is done using Interceptors. </para>
+        <para>The are two types of interceptors: Command Dispatch Interceptors and Command Handler
+            Interceptors. The former are invoked before a command is dispatched to a Command
+            Handler. At that point, it may not even be sure that any handler exists for that
+            command. The latter are invoked just before the Command Handler is invoked.</para>
+        <sect2>
+            <title>Command Dispatch Interceptors</title>
+            <para>Command Dispatch Interceptors are invoked when a command is dispatched on a
+                Command Bus. The have the ability to alter the Command Message, by adding Meta Data,
+                for example, or block the command by throwing an Exception. The interceptors are
+                always invoked on the thread that dispatches the Command.</para>
+            <sect3>
+                <title>Structural validation</title>
+                <para>There is no point in processing a command if it does not contain all required
+                    information in the correct format. In fact, a command that lacks information
+                    should be blocked as early as possible, preferably even before any transaction
+                    is started. Therefore, an interceptor should check all incoming commands for the
+                    availability of such information. This is called structural validation. </para>
+                <para>Axon Framework has support for JSR 303 Bean Validation based validation. This
+                    allows you to annotate the fields on commands with annotations like
+                        <code>@NotEmpty</code> and<code>@Pattern</code>. You need to include a JSR
+                    303 implementation (such as Hibernate-Validator) on your classpath. Then,
+                    configure a <code>BeanValidationInterceptor</code> on your Command Bus, and it
+                    will automatically find and configure your validator implementation. While it
+                    uses sensible defaults, you can fine-tune it to your specific needs. <tip>
+                        <para>You want to spend as less resources on an invalid command as possible.
+                            Therefore, this interceptor is generally placed in the very front of the
+                            interceptor chain. In some cases, a Logging or Auditing interceptor
+                            might need to be placed in front, with the validating interceptor
+                            immediately following it. Transaction Management is better done after
+                            structural validation, as it often requires remote resources. </para>
+                    </tip></para>
+                <para>The BeanValidationInterceptor also implements
+                        <code>CommandHandlerInterceptor</code>, allowing you to configure it as a
+                    Handler Interceptor as well.</para>
+            </sect3>
         </sect2>
         <sect2>
-            <title>Structural validation</title>
-            <para>There is no point in processing a command if it does not contain all required
-                information in the correct format. In fact, a command that lacks information should
-                be blocked as early as possible, preferably even before any transaction is started.
-                Therefore, an interceptor should check all incoming commands for the availability of
-                such information. This is called structural validation.
-            </para>
-            <para>Axon Framework has support for JSR 303 Bean Validation based validation. This
-                allows you to annotate the fields on commands with annotations like
-                <code>@NotEmpty</code>
-                and<code>@Pattern</code>. You need to include a JSR 303
-                implementation (such as Hibernate-Validator) on your classpath. Then, configure a
-                <code>BeanValidationInterceptor</code>
-                on your Command Bus, and it will
-                automatically find and configure your validator implementation. While it uses
-                sensible defaults, you can fine-tune it to your specific needs.
-                <tip>
-                    <para>You want to spend as less resources on an invalid command as possible.
-                        Therefore, this interceptor is generally placed in the very front of the
-                        interceptor chain. In some cases, a Logging or Auditing interceptor might
-                        need to be placed in front, with the validating interceptor immediately
-                        following it. Transaction Management is better done after structural
-                        validation, as it often requires remote resources.
-                    </para>
-                </tip>
-            </para>
-        </sect2>
-        <sect2 xml:id="auditing-interceptor">
-            <title>Auditing</title>
-            <para>Well designed events will give clear insight in what has happened, when and why.
-                To use the event store as an Audit Trail, which provides insight in the exact
-                history of changes in the system, this information might not be enough. In some
-                cases, you might want to know which user caused the change, using what command, from
-                which machine, etc.
-            </para>
-            <para>The
-                <code>AuditingInterceptor</code>
-                is an interceptor that allows you to attach
-                arbitray information to events just before they are stored or published. The
-                <code>AuditingInterceptor</code>
-                uses an
-                <code>AuditingDataProvider</code>
-                to
-                retrieve the information to attach to these events. You need to provide the
-                implementation of the
-                <code>AuditingDataProvider</code>
-                yourself.
-            </para>
-            <para>An Audit Logger may be configured to write to an audit log. To do so, you can
-                implement the
-                <code>AuditLogger</code>
-                interface and configure it in the
-                <code>AuditingInterceptor</code>. The audit logger is notified both on succesful
-                execution of the command, as well as when execution fails. If you use event
-                sourcing, you should be aware that the event log already contains the exact details
-                of each event. In that case, it could suffice to just log the event identifier or
-                aggregate identifier and sequence number combination.
-            </para>
-            <note>
-                <para>Note that the log method is called in the same thread as the command
-                    processing. This means that logging to slow sources may result in higher
-                    response times for the client. When important, make sure logging is done
-                    asynchronously from the command handling thread.
-                </para>
-            </note>
+            <title>Command Handler Interceptors</title>
+            <para>Command Handler Interceptors can take action both before and after command
+                processing. Interceptors can even block command processing altogether, for example
+                for security reasons. </para>
+            <para>Interceptors must implement the <code>CommandHandlerInterceptor</code> interface.
+                This interface declares one method, <code>handle</code>, that takes three
+                parameters: the command message, the current <code>UnitOfWork</code> and an
+                    <code>InterceptorChain</code>. The <code>InterceptorChain</code> is used to
+                continue the dispatching process. </para>
+            <sect3 xml:id="transactional-interceptor">
+                <title>Transaction management</title>
+                <para>The command handling process can be considered an atomic procedure; it should
+                    either be processed entirely, or not at all. Axon Framework uses the Unit Of
+                    Work to track actions performed by the command handlers. After the command
+                    handler completed, Axon will try to commit the actions registered with the Unit
+                    Of Work. This involves storing modified aggregates (see <xref
+                        linkend="domain-modeling"/>) in their respective repository (see <xref
+                        linkend="repositories-and-event-stores"/>) and publishing events on the
+                    Event Bus (see <xref linkend="event-processing"/>). </para>
+                <para>The Unit Of Work, however, it is not a replacement for a transaction. The Unit
+                    Of Work only ensures that changes made to aggregates are stored upon successful
+                    execution of a command handler. If an error occurs while storing an aggregate,
+                    any aggregates already stored are not rolled back. If this is important to your
+                    application, consider using a Transaction Interceptor on the command bus that
+                    attaches a transaction to the Unit of Work. </para>
+                <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses
+                    Spring's <code>PlatformTransactionManager</code> to manage the actual
+                    transactions. A transaction is committed after a successful commit of the Unit
+                    of Work, or rolled back as the Unit of Work is rolled back. </para>
+            </sect3>
+            <sect3 xml:id="auditing-interceptor">
+                <title>Auditing</title>
+                <para>Well designed events will give clear insight in what has happened, when and
+                    why. To use the event store as an Audit Trail, which provides insight in the
+                    exact history of changes in the system, this information might not be enough. In
+                    some cases, you might want to know which user caused the change, using what
+                    command, from which machine, etc. </para>
+                <para>The <code>AuditingInterceptor</code> is an interceptor that allows you to
+                    attach arbitray information to events just before they are stored or published.
+                    The <code>AuditingInterceptor</code> uses an <code>AuditingDataProvider</code>
+                    to retrieve the information to attach to these events. You need to provide the
+                    implementation of the <code>AuditingDataProvider</code> yourself. </para>
+                <para>An Audit Logger may be configured to write to an audit log. To do so, you can
+                    implement the <code>AuditLogger</code> interface and configure it in the
+                        <code>AuditingInterceptor</code>. The audit logger is notified both on
+                    succesful execution of the command, as well as when execution fails. If you use
+                    event sourcing, you should be aware that the event log already contains the
+                    exact details of each event. In that case, it could suffice to just log the
+                    event identifier or aggregate identifier and sequence number combination. </para>
+                <note>
+                    <para>Note that the log method is called in the same thread as the command
+                        processing. This means that logging to slow sources may result in higher
+                        response times for the client. When important, make sure logging is done
+                        asynchronously from the command handling thread. </para>
+                </note>
+            </sect3>
         </sect2>
     </sect1>
     <sect1>

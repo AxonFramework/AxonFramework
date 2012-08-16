@@ -84,15 +84,23 @@
                 dispatching logic, it will also ensure that aggregates are not concurrently
                 modified.
             </para>
-            <para>You can configure the
-                <code>LockingRepository</code>
-                to use an optimistic locking
+            <para>You can configure the <code>LockingRepository</code> to use an optimistic locking
                 strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
                 the second thread saving an aggregate will receive a
-                <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
+                    <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
                 access to the aggregate alltogether. The pessimistic locking strategy is the default
-                strategy.
-            </para>
+                strategy. A custom locking strategy can be provided by implementing the
+                    <code>LockManager</code> interface.</para>
+            <para>Deadlocks are a common problem when threads use more than one lock to complete
+                their operation. In the case of Sagas, it is not uncommon that a command is
+                dispatched -causing a lock to be acquired-, while still holding a lock on the
+                aggregate that cause the Saga to be invoked. The <code>PessimisticLockManager</code>
+                will automatically detect an imminent deadlock and will throw a
+                    <code>DeadlockException</code> before the deadlock actually occurs. It is safe
+                to retry the operation once all nested Units of Work have been rolled back (to
+                ensure all locks are released). The <code>CommandGateway</code> will not invoke the
+                    <code>RetryScheduler</code> if a <code>DeadlockException</code> occured to
+                prevent a retry before all held locks have been released.</para>
             <para>
                 <warning>
                     <title>Event ordering and optimistic locking strategy</title>
@@ -268,20 +276,17 @@
             provides an implementation of the Event Serializer that serializes events to XML: the
             <code>XStreamSerializer</code>.
         </para>
-        <simplesect>
+        <sect2>
             <title><code>FileSystemEventStore</code>
             </title>
-            <para>The
-                <code>FileSystemEventStore</code>
-                stores the events in a file on the file
+            <para>The <code>FileSystemEventStore</code> stores the events in a file on the file
                 system. It provides good performance and easy configuration. The downside of this
                 event store is that is does not provide transaction support and doesn't cluster very
                 well. The only configuration needed is the location where the event store may store
                 its files and the serializer to use to actually serialize and deserialize the
-                events.
-            </para>
-        </simplesect>
-        <simplesect>
+                events. </para>
+        </sect2>
+        <sect2>
             <title><code>JpaEventStore</code>
             </title>
             <para>The <code>JpaEventStore</code> stores events in a JPA-compatible data source.
@@ -291,16 +296,9 @@
                 stored for fast lookup of these entries. To use the <code>JpaEventStore</code>, you
                 must have the JPA (<code>javax.persistence</code>) annotations on your classpath. </para>
             <para>By default, the event store needs you to configure your persistence context
-                (defined in
-                <code>META-INF/persistence.xml</code>
-                file) to contain the classes
-                <code>DomainEventEntry</code>
-                and
-                <code>SnapshotEventEntry</code>
-                (both in the
-                <code>org.axonframework.eventstore.jpa</code>
-                package).
-            </para>
+                (defined in <code>META-INF/persistence.xml</code> file) to contain the classes
+                    <code>DomainEventEntry</code> and <code>SnapshotEventEntry</code> (both in the
+                    <code>org.axonframework.eventstore.jpa</code> package). </para>
             <para>Below is an example configuration of a persistence context configuration:</para>
             <programlistingco>
                 <areaspec units="linecolumn">
@@ -315,10 +313,9 @@
 </persistence>]]></programlisting>
                 <calloutlist>
                     <callout arearefs="persistence-unit-name-co">
-                        <para>In this sample, there is is specific persistence unit for the
-                            event store. You may, however, choose to add the third line to any
-                            other persistence unit configuration.
-                        </para>
+                        <para>In this sample, there is is specific persistence unit for the event
+                            store. You may, however, choose to add the third line to any other
+                            persistence unit configuration. </para>
                     </callout>
                     <callout arearefs="domain-event-entry-co">
                         <para>This line registers the <code>DomainEventEntry</code> (the class used
@@ -334,52 +331,39 @@
                     access to the event store will result in a Key Constraint Violation, as the
                     table only allows a single Event for an aggregate with any sequence number.
                     Inserting a second event for an existing aggregate with an existing sequence
-                    number will result in an error.
-                </para>
+                    number will result in an error. </para>
                 <para>The JPA EventStore can detect this error and translate it to a
                     ConcurrencyException. However, each database system reports this violation
                     differently. If you register your DataSource with the JpaEventStore, it will try
                     to detect the type of database and figure out which error codes represent a Key
                     Constraint Violation. Alternatively, you may provide a
                     PersistenceExceptionTranslator instance, which can tell if a given exception
-                    represents a Key Constraint Violation.
-                </para>
+                    represents a Key Constraint Violation. </para>
                 <para>If no DataSource or PersistenceExceptionTranslator is provided, exceptions
-                    from the Database driver are thrown as-is.
-                </para>
+                    from the Database driver are thrown as-is. </para>
             </note>
-        </simplesect>
-        <simplesect>
-            <title>Working with multiple Persistence Contexts</title>
-            <para>By default, the JPA Event Store expects the application to have only a single,
-                container managed, persistence context. In many cases, however, an application has
-                more than one. In that case, you must provide an explicit
-                <code>EntityManagerProvider</code>
-                implementation that returns the
-                <code>EntityManager</code>
-                instance for the
-                <code>EventStore</code>
-                to use. This
-                also allows for application managed persistence contexts to be used. It is the
-                <code>EntityManagerProvider</code>'s responsiblity to provide a correct instance
-                of the<code>EntityManager</code>.
-            </para>
-            <para>There are a few implementations of the
-                <code>EntityManagerProvider</code>
-                available, each for different needs. The
-                <code>SimpleEntityManagerProvider</code>
-                simply returns the
-                <code>EntityManager</code>
-                instance which is given to it at
-                construction time. This makes the implementation a simple option for Container
-                Managed Contexts. Alternatively, there is the
-                <code>ContainerManagedEntityManagerProvider</code>, which returns the default
-                persistence context, and is used by default by the Jpa Event Store.
-            </para>
-            <para>If you have a persistence unit called "myPersistenceUnit" which you wish to use in
-                the <code>JpaEventStore</code>, this is what the EntityManagerProvider
-                implementation could look like:
-                <programlisting language="java">public class MyEntityManagerProvider implements EntityManagerProvider {
+            <simplesect>
+                <title>Working with multiple Persistence Contexts</title>
+                <para>By default, the JPA Event Store expects the application to have only a single,
+                    container managed, persistence context. In many cases, however, an application
+                    has more than one. In that case, you must provide an explicit
+                        <code>EntityManagerProvider</code> implementation that returns the
+                        <code>EntityManager</code> instance for the <code>EventStore</code> to use.
+                    This also allows for application managed persistence contexts to be used. It is
+                    the <code>EntityManagerProvider</code>'s responsiblity to provide a correct
+                    instance of the<code>EntityManager</code>. </para>
+                <para>There are a few implementations of the <code>EntityManagerProvider</code>
+                    available, each for different needs. The
+                        <code>SimpleEntityManagerProvider</code> simply returns the
+                        <code>EntityManager</code> instance which is given to it at construction
+                    time. This makes the implementation a simple option for Container Managed
+                    Contexts. Alternatively, there is the
+                        <code>ContainerManagedEntityManagerProvider</code>, which returns the
+                    default persistence context, and is used by default by the Jpa Event Store. </para>
+                <para>If you have a persistence unit called "myPersistenceUnit" which you wish to
+                    use in the <code>JpaEventStore</code>, this is what the EntityManagerProvider
+                    implementation could look like:
+                    <programlisting language="java">public class MyEntityManagerProvider implements EntityManagerProvider {
 
     private EntityManager entityManager;
 
@@ -392,68 +376,84 @@
     public void setEntityManager(EntityManager entityManager) {
         this.entityManager = entityManager;
     }                </programlisting>
-            </para>
-        </simplesect>
-        <simplesect>
-            <title>Customizing the Event storage</title>
-            <para>By default, the JPA Event Store stores entries in
-                <code>DomainEventEntry</code>
-                and
-                <code>SnapshotEventEntry</code>
-                entities. While this will suffice in many cases,
-                you might encounter a situation where the meta-data provided by these entities is
-                not enough. Or you might want to store events of different aggregate types in
-                different tables.
-            </para>
-            <para>If that is the case, you may provide your own implementation of
-                <code>EventEntryStore</code>
-                in the JPA Event Store's constructor. You will need
-                to provide implementations of methods that load and store serialized events. Check
-                the API Documentation of the
-                <code>EventEntryStore</code>
-                class for implementation
-                requirements.
-                <warning>
-                    <title>Memory consumption warning</title>
-                    <para>Note that persistence providers, such as Hibernate, use a first-level
-                        cache on their EntityManager implementation. Typically, this means that all
-                        entities used or returned in queries are attached to the EntityManager. They
-                        are only cleared when the surrounding transaction is committed or an
-                        explicit "clear" in performed inside the transaction. This is especially the
-                        case when the Queries are executed in the context of a transaction.
-                    </para>
-                    <para>To work around this issue, make sure to exclusively query for non-entity
-                        objects. You can use JPA's "SELECT new SomeClass(parameters) FROM ..." style
-                        queries to work around this issue. Alternatively, call
-                            <code>EntityManager.flush()</code> and
-                            <code>EntityManager.clear()</code> after fetching a batch of events.
-                        Failure to do so might result in <code>OutOfMemoryException</code>s when
-                        loading large streams of events. </para>
-                </warning>
-            </para>
-        </simplesect>
-        <simplesect>
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Customizing the Event storage</title>
+                <para>By default, the JPA Event Store stores entries in
+                        <code>DomainEventEntry</code> and <code>SnapshotEventEntry</code> entities.
+                    While this will suffice in many cases, you might encounter a situation where the
+                    meta-data provided by these entities is not enough. Or you might want to store
+                    events of different aggregate types in different tables. </para>
+                <para>If that is the case, you may provide your own implementation of
+                        <code>EventEntryStore</code> in the JPA Event Store's constructor. You will
+                    need to provide implementations of methods that load and store serialized
+                    events. Check the API Documentation of the <code>EventEntryStore</code> class
+                    for implementation requirements. <warning>
+                        <title>Memory consumption warning</title>
+                        <para>Note that persistence providers, such as Hibernate, use a first-level
+                            cache on their EntityManager implementation. Typically, this means that
+                            all entities used or returned in queries are attached to the
+                            EntityManager. They are only cleared when the surrounding transaction is
+                            committed or an explicit "clear" in performed inside the transaction.
+                            This is especially the case when the Queries are executed in the context
+                            of a transaction. </para>
+                        <para>To work around this issue, make sure to exclusively query for
+                            non-entity objects. You can use JPA's "SELECT new SomeClass(parameters)
+                            FROM ..." style queries to work around this issue. Alternatively, call
+                                <code>EntityManager.flush()</code> and
+                                <code>EntityManager.clear()</code> after fetching a batch of events.
+                            Failure to do so might result in <code>OutOfMemoryException</code>s when
+                            loading large streams of events. </para>
+                    </warning></para>
+            </simplesect>
+        </sect2>
+        <sect2>
+            <title>MongoDB Event Store</title>
+            <para>MongoDB is a document based NoSQL store. It scalability characteristics make it
+                suitable for use as an Event Store. Axon provides the MongoEventStore, which uses
+                MongoDB as backing database. It is contained in the Axon Mongo module (Maven
+                artifactId <code>axon-mongo</code>).</para>
+            <para>Events are stored in two separate collections: one for the actual event streams
+                and one for the snapshots.</para>
+            <para>By default, the MongoEventStore stores each event in a separate document. It is,
+                however, possible to change the <code>StorageStrategy</code> used. The alternative
+                provided by Axon is the DocumentPerCommitStorageStrategy, which creates a single
+                document for all Events that have been stored in a single commit (i.e. in the same
+                DomainEventStream).</para>
+            <para>Storing an entire commit in a single document has the advantage that a commit is
+                stored atomically. Furthermore, it requires only a single roundtrip for any number
+                of events. A disadvantage is that it becomes harder to query events manually or
+                through the <code>EventStoreManagement</code> methods. When refactoring the domain
+                model, for example, it is harder to "transfer" events from one aggregate to another
+                if they are included in a "commit document".</para>
+            <para>The MongoDB doesn't take a lot of configuration. All it needs is a reference to
+                the collections to store the Events in, and you're set to go.</para>
+        </sect2>
+        <sect2>
             <title>Implementing your own event store</title>
             <para>If you have specific requirements for an event store, it is quite easy to
                 implement one using different underlying data sources. Reading and appending events
-                is done using a<code>DomainEventStream</code>, which is quite similar to iterator
-                implementations.
-            </para>
+                is done using a <code>DomainEventStream</code>, which is quite similar to iterator
+                implementations. </para>
+            <para>Instead of eagerly deserializing Events, consider using the
+                    <code>SerializedDomainEventMessage</code>, which will postpone deserialization
+                of Meta Data and Payload until it is actually used by a handler.</para>
             <tip>
                 <para>The <code>SimpleDomainEventStream</code> class will make the contents of a
                     sequence ( <code>List</code> or <code>array</code>) of <code>EventMessage</code>
                     instances accessible as event stream. </para>
             </tip>
-        </simplesect>
-        <simplesect>
+        </sect2>
+        <sect2>
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Event to prepare it for storage. By
-                default, Axon uses the <code>XStreamSerializer</code>, which uses XStream (see <link
-                    xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
-                    >xstream.codehaus.org</link>) to serialize Events into XML and vice versa.
-                XStream is reasonably fast and is more flexible than Java Serialization.
-                Furthermore, the result of XStream serialization is human readable. Quite useful for
-                logging and debugging purposes. </para>
+                default, Axon provides the <code>XStreamSerializer</code>, which uses XStream (see
+                    <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>) to
+                serialize Events into XML and vice versa. XStream is reasonably fast and is more
+                flexible than Java Serialization. Furthermore, the result of XStream serialization
+                is human readable. Quite useful for logging and debugging purposes. </para>
             <para>The XStreamSerializer can be configured. You can define aliases it should use for
                 certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
@@ -463,7 +463,7 @@
             <para>You may also implement your own Serializer, simply by creating a class that
                 implements <code>Serializer</code>, and configuring the Event Store to use that
                 implementation instead of the default. </para>
-        </simplesect>
+        </sect2>
     </sect1>
     <sect1>
         <title>Event Upcasting</title>
@@ -472,14 +472,13 @@
             append-only data source, your application must be able to read all events, regardless of
             when they have been added. This is where upcasting comes in.
         </para>
-        <para>Originally a concept of object-oriented programming, where: "a subclass gets casted to
+        <para>Originally a concept of object-oriented programming, where: "a subclass gets casteto
             it's superclass automatically when needed", the concept of upcasting can also be applied
             to event sourcing. To upcast an event means to transform it from its original structure
-            to its new structure.  Unlike OOP upcasting, event upcasting cannot be done in full
+            to its new structure. Unlike OOP upcasting, event upcasting cannot be done in full
             automation because the structure of the new event is unknown to the old event. Manually
             written Upcasters have to be provided to specify how to upcast the old structure to the
-            new structure. 
-        </para>
+            new structure. </para>
         <para>Upcasters are classes that take one input event of revision <code>x</code> and output
             zero or more new events of revision <code>x + 1</code>. Moreover, upcasters are
             processed in a chain, meaning that the output of one upcaster is send to the input of
@@ -495,6 +494,17 @@
             implementations of the Upcaster Chain that come with Axon, and explain how the
             serialized representations of events affects how upcasters are written.
         </para>
+        <para>To allow an upcaster to see what version of serialized object they are receiving, the
+            Event Store stores a revision number as well as the fully qualified name of the Event.
+            This revision number is generated by a <code>RevisionResolver</code>, configured in the
+            serializer. Axon provides several implementations of the <code>RevisionResolver</code>,
+            such as the <code>AnnotationRevisionResolver</code>, which checks for an
+                <code>@Revision</code> annotation on the Event payload, a
+                <code>SerialVersionUIDRevisionResolver</code> that uses the
+                <code>serialVersionUID</code> as defined by Java Serialization API and a
+                <code>FixedValueRevisionResolver</code>, which always returns a predefined value.
+            The latter is useful when injection the current application version. This will allow you
+            to see which version of the application generated a specific event.</para>
         <sect2>
             <title>Writing an upcaster</title>
             <para>To explain how to write an upcaster for Axon we'll walk through a small example,

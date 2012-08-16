@@ -343,11 +343,13 @@
             <para>Configuring command interceptors for your command bus is also possible using the
                     <code>&lt;axon:command-bus></code> element, like so:
                 <programlisting language="xml">&lt;axon:command-bus id="commandBus">
-	&lt;axon:interceptors>
+	&lt;axon:dispatchInterceptors>
 		&lt;ref>interceptor-zero&lt;/ref>
+    &lt;/axon:dispatchInterceptors>
+    &lt;axon:handlerInterceptors>
 		&lt;ref>interceptor-one&lt;/ref>
 		&lt;ref>interceptor-two&lt;/ref>
-	&lt;/axon:interceptors>
+	&lt;/axon:handlerInterceptors>
 &lt;/axon:command-bus></programlisting>
                 Of course you are not limited to bean references; you can also include local bean
                 definitions if you want. </para>

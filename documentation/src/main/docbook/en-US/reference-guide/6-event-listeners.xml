@@ -39,9 +39,9 @@
                 and the exception is propagated to the component publising the
                 <code>Event</code>.</para>
             <para>The <code>SimpleEventBus</code> is suitable for most cases where dispatching is
-                only done locally, in a single JVM. Once you application requires
-                    <code>Events</code> to be published across multiple JVMs, you could consider
-                using the <code>ClusteringEventBus</code> instead.</para>
+                done synchronously and locally, (i.e. in a single JVM). Once you application
+                requires <code>Events</code> to be published across multiple JVMs, you could
+                consider using the <code>ClusteringEventBus</code> instead.</para>
         </sect2>
         <sect2>
             <title>Clustering Event Bus</title>
@@ -126,33 +126,87 @@
                     method available. These event handler methods must be annotated with the
                         <code>@EventHandler</code> annotation and are resolved according the
                         following rules:</para>
-                <para>
-                    TODO explain multiple parameters, first defines event type. Rest is metadata blabla, customizable.
-                    <orderedlist>
-                        <listitem><para>Some explanation</para></listitem>
-                    </orderedlist>
-                    
-                    In all circumstances, exactly one event
-                    handler method is invoked per listener instance. Axon will search the most specific method to invoke, in the following
+                <para>The AnnotationEventListenerAdapter, as well as the
+                    AbstractAnnotatedAggregateRoot, use ParameterResolvers to resolve the value that
+                    should be passed in the parameters of methods annotated with @EventHandler. By
+                    default, Axon provides a number of parameter resolvers that allow you to use the
+                    following parameter types: <itemizedlist>
+                        <listitem>
+                            <para>The first parameter is always the payload of the Event
+                                message</para>
+                        </listitem>
+                        <listitem>
+                            <para>Parameters annotated with @MetaData will resolve to the Meta Data
+                                value with the key as indicated on the annotation. If
+                                    <code>required</code> is <code>false</code> (default),
+                                    <code>null</code> is passed when the meta data value is not
+                                present. If <code>required</code> is <code>true</code>, the resolver
+                                will not match and prevent the method from being invoked when the
+                                meta data value is not present.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Parameters of type MetaData will have the entire MetaData of an
+                                EventMessage injected.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Parameters of type DateTime will resolve to the timestamp of the
+                                EventMessage. This is the time at which the Event was
+                                generated.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Parameters assignable to Message will have the entire EventMessage
+                                injected (if the message is assignable to that parameter). If the
+                                first parameter is of type message, it effectively matches an Event
+                                of any type, even if generic parameters would suggest otherwise. Due
+                                to type erasure, Axon cannot detect what parameter is expected. In
+                                such case, it is best to declare a parameter of the payload type,
+                                followed by a parameter of type Message.</para>
+                        </listitem>
+                        <listitem>
+                            <para>When using Spring and <code>&lt;axon:annotation-config/></code> is
+                                declared, any other parameters will resolve to autowired beans, if
+                                exactly one autowirable candidate is available in the application
+                                context. This allows you to inject resources directly into
+                                @EventHandler annotated classes.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Other parameters are resolved to resources declared using the
+                                static
+                                    <code>SimpleResourceParameterResolverFactory.register()</code>
+                                method. It is important that these resources have been declared
+                                prior to the creation of any adapters.</para>
+                        </listitem>
+                    </itemizedlist></para>
+                <para>You can configure additional ParameterResolvers by extending the
+                    ParameterResolverFactory class and creating a file named
+                        <code>/META-INF/service/org.axonframework.common.annotation.ParameterResolverFactory</code>
+                    containing the fully qualified name of the implementing class. Alternatively,
+                    you can register your implementation at runtime using
+                        <code>ParameterResolverFactory.registerFactory()</code>. Make sure to do so
+                    before any adapters are created, otherwise handlers may have been initialized
+                    without those parameter resolvers.</para>
+                <para>In all circumstances, exactly one event handler method is invoked per listener
+                    instance. Axon will search the most specific method to invoke, in the following
                     order: <orderedlist>
                         <listitem>
-                            <para>On the actual instance level of the class hierarchy (as returned by
-                                <code>this.getClass()</code>), all annotated methods are evaluated </para>
+                            <para>On the actual instance level of the class hierarchy (as returned
+                                by <code>this.getClass()</code>), all annotated methods are
+                                evaluated </para>
                         </listitem>
                         <listitem>
-                            <para>If one or more methods are found of which the parameter is of the event type or a
-                                super type, the method with the most specific type is chosen and invoked </para>
+                            <para>If one or more methods are found of which all parameters can be
+                                resolved to a value, the method with the most specific type is
+                                chosen and invoked </para>
                         </listitem>
                         <listitem>
-                            <para>If no methods are found on this level of the class hierarchy, the super type is
-                                evaluated the same way</para>
+                            <para>If no methods are found on this level of the class hierarchy, the
+                                super type is evaluated the same way</para>
                         </listitem>
                         <listitem>
-                            <para>When the top level of the hierarchy is reached, and no suitable event handler is
-                                found, the event is ignored.</para>
+                            <para>When the top level of the hierarchy is reached, and no suitable
+                                event handler is found, the event is ignored.</para>
                         </listitem>
-                    </orderedlist>
-                </para>
+                    </orderedlist></para>
                 <para>The constructor of the <code>AnnotationEventListenerAdapter</code> takes two
                     parameters: the annotated bean, and the <code>EventBus</code>, to which the
                     listener should subscribe. You can subscribe and unsubscribe the event listener
@@ -170,6 +224,10 @@
         </sect2>
         <sect2>
             <title>Asynchronous event processing</title>
+            <warning>
+                <para>This feature will be deprecated in favor of an asynchronous implementation of
+                    a <code>Cluster</code>.</para>
+            </warning>
             <para>By default, event listeners process events in the thread that dispatches them.
                 This means that the thread that executes the command will have to wait untill all
                 event handling has finished. For some types of event listeners this is not the
@@ -591,6 +649,14 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                         </itemizedlist></para>
                 </listitem>
             </itemizedlist>
+            <para>When a cluster is selected for an Event Listener, it will be registered with the
+                terminal. At that point, the terminal will check if there is any cluster-specific
+                configuration available. It does so by checking the <code>AMQP.Config</code>
+                MetaData value. If that value is an instance of
+                    <code>AMQPConsumerConfiguration</code> (such as
+                    <code>SpringAMQPConsumerConfiguration</code>) any settings configured there will
+                override the defaults set on the terminal itself. This allows you to specify
+                different behavior (such as transaction size) for different clusters.</para>
         </sect2>
     </sect1>
 </chapter>

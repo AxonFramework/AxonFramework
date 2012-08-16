@@ -80,11 +80,12 @@
         <sect2>
             <title>Event Handling</title>
             <para>Event Handling in a Saga is quite comparable to that of a regular Event Listener.
-                There is one major difference, though. While there is a single instance of an Event
-                Listener that deals will all incoming events, multiple instances of a Saga may
-                exist, each interested in different Events. For example, a Saga that manages a
-                transaction around an Order with Id "1" will not be interested in Events regarding
-                Order "2", and vice versa.</para>
+                The same rules for method and parameter resolution are valid here. There is one
+                major difference, though. While there is a single instance of an Event Listener that
+                deals will all incoming events, multiple instances of a Saga may exist, each
+                interested in different Events. For example, a Saga that manages a transaction
+                around an Order with Id "1" will not be interested in Events regarding Order "2",
+                and vice versa.</para>
             <simplesect><title>Using association values</title>
             <para>Instead of publishing all Events to all Saga instances (which would be a complete
                 waste of resources), Axon will only publish Events containing properties that the
@@ -218,10 +219,8 @@
                 days. The EventScheduler returns a <code>ScheduleToken</code> after scheduling an
                 Event. This token can be used to cancel the schedule, for example when a payment of
                 an Invoice has been received.</para>
-            <para>Scheduled Events must extend <code>ApplicationEvent</code> or
-                    <code>ScheduledEvent</code>. The latter is aware of its own publication time.
-                Axon provides two EventScheduler implementations: a pure Java one and one using
-                Quartz as a backing scheduling mechanism.</para>
+            <para>Axon provides two EventScheduler implementations: a pure Java one and one using
+                Quartz 2 as a backing scheduling mechanism.</para>
             <simplesect>
                 <title><code>SimpleEventScheduler</code></title>
                 <para>This pure-Java implementation of the <code>EventScheduler</code> uses a
@@ -395,9 +394,9 @@
             <para>There are some special requirements, however. Since concurrency in Sagas is a very
                 delicate procedure, the repository must ensure that for each conceptual Saga
                 instance (with equal identifier) only a single instance exists in the JVM.</para>
-            <para>Axon provides two <code>SagaRepository</code> implementations: the
-                    <code>InMemorySagaRepository</code> and the
-                <code>JpaSagaRepository</code>.</para>
+            <para>Axon provides three <code>SagaRepository</code> implementations: the
+                    <code>InMemorySagaRepository</code>, the <code>JpaSagaRepository</code> and the
+                    <code>MongoSagaRepository</code>.</para>
             <simplesect>
                 <title><code>InMemorySagaRepository</code></title>
                 <para>As the name suggests, this repository keeps a collection of Sagas in memory.
@@ -428,6 +427,17 @@
                     you can choose whether to explicitly flush the <code>EntityManager</code> after
                     each operation. This will ensure that data is sent to the database, even before
                     a transaction is committed. the default is to use explicit flushes.</para>
+            </simplesect>
+            <simplesect>
+                <title><code>MongoSagaRepository</code></title>
+                <para>Similar to the <code>JpaSagaRepository</code>, the
+                        <code>MongoSagaRepository</code> stores the Saga instances and their
+                    associations in a database. The <code>MongoSagaRepository</code> stores sagas in
+                    a single Collection in a MongoDB database. Per Saga instance, a single document
+                    is created.</para>
+                <para>The MongoSagaRepository also ensures that at any time, only a single Saga
+                    instance exists for any unique Saga in a single JVM. This ensures that no state
+                    changes are lost due to concurrency issues.</para>
             </simplesect>
         </sect2>
     </sect1>
