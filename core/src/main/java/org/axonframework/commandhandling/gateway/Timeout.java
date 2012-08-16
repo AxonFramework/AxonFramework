@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Inherited
 public @interface Timeout {
 
     /**

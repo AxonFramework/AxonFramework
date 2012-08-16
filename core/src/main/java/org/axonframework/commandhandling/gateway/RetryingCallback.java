@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.lock.DeadlockException;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +74,10 @@ public class RetryingCallback<R> implements CommandCallback<R> {
     public void onFailure(Throwable cause) {
         history.add(simplify(cause));
         try {
+            // we fail immediately when the exception is checked,
+            // or when it is a Deadlock Exception and we have an active unit of work
             if (!(cause instanceof RuntimeException)
+                    || (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted())
                     || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
                                                      new ArrayList<Class<? extends Throwable>[]>(history),
                                                      dispatchCommand)) {
@@ -81,6 +86,11 @@ public class RetryingCallback<R> implements CommandCallback<R> {
         } catch (Exception e) {
             delegate.onFailure(e);
         }
+    }
+
+    private boolean isCausedBy(Throwable exception, Class<? extends Throwable> causeType) {
+        return causeType.isInstance(exception)
+                || (exception.getCause() != null && isCausedBy(exception.getCause(), causeType));
     }
 
     @SuppressWarnings("unchecked")

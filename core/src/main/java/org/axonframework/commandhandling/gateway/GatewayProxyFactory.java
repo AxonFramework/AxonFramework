@@ -164,7 +164,9 @@ public class GatewayProxyFactory {
             HandlerInvocation dispatcher = new DispatchOnHandlerInvocation(commandBus, retryScheduler,
                                                                            dispatchInterceptors, extractors);
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
-            if (arguments.length >= 3
+            if (Future.class.equals(gatewayMethod.getReturnType())) {
+                dispatcher = new ReturnFuture(dispatcher);
+            } else if (arguments.length >= 3
                     && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
                     && (long.class.isAssignableFrom(arguments[arguments.length - 2])
                     || int.class.isAssignableFrom(arguments[arguments.length - 2]))) {
@@ -178,8 +180,6 @@ public class GatewayProxyFactory {
                 }
                 if (timeout != null) {
                     dispatcher = new WaitForResultWithFixedTimeout(dispatcher, timeout.value(), timeout.unit());
-                } else if (Future.class.equals(gatewayMethod.getReturnType())) {
-                    dispatcher = new ReturnFuture(dispatcher);
                 } else if (!Void.TYPE.equals(gatewayMethod.getReturnType())
                         || gatewayMethod.getExceptionTypes().length > 0) {
                     dispatcher = new WaitForResult(dispatcher);
@@ -375,8 +375,15 @@ public class GatewayProxyFactory {
 
         @Override
         public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
-            return delegate.invoke(proxy, invokedMethod, args).get((Long) args[timeoutIndex],
+            return delegate.invoke(proxy, invokedMethod, args).get(toLong(args[timeoutIndex]),
                                                                    (TimeUnit) args[timeUnitIndex]);
+        }
+
+        private long toLong(Object arg) {
+            if (int.class.isInstance(arg) || Integer.class.isInstance(arg)) {
+                return Long.valueOf((Integer) arg);
+            }
+            return (Long) arg;
         }
     }
 
