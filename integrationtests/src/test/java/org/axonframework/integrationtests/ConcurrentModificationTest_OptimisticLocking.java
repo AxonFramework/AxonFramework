@@ -26,8 +26,9 @@ import org.axonframework.integrationtests.commandhandling.ProblematicCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.integrationtests.eventhandling.RegisteringEventHandler;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,11 +36,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.Log4jConfigurer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,7 +80,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
      *
      * @throws InterruptedException
      */
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testConcurrentModifications() throws Exception {
         Log4jConfigurer.initLogging("classpath:log4j_silenced.properties");
         assertFalse("Something is wrong", CurrentUnitOfWork.isStarted());
@@ -105,19 +102,19 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
                     }
                     for (int t = 0; t < COMMAND_PER_THREAD_COUNT; t++) {
                         commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
-                                            SilentCallback.INSTANCE);
+                                SilentCallback.INSTANCE);
                         commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)),
-                                            new VoidCallback() {
-                                                @Override
-                                                protected void onSuccess() {
-                                                    successCounter.incrementAndGet();
-                                                }
+                                new VoidCallback() {
+                                    @Override
+                                    protected void onSuccess() {
+                                        successCounter.incrementAndGet();
+                                    }
 
-                                                @Override
-                                                public void onFailure(Throwable cause) {
-                                                    failCounter.incrementAndGet();
-                                                }
-                                            });
+                                    @Override
+                                    public void onFailure(Throwable cause) {
+                                        failCounter.incrementAndGet();
+                                    }
+                                });
                     }
                     cdl.countDown();
                 }
