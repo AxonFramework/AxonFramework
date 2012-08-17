@@ -43,7 +43,7 @@
     </para>
     <sect1>
         <title>The Command Gateway</title>
-        <para>The Command Gateway is a conventient interface towards the Command dispatching
+        <para>The Command Gateway is a convenient interface towards the Command dispatching
             mechanism. While you are not required to use a Gateway to dispatch Commands, it is
             generally the easiest option to do so. </para>
         <para>There are two ways to use a CommandGateway. The first is to use the
@@ -57,10 +57,10 @@
             (checked) business exceptions.</para>
         <sect2>
             <title>Configuring the CommandGateway</title>
-            <para>Independent of the whether a custom gateway or the one provided by Axon is used,
-                it needs to be configured with at least access to the Command Bus. In addition, the
-                CommandGateway can be configured with a <code>RetryScheduler</code> and any number
-                of <code>CommandDispatchInterceptor</code>s.</para>
+            <para>Both your custom gateway and the one provided by Axon need to be configured with 
+                at least access to the Command Bus. In addition, the CommandGateway can be configured 
+                with a <code>RetryScheduler</code> and any number of 
+                <code>CommandDispatchInterceptor</code>s.</para>
             <para>The <code>RetryScheduler</code> is capable of scheduling retries when command
                 execution has failed. The IntervalRetryScheduler is an implementation that will
                 retry a given command at set intervals until it succeeds, or a maximum number of
@@ -98,7 +98,7 @@
                         will block at most as long as these parameters indicate. How the method
                         reacts on a timeout depends on the exceptions declared on the method (see
                         below). Note that if other properties of the method prevent blocking
-                        altogether, a timeout will enver occur.</para>
+                        altogether, a timeout will never occur.</para>
                 </listitem>
             </itemizedlist>
             <para>The declared return value of a method will also affect its behavior:</para>
@@ -612,7 +612,7 @@
                 (or roll back) a Unit of Work instead.
             </para>
             <para>In most cases, the DefaultUnitOfWork will provide you with the functionality you
-                needs. It expects Command processing to happen within a single thread. To start a
+                need. It expects Command processing to happen within a single thread. To start a
                 new Unit Of Work, simply call<code>DefaultUnitOfWork.startAndGet();</code>. This
                 will start a Unit of Work, bind it to the current thread (making it accessible via
                 <code>CurrentUnitOfWork.get()</code>), and return it. When processing is done,
@@ -637,14 +637,14 @@ try {
         <para>One of the advantages of using a command bus is the ability to undertake action based
             on all incoming commands. Examples are logging or authentication, which you might want
             to do regardless of the type of command. This is done using Interceptors. </para>
-        <para>The are two types of interceptors: Command Dispatch Interceptors and Command Handler
+        <para>There are two types of interceptors: Command Dispatch Interceptors and Command Handler
             Interceptors. The former are invoked before a command is dispatched to a Command
             Handler. At that point, it may not even be sure that any handler exists for that
             command. The latter are invoked just before the Command Handler is invoked.</para>
         <sect2>
             <title>Command Dispatch Interceptors</title>
             <para>Command Dispatch Interceptors are invoked when a command is dispatched on a
-                Command Bus. The have the ability to alter the Command Message, by adding Meta Data,
+                Command Bus. They have the ability to alter the Command Message, by adding Meta Data,
                 for example, or block the command by throwing an Exception. The interceptors are
                 always invoked on the thread that dispatches the Command.</para>
             <sect3>
@@ -712,7 +712,7 @@ try {
                     some cases, you might want to know which user caused the change, using what
                     command, from which machine, etc. </para>
                 <para>The <code>AuditingInterceptor</code> is an interceptor that allows you to
-                    attach arbitray information to events just before they are stored or published.
+                    attach arbitrary information to events just before they are stored or published.
                     The <code>AuditingInterceptor</code> uses an <code>AuditingDataProvider</code>
                     to retrieve the information to attach to these events. You need to provide the
                     implementation of the <code>AuditingDataProvider</code> yourself. </para>
@@ -739,7 +739,7 @@ try {
             Command Messages to be dispatched within a single JVM. Sometimes, you want multiple
             instances of Command Buses in different JVM's to act as one. Commands dispatched on one
             JVM's Command Bus should be seamlessly transported to a Command Handler in another JVM
-            while reporting any results back.</para>
+            while sending back any results.</para>
         <para>That's where the <code>DistributedCommandBus</code> comes in. Unlike the the other
                 <code>CommandBus</code> implementations, the <code>DistributedCommandBus</code> does
             not invoke any handlers at all. All it does is form a "bridge" between Command Bus

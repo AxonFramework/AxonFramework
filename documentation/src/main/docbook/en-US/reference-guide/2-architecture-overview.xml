@@ -135,7 +135,7 @@
                 <para>The Core module contains, as the name suggests, the Core components of Axon.
                     If you use a single-node setup and have no extreme performance requirements,
                     this module is likely to provide all the components you need. All other Axon
-                    modules depend on this module, so it must always be avaiable on the
+                    modules depend on this module, so it must always be available on the
                     classpath.</para>
             </simplesect>
             <simplesect>
