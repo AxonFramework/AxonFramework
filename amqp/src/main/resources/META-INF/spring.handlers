@@ -1,0 +1,1 @@
+http\://www.axonframework.org/schema/amqp=org.axonframework.contextsupport.spring.amqp.AxonAMQPNamespaceHandler

@@ -1,0 +1,2 @@
+http\://www.axonframework.org/schema/axon-amqp-2.0.xsd=org/axonframework/contextsupport/spring/amqp/axon-amqp-2.0.xsd
+http\://www.axonframework.org/schema/axon-amqp.xsd=org/axonframework/contextsupport/spring/amqp/axon-amqp-2.0.xsd
