@@ -20,6 +20,8 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.io.EventMessageReader;
+import org.axonframework.eventhandling.io.EventMessageWriter;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 
