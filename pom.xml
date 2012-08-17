@@ -25,7 +25,6 @@
         <module>integration</module>
         <module>test</module>
         <module>distributed-commandbus</module>
-        <module>disruptor-commandbus</module>
         <module>integrationtests</module>
         <module>mongo</module>
         <module>incubator/google-app-engine</module>
