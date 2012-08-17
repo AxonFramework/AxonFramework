@@ -31,6 +31,7 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.support.ManagedList;
+import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -40,7 +41,6 @@ import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -153,7 +153,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
     private Map parseMetaData(Element element, ParserContext parserContext, AbstractBeanDefinition beanDefinition) {
         Element metaDataElement = DomUtils.getChildElementByTagName(element, META_DATA_ELEMENT);
         if (metaDataElement == null) {
-            return Collections.emptyMap();
+            return new ManagedMap();
         }
         return parserContext.getDelegate().parseMapElement(metaDataElement, beanDefinition);
     }
