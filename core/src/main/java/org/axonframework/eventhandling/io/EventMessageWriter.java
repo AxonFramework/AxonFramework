@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.io;
+package org.axonframework.eventhandling.io;
 
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.io.DefaultMessageDefinitions;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 
@@ -57,7 +58,11 @@ public class EventMessageWriter {
      * @throws IOException when any exception occurs writing to the underlying stream
      */
     public void writeEventMessage(EventMessage eventMessage) throws IOException {
-        out.writeByte(EventMessageType.forMessage(eventMessage).getTypeByte());
+        if (DomainEventMessage.class.isInstance(eventMessage)) {
+            out.writeByte(DefaultMessageDefinitions.DOMAIN_EVENT_MESSAGE.getTypeByte());
+        } else {
+            out.writeByte(DefaultMessageDefinitions.EVENT_MESSAGE.getTypeByte());
+        }
         out.writeUTF(eventMessage.getIdentifier());
         out.writeUTF(eventMessage.getTimestamp().toString());
         if (eventMessage instanceof DomainEventMessage) {

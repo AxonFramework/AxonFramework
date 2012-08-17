@@ -20,7 +20,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
-import org.axonframework.io.EventMessageWriter;
+import org.axonframework.eventhandling.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.hamcrest.Description;

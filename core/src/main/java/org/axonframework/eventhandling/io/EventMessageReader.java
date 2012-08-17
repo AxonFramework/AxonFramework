@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.io;
+package org.axonframework.eventhandling.io;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.io.DefaultMessageDefinitions;
+import org.axonframework.io.MessageDefinition;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
@@ -24,7 +26,7 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 
-import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.IOException;
 
 /**
@@ -38,7 +40,7 @@ import java.io.IOException;
 public class EventMessageReader {
 
     private final Serializer serializer;
-    private final DataInput in;
+    private final DataInputStream in;
 
     /**
      * Creates a new EventMessageReader that reads the data from the given <code>input</code> and deserializes payload
@@ -47,7 +49,7 @@ public class EventMessageReader {
      * @param input      The input providing access to the written data
      * @param serializer The serializer to deserialize payload and meta data with
      */
-    public EventMessageReader(DataInput input, Serializer serializer) {
+    public EventMessageReader(DataInputStream input, Serializer serializer) {
         this.in = input;
         this.serializer = serializer;
     }
@@ -57,18 +59,24 @@ public class EventMessageReader {
      * DomainEventMessage is returned.
      *
      * @param <T> The type of payload expected to be in the returned EventMessage. This is not checked at runtime!
-     * @return an EventMessage representing the message originally written.
+     * @return an EventMessage representing the message originally written, or <code>null</code> if the stream has
+     *         reached the end
      *
      * @throws IOException          when an error occurs reading from the underlying input
      * @throws java.io.EOFException when the end of the stream was reached before the message was entirely read
      */
     public <T> EventMessage<T> readEventMessage() throws IOException {
-        EventMessageType messageType = EventMessageType.fromTypeByte(in.readByte());
+        final int firstByte = in.read();
+        if (firstByte == -1) {
+            // end of stream
+            return null;
+        }
+        MessageDefinition messageType = DefaultMessageDefinitions.fromTypeByte((byte) firstByte);
         String identifier = in.readUTF();
         String timestamp = in.readUTF();
         String aggregateIdentifier = null;
         long sequenceNumber = 0;
-        if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
+        if (messageType == DefaultMessageDefinitions.DOMAIN_EVENT_MESSAGE) {
             aggregateIdentifier = in.readUTF();
             sequenceNumber = in.readLong();
         }
@@ -88,7 +96,7 @@ public class EventMessageReader {
         SerializedEventMessage<T> message = new SerializedEventMessage<T>(identifier, new DateTime(timestamp),
                                                                           serializedPayload, serializedMetaData,
                                                                           serializer);
-        if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
+        if (messageType == DefaultMessageDefinitions.DOMAIN_EVENT_MESSAGE) {
             return new SerializedDomainEventMessage<T>(message, aggregateIdentifier, sequenceNumber);
         }
         return message;
