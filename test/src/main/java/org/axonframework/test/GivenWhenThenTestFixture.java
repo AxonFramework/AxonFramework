@@ -181,6 +181,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public TestExecutor givenCommands(List<?> commands) {
+        finalizeConfiguration();
         clearGivenWhenState();
         for (Object command : commands) {
             commandBus.dispatch(GenericCommandMessage.asCommandMessage(command));

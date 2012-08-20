@@ -60,6 +60,16 @@ public class FixtureTest_Annotated {
         }
     }
 
+    @Test
+    public void testFixtureGivenCommands() {
+        fixture.givenCommands(new CreateAggregateCommand("aggregateId"),
+                              new TestCommand("aggregateId"),
+                              new TestCommand("aggregateId"),
+                              new TestCommand("aggregateId"))
+               .when(new TestCommand("aggregateId"))
+               .expectEvents(new MyEvent("aggregateId", 4));
+    }
+
     @Test(expected = FixtureExecutionException.class)
     public void testAggregate_InjectCustomResourceAfterCreatingAnnotatedHandler() {
         // a 'when' will cause command handlers to be registered.
