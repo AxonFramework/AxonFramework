@@ -17,10 +17,8 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:rabbit="http://www.springframework.org/schema/rabbit"
-       xmlns:axon-amqp="http://www.axonframework.org/schema/amqp"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd
-       http://www.axonframework.org/schema/amqp http://www.axonframework.org/schema/axon-amqp-2.0.xsd">
+       http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd">
 
     <rabbit:fanout-exchange id="eventBusExchange" name="Axon.EventBus" durable="false" auto-delete="true">
         <rabbit:bindings>
