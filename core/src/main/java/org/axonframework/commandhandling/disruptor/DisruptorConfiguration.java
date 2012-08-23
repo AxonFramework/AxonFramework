@@ -44,6 +44,11 @@ import java.util.concurrent.Executor;
  */
 public class DisruptorConfiguration {
 
+    /**
+     * The default size of the buffer in this configuration
+     */
+    public static final int DEFAULT_BUFFER_SIZE = 4096;
+
     private ClaimStrategy claimStrategy;
     private WaitStrategy waitStrategy;
     private Executor executor;
@@ -63,7 +68,7 @@ public class DisruptorConfiguration {
      * multi-threaded claim strategy.
      */
     public DisruptorConfiguration() {
-        this.claimStrategy = new MultiThreadedClaimStrategy(4096);
+        this.claimStrategy = new MultiThreadedClaimStrategy(DEFAULT_BUFFER_SIZE);
         this.waitStrategy = new BlockingWaitStrategy();
         coolingDownPeriod = 1000;
         cache = NoCache.INSTANCE;

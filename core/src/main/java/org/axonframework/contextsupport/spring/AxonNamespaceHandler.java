@@ -39,6 +39,7 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("snapshotter", new SnapshotterBeanDefinitionParser());
         registerBeanDefinitionParser("annotation-config", new AnnotationConfigurationBeanDefinitionParser());
         registerBeanDefinitionParser("command-bus", new SimpleCommandBusBeanDefinitionParser());
+        registerBeanDefinitionParser("disruptor-command-bus", new DisruptorCommandBusBeanDefinitionParser());
         registerBeanDefinitionParser("event-bus", new EventBusBeanDefinitionParser());
         registerBeanDefinitionParser("jpa-event-store", new JpaEventStoreBeanDefinitionParser());
         registerBeanDefinitionParser("jpa-repository", new JpaRepositoryBeanDefinitionParser());

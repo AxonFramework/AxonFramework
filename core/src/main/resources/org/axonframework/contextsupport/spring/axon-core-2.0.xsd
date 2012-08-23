@@ -226,6 +226,230 @@
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="disruptor-command-bus">
+        <xsd:annotation>
+            <xsd:documentation>
+                Creates a DisruptorCommandBus instance. Use &lt;repositories&gt; / &lt;repository&gt; child elements
+                to indicate the aggregates that are supported by this command bus.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="org.axonframework.commandhandling.disruptor.DisruptorCommandBus"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:all>
+                        <xsd:element name="invoker-interceptors" type="beans:listOrSetType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>A list of beans or references to CommandHandlerInterceptors that
+                                    should be executed by the invoker thread. They are invoked just prior to the
+                                    invocation of the Command Handler.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="publisher-interceptors" type="beans:listOrSetType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>A list of beans or references to CommandHandlerInterceptors that
+                                    should be executed by the publisher thread. They are invoked just prior to the
+                                    publication of the results (events and callback).
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="dispatcher-interceptors" type="beans:listOrSetType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>A list of beans or references to CommandDispatchInterceptor that
+                                    should be executed when a command is offered to the Command Bus. These interceptors
+                                    are executed in the thread that provides the Command Message to the Command Bus.
+                                </xsd:documentation>
+                            </xsd:annotation>
+
+                        </xsd:element>
+                        <xsd:element name="repositories">
+                            <xsd:annotation>
+                                <xsd:documentation>Wrapper element for a list of &lt;repository&gt; elements. Each child
+                                    element defines a supported aggregate type and the identifier of the repository to
+                                    access its instances.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                            <xsd:complexType>
+                                <xsd:sequence>
+                                    <xsd:element name="repository" maxOccurs="unbounded">
+                                        <xsd:annotation>
+                                            <xsd:appinfo>
+                                                <tool:annotation>
+                                                    <tool:exports type="org.axonframework.repository.Repository"/>
+                                                </tool:annotation>
+                                            </xsd:appinfo>
+                                        </xsd:annotation>
+                                        <xsd:complexType>
+                                            <xsd:attribute name="id" type="xsd:string" use="required">
+                                                <xsd:annotation>
+                                                    <xsd:documentation>
+                                                        The identifier of the aggregate bean to generate. This
+                                                        identifier can serve as a qualifier to autowire the correct
+                                                        repository instance.
+                                                    </xsd:documentation>
+                                                </xsd:annotation>
+                                            </xsd:attribute>
+                                            <xsd:attribute name="aggregate-type" type="xsd:string" use="optional">
+                                                <xsd:annotation>
+                                                    <xsd:documentation>The fully qualified class name of the aggregate
+                                                        to support. This value is ignored if an aggregate-factory is
+                                                        provided.
+                                                    </xsd:documentation>
+                                                </xsd:annotation>
+                                            </xsd:attribute>
+                                            <xsd:attribute name="aggregate-factory" type="xsd:string" use="optional">
+                                                <xsd:annotation>
+                                                    <xsd:documentation>A bean reference to the aggregate factory that
+                                                        creates instances of an aggregate that this command bus will
+                                                        process commands for. When provided, the value of the
+                                                        "aggregate-type" property is ignored.
+                                                    </xsd:documentation>
+                                                    <xsd:appinfo>
+                                                        <tool:annotation kind="ref">
+                                                            <tool:expected-type
+                                                                    type="org.axonframework.eventsourcing.AggregateFactory"/>
+                                                        </tool:annotation>
+                                                    </xsd:appinfo>
+                                                </xsd:annotation>
+                                            </xsd:attribute>
+                                        </xsd:complexType>
+                                    </xsd:element>
+                                </xsd:sequence>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:all>
+                    <xsd:attribute name="event-store" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>The bean name of the event store that stores the events generated by
+                                aggregates invoked by this command bus.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.axonframework.eventstore.EventStore"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="event-bus" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>The bean name of the event bus on which generated events should be
+                                published.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.axonframework.eventhandling.EventBus"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="invoker-threads" type="xsd:int">
+                        <xsd:annotation>
+                            <xsd:documentation>The number of threads that should execute the command handler invocation.
+                                Defaults to 1.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="publisher-threads" type="xsd:int">
+                        <xsd:annotation>
+                            <xsd:documentation>The number of threads that should store and publish generated events.
+                                Defaults to 1.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="buffer-size" type="xsd:int">
+                        <xsd:annotation>
+                            <xsd:documentation>The number of positions in the CommandBus' buffer. This value must be a
+                                power of 2 (e.g. 128, 256, 512, 1024, etc). Defaults to 4096.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="claim-strategy">
+                        <xsd:annotation>
+                            <xsd:documentation>The strategy to use to claim positions in the CommandBus' buffer.
+                                Defaults to a multi-threaded strategy. If only a single thread ever produces commands
+                                for this Command Bus, consider using the 'single-threaded' strategy.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="multi-threaded"/>
+                                <xsd:enumeration value="single-threaded"/>
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="wait-strategy">
+                        <xsd:annotation>
+                            <xsd:documentation>The strategy to use to when processor threads need to wait for each
+                                other. Some strategies are faster, but claim more CPU for themselves. From fast (and
+                                claiming CPU) to slow (and still fast, but more friendly for other processes), they are:
+                                'busy-spin', 'yield', 'sleep' and 'block'. 'block' is the default.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="busy-spin"/>
+                                <xsd:enumeration value="yield"/>
+                                <xsd:enumeration value="sleep"/>
+                                <xsd:enumeration value="block"/>
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="reschedule-commands-on-corrupt-state" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation>Whether to reschedule commands that have been executed against an
+                                aggregate in a corrupt state. 'false' will cause those commands to fail. Defaults to
+                                'true'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="rollback-configuration" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to a bean defining the exceptions on which to rollback the
+                                Unit of Work. Defaults to a strategy that rolls back on Runtime Exceptions only.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="command-target-resolver" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to a bean defining how the target of a Command is resolved from
+                                the Command Message. Defaults to a AnnotationCommandTargetResolver.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="executor" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the executor that provides the threads for this command bus.
+                                Defaults to an executor that creates Threads as they are needed (Cached Thread Pool).
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="cache" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>The cache in which aggregates are kept when not directly in use by the
+                                Command Bus. It is recommended to use an in-memory cache only. Defaults to no cache at
+                                all.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="cooling-down-period" type="xsd:int">
+                        <xsd:annotation>
+                            <xsd:documentation>The number of seconds to wait when shutting down to ensure no commands
+                                are being processed on the command bus any more.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
     <!-- ================================== -->
     <!-- == Annotation-based configuration= -->
     <!-- ================================== -->

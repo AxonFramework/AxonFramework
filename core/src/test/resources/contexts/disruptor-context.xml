@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2010-2012. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-2.0.xsd">
+
+    <axon:disruptor-command-bus id="disruptorCommandBus" event-bus="eventBus" event-store="eventStore"
+                                buffer-size="2048" cache="mockCache" claim-strategy="single-threaded"
+                                executor="executor" cooling-down-period="20" invoker-threads="2"
+                                publisher-threads="2" rollback-configuration="rollbackConfig"
+                                reschedule-commands-on-corrupt-state="false" command-target-resolver="ctr"
+                                wait-strategy="sleep">
+        <axon:dispatcher-interceptors>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.commandhandling.CommandDispatchInterceptor"/>
+            </bean>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.commandhandling.CommandDispatchInterceptor"/>
+            </bean>
+        </axon:dispatcher-interceptors>
+        <axon:invoker-interceptors>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+            </bean>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+            </bean>
+        </axon:invoker-interceptors>
+        <axon:publisher-interceptors>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+            </bean>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+            </bean>
+        </axon:publisher-interceptors>
+        <axon:repositories>
+            <axon:repository id="myAggregateRepository" aggregate-factory="aggregateFactory"/>
+            <axon:repository id="myOtherAggregateRepository"
+                             aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
+        </axon:repositories>
+    </axon:disruptor-command-bus>
+
+    <bean id="rollbackConfig" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.commandhandling.RollbackConfiguration"/>
+    </bean>
+
+    <bean id="ctr" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.commandhandling.CommandTargetResolver"/>
+    </bean>
+
+    <bean id="executor" class="java.util.concurrent.Executors" factory-method="newCachedThreadPool"
+          destroy-method="shutdown"/>
+
+    <bean id="aggregateFactory" class="org.axonframework.eventsourcing.GenericAggregateFactory" >
+        <constructor-arg value="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
+    </bean>
+
+    <bean id="eventBus" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.eventhandling.EventBus"/>
+    </bean>
+
+    <bean id="eventStore" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.eventstore.EventStore"/>
+    </bean>
+
+    <bean id="mockCache" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="net.sf.jsr107cache.Cache"/>
+    </bean>
+
+
+</beans>
