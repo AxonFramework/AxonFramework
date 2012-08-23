@@ -20,6 +20,7 @@ import org.junit.*;
 
 import java.util.UUID;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
 
 /**
@@ -28,7 +29,6 @@ import static org.junit.Assert.*;
 public class EventContainerTest {
 
     private MetaData metaData = MetaData.emptyInstance();
-    private String aggregateType = "type";
 
     @Test
     public void testAddEvent_IdAndSequenceNumberInitialized() {
@@ -52,5 +52,23 @@ public class EventContainerTest {
         eventContainer.commit();
 
         assertEquals(0, eventContainer.size());
+    }
+
+    @Test
+    public void testRegisterCallbackInvokedWithAllRegisteredEvents() {
+        EventContainer container = new EventContainer(UUID.randomUUID().toString());
+        container.addEvent(metaData, "payload");
+
+        assertFalse(container.getEventList().get(0).getMetaData().containsKey("key"));
+
+        container.addEventRegistrationCallback(new EventRegistrationCallback() {
+            @Override
+            public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
+                return event.withMetaData(singletonMap("key", "value"));
+            }
+        });
+
+        DomainEventMessage firstEvent = container.getEventList().get(0);
+        assertEquals("value", firstEvent.getMetaData().get("key"));
     }
 }

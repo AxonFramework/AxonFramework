@@ -184,5 +184,8 @@ public class EventContainer implements Serializable {
             this.registrationCallbacks = new ArrayList<EventRegistrationCallback>();
         }
         this.registrationCallbacks.add(eventRegistrationCallback);
+        for (int i = 0; i < events.size(); i++) {
+            events.set(i, eventRegistrationCallback.onRegisteredEvent(events.get(i)));
+        }
     }
 }

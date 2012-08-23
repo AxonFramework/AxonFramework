@@ -18,7 +18,6 @@ package org.axonframework.unitofwork;
 
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventhandling.EventBus;
@@ -104,12 +103,6 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
         registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, saveAggregateCallback
         ));
-
-        // register any events already available as uncommitted in the aggregate
-        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
-        while (uncommittedEvents != null && uncommittedEvents.hasNext()) {
-            publishEvent(uncommittedEvents.next(), eventBus);
-        }
 
         // listen for new events registered in the aggregate
         aggregate.addEventRegistrationCallback(eventRegistrationCallback);

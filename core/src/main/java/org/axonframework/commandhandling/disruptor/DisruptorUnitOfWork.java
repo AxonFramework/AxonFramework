@@ -143,11 +143,6 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
                             + "executes against at most one aggregate, or use another Command Bus implementation.");
         }
         aggregate = (EventSourcedAggregateRoot) aggregateRoot;
-        // register any events already available as uncommitted in the aggregate
-        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
-        while (uncommittedEvents != null && uncommittedEvents.hasNext()) {
-            publishEvent(uncommittedEvents.next(), eventBus);
-        }
 
         // listen for new events registered in the aggregate
         aggregate.addEventRegistrationCallback(this);

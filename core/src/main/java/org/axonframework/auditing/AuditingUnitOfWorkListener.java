@@ -69,7 +69,7 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
 
     @Override
     public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
-        Map<String, Object> auditData = auditDataProvider.provideAuditDataFor(command);
+        Map<String, ?> auditData = auditDataProvider.provideAuditDataFor(command);
         if (!auditData.isEmpty()) {
             event = event.andMetaData(auditData);
         }
