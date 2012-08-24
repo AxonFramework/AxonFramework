@@ -25,6 +25,7 @@ import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
@@ -43,7 +44,7 @@ public class SequenceOfEventsMatcherTest {
     private StubEvent stubEvent3;
     private StubEvent stubEvent4;
     private StubEvent stubEvent5;
-    private SequenceMatcher<EventMessage> testSubject;
+    private Matcher<List<?>> testSubject;
 
     @SuppressWarnings({"unchecked"})
     @Before

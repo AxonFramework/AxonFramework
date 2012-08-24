@@ -66,7 +66,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
+    public ResultValidator expectEventsMatching(Matcher<List<?>> matcher) {
         if (publishedEvents.size() != storedEvents.size()) {
             reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
         }
@@ -91,7 +91,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
+    public ResultValidator expectPublishedEventsMatching(Matcher<List<?>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
         }
@@ -120,7 +120,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectStoredEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
+    public ResultValidator expectStoredEventsMatching(Matcher<List<?>> matcher) {
         if (!matcher.matches(storedEvents)) {
             reporter.reportWrongEvent(storedEvents, descriptionOf(matcher), actualException);
         }

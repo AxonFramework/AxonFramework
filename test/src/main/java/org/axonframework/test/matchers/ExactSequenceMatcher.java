@@ -31,11 +31,10 @@ import java.util.List;
  * Matchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If there are more matchers
  * than Events, the remainder of matchers is evaluated against a <code>null</code> value.
  *
- * @param <T> the type of object expected in the matched List
  * @author Allard Buijze
  * @since 1.1
  */
-public class ExactSequenceMatcher<T> extends ListMatcher<T> {
+public class ExactSequenceMatcher extends ListMatcher {
 
     /**
      * Construct a matcher that will return true if all the given <code>matchers</code> match against the event with
@@ -43,16 +42,16 @@ public class ExactSequenceMatcher<T> extends ListMatcher<T> {
      *
      * @param matchers The matchers that must match against at least one Event in the list.
      */
-    public ExactSequenceMatcher(Matcher<? extends T>... matchers) {
+    public ExactSequenceMatcher(Matcher<?>... matchers) {
         super(matchers);
     }
 
     @Override
     public boolean matchesList(List<?> events) {
         Iterator<?> eventIterator = events.iterator();
-        Iterator<Matcher<? extends T>> matcherIterator = getMatchers().iterator();
+        Iterator<Matcher<?>> matcherIterator = getMatchers().iterator();
         while (eventIterator.hasNext() && matcherIterator.hasNext()) {
-            Matcher<? extends T> matcher = matcherIterator.next();
+            Matcher matcher = matcherIterator.next();
             if (!matcher.matches(eventIterator.next())) {
                 reportFailed(matcher);
                 return false;

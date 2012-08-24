@@ -25,6 +25,7 @@ import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.andNoMore;
 import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
@@ -39,7 +40,7 @@ public class ExactSequenceOfEventsMatcherTest {
     private Matcher<EventMessage> mockMatcher1;
     private Matcher<EventMessage> mockMatcher2;
     private Matcher<EventMessage> mockMatcher3;
-    private ExactSequenceMatcher testSubject;
+    private Matcher<List<?>> testSubject;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
     private StubEvent stubEvent3;

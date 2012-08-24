@@ -31,11 +31,10 @@ import java.util.List;
  * Matchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If the last item of the list
  * has been evaluated, and Matchers still remain, they are evaluated against a <code>null</code> value.
  *
- * @param <T> the type of object expected in the matched List
  * @author Allard Buijze
  * @since 1.1
  */
-public class SequenceMatcher<T> extends ListMatcher<T> {
+public class SequenceMatcher extends ListMatcher {
 
     /**
      * Construct a matcher that will return true if all the given <code>matchers</code> match against an item
@@ -43,15 +42,15 @@ public class SequenceMatcher<T> extends ListMatcher<T> {
      *
      * @param matchers The matchers that must match against at least one item in the list.
      */
-    public SequenceMatcher(Matcher<? extends T>... matchers) {
+    public SequenceMatcher(Matcher<?>... matchers) {
         super(matchers);
     }
 
     @Override
     public boolean matchesList(List<?> items) {
         Iterator<?> itemIterator = items.iterator();
-        Iterator<Matcher<? extends T>> matcherIterator = getMatchers().iterator();
-        Matcher<? extends T> currentMatcher = null;
+        Iterator<Matcher<?>> matcherIterator = getMatchers().iterator();
+        Matcher currentMatcher = null;
         if (matcherIterator.hasNext()) {
             currentMatcher = matcherIterator.next();
         }

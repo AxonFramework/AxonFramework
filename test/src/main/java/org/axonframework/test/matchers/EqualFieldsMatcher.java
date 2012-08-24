@@ -38,7 +38,7 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     private Object failedFieldActualValue;
 
     /**
-     * Initializes an EqualFieldsMatcher that will match an event with equal properties as the given
+     * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given
      * <code>expected</code> object.
      *
      * @param expected The expected object
@@ -50,21 +50,21 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     @SuppressWarnings({"unchecked"})
     @Override
     public boolean matches(Object item) {
-        return expected.getClass().isInstance(item) && matchesSafely((T) item);
+        return expected.getClass().isInstance(item) && matchesSafely(item);
     }
 
-    private boolean matchesSafely(Object actualEvent) {
-        return expected.getClass().equals(actualEvent.getClass())
-                && fieldsMatch(expected.getClass(), expected, actualEvent);
+    private boolean matchesSafely(Object actual) {
+        return expected.getClass().equals(actual.getClass())
+                && fieldsMatch(expected.getClass(), expected, actual);
     }
 
-    private boolean fieldsMatch(Class<?> aClass, Object expectedEvent, Object actualEvent) {
+    private boolean fieldsMatch(Class<?> aClass, Object expected, Object actual) {
         boolean match = true;
         for (Field field : aClass.getDeclaredFields()) {
             field.setAccessible(true);
             try {
-                Object expectedFieldValue = field.get(expectedEvent);
-                Object actualFieldValue = field.get(actualEvent);
+                Object expectedFieldValue = field.get(expected);
+                Object actualFieldValue = field.get(actual);
                 if (expectedFieldValue != null && actualFieldValue != null && expectedFieldValue.getClass().isArray()) {
                     if (!Arrays.deepEquals(new Object[]{expectedFieldValue}, new Object[]{actualFieldValue})) {
                         failedField = field;
@@ -80,11 +80,11 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
                     return false;
                 }
             } catch (IllegalAccessException e) {
-                throw new MatcherExecutionException("Could not confirm event equality due to an exception", e);
+                throw new MatcherExecutionException("Could not confirm object equality due to an exception", e);
             }
         }
         if (aClass.getSuperclass() != Object.class) {
-            match = fieldsMatch(aClass.getSuperclass(), expectedEvent, actualEvent);
+            match = fieldsMatch(aClass.getSuperclass(), expected, actual);
         }
         return match;
     }

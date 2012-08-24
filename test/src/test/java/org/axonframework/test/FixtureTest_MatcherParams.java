@@ -17,6 +17,7 @@
 package org.axonframework.test;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.Message;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.*;
@@ -47,7 +48,7 @@ public class FixtureTest_MatcherParams {
                .given(new MyEvent("aggregateId", 1))
                .when(new TestCommand("aggregateId"))
                .expectReturnValue(new DoesMatch())
-               .expectEventsMatching(sequenceOf(new DoesMatch<EventMessage>()));
+               .expectEventsMatching(sequenceOf(new DoesMatch<Message>()));
     }
 
     @Test
@@ -153,7 +154,7 @@ public class FixtureTest_MatcherParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
-                    .expectEventsMatching(new DoesNotMatch<List<? extends EventMessage>>());
+                    .expectEventsMatching(new DoesNotMatch<List<?>>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("something you can never give me"));

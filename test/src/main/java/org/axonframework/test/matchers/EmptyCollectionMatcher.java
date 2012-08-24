@@ -16,7 +16,6 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.EventMessage;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
@@ -29,7 +28,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class EmptyCollectionMatcher extends BaseMatcher<List<? extends EventMessage>> {
+public class EmptyCollectionMatcher extends BaseMatcher<List<?>> {
 
     private final String contentDescription;
 

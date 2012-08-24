@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.EventMessage;
 import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -68,7 +67,7 @@ public interface FixtureExecutionResult {
      * @param matcher  A matcher defining the event expected to be published
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? extends EventMessage> matcher);
+    FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<?> matcher);
 
     /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication after the given
@@ -152,7 +151,7 @@ public interface FixtureExecutionResult {
      * @param matcher The matcher that describes the expected list of commands
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher);
+    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<List<?>> matcher);
 
     /**
      * Asserts that the sagas did not dispatch any commands. Only commands as a result of the event in the "when" stage
@@ -177,7 +176,7 @@ public interface FixtureExecutionResult {
      * @param matcher The matcher that defines the expected list of published events.
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher);
+    FixtureExecutionResult expectPublishedEventsMatching(Matcher<List<?>> matcher);
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given <code>expected</code>

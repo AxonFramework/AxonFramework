@@ -24,11 +24,10 @@ import java.util.List;
 /**
  * A matcher that will match if all the given <code>matchers</code> match against at least one item in a given List.
  *
- * @param <T> the type of object expected in the matched List
  * @author Allard Buijze
  * @since 1.1
  */
-public class ListWithAnyOfMatcher<T> extends ListMatcher<T> {
+public class ListWithAnyOfMatcher extends ListMatcher {
 
     /**
      * Construct a matcher that will return true if any of the given <code>matchers</code> matches against at least one
@@ -36,14 +35,14 @@ public class ListWithAnyOfMatcher<T> extends ListMatcher<T> {
      *
      * @param matchers The matchers that must match against at least one item in the list.
      */
-    public ListWithAnyOfMatcher(Matcher<T>... matchers) {
+    public ListWithAnyOfMatcher(Matcher... matchers) {
         super(matchers);
     }
 
     @Override
     public boolean matchesList(List<?> items) {
         boolean match = false;
-        for (Matcher<? extends T> matcher : getMatchers()) {
+        for (Matcher matcher : getMatchers()) {
             boolean matcherMatch = false;
             for (Object item : items) {
                 if (matcher.matches(item)) {

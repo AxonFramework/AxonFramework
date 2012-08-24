@@ -16,7 +16,6 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.EventMessage;
 import org.hamcrest.Matcher;
 
 import java.util.List;
@@ -61,7 +60,7 @@ public interface ResultValidator {
      * @param matcher The matcher to match with the actually published events
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEventsMatching(Matcher<List<? extends EventMessage>> matcher);
+    ResultValidator expectEventsMatching(Matcher<List<?>> matcher);
 
     /**
      * Expect the given set of events to have been published on the events bus. If you expect the same events to be
@@ -88,7 +87,7 @@ public interface ResultValidator {
      * @param matcher The matcher which validates the actual list of published events.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher);
+    ResultValidator expectPublishedEventsMatching(Matcher<List<?>> matcher);
 
     /**
      * Expect the given set of events to have been stored in the event store. If you expect the same events to be
@@ -114,7 +113,7 @@ public interface ResultValidator {
      * @param matcher The matcher which validates the actual list of stored events.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectStoredEventsMatching(Matcher<List<? extends EventMessage>> matcher);
+    ResultValidator expectStoredEventsMatching(Matcher<List<?>> matcher);
 
     /**
      * Expect the command handler to return the given <code>expectedReturnValue</code> after execution. The actual and

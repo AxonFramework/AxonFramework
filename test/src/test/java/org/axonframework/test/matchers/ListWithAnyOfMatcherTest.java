@@ -25,6 +25,7 @@ import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
 import static org.junit.Assert.*;
@@ -38,7 +39,7 @@ public class ListWithAnyOfMatcherTest {
     private Matcher<EventMessage> mockMatcher1;
     private Matcher<EventMessage> mockMatcher2;
     private Matcher<EventMessage> mockMatcher3;
-    private ListWithAnyOfMatcher testSubject;
+    private Matcher<List<?>> testSubject;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
 

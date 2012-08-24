@@ -26,9 +26,11 @@ import org.junit.*;
 
 import java.util.UUID;
 
-import static org.axonframework.test.matchers.Matchers.*;
+import static org.axonframework.test.matchers.Matchers.messageWithPayload;
+import static org.axonframework.test.matchers.Matchers.noEvents;
 import static org.hamcrest.CoreMatchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -51,12 +53,12 @@ public class AnnotatedSagaTest {
         validator.expectAssociationWith("identifier", aggregate2);
         validator.expectNoAssociationWith("identifier", aggregate1);
         validator.expectScheduledEventOfType(Duration.standardMinutes(10), TimerTriggeredEvent.class);
-        validator.expectScheduledEventMatching(Duration.standardMinutes(10), eventWithPayload(CoreMatchers.any(
+        validator.expectScheduledEventMatching(Duration.standardMinutes(10), messageWithPayload(CoreMatchers.any(
                 TimerTriggeredEvent.class)));
         validator.expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(aggregate1.toString()));
         validator.expectScheduledEventOfType(fixture.currentTime().plusMinutes(10), TimerTriggeredEvent.class);
         validator.expectScheduledEventMatching(fixture.currentTime().plusMinutes(10),
-                                               eventWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
+                                               messageWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
         validator.expectScheduledEvent(fixture.currentTime().plusMinutes(10),
                                        new TimerTriggeredEvent(aggregate1.toString()));
         validator.expectDispatchedCommandsEqualTo();
@@ -96,9 +98,9 @@ public class AnnotatedSagaTest {
         validator.expectAssociationWith("identifier", aggregate1);
         validator.expectNoAssociationWith("identifier", aggregate2);
         validator.expectScheduledEventMatching(Duration.standardMinutes(10),
-                                               Matchers.eventWithPayload(CoreMatchers.any(Object.class)));
+                                               Matchers.messageWithPayload(CoreMatchers.any(Object.class)));
         validator.expectDispatchedCommandsEqualTo();
-        validator.expectPublishedEventsMatching(listWithAllOf(eventWithPayload(any(SagaWasTriggeredEvent.class))));
+        validator.expectPublishedEventsMatching(Matchers.listWithAnyOf(messageWithPayload(any(SagaWasTriggeredEvent.class))));
     }
 
     @Test
@@ -120,7 +122,7 @@ public class AnnotatedSagaTest {
         // 6 minutes have passed since the 10minute timer was reset,
         // so expect the timer to be scheduled for 4 minutes (t0 + 15)
         validator.expectScheduledEventMatching(Duration.standardMinutes(4),
-                                               Matchers.eventWithPayload(CoreMatchers.any(Object.class)));
+                                               Matchers.messageWithPayload(CoreMatchers.any(Object.class)));
         validator.expectNoDispatchedCommands();
         validator.expectPublishedEvents();
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
@@ -30,7 +29,7 @@ import org.joda.time.Duration;
 import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
-import static org.axonframework.test.matchers.Matchers.eventWithPayload;
+import static org.axonframework.test.matchers.Matchers.messageWithPayload;
 import static org.hamcrest.CoreMatchers.any;
 
 /**
@@ -91,20 +90,19 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectScheduledEventMatching(Duration duration,
-                                                               Matcher<? extends EventMessage> matcher) {
+    public FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<?> matcher) {
         eventSchedulerValidator.assertScheduledEventMatching(duration, matcher);
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectScheduledEvent(Duration duration, Object applicationEvent) {
-        return expectScheduledEventMatching(duration, eventWithPayload(equalTo(applicationEvent)));
+        return expectScheduledEventMatching(duration, messageWithPayload(equalTo(applicationEvent)));
     }
 
     @Override
     public FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType) {
-        return expectScheduledEventMatching(duration, eventWithPayload(any(eventType)));
+        return expectScheduledEventMatching(duration, messageWithPayload(any(eventType)));
     }
 
     @Override
@@ -116,13 +114,13 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, Object applicationEvent) {
-        return expectScheduledEventMatching(scheduledTime, eventWithPayload(equalTo(applicationEvent)));
+        return expectScheduledEventMatching(scheduledTime, messageWithPayload(equalTo(applicationEvent)));
     }
 
     @Override
     public FixtureExecutionResult expectScheduledEventOfType(DateTime scheduledTime,
                                                              Class<?> eventType) {
-        return expectScheduledEventMatching(scheduledTime, eventWithPayload(any(eventType)));
+        return expectScheduledEventMatching(scheduledTime, messageWithPayload(any(eventType)));
     }
 
     @Override
@@ -132,14 +130,15 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<?> matcher) {
+    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<List<?>> matcher) {
         commandValidator.assertDispatchedMatching(matcher);
         return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoDispatchedCommands() {
-        return expectDispatchedCommandsMatching(Matchers.noCommands());
+        commandValidator.assertDispatchedMatching(Matchers.noCommands());
+        return this;
     }
 
     @Override
@@ -149,7 +148,7 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
+    public FixtureExecutionResult expectPublishedEventsMatching(Matcher<List<?>> matcher) {
         eventValidator.assertPublishedEventsMatching(matcher);
         return this;
     }

@@ -44,7 +44,7 @@ public class EventValidator implements EventListener {
     /**
      * Initializes the event validator to monitor the given <code>eventBus</code>.
      *
-     * @param eventBus the eventbus to monitor
+     * @param eventBus the event bus to monitor
      */
     public EventValidator(EventBus eventBus) {
         this.eventBus = eventBus;
@@ -55,7 +55,7 @@ public class EventValidator implements EventListener {
      *
      * @param matcher The matcher that will validate the actual events
      */
-    public void assertPublishedEventsMatching(Matcher<List<? extends EventMessage>> matcher) {
+    public void assertPublishedEventsMatching(Matcher<List<?>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             StringDescription expectedDescription = new StringDescription();
             StringDescription actualDescription = new StringDescription();
@@ -72,7 +72,7 @@ public class EventValidator implements EventListener {
      * @param expected the events that must have been published.
      */
     public void assertPublishedEvents(Object... expected) {
-        assertPublishedEventsMatching(eventPayloadsMatching(exactSequenceOf(createEqualToMatchers(expected))));
+        assertPublishedEventsMatching(payloadsMatching(exactSequenceOf(createEqualToMatchers(expected))));
     }
 
     @Override

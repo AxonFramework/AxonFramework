@@ -16,7 +16,6 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.Message;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
@@ -35,46 +34,35 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches a list of EventMessage if a list containing their respective payloads matches the given
+     * Matches a list of Messages if a list containing their respective payloads matches the given
      * <code>matcher</code>.
      *
-     * @param matcher The mather to match against the EventMessage payloads
-     * @return a Matcher that matches against the EventMessage payloads
-     */
-    public static Matcher<List<? extends EventMessage>> eventPayloadsMatching(final Matcher<? extends List> matcher) {
-        return new PayloadsMatcher<EventMessage>(EventMessage.class, matcher);
-    }
-
-    /**
-     * Matches a list of Message if a list containing their respective payloads matches the given <code>matcher</code>.
-     *
      * @param matcher The mather to match against the Message payloads
-     * @return a Matcher that evaluates a Message's payloads
+     * @return a Matcher that matches against the Message payloads
      */
-    public static Matcher<List<? extends Message>> messagePayloadsMatching(final Matcher<? extends List> matcher) {
-        return new PayloadsMatcher<Message>(Message.class, matcher);
+    public static Matcher<List<?>> payloadsMatching(final Matcher<List<?>> matcher) {
+        return new PayloadsMatcher(matcher);
     }
 
     /**
-     * Matches a single EventMessage if the given <code>payloadMatcher</code> matches that event's payload.
+     * Matches a single Message if the given <code>payloadMatcher</code> matches that message's payload.
      *
-     * @param payloadMatcher THe matcher to match against the EventMessage's payload
+     * @param payloadMatcher The matcher to match against the Message's payload
      * @return a Matcher that evaluates a Message's payload.
      */
-    public static Matcher<? extends EventMessage> eventWithPayload(Matcher<?> payloadMatcher) {
-        return new PayloadMatcher<EventMessage>(payloadMatcher);
+    public static Matcher<Message> messageWithPayload(Matcher<?> payloadMatcher) {
+        return new PayloadMatcher<Message>(payloadMatcher);
     }
 
     /**
      * Matches a List where all the given matchers must match with at least one of the items in that list.
      *
      * @param matchers the matchers that should match against one of the items in the List.
-     * @param <T>      The type of object expected in the list
      * @return a matcher that matches a number of matchers against a list
      */
     @Factory
-    public static <T> ListWithAllOfMatcher listWithAllOf(Matcher<T>... matchers) {
-        return new ListWithAllOfMatcher<T>(matchers);
+    public static Matcher<List<?>> listWithAllOf(Matcher<?>... matchers) {
+        return new ListWithAllOfMatcher(matchers);
     }
 
     /**
@@ -82,12 +70,11 @@ public abstract class Matchers {
      * list.
      *
      * @param matchers the matchers that should match against one of the items in the List of Events.
-     * @param <T>      The type of event to match against
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
-    public static <T> ListWithAnyOfMatcher<T> listWithAnyOf(Matcher<T>... matchers) {
-        return new ListWithAnyOfMatcher<T>(matchers);
+    public static Matcher<List<?>> listWithAnyOf(Matcher<?>... matchers) {
+        return new ListWithAnyOfMatcher(matchers);
     }
 
     /**
@@ -98,12 +85,11 @@ public abstract class Matchers {
      * To match the exact sequence of events (i.e. without gaps), use {@link #exactSequenceOf(org.hamcrest.Matcher[])}.
      *
      * @param matchers the matchers to match against the list of events
-     * @param <T>      The type of event to match against
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
-    public static <T> SequenceMatcher<T> sequenceOf(Matcher<? extends T>... matchers) {
-        return new SequenceMatcher<T>(matchers);
+    public static Matcher<List<?>> sequenceOf(Matcher<?>... matchers) {
+        return new SequenceMatcher(matchers);
     }
 
     /**
@@ -119,12 +105,11 @@ public abstract class Matchers {
      * To allow "gaps" of unmatched Events, use {@link #sequenceOf(org.hamcrest.Matcher[])} instead.
      *
      * @param matchers the matchers to match against the list of events
-     * @param <T>      The type of event to match against
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @Factory
-    public static <T> ExactSequenceMatcher<T> exactSequenceOf(Matcher<? extends T>... matchers) {
-        return new ExactSequenceMatcher<T>(matchers);
+    public static Matcher<List<?>> exactSequenceOf(Matcher<?>... matchers) {
+        return new ExactSequenceMatcher(matchers);
     }
 
     /**
@@ -133,7 +118,7 @@ public abstract class Matchers {
      * @return a matcher that matches an empty list of events
      */
     @Factory
-    public static EmptyCollectionMatcher noEvents() {
+    public static Matcher<List<?>> noEvents() {
         return new EmptyCollectionMatcher("events");
     }
 
@@ -143,7 +128,7 @@ public abstract class Matchers {
      * @return a matcher that matches an empty list of Commands
      */
     @Factory
-    public static EmptyCollectionMatcher noCommands() {
+    public static Matcher<List<?>> noCommands() {
         return new EmptyCollectionMatcher("commands");
     }
 
@@ -169,7 +154,7 @@ public abstract class Matchers {
      * @return a matcher that matches against "nothing".
      */
     @Factory
-    public static NullOrVoidMatcher andNoMore() {
+    public static Matcher<?> andNoMore() {
         return nothing();
     }
 
@@ -180,7 +165,7 @@ public abstract class Matchers {
      * @return a matcher that matches against "nothing".
      */
     @Factory
-    public static NullOrVoidMatcher nothing() {
+    public static Matcher<?> nothing() {
         return new NullOrVoidMatcher();
     }
 }

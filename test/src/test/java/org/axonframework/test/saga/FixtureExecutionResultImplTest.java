@@ -32,6 +32,8 @@ import org.junit.*;
 import java.util.List;
 import java.util.UUID;
 
+import static org.axonframework.test.matchers.Matchers.*;
+
 /**
  * @author Allard Buijze
  */
@@ -70,7 +72,10 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
         testSubject.expectPublishedEvents(endEvent);
+        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(equalTo(endEvent), andNoMore())));
+
         testSubject.expectDispatchedCommandsEqualTo("Second");
+        testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(equalTo("Second"), andNoMore())));
     }
 
     @Test(expected = AxonAssertionError.class)
