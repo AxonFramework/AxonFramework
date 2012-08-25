@@ -23,8 +23,10 @@
         meaning, it also means that they hardly depend on any implementation choices.</para>
     <para>The features described in this chapter require the <code>axon-test</code> module, which
         can be obtained by configuration a maven dependency (use
-            <code>&lt;artifactId>axon-text&lt;/artifactId></code>) or from the full package
+            <code>&lt;artifactId>axon-test&lt;/artifactId></code>) or from the full package
         download. </para>
+    <para>The fixtures described in this chapter work with any testing framework, such as JUnit and
+        TestNG.</para>
     <sect1>
         <title>Command Component Testing</title>
         <para>The command handling component is typically the component in any CQRS based
@@ -55,8 +57,8 @@
         <para>
             <programlistingco>
                 <areaspec>
-                    <area coords="7 55" xml:id="create-new-fixture-co"/>
-                    <area coords="9 84" xml:id="create-generic-repository-co"/>
+                    <area coords="7 72" xml:id="create-new-fixture-co"/>
+                    <area coords="9 57" xml:id="create-generic-repository-co"/>
                     <area xml:id="register-command-handler-co" coords="10 68"/>
                     <area xml:id="given-when-then-co" coords="15 39"/>
                 </areaspec>
@@ -66,9 +68,9 @@
 
     @Before
     public void setUp() {
-        fixture = Fixtures.newGivenWhenThenFixture();
+        fixture = Fixtures.newGivenWhenThenFixture(MyAggregate.class);
         MyCommandHandler myCommandHandler = new MyCommandHandler(
-                              fixture.createGenericRepository(MyAggregate.class));
+                              fixture.getRepository());
         fixture.registerAnnotatedCommandHandler(myCommandHandler);
     }
 
@@ -89,17 +91,20 @@
                             command bus are automatically created as part of the fixture.</para>
                     </callout>
                     <callout arearefs="create-generic-repository-co">
-                        <para>The <code>createGenericRepository</code> method creates, as expected,
-                            a <code>GenericEventSourcingRepository</code> instance capable of
-                            storing <code>MyAggregate</code> instances. This requires some
-                            conventions on the MyAggregate class, as described in <xref
-                                linkend="event-sourcing-repositories"/>.</para>
+                        <para>The <code>getRepository()</code> method returns an
+                                <code>EventSourcingRepository</code> instance capable of storing
+                                <code>MyAggregate</code> instances. This requires some conventions
+                            on the MyAggregate class, as described in <xref
+                                linkend="event-sourcing-repositories"/>. If there is need for a
+                            custom <code>AggregateFactory</code>, use the
+                                <code>registerRepository(...)</code> method to register another
+                            repository with the correct <code>AggregateFactory</code>.</para>
                     </callout>
                     <callout arearefs="register-command-handler-co">
                         <para>The <code>registerAnnotatedCommandHandler</code> method will register
                             any bean as being an <code>@CommandHandler</code> with the command bus.
-                            All supported command types are automatically registered with the event
-                            bus.</para>
+                            All supported command types are automatically registered with the
+                            command bus.</para>
                     </callout>
                     <callout arearefs="given-when-then-co">
                         <para>These four lines define the actual scenario and its expected result.
@@ -128,24 +133,24 @@
         </note>
         <simplesect>
             <title>Configuration</title>
-            <para>During the configuration phase, you provide the building blocks required to
-                execute the test. Specialized versions of the event bus, command bus and event store
-                are provided as part of the fixture. There are getters in place to obtain references
-                to them. The repository and command handlers need to be provided. This can be done
-                using the <code>registerRepository</code> and <code>registerCommandHandler</code>
-                (or <code>registerAnnotatedCommandHandler</code>) methods. If your aggregate allows
+            <para>During the configuration phase (i.e. before the first "given" is provided), you
+                provide the building blocks required to execute the test. Specialized versions of
+                the event bus, command bus and event store are provided as part of the fixture.
+                There are getters in place to obtain references to them. The repository and command
+                handlers need to be provided. This can be done using the
+                    <code>registerRepository</code> and <code>registerCommandHandler</code> (or
+                    <code>registerAnnotatedCommandHandler</code>) methods. If your aggregate allows
                 the use of a generic repository, you can use the
                     <code>createGenericRepository</code> method to create a generic repository and
                 register it with the fixture in a single call. The example above uses this
                 feature.</para>
             <para>If the command handler and repository are configured, you can define the "given"
-                events. These events need to be subclasses of <code>DomainEvent</code>, as they
-                represent events coming from the event store. You do not need to set aggregate
-                identifiers of sequence numbers. The fixture will inject those for you (using the
-                aggregate identifier exposed by <code>getAggregateIdentifier</code> and a sequence
-                number starting with 0.</para>
+                events. The test fixture will wrap these events as DomainEventMessage. If the
+                "given" event implements Message, the payload and meta data of that message will be
+                included in the DomainEventMessage, otherwise the given event is used as payload.
+                The sequence numbers of the DomainEventMessage are sequential, starting at 0.</para>
             <para>Alternatively, you may also provide commands as "given" scenario. In that case,
-                the events generated by hose commands will be used to event source the Aggregate
+                the events generated by those commands will be used to event source the Aggregate
                 when executing the actual command under test.</para>
         </simplesect>
         <simplesect>
@@ -161,7 +166,8 @@
                     Aggregate after the command execution to the state of the Aggregate if it
                     sourced from all "given" and stored events. If that state is not identical, this
                     means that a state change has occurred outside of an Aggregate's Event Handler
-                    method.</para>
+                    method. Static and transient fields are ignored in the comparison, as they
+                    typically contain references to resources.</para>
                 <para>You can switch detection in the configuration of the fixture with the
                         <code>setReportIllegalStateChange</code> method.</para>
             </note>
@@ -239,12 +245,14 @@
                 against a single Event instance:<itemizedlist>
                     <listitem>
                         <para><emphasis role="bold">Equal Event</emphasis>:
-                                <code>Matchers.equalTo(event instance...)</code></para>
-                        <para>Verifies that the given event is semantically equal to the actual
+                                <code>Matchers.equalTo(instance...)</code></para>
+                        <para>Verifies that the given object is semantically equal to the given
                             event. This matcher will compare all values in the fields of both actual
-                            and expected Events using a null-safe equals method. The aggregate
-                            identifier and sequence number are ignored, as they are often not set on
-                            the "expected" Event.</para>
+                            and expected objects using a null-safe equals method. This means that
+                            events can be compared, even if they don't implement the equals method.
+                            The objects stored in fields of the given parameter <emphasis
+                                role="italic">are</emphasis> compared using equals, requiring them
+                            to implement one correctly.</para>
                     </listitem>
                     <listitem>
                         <para><emphasis role="bold">No More Events</emphasis>:
@@ -255,16 +263,48 @@
                             that no unmatched events remain.</para>
                     </listitem>
                 </itemizedlist></para>
+            <para>Since the matchers are passed a list of Event Messages, you sometimes only want to
+                verify the payload of the message. There are matchers to help you out:<itemizedlist>
+                    <listitem>
+                        <para><emphasis role="bold">Payload Matching</emphasis>:
+                                <code>Matchers.eventWithPayload(payload matcher)</code></para>
+                        <para>Verifies that the payload of an EventMessage matches the given payload
+                            matcher.</para>
+                    </listitem>
+                    <listitem>
+                        <para><emphasis role="bold">Payloads Matching</emphasis>:
+                                <code>Matchers.eventPayloadsMatching(list matcher)</code></para>
+                        <para>Verifies that the payloads of the EventMessages matches the given
+                            matcher. The given matcher must match against a list containing each of
+                            the Messages payload. The Payloads Matching matcher is typically used as
+                            the outer matcher to prevent repetition of payload matchers.</para>
+                    </listitem>
+                </itemizedlist></para>
             <para>Below is a small code sample displaying the usage of these matchers. In this
-                example, we expect two events to be stored and published. The first event must be
-                "aThirdEvent", and the second "aFourthEventWithSomeSpecialThings". There may be no
+                example, we expect two events to be stored and published. The first event must be a
+                "ThirdEvent", and the second "aFourthEventWithSomeSpecialThings". There may be no
                 third event, as that will fail against the "andNoMore"
                 matcher.<programlisting language="java">fixture.given(new FirstEvent(), new SecondEvent())
-       .when(new DoSomethingCommand(fixture.getAggregateIdentifier()))
+       .when(new DoSomethingCommand("aggregateId"))
        .expectEvents(exactSequenceOf(
-           aThirdEvent(),
+           // we can match against the payload only:
+           eventWithPayload(equalTo(new ThirdEvent())),
+           // this will match against a Message
            aFourthEventWithSomeSpecialThings(),
+           // this will ensure that there is no more events
            andNoMore()
+       ));
+
+// or if we prefer to match on payloads only:
+       .expecteEvents(eventPayloadsMatching(
+               exactSequenceOf(
+                   // we only have payloads, so we can equalTo directly
+                   equalTo(new ThirdEvent()),
+                   // now, this matcher matches against the payload too
+                   aFourthEventWithSomeSpecialThings(),
+                   // this still requires that there is no more events
+                   andNoMore()
+               )
        ));</programlisting></para>
         </simplesect>
     </sect1>
@@ -301,7 +341,11 @@
                 <programlisting language="java">AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(InvoicingSaga.class);
 fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
        .whenTimeElapses(Duration.standardDays(31))
-       .expectDispatchedCommandsMatching(Matchers.listWithAllOf(aMarkAsOverdueCommand()));  </programlisting>
+       .expectDispatchedCommandsMatching(Matchers.listWithAllOf(aMarkAsOverdueCommand()));
+
+// or, to match against the payload of a Command Message only
+       .expectDispatchedCommandsMatching(Matchers.payloadsMatching(
+               Matchers.listWithAllOf(aMarkAsOverdueCommand())));</programlisting>
                 <calloutlist>
                     <callout arearefs="sagafixture-create-co">
                         <para>Creates a fixture to test the InvoiceSaga class</para>
@@ -313,7 +357,8 @@ fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
                         <para>Tells the saga that time elapses, triggering events scheduled in that time frame</para>
                     </callout>
                     <callout arearefs="sagafixture-then-command-co">
-                        <para>Verifies that the saga has sent a command matching the return value of <code>aMarkAsOverdueCommand()</code> (a Hamcrest matcher)</para>
+                        <para>Verifies that the saga has sent a command matching the return value of
+                                <code>aMarkAsOverdueCommand()</code> (a Hamcrest matcher)</para>
                     </callout>
                 </calloutlist>
                

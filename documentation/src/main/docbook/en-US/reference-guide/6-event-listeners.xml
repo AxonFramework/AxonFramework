@@ -25,7 +25,7 @@
         <para>The <code>EventBus</code> is the mechanism that dispatches events to the subscribed
             event listeners. Axon Framework provides two implementation of the event bus:
                 <code>SimpleEventBus</code> and <code>ClusteringEventBus</code>. Both
-            implementations manages subscribed <code>EventListeners</code> and forward all incoming
+            implementations manage subscribed <code>EventListeners</code> and forward all incoming
             events to all subscribed listeners. This means that Event Listeners must be explicitly
             registered with the Event Bus in order for them to receive events. The registration
             process is thread safe. Listeners may register and unregister for events at any
@@ -35,9 +35,9 @@
             <para>The <code>SimpleEventBus</code> is, as the name suggests, a very basic
                 implementation of the <code>EventBus</code> interface. It just dispatches each
                 incoming <code>Event</code> to each of the subscribed <code>EventListeners</code>
-                sequentiall. If an EventListener throws an <code>Exception</code>, dispatching stops
-                and the exception is propagated to the component publising the
-                <code>Event</code>.</para>
+                sequentially. If an EventListener throws an <code>Exception</code>, dispatching
+                stops and the exception is propagated to the component publising the
+                    <code>Event</code>.</para>
             <para>The <code>SimpleEventBus</code> is suitable for most cases where dispatching is
                 done synchronously and locally, (i.e. in a single JVM). Once you application
                 requires <code>Events</code> to be published across multiple JVMs, you could
@@ -49,6 +49,7 @@
                     <code>EventListener</code>s into <code>Cluster</code>s based on their properties
                 and non-functional requirements. The ClusteringEventBus is also more capable to deal
                 with Events being dispatched among different machines.</para>
+            <para><!--TODO: Add schema of Clustering Event Bus--></para>
             <para>The ClusteringEventsBus contains two mechanisms: the <code>ClusterSelector</code>,
                 which selects a <code>Cluster</code> instance for each of the registered
                     <code>EventListener</code>s, and the <code>EventBusTerminal</code>, which is
@@ -84,17 +85,24 @@
                     EventListener sequentially in the calling thread. By adding information in the
                     Meta Data of a cluster, the selector can provide hints to the Terminal about the
                     expected behavior.</para>
+                <note>
+                    <title>Clusters and Cluster Selectors in Spring</title>
+                    <para>Spring users can define clusters using the &lt;cluster> element. This
+                        element allows you to define the selection criteria for Event Handlers in
+                        that cluster. These criteria are transformed into cluster selectors and used
+                        to assign each Listener to one of the clusters.</para>
+                </note>
             </simplesect>
             <simplesect>
                 <title><code>EventBusTerminal</code></title>
-                <para>The <code>EventBusTerminal</code> forms the bridge between the events being
-                    dispatched and the Clusters inside the Event Bus. The terminal is aware of any
-                    remoting technologies used, such as JMS, AMQP, etc. The default implementation
-                    dispatches published events to each of the (local) clusters using the publishing
-                    thread. This means that with the default terminal, and the default
-                        <code>ClusterSelector</code>, the behavior of the
-                        <code>ClusteringEventBus</code> is exactly the same as that of the
-                        <code>SimpleEventBus</code>.</para>
+                <para>The <code>EventBusTerminal</code> forms the bridge between the Clusters inside
+                    the Event Bus. While some terminals will dispatch within the same JVM, others
+                    are aware of remoting technologies, such as AMQP to dispatch Event Messages to
+                    clusters on remote machines. The default implementation dispatches published
+                    events to each of the (local) clusters using the publishing thread. This means
+                    that with the default terminal, and the default <code>ClusterSelector</code>,
+                    the behavior of the <code>ClusteringEventBus</code> is exactly the same as that
+                    of the <code>SimpleEventBus</code>.</para>
                 <para>In a typical AMQP based configuration, the <code>EventBusTerminal</code> would
                     send published events to an Exchange. For each cluster, a Queue would be
                     connected to that exchange. The <code>EventBusTerminal</code> will create a
@@ -107,28 +115,42 @@
     </sect1>
     <sect1 xml:id="event-listeners">
         <title>Event Listeners</title>
-        <para>Event listeners are the component that act on incoming events. These events may be of
-            any type of the events mentioned in <xref linkend="events"/>. In the Axon Framework, all
-            event listeners must implement the <code>EventListener</code> interface. </para>
+        <para>Event listeners are the component that act on incoming events. Events may be of any
+            type. In the Axon Framework, all event listeners must implement the
+                <code>EventListener</code> interface. </para>
         <sect2>
-            <title>Basic configuration</title>
+            <title>Basic implementation</title>
             <para>Event listeners need to be registered with an event bus (see <xref
-                    linkend="event-bus"/>) to be notified of events. Axon provides a base
-                implementation that take care of this, and other things, for you. </para>
+                    linkend="event-bus"/>) to be notified of events. The EventListener interface
+                prescribes a single method to be implemented. This method is invoked for each Event
+                Message passed on the Event Bus that it is subscribed
+                to:<programlisting language="java">public class MyEventListener implement EventListener {
+
+    public void handle(EventMessage message) {
+        if (SomeEvent.class.isAssignableFrom(message.getPayloadType) {
+            // handle SomeEvent
+        } else if (OtherEvent.class.isAssignableFrom(message.getPayloadType) {
+            // handle SomeOtherEvent
+        }
+    }
+}</programlisting></para>
         </sect2>
         <sect2 xml:id="annotated-event-handlers">
             <title>Annotated Event Handler</title>
+            <para>Implementing the EventListener interface can produce a large if-statement and
+                verbose plumbing code. Using annotations to demarcate Event Handler methods is a
+                cleaner alternative. </para>
             <simplesect>
                 <title>
                     <code>AnnotationEventListenerAdapter</code></title>
                 <para>The <code>AnnotationEventListenerAdapter</code> can wrap any object into an
                     event listener. The adapter will invoke the most appropriate event handler
                     method available. These event handler methods must be annotated with the
-                        <code>@EventHandler</code> annotation and are resolved according the
-                        following rules:</para>
-                <para>The AnnotationEventListenerAdapter, as well as the
-                    AbstractAnnotatedAggregateRoot, use ParameterResolvers to resolve the value that
-                    should be passed in the parameters of methods annotated with @EventHandler. By
+                        <code>@EventHandler</code> annotation.</para>
+                <para>The <code>AnnotationEventListenerAdapter</code>, as well as the
+                        <code>AbstractAnnotatedAggregateRoot</code>, use
+                        <code>ParameterResolver</code>s to resolve the value that should be passed
+                    in the parameters of methods annotated with <code>@EventHandler</code>. By
                     default, Axon provides a number of parameter resolvers that allow you to use the
                     following parameter types: <itemizedlist>
                         <listitem>
@@ -136,8 +158,8 @@
                                 message</para>
                         </listitem>
                         <listitem>
-                            <para>Parameters annotated with @MetaData will resolve to the Meta Data
-                                value with the key as indicated on the annotation. If
+                            <para>Parameters annotated with <code>@MetaData</code> will resolve to
+                                the Meta Data value with the key as indicated on the annotation. If
                                     <code>required</code> is <code>false</code> (default),
                                     <code>null</code> is passed when the meta data value is not
                                 present. If <code>required</code> is <code>true</code>, the resolver
@@ -145,36 +167,31 @@
                                 meta data value is not present.</para>
                         </listitem>
                         <listitem>
-                            <para>Parameters of type MetaData will have the entire MetaData of an
-                                EventMessage injected.</para>
+                            <para>Parameters of type <code>MetaData</code> will have the entire
+                                    <code>MetaData</code> of an <code>EventMessage</code>
+                                injected.</para>
                         </listitem>
                         <listitem>
-                            <para>Parameters of type DateTime will resolve to the timestamp of the
-                                EventMessage. This is the time at which the Event was
-                                generated.</para>
+                            <para>Parameters of type <code>org.joda.time.DateTime</code> will
+                                resolve to the timestamp of the <code>EventMessage</code>. This is
+                                the time at which the Event was generated.</para>
                         </listitem>
                         <listitem>
-                            <para>Parameters assignable to Message will have the entire EventMessage
-                                injected (if the message is assignable to that parameter). If the
-                                first parameter is of type message, it effectively matches an Event
-                                of any type, even if generic parameters would suggest otherwise. Due
-                                to type erasure, Axon cannot detect what parameter is expected. In
-                                such case, it is best to declare a parameter of the payload type,
-                                followed by a parameter of type Message.</para>
+                            <para>Parameters assignable to Message will have the entire
+                                    <code>EventMessage</code> injected (if the message is assignable
+                                to that parameter). If the first parameter is of type message, it
+                                effectively matches an Event of any type, even if generic parameters
+                                would suggest otherwise. Due to type erasure, Axon cannot detect
+                                what parameter is expected. In such case, it is best to declare a
+                                parameter of the payload type, followed by a parameter of type
+                                Message.</para>
                         </listitem>
                         <listitem>
                             <para>When using Spring and <code>&lt;axon:annotation-config/></code> is
                                 declared, any other parameters will resolve to autowired beans, if
                                 exactly one autowirable candidate is available in the application
                                 context. This allows you to inject resources directly into
-                                @EventHandler annotated classes.</para>
-                        </listitem>
-                        <listitem>
-                            <para>Other parameters are resolved to resources declared using the
-                                static
-                                    <code>SimpleResourceParameterResolverFactory.register()</code>
-                                method. It is important that these resources have been declared
-                                prior to the creation of any adapters.</para>
+                                    <code>@EventHandler</code> annotated methods.</para>
                         </listitem>
                     </itemizedlist></para>
                 <para>You can configure additional ParameterResolvers by extending the
@@ -206,12 +223,40 @@
                             <para>When the top level of the hierarchy is reached, and no suitable
                                 event handler is found, the event is ignored.</para>
                         </listitem>
-                    </orderedlist></para>
+                    </orderedlist><programlisting language="java">// assume EventB extends EventA 
+// and    EventC extends EventB
+
+public class TopListener {
+
+    @EventHandler
+    public void handle(EventA event) {
+    }
+
+    @EventHandler
+    public void handle(EventC event) {
+    }
+}
+
+public class SubListener extends TopListener {
+
+    @EventHandler
+    public void handle(EventB event) {
+    }
+
+}</programlisting>In
+                    the example above, the <code>SubListener</code> will receive all instances of
+                        <code>EventB</code> as well as <code>EventC</code> (as it extends
+                        <code>EventB</code>). In other words, the <code>TopListener</code> will not
+                    receive any invocations for <code>EventC</code> at all. Since
+                        <code>EventA</code> is not assignable to <code>EventB</code> (it's its
+                    superclass), those will be processed by <code>TopListener</code>.</para>
                 <para>The constructor of the <code>AnnotationEventListenerAdapter</code> takes two
                     parameters: the annotated bean, and the <code>EventBus</code>, to which the
                     listener should subscribe. You can subscribe and unsubscribe the event listener
                     using the <code>subscribe()</code> and <code>unsubscribe()</code> methods on the
-                    adapter. </para>
+                    adapter. Alternatively, you can use
+                        <code>AnnotationEventListenerAdapter.subscribe(listener, eventBus)</code> to
+                    create and subscribe the listener in one invocation.</para>
                 <tip>
                     <para>If you use Spring, you can automatically wrap all annotated event
                         listeners with an adapter automatically by adding
@@ -305,7 +350,7 @@
                 policies must implement the <code>EventSequencingPolicy</code> interface. This
                 interface defines a single method, <code>getSequenceIdentifierFor</code>, that
                 returns the identifier sequence identifier for a given event. Events for which an
-                equals sequence identifer is returned must be processed sequentially. Events that
+                equal sequence identifer is returned must be processed sequentially. Events that
                 produce a different sequence identifier may be processed concurrently. For
                 performance reasons, policy implementations should return <code>null</code> if the
                 event may be processed in parallel to any other event. This is faster, because Axon
@@ -323,41 +368,13 @@
                 for more
                 information.
             </para>
-            <simplesect>
-                <title>Annotation support for concurrent processing</title>
-                <para>If you use the <code>AnnotationEventListenerAdapter</code>, or
-                        <code>&lt;axon:annotation-config/></code>, an <code>Executor</code> must be
-                    configured to allow asynchronous processing of events.</para>
-                <para>You can configure the event sequencing policy on the
-                        <code>@AsynchronousEventListener</code> annotation. You then set the
-                        <code>sequencePolicyClass</code> to the type of policy you like to use. Note
-                    that you can only choose policy classes that provide a public no-arg
-                    constructor.
-                    <programlisting language="java">@AsynchronousEventListener(sequencingPolicyClass = MyCustomPolicy.class)
-public class MyEventListener() {
-
-    @EventHandler
-    public void onSomeImportantEvent(MyEvent event) {
-        // eventProcessing logic
-    }
-}
-
-public class MyCustomPolicy implements EventSequencingPolicy {
-    public Object getSequenceIdentifierFor(Event event) {
-        if (event instanceof MyEvent) {
-            // let's assume that we do processing based on the someProperty field.
-            return ((MyEvent) event).someProperty();
-        }
-        return null;
-    }
-}                    </programlisting>With
-                    annotation support, the event handler bean must also act as a transaction
-                    manager in order to support transactions. There is annotation support for
-                    transaction management, too (see <xref linkend="transactionmanager"/>). </para>
-            </simplesect>
         </sect2>
         <sect2 xml:id="transactionmanager">
             <title>Managing transactions in asynchronous event handling</title>
+            <warning>
+                <para>This feature will be deprecated in favor of an asynchronous implementation of
+                    a <code>Cluster</code>.</para>
+            </warning>
             <para>In some cases, your event handlers have to store data in systems that use
                 transactions. Starting and committing a transaction for each single event has a big
                 performance impact. In Axon, events are processed in batches. The batch size depends
@@ -493,53 +510,6 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                 </para>
             </simplesect>
             <simplesect>
-                <title>Manipulating transactions during event processing</title>
-                <para>You can change transaction semantics event during event processing. This can
-                    be done in one of two ways, depending on the type of event handler you use.
-                </para>
-                <para>If you use the
-                    <code>@EventHandler</code>
-                    annotation to mark event handler
-                    methods, you may use a second parameter of type <code>TransactionStatus</code>.
-                    If such parameter is available on the annotated method, the current
-                    <code>TransactionStatus</code>
-                    object is passed as a parameter.
-                </para>
-                <para>Alternatively, you can use the static
-                    <code>TransactionStatus.current()</code>
-                    accessor to gain access to the status of the current transaction. Note that this
-                    method returns <code>null</code> if there is no active transaction.
-                </para>
-                <para>With the current transaction status, you can use the
-                    <code>requestImmediateYield()</code>
-                    and
-                    <code>requestImmediateCommit()</code>
-                    methods to end the transaction after
-                    processing of the event. The former will also tell the scheduler to reschedule
-                    the remainder of the events for another batch. The latter will use the yield
-                    policy to see what needs to be done. Since the default yielding policy is
-                    <code>YIELD_AFTER_TRANSACTION</code>, the behavior of both methods is
-                    identical when using these defaults.
-                </para>
-            </simplesect>
-            <simplesect>
-                <title>Annotation support</title>
-                <para>As with many of the other supported features in Axon, there is also annotation
-                    support for transaction management. You have several options to configure
-                    transactions.</para>
-                <para>The first is to annotate methods on your EventListener with
-                        <code>@BeforeTransaction</code> and <code>@AfterTransaction</code>. These
-                    methods will be called before and after the execution of a transactional batch,
-                    respectively. The annotated methods may accept a single parameter of type
-                        <code>TransactionStatus</code>, which provides access to transaction
-                    details, such as current status and configuration.</para>
-                <para>Alternatively, you can use an external Transaction Manager, which you assign
-                    to a field. If you annotate that field with <code>@TransactionManager</code>,
-                    Axon will autodetect it and use it as transaction manager for that listener. The
-                    transaction manager may be either one that implements the TransactionManager
-                    interface, or any other type that uses annotations.</para>
-            </simplesect>
-            <simplesect>
                 <title>Provided TransactionManager implementations</title>
                 <para>Currently, Axon Framework provides one TransactionManager implementation, the
                         <code>SpringTransactionManager</code>. This implemenation uses Spring's
@@ -574,8 +544,14 @@ public class MyCustomPolicy implements EventSequencingPolicy {
             <para>The Spring AMQP Terminal uses the Spring AMQP module to transmit events to an AMQP
                 compatible message broker, such as Rabbit MQ. It also connects local clusters to
                 queues on that message broker.</para>
-            <para>The configure the Spring AMQP Terminal, you need to specify a number of beans in
-                your application context:</para>
+            <para>The <code>axon-amqp</code> namespace
+                    (<code>http://www.axonframework.org/schema/amqp</code>) allows you to configure
+                an AMQP Terminal by adding the &lt;axon-amqp:terminal> element to the Spring
+                application context. On this element, you can define different properties for the
+                terminal, as well as a configuration containing defaults to use to connect each
+                cluster to an AMQP Queue.</para>
+            <para>The configure the Spring AMQP Terminal "manually", you need to specify a number of
+                beans in your application context:</para>
             <itemizedlist>
                 <listitem>
                     <para>The <code>ListenerContainerLifecycleManager</code> is responsible for
@@ -657,6 +633,14 @@ public class MyCustomPolicy implements EventSequencingPolicy {
                     <code>SpringAMQPConsumerConfiguration</code>) any settings configured there will
                 override the defaults set on the terminal itself. This allows you to specify
                 different behavior (such as transaction size) for different clusters.</para>
+            <programlisting>// XML Configuration for a Cluster with AMQPConsumerConfiguration
+&lt;axon:cluster id="myDefaultCluster" default="true">
+    &lt;axon:meta-data>
+        &lt;entry key="AMQP.Config">
+            &lt;axon-amqp:configuration transaction-size="20000"/>
+        &lt;/entry>
+    &lt;/axon:meta-data>
+&lt;/axon:cluster></programlisting>
         </sect2>
     </sect1>
 </chapter>

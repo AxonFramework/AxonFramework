@@ -49,8 +49,8 @@
             point and an end, both triggered by Events. While the starting point of a Saga is
             usually very clear, while there could be many ways for a Saga to end.</para>
         <para>In Axon, all Sagas must implement the <code>Saga</code> interface. As with Aggregates,
-            there is a Saga implementation that allows you to annotate event handling methods with
-                <code>@SagaEventHandler</code>: the <code>AbstractAnnotatedSaga</code>.</para>
+            there is a Saga implementation that allows you to annotate event handling methods: the
+                <code>AbstractAnnotatedSaga</code>.</para>
         <sect2>
             <title>Life Cycle</title>
             <para>As a single Saga instance is responsible for managing a single transaction. That
@@ -115,9 +115,9 @@
                     a Saga is newly created when invoking a <code>@StartSaga</code> annotated Event
                     Handler, it is automatically associated with the property identified in the
                         <code>@SagaEventHandler</code> method. Any other association can be created
-                    using the <code>associateWith(String key, Object value)</code> method. Use the
-                        <code>removeAssociationWith(String key, Object value)</code> method to
-                    remove a specific association.</para>
+                    using the <code>associateWith(String key, String/Number value)</code> method.
+                    Use the <code>removeAssociationWith(String key, String/Number value)</code>
+                    method to remove a specific association.</para>
                 <para>Imagine a Saga that has been created for a transaction around an Order. The
                     Saga is automatically associated with the Order, as the method is annotated with
                         <code>@StartSaga</code>. The Saga is responsible for creating an Invoice for
@@ -191,19 +191,6 @@
                     if the invoice is not paid in time. What if the shipment cannot be delivered?
                     The Saga should be able to cope with those scenarios as well. </para>
             </simplesect>
-            <simplesect>
-                <title>AssociationValue considerations</title>
-                <para>As said before, an AssociationValue consists of a key, which is a String, and
-                    a value, which may be of any type. However, a few simple rules should be
-                    conformed to. The value of an AssociationValue should always be a Value Object
-                    (as defined in Domain Driven Design). In terms of implementation, that means
-                    they should be immutable and have a proper <code>equals</code> and
-                        <code>hashCode</code> method. Preferably, they should implement the
-                    Comparable interface, too. If Sagas need to be persisted,
-                        <code>AssociationValue</code>s need to be serializable. In that case, only
-                    use Serializable values. Generally, it shouldn't be a problem to make Value
-                    Objects Serializable.</para>
-            </simplesect>
         </sect2>
         <sect2>
             <title>Keeping track of Deadlines</title>
@@ -269,7 +256,9 @@
             <para>For that purpose, there is the <code>ResourceInjector</code>. It is use by the
                     <code>SagaRepository</code> to inject resources into a Saga. Axon provides a
                     <code>SpringResourceInjector</code>, which injects annotated fields and methods
-                with Resources from the Application Context.</para>
+                with Resources from the Application Context, and a
+                    <code>SimpleResourceInjector</code>, which detects setters and injects resources
+                which have been registered with it.</para>
             
                 <tip>
                     <title>Mark fields holding injected resources <code>transient</code></title>
@@ -364,17 +353,15 @@
                     before and after each invocation to the Saga Repository and before and after
                     each batch of Events has been processed by the Saga itself. The Transaction
                     Manager has the opportunity to configure the batch size each time a transaction
-                    starts. The batch size describes the number of Events that a Saga may process
-                    before the transaction is committed. This mechanism can be compared to the
-                    mechanism for Event Listeners, desribed in <xref linkend="transactionmanager"
-                    />.</para>
+                    starts.</para>
                 <para>In a Spring application context, a Saga Manager can be marked as asynchronous
                     by adding the <code>executor</code> and optionally the
                         <code>transaction-manager</code> attributes to the <code>saga-manager</code>
-                    element, as shown below.
-                    <programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
-                   saga-repository="sagaRepository" event-bus="eventBus"
-                   executor="myThreadPool" transaction-manager="txManager">
+                    element, as shown below. The <code>processor-count</code> attribute defines the
+                    number of threads that should process the
+                    sagas.<programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
+                   saga-repository="sagaRepository" event-bus="eventBus">
+    &lt;axon:async processor-count="10" executor="myThreadPool" transaction-manager="txManager"/>
     &lt;axon:types>
         fully.qualified.ClassName,
         another.fq.ClassName
@@ -409,19 +396,17 @@
                 <title><code>JpaSagaRepository</code></title>
                 <para>The <code>JpaSagaRepository</code> uses JPA to store the state and Association
                     Values of Sagas. Saga's do no need any JPA annotations; Axon will serialize the
-                    sagas using a <code>Serializer</code> (similar to Event serialization,
-                    you can use either a <code>JavaSerializer</code> or an
-                        <code>XStreamSerializer</code>). Although Sagas are persisted and may be
-                    garbage collected when not used, the Association Values are kept in memory. The
-                    memory footprint of these values is generally quite small and should no be a
-                    problem. These values are reconstructed after a JVM restart, without loss of
-                    data.</para>
-                <para>In order to ensure that only a single instance exists for each conceptual
-                    Saga, the JpaSagaRepository uses a specialized cache. Unlike many other caches,
-                    the primary goal of this cache is to prevent multiple instances of a single
-                    Saga. These Sagas are Weakly Referenced. That means that once a Saga is no
-                    longer referenced, the Garbage Collector may clean them up. When the Saga is
-                    needed, a new instance is automatically created.</para>
+                    sagas using a <code>Serializer</code> (similar to Event serialization, you can
+                    use either a <code>JavaSerializer</code> or an
+                    <code>XStreamSerializer</code>).</para>
+                <note>
+                    <para>In order to ensure that only a single instance exists for each conceptual
+                        Saga, the JpaSagaRepository uses a specialized cache. Unlike many other
+                        caches, the primary goal of this cache is to prevent multiple instances of a
+                        single Saga. These Sagas are Weakly Referenced. That means that once a Saga
+                        is no longer referenced, the Garbage Collector may clean them up. When the
+                        Saga is needed, a new instance is automatically created.</para>
+                </note>
                 <para>The JpaSagaRepository is configured with a JPA <code>EntityManager</code>, a
                         <code>ResourceInjector</code> and a <code>Serializer</code>. Optionally,
                     you can choose whether to explicitly flush the <code>EntityManager</code> after

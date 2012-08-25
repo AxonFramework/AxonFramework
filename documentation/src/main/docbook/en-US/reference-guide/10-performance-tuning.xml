@@ -34,8 +34,8 @@
             <listitem>
                 <para>Normal operational use (storing and loading events):</para>
                 <para>Table 'DomainEventEntry', columns <code>type</code>,
-                        <code>aggregateIdentifier</code> and <code>sequenceNumber</code> (unique
-                    index) </para>
+                        <code>aggregateIdentifier</code> and <code>sequenceNumber</code> (primary
+                    key or unique index) </para>
             </listitem>
             <listitem>
                 <para>Snapshotting:</para>
@@ -80,7 +80,7 @@
                         reconstructed from its Events. If you use exceptions as a potential
                         (functional) return value, you can configure a
                             <code>RollbackConfiguration</code> on your Command Bus. By default, the
-                        Unit Of Work will be rolled back on every exception. </para>
+                        Unit Of Work will be rolled back on runtime exceptions.</para>
                 </listitem>
                 <listitem>
                     <para>All commands for a single aggregate must arrive on the machine that has
@@ -95,10 +95,10 @@
                     <para>Configure a sensible time to live / time to idle</para>
                     <para>By default, caches have a tendency to have a relatively short time to
                         live, a matter of minutes. For a command handling component with consistent
-                        routing, an eternal time-to-idle and time-to-live is the better default.
-                        This prevents the need to re-initialize an aggregate based on its events,
-                        just because its cache entry expired. The time-to-live of your cache should
-                        match the expected lifetime of your aggregate. </para>
+                        routing, a longer time-to-idle and time-to-live is usually better. This
+                        prevents the need to re-initialize an aggregate based on its events, just
+                        because its cache entry expired. The time-to-live of your cache should match
+                        the expected lifetime of your aggregate.</para>
                 </listitem>
             </itemizedlist></para>
     </sect1>
@@ -147,12 +147,11 @@
     <sect1>
         <title>Event Serializer tuning</title>
         <para>XStream is very configurable and extensible. If you just use a plain
-            <code>XStreamSerializer</code>, there are some quick wins ready to pick up.
-            XStream allows you to configure aliases for package names and event class names. Aliases
-            are typically much shorter (especially if you have long package names), making the
-            serialized form of an event smaller. An since we're talking XML, character removed from
-            XML is twice the profit (one for the start tag, and one for the end tag).
-        </para>
+                <code>XStreamSerializer</code>, there are some quick wins ready to pick up. XStream
+            allows you to configure aliases for package names and event class names. Aliases are
+            typically much shorter (especially if you have long package names), making the
+            serialized form of an event smaller. And since we're talking XML, each character removed
+            from XML is twice the profit (one for the start tag, and one for the end tag). </para>
         <para>A more advanced topic in XStream is creating custom converters. The default reflection
             based converters are simple, but do not generate the most compact XML. Always look
             carefully at the generated XML and see if all the information there is really needed to
@@ -171,15 +170,12 @@
             information.
         </para>
         <para>For ultimate performance, you're probably better off without reflection based
-            mechanisms alltogether. In that case, it is probably wisest to create a customer
+            mechanisms alltogether. In that case, it is probably wisest to create a custom
             serialization mechanism. The <code>DataInputStream</code> and
                 <code>DataOutputStream</code> allow you to easilly write the contents of the Events
             to an output stream. The <code>ByteArrayOutputStream</code> and
-                <code>ByteArrayInputStream</code> allow writing to and reading from byte arrays. The
-                <code>DomainEvent</code> class provides a constructor that you can use to do a full
-            reconstruction based on existing data: <code>DomainEvent(String eventIdentifier,
-                DateTime creationTimeStamp, long eventRevision, long sequenceNumber,
-                AggregateIdentifier aggregateIdentifier)</code>. </para>
+                <code>ByteArrayInputStream</code> allow writing to and reading from byte
+            arrays.</para>
     </sect1>
     <sect1 linkend="custom-identifier-generation">
         <title>Custom Identifier generation</title>

@@ -16,8 +16,7 @@
   -->
 
 <book version="5.0" xmlns="http://docbook.org/ns/docbook"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-        >
+      xmlns:xi="http://www.w3.org/2001/XInclude">
     <info>
         <title>Reference Guide</title>
         <authorgroup>
@@ -25,7 +24,6 @@
                 <personname>
                     <firstname>Allard</firstname>
                     <surname>Buijze</surname>
-
                 </personname>
                 <affiliation>
                     <orgname>Orange11</orgname>

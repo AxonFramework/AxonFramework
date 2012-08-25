@@ -69,12 +69,14 @@
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/releaseinfo"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="releaseinfo"/>
 
+        <!-- Don't include the names of the authors
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/authorgroup/author"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/authorgroup/othercredit"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/authorgroup/author"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/authorgroup/othercredit"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="bookinfo/author"/>
         <xsl:apply-templates mode="book.titlepage.recto.auto.mode" select="info/author"/>
+        -->
     </xsl:template>
 
     <xsl:template match="title" mode="book.titlepage.recto.auto.mode">

@@ -22,16 +22,15 @@
         commands of a certain type and taking action based on the information contained inside
         it.
     </para>
-    <para>The use of an explicit command dispatching mechanism has a number of advantages. First
-        of all, there is a single object that clearly describes the intent of the client. By logging
+    <para>The use of an explicit command dispatching mechanism has a number of advantages. First of
+        all, there is a single object that clearly describes the intent of the client. By logging
         the command, you store both the intent and related data for future reference. Command
         handling also makes it easy to expose your command processing components to remote clients,
         via web services for example. Testing also becomes a lot easier, you could define test
         scripts by just defining the starting situation (given), command to execute (when) and
-        expected results (then) by listing a number of events and commands (see<xref
-                linkend="testing"/>). The last major advantage is that it is very easy to switch between
-        synchronous and asynchronous command processing.
-    </para>
+        expected results (then) by listing a number of events and commands (see <xref
+            linkend="testing"/>). The last major advantage is that it is very easy to switch between
+        synchronous and asynchronous command processing. </para>
     <para>This doesn't mean Command dispatching using explicit command object is the only right way
         to do it. The goal of Axon is not to prescribe a specific way of working, but to support you
         doing it your way. It is still possible to use a Service layer that you can invoke to
@@ -46,7 +45,7 @@
         <para>The Command Gateway is a convenient interface towards the Command dispatching
             mechanism. While you are not required to use a Gateway to dispatch Commands, it is
             generally the easiest option to do so. </para>
-        <para>There are two ways to use a CommandGateway. The first is to use the
+        <para>There are two ways to use a Command Gateway. The first is to use the
                 <code>CommandGateway</code> interface and <code>DefaultCommandGateway</code>
             implementation provided by Axon. The command gateway provides a number of methods that
             allow you to send a command and wait for a result either synchronously, with a timeout
@@ -54,20 +53,21 @@
         <para>The other option is perhaps the most flexible of all. You can turn almost any
             interface into a Command Gateway using the <code>GatewayProxyFactory</code>. This allows
             you to define your application's interface using strong typing and declaring your own
-            (checked) business exceptions.</para>
+            (checked) business exceptions. Axon will automatically generate an implementation for
+            that interface at runtime.</para>
         <sect2>
-            <title>Configuring the CommandGateway</title>
-            <para>Both your custom gateway and the one provided by Axon need to be configured with 
-                at least access to the Command Bus. In addition, the CommandGateway can be configured 
-                with a <code>RetryScheduler</code> and any number of 
-                <code>CommandDispatchInterceptor</code>s.</para>
+            <title>Configuring the Command Gateway</title>
+            <para>Both your custom gateway and the one provided by Axon need to be configured with
+                at least access to the Command Bus. In addition, the Command Gateway can be
+                configured with a <code>RetryScheduler</code> and any number of
+                    <code>CommandDispatchInterceptor</code>s.</para>
             <para>The <code>RetryScheduler</code> is capable of scheduling retries when command
-                execution has failed. The IntervalRetryScheduler is an implementation that will
-                retry a given command at set intervals until it succeeds, or a maximum number of
-                retries is done. When a command fails due to an exception that is explicitly
-                non-transient, no retries are done at all. Note that the retry scheduler is only
-                invoked when a command fails due to a RuntimeException. Checked exceptions are
-                regarded "business exception" and will never trigger a retry.</para>
+                execution has failed. The <code>IntervalRetryScheduler</code> is an implementation
+                that will retry a given command at set intervals until it succeeds, or a maximum
+                number of retries is done. When a command fails due to an exception that is
+                explicitly non-transient, no retries are done at all. Note that the retry scheduler
+                is only invoked when a command fails due to a <code>RuntimeException</code>. Checked
+                exceptions are regarded "business exception" and will never trigger a retry.</para>
             <para><code>CommandDispatchInterceptor</code>s allow modification of
                     <code>CommandMessage</code>s prior to dispatching them to the Command Bus. In
                 contrast to <code>CommandDispatchInterceptor</code>s configured on the CommandBus,
@@ -76,11 +76,12 @@
                 example.</para>
         </sect2>
         <sect2>
-            <title>Creating a Custom CommandGateway</title>
-            <para>The GatewayProxyFactory creates an instance of a CommandGateway based on an
-                interface class. The behavior of each method is based on the parameter types, return
-                type and declared exception. Using this gateway is not only convenient, it makes
-                testing a lot easier by allowing you to mock your interface where needed.</para>
+            <title>Creating a Custom Command Gateway</title>
+            <para>The <code>GatewayProxyFactory</code> creates an instance of a Command Gateway
+                based on an interface class. The behavior of each method is based on the parameter
+                types, return type and declared exception. Using this gateway is not only
+                convenient, it makes testing a lot easier by allowing you to mock your interface
+                where needed.</para>
             <para>This is how parameter affect the behavior of the CommandGateway:</para>
             <itemizedlist>
                 <listitem>
@@ -126,20 +127,22 @@
                     <para>Any declared checked exception will be thrown if the Command Handler (or
                         an interceptor) threw an exceptions of that type. If a checked exception is
                         thrown that has not been declared, it is wrapped in a
-                            <code>CommandExecutionException</code>.</para>
+                            <code>CommandExecutionException</code>, which is a
+                            <code>RuntimeException</code>.</para>
                 </listitem>
                 <listitem>
-                    <para>When a timeout occurs, the default behavior is to return null from the
-                        method. This can be changed by declaring a TimeoutException. If this
-                        exception is declared, a TimeoutException is thrown instead.</para>
+                    <para>When a timeout occurs, the default behavior is to return <code>null</code>
+                        from the method. This can be changed by declaring a
+                            <code>TimeoutException</code>. If this exception is declared, a
+                            <code>TimeoutException</code> is thrown instead.</para>
                 </listitem>
                 <listitem>
                     <para>When a Thread is interrupted while waiting for a result, the default
                         behavior is to return null. In that case, the interrupted flag is set back
-                        on the Thread. By declaring an InterruptedException on the method, this
-                        behavior is changed to throw that exception instead. The interrupt flag is
-                        removed when the exception is thrown, consistent with the java
-                        specification.</para>
+                        on the Thread. By declaring an <code>InterruptedException</code> on the
+                        method, this behavior is changed to throw that exception instead. The
+                        interrupt flag is removed when the exception is thrown, consistent with the
+                        java specification.</para>
                 </listitem>
                 <listitem>
                     <para>Other Runtime Exceptions may be declared on the method, but will not have
@@ -166,12 +169,31 @@
                         specify timeout parameters.</para>
                 </listitem>
             </itemizedlist>
+            <programlisting language="java">public interface MyGateway {
+    
+    // fire and forget
+    void sendCommand(MyPayloadType command);
+
+    // method that attaches meta data and will wait for a result for 10 seconds
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
+    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command, 
+                                             @MetaData("userId") String userId);
+
+    // alternative that throws exceptions on timeout
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
+    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command) 
+                         throws TimeoutException, InterruptedException;
+
+    // this method will also wait, caller decides how long
+    void sendCommandAndWait(MyPayloadType command, long timeout, TimeUnit unit) 
+                         throws TimeoutException, InterruptedException;
+}</programlisting>
             <simplesect>
                 <title>Configuring a custom Command Gateway Spring</title>
                 <para>When using Spring, the easiest way to create a custom Command Gateway is by
                     using the <code>CommandGatewayFactoryBean</code>. It uses setter injection,
-                    making it easier to configure. Only the "commandBus" property is
-                    mandatory.</para>
+                    making it easier to configure. Only the "commandBus" and "gatewayInterface"
+                    properties are mandatory.</para>
             </simplesect>
         </sect2>
     </sect1>
@@ -187,17 +209,18 @@
             <title>Dispatching commands</title>
             <para>The CommandBus provides two methods to dispatch commands to their respective
                 handler: <code>dispatch(commandMessage, callback)</code> and
-                    <code>dispatch(commandMessage)</code>. The first parameter is the actual command
-                to dispatch. The optional second parameter takes a callback that allows the
-                dispatching component to be notified when command handling is completed. This
-                callback has two methods: <code>onSuccess()</code> and <code>onFailure()</code>,
-                which are called when command handling returned normally, or when it threw an
-                exception, respectively. </para>
+                    <code>dispatch(commandMessage)</code>. The first parameter is a message
+                containing the actual command to dispatch. The optional second parameter takes a
+                callback that allows the dispatching component to be notified when command handling
+                is completed. This callback has two methods: <code>onSuccess()</code> and
+                    <code>onFailure()</code>, which are called when command handling returned
+                normally, or when it threw an exception, respectively. </para>
             <para>The calling component may not assume that the callback is invoked in the same
                 thread that dispatched the command. If the calling thread depends on the result
                 before continuing, you can use the <code>FutureCallback</code>. It is a combination
                 of a <code>Future</code> (as defined in the java.concurrent package) and Axon's
-                    <code>CommandCallback</code>. </para>
+                    <code>CommandCallback</code>. Alternatively, consider using a Command
+                Gateway.</para>
             <para>Best scalability is achieved when your application is not interested in the result
                 of a dispatched command at all. In that case, you should use the single-parameter
                 version of the <code>dispatch</code> method. If the <code>CommandBus</code> is fully
@@ -212,7 +235,9 @@
                 dispatches them. After a command is processed, the modified aggregate(s) are saved
                 and generated events are published in that same thread. In most scenario's, such as
                 web applications, this implementation will suit your needs. </para>
-            <para>The SimpleCommandBus allows CommandHandlerInterceptors to be configured. They are
+            <para>The SimpleCommandBus allows interceptors to be configured.
+                    <code>CommandDispatchInterceptor</code>s are invoked when a command is
+                dispatched on the Command Bus. The <code>CommandHandlerInterceptor</code>s are
                 invoked before the actual command handler method is, allowing you to do modify or
                 block the command. See <xref linkend="command-handler-interceptors"/> for more
                 information. </para>
@@ -275,15 +300,11 @@
                 </itemizedlist></para>
             <simplesect>
                 <title>Configuring the DisruptorCommandBus</title>
-                <para>The DisruptorCommandBus is part of the
-                        <emphasis>axon-disruptor-commandbus</emphasis> module. If you use maven,
-                    make sure to add a dependency to that module. The <code>groupId</code> and
-                        <code>version</code> are identical to those of the Core module.</para>
                 <para>To construct a <code>DisruptorCommandBus</code> instance, you need an
                         <code>AggregateFactory</code>, an <code>EventBus</code> and
                         <code>EventStore</code>. These components are explained in <xref
                         xmlns:xlink="http://www.w3.org/1999/xlink"
-                        linkend="repositories-and-eventstores"/> and <xref
+                        linkend="repositories-and-event-stores"/> and <xref
                         xmlns:xlink="http://www.w3.org/1999/xlink" linkend="event-bus"/>. Finally,
                     you also need a <code>CommandTargetResolver</code>. This is a mechanism that
                     tells the disruptor which aggregate is the target of a specific Command. There
@@ -292,7 +313,8 @@
                     describe the target, or the <code>MetaDataCommandTargetResolver</code>, which
                     uses the Command's Meta Data fields. </para>
                 <para>Optionally, you can provide a <code>DisruptorConfiguration</code> instance,
-                    which allows you to tweak the configuration to optimize performance:<itemizedlist>
+                    which allows you to tweak the configuration to optimize performance for your
+                    specific environment.<itemizedlist>
                         <listitem>
                             <para>ClaimStrategy: Sets the ClaimStrategy instance, which defines how
                                 a Thread dispatching a command can claim a "position" in the
@@ -307,11 +329,10 @@
                                 eachother. The best WaitStrategy depends on the number of cores
                                 available in the machine, and the number of other processes running.
                                 If low latency is crucial, and the DisruptorCommandBus may claim
-                                three cores for itself, you can use the
-                                    <code>BusySpinWaitStrategy</code>. To make the Command Bus claim
-                                less of the CPU and allow other threads to do processing, use the
-                                    <code>YieldingWaitStrategy</code>. Finally, you can use the
-                                    <code>SleepingWaitStrategy</code> and
+                                cores for itself, you can use the <code>BusySpinWaitStrategy</code>.
+                                To make the Command Bus claim less of the CPU and allow other
+                                threads to do processing, use the <code>YieldingWaitStrategy</code>.
+                                Finally, you can use the <code>SleepingWaitStrategy</code> and
                                     <code>BlockingWaitStrategy</code> to allow other processes a
                                 fair share of CPU. The latter is suitable if the Command Bus is not
                                 expected to be processing full-time. Defaults to the
@@ -361,10 +382,9 @@
                         </listitem>
                         <listitem>
                             <para>Cache: Sets the cache that stores aggregate instances that have
-                                been reconstructed from the Event Store. Note that while the
-                                DisruptorEventBus is processing an Aggregate, it reuses that
-                                reference, avoiding any cache uses. By default, no cache is
-                                used.</para>
+                                been reconstructed from the Event Store. The cache is used to store
+                                aggregate instances that are not in active use by the
+                                disruptor.</para>
                         </listitem>
                         <listitem>
                             <para>InvokerThreadCount: The number of threads to assign to the
@@ -374,9 +394,11 @@
                         <listitem>
                             <para>PublisherThreadCount: The number of threads to use to publish
                                 events. A good starting point is half the number of cores, and could
-                                be increased if a lot of time is spent in IO.</para>
+                                be increased if a lot of time is spent on IO.</para>
                         </listitem>
                     </itemizedlist></para>
+                <para>Spring users can use the &lt;axon:disruptor-command-bus> element for easier
+                    configuration of the <code>DisruptorCommandBus</code>.</para>
             </simplesect>
         </sect2>
     </sect1>
@@ -401,16 +423,22 @@
         <sect2>
             <title>Subscribing to a Command Bus</title>
             <para>You can subscribe and unsubscribe command handlers using the
-                <code>subscribe</code>
-                and
-                <code>unsubscribe</code>
-                methods on
-                <code>CommandBus</code>, respectively. They both take two parameters: the type
+                    <code>subscribe</code> and <code>unsubscribe</code> methods on
+                    <code>CommandBus</code>, respectively. They both take two parameters: the type
                 of command to (un)subscribe the handler to, and the handler to (un)subscribe. An
                 unsubscription will only be successful if the handler passed as the second parameter
                 was currently assigned to handle that type of command. If another command was
                 subscribed to that type of command, nothing happens.
-            </para>
+                <programlisting language="java">CommandBus commandBus = new SimpleCommandBus();
+
+// to subscribe a handler:
+commandBus.subscribe(MyPayloadType.class, myCommandHandler);
+
+// we can subscribe the same handler to different command types
+commandBus.subscribe(MyOtherPayload.class, myCommandHandler);
+
+// we can also unsubscribe the handler from one of these types:
+commandBus.unsubscribe(MyOtherPayload.class, myCommandHandler);</programlisting></para>
         </sect2>
         <sect2>
             <title>Annotation based handlers</title>
@@ -448,19 +476,26 @@
                                     <code>ParameterResolverFactory</code> for more
                                 information.</para>
                         </listitem>
-                    </itemizedlist></para>
+                    </itemizedlist><programlisting language="java">public class MyAnnotatedHandler {
+
+    @CommandHandler
+    public void handleSomeCommand(SomeCommand command, @MetaData("userId") String userId) {
+        // whatever logic here
+    }
+
+}
+
+// To register the annotated handlers to the command bus:
+AnnotationCommandHandlerAdapter handler = AnnotationCommandHandlerAdapter.subscribe(new MyAnnotatedHandler(), commandBus);
+
+// and to unsubscribe again:
+handler.unsubscribe();</programlisting></para>
             </annotation>
-            <para>You can use the
-                <code>AnnotationCommandHandlerAdapter</code>
-                to turn your
-                annotated class into a<code>CommandHandler</code>. The adapter also takes a
-                <code>CommandBus</code>
-                instance. Use the
-                <code>subscribe()</code>
-                method on the
+            <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
+                annotated class into a <code>CommandHandler</code>. The adapter also takes a
+                    <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on the
                 adapter to subscribe all the annotated handlers to the command bus using the correct
-                command type.
-            </para>
+                command type. </para>
             <note>
                 <para>If you use Spring, you can add the <code>&lt;axon:annotation-config/></code>
                     element to your application context. It will turn any bean with
@@ -507,10 +542,8 @@
                     invocation (without parameters) as the value to use.
                 </para>
                 <para>If you prefer not to use annotations, the behavior can be overridden by
-                    supplying a custom<code>CommandTargetResolver</code>. This class should return
-                    the Aggregate Identifier and expected version (if any) based on a given
-                    command.
-                </para>
+                    supplying a custom <code>CommandTargetResolver</code>. This class should return
+                    the Aggregate Identifier and expected version (if any) based on a given command. </para>
                 <para>
                     <note>
                         <title>Creating new Aggregate Instances</title>
@@ -532,6 +565,44 @@
                         </para>
                     </note>
                 </para>
+                <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
+   
+    @AggregateIdentifier
+    private String id;
+
+    @CommandHandler
+    public MyAggregate(CreateMyAggregateCommand command) {
+        apply(new MyAggregateCreatedEvent(IdentifierFactory.getInstance().generateIdentifier()));
+    }
+
+    // no-arg constructor for Axon
+    MyAggregate() {
+    }
+
+    @CommandHandler
+    public void doSomething(DoSomethingCommand command) {
+        // do something...
+    }
+
+    // code omitted for brevity. The event handler for MyAggregateCreatedEvent must set the id field
+}
+
+public class DoSomethingCommand {
+
+    @TargetAggregateIdentifier
+    private String aggregateId;
+
+    // code omitted for brevity
+
+}
+
+// to generate the command handlers for this aggregate:
+AggregateAnnotationCommandHandler handler = AggregateAnnotationCommandHandler.subscribe(MyAggregate.class, repository, commandBus);
+// or when using another type of CommandTargetResolver:
+AggregateAnnotationCommandHandler handler = AggregateAnnotationCommandHandler.subscribe(MyAggregate.class, repository, commandBus, myOwnCommandTargetResolver);
+
+// to unsubscribe:
+handler.unsubscribe();</programlisting>
             </simplesect>
         </sect2>
     </sect1>
@@ -542,8 +613,7 @@
             is tracked in the current Unit of Work. When command handling is finished, the Unit of
             Work is committed and all actions are finalized. This means that any repositores are
             notified of state changes in their aggregates and events scheduled for publication are
-            send to the Event Bus.
-        </para>
+            sent to the Event Bus. </para>
         <para>The Unit of Work serves two purposes. First, it makes the interface towards
             repositories a lot easier, since you do not have to explicitly save your changes.
             Secondly, it is an important hook-point for interceptors to find out what a command
@@ -587,40 +657,31 @@
                 default, these exceptions will cause the UnifOfWork to roll back all changes. As a
                 result, no Events are stored or published. In some cases, however, you might want to
                 commit the Unif of Work and still notify the dispatcher of the command of an
-                exception through the callback. The
-                <code>SimpleCommandBus</code>
-                allows you to
-                provide a<code>RollbackConfiguration</code>. The
-                <code>RollbackConfiguration</code>
+                exception through the callback. The <code>SimpleCommandBus</code> allows you to
+                provide a <code>RollbackConfiguration</code>. The <code>RollbackConfiguration</code>
                 instance indicates whether an exception should perform a rollback on the Unit of
                 Work, or a commit. Axon provides two implementation, which should cover most of the
-                cases.
-            </para>
-            <para>The<code>RollbackOnAllExceptionsConfiguration</code>, which is the default, will
+                cases. </para>
+            <para>The <code>RollbackOnAllExceptionsConfiguration</code>, which is the default, will
                 cause a rollback on any exception (or error). The other is the
-                <code>RollbackOnUncheckedExceptionConfiguration</code>, which will commit the
+                    <code>RollbackOnUncheckedExceptionConfiguration</code>, which will commit the
                 Unit of Work on checked exceptions (those not extending
-                <code>RuntimeException</code>) while still performing a rollback on Errors and
-                Runtime Exceptions.
-            </para>
+                    <code>RuntimeException</code>) while still performing a rollback on Errors and
+                Runtime Exceptions. </para>
         </simplesect>
         <simplesect>
             <title>Programatically managing a Unit of Work</title>
             <para>When using a Command Bus, the lifeycle of the Unit of Work will be automatically
                 managed for you. If you choose not to use explicit command objects and a Command
                 Bus, but a Service Layer instead, you will need to programatically start and commit
-                (or roll back) a Unit of Work instead.
-            </para>
+                (or roll back) a Unit of Work instead. </para>
             <para>In most cases, the DefaultUnitOfWork will provide you with the functionality you
-                need. It expects Command processing to happen within a single thread. To start a
-                new Unit Of Work, simply call<code>DefaultUnitOfWork.startAndGet();</code>. This
-                will start a Unit of Work, bind it to the current thread (making it accessible via
-                <code>CurrentUnitOfWork.get()</code>), and return it. When processing is done,
-                either invoke
-                <code>unitOfWork.commit();</code>
-                or
-                <code>unitOfWork.rollback(optionalException)</code>.
-            </para>
+                need. It expects Command processing to happen within a single thread. To start a new
+                Unit Of Work, simply call<code>DefaultUnitOfWork.startAndGet();</code>. This will
+                start a Unit of Work, bind it to the current thread (making it accessible via
+                    <code>CurrentUnitOfWork.get()</code>), and return it. When processing is done,
+                either invoke <code>unitOfWork.commit();</code> or
+                    <code>unitOfWork.rollback(optionalException)</code>. </para>
             <para>Typical usage is as follows:
                 <programlisting language="java">UnitOfWork uow = DefaultUnitOfWork.startAndGet();
 try {
@@ -630,6 +691,34 @@ try {
     uow.rollback(e);
     // maybe rethrow...
 }</programlisting></para>
+        </simplesect>
+        <simplesect>
+            <title>Unit of Work phases</title>
+            <para>A Unit of Work knows several phases. Each time it progresses to another phase, the
+                UnitOfWork Listeners are notified.</para>
+            <itemizedlist>
+                <listitem>
+                    <para>Active phase: this is where the Unit of Work starts. Each time an event is
+                        registered with the Unit of Work, the <code>onEventRegistered</code> method
+                        is called. This method may alter the event message, for example to attach
+                        meta data to it. The return value of the method is the new EventMessage
+                        instance to use.</para>
+                </listitem>
+                <listitem>
+                    <para>Commit phase: before a Unit of Work is committed, the listeners'
+                            <code>onPrepareCommit</code> methods are invoked. This method is
+                        provided with the set of aggregates and list of Event Messages being stored.
+                        When the commit succeeded, the <code>afterCommit</code> method is invoked.
+                        If a commit failed, the <code>onRollback</code> is used. This method has a
+                        parameter which defines the cause of the failure, ir available.</para>
+                </listitem>
+                <listitem>
+                    <para>Cleanup phase: This is the phase where any of the resources held by this
+                        Unit of Work (such as locks) are to be released. If multiple Units Of Work
+                        are nested, the cleanup phase is postponed until the outer unit of work is
+                        ready to clean up.</para>
+                </listitem>
+            </itemizedlist>
         </simplesect>
     </sect1>
     <sect1 xml:id="command-handler-interceptors">
@@ -644,9 +733,9 @@ try {
         <sect2>
             <title>Command Dispatch Interceptors</title>
             <para>Command Dispatch Interceptors are invoked when a command is dispatched on a
-                Command Bus. They have the ability to alter the Command Message, by adding Meta Data,
-                for example, or block the command by throwing an Exception. The interceptors are
-                always invoked on the thread that dispatches the Command.</para>
+                Command Bus. They have the ability to alter the Command Message, by adding Meta
+                Data, for example, or block the command by throwing an Exception. These interceptors
+                are always invoked on the thread that dispatches the Command.</para>
             <sect3>
                 <title>Structural validation</title>
                 <para>There is no point in processing a command if it does not contain all required
@@ -703,6 +792,9 @@ try {
                     Spring's <code>PlatformTransactionManager</code> to manage the actual
                     transactions. A transaction is committed after a successful commit of the Unit
                     of Work, or rolled back as the Unit of Work is rolled back. </para>
+                <para>When building another transactional interceptor, you can extend from
+                        <code>AbstractTransactionalInterceptor</code>. All you need to define is how
+                    a transaction is started, committed and rolled back.</para>
             </sect3>
             <sect3 xml:id="auditing-interceptor">
                 <title>Auditing</title>
@@ -745,6 +837,7 @@ try {
             not invoke any handlers at all. All it does is form a "bridge" between Command Bus
             implementations on different JVM's. Each instance of the
                 <code>DistributedCommandBus</code> on each JVM is called a "Segment".</para>
+        <!--TODO: Add schema of Distributed Command Bus and local segments here-->
         <para>
             <note>
                 <title>Dependencies</title>
@@ -754,13 +847,14 @@ try {
                     version are identifical to those of the Core module. </para>
             </note>
         </para>
-        <para>The DistributedCommandBus relies on two components: a CommandBusConnector, which
-            implements the communication protocol between the JVM's, and the RoutingStrategy, which
-            provides a Routing Key for each incoming Command. This Routing Key defines which segment
-            of the Distributed Command Bus should be given a Command. Two commands with the same
-            routing key will always be routed to the same segment, as long as there is no change in
-            the number and configuration of the segments. Generally, the identifier of the targeted
-            aggregate is used as a routing key.</para>
+        <para>The <code>DistributedCommandBus</code> relies on two components: a
+                <code>CommandBusConnector</code>, which implements the communication protocol
+            between the JVM's, and the <code>RoutingStrategy</code>, which provides a Routing Key
+            for each incoming Command. This Routing Key defines which segment of the Distributed
+            Command Bus should be given a Command. Two commands with the same routing key will
+            always be routed to the same segment, as long as there is no change in the number and
+            configuration of the segments. Generally, the identifier of the targeted aggregate is
+            used as a routing key.</para>
         <para>Two implementations of the RoutingStrategy are provided: the
                 <code>MetaDataRoutingStrategy</code>, which uses a Meta Data property in the Command
             Message to find the routing key, and the <code>AnnotationRoutingStrategy</code>, which
@@ -827,6 +921,23 @@ try {
                 routing keys as the other segments. Note that when commands are unevenly distributed
                 over the rouing keys, segments with lower load factors could still receive more
                 command than a segment with a higher load factor.</para>
+            <programlisting language="java">JChannel channel = new JChannel("path/to/channel/config.xml");
+CommandBus localSegment = new SimpleCommandBus();
+Serializer serializer = new XStreamSerializer();
+
+JGroupsConnector connector = new JGroupsConnector(channel, "myCommandBus", localSegment, serializer);
+DistributedCommandBus commandBus = new DistributedCommandBus(connector);
+
+// on one node:
+connector.connect(50);
+commandBus.subscribe(CommandType.class, handler);
+
+// on another node with more CPU:
+connector.connect(150);
+commandBus.subscribe(CommandType.class, handler);
+commandBus.subscribe(AnotherCommandType.class, handler2);
+
+// from now on, just deal with commandBus as if it is local...</programlisting>
             <note>
                 <para>Note that it is not required that all segments have Command Handlers for the
                     same type of Comands. You may use different segments for different Command Types
@@ -834,13 +945,13 @@ try {
                     Command to that has support for that specific type of Command.</para>
             </note>
             <simplesect>
-                <title>The JGroupsConnector and SpringFramework</title>
+                <title>The <code>JGroupsConnector</code> and Spring Framework</title>
                 <para>If you use Spring, you may want to consider using the
                         <code>JGroupsConnectorFactoryBean</code>. It automatically connects the
                     Connector when the ApplicationContext is started, and does a proper disconnect
-                    when the ApplicationContext is shut down. Furthermore, it uses sensible defaults
-                    (though not the assumed production ready!) and autowiring for the
-                    configuration.</para>
+                    when the <code>ApplicationContext</code> is shut down. Furthermore, it uses
+                    sensible defaults for a testing envinroment (but should not be considered
+                    production ready) and autowiring for the configuration.</para>
             </simplesect>
         </sect2>
     </sect1>

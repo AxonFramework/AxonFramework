@@ -23,8 +23,8 @@
         Repository.
     </para>
     <para>In the Axon Framework, all repositories must implement the <code>Repository</code>
-        interface. This interface prescribes three methods:<code>load(identifier, version)</code>,
-            <code>load(identifier)</code> and<code>add(aggregate)</code>. The <code>load</code>
+        interface. This interface prescribes three methods: <code>load(identifier, version)</code>,
+            <code>load(identifier)</code> and <code>add(aggregate)</code>. The <code>load</code>
         methods allows you to load aggregates from the repository. The optional <code>version</code>
         parameter is used to detect concurrent modifications (see <xref
             linkend="conflict-resolution"/>). <code>add</code> is used to register newly created
@@ -68,11 +68,11 @@
         <simplesect>
             <title><code>AbstractRepository</code>
             </title>
-            <para>The most basic implementation of the repository is AbstractRepository. It takes
-                care of the event publishing when an aggregate is saved. The actual persistence
-                mechanism must still be implemented. This implementation doesn't provide any locking
-                mechanism and expects the underlying data storage mechanism to provide it.
-            </para>
+            <para>The most basic implementation of the repository is
+                <code>AbstractRepository</code>. It takes care of the event publishing when an
+                aggregate is saved. The actual persistence mechanism must still be implemented. This
+                implementation doesn't provide any locking mechanism and expects the underlying data
+                storage mechanism to provide it. </para>
         </simplesect>
         <simplesect xml:id="locking-repository">
             <title><code>LockingRepository</code>
@@ -84,9 +84,9 @@
                 dispatching logic, it will also ensure that aggregates are not concurrently
                 modified.
             </para>
-            <para>You can configure the <code>LockingRepository</code> to use an optimistic locking
-                strategy, or a pessimistic one. When the optimistic lock detects concurrent access,
-                the second thread saving an aggregate will receive a
+            <para>You can configure the <code>LockingRepository</code> with a locking strategy, such
+                an optimistic or a pessimistic one. When the optimistic lock detects concurrent
+                access, the second thread saving an aggregate will receive a
                     <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
                 access to the aggregate alltogether. The pessimistic locking strategy is the default
                 strategy. A custom locking strategy can be provided by implementing the
@@ -135,14 +135,9 @@
         <simplesect>
             <title><code>GenericJpaRepository</code>
             </title>
-            <para>This is a repository implementation that can store JPA compatible Aggregates, such
-                as
-                <code>AbstractJpaAggregateRoot</code>
-                subclasses. It is configured with an
-                <code>EntityManager</code>
-                to manage the actual persistence, and a class
-                specifiying the actual type of Aggregate stored in the Repository.
-            </para>
+            <para>This is a repository implementation that can store JPA compatible Aggregates. It
+                is configured with an <code>EntityManager</code> to manage the actual persistence,
+                and a class specifiying the actual type of Aggregate stored in the Repository. </para>
         </simplesect>
     </sect1>
     <sect1 xml:id="event-sourcing-repositories">
@@ -159,7 +154,7 @@
                 functionality needed by any event sourcing repository in the AxonFramework. It
                 depends on an <code>EventStore</code> (see <xref
                     linkend="implementing-an-eventstore"/>), which abstracts the actual storage
-                mechanism for the events and an<code>AggregateFactory</code>, which is reponsible
+                mechanism for the events and an <code>AggregateFactory</code>, which is reponsible
                 for creating uninitialized aggregate instances. </para>
             <para>The AggregateFactory specifies which aggregate needs to be created and how. Once
                 an aggregate has been created, the
@@ -171,6 +166,46 @@
                 implementations that you may use. If
                 they do not suffice, it is very easy to create your own implementation.
             </para>
+            <para><emphasis>GenericAggregateFactory</emphasis>
+            </para>
+            <para>The <code>GenericAggregateFactory</code> is a special
+                    <code>AggregateFactory</code> implementation that can be used for any type of
+                Event Sourced Aggregate Root. The <code>GenericAggregateFactory</code> creates an
+                instance of the Aggregate type the repository manages. The Aggregate class must be
+                non-abstract and declare a default no-arg constructor that does no initialization at
+                all. </para>
+            <para>The GenericAggregateFactory is suitable for most scenarios where aggregates do not
+                need special injection of non-serializable resources. </para>
+            <para><emphasis>SpringPrototypeAggregateFactory</emphasis>
+            </para>
+            <para>Depending on your architectural choices, it might be useful to inject dependencies
+                into your aggregates using Spring. You could, for example, inject query repositories
+                into your aggregate to ensure the existance (or inexistance) of certain values. </para>
+            <para>To inject dependencies into your aggregates, you need to configure a prototype
+                bean of your aggregate root in the Spring context that also defines the
+                    <code>SpringPrototypeAggregateFactory</code>. Instead of creating regular
+                instances of using a constructor, it uses the Spring Application Context to
+                instantiate your aggregates. This will also inject any dependencies in your
+                aggregate. </para>
+            <para><emphasis>Implementing your own AggregateFactory</emphasis>
+            </para>
+            <para>In some cases, the <code>GenericAggregateFactory</code> just doesn't deliver what
+                you need. For example, you could have an abstract aggregate type with multiple
+                implementations for different scenarios (e.g. <code>PublicUserAccount</code> and
+                    <code>BackOfficeAccount</code> both extending an <code>Account</code>). Instead
+                of creating different repositories for each of the aggregates, you could use a
+                single repository, and configure an AggregateFactory that is aware of the different
+                implementations. </para>
+            <para>The AggregateFactory must specify the aggregate type identifier. This is a String
+                that the Event Store needs to figure out which events belong to which type of
+                aggregate. Typically, this name is deducted from the abstract super-aggregate. In
+                the given example that could be: Account. </para>
+            <para>The bulk of the work the Aggregate Factory does is creating uninitialized
+                Aggregate instances. It must do so using a given aggregate identifier and the first
+                Event from the stream. Usually, this Event is a creation event which contains hints
+                about the expected type of aggregate. You can use this information to choose an
+                implementation and invoke its constructor. Make sure no Events are applied by that
+                constructor; the aggregate must be uninitialized. </para>
         </simplesect>
         <simplesect>
             <title>CachingEventSourcingRepository</title>
@@ -192,58 +227,6 @@
                     eachother.
                 </para>
             </note>
-            <para><emphasis>GenericAggregateFactory</emphasis>
-            </para>
-            <para>The
-                <code>GenericAggregateFactory</code>
-                is a special
-                <code>AggregateFactory</code>
-                implementation that can be used for any type of
-                Event Sourced Aggregate Root. The
-                <code>GenericAggregateFactory</code>
-                creates an
-                instance of the Aggregate type the repository manages. The Aggregate class must be
-                non-abstract and declare a default no-arg constructor that does no initialization at
-                all.
-            </para>
-            <para>The GenericAggregateFactory is suitable for most scenarios where aggregates do not
-                need special injection of non-serializable resources.
-            </para>
-            <para><emphasis>SpringPrototypeAggregateFactory</emphasis>
-            </para>
-            <para>Depending on your architectural choices, it might be useful to inject dependencies
-                into your aggregates using Spring. You could, for example, inject query repositories
-                into your aggregate to ensure the existance (or inexistance) of certain
-                values.
-            </para>
-            <para>To inject dependencies into your aggregates, you need to configure a prototype
-                bean of your aggregate root in the Spring context that also defines the
-                <code>SpringPrototypeAggregateFactory</code>. Instead of creating regular
-                instances of using a constructor, it uses the Spring Application Context to
-                instantiate your aggregates. This will also inject any dependencies in your
-                aggregate.
-            </para>
-            <para><emphasis>Implementing your own AggregateFactory</emphasis>
-            </para>
-            <para>In some cases, the <code>GenericAggregateFactory</code> just doesn't deliver what
-                you need. For example, you could have an abstract aggregate type with multiple
-                implementations for different scenarios (e.g. <code>PublicUserAccount</code> and
-                    <code>BackOfficeAccount</code> both extending an <code>Account</code>). Instead
-                of creating different repositories for each of the aggregates, you could use a
-                single repository, and configure an AggregateFactory that is aware of the different
-                implementations. </para>
-            <para>The AggregateFactory must specify the aggregate type identifier. This is a String
-                that the Event Store needs to figure out which events belong to which type of
-                aggregate. Typically, this name is deducted from the abstract super-aggregate. In
-                the given example that could be: Account.
-            </para>
-            <para>The bulk of the work the Aggregate Factory does is creating uninitialized
-                Aggregate instances. It must do so using a given aggregate identifier and the first
-                Event from the stream. Usually, this Event is a creation event which contains hints
-                about the expected type of aggregate. You can use this information to choose an
-                implementation and invoke its constructor. Make sure no Events are applied by that
-                constructor; the aggregate must be uninitialized.
-            </para>
         </simplesect>
         <simplesect>
             <title>HybridJpaRepository</title>
@@ -256,11 +239,12 @@
                 in an event store. When the repository reads an aggregate back in, it uses the
                 relational model exclusively.
             </para>
-            <para>This repository removes the need for Event Upcasters, making data migrations
-                potentially easier. Since the aggregates are event sourced, you keep the ability to
-                use the given-when-then test fixtures (see <xref linkend="testing"/>). On the other
-                hand, since it doesn't use the event store for reading, it doesn't allow for
-                automated conflict resolution. </para>
+            <para>This repository removes the need for Event Upcasters (see <xref
+                    xmlns:xlink="http://www.w3.org/1999/xlink" linkend="event-upcasting"/>), making
+                data migrations potentially easier. Since the aggregates are event sourced, you keep
+                the ability to use the given-when-then test fixtures (see <xref linkend="testing"
+                />). On the other hand, since it doesn't use the event store for reading, it doesn't
+                allow for automated conflict resolution. </para>
         </simplesect>
     </sect1>
     <sect1 xml:id="implementing-an-eventstore">
@@ -351,7 +335,7 @@
                         <code>EntityManager</code> instance for the <code>EventStore</code> to use.
                     This also allows for application managed persistence contexts to be used. It is
                     the <code>EntityManagerProvider</code>'s responsiblity to provide a correct
-                    instance of the<code>EntityManager</code>. </para>
+                    instance of the <code>EntityManager</code>. </para>
                 <para>There are a few implementations of the <code>EntityManagerProvider</code>
                     available, each for different needs. The
                         <code>SimpleEntityManagerProvider</code> simply returns the
@@ -448,31 +432,30 @@
         <sect2>
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Event to prepare it for storage. By
-                default, Axon provides the <code>XStreamSerializer</code>, which uses XStream (see
-                    <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://xstream.codehaus.org/">xstream.codehaus.org</link>) to
-                serialize Events into XML and vice versa. XStream is reasonably fast and is more
-                flexible than Java Serialization. Furthermore, the result of XStream serialization
-                is human readable. Quite useful for logging and debugging purposes. </para>
+                default, Axon provides the <code>XStreamSerializer</code>, which uses <link
+                    xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
+                    >XStream</link> to serialize Events into XML and vice versa. XStream is
+                reasonably fast and is more flexible than Java Serialization. Furthermore, the
+                result of XStream serialization is human readable. Quite useful for logging and
+                debugging purposes. </para>
             <para>The XStreamSerializer can be configured. You can define aliases it should use for
                 certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
-                change. For more information about aliases, visit the XStream website: <link
+                change. For more information about aliases, visit the <link
                     xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
-                    >xstream.codehaus.org</link>. </para>
+                    >XStream website</link>. </para>
             <para>You may also implement your own Serializer, simply by creating a class that
                 implements <code>Serializer</code>, and configuring the Event Store to use that
                 implementation instead of the default. </para>
         </sect2>
     </sect1>
-    <sect1>
+    <sect1 xml:id="event-upcasting">
         <title>Event Upcasting</title>
         <para>Due to the ever-changing nature of software applications it is likely that event
             definitions also change over time. Since the Event Store is considered a read and
             append-only data source, your application must be able to read all events, regardless of
-            when they have been added. This is where upcasting comes in.
-        </para>
-        <para>Originally a concept of object-oriented programming, where: "a subclass gets casteto
+            when they have been added. This is where upcasting comes in. </para>
+        <para>Originally a concept of object-oriented programming, where: "a subclass gets cast to
             it's superclass automatically when needed", the concept of upcasting can also be applied
             to event sourcing. To upcast an event means to transform it from its original structure
             to its new structure. Unlike OOP upcasting, event upcasting cannot be done in full
@@ -483,17 +466,14 @@
             zero or more new events of revision <code>x + 1</code>. Moreover, upcasters are
             processed in a chain, meaning that the output of one upcaster is send to the input of
             the next. This allows you to update events in an incremental manner, writing an Upcaster
-            for each new event revision, making them small, isolated, and easy to understand.
-        </para>
+            for each new event revision, making them small, isolated, and easy to understand. </para>
         <note>
             <para> Perhaps the greatest benefit of upcasting is that it allows you to do
-                non-destructive refactoring, i.e. the complete event history remains intact.
-            </para>
+                non-destructive refactoring, i.e. the complete event history remains intact. </para>
         </note>
         <para>In this section we'll explain how to write an upcaster, describe the two
             implementations of the Upcaster Chain that come with Axon, and explain how the
-            serialized representations of events affects how upcasters are written.
-        </para>
+            serialized representations of events affects how upcasters are written. </para>
         <para>To allow an upcaster to see what version of serialized object they are receiving, the
             Event Store stores a revision number as well as the fully qualified name of the Event.
             This revision number is generated by a <code>RevisionResolver</code>, configured in the
@@ -503,37 +483,38 @@
                 <code>SerialVersionUIDRevisionResolver</code> that uses the
                 <code>serialVersionUID</code> as defined by Java Serialization API and a
                 <code>FixedValueRevisionResolver</code>, which always returns a predefined value.
-            The latter is useful when injection the current application version. This will allow you
+            The latter is useful when injecting the current application version. This will allow you
             to see which version of the application generated a specific event.</para>
         <sect2>
             <title>Writing an upcaster</title>
             <para>To explain how to write an upcaster for Axon we'll walk through a small example,
-                describing the details of writing an upcaster as we go along.
-            </para>
-            <para>It so happens to be that there is an Event Store containing many
-                <code>AdministrativeDetailsUpdated</code> events. New requirements have let to the introduction of two
-                new events: <code>AddressUpdatedEvent</code> and <code>InsurancePolicyUpdatedEvent</code>. Previously though,
-                all information in these two events was contained in the old
-                <code>AdministrativeDetailsUpdatedEvent</code>, which is now deprecated. To nicely handle this
-                situation we'll write an upcaster to transform the <code>AdministrativeDetailsUpdatedEvent</code>
-                into an <code>AddressUpdatedEvent</code> and an <code>InsurancePolicyUpdatedEvent</code>.
-            </para>
+                describing the details of writing an upcaster as we go along. </para>
+            <para>Let's assume that there is an Event Store containing many
+                    <code>AdministrativeDetailsUpdated</code> events. New requirements have let to
+                the introduction of two new events: <code>AddressUpdatedEvent</code> and
+                    <code>InsurancePolicyUpdatedEvent</code>. Previously though, all information in
+                these two events was contained in the old
+                    <code>AdministrativeDetailsUpdatedEvent</code>, which is now deprecated. To
+                nicely handle this situation we'll write an upcaster to transform the
+                    <code>AdministrativeDetailsUpdatedEvent</code> into an
+                    <code>AddressUpdatedEvent</code> and an
+                <code>InsurancePolicyUpdatedEvent</code>. </para>
             <para>Here is the code for an upcaster: <programlistingco>
-            <areaspec>
-                <area xml:id="content-type" coords="3 83"/>
-                <area xml:id="can-upcast" coords="6 63"/>
-                <area xml:id="expected-representation" coords="12 59"/>
-                <area xml:id="upcast-body" coords="18 90"/>
-                <area xml:id="upcast-type" coords="40 73"/>
-            </areaspec>
-            <programlisting language="java">import org.dom4j.Document;
+                    <areaspec>
+                        <area xml:id="content-type" coords="3 83"/>
+                        <area xml:id="can-upcast" coords="6 63"/>
+                        <area xml:id="expected-representation" coords="12 59"/>
+                        <area xml:id="upcast-body" coords="18 90"/>
+                        <area xml:id="upcast-type" coords="40 73"/>
+                    </areaspec>
+                    <programlisting language="java">import org.dom4j.Document;
                 
 public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Document> {
 
     @Override
     public boolean canUpcast(SerializedType serializedType) {
         return serializedType.getName().equals("org.example.AdministrativeDetailsUpdated") &amp;&amp;
-               serializedType.getRevision().equals("0");
+               "0".equals(serializedType.getRevision());
     }
 
     @Override
@@ -573,57 +554,59 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         return Arrays.asList(addressUpdatedEventType, insurancePolicyUpdatedEventType);
     }
 }</programlisting>
-            <calloutlist>
-                <callout arearefs="content-type">
-                    <para>First we have to create a class that implements the <code>Upcaster</code>
-                    interface. Then we have to decide on which content type to work. For this example
-                    dom4j documents are used as they'll fit nicely with an event store that uses XML
-                    to store events.</para>
-                </callout>
-                <callout arearefs="can-upcast">
-                    <para>In Axon, Events have a revision, if the definition of an event changes, you should
-                    update its revision as well. The <code>canUpcast</code> method can then be used to
-                    check if an event needs to be upcasted. In the example we return true on the
-                    <code>canUpcast</code> method only when the incoming event has the type
-                    <code>org.example.AdministrativeDetailsUpdatedEvent</code> and has revision number
-                    0. Axon will take care of calling the Upcaster's <code>upcast</code> method if the
-                    <code>canUpcast</code> method on that Upcaster returns true.</para>
-                </callout>
-                <callout arearefs="expected-representation">
-                    <para>Due to Java's type erasure we have to implement the
-                    <code>expectedRepresentationType</code> method to provide Axon with runtime type
-                    information on the content type by returning the <code>Class</code> object of the
-                    content type. The content type is used at runtime to determine how the incoming
-                    event needs to be converted to provide the upcaster with the event with the
-                    correct type.</para>
-                </callout>
-                <callout arearefs="upcast-body">
-                    <para>
-                    By copying the address and policy element from the
-                    AdministrativeDetailsUpdatedEvent each into its own document, the event is
-                    upcasted. Deserializing the result would get us an instance of the
-                    InsurancePolicyUpdatedEvent and an instance of the AddressUpdatedEvent.</para>
-                </callout>
-                <callout arearefs="upcast-type">
-                    <para>
-                    Upcasting can be expensive, possibly involving type conversion, deserialization
-                    and logic. Axon is smart enough to prevent this from happening when it is not
-                    neccesary through the concept of SerializedTypes. SerializedTypes provide Axon
-                    with the information to delay event upcasting until the application requires it.</para> 
-                </callout>
-            </calloutlist>
-    </programlistingco></para>
+                    <calloutlist>
+                        <callout arearefs="content-type">
+                            <para>First we have to create a class that implements the
+                                    <code>Upcaster</code> interface. Then we have to decide on which
+                                content type to work. For this example dom4j documents are used as
+                                they'll fit nicely with an event store that uses XML to store
+                                events.</para>
+                        </callout>
+                        <callout arearefs="can-upcast">
+                            <para>In Axon, Events have a revision, if the definition of an event
+                                changes, you should update its revision as well. The
+                                    <code>canUpcast</code> method can then be used to check if an
+                                event needs to be upcasted. In the example we return true on the
+                                    <code>canUpcast</code> method only when the incoming event has
+                                the type <code>org.example.AdministrativeDetailsUpdatedEvent</code>
+                                and has revision number 0. Axon will take care of calling the
+                                Upcaster's <code>upcast</code> method if the <code>canUpcast</code>
+                                method on that Upcaster returns true.</para>
+                        </callout>
+                        <callout arearefs="expected-representation">
+                            <para>Due to Java's type erasure we have to implement the
+                                    <code>expectedRepresentationType</code> method to provide Axon
+                                with runtime type information on the content type by returning the
+                                    <code>Class</code> object of the content type. The content type
+                                is used at runtime to determine how the incoming event needs to be
+                                converted to provide the upcaster with the event with the correct
+                                type.</para>
+                        </callout>
+                        <callout arearefs="upcast-body">
+                            <para> By copying the address and policy element from the
+                                AdministrativeDetailsUpdatedEvent each into its own document, the
+                                event is upcasted. Deserializing the result would get us an instance
+                                of the InsurancePolicyUpdatedEvent and an instance of the
+                                AddressUpdatedEvent.</para>
+                        </callout>
+                        <callout arearefs="upcast-type">
+                            <para> Upcasting can be expensive, possibly involving type conversion,
+                                deserialization and logic. Axon is smart enough to prevent this from
+                                happening when it is not neccesary through the concept of
+                                SerializedTypes. SerializedTypes provide Axon with the information
+                                to delay event upcasting until the application requires it.</para>
+                        </callout>
+                    </calloutlist>
+                </programlistingco></para>
         </sect2>
         <sect2>
             <title>The Upcaster Chain</title>
-            <para>The Upcaster Chain is responsible for upcasting events by chaining the output
-                of one upcaster to the next. It comes in the following two flavours:
-            </para>
+            <para>The Upcaster Chain is responsible for upcasting events by chaining the output of
+                one upcaster to the next. It comes in the following two flavours: </para>
             <itemizedlist>
                 <listitem>
-                    <para>The <code>SimpleUpcasterChain</code> immediately upcasts all events given to
-                        it and returns them.
-                    </para>
+                    <para>The <code>SimpleUpcasterChain</code> immediately upcasts all events given
+                        to it and returns them. </para>
                 </listitem>
                 <listitem>
                     <para>The <code>LazyUpcasterChain</code> prepares the events to be upcasted but
@@ -635,11 +618,10 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                         events, this may be a problem. </para>
                 </listitem>
             </itemizedlist>
-            <para>The LazyUpcasterChain is a safe choice if your upcasters are stateless or do
-                not depend on other upcasters. Always consider using the LazyUpcasterChain since
-                it can provide a great performance benefit over the SimpleUpcasterChain. If you
-                want guaranteed upcasting in a strict order, use the SimpleUpcasterChain.
-            </para>
+            <para>The LazyUpcasterChain is a safe choice if your upcasters are stateless or do not
+                depend on other upcasters. Always consider using the LazyUpcasterChain since it can
+                provide a great performance benefit over the SimpleUpcasterChain. If you want
+                guaranteed upcasting in a strict order, use the SimpleUpcasterChain. </para>
         </sect2>
         <sect2>
             <title>Content type conversion</title>
@@ -651,9 +633,8 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                 requested upcaster. For performance reasons, conversion will only be performed if
                 the <code>canUpcast</code> method on the receiving upcaster yields true. </para>
             <tip>
-                <para>To achieve the best performance, ensure that all upcasters in the same
-                    chain (where one's output is another's input) work on the same content type.
-                </para>
+                <para>To achieve the best performance, ensure that all upcasters in the same chain
+                    (where one's output is another's input) work on the same content type. </para>
             </tip>
             <para>If the content type conversion that you need is not provided by Axon you can
                 always write one yourself using the <code>ContentTypeConverter</code> interface.
@@ -737,20 +718,18 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                 <code>scheduleSnapshot()</code>, which takes the aggregate's type and identifier
                 as parameters.
             </para>
-            <para>Axon provides the<code>AggregateSnapshotter</code>, which creates and stores
-                <code>AggregateSnapshot</code>
-                instances. This is a special type of snapshot,
+            <para>Axon provides the <code>AggregateSnapshotter</code>, which creates and stores
+                    <code>AggregateSnapshot</code> instances. This is a special type of snapshot,
                 since it contains the actual aggregate instance within it. The repositories provided
                 by Axon are aware of this type of snapshot, and will extract the aggregate from it,
                 instead of instantiating a new one. All events loaded after the snapshot events are
-                streamed to the extracted aggregate instance.
-            </para>
+                streamed to the extracted aggregate instance. </para>
             <note>
                 <para>Do make sure that the <code>Serializer</code> instance you use (which defaults
                     to the <code>XStreamSerializer</code>) is capable of serializing your aggregate.
-                    The <code>XStreamSerializer</code> requires you to use either a Sun JVM, or your
-                    aggregate must either have an accessible default constructor or implement the
-                        <code>Serializable</code> interface. </para>
+                    The <code>XStreamSerializer</code> requires you to use either a Hotspot JVM, or
+                    your aggregate must either have an accessible default constructor or implement
+                    the <code>Serializable</code> interface. </para>
             </note>
             <para>The AbstractSnapshotter provides a basic set of properties that allow you to tweak
                 the way snapshots are created:
@@ -795,33 +774,25 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                     they are not explicitly configured.
                 </para>
             </note>
-            <para>Spring users should use the
-                <code>SpringAggregateSnapshotter</code>
-                instead. See
-                <xref linkend="spring-snapshotting"/>
-                for more details about configuring snapshotting in Spring.
-            </para>
         </sect2>
         <sect2>
             <title>Storing Snapshot Events</title>
-            <para>Both the <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> are
-                capable of storing snapshot events. They provide a special method that allows a
-                    <code>DomainEventMessage</code> to be stored as a snapshot event. You have to
-                initialize the snapshot event completely, including the aggregate identifier and the
-                sequence number. There is a special constructor on the
-                    <code>GenericDomainEventMessage</code> for this purpose. The sequence number
-                must be equal to the sequence number of the last event that was included in the
-                state that the snapshot represents. In most cases, you can use the
+            <para>All Axon-provided Event Store implementations are capable of storing snapshot
+                events. They provide a special method that allows a <code>DomainEventMessage</code>
+                to be stored as a snapshot event. You have to initialize the snapshot event
+                completely, including the aggregate identifier and the sequence number. There is a
+                special constructor on the <code>GenericDomainEventMessage</code> for this purpose.
+                The sequence number must be equal to the sequence number of the last event that was
+                included in the state that the snapshot represents. In most cases, you can use the
                     <code>getVersion()</code> on the <code>AggregateRoot</code> (which each event
                 sourced aggregate implements) to obtain the sequence number to use in the snapshot
                 event. </para>
             <para>When a snapshot is stored in the Event Store, it will automatically use that
-                snapshot to summarize all prior events and return it in their place. Both event
-                store implementations allow for concurrent creation of snapshots. This means they
-                allow snapshots to be stored while another process is adding Events for the same
+                snapshot to summarize all prior events and return it in their place. All event store
+                implementations allow for concurrent creation of snapshots. This means they allow
+                snapshots to be stored while another process is adding Events for the same
                 aggregate. This allows the snapshotting process to run as a separate process
-                alltogether.
-            </para>
+                alltogether. </para>
             <note>
                 <para>Normally, you can archive all events once they are part of a snapshot event.
                     Snapshotted events will never be read in again by the event store in regular
@@ -842,15 +813,11 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         </sect2>
         <sect2>
             <title>Initializing an Aggregate based on a Snapshot Event</title>
-            <para>Every snapshot event is a
-                <code>DomainEvent</code>
-                instance. That means a snapshot
-                event is handled just like any other domain event. When using annotations to
-                demarcate event handers (<code>@EventHandler</code>), you can annotate a method that
-                initializes full aggregate state based on a snapshot event. The code sample below
-                shows how snapshot events are treated like any other domain event within the
-                aggregate.
-            </para>
+            <para>A snapshot event is an event like any other. That means a snapshot event is
+                handled just like any other domain event. When using annotations to demarcate event
+                handers (<code>@EventHandler</code>), you can annotate a method that initializes
+                full aggregate state based on a snapshot event. The code sample below shows how
+                snapshot events are treated like any other domain event within the aggregate. </para>
             <para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
@@ -870,13 +837,11 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
 }                </programlisting>
             </para>
             <para>There is one type of snapshot event that is treated differently: the
-                <code>AggregateSnapshot</code>. This type of snapshot event contains the actual
-                aggregate. The repository recognizes this type of event and extract the aggregate
-                from the snapshot. Then, all other events are re-applied to the extracted snapshot.
-                That means aggregates never need to be able to deal with
-                <code>AggregateSnapshot</code>
-                instances themselves.
-            </para>
+                    <code>AggregateSnapshot</code>. This type of snapshot event contains the actual
+                aggregate. The aggregate factory recognizes this type of event and extracts the
+                aggregate from the snapshot. Then, all other events are re-applied to the extracted
+                snapshot. That means aggregates never need to be able to deal with
+                    <code>AggregateSnapshot</code> instances themselves. </para>
         </sect2>
         <sect2>
             <title>Pruning Snapshot Events</title>
@@ -931,25 +896,15 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             Sourcing Repositories offer support for more advanced conflict detection, as decribed in
             the paragraph above.
         </para>
-        <para>To enable advanced conflict detection, configure a
-            <code>ConflictResolver</code>
-            on
-            the<code>EventSourcingRepository</code>. This
-            <code>ConflictResolver</code>
-            is
+        <para>To enable advanced conflict detection, configure a <code>ConflictResolver</code> on
+            the <code>EventSourcingRepository</code>. This <code>ConflictResolver</code> is
             responsible for detecting conflicting modifications, based on the events representing
             these changes. Detecting these conflicts is a matter of comparing the two lists of
-            DomainEvents provided in the
-            <code>resolveConflicts</code>
-            method declared on the
-            <code>ConflictResolver</code>. If such a conflict is found, a
-            <code>ConflictingModificationException</code>
-            (or better, a more explicit and
-            explanatory subclass of it) must be thrown. If the
-            <code>ConflictResolver</code>
-            returns
+            DomainEvents provided in the <code>resolveConflicts</code> method declared on the
+                <code>ConflictResolver</code>. If such a conflict is found, a
+                <code>ConflictingModificationException</code> (or better, a more explicit and
+            explanatory subclass of it) must be thrown. If the <code>ConflictResolver</code> returns
             normally, the events are persisted, effectively meaning that the concurrent changes have
-            been merged.
-        </para>
+            been merged. </para>
     </sect1>
 </chapter>

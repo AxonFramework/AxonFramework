@@ -49,25 +49,22 @@
                 application, eventually this approach will cause complexity to increase and
                 development to slow down.
             </para>
-            <para>Greg Young, initiator of the Command Query Responsiblity Segregation (CQRS)
-                pattern addressed these issues by drastically changing the way applications are
-                architected. Instead of separating logic into separate layers, logic is separated
-                based on whether it is changing an application's state or querying it. That means
-                that executing commands (actions that potentially change an application's state) are
-                executed by different components than those that query for the application's state.
-                The most important reason for this separation is the fact that there are different
-                technical and non-technical requirements for each of them. When commands are
-                executed, the query components are (a)synchronously updated using events. This
-                mechanism of updates through events, is what makes this architecture is extensible,
-                scalable and ultimately more maintainable.
-                <note>
+            <para>The Command Query Responsiblity Segregation (CQRS) pattern addresses these issues
+                by drastically changing the way applications are architected. Instead of separating
+                logic into separate layers, logic is separated based on whether it is changing an
+                application's state or querying it. That means that executing commands (actions that
+                potentially change an application's state) are executed by different components than
+                those that query for the application's state. The most important reason for this
+                separation is the fact that there are different technical and non-technical
+                requirements for each of them. When commands are executed, the query components are
+                (a)synchronously updated using events. This mechanism of updates through events, is
+                what makes this architecture is extensible, scalable and ultimately more
+                maintainable. <note>
                     <para>A full explanation of CQRS is not within the scope of this document. If
                         you would like to have more background information about CQRS, visit the
                         Axon Framework website:<link xmlns:ns1="http://www.w3.org/1999/xlink"
-                                                     ns1:href="http://www.axonframework.org/">
-                            www.axonframework.org</link>.
-                        It contains links to background information.
-                    </para>
+                            ns1:href="http://www.axonframework.org/"> www.axonframework.org</link>.
+                        It contains links to background information. </para>
                 </note>
             </para>
             <para>Since CQRS is so fundamentally different than the layered-architecture which
@@ -208,9 +205,7 @@
 </dependency>]]></programlisting>
             <para>Most of the features provided by the Axon Framework are optional and require
                 additional dependencies. We have chosen not to add these dependencies by default, as
-                they would potentially clutter your project with artifacts you don't need. This
-                section discusses these dependencies and describes in what scenarios you need them.
-            </para>
+                they would potentially clutter your project with artifacts you don't need.</para>
         </sect2>
         <sect2>
             <title>Infrastructure requirements</title>
@@ -233,7 +228,7 @@
                 Axon Users mailinglist is there to help. Just send an email to <link
                     xmlns:xlink="http://www.w3.org/1999/xlink"
                     xlink:href="mailto:axonframework@googlegroups.com"
-                    >axonframework@googlegroups.com</link>. Other uses as well as contributors to
+                    >axonframework@googlegroups.com</link>. Other users as well as contributors to
                 the Axon Framework are there to help with your issues.</para>
             <para>If you find a bug, you can report them at <link
                     xmlns:ns1="http://www.w3.org/1999/xlink"

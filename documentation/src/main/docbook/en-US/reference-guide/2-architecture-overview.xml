@@ -117,7 +117,7 @@
                 they map directly to a specific view in the UI (also referred to as table-per-view). </para>
             <para>Axon does not provide any building blocks for this part of the application. The
                 main reason is that this is very straightforward and doesn't differ from the layered
-                architecture. </para>
+                architecture.</para>
         </simplesect>
     </sect1>
     <sect1>
@@ -133,10 +133,9 @@
             <simplesect>
                 <title>Axon Core</title>
                 <para>The Core module contains, as the name suggests, the Core components of Axon.
-                    If you use a single-node setup and have no extreme performance requirements,
-                    this module is likely to provide all the components you need. All other Axon
-                    modules depend on this module, so it must always be available on the
-                    classpath.</para>
+                    If you use a single-node setup, this module is likely to provide all the
+                    components you need. All other Axon modules depend on this module, so it must
+                    always be available on the classpath.</para>
             </simplesect>
             <simplesect>
                 <title>Axon Test</title>
@@ -236,7 +235,8 @@
             Abstract and concrete implementations are provided to help you on your way, but will
             nowhere be required by the framework. It is always possible to build a completely custom
             implementation of any building block using that interface.</para>
-        <simplesect>
+    </sect1>
+    <sect1>
             <title>Spring Support</title>
             <para>Axon Framework provides extensive support for Spring, but does not require you to
                 use Spring in order to use Axon. All components can be configured programmatically
@@ -245,6 +245,6 @@
                 Building blocks, such as the Command Bus, Event Bus and Saga Managers can be
                 configured using a single XML element in your Spring Application Context.</para>
             <para>Check out the documentation of each building block for more information on how to
-                configure it using Spring.</para>
-        </simplesect>
-    </sect1></chapter>
+            configure it using Spring.</para>
+        </sect1>
+</chapter>

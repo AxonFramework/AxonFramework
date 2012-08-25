@@ -298,17 +298,23 @@
     
     <sect1>
         <title>Wiring the event bus</title>
-        <para>In a typical Axon application there is only one event bus. Wiring it is just a matter
-            of creating a bean of a subtype of <code>EventBus</code>. The
-                <code>SimpleEventBus</code> is the provided implementation.
-            <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+        <simplesect>
+            <title>The basics</title>
+            <para>In a typical Axon application there is only one event bus. Wiring it is just a
+                matter of creating a bean of a subtype of <code>EventBus</code>. The
+                    <code>SimpleEventBus</code> is the provided implementation.
+                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
 
     &lt;bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
 &lt;/beans></programlisting></para>
-
-		<para>Setting up an event bus can also be accomplished using support from the axon namespace:
-            <programlisting language="xml">&lt;axon:event-bus id="eventBus"/></programlisting></para>
+        </simplesect>
+        <simplesect>
+            <title>Using the Axon namespace</title>
+            <para>Setting up an event bus can also be accomplished using support from the axon
+                namespace:
+                <programlisting language="xml">&lt;axon:event-bus id="eventBus"/></programlisting></para>
+        </simplesect>
 
     </sect1>
     <sect1>
@@ -434,7 +440,7 @@
 &lt;!-- or, when using the namespace -->
 
 &lt;axon:event-sourcing-repository> &lt;!-- attributes omitted for brevity -->
-    &lt;axon:snapshotter-trigger id="snapshotterTrigger" event-count-threshold="20" snapshotter-ref="snapshotter"/>
+    &lt;axon:snapshotter-trigger event-count-threshold="20" snapshotter-ref="snapshotter"/>
 &lt;/axon:event-sourcing-repository></programlisting>
         <para>The sample above configures an EventCountSnapshotter trigger that will trigger
             Snapshot creation when 20 or more events are required to reload the aggregate's current
@@ -468,9 +474,9 @@
             SagaRepository. Each have their own element in the Spring application context.</para>
         <para>The SagaManager is defined as
             follows:<programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-repository="sagaRepository" 
-                   saga-factory="sagaFactory" executor="taskExecutor" 
-                   transaction-manager="transactionManager"
+                   saga-factory="sagaFactory"
                    resource-injector="resourceInjector">
+    &lt;axon:async executor="taskExecutor" transaction-manager="transactionManager" />
     &lt;axon:types>
         fully.qualified.ClassName,
         another.ClassName
@@ -480,9 +486,9 @@
                 <code>saga-repository</code> will default to an in-memory repository, meaning that
             Sagas will be lost when the VM is shut down. The <code>saga-factory</code> can be
             provided if the Saga instances do not have a no-argument accessible constructor, or when
-            special initialization is required. An <code>executor</code> can be provided if Sagas
-            should not be invoked by the event dispatching thread. When using asynchronous event
-            handling, or event scheduling within the Saga's, it is required to provide the
+            special initialization is required. An <code>async</code> element with
+                <code>executor</code> can be provided if Sagas should not be invoked by the event
+            dispatching thread. When using asynchronous event handling it is required to provide the
                 <code>transaction-manager</code> attribute. The default resource injector uses the
             Spring Context to autowire Saga instances with Spring Beans.</para>
         <para>Use the <code>types</code> element to provide a comma-separated list of fully

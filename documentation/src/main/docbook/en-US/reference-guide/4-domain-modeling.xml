@@ -35,20 +35,12 @@
         </para>
         <para>When Events are dispatched, Axon wraps them in a Message. The actual type of Message
             used depends on the origin of the Event. When an Event is raised by an Aggregate, it is
-            wrapped in a
-            <code>DomainEventMessage</code>
-            (which extends<code>EventMesssage</code>).
-            All other Events are wrapped in an
-            <code>EventMessage.</code>
-            The
-            <code>EventMessage</code>
-            contains a unique Identifier for the event, as well as a
-            Timestamp and Meta Data. The
-            <code>DomainEventMessage</code>
-            also contains the
+            wrapped in a <code>DomainEventMessage</code> (which extends <code>EventMesssage</code>).
+            All other Events are wrapped in an <code>EventMessage.</code> The
+                <code>EventMessage</code> contains a unique Identifier for the event, as well as a
+            Timestamp and Meta Data. The <code>DomainEventMessage</code> additionally contains the
             identifier of the aggregate that raised the Event and the sequence number which allows
-            the order of events to be reproduced.
-        </para>
+            the order of events to be reproduced. </para>
         <para>Even though the DomainEventMessage contains a reference to the Aggregate Identifier,
             you should always include that identifier in the actual Event itself as well. The
             identifier in the DomainEventMessage is meant for the EventStore and may not always
@@ -56,11 +48,10 @@
         </para>
         <para>The original Event object is stored as the Payload of an EventMessage. Next to the
             payload, you can store information in the Meta Data of an Event Message. The intent of
-            the MetaData is to store additional information about an Event that is not primarily
+            the Meta Data is to store additional information about an Event that is not primarily
             intended as business information. Auditing information is a typical example. It allows
             you to see under which circumstances an Event was raised, such as the User Account that
-            triggered the processing, or the name of the machine that processed the Event.
-        </para>
+            triggered the processing, or the name of the machine that processed the Event. </para>
         <note>
             <para>In general, you should not base business decisions on information in the meta-data
                 of event messages. If that is the case, you might have information attached that
@@ -101,20 +92,13 @@
             </figure>
         </note>
         <para>When dispatching an Event on the Event Bus, you will need to wrap it in an (Domain)
-            Event Message. The
-            <code>GenericEventMessage</code>
-            is an implementation that allows you
+            Event Message. The <code>GenericEventMessage</code> is an implementation that allows you
             to wrap your Event in a Message. You can use the constructor, or the static
-            <code>asEventMessage</code>
-            method. The latter checks whether the given parameter
-            doesn't already implement the
-            <code>Message</code>
-            interface. If so, it is either
-            returned directly (if it implements<code>EventMessage</code>,) or it returns a new
-            <code>GenericEventMessage</code>
-            using the given<code>Message</code>'s payload and
-            Meta Data.
-        </para>
+                <code>asEventMessage()</code> method. The latter checks whether the given parameter
+            doesn't already implement the <code>Message</code> interface. If so, it is either
+            returned directly (if it implements <code>EventMessage</code>,) or it returns a new
+                <code>GenericEventMessage</code> using the given <code>Message</code>'s payload and
+            Meta Data. </para>
     </sect1>
     <sect1>
         <title>Aggregate</title>
@@ -138,34 +122,28 @@
                     >http://domaindrivendesign.org/freelinking/Aggregate</link>.
             </para>
         </note>
-        <para>For example, a "Contact" aggregate will contain two entities: contact and address. To
+        <para>For example, a "Contact" aggregate could contain two entities: Contact and Address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
-            be done via the contact entity. In this case, the Contact entity is the appointed
-            aggregate root.
-        </para>
+            be done via the Contact entity. In this case, the Contact entity is the appointed
+            aggregate root. </para>
         <para>In Axon, aggregates are identified by an Aggregate Identifier. This may be any object,
-            but there are a few guidelines for good implementations of identifiers. Identifiers must:
-            <itemizedlist>
+            but there are a few guidelines for good implementations of identifiers. Identifiers
+            must: <itemizedlist>
                 <listitem>
                     <para>implement equals and hashCode to ensure good equality comparison with
-                        other instances,
-                    </para>
+                        other instances, </para>
                 </listitem>
                 <listitem>
                     <para>implement a toString() method that provides a consistent result (equal
-                        identifiers should provide an equal toString() result), and
-                    </para>
+                        identifiers should provide an equal toString() result), and </para>
                 </listitem>
                 <listitem>
                     <para>preferably be serializable.</para>
                 </listitem>
-            </itemizedlist>
-            The test fixtures (see<xref
-                    linkend="testing"/>) will verify these conditions and fail a test when an Aggregate
-            uses an incompatible identifier. Identifiers of type<code>String</code>,
-            <code>UUID</code>
-            and the numeric types are always suitable.
-        </para>
+            </itemizedlist>The test fixtures (see <xref linkend="testing"/>) will verify these
+            conditions and fail a test when an Aggregate uses an incompatible identifier.
+            Identifiers of type <code>String</code>, <code>UUID</code> and the numeric types are
+            always suitable. </para>
         <note>
             <para>It is considered a good practice to use randomly generated identifiers, as opposed
                 to sequenced ones. Using a sequence drastically reduces scalability of your
@@ -205,23 +183,12 @@
             <simplesect>
                 <title><code>AbstractAggregateRoot</code>
                 </title>
-                <para>The
-                    <code>AbstractAggregateRoot</code>
-                    is a basic implementation that provides
-                    a
-                    <code>registerEvent(DomainEvent)</code>
-                    method that you can call in your
+                <para>The <code>AbstractAggregateRoot</code> is a basic implementation that provides
+                    a <code>registerEvent(DomainEvent)</code> method that you can call in your
                     business logic method to have an event added to the list of uncommitted events.
-                    The
-                    <code>AbstractAggregateRoot</code>
-                    will keep track of all uncommitted
+                    The <code>AbstractAggregateRoot</code> will keep track of all uncommitted
                     registered events and make sure they are forwarded to the event bus when the
-                    aggregate is saved to a repository. The
-                    <code>AbstractAggregateRoot</code>
-                    is a
-                    JPA-compatible implementation and can be used with a Jpa based ORM
-                    repository.
-                </para>
+                    aggregate is saved to a repository.</para>
             </simplesect>
         </sect2>
         <sect2>
@@ -255,26 +222,16 @@
             <simplesect>
                 <title><code>AbstractEventSourcedAggregateRoot</code>
                 </title>
-                <para>The
-                    <code>AbstractEventSourcedAggregateRoot</code>
-                    implements all methods on
-                    the
-                    <code>EventSourcedAggregateRoot</code>
-                    interface. It defines an abstract
-                    <code>handle()</code>
-                    method, which you need to implement with the actual
+                <para>The <code>AbstractEventSourcedAggregateRoot</code> implements all methods on
+                    the <code>EventSourcedAggregateRoot</code> interface. It defines an abstract
+                        <code>handle()</code> method, which you need to implement with the actual
                     logic to apply state changes based on domain events. When you extend the
-                    <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
-                    using<code>apply()</code>. This method will register the event to be committed
-                    when the aggregate is saved, and will call the
-                    <code>handle()</code>
-                    method with
-                    the event as parameter. You need to implement this
-                    <code>handle()</code>
-                    method
+                        <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
+                    using <code>apply()</code>. This method will register the event to be committed
+                    when the aggregate is saved, and will call the <code>handle()</code> method with
+                    the event as parameter. You need to implement this <code>handle()</code> method
                     to apply the state changes represented by that event. Below is a sample
-                    implementation of an aggregate.
-                </para>
+                    implementation of an aggregate. </para>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
     private String aggregateIdentifier;
@@ -289,9 +246,9 @@
     }
 
     public void handle(DomainEvent event) {
-        if (event.getPayload() instanceof MyAggregateCreatedEvent) {
+        if (MyAggregateCreatedEvent.class.isAssignableFrom(event.getPayloadType())) {
             // make sure to always initialize the aggregate identifier
-            this.aggregateIdentifier = ((String) this.getPayload()).getMyIdentifier();
+            this.aggregateIdentifier = ((MyAggregateCreatedEvent) this.getPayload()).getMyIdentifier();
             // do something with someProperty
         }
         // and more if-else-if logic here
@@ -301,6 +258,16 @@
         return aggregateIdentifier;
     }
 }                </programlisting>
+                <note>
+                    <title><code>isAssignableFrom</code> versus <code>instanceof</code></title>
+                    <para>Note that the code sample used <code>isAssignableFrom</code> to verify the
+                        payload type of a command. This method is preferred over "<code>getPayload()
+                            instanceof</code>" for performance reasons. When reading events from the
+                        Event Store, they are actually not deserialized until the
+                            <code>getPayload()</code> method is invoked. By using
+                            <code>getPayloadType()</code> to detect interesting Events, you skip
+                        deserialization for events that you are not interested in.</para>
+                </note>
             </simplesect>
             <simplesect xml:id="annotated-aggregate-root">
                 <title><code>AbstractAnnotatedAggregateRoot</code>
@@ -363,6 +330,10 @@
                         clearly separate the public API of your aggregate, which exposes the methods that
                         generate events, from the internal logic, which processes the events.
                     </para>
+                    <para>Most IDE's have an option to ignore "unused private method" warnings for
+                        methods with a specific annotation. Alternatively, you can add an
+                            <code>@SuppressWarnings("UnusedDeclaration")</code> annotation to the
+                        method.</para>
                 </note>
 
             </simplesect>
@@ -392,14 +363,11 @@
             </para>
             <para>To register an Event, the Entity must know about the Aggregate Root. Axon will
                 automatically register the Aggregate Root with an Entity before applying any Events
-                to it. This means that Entities (unlike usual in the Aggregate Root) should never
+                to it. This means that Entities (in constrast to the Aggregate Root) should never
                 apply an Event in their constructor. Non-Aggregate Root Entities should be created
-                in an
-                <code>@EventHandler</code>
-                annotated method in their parent Entity (as
+                in an <code>@EventHandler</code> annotated method in their parent Entity (as
                 creation of an entity can be considered a state change of the Aggregate). Axon will
-                ensure that the Aggregate Root is properly registered in time.
-            </para>
+                ensure that the Aggregate Root is properly registered in time. </para>
             <para>Axon will automatically detect most of the child entities in the fields of an
                 Entity (albeit aggregate root or not). The following Entities are found: <itemizedlist>
                     <listitem>
