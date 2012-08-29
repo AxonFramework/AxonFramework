@@ -16,8 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
@@ -31,16 +29,13 @@ import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
-
 /**
  * @author Allard Buijze
  */
 public class StubSaga extends AbstractAnnotatedSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
-    private transient CommandBus commandBus;
+    private transient StubGateway stubGateway;
     private transient EventBus eventBus;
     private transient EventScheduler scheduler;
     private List<Object> handledEvents = new ArrayList<Object>();
@@ -83,19 +78,10 @@ public class StubSaga extends AbstractAnnotatedSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleTriggerEvent(TimerTriggeredEvent event) {
         handledEvents.add(event);
-        commandBus.dispatch(asCommandMessage("Say hi!"), new CommandCallback<Object>() {
-            @Override
-            public void onSuccess(Object result) {
-                if (result != null) {
-                    commandBus.dispatch(asCommandMessage(result));
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable cause) {
-                fail("Didn't expect exception");
-            }
-        });
+        String result = stubGateway.send("Say hi!");
+        if (result != null) {
+            stubGateway.send(result);
+        }
     }
 
     @SagaEventHandler(associationProperty = "identifier")
@@ -122,12 +108,8 @@ public class StubSaga extends AbstractAnnotatedSaga {
         this.scheduler = scheduler;
     }
 
-    public CommandBus getCommandBus() {
-        return commandBus;
-    }
-
-    public void setCommandBus(CommandBus commandBus) {
-        this.commandBus = commandBus;
+    public void setStubGateway(StubGateway stubGateway) {
+        this.stubGateway = stubGateway;
     }
 
     @Override

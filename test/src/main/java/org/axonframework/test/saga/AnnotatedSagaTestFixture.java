@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
@@ -32,10 +33,13 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.joda.time.Duration;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Fixture for testing Annotated Sagas based on events and time passing. This fixture allows resources to be configured
@@ -162,6 +166,20 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         return eventScheduler.getCurrentDateTime();
     }
 
+    @Override
+    public <T> T registerCommandGateway(Class<T> gatewayInterface) {
+        return registerCommandGateway(gatewayInterface, null);
+    }
+
+    @Override
+    public <T> T registerCommandGateway(Class<T> gatewayInterface, final T stubImplementation) {
+        GatewayProxyFactory factory = new StubAwareGatewayProxyFactory(stubImplementation,
+                                                                       AnnotatedSagaTestFixture.this.commandBus);
+        final T gateway = factory.createGateway(gatewayInterface);
+        registerResource(gateway);
+        return gateway;
+    }
+
     private AggregateEventPublisherImpl getPublisherFor(Object aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl());
@@ -196,6 +214,67 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
             } finally {
                 DateTimeUtils.setCurrentMillisSystem();
             }
+        }
+    }
+
+    /**
+     * GatewayProxyFactory that is aware of a stub implementation that defines the behavior for the callback.
+     */
+    private static class StubAwareGatewayProxyFactory extends GatewayProxyFactory {
+
+        private final Object stubImplementation;
+
+        public StubAwareGatewayProxyFactory(Object stubImplementation, RecordingCommandBus commandBus) {
+            super(commandBus);
+            this.stubImplementation = stubImplementation;
+        }
+
+        @Override
+        protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<Future<R>> delegate) {
+            return new ReturnResultFromStub<R>(delegate, stubImplementation);
+        }
+
+        @Override
+        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(
+                InvocationHandler<Future<R>> delegate, long timeout, TimeUnit timeUnit) {
+            return new ReturnResultFromStub<R>(delegate, stubImplementation);
+        }
+
+        @Override
+        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
+                InvocationHandler<Future<R>> delegate, int timeoutIndex, int timeUnitIndex) {
+            return new ReturnResultFromStub<R>(delegate, stubImplementation);
+        }
+    }
+
+    /**
+     * Invocation handler that uses a stub implementation (of not <code>null</code>) to define the value to return from
+     * a handler invocation. If none is provided, the returned future is checked for a value. If that future is not
+     * "done" (for example because no callback behavior was provided), it returns <code>null</code>.
+     *
+     * @param <R> The return type of the method invocation
+     */
+    private static class ReturnResultFromStub<R> implements GatewayProxyFactory.InvocationHandler<R> {
+
+        private final GatewayProxyFactory.InvocationHandler<Future<R>> dispatcher;
+        private final Object stubGateway;
+
+        public ReturnResultFromStub(GatewayProxyFactory.InvocationHandler<Future<R>> dispatcher, Object stubGateway) {
+            this.dispatcher = dispatcher;
+            this.stubGateway = stubGateway;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+            Future<R> future = dispatcher.invoke(proxy, invokedMethod, args);
+            if (stubGateway != null) {
+                return (R) invokedMethod.invoke(stubGateway, args);
+            }
+            if (future.isDone()) {
+                return future.get();
+            }
+            return null;
         }
     }
 }

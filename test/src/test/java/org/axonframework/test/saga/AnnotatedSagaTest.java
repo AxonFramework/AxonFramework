@@ -26,6 +26,7 @@ import org.junit.*;
 
 import java.util.UUID;
 
+import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
 import static org.axonframework.test.matchers.Matchers.noEvents;
 import static org.hamcrest.CoreMatchers.any;
@@ -100,7 +101,7 @@ public class AnnotatedSagaTest {
         validator.expectScheduledEventMatching(Duration.standardMinutes(10),
                                                Matchers.messageWithPayload(CoreMatchers.any(Object.class)));
         validator.expectDispatchedCommandsEqualTo();
-        validator.expectPublishedEventsMatching(Matchers.listWithAnyOf(messageWithPayload(any(SagaWasTriggeredEvent.class))));
+        validator.expectPublishedEventsMatching(listWithAnyOf(messageWithPayload(any(SagaWasTriggeredEvent.class))));
     }
 
     @Test
@@ -127,14 +128,15 @@ public class AnnotatedSagaTest {
         validator.expectPublishedEvents();
     }
 
+
     @Test
-    public void testFixtureApi_WhenTimeElapses() throws Throwable {
+    public void testFixtureApi_WhenTimeElapses_UsingMockGateway() throws Throwable {
         UUID identifier = UUID.randomUUID();
         UUID identifier2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-        CallbackBehavior commandHandler = mock(CallbackBehavior.class);
-        when(commandHandler.handle(eq("Say hi!"), isA(MetaData.class))).thenReturn("Hi again!");
-        fixture.setCallbackBehavior(commandHandler);
+        final StubGateway gateway = mock(StubGateway.class);
+        fixture.registerCommandGateway(StubGateway.class, gateway);
+        when(gateway.send(eq("Say hi!"))).thenReturn("Hi again!");
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
@@ -146,7 +148,50 @@ public class AnnotatedSagaTest {
                .expectDispatchedCommandsEqualTo("Say hi!", "Hi again!")
                .expectPublishedEventsMatching(noEvents());
 
-        verify(commandHandler).handle(isA(Object.class), eq(MetaData.emptyInstance()));
+        verify(gateway).send("Say hi!");
+        verify(gateway).send("Hi again!");
+    }
+
+    @Test
+    public void testFixtureApi_WhenTimeElapses_UsingDefaults() throws Throwable {
+        UUID identifier = UUID.randomUUID();
+        UUID identifier2 = UUID.randomUUID();
+        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
+        fixture.registerCommandGateway(StubGateway.class);
+
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
+               .whenTimeElapses(Duration.standardMinutes(35))
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", identifier)
+               .expectNoAssociationWith("identifier", identifier2)
+               .expectNoScheduledEvents()
+                // since we return null for the command, the other is never sent...
+               .expectDispatchedCommandsEqualTo("Say hi!")
+               .expectPublishedEventsMatching(noEvents());
+    }
+
+    @Test
+    public void testFixtureApi_WhenTimeElapses_UsingCallbackBehavior() throws Throwable {
+        UUID identifier = UUID.randomUUID();
+        UUID identifier2 = UUID.randomUUID();
+        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
+        CallbackBehavior commandHandler = mock(CallbackBehavior.class);
+        when(commandHandler.handle(eq("Say hi!"), isA(MetaData.class))).thenReturn("Hi again!");
+        fixture.setCallbackBehavior(commandHandler);
+        fixture.registerCommandGateway(StubGateway.class);
+
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
+               .whenTimeElapses(Duration.standardMinutes(35))
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", identifier)
+               .expectNoAssociationWith("identifier", identifier2)
+               .expectNoScheduledEvents()
+               .expectDispatchedCommandsEqualTo("Say hi!", "Hi again!")
+               .expectPublishedEventsMatching(noEvents());
+
+        verify(commandHandler, times(2)).handle(isA(Object.class), eq(MetaData.emptyInstance()));
     }
 
     @Test
@@ -154,7 +199,7 @@ public class AnnotatedSagaTest {
         UUID identifier = UUID.randomUUID();
         UUID identifier2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
-
+        fixture.registerCommandGateway(StubGateway.class);
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
 
