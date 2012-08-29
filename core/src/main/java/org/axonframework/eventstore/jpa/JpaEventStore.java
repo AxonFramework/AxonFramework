@@ -94,7 +94,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      */
     public JpaEventStore(EntityManagerProvider entityManagerProvider) {
-        this(entityManagerProvider, new XStreamSerializer(), new DefaultEventEntryStore());
+        this(entityManagerProvider, new XStreamSerializer(),
+             DefaultHibernateEventEntryStore.getSupportedImplementation());
     }
 
     /**
@@ -117,7 +118,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      */
     public JpaEventStore(EntityManagerProvider entityManagerProvider,
                          Serializer eventSerializer) {
-        this(entityManagerProvider, eventSerializer, new DefaultEventEntryStore());
+        this(entityManagerProvider, eventSerializer, DefaultHibernateEventEntryStore.getSupportedImplementation());
     }
 
     /**
@@ -196,29 +197,17 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
             }
         }
 
-        List<DomainEventMessage> events = fetchBatch(type, identifier, snapshotSequenceNumber + 1);
-        if (snapshotEvent != null) {
-            events.add(0, snapshotEvent);
-        }
-        if (events.isEmpty()) {
+        EntityManager entityManager1 = entityManagerProvider.getEntityManager();
+        Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(type,
+                                                                                                     identifier,
+                                                                                                     snapshotSequenceNumber
+                                                                                                             + 1,
+                                                                                                     batchSize,
+                                                                                                     entityManager1);
+        if (snapshotEvent == null && !entries.hasNext()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new BatchingDomainEventStream(events, identifier, type);
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private List<DomainEventMessage> fetchBatch(String type, Object identifier, long firstSequenceNumber) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        List<? extends SerializedDomainEventData> entries = eventEntryStore.fetchBatch(type,
-                                                                                       identifier,
-                                                                                       firstSequenceNumber,
-                                                                                       batchSize,
-                                                                                       entityManager);
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entries.size());
-        for (SerializedDomainEventData entry : entries) {
-            events.addAll(upcastAndDeserialize(entry, identifier));
-        }
-        return events;
+        return new CursorBackedDomainEventStream(snapshotEvent, entries, identifier);
     }
 
     @SuppressWarnings("unchecked")
@@ -274,20 +263,13 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
     private void doVisitEvents(EventVisitor visitor, String whereClause, Map<String, Object> parameters) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        int first = 0;
-        List<? extends SerializedDomainEventData> batch;
-        boolean shouldContinue = true;
-        while (shouldContinue) {
-            batch = eventEntryStore.fetchFilteredBatch(whereClause, parameters, first, batchSize, entityManager);
-            for (SerializedDomainEventData entry : batch) {
-                List<DomainEventMessage> domainEventMessages = upcastAndDeserialize(entry,
-                                                                                    entry.getAggregateIdentifier());
-                for (DomainEventMessage domainEventMessage : domainEventMessages) {
-                    visitor.doWithEvent(domainEventMessage);
-                }
-            }
-            shouldContinue = (batch.size() >= batchSize);
-            first += batchSize;
+        Iterator<? extends SerializedDomainEventData> batch = eventEntryStore.fetchFiltered(whereClause,
+                                                                                            parameters,
+                                                                                            batchSize,
+                                                                                            entityManager);
+        DomainEventStream eventStream = new CursorBackedDomainEventStream(null, batch, null);
+        while (eventStream.hasNext()) {
+            visitor.doWithEvent(eventStream.next());
         }
     }
 
@@ -349,22 +331,24 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         this.maxSnapshotsArchived = maxSnapshotsArchived;
     }
 
-    private final class BatchingDomainEventStream implements DomainEventStream {
+    private final class CursorBackedDomainEventStream implements DomainEventStream {
 
-        private int currentBatchSize;
         private Iterator<DomainEventMessage> currentBatch;
         private DomainEventMessage next;
-        private final Object id;
-        private final String typeId;
+        private final Iterator<? extends SerializedDomainEventData> cursor;
+        private final Object aggregateIdentifier;
 
-        private BatchingDomainEventStream(List<DomainEventMessage> firstBatch, Object id, String typeId) {
-            this.id = id;
-            this.typeId = typeId;
-            this.currentBatchSize = firstBatch.size();
-            this.currentBatch = firstBatch.iterator();
-            if (currentBatch.hasNext()) {
-                next = currentBatch.next();
+        public CursorBackedDomainEventStream(DomainEventMessage snapshotEvent,
+                                             Iterator<? extends SerializedDomainEventData> cursor,
+                                             Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
+            if (snapshotEvent != null) {
+                currentBatch = Collections.singletonList(snapshotEvent).iterator();
+            } else {
+                currentBatch = Collections.<DomainEventMessage>emptyList().iterator();
             }
+            this.cursor = cursor;
+            initializeNextItem();
         }
 
         @Override
@@ -375,14 +359,20 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         @Override
         public DomainEventMessage next() {
             DomainEventMessage current = next;
-            if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
-                logger.debug("Fetching new batch for Aggregate [{}]", id);
-                List<DomainEventMessage> newBatch = fetchBatch(typeId, id, next.getSequenceNumber() + 1);
-                currentBatchSize = newBatch.size();
-                currentBatch = newBatch.iterator();
+            initializeNextItem();
+            return current;
+        }
+
+        private void initializeNextItem() {
+            while (!currentBatch.hasNext() && cursor.hasNext()) {
+                final SerializedDomainEventData entry = cursor.next();
+                currentBatch = upcastAndDeserialize(entry, getAggregateIdentifier(entry)).iterator();
             }
             next = currentBatch.hasNext() ? currentBatch.next() : null;
-            return current;
+        }
+
+        private Object getAggregateIdentifier(SerializedDomainEventData entry) {
+            return aggregateIdentifier != null ? aggregateIdentifier : entry.getAggregateIdentifier();
         }
 
         @Override

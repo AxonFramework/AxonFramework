@@ -37,14 +37,11 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
-import org.junit.runner.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -63,12 +60,8 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Frank Versnel
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {
-        "classpath:/META-INF/spring/db-context.xml",
-        "classpath:/META-INF/spring/test-context.xml"})
 @Transactional()
-public class JpaEventStoreTest {
+public abstract class JpaEventStoreTestCases {
 
     @Autowired
     private JpaEventStore testSubject;
@@ -556,19 +549,19 @@ public class JpaEventStoreTest {
         reset(eventEntryStore);
         GenericDomainEventMessage<String> eventMessage = new GenericDomainEventMessage<String>(
                 UUID.randomUUID(), 0L, "Mock contents", MetaData.emptyInstance());
-        when(eventEntryStore.fetchBatch(anyString(), any(), anyInt(), anyInt(),
-                                        any(EntityManager.class)))
+        when(eventEntryStore.fetchAggregateStream(anyString(), any(), anyInt(), anyInt(),
+                                                  any(EntityManager.class)))
                 .thenReturn(new ArrayList(Arrays.asList(new DomainEventEntry(
                         "Mock", eventMessage,
                         mockSerializedObject("Mock contents".getBytes()),
-                        mockSerializedObject("Mock contents".getBytes())))));
+                        mockSerializedObject("Mock contents".getBytes())))).iterator());
         when(eventEntryStore.loadLastSnapshotEvent(anyString(), any(),
                                                    any(EntityManager.class)))
                 .thenReturn(null);
 
         testSubject.readEvents("test", "1");
 
-        verify(eventEntryStore).fetchBatch("test", "1", 0, 100, entityManager);
+        verify(eventEntryStore).fetchAggregateStream("test", "1", 0, 100, entityManager);
         verify(eventEntryStore).loadLastSnapshotEvent("test", "1", entityManager);
     }
 

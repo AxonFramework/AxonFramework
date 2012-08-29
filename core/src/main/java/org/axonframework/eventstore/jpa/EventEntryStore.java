@@ -20,7 +20,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import javax.persistence.EntityManager;
 
@@ -36,7 +36,7 @@ public interface EventEntryStore {
      * Persists the given <code>event</code> which has been serialized into <code>serializedEvent</code> in the
      * backing data store using given <code>entityManager</code>.
      * <p/>
-     * These events should be returned by the <code>fetchBatch(...)</code> methods.
+     * These events should be returned by the <code>fetchAggregateStream(...)</code> methods.
      *
      * @param aggregateType      The type identifier of the aggregate that generated the event
      * @param event              The actual event instance. May be used to extract relevant meta data
@@ -60,9 +60,10 @@ public interface EventEntryStore {
                                                     EntityManager entityManager);
 
     /**
-     * Fetches a selection of events for an aggregate of given <code>type</code> and given <code>identifier</code>
-     * starting at given <code>firstSequenceNumber</code> with given <code>batchSize</code>. The given
-     * <code>entityManager</code> provides access to the backing data store.
+     * Creates an iterator that iterates through the events for an aggregate of given <code>type</code> and given
+     * <code>identifier</code> starting at given <code>firstSequenceNumber</code>. When using batched fetching, the
+     * given <code>batchSize</code> should be used. The given <code>entityManager</code> provides access to the backing
+     * data store.
      * <p/>
      * Note that the result is expected to be ordered by sequence number, with the lowest number first.
      *
@@ -73,29 +74,30 @@ public interface EventEntryStore {
      * @param entityManager       The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    List<? extends SerializedDomainEventData> fetchBatch(String aggregateType, Object identifier,
-                                                         long firstSequenceNumber, int batchSize,
-                                                         EntityManager entityManager);
+    Iterator<? extends SerializedDomainEventData> fetchAggregateStream(String aggregateType, Object identifier,
+                                                                       long firstSequenceNumber, int batchSize,
+                                                                       EntityManager entityManager);
 
     /**
-     * Fetches a selection of events that conform to the given JPA <code>whereClause</code>,
-     * starting at given <code>firstSequenceNumber</code> with given <code>batchSize</code>. The given
+     * Creates an iterator that iterates through the Events that conform to the given JPA <code>whereClause</code>.
+     * When the implementation uses batched fetching, it should use given <code>batchSize</code>. The given
      * <code>parameters</code> provide the values for the placeholders used in the where clause.
-     * Both the <code>from</code> and <code>to</code> dates are inclusive.
      * <p/>
-     * The "WHERE" keyword is not included in the clause. If the clause is null or an empty String, no filters are
-     * expected to be applied.
+     * The "WHERE" keyword must not be included in the <code>whereClause</code>. If the clause is null or an empty
+     * String, no filters are applied, and an iterator is returned that scans <em>all</em> events in the event store.
+     * <p/>
+     * The iterator should return events in the order they were added to the event store. In either case, it must
+     * ensure that events originating from the same aggregate are always returned with the lowest sequence number
+     * first.
      *
      * @param whereClause   The JPA clause to be included after the WHERE keyword
      * @param parameters    A map containing all the parameter values for parameter keys included in the where clause
-     * @param first         The index number of the first event in the entire selection to return
      * @param batchSize     The total number of events to return in this batch
      * @param entityManager The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    List<? extends SerializedDomainEventData> fetchFilteredBatch(String whereClause, Map<String, Object> parameters,
-                                                                 int first, int batchSize,
-                                                                 EntityManager entityManager);
+    Iterator<? extends SerializedDomainEventData> fetchFiltered(String whereClause, Map<String, Object> parameters,
+                                                                int batchSize, EntityManager entityManager);
 
     /**
      * Removes old snapshots from the storage for an aggregate of given <code>type</code> that generated the given

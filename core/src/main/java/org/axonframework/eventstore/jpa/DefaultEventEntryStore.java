@@ -17,8 +17,11 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +39,8 @@ import javax.persistence.Query;
  * @since 1.2
  */
 public class DefaultEventEntryStore implements EventEntryStore {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultEventEntryStore.class);
 
     @Override
     @SuppressWarnings({"unchecked"})
@@ -68,28 +73,10 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public List<DomainEventEntry> fetchFilteredBatch(String whereClause, Map<String, Object> parameters,
-                                                     int startPosition, int batchSize,
-                                                     EntityManager entityManager) {
-//        String eventIdentifier, String aggregateIdentifier, long sequenceNumber,
-//        String timeStamp, String payloadType, String payloadRevision, byte[] payload,
-//        byte[] metaData
-        Query query = entityManager.createQuery(
-                String.format("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
-                                      + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
-                                      + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
-                                      + "FROM DomainEventEntry e %s ORDER BY e.timeStamp ASC, e.sequenceNumber ASC",
-                              whereClause != null && whereClause.length() > 0 ? "WHERE " + whereClause : ""))
-                                   .setFirstResult(startPosition)
-                                   .setMaxResults(batchSize);
-        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-            Object value = entry.getValue();
-            if (value instanceof DateTime) {
-                value = entry.getValue().toString();
-            }
-            query.setParameter(entry.getKey(), value);
-        }
-        return query.getResultList();
+    public Iterator<SerializedDomainEventData> fetchFiltered(String whereClause, Map<String, Object> parameters,
+                                                             int batchSize,
+                                                             EntityManager entityManager) {
+        return new BatchingIterator(whereClause, parameters, batchSize, entityManager);
     }
 
     @Override
@@ -145,20 +132,148 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public List<DomainEventEntry> fetchBatch(String aggregateType, Object identifier, long firstSequenceNumber,
-                                             int batchSize, EntityManager entityManager) {
-        return (List<DomainEventEntry>) entityManager
-                .createQuery("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
-                                     + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
-                                     + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
-                                     + "FROM DomainEventEntry e "
-                                     + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
-                                     + "AND e.sequenceNumber >= :seq "
-                                     + "ORDER BY e.sequenceNumber ASC")
-                .setParameter("id", identifier.toString())
-                .setParameter("type", aggregateType)
-                .setParameter("seq", firstSequenceNumber)
-                .setMaxResults(batchSize)
-                .getResultList();
+    public Iterator<SerializedDomainEventData> fetchAggregateStream(String aggregateType, Object identifier,
+                                                                    long firstSequenceNumber,
+                                                                    int batchSize, EntityManager entityManager) {
+
+        return new BatchingAggregateStreamIterator(firstSequenceNumber, identifier, aggregateType, batchSize, entityManager);
+    }
+
+    private static class BatchingAggregateStreamIterator implements Iterator<SerializedDomainEventData> {
+
+        private int currentBatchSize;
+        private Iterator<SerializedDomainEventData> currentBatch;
+        private SerializedDomainEventData next;
+        private final Object id;
+        private final String typeId;
+        private final int batchSize;
+        private final EntityManager entityManager;
+
+        private BatchingAggregateStreamIterator(long firstSequenceNumber, Object id, String typeId, int batchSize,
+                                                EntityManager entityManager) {
+            this.id = id;
+            this.typeId = typeId;
+            this.batchSize = batchSize;
+            this.entityManager = entityManager;
+            List<SerializedDomainEventData> firstBatch = fetchBatch(firstSequenceNumber);
+            this.currentBatchSize = firstBatch.size();
+            this.currentBatch = firstBatch.iterator();
+            if (currentBatch.hasNext()) {
+                next = currentBatch.next();
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public SerializedDomainEventData next() {
+            SerializedDomainEventData current = next;
+            if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
+                logger.debug("Fetching new batch for Aggregate [{}]", id);
+                List<SerializedDomainEventData> entries = fetchBatch(next.getSequenceNumber() + 1);
+
+                currentBatchSize = entries.size();
+                currentBatch = entries.iterator();
+            }
+            next = currentBatch.hasNext() ? currentBatch.next() : null;
+            return current;
+        }
+
+        private List<SerializedDomainEventData> fetchBatch(long firstSequenceNumber) {
+            return entityManager.createQuery(
+                    "SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
+                            + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
+                            + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
+                            + "FROM DomainEventEntry e "
+                            + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
+                            + "AND e.sequenceNumber >= :seq "
+                            + "ORDER BY e.sequenceNumber ASC", SerializedDomainEventData.class)
+                                .setParameter("id", id.toString())
+                                .setParameter("type", typeId)
+                                .setParameter("seq", firstSequenceNumber)
+                                .setMaxResults(batchSize)
+                                .getResultList();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Remove is not supported");
+        }
+    }
+
+    private static class BatchingIterator implements Iterator<SerializedDomainEventData> {
+
+        private int currentBatchSize;
+        private Iterator<SerializedDomainEventData> currentBatch;
+        private SerializedDomainEventData next;
+        private int firstItem;
+        private final String whereClause;
+        private final Map<String, Object> parameters;
+        private final int batchSize;
+        private final EntityManager entityManager;
+
+        public BatchingIterator(
+                String whereClause, Map<String, Object> parameters, int batchSize, EntityManager entityManager) {
+            this.whereClause = whereClause;
+            this.parameters = parameters;
+            this.batchSize = batchSize;
+            this.entityManager = entityManager;
+            this.firstItem = 0;
+            List<SerializedDomainEventData> firstBatch = fetchBatch();
+
+            this.currentBatchSize = firstBatch.size();
+            this.currentBatch = firstBatch.iterator();
+            if (currentBatch.hasNext()) {
+                next = currentBatch.next();
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<SerializedDomainEventData> fetchBatch() {
+            Query query = entityManager.createQuery(
+                    String.format("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
+                                          + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
+                                          + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
+                                          + "FROM DomainEventEntry e %s ORDER BY e.timeStamp ASC, e.sequenceNumber ASC",
+                                  whereClause != null && whereClause.length() > 0 ? "WHERE " + whereClause : ""))
+                                       .setFirstResult(firstItem)
+                                       .setMaxResults(batchSize);
+            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof DateTime) {
+                    value = entry.getValue().toString();
+                }
+                query.setParameter(entry.getKey(), value);
+            }
+            final List resultList = query.getResultList();
+            firstItem += resultList.size();
+            return resultList;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public SerializedDomainEventData next() {
+            SerializedDomainEventData current = next;
+            if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
+                List<SerializedDomainEventData> entries = fetchBatch();
+
+                currentBatchSize = entries.size();
+                currentBatch = entries.iterator();
+            }
+            next = currentBatch.hasNext() ? currentBatch.next() : null;
+            return current;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
     }
 }
