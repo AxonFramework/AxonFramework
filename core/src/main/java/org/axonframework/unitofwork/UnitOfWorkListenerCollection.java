@@ -29,11 +29,11 @@ import java.util.Set;
 
 /**
  * This class is responsible for notifying registered listeners in a specific order of precedence.
- * When {@link #onPrepareCommit(java.util.Set, java.util.List)}} and
- * {@link #onEventRegistered(org.axonframework.domain.EventMessage)} are called the listeners will be handled
- * in the order they have been registered (order of precedence).
- * When {@link #afterCommit()}, {@link #onRollback(Throwable)}, and {@link #onCleanup()} are called
- * the listeners will be handled in the reversed order of precedence.
+ * When {@link #onPrepareCommit(UnitOfWork, java.util.Set, java.util.List)}} and
+ * {@link #onEventRegistered(UnitOfWork, org.axonframework.domain.EventMessage)} are called the listeners will be
+ * handled in the order they have been registered (order of precedence). When {@link #afterCommit(UnitOfWork)}, {@link
+ * #onRollback(UnitOfWork, Throwable)}, and {@link #onCleanup(UnitOfWork)} are called the listeners will be handled in
+ * the reversed order of precedence.
  * <p/>
  * This behaviour is particularly useful because the {@link org.axonframework.auditing.AuditingUnitOfWorkListener}
  * should write an entry before any other listeners are allowed to anything (prepare commit)
@@ -54,14 +54,14 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
      * Listeners are called in the reversed order of precedence.
      */
     @Override
-    public void afterCommit() {
+    public void afterCommit(UnitOfWork unitOfWork) {
         logger.debug("Notifying listeners after commit");
-        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext();) {
+        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext(); ) {
             UnitOfWorkListener listener = listenerIter.next();
             if (logger.isDebugEnabled()) {
                 logger.debug("Notifying listener [{}] after commit", listener.getClass().getName());
             }
-            listener.afterCommit();
+            listener.afterCommit(unitOfWork);
         }
     }
 
@@ -71,14 +71,14 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
      * Listeners are called in the reversed order of precedence.
      */
     @Override
-    public void onRollback(Throwable failureCause) {
+    public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
         logger.debug("Notifying listeners of rollback");
-        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext();) {
+        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext(); ) {
             UnitOfWorkListener listener = listenerIter.next();
             if (logger.isDebugEnabled()) {
                 logger.debug("Notifying listener [{}] of rollback", listener.getClass().getName());
             }
-            listener.onRollback(failureCause);
+            listener.onRollback(unitOfWork, failureCause);
         }
     }
 
@@ -88,10 +88,10 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
      * Listeners are called in the order of precedence.
      */
     @Override
-    public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
+    public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
         EventMessage<T> newEvent = event;
         for (UnitOfWorkListener listener : listeners) {
-            newEvent = listener.onEventRegistered(newEvent);
+            newEvent = listener.onEventRegistered(unitOfWork, newEvent);
         }
         return newEvent;
     }
@@ -102,13 +102,13 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
      * Listeners are called in the order of precedence.
      */
     @Override
-    public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
+    public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
         logger.debug("Notifying listeners of commit request");
         for (UnitOfWorkListener listener : listeners) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Notifying listener [{}] of upcoming commit", listener.getClass().getName());
             }
-            listener.onPrepareCommit(aggregateRoots, events);
+            listener.onPrepareCommit(unitOfWork, aggregateRoots, events);
         }
         logger.debug("Listeners successfully notified");
     }
@@ -119,15 +119,15 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
      * Listeners are called in the reversed order of precedence.
      */
     @Override
-    public void onCleanup() {
+    public void onCleanup(UnitOfWork unitOfWork) {
         logger.debug("Notifying listeners of cleanup");
-        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext();) {
+        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext(); ) {
             UnitOfWorkListener listener = listenerIter.next();
             try {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
                 }
-                listener.onCleanup();
+                listener.onCleanup(unitOfWork);
             } catch (RuntimeException e) {
                 logger.warn("Listener raised an exception on cleanup. Ignoring...", e);
             }

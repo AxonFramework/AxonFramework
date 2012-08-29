@@ -110,7 +110,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     }
 
     private <T> EventMessage<T> invokeEventRegistrationListeners(EventMessage<T> event) {
-        return listeners.onEventRegistered(event);
+        return listeners.onEventRegistered(this, event);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -153,14 +153,14 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     protected void notifyListenersRollback(Throwable cause) {
-        listeners.onRollback(cause);
+        listeners.onRollback(this, cause);
     }
 
     /**
-     * Send a {@link UnitOfWorkListener#afterCommit()} notification to all registered listeners.
+     * Send a {@link UnitOfWorkListener#afterCommit(UnitOfWork)} notification to all registered listeners.
      */
     protected void notifyListenersAfterCommit() {
-        listeners.afterCommit();
+        listeners.afterCommit(this);
     }
 
     /**
@@ -215,12 +215,12 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     protected void notifyListenersPrepareCommit() {
-        listeners.onPrepareCommit(registeredAggregates.keySet(), eventsToPublish());
+        listeners.onPrepareCommit(this, registeredAggregates.keySet(), eventsToPublish());
     }
 
     @Override
     protected void notifyListenersCleanup() {
-        listeners.onCleanup();
+        listeners.onCleanup(this);
     }
 
     private List<EventMessage> eventsToPublish() {

@@ -408,7 +408,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                 throws Throwable {
             unitOfWork.registerListener(new UnitOfWorkListenerAdapter() {
                 @Override
-                public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
+                public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+                                            List<EventMessage> events) {
                     Iterator<AggregateRoot> iterator = aggregateRoots.iterator();
                     if (iterator.hasNext()) {
                         workingAggregate = iterator.next();

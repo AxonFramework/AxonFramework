@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
 import org.mockito.*;
@@ -113,7 +114,8 @@ public class LockingRepositoryTest {
 
         CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
+            public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+                                        List<EventMessage> events) {
                 throw new RuntimeException("Mock Exception");
             }
         });
@@ -152,7 +154,8 @@ public class LockingRepositoryTest {
 
         CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
+            public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+                                        List<EventMessage> events) {
                 throw new RuntimeException("Mock Exception");
             }
         });

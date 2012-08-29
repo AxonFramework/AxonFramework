@@ -96,8 +96,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
         testSubject.subscribe(CreateCommand.class, stubHandler);
         testSubject.subscribe(ErrorCommand.class, stubHandler);
         Repository<StubAggregate> spiedRepository = spy(testSubject
-                                                    .createRepository(new GenericAggregateFactory<StubAggregate>(
-                                                            StubAggregate.class)));
+                                                                .createRepository(new GenericAggregateFactory<StubAggregate>(
+                                                                        StubAggregate.class)));
         stubHandler.setRepository(spiedRepository);
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<Object, Object>();
         doAnswer(new Answer() {
@@ -116,12 +116,13 @@ public class DisruptorCommandBusTest_MultiThreaded {
             }
         }).when(spiedRepository).load(isA(Object.class));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
-        when(mockUnitOfWorkListener.onEventRegistered(any(EventMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
+                .thenAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return invocation.getArguments()[0];
+                    }
+                });
 
         for (int a = 0; a < AGGREGATE_COUNT; a++) {
             testSubject.dispatch(new GenericCommandMessage<CreateCommand>(new CreateCommand(aggregateIdentifier[a])));

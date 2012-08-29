@@ -21,6 +21,7 @@ import org.axonframework.common.NoCache;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 /**
@@ -131,7 +132,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
         }
 
         @Override
-        public void onRollback(Throwable failureCause) {
+        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             cache.remove(identifier);
         }
     }

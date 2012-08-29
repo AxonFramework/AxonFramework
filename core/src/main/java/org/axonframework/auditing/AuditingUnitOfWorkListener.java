@@ -19,6 +19,7 @@ package org.axonframework.auditing;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 
 import java.util.ArrayList;
@@ -58,17 +59,17 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     }
 
     @Override
-    public void afterCommit() {
+    public void afterCommit(UnitOfWork unitOfWork) {
         auditLogger.logSuccessful(command, returnValue, recordedEvents);
     }
 
     @Override
-    public void onRollback(Throwable failureCause) {
+    public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
         auditLogger.logFailed(command, failureCause, recordedEvents);
     }
 
     @Override
-    public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
+    public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
         Map<String, ?> auditData = auditDataProvider.provideAuditDataFor(command);
         if (!auditData.isEmpty()) {
             event = event.andMetaData(auditData);
@@ -78,11 +79,11 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
     }
 
     @Override
-    public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
+    public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
     }
 
     @Override
-    public void onCleanup() {
+    public void onCleanup(UnitOfWork unitOfWork) {
     }
 
     /**

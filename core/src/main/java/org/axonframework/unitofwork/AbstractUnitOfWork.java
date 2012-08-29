@@ -79,13 +79,14 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     /**
-     * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onCleanup()} notification to all registered
-     * listeners. The implementation must ensure that all listeners are notified, even if one throws an exception.
+     * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onCleanup(UnitOfWork)} notification to all
+     * registered listeners. The implementation must ensure that all listeners are notified, even if one throws an
+     * exception.
      */
     protected abstract void notifyListenersCleanup();
 
     /**
-     * Send a {@link UnitOfWorkListener#onRollback(Throwable)} notification to all registered listeners.
+     * Send a {@link UnitOfWorkListener#onRollback(UnitOfWork, Throwable)} notification to all registered listeners.
      *
      * @param cause The cause of the rollback
      */
@@ -217,7 +218,8 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     protected abstract void saveAggregates();
 
     /**
-     * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onPrepareCommit(java.util.Set, java.util.List)}
+     * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onPrepareCommit(UnitOfWork, java.util.Set,
+     * java.util.List)}
      * notification to all registered listeners.
      */
     protected abstract void notifyListenersPrepareCommit();
@@ -225,17 +227,17 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private class CommitOnOuterCommitTask implements UnitOfWorkListener {
 
         @Override
-        public <T> EventMessage<T> onEventRegistered(EventMessage<T> event) {
+        public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
             return event;
         }
 
         @Override
-        public void afterCommit() {
+        public void afterCommit(UnitOfWork unitOfWork) {
             performInnerCommit();
         }
 
         @Override
-        public void onRollback(Throwable failureCause) {
+        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             CurrentUnitOfWork.set(AbstractUnitOfWork.this);
             try {
                 doRollback(failureCause);
@@ -245,11 +247,12 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         }
 
         @Override
-        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
+        public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+                                    List<EventMessage> events) {
         }
 
         @Override
-        public void onCleanup() {
+        public void onCleanup(UnitOfWork unitOfWork) {
             performCleanup();
         }
     }

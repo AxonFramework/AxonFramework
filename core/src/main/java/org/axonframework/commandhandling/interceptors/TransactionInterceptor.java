@@ -86,7 +86,7 @@ public abstract class TransactionInterceptor<T> implements CommandHandlerInterce
          * @param failureCause The cause of the rollback
          */
         @Override
-        public void onRollback(Throwable failureCause) {
+        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             rollbackTransaction(transaction);
         }
 
@@ -94,7 +94,7 @@ public abstract class TransactionInterceptor<T> implements CommandHandlerInterce
          * This method commits the transaction assigned to this Unit Of Work.
          */
         @Override
-        public void afterCommit() {
+        public void afterCommit(UnitOfWork unitOfWork) {
             commitTransaction(transaction);
         }
     }

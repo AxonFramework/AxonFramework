@@ -26,6 +26,7 @@ import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.LockingRepository;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.ArrayList;
@@ -83,7 +84,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * Initialize a repository with the given locking strategy.
      *
      * @param aggregateFactory The factory for new aggregate instances
-     * @param lockManager  the locking strategy to apply to this repository
+     * @param lockManager      the locking strategy to apply to this repository
      */
     public EventSourcingRepository(final AggregateFactory<T> aggregateFactory,
                                    final LockManager lockManager) {
@@ -95,8 +96,8 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * Initialize a repository with the given locking strategy, using a GenericAggregateFactory to create new aggregate
      * instances.
      *
-     * @param aggregateType   The type of aggregate to store in this repository
-     * @param lockManager the locking strategy to apply to this
+     * @param aggregateType The type of aggregate to store in this repository
+     * @param lockManager   the locking strategy to apply to this
      */
     public EventSourcingRepository(final Class<T> aggregateType,
                                    final LockManager lockManager) {
@@ -262,7 +263,8 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         }
 
         @Override
-        public void onPrepareCommit(Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
+        public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+                                    List<EventMessage> events) {
             if (hasPotentialConflicts()) {
                 conflictResolver.resolveConflicts(asList(aggregate.getUncommittedEvents()), unseenEvents);
             }

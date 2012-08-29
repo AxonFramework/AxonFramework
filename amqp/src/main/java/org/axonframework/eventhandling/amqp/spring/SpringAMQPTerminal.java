@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -310,7 +311,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         }
 
         @Override
-        public void afterCommit() {
+        public void afterCommit(UnitOfWork unitOfWork) {
             if (isOpen) {
                 try {
                     if (isTransactional) {
@@ -324,7 +325,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         }
 
         @Override
-        public void onRollback(Throwable failureCause) {
+        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             try {
                 channel.txRollback();
             } catch (IOException e) {

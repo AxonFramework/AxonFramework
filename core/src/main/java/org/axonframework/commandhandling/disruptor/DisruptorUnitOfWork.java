@@ -67,7 +67,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * committed, but before any of the changes are made public.
      */
     public void onPrepareCommit() {
-        listeners.onPrepareCommit(Collections.<AggregateRoot>singleton(aggregate), eventsToPublish);
+        listeners.onPrepareCommit(this, Collections.<AggregateRoot>singleton(aggregate), eventsToPublish);
     }
 
     /**
@@ -75,7 +75,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * and published.
      */
     public void onAfterCommit() {
-        listeners.afterCommit();
+        listeners.afterCommit(this);
     }
 
     /**
@@ -83,7 +83,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * published and the after-commit cycle has been executed.
      */
     public void onCleanup() {
-        listeners.onCleanup();
+        listeners.onCleanup(this);
 
         // clear the lists of events to make them garbage-collectible
         eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
@@ -97,7 +97,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * @param cause The cause of the rollback
      */
     public void onRollback(Throwable cause) {
-        listeners.onRollback(cause);
+        listeners.onRollback(this, cause);
     }
 
     @Override
@@ -184,7 +184,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
 
     @Override
     public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
-        DomainEventMessage<T> message = (DomainEventMessage<T>) listeners.onEventRegistered(event);
+        DomainEventMessage<T> message = (DomainEventMessage<T>) listeners.onEventRegistered(this, event);
         eventsToPublish.add(message);
         return message;
     }

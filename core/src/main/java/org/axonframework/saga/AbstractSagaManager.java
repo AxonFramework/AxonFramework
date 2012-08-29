@@ -20,6 +20,7 @@ import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.axonframework.common.lock.IdentifierBasedLock;
 import org.slf4j.Logger;
@@ -195,7 +196,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
                     if (CurrentUnitOfWork.isStarted()) {
                         CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
                             @Override
-                            public void onCleanup() {
+                            public void onCleanup(UnitOfWork unitOfWork) {
                                 lock.releaseLock(saga.getSagaIdentifier());
                             }
                         });

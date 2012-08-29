@@ -102,15 +102,15 @@ public class SpringTransactionManagerTest {
         UnitOfWorkListener mockUoWListener = mock(UnitOfWorkListener.class);
         uow.registerListener(mockUoWListener);
         uow.commit();
-        verify(mockUoWListener, never()).onCleanup();
+        verify(mockUoWListener, never()).onCleanup(isA(UnitOfWork.class));
         when(mockTransactionStatus.isSuccessful()).thenReturn(true);
         testSubject.afterTransaction(mockTransactionStatus);
 
         InOrder inOrder = inOrder(mockUoWListener, transactionManager);
 
-        inOrder.verify(mockUoWListener).onPrepareCommit(isA(Set.class), isA(List.class));
-        inOrder.verify(mockUoWListener).afterCommit();
+        inOrder.verify(mockUoWListener).onPrepareCommit(isA(UnitOfWork.class), isA(Set.class), isA(List.class));
+        inOrder.verify(mockUoWListener).afterCommit(isA(UnitOfWork.class));
         inOrder.verify(transactionManager).commit(underlyingTransactionStatus);
-        inOrder.verify(mockUoWListener).onCleanup();
+        inOrder.verify(mockUoWListener).onCleanup(isA(UnitOfWork.class));
     }
 }

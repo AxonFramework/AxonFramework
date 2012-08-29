@@ -20,6 +20,7 @@ import net.sf.jsr107cache.Cache;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.List;
@@ -245,7 +246,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         }
 
         @Override
-        public void onCleanup() {
+        public void onCleanup(UnitOfWork unitOfWork) {
             triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, counter);
         }
     }

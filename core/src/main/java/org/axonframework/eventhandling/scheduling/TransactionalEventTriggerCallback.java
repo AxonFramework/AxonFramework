@@ -43,13 +43,13 @@ public abstract class TransactionalEventTriggerCallback<T> implements EventTrigg
         final T tx = startUnderlyingTransaction(event);
         uow.registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void onRollback(Throwable failureCause) {
+            public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
                 logger.warn("Rolling back transaction due to exception.", failureCause);
                 rollbackUnderlyingTransaction(tx);
             }
 
             @Override
-            public void afterCommit() {
+            public void afterCommit(UnitOfWork unitOfWork) {
                 commitUnderlyingTransaction(tx);
             }
         });

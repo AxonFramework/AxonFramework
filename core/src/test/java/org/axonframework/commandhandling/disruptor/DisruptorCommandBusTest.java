@@ -99,7 +99,7 @@ public class DisruptorCommandBusTest {
     public void testCallbackInvokedBeforeUnitOfWorkCleanup() throws Throwable {
         CommandHandlerInterceptor mockHandlerInterceptor = mock(CommandHandlerInterceptor.class);
         CommandDispatchInterceptor mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
-        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new FirstParameter());
+        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Parameter(0));
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore, eventBus,
@@ -114,12 +114,8 @@ public class DisruptorCommandBusTest {
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
-        when(mockUnitOfWorkListener.onEventRegistered(any(EventMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
+                .thenAnswer(new Parameter(1));
         when(mockHandlerInterceptor.handle(any(CommandMessage.class),
                                            any(UnitOfWork.class),
                                            any(InterceptorChain.class)))
@@ -147,9 +143,9 @@ public class DisruptorCommandBusTest {
         inOrder.verify(mockHandlerInterceptor).handle(any(CommandMessage.class),
                                                       any(UnitOfWork.class),
                                                       any(InterceptorChain.class));
-        inOrder.verify(mockUnitOfWorkListener).onPrepareCommit(any(Set.class), any(List.class));
-        inOrder.verify(mockUnitOfWorkListener).afterCommit();
-        inOrder.verify(mockUnitOfWorkListener).onCleanup();
+        inOrder.verify(mockUnitOfWorkListener).onPrepareCommit(any(UnitOfWork.class), any(Set.class), any(List.class));
+        inOrder.verify(mockUnitOfWorkListener).afterCommit(isA(UnitOfWork.class));
+        inOrder.verify(mockUnitOfWorkListener).onCleanup(isA(UnitOfWork.class));
 
         verify(mockCallback).onSuccess(any());
     }
@@ -207,12 +203,8 @@ public class DisruptorCommandBusTest {
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
-        when(mockUnitOfWorkListener.onEventRegistered(any(EventMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
+                .thenAnswer(new Parameter(1));
         when(mockInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class)))
                 .thenAnswer(new Answer<Object>() {
                     @Override
@@ -496,11 +488,17 @@ public class DisruptorCommandBusTest {
 
     }
 
-    private static class FirstParameter implements Answer<Object> {
+    private static class Parameter implements Answer<Object> {
+
+        private final int index;
+
+        private Parameter(int index) {
+            this.index = index;
+        }
 
         @Override
         public Object answer(InvocationOnMock invocation) throws Throwable {
-            return invocation.getArguments()[0];
+            return invocation.getArguments()[index];
         }
     }
 }

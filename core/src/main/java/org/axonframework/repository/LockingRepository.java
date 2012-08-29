@@ -18,6 +18,7 @@ package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -181,7 +182,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
         }
 
         @Override
-        public void onCleanup() {
+        public void onCleanup(UnitOfWork unitOfWork) {
             lockManager.releaseLock(aggregate.getIdentifier());
         }
     }

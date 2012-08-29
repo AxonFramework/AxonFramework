@@ -48,12 +48,12 @@ public abstract class AbstractTransactionManager<T> implements TransactionManage
         final T tx = startUnderlyingTransaction(transactionStatus);
         uow.registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void afterCommit() {
+            public void afterCommit(UnitOfWork unitOfWork) {
                 commitUnderlyingTransaction(tx);
             }
 
             @Override
-            public void onRollback(Throwable failureCause) {
+            public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
                 rollbackUnderlyingTransaction(tx);
             }
         });

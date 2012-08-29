@@ -93,7 +93,7 @@ public class DefaultUnitOfWorkTest {
         UnitOfWork inner = DefaultUnitOfWork.startAndGet();
         inner.registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void onRollback(Throwable failureCause) {
+            public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
                 isRolledBack.set(true);
             }
         });
@@ -110,7 +110,7 @@ public class DefaultUnitOfWorkTest {
         UnitOfWork inner = DefaultUnitOfWork.startAndGet();
         inner.registerListener(new UnitOfWorkListenerAdapter() {
             @Override
-            public void afterCommit() {
+            public void afterCommit(UnitOfWork unitOfWork) {
                 isCommitted.set(true);
             }
         });
@@ -148,7 +148,8 @@ public class DefaultUnitOfWorkTest {
     @Test
     public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnPrepareCommit() {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        doThrow(new MockException()).when(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class),
+        doThrow(new MockException()).when(mockListener).onPrepareCommit(isA(UnitOfWork.class),
+                                                                        anySetOf(AggregateRoot.class),
                                                                         anyListOf(EventMessage.class));
         testSubject.registerListener(mockListener);
         testSubject.start();
@@ -159,9 +160,9 @@ public class DefaultUnitOfWorkTest {
             assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
-        verify(mockListener).onRollback(isA(RuntimeException.class));
-        verify(mockListener, never()).afterCommit();
-        verify(mockListener).onCleanup();
+        verify(mockListener).onRollback(isA(UnitOfWork.class), isA(RuntimeException.class));
+        verify(mockListener, never()).afterCommit(isA(UnitOfWork.class));
+        verify(mockListener).onCleanup(isA(UnitOfWork.class));
     }
 
     @SuppressWarnings({"unchecked"})
@@ -179,18 +180,19 @@ public class DefaultUnitOfWorkTest {
             assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
-        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
-        verify(mockListener).onRollback(isA(RuntimeException.class));
-        verify(mockListener, never()).afterCommit();
-        verify(mockListener).onCleanup();
+        verify(mockListener).onPrepareCommit(isA(UnitOfWork.class), anySetOf(AggregateRoot.class), anyListOf(
+                EventMessage.class));
+        verify(mockListener).onRollback(isA(UnitOfWork.class), isA(RuntimeException.class));
+        verify(mockListener, never()).afterCommit(isA(UnitOfWork.class));
+        verify(mockListener).onCleanup(isA(UnitOfWork.class));
     }
 
     @SuppressWarnings({"unchecked"})
     @Test
     public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnDispatchEvents() {
         UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        when(mockListener.onEventRegistered(Matchers.<EventMessage<Object>>any()))
-                .thenAnswer(new ReturnFirstParameterAnswer());
+        when(mockListener.onEventRegistered(isA(UnitOfWork.class), Matchers.<EventMessage<Object>>any()))
+                .thenAnswer(new ReturnParameterAnswer(1));
 
         doThrow(new MockException()).when(mockEventBus).publish(isA(EventMessage.class));
         testSubject.start();
@@ -209,10 +211,11 @@ public class DefaultUnitOfWorkTest {
             assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
             assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
         }
-        verify(mockListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
-        verify(mockListener).onRollback(isA(RuntimeException.class));
-        verify(mockListener, never()).afterCommit();
-        verify(mockListener).onCleanup();
+        verify(mockListener).onPrepareCommit(isA(UnitOfWork.class), anySetOf(AggregateRoot.class),
+                                             anyListOf(EventMessage.class));
+        verify(mockListener).onRollback(isA(UnitOfWork.class), isA(RuntimeException.class));
+        verify(mockListener, never()).afterCommit(isA(UnitOfWork.class));
+        verify(mockListener).onCleanup(isA(UnitOfWork.class));
     }
 
     @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
@@ -225,15 +228,15 @@ public class DefaultUnitOfWorkTest {
         inner.registerListener(innerListener);
         outer.registerListener(outerListener);
         inner.commit();
-        verify(innerListener, never()).afterCommit();
-        verify(innerListener, never()).onCleanup();
+        verify(innerListener, never()).afterCommit(isA(UnitOfWork.class));
+        verify(innerListener, never()).onCleanup(isA(UnitOfWork.class));
         outer.commit();
 
         InOrder inOrder = inOrder(innerListener, outerListener);
-        inOrder.verify(innerListener).afterCommit();
-        inOrder.verify(outerListener).afterCommit();
-        inOrder.verify(innerListener).onCleanup();
-        inOrder.verify(outerListener).onCleanup();
+        inOrder.verify(innerListener).afterCommit(isA(UnitOfWork.class));
+        inOrder.verify(outerListener).afterCommit(isA(UnitOfWork.class));
+        inOrder.verify(innerListener).onCleanup(isA(UnitOfWork.class));
+        inOrder.verify(outerListener).onCleanup(isA(UnitOfWork.class));
     }
 
     @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored", "NullableProblems"})
@@ -246,15 +249,15 @@ public class DefaultUnitOfWorkTest {
         inner.registerListener(innerListener);
         outer.registerListener(outerListener);
         inner.rollback();
-        verify(innerListener, never()).afterCommit();
-        verify(innerListener, never()).onCleanup();
+        verify(innerListener, never()).afterCommit(isA(UnitOfWork.class));
+        verify(innerListener, never()).onCleanup(isA(UnitOfWork.class));
         outer.commit();
 
         InOrder inOrder = inOrder(innerListener, outerListener);
-        inOrder.verify(innerListener).onRollback(null);
-        inOrder.verify(outerListener).afterCommit();
-        inOrder.verify(innerListener).onCleanup();
-        inOrder.verify(outerListener).onCleanup();
+        inOrder.verify(innerListener).onRollback(isA(UnitOfWork.class), (Throwable) isNull());
+        inOrder.verify(outerListener).afterCommit(isA(UnitOfWork.class));
+        inOrder.verify(innerListener).onCleanup(isA(UnitOfWork.class));
+        inOrder.verify(outerListener).onCleanup(isA(UnitOfWork.class));
     }
 
     @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored", "NullableProblems"})
@@ -267,25 +270,35 @@ public class DefaultUnitOfWorkTest {
         inner.registerListener(innerListener);
         outer.registerListener(outerListener);
         inner.commit();
-        verify(innerListener, never()).afterCommit();
-        verify(innerListener, never()).onCleanup();
+        verify(innerListener, never()).afterCommit(isA(UnitOfWork.class));
+        verify(innerListener, never()).onCleanup(isA(UnitOfWork.class));
         outer.rollback();
-        verify(outerListener, never()).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
+        verify(outerListener, never()).onPrepareCommit(isA(UnitOfWork.class),
+                                                       anySetOf(AggregateRoot.class),
+                                                       anyListOf(EventMessage.class));
 
         InOrder inOrder = inOrder(innerListener, outerListener);
-        inOrder.verify(innerListener).onPrepareCommit(anySetOf(AggregateRoot.class), anyListOf(EventMessage.class));
+        inOrder.verify(innerListener).onPrepareCommit(isA(UnitOfWork.class),
+                                                      anySetOf(AggregateRoot.class),
+                                                      anyListOf(EventMessage.class));
 
-        inOrder.verify(innerListener).onRollback(null);
-        inOrder.verify(outerListener).onRollback(null);
-        inOrder.verify(innerListener).onCleanup();
-        inOrder.verify(outerListener).onCleanup();
+        inOrder.verify(innerListener).onRollback(isA(UnitOfWork.class), (Throwable) isNull());
+        inOrder.verify(outerListener).onRollback(isA(UnitOfWork.class), (Throwable) isNull());
+        inOrder.verify(innerListener).onCleanup(isA(UnitOfWork.class));
+        inOrder.verify(outerListener).onCleanup(isA(UnitOfWork.class));
     }
 
-    private static class ReturnFirstParameterAnswer implements Answer<Object> {
+    private static class ReturnParameterAnswer implements Answer<Object> {
+
+        private final int parameterIndex;
+
+        private ReturnParameterAnswer(int parameterIndex) {
+            this.parameterIndex = parameterIndex;
+        }
 
         @Override
         public Object answer(InvocationOnMock invocation) throws Throwable {
-            return invocation.getArguments()[0];
+            return invocation.getArguments()[parameterIndex];
         }
     }
 
