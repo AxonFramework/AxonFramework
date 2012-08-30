@@ -126,7 +126,9 @@ public class SimpleEventScheduler implements EventScheduler {
         @Override
         public void run() {
             EventMessage<?> eventMessage = createMessage();
-            logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
+            if (logger.isInfoEnabled()) {
+                logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
+            }
             eventTriggerCallback.beforePublication(eventMessage);
             try {
                 eventBus.publish(eventMessage);

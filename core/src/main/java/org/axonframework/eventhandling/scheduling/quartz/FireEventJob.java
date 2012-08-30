@@ -74,9 +74,13 @@ public class FireEventJob implements Job {
             if (eventTriggerCallback != null) {
                 eventTriggerCallback.afterPublicationSuccess();
             }
-            logger.info("Job successfully executed. Scheduled Event has been published.");
+            if (logger.isInfoEnabled()) {
+                logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
+                            eventMessage.getPayloadType().getSimpleName());
+            }
         } catch (Exception e) {
-            logger.warn("Exception occurred while executing a scheduled job");
+            logger.warn("Exception occurred while publishing scheduled event [{}]",
+                        eventMessage.getPayloadType().getSimpleName());
             throw new JobExecutionException(e);
         }
     }
