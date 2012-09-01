@@ -84,13 +84,13 @@ public class MongoEventStoreTest {
         try {
             mongo = context.getBean(Mongo.class);
             testSubject = context.getBean(MongoEventStore.class);
+            mongoTemplate = new DefaultMongoTemplate(mongo);
+            mongoTemplate.domainEventCollection().remove(new BasicDBObject());
+            mongoTemplate.snapshotEventCollection().remove(new BasicDBObject());
         } catch (Exception e) {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
-        mongoTemplate = new DefaultMongoTemplate(mongo);
-        mongoTemplate.domainEventCollection().remove(new BasicDBObject());
-        mongoTemplate.snapshotEventCollection().remove(new BasicDBObject());
         aggregate1 = new StubAggregateRoot();
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
