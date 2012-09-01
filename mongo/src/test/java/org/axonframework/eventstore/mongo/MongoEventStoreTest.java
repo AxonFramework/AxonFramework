@@ -102,12 +102,6 @@ public class MongoEventStoreTest {
         aggregate2.changeState();
     }
 
-    @After
-    public void tearDown() {
-        mongoTemplate.domainEventCollection().remove(new BasicDBObject());
-        mongoTemplate.snapshotEventCollection().remove(new BasicDBObject());
-    }
-
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
