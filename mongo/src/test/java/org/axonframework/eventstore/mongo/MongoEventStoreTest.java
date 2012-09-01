@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.mongo;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.Mongo;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -26,6 +27,7 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
@@ -87,7 +89,8 @@ public class MongoEventStoreTest {
             Assume.assumeNoException(e);
         }
         mongoTemplate = new DefaultMongoTemplate(mongo);
-        mongoTemplate.domainEventCollection().getDB().dropDatabase();
+        mongoTemplate.domainEventCollection().remove(new BasicDBObject());
+        mongoTemplate.snapshotEventCollection().remove(new BasicDBObject());
         aggregate1 = new StubAggregateRoot();
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
@@ -97,6 +100,12 @@ public class MongoEventStoreTest {
         aggregate2.changeState();
         aggregate2.changeState();
         aggregate2.changeState();
+    }
+
+    @After
+    public void tearDown() {
+        mongoTemplate.domainEventCollection().remove(new BasicDBObject());
+        mongoTemplate.snapshotEventCollection().remove(new BasicDBObject());
     }
 
     @Test
@@ -186,7 +195,7 @@ public class MongoEventStoreTest {
 
         assertEquals(2, domainEvents.size());
     }
-    
+
     @Test
     public void testLoadWithMultipleSnapshotEvents() {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
@@ -212,6 +221,19 @@ public class MongoEventStoreTest {
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
         testSubject.readEvents("test", UUID.randomUUID());
+    }
+
+    @Test
+    public void testStoreDuplicateAggregate() {
+        testSubject.appendEvents("type1", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>("aggregate1", 0, "payload")));
+        try {
+            testSubject.appendEvents("type1", new SimpleDomainEventStream(
+                    new GenericDomainEventMessage<String>("aggregate1", 0, "payload")));
+            fail("Expected exception to be thrown");
+        } catch (ConcurrencyException e) {
+            assertNotNull(e);
+        }
     }
 
     @Test

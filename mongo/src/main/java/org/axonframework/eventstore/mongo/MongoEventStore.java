@@ -18,6 +18,7 @@ package org.axonframework.eventstore.mongo;
 
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.MongoException;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -27,6 +28,7 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteriaBuilder;
+import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
@@ -121,7 +123,12 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
             messages.add(events.next());
         }
 
-        mongoTemplate.domainEventCollection().insert(storageStrategy.createDocuments(type, eventSerializer, messages));
+        try {
+            mongoTemplate.domainEventCollection().insert(storageStrategy.createDocuments(type, eventSerializer, messages));
+        } catch (MongoException.DuplicateKey e) {
+            throw new ConcurrencyException("Trying to insert an Event for an aggregate with a sequence "
+                                                   + "number that is already present in the Event Store", e);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("{} events appended", new Object[]{messages.size()});
