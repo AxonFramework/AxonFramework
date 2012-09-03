@@ -16,8 +16,6 @@
 
 package org.axonframework.common.lock;
 
-import org.axonframework.common.AxonTransientException;
-
 /**
  * Exception indicating that a deadlock has been detected while a thread was attempting to acquire a lock. This
  * typically happens when a Thread attempts to acquire a lock that is owned by a Thread that is in turn waiting for a
@@ -28,7 +26,7 @@ import org.axonframework.common.AxonTransientException;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DeadlockException extends AxonTransientException {
+public class DeadlockException extends LockAcquisitionFailedException {
 
     private static final long serialVersionUID = -5552006099153686607L;
 

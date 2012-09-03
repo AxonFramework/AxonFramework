@@ -94,7 +94,7 @@ public class IdentifierBasedLock {
      */
     public void releaseLock(String identifier) {
         if (!locks.containsKey(identifier)) {
-            throw new LockAcquisitionFailedException("No lock for this identifier was ever obtained");
+            throw new IllegalLockUsageException("No lock for this identifier was ever obtained");
         }
         DisposableLock lock = lockFor(identifier);
         lock.unlock(identifier);
