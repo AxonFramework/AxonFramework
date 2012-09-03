@@ -16,18 +16,17 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.AxonNonTransientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLNonTransientException;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import static org.axonframework.eventhandling.YieldPolicy.DO_NOT_YIELD;
 
 /**
  * Scheduler that keeps track of (Event processing) tasks that need to be executed sequentially.
@@ -45,12 +44,14 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
     private final Executor executor;
     // guarded by "this"
     private final Queue<T> eventQueue;
-    private final List<T> currentBatch = new LinkedList<T>();
+    private final LinkedList<T> currentBatch = new LinkedList<T>();
     // guarded by "this"
     private boolean isScheduled = false;
     private volatile boolean cleanedUp;
     private volatile long retryAfter;
-    private volatile boolean transactionStarted;
+    private final RetryPolicy skipFailedEvent;
+    private final int maxBatchSize;
+    private final int retryInterval;
 
     /**
      * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule
@@ -59,29 +60,40 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
      * @param transactionManager The transaction manager that manages underlying transactions
      * @param executor           The executor service that will process the events
      * @param shutDownCallback   The callback to notify when the scheduler finishes processing events
+     * @param retryPolicy        The policy indicating how to deal with event processing failure
+     * @param batchSize          The number of events to process in a single batch
+     * @param retryInterval      The number of milliseconds to wait between retries
      */
     public EventProcessingScheduler(TransactionManager transactionManager, Executor executor,
-                                    ShutdownCallback shutDownCallback) {
-        this(transactionManager, new LinkedList<T>(), executor, shutDownCallback);
+                                    ShutdownCallback shutDownCallback, RetryPolicy retryPolicy, int batchSize,
+                                    int retryInterval) {
+        this(transactionManager, new LinkedList<T>(), executor, shutDownCallback,
+             retryPolicy, batchSize, retryInterval);
     }
 
     /**
      * Initialize a scheduler using the given <code>executor</code>. The <code>eventQueue</code> is the queue from
-     * which
-     * the scheduler should obtain it's events. This queue must be thread safe, as it can be used simultaneously by
-     * multiple threads.
+     * which the scheduler should obtain it's events. This queue does not have to be thread safe, if the queue is not
+     * accessed from outside the EventProcessingScheduler.
      *
      * @param transactionManager The transaction manager that manages underlying transactions
      * @param executor           The executor service that will process the events
      * @param eventQueue         The queue from which this scheduler gets events
      * @param shutDownCallback   The callback to notify when the scheduler finishes processing events
+     * @param retryPolicy        The policy indicating how to deal with event processing failure
+     * @param batchSize          The number of events to process in a single batch
+     * @param retryInterval      The number of milliseconds to wait between retries
      */
     public EventProcessingScheduler(TransactionManager transactionManager, Queue<T> eventQueue, Executor executor,
-                                    ShutdownCallback shutDownCallback) {
+                                    ShutdownCallback shutDownCallback, RetryPolicy retryPolicy, int batchSize,
+                                    int retryInterval) {
         this.transactionManager = transactionManager;
         this.eventQueue = eventQueue;
         this.shutDownCallback = shutDownCallback;
         this.executor = executor;
+        this.skipFailedEvent = retryPolicy;
+        this.maxBatchSize = batchSize;
+        this.retryInterval = retryInterval;
     }
 
     /**
@@ -195,27 +207,13 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
     public void run() {
         boolean mayContinue = true;
         waitUntilAllowedStartingTime();
-        final TransactionStatus status = new TransactionStatus();
-        status.setMaxTransactionSize(queuedEventCount() + currentBatch.size());
-        TransactionStatus.set(status);
+        final BatchStatus status = new BatchStatus(skipFailedEvent, maxBatchSize, retryInterval);
         while (mayContinue) {
             processOrRetryBatch(status);
-            boolean inRetryMode =
-                    !status.isSuccessful() && status.getRetryPolicy() != RetryPolicy.SKIP_FAILED_EVENT;
-            /*
-             * Only continue processing in the current thread if:
-             * - all of the following
-             *   - not in retry mode
-             *   - there are events waiting in the queue
-             *   - the yielding policy is DO_NOT_YIELD
-             * - or
-             *   - yielding failed because the executor rejected the execution
-             */
-            mayContinue = (!inRetryMode && queuedEventCount() > 0 && DO_NOT_YIELD.equals(status.getYieldPolicy()))
-                    || !yield();
-            status.resetTransactionStatus();
+            // Only continue processing in the current thread if yielding failed
+            mayContinue = !yield();
+            status.reset();
         }
-        TransactionStatus.clear();
     }
 
     private void waitUntilAllowedStartingTime() {
@@ -234,9 +232,11 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
         }
     }
 
-    private void processOrRetryBatch(TransactionStatus status) {
+    @SuppressWarnings("unchecked")
+    private void processOrRetryBatch(BatchStatus status) {
+        Object transaction = null;
         try {
-            this.transactionStarted = false;
+            transaction = transactionManager.startTransaction();
             if (currentBatch.isEmpty()) {
                 handleEventBatch(status);
             } else {
@@ -245,63 +245,96 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
                 logger.warn("Continuing regular processing of events.");
                 handleEventBatch(status);
             }
-            if (transactionStarted) {
-                transactionManager.afterTransaction(status);
-            }
+            transactionManager.commitTransaction(transaction);
             currentBatch.clear();
         } catch (Exception e) {
             // the batch failed.
-            prepareBatchRetry(status, e);
+            prepareBatchRetry(status, transaction, e);
         }
     }
 
-    private synchronized void prepareBatchRetry(TransactionStatus status, Exception e) {
-        status.markFailed(e);
-        tryAfterTransactionCall(status);
-        switch (status.getRetryPolicy()) {
+    @SuppressWarnings("unchecked")
+    private synchronized RetryPolicy prepareBatchRetry(BatchStatus status, Object transaction, Exception e) {
+        RetryPolicy policyToApply = status.getRetryPolicy();
+        long retryIntervalToApply = status.getRetryInterval();
+        if (policyToApply != RetryPolicy.SKIP_FAILED_EVENT && isNonTransient(e)) {
+            logger.warn("RetryPolicy has been overridden. The exception {} is explicitly Non Transient. "
+                                + "Failed event is skipped to prevent poison message syndrome.",
+                        e.getClass().getSimpleName());
+            policyToApply = RetryPolicy.SKIP_FAILED_EVENT;
+        }
+
+        if (transaction != null && policyToApply != RetryPolicy.RETRY_TRANSACTION) {
+            try {
+                transactionManager.commitTransaction(transaction);
+            } catch (Exception transactionException) {
+                logger.warn("The retry policy [{}] requires the transaction to be committed, "
+                                    + "but a failure occurred while doing so. Scheduling a full retry instead.",
+                            policyToApply);
+                if (policyToApply == RetryPolicy.SKIP_FAILED_EVENT) {
+                    logger.warn("The retry policy [{}] requires the transaction to be committed, "
+                                        + "but a failure occurred while doing so. Scheduling a full retry instead, "
+                                        + "excluding the failed event.", policyToApply);
+                    // we take out the failed event, and retry the rest only
+                    currentBatch.remove(status.getEventsProcessedInBatch());
+                } else {
+                    logger.warn("The retry policy [{}] requires the transaction to be committed, "
+                                        + "but a failure occurred while doing so. Scheduling a full retry instead.",
+                                policyToApply);
+                }
+                policyToApply = RetryPolicy.RETRY_TRANSACTION;
+                retryIntervalToApply = 0;
+            }
+        }
+
+        switch (policyToApply) {
             case RETRY_LAST_EVENT:
-                markLastEventForRetry();
+                this.retryAfter = System.currentTimeMillis() + retryIntervalToApply;
+                for (int t = 0; t < status.getEventsProcessedInBatch(); t++) {
+                    currentBatch.removeFirst();
+                }
                 logger.warn("Transactional event processing batch failed. Rescheduling last event for retry.", e);
                 break;
             case SKIP_FAILED_EVENT:
                 logger.error("Transactional event processing batch failed. Ignoring failed event.", e);
                 currentBatch.clear();
-                status.setRetryInterval(0);
                 break;
             case RETRY_TRANSACTION:
+                if (transaction != null) {
+                    try {
+                        transactionManager.rollbackTransaction(transaction);
+                    } catch (Exception transactionException) {
+                        logger.warn("Failed rolling back a transaction.");
+                    }
+                }
+                this.retryAfter = System.currentTimeMillis() + retryIntervalToApply;
                 logger.warn("Transactional event processing batch failed. ", e);
                 logger.warn("Retrying entire batch of {} events, with {} more in queue.",
                             currentBatch.size(),
                             queuedEventCount());
                 break;
         }
-        this.retryAfter = System.currentTimeMillis() + status.getRetryInterval();
+        return status.getRetryPolicy();
     }
 
-    private void tryAfterTransactionCall(TransactionStatus status) {
-        try {
-            transactionManager.afterTransaction(status);
-        } catch (Exception e) {
-            logger.warn("Call to afterTransaction method of failed transaction resulted in an exception.", e);
-        }
-        transactionStarted = false;
-    }
-
-    private void markLastEventForRetry() {
-        T lastEvent = currentBatch.get(currentBatch.size() - 1);
-        currentBatch.clear();
-        if (lastEvent != null) {
-            currentBatch.add(lastEvent);
-        }
-    }
-
-    private void retryEventBatch(TransactionStatus status) {
+    private void retryEventBatch(BatchStatus status) {
         for (T event : this.currentBatch) {
-            startTransactionIfNecessary(status);
             doHandle(event);
             status.recordEventProcessed();
         }
         currentBatch.clear();
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    private boolean isNonTransient(Throwable exception) {
+        if (exception instanceof SQLNonTransientException
+                || exception instanceof AxonNonTransientException) {
+            return true;
+        }
+        if (exception.getCause() != null && exception.getCause() != exception) {
+            return isNonTransient(exception.getCause());
+        }
+        return false;
     }
 
     /**
@@ -312,19 +345,11 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
      */
     protected abstract void doHandle(T event);
 
-    private void handleEventBatch(TransactionStatus status) {
+    private void handleEventBatch(BatchStatus status) {
         T event;
-        while (!status.isTransactionSizeReached() && (event = nextEvent()) != null) { // NOSONAR
-            startTransactionIfNecessary(status);
+        while (!status.isBatchSizeReached() && (event = nextEvent()) != null) { // NOSONAR
             doHandle(event);
             status.recordEventProcessed();
-        }
-    }
-
-    private void startTransactionIfNecessary(TransactionStatus status) {
-        if (!transactionStarted) {
-            transactionManager.beforeTransaction(status);
-            transactionStarted = true;
         }
     }
 
@@ -347,5 +372,88 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
          * @param scheduler the scheduler that completed processing.
          */
         void afterShutdown(EventProcessingScheduler scheduler);
+    }
+
+    /**
+     * Provides details about the current status of an event handling batch.
+     * <p/>
+     * All instance methods in this class are meant to be used in a single thread and are therefore not thread-safe.
+     * The
+     * static methods are thread-safe.
+     *
+     * @author Allard Buijze
+     * @since 0.3
+     */
+    private static final class BatchStatus {
+
+        private int eventsProcessedInBatch = 0;
+        private final RetryPolicy retryPolicy;
+        private final int maxBatchSize;
+        private final long retryInterval;
+
+        /**
+         * Initialize a BatchStatus instance with given settings.
+         *
+         * @param retryPolicy   The retry policy in case of processing failure
+         * @param maxBatchSize  The maximum number of events to handle in a single batch
+         * @param retryInterval The amount of time to wait between retries
+         */
+        public BatchStatus(RetryPolicy retryPolicy, int maxBatchSize, int retryInterval) {
+            this.retryPolicy = retryPolicy;
+            this.maxBatchSize = maxBatchSize;
+            this.retryInterval = retryInterval;
+        }
+
+        /**
+         * Returns the retry policy for the current transaction
+         *
+         * @return the retry policy for the current transaction
+         */
+        public RetryPolicy getRetryPolicy() {
+            return retryPolicy;
+        }
+
+        /**
+         * Record the fact that an event has been processed. This will increase the number of events processed in
+         * current
+         * transaction as well as the number of events since last yield.
+         */
+        protected void recordEventProcessed() {
+            eventsProcessedInBatch++;
+        }
+
+        public int getEventsProcessedInBatch() {
+            return eventsProcessedInBatch;
+        }
+
+        /**
+         * Resets the event count for current transaction to 0 and sets the YieldPolicy to the default value
+         * (YIELD_AFTER_TRANSACTION).
+         */
+        protected void reset() {
+            eventsProcessedInBatch = 0;
+        }
+
+        /**
+         * Indicates whether or not the maximum amount of events have been processed in this transaction.
+         *
+         * @return true if the maximum amount of events was handled, otherwise false.
+         */
+        protected boolean isBatchSizeReached() {
+            return eventsProcessedInBatch >= maxBatchSize;
+        }
+
+        /**
+         * Returns the current retry interval. This is the number of milliseconds processing should wait before
+         * retrying
+         * this transaction. Defaults to 5000 milliseconds.
+         * <p/>
+         * Note that negative values will result in immediate retries, making them practically equal to a value of 0.
+         *
+         * @return the current retry interval
+         */
+        public long getRetryInterval() {
+            return retryInterval;
+        }
     }
 }

@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.scheduling.quartz;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
+import org.axonframework.eventhandling.TransactionManager;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -49,7 +49,7 @@ public class FireEventJob implements Job {
     /**
      * The key used to locate the optional EventTriggerCallback in the scheduler context.
      */
-    public static final String TRIGGER_CALLBACK_KEY = EventTriggerCallback.class.getName();
+    public static final String TRANSACTION_MANAGER_KEY = TransactionManager.class.getName();
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -58,21 +58,16 @@ public class FireEventJob implements Job {
         EventMessage<?> eventMessage = createMessage(event);
         try {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            EventTriggerCallback eventTriggerCallback = (EventTriggerCallback) context.getScheduler().getContext().get(
-                    TRIGGER_CALLBACK_KEY);
-            if (eventTriggerCallback != null) {
-                eventTriggerCallback.beforePublication(eventMessage);
+            TransactionManager transactionManager =
+                    (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
+            Object transaction = null;
+            if (transactionManager != null) {
+                transaction = transactionManager.startTransaction();
             }
             try {
                 eventBus.publish(eventMessage);
-            } catch (RuntimeException e) {
-                if (eventTriggerCallback != null) {
-                    eventTriggerCallback.afterPublicationFailure(e);
-                }
-                throw e;
-            }
-            if (eventTriggerCallback != null) {
-                eventTriggerCallback.afterPublicationSuccess();
+            } finally {
+                doCommit(transactionManager, transaction);
             }
             if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
@@ -82,6 +77,13 @@ public class FireEventJob implements Job {
             logger.warn("Exception occurred while publishing scheduled event [{}]",
                         eventMessage.getPayloadType().getSimpleName());
             throw new JobExecutionException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void doCommit(TransactionManager transactionManager, Object transaction) {
+        if (transactionManager != null && transaction != null) {
+            transactionManager.commitTransaction(transaction);
         }
     }
 

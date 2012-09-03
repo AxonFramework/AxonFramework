@@ -28,7 +28,6 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
@@ -190,23 +189,5 @@ public class AnnotationEventListenerBeanPostProcessorTest {
 
     public static class FailingEvent {
 
-    }
-
-    public static class StubExecutor implements Executor {
-
-        private int invocationCounter = 0;
-
-        @Override
-        public void execute(Runnable command) {
-            this.invocationCounter++;
-        }
-    }
-
-    @AsynchronousEventListener
-    public static class AsyncHandler {
-
-        @EventHandler
-        public void handleEvent(EventMessage event) {
-        }
     }
 }

@@ -27,9 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p/>
  * Application developers may provide custom ParameterResolverFactory implementations using the ServiceLoader
  * mechanism. To do so, place a file called <code>org.axonframework.common.annotation.ParameterResolverFactory</code>
- * in
- * the
- * <code>META-INF/services</code> folder. In this file, place the fully qualified class names of all available
+ * in the <code>META-INF/services</code> folder. In this file, place the fully qualified class names of all available
  * implementations.
  * <p/>
  * The factory implementations must be public, non-abstract, have a default public constructor and extend the

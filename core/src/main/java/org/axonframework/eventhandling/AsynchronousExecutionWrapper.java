@@ -39,26 +39,37 @@ public abstract class AsynchronousExecutionWrapper<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AsynchronousExecutionWrapper.class);
     private final Executor executor;
-    private final ConcurrentMap<Object, EventProcessingScheduler<T>> transactions =
+    private final ConcurrentMap<Object, EventProcessingScheduler<T>> currentSchedulers =
             new ConcurrentHashMap<Object, EventProcessingScheduler<T>>();
     private final SequencingPolicy<? super T> sequencingPolicy;
+    // the queue on which events are places that may be processed concurrently
     private final BlockingQueue<T> concurrentEventQueue = new LinkedBlockingQueue<T>();
     private final TransactionManager transactionManager;
+    private final RetryPolicy retryPolicy;
+    private final int batchSize;
+    private final int retryInterval;
 
     /**
      * Initialize the AsynchronousExecutionWrapper using the given <code>executor</code> and
      * <code>transactionManager</code>. The transaction manager is used to start and stop any underlying transactions
      * necessary for task processing.
      *
+     * @param executor           The executor that processes the tasks
      * @param transactionManager The transaction manager that will manage underlying transactions for this task
      * @param sequencingPolicy   The sequencing policy for concurrent execution of tasks
-     * @param executor           The executor that processes the tasks
+     * @param retryPolicy        The policy for handling failed events
+     * @param batchSize          The number of events to process in a single batch
+     * @param retryInterval      The number of milliseconds to wait before a retry
      */
     public AsynchronousExecutionWrapper(Executor executor, TransactionManager transactionManager,
-                                        SequencingPolicy<? super T> sequencingPolicy) {
+                                        SequencingPolicy<? super T> sequencingPolicy, RetryPolicy retryPolicy,
+                                        int batchSize, int retryInterval) {
         this.executor = executor;
         this.transactionManager = transactionManager;
         this.sequencingPolicy = sequencingPolicy;
+        this.retryPolicy = retryPolicy;
+        this.batchSize = batchSize;
+        this.retryInterval = retryInterval;
     }
 
     /**
@@ -68,10 +79,10 @@ public abstract class AsynchronousExecutionWrapper<T> {
      *
      * @param sequencingPolicy The sequencing policy for concurrent execution of tasks
      * @param executor         The executor that processes the tasks
-     * @see #AsynchronousExecutionWrapper(java.util.concurrent.Executor, TransactionManager, SequencingPolicy)
+     * @see #AsynchronousExecutionWrapper(java.util.concurrent.Executor, SequencingPolicy)
      */
     public AsynchronousExecutionWrapper(Executor executor, SequencingPolicy<? super T> sequencingPolicy) {
-        this(executor, new NoTransactionManager(), sequencingPolicy);
+        this(executor, new NoTransactionManager(), sequencingPolicy, RetryPolicy.RETRY_LAST_EVENT, 50, 5000);
     }
 
     /**
@@ -106,15 +117,15 @@ public abstract class AsynchronousExecutionWrapper<T> {
     private void assignEventToScheduler(T task, Object sequenceIdentifier) {
         boolean taskScheduled = false;
         while (!taskScheduled) {
-            EventProcessingScheduler<T> currentScheduler = transactions.get(sequenceIdentifier);
+            EventProcessingScheduler<T> currentScheduler = currentSchedulers.get(sequenceIdentifier);
             if (currentScheduler == null) {
-                transactions.putIfAbsent(sequenceIdentifier,
-                                         newProcessingScheduler(new TransactionCleanUp(sequenceIdentifier)));
+                currentSchedulers.putIfAbsent(sequenceIdentifier,
+                                         newProcessingScheduler(new SchedulerCleanUp(sequenceIdentifier)));
             } else {
                 taskScheduled = currentScheduler.scheduleEvent(task);
                 if (!taskScheduled) {
                     // we know it can be cleaned up.
-                    transactions.remove(sequenceIdentifier, currentScheduler);
+                    currentSchedulers.remove(sequenceIdentifier, currentScheduler);
                 }
             }
         }
@@ -143,7 +154,8 @@ public abstract class AsynchronousExecutionWrapper<T> {
     protected EventProcessingScheduler<T> newProcessingScheduler(
             EventProcessingScheduler.ShutdownCallback shutDownCallback,
             Queue<T> taskQueue) {
-        return new EventProcessingScheduler<T>(transactionManager, taskQueue, executor, shutDownCallback) {
+        return new EventProcessingScheduler<T>(transactionManager, taskQueue, executor, shutDownCallback,
+                                               retryPolicy, batchSize, retryInterval) {
             @Override
             protected void doHandle(T task) {
                 AsynchronousExecutionWrapper.this.doHandle(task);
@@ -161,11 +173,11 @@ public abstract class AsynchronousExecutionWrapper<T> {
         }
     }
 
-    private final class TransactionCleanUp implements EventProcessingScheduler.ShutdownCallback {
+    private final class SchedulerCleanUp implements EventProcessingScheduler.ShutdownCallback {
 
         private final Object sequenceIdentifier;
 
-        private TransactionCleanUp(Object sequenceIdentifier) {
+        private SchedulerCleanUp(Object sequenceIdentifier) {
             this.sequenceIdentifier = sequenceIdentifier;
         }
 
@@ -175,7 +187,7 @@ public abstract class AsynchronousExecutionWrapper<T> {
         @Override
         public void afterShutdown(EventProcessingScheduler scheduler) {
             logger.debug("Cleaning up processing scheduler for sequence [{}]", sequenceIdentifier.toString());
-            transactions.remove(sequenceIdentifier, scheduler);
+            currentSchedulers.remove(sequenceIdentifier, scheduler);
         }
     }
 }

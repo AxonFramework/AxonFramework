@@ -482,18 +482,6 @@
                     </xsd:appinfo>
                 </xsd:annotation>
             </xsd:attribute>
-            <xsd:attribute name="executor" type="xsd:string" use="optional">
-                <xsd:annotation>
-                    <xsd:documentation>Select an executor to use for the event
-                        handlers.
-                    </xsd:documentation>
-                    <xsd:appinfo>
-                        <tool:annotation kind="ref">
-                            <tool:expected-type type="java.util.concurrent.Executor"/>
-                        </tool:annotation>
-                    </xsd:appinfo>
-                </xsd:annotation>
-            </xsd:attribute>
             <xsd:attribute name="event-bus" type="xsd:string" use="optional">
                 <xsd:annotation>
                     <xsd:documentation>Explicitly select an event bus to use. If left

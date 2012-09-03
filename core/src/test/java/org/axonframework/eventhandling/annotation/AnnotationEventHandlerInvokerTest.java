@@ -16,16 +16,14 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.common.annotation.MetaData;
 import org.axonframework.common.annotation.UnsupportedHandlerException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.eventhandling.TransactionStatus;
 import org.junit.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -163,8 +161,6 @@ public class AnnotationEventHandlerInvokerTest {
 
         protected int invocationCount1;
         protected int invocationCount2;
-        protected int beforeTransactionCount;
-        protected int afterTransactionCount;
 
         /*
         return values are allowed, but ignored
@@ -181,10 +177,6 @@ public class AnnotationEventHandlerInvokerTest {
             invocationCount2++;
         }
 
-        @BeforeTransaction
-        public void beforeTransaction(TransactionStatus transactionStatus) {
-            beforeTransactionCount++;
-        }
     }
 
     private static class ListeningToInterface {
@@ -208,23 +200,15 @@ public class AnnotationEventHandlerInvokerTest {
         protected int invocationCount3;
 
         @EventHandler
-        public void method3(StubEventOne event,
-                            @MetaData("transactionStatus") TransactionStatus transactionStatus) {
+        public void method3(StubEventOne event) {
             invocationCount3++;
-        }
-
-        @AfterTransaction
-        public void afterTransaction() throws Exception {
-            afterTransactionCount++;
-            throw new Exception("Mock");
         }
     }
 
     private static class IllegalEventHandler extends SecondSubclass {
 
         @EventHandler
-        public void notARealHandler(int event, TransactionStatus transactionStatus,
-                                    String thisParameterMakesItIncompatible) {
+        public void notARealHandler(int event, String thisParameterMakesItIncompatible) {
         }
     }
 

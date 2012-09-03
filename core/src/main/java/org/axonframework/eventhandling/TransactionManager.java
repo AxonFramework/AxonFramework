@@ -17,42 +17,36 @@
 package org.axonframework.eventhandling;
 
 /**
- * org.axonframework.eventhandling.EventListener} interface that provides implementations the ability to do work at the
- * start and end of a transaction.
+ * Interface towards a mechanism that manages transactions
  * <p/>
  * Typically, this will involve opening database transactions or connecting to external systems.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 2.0
  */
-public interface TransactionManager {
+public interface TransactionManager<T> {
 
     /**
-     * Invoked by the EventProcessingScheduler before processing a series of events. The given {@link TransactionStatus}
-     * may be used to set the maximum batch size for the current transaction.
+     * Starts a transaction. The return value is an object representing the transaction status and must be passed as an
+     * argument when invoking {@link #commitTransaction(Object)} or {@link #rollbackTransaction(Object)}.
+     * <p/>
+     * The returned object must never be <code>null</code> if a transaction was successfully created.
      *
-     * @param transactionStatus The current status of the transaction
-     * @see #afterTransaction(TransactionStatus)
-     * @see TransactionStatus
+     * @return The object representing the transaction status
      */
-    void beforeTransaction(TransactionStatus transactionStatus);
+    T startTransaction();
 
     /**
-     * Invoked by the EventProcessingScheduler after a series of events is processed. The given {@link
-     * TransactionStatus} may be used to indicate whether the scheduler should yield to other event processing
-     * schedulers or not.
-     * <p/>
-     * This method is always called once for each invocation to {@link #beforeTransaction(TransactionStatus)}, even if
-     * no events were processed at all.
-     * <p/>
-     * Note that this method is called when a transactional batch was handled successfully, as well as when an error
-     * occurred. Use the {@link TransactionStatus} object to find information about transaction status and (when failed)
-     * the cause of the failure.
+     * Commits the transaction identifier by given <code>transactionStatus</code>.
      *
-     * @param transactionStatus The current status of the transaction
-     * @see #beforeTransaction(TransactionStatus)
-     * @see TransactionStatus
+     * @param transactionStatus The status object provided by {@link #startTransaction()}.
      */
-    void afterTransaction(TransactionStatus transactionStatus);
+    void commitTransaction(T transactionStatus);
 
+    /**
+     * Rolls back the transaction identifier by given <code>transactionStatus</code>.
+     *
+     * @param transactionStatus The status object provided by {@link #startTransaction()}.
+     */
+    void rollbackTransaction(T transactionStatus);
 }

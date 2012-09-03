@@ -16,16 +16,10 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.TransactionStatus;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Iterator;
 
 /**
  * Utility class that supports invocation of specific handler methods for a given event. See {@link EventHandler} for
@@ -73,55 +67,5 @@ public class AnnotationEventHandlerInvoker {
      */
     public Object getTarget() {
         return invoker.getTarget();
-    }
-
-    /**
-     * Invoke the "BeforeTransaction" method on the target. This is the method annotated with {@link
-     * org.axonframework.eventhandling.annotation.BeforeTransaction}
-     *
-     * @param transactionStatus The status of the transaction to pass as parameter to the method call
-     */
-    public void invokeBeforeTransaction(TransactionStatus transactionStatus) {
-        invokeTransactionMethod(BeforeTransaction.class, transactionStatus);
-    }
-
-    /**
-     * Invoke the "AfterTransaction" method on the target. This is the method annotated with {@link
-     * org.axonframework.eventhandling.annotation.AfterTransaction}
-     *
-     * @param transactionStatus The status of the transaction to pass as parameter to the method call
-     */
-    public void invokeAfterTransaction(TransactionStatus transactionStatus) {
-        invokeTransactionMethod(AfterTransaction.class, transactionStatus);
-    }
-
-    private void invokeTransactionMethod(Class<? extends Annotation> annotation,
-                                         TransactionStatus transactionStatus) {
-        Iterator<Method> iterator = ReflectionUtils.methodsOf(invoker.getTargetType()).iterator();
-        boolean found = false;
-        while (!found && iterator.hasNext()) {
-            Method m = iterator.next();
-            if (m.isAnnotationPresent(annotation)
-                    && (m.getParameterTypes().length == 0
-                    || m.getParameterTypes()[0].equals(TransactionStatus.class))) {
-                try {
-                    found = true;
-                    try {
-                        if (m.getParameterTypes().length == 1) {
-                            m.invoke(getTarget(), transactionStatus);
-                        } else {
-                            m.invoke(getTarget());
-                        }
-                    } catch (InvocationTargetException e) {
-                        throw new TransactionMethodExecutionException(String.format(
-                                "An error occurred while invoking [%s] on [%s].",
-                                m.getName(),
-                                invoker.getTargetType().getSimpleName()), e);
-                    }
-                } catch (IllegalAccessException e) {
-                    throw new AxonConfigurationException("Should be Illegal to access this method", e);
-                }
-            }
-        }
     }
 }

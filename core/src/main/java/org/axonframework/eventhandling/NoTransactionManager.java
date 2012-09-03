@@ -21,15 +21,25 @@ package org.axonframework.eventhandling;
  * transaction management is required.
  *
  * @author Allard Buijze
- * @since 1.0
+ * @since 2.0
  */
 public class NoTransactionManager implements TransactionManager {
 
+    /**
+     * An object to represent the transaction, preventing NPE if any component want to toString it
+     */
+    private static final Object STATUS = new Object();
+
     @Override
-    public void beforeTransaction(TransactionStatus transactionStatus) {
+    public Object startTransaction() {
+        return STATUS;
     }
 
     @Override
-    public void afterTransaction(TransactionStatus transactionStatus) {
+    public void commitTransaction(Object transactionStatus) {
+    }
+
+    @Override
+    public void rollbackTransaction(Object transaction) {
     }
 }

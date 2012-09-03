@@ -18,7 +18,6 @@ package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.eventhandling.TransactionManager;
-import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 
@@ -40,7 +39,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private final Map<String, Saga> processedSagas = new TreeMap<String, Saga>();
     private final int processorCount;
     private final int processorId;
-    private TransactionStatus transactionStatus;
+    private Object transactionStatus;
 
     /**
      * Creates the Disruptor Event Handlers for invoking Sagas. The size of the array returned is equal to the given
@@ -104,11 +103,11 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
 
     private void ensureLiveTransaction() {
         if (transactionStatus == null) {
-            transactionStatus = new TransactionStatus();
-            transactionManager.beforeTransaction(transactionStatus);
+            transactionStatus = transactionManager.startTransaction();
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void persistProcessedSagas(boolean ensureNewTransaction) {
         if (!processedSagas.isEmpty()) {
             ensureLiveTransaction();
@@ -117,7 +116,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             }
         }
         if (transactionStatus != null) {
-            transactionManager.afterTransaction(transactionStatus);
+            transactionManager.commitTransaction(transactionStatus);
             transactionStatus = null;
         }
         processedSagas.clear();

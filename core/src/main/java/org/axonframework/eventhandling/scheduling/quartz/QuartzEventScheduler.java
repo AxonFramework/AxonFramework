@@ -20,7 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
+import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.joda.time.DateTime;
@@ -56,7 +56,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private EventBus eventBus;
     private String groupIdentifier = DEFAULT_GROUP_NAME;
     private volatile boolean initialized;
-    private EventTriggerCallback eventTriggerCallback;
+    private TransactionManager transactionManager;
 
     @Override
     public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
@@ -143,7 +143,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         Assert.notNull(scheduler, "A Scheduler must be provided.");
         Assert.notNull(eventBus, "An EventBus must be provided.");
         scheduler.getContext().put(FireEventJob.EVENT_BUS_KEY, eventBus);
-        scheduler.getContext().put(FireEventJob.TRIGGER_CALLBACK_KEY, eventTriggerCallback);
+        scheduler.getContext().put(FireEventJob.TRANSACTION_MANAGER_KEY, transactionManager);
         initialized = true;
     }
 
@@ -177,11 +177,11 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Sets the callback to invoke before and after publication of a scheduled event.
+     * Sets the transaction manager that manages a transaction around the publication of an event
      *
-     * @param eventTriggerCallback the callback to invoke before and after publication of a scheduled event
+     * @param transactionManager the callback to invoke before and after publication of a scheduled event
      */
-    public void setEventTriggerCallback(EventTriggerCallback eventTriggerCallback) {
-        this.eventTriggerCallback = eventTriggerCallback;
+    public void setTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
     }
 }

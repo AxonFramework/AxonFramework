@@ -21,8 +21,9 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.NoTransactionManager;
+import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.EventTriggerCallback;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -54,7 +55,7 @@ public class SimpleEventScheduler implements EventScheduler {
 
     private final ScheduledExecutorService executorService;
     private final EventBus eventBus;
-    private final EventTriggerCallback eventTriggerCallback;
+    private final TransactionManager transactionManager;
     private final Map<String, Future<?>> tokens = new ConcurrentHashMap<String, Future<?>>();
 
     /**
@@ -65,7 +66,7 @@ public class SimpleEventScheduler implements EventScheduler {
      * @param eventBus        The Event Bus on which Events are to be published
      */
     public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus) {
-        this(executorService, eventBus, new NoOpEventTriggerCallback());
+        this(executorService, eventBus, new NoTransactionManager());
     }
 
     /**
@@ -73,18 +74,18 @@ public class SimpleEventScheduler implements EventScheduler {
      * mechanism, and publishes events to the given <code>eventBus</code>. The <code>eventTriggerCallback</code> is
      * invoked just before and after publication of a scheduled event.
      *
-     * @param executorService      The backing ScheduledExecutorService
-     * @param eventBus             The Event Bus on which Events are to be published
-     * @param eventTriggerCallback To notify when an event is published
+     * @param executorService    The backing ScheduledExecutorService
+     * @param eventBus           The Event Bus on which Events are to be published
+     * @param transactionManager to manage transactions around event publication
      */
     public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus,
-                                EventTriggerCallback eventTriggerCallback) {
+                                TransactionManager transactionManager) {
         Assert.notNull(executorService, "The ScheduledExecutorService may not be null");
         Assert.notNull(eventBus, "The EventBus may not be null");
 
         this.executorService = executorService;
         this.eventBus = eventBus;
-        this.eventTriggerCallback = eventTriggerCallback;
+        this.transactionManager = transactionManager;
     }
 
     @Override
@@ -123,22 +124,23 @@ public class SimpleEventScheduler implements EventScheduler {
             this.tokenId = tokenId;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             EventMessage<?> eventMessage = createMessage();
             if (logger.isInfoEnabled()) {
                 logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
-            eventTriggerCallback.beforePublication(eventMessage);
+            Object transaction = transactionManager.startTransaction();
             try {
                 eventBus.publish(eventMessage);
             } catch (RuntimeException e) {
-                eventTriggerCallback.afterPublicationFailure(e);
+                transactionManager.rollbackTransaction(transaction);
                 throw e;
             } finally {
                 tokens.remove(tokenId);
             }
-            eventTriggerCallback.afterPublicationSuccess();
+            transactionManager.commitTransaction(transaction);
         }
 
         /**
@@ -156,22 +158,6 @@ public class SimpleEventScheduler implements EventScheduler {
                 eventMessage = new GenericEventMessage<Object>(event);
             }
             return eventMessage;
-        }
-    }
-
-    private static class NoOpEventTriggerCallback implements EventTriggerCallback {
-
-        @Override
-        public void beforePublication(EventMessage event) {
-        }
-
-        @Override
-        public void afterPublicationSuccess() {
-        }
-
-        @Override
-        public void afterPublicationFailure(RuntimeException cause) {
-            logger.error("An exception occurred while processing a scheduled Event.", cause);
         }
     }
 }

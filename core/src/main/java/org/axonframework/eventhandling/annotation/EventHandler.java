@@ -23,14 +23,28 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to be placed on methods that can handle events.
+ * Annotation to be placed on methods that can handle events. The parameters of the annotated method are resolved using
+ * parameter resolvers.
  * <p/>
- * Annotated methods must comply to a few simple rules: <ul> <li>The method must accept 1 or 2 parameter
- * parameters<li>The first parameter must be a subtype of {@link org.axonframework.domain.EventMessage} <li>If
- * specified, the
- * second parameter must be of type {@link org.axonframework.eventhandling.TransactionStatus}<li>Return values are
- * allowed, but are ignored by dispatchers <li>Exceptions are highly discouraged, and are likely to be caught and
- * ignored by the dispatchers </ul>
+ * Axon provides a number of parameter resolvers that allow you to use the following parameter types:<ul>
+ * <li>The first parameter is always the payload of the Event message</li>
+ * <li>Parameters annotated with <code>@MetaData</code> will resolve to the Meta Data value with the key as indicated
+ * on the annotation. If required is false (default), null is passed when the meta data value is not present. If
+ * required is true, the resolver will not match and prevent the method from being invoked when the meta data value is
+ * not present.</li>
+ * <li>Parameters of type {@link org.axonframework.domain.MetaData} will have the entire Meta Data of an Event Message
+ * injected.</li>
+ * <li>Parameters of type {@link org.joda.time.DateTime} will resolve to the timestamp of the EventMessage. This is the
+ * time at which the Event was generated.</li>
+ * <li>Parameters assignable to {@link org.axonframework.domain.Message} will have the entire {@link
+ * org.axonframework.domain.EventMessage} injected (if the message is assignable to that parameter). If the first
+ * parameter is of type message, it effectively matches an Event of any type, even if generic parameters would suggest
+ * otherwise. Due to type erasure, Axon cannot detect what parameter is expected. In such case, it is best to declare a
+ * parameter of the payload type, followed by a parameter of type Message.</li>
+ * <li>When using Spring and <code>&lt;axon:annotation-config/&gt;</code> is declared, any other parameters will
+ * resolve to autowired beans, if exactly one autowire candidate is available in the application context. This allows
+ * you to inject resources directly into <code>@EventHandler</code> annotated methods.</li>
+ * </ul>
  * <p/>
  * For each event, only a single method will be invoked per object instance with annotated methods. This method is
  * resolved in the following order: <ol> <li>First, the event handler methods of the actual class (at runtime) are
@@ -44,12 +58,13 @@ import java.lang.annotation.Target;
  * evaluated. <li>If still no method is found, the event listener ignores the event </ol>
  * <p/>
  * If you do not want any events to be ignored, but rather have some logging of the fact that an unhandled event came
- * by, make an abstract superclass that contains an event handler method that accepts {@link Object}.
+ * by, make an abstract superclass that contains an event handler method that accepts any <code>Object</code>.
  * <p/>
  * Note: if there are two event handler methods accepting the same argument, the behavior is undefined.
  *
  * @author Allard Buijze
  * @see org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter
+ * @see org.axonframework.common.annotation.ParameterResolverFactory
  * @since 0.1
  */
 @Documented

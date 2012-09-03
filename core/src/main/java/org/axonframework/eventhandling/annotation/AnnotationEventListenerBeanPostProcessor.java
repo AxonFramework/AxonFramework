@@ -24,7 +24,6 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor {
 
-    private Executor executor;
     private EventBus eventBus;
 
     @Override
@@ -53,7 +51,7 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
      */
     @Override
     protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
-        return AnnotationEventListenerAdapter.subscribe(bean, executor, eventBus);
+        return AnnotationEventListenerAdapter.subscribe(bean, eventBus);
     }
 
     @Override
@@ -94,16 +92,6 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
         final AtomicBoolean result = new AtomicBoolean(false);
         ReflectionUtils.doWithMethods(beanClass, new HasEventHandlerAnnotationMethodCallback(result));
         return result.get();
-    }
-
-    /**
-     * Sets the Executor to use when the AnnotationEventListenerBeanPostProcessor encounters event listeners with the
-     * {@link org.axonframework.eventhandling.annotation.AsynchronousEventListener} annotation.
-     *
-     * @param executor the Executor to use for asynchronous event listeners
-     */
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
     }
 
     /**

@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling.transactionmanagers;
 
-import org.axonframework.eventhandling.RetryPolicy;
-import org.axonframework.eventhandling.TransactionStatus;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
@@ -25,8 +23,8 @@ import org.junit.*;
 import org.mockito.*;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import java.sql.SQLTimeoutException;
 import java.util.List;
 import java.util.Set;
 
@@ -54,57 +52,34 @@ public class SpringTransactionManagerTest {
     }
 
     @Test
-    public void testManageTransaction_RegularFlow() {
-        TransactionStatus mockTransactionStatus = mock(TransactionStatus.class);
-        testSubject.beforeTransaction(mockTransactionStatus);
-        when(mockTransactionStatus.isSuccessful()).thenReturn(true);
-        testSubject.afterTransaction(mockTransactionStatus);
+    public void testManageTransaction_CustomTransactionStatus() {
+        final TransactionDefinition transactionDefinition = mock(TransactionDefinition.class);
+        testSubject.setTransactionDefinition(transactionDefinition);
+        UnitOfWork transaction = testSubject.startTransaction();
+        testSubject.commitTransaction(transaction);
 
-        verify(transactionManager).getTransaction(isA(TransactionDefinition.class));
+        verify(transactionManager).getTransaction(transactionDefinition);
         verify(transactionManager).commit(underlyingTransactionStatus);
     }
 
     @Test
-    public void testManageTransaction_TransientException() {
-        TransactionStatus mockTransactionStatus = mock(TransactionStatus.class);
-        testSubject.beforeTransaction(mockTransactionStatus);
-        when(mockTransactionStatus.isSuccessful()).thenReturn(false);
-        when(mockTransactionStatus.getException()).thenReturn(
-                new RuntimeException("Wrapper around a transient exception",
-                                     new SQLTimeoutException("Faking a timeout")));
-        testSubject.afterTransaction(mockTransactionStatus);
+    public void testManageTransaction_DefaultTransactionStatus() {
+        UnitOfWork transaction = testSubject.startTransaction();
+        testSubject.commitTransaction(transaction);
 
-        InOrder inOrder = inOrder(transactionManager, mockTransactionStatus);
-        inOrder.verify(transactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(mockTransactionStatus).setRetryPolicy(RetryPolicy.RETRY_TRANSACTION);
-        inOrder.verify(transactionManager).rollback(underlyingTransactionStatus);
-    }
-
-    @Test
-    public void testManageTransaction_NonTransientException() {
-        TransactionStatus mockTransactionStatus = mock(TransactionStatus.class);
-        testSubject.beforeTransaction(mockTransactionStatus);
-        when(mockTransactionStatus.isSuccessful()).thenReturn(false);
-        when(mockTransactionStatus.getException()).thenReturn(new RuntimeException("Faking a timeout"));
-        testSubject.afterTransaction(mockTransactionStatus);
-
-        InOrder inOrder = inOrder(transactionManager, mockTransactionStatus);
-        inOrder.verify(transactionManager).getTransaction(isA(TransactionDefinition.class));
-        inOrder.verify(mockTransactionStatus).setRetryPolicy(RetryPolicy.SKIP_FAILED_EVENT);
-        inOrder.verify(transactionManager).commit(underlyingTransactionStatus);
+        verify(transactionManager).getTransaction(isA(DefaultTransactionDefinition.class));
+        verify(transactionManager).commit(underlyingTransactionStatus);
     }
 
     @Test
     public void testCleanupOfInnerUnitOfWorkInvokedAfterTxCommit() {
-        TransactionStatus mockTransactionStatus = mock(TransactionStatus.class);
-        testSubject.beforeTransaction(mockTransactionStatus);
+        UnitOfWork transaction = testSubject.startTransaction();
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         UnitOfWorkListener mockUoWListener = mock(UnitOfWorkListener.class);
         uow.registerListener(mockUoWListener);
         uow.commit();
         verify(mockUoWListener, never()).onCleanup(isA(UnitOfWork.class));
-        when(mockTransactionStatus.isSuccessful()).thenReturn(true);
-        testSubject.afterTransaction(mockTransactionStatus);
+        testSubject.commitTransaction(transaction);
 
         InOrder inOrder = inOrder(mockUoWListener, transactionManager);
 

@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.scheduling.SpringTransactionalTriggerCallback;
+import org.axonframework.eventhandling.transactionmanagers.SpringTransactionManager;
 import org.quartz.Scheduler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
@@ -79,12 +79,8 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
             eventScheduler.setGroupIdentifier(groupIdentifier);
         }
         if (transactionManager != null) {
-            SpringTransactionalTriggerCallback callback = new SpringTransactionalTriggerCallback();
-            callback.setTransactionManager(transactionManager);
-            if (transactionDefinition != null) {
-                callback.setTransactionDefinition(transactionDefinition);
-            }
-            eventScheduler.setEventTriggerCallback(callback);
+            eventScheduler.setTransactionManager(new SpringTransactionManager(transactionManager,
+                                                                              transactionDefinition));
         }
         eventScheduler.initialize();
     }
@@ -132,7 +128,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     }
 
     /**
-     * The TransactionDefinition to use by the transaction manager. Default to a {@link
+     * The TransactionDefinition to use by the transaction manager. Defaults to a {@link
      * org.springframework.transaction.support.DefaultTransactionDefinition}.
      * Is ignored if no transaction manager is configured.
      *

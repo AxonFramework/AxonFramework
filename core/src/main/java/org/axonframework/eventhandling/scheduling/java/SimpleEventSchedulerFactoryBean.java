@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.scheduling.SpringTransactionalTriggerCallback;
+import org.axonframework.eventhandling.transactionmanagers.SpringTransactionManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -25,6 +25,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,7 +49,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     private SimpleEventScheduler eventScheduler;
     private ApplicationContext applicationContext;
     private PlatformTransactionManager transactionManager;
-    private TransactionDefinition transactionDefinition;
+    private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
     @Override
     public SimpleEventScheduler getObject() throws Exception {
@@ -76,20 +77,16 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
         if (transactionManager == null) {
             this.eventScheduler = new SimpleEventScheduler(executorService, eventBus);
         } else {
-            SpringTransactionalTriggerCallback callback = new SpringTransactionalTriggerCallback();
-            callback.setTransactionManager(transactionManager);
-            if (transactionDefinition != null) {
-                callback.setTransactionDefinition(transactionDefinition);
-            }
-            this.eventScheduler = new SimpleEventScheduler(executorService, eventBus, callback);
+            this.eventScheduler = new SimpleEventScheduler(executorService, eventBus,
+                                                           new SpringTransactionManager(transactionManager,
+                                                                                        transactionDefinition));
         }
     }
 
     /**
      * Sets the eventBus that scheduled events should be published to. Defaults to the EventBus found in the
      * application context. If there is more than one EventBus in the application context, you must specify which one
-     * to
-     * use.
+     * to use.
      *
      * @param eventBus The EventBus to publish scheduled events to
      */
@@ -118,7 +115,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     }
 
     /**
-     * The TransactionDefinition to use by the transaction manager. Default to a {@link
+     * The TransactionDefinition to use by the transaction manager. Defaults to a {@link
      * org.springframework.transaction.support.DefaultTransactionDefinition}.
      * Is ignored if no transaction manager is configured.
      *

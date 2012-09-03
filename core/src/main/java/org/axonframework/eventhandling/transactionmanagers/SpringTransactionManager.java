@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.transactionmanagers;
 
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
@@ -34,11 +35,39 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 public class SpringTransactionManager extends AbstractTransactionManager<TransactionStatus> {
 
     private PlatformTransactionManager transactionManager;
+    private TransactionDefinition transactionDefinition;
+
+    /**
+     * @param transactionManager    The transaction manager to use
+     * @param transactionDefinition The definition for transactions to create
+     */
+    public SpringTransactionManager(PlatformTransactionManager transactionManager,
+                                    TransactionDefinition transactionDefinition) {
+        this.transactionManager = transactionManager;
+        this.transactionDefinition = transactionDefinition;
+    }
+
+    /**
+     * Initializes the SpringTransactionManager with the given <code>transactionManger</code> and the default
+     * transaction definition.
+     *
+     * @param transactionManager the transaction manager to use
+     */
+    public SpringTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+        this.transactionDefinition = new DefaultTransactionDefinition();
+    }
+
+    /**
+     * Default constructor. Requires the transaction manager to be set using setter injection.
+     */
+    public SpringTransactionManager() {
+        this.transactionDefinition = new DefaultTransactionDefinition();
+    }
 
     @Override
-    protected TransactionStatus startUnderlyingTransaction(
-            org.axonframework.eventhandling.TransactionStatus transactionStatus) {
-        return transactionManager.getTransaction(new DefaultTransactionDefinition());
+    protected TransactionStatus startUnderlyingTransaction() {
+        return transactionManager.getTransaction(transactionDefinition);
     }
 
     @Override
@@ -62,5 +91,15 @@ public class SpringTransactionManager extends AbstractTransactionManager<Transac
      */
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
+    }
+
+    /**
+     * The TransactionDefinition to use by the transaction manager. Defaults to a {@link
+     * org.springframework.transaction.support.DefaultTransactionDefinition}.
+     *
+     * @param transactionDefinition the TransactionDefinition to use by the transaction manager
+     */
+    public void setTransactionDefinition(TransactionDefinition transactionDefinition) {
+        this.transactionDefinition = transactionDefinition;
     }
 }
