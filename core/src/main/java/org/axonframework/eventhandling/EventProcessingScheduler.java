@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLNonTransientException;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -44,7 +45,7 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
     private final Executor executor;
     // guarded by "this"
     private final Queue<T> eventQueue;
-    private final LinkedList<T> currentBatch = new LinkedList<T>();
+    private final List<T> currentBatch = new LinkedList<T>();
     // guarded by "this"
     private boolean isScheduled = false;
     private volatile boolean cleanedUp;
@@ -291,7 +292,7 @@ public abstract class EventProcessingScheduler<T> implements Runnable {
             case RETRY_LAST_EVENT:
                 this.retryAfter = System.currentTimeMillis() + retryIntervalToApply;
                 for (int t = 0; t < status.getEventsProcessedInBatch(); t++) {
-                    currentBatch.removeFirst();
+                    currentBatch.remove(0);
                 }
                 logger.warn("Transactional event processing batch failed. Rescheduling last event for retry.", e);
                 break;

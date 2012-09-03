@@ -32,8 +32,8 @@ public class TerminalBeanDefinitionParser extends AbstractBeanDefinitionParser {
     private static final String PROPERTY_DEFAULT_CONFIGURATION = "defaultConfiguration";
     private final BeanDefinitionParser configurationParser = new AMQPConfigurationBeanDefinitionParser();
 
-    private static Map<String, String> BEAN_REFERENCE_PROPERTIES = new HashMap<String, String>();
-    private static Map<String, String> BEAN_VALUE_PROPERTIES = new HashMap<String, String>();
+    private static final Map<String, String> BEAN_REFERENCE_PROPERTIES = new HashMap<String, String>();
+    private static final Map<String, String> BEAN_VALUE_PROPERTIES = new HashMap<String, String>();
 
     static {
         BEAN_REFERENCE_PROPERTIES.put("connection-factory", "connectionFactory");
@@ -49,7 +49,7 @@ public class TerminalBeanDefinitionParser extends AbstractBeanDefinitionParser {
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition terminalDefinition = new GenericBeanDefinition();
         terminalDefinition.setBeanClass(SpringAMQPTerminal.class);
-        GenericBeanDefinition listenerContainerDefinition = ContainerManager(element, parserContext);
+        GenericBeanDefinition listenerContainerDefinition = createContainerManager(element, parserContext);
         final String containerBeanName = resolveId(element, terminalDefinition, parserContext)
                 + CONTAINER_MANAGER_SUFFIX;
         parserContext.getRegistry().registerBeanDefinition(containerBeanName, listenerContainerDefinition);
@@ -72,7 +72,7 @@ public class TerminalBeanDefinitionParser extends AbstractBeanDefinitionParser {
         return terminalDefinition;
     }
 
-    private GenericBeanDefinition ContainerManager(Element element, ParserContext parserContext) {
+    private GenericBeanDefinition createContainerManager(Element element, ParserContext parserContext) {
         GenericBeanDefinition listenerContainerDefinition = new GenericBeanDefinition();
         listenerContainerDefinition.setBeanClass(ListenerContainerLifecycleManager.class);
         final Element defaultConfig = DomUtils.getChildElementByTagName(element, DEFAULT_CONFIG_ELEMENT);

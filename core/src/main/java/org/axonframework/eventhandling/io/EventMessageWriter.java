@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.io;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.io.DefaultMessageDefinitions;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 
@@ -59,9 +58,9 @@ public class EventMessageWriter {
      */
     public void writeEventMessage(EventMessage eventMessage) throws IOException {
         if (DomainEventMessage.class.isInstance(eventMessage)) {
-            out.writeByte(DefaultMessageDefinitions.DOMAIN_EVENT_MESSAGE.getTypeByte());
+            out.writeByte(EventMessageType.DOMAIN_EVENT_MESSAGE.getTypeByte());
         } else {
-            out.writeByte(DefaultMessageDefinitions.EVENT_MESSAGE.getTypeByte());
+            out.writeByte(EventMessageType.EVENT_MESSAGE.getTypeByte());
         }
         out.writeUTF(eventMessage.getIdentifier());
         out.writeUTF(eventMessage.getTimestamp().toString());

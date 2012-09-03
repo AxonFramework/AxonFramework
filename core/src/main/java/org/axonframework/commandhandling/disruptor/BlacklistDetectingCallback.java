@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
  * Wrapper for command handler Callbacks that detects blacklisted aggregates and starts a cleanup process when an
  * aggregate is blacklisted.
  *
- * @param <T> The type of AggregateRoot that may be blacklisted
  * @param <R> The return value of the Command
  * @author Allard Buijze
  * @since 2.0

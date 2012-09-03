@@ -139,7 +139,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
         return new BatchingAggregateStreamIterator(firstSequenceNumber, identifier, aggregateType, batchSize, entityManager);
     }
 
-    private static class BatchingAggregateStreamIterator implements Iterator<SerializedDomainEventData> {
+    private static final class BatchingAggregateStreamIterator implements Iterator<SerializedDomainEventData> {
 
         private int currentBatchSize;
         private Iterator<SerializedDomainEventData> currentBatch;

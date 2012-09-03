@@ -21,6 +21,7 @@ package org.axonframework.eventhandling;
  * <p/>
  * Typically, this will involve opening database transactions or connecting to external systems.
  *
+ * @param <T> The type of object used to represent the transaction
  * @author Allard Buijze
  * @since 2.0
  */

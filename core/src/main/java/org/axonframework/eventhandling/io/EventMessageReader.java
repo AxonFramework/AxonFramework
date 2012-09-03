@@ -17,8 +17,6 @@
 package org.axonframework.eventhandling.io;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.io.DefaultMessageDefinitions;
-import org.axonframework.io.MessageDefinition;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
@@ -71,12 +69,12 @@ public class EventMessageReader {
             // end of stream
             return null;
         }
-        MessageDefinition messageType = DefaultMessageDefinitions.fromTypeByte((byte) firstByte);
+        EventMessageType messageType = EventMessageType.fromTypeByte((byte) firstByte);
         String identifier = in.readUTF();
         String timestamp = in.readUTF();
         String aggregateIdentifier = null;
         long sequenceNumber = 0;
-        if (messageType == DefaultMessageDefinitions.DOMAIN_EVENT_MESSAGE) {
+        if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
             aggregateIdentifier = in.readUTF();
             sequenceNumber = in.readLong();
         }
@@ -96,7 +94,7 @@ public class EventMessageReader {
         SerializedEventMessage<T> message = new SerializedEventMessage<T>(identifier, new DateTime(timestamp),
                                                                           serializedPayload, serializedMetaData,
                                                                           serializer);
-        if (messageType == DefaultMessageDefinitions.DOMAIN_EVENT_MESSAGE) {
+        if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
             return new SerializedDomainEventMessage<T>(message, aggregateIdentifier, sequenceNumber);
         }
         return message;

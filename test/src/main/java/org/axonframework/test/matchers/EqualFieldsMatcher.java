@@ -58,12 +58,12 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
                 && fieldsMatch(expected.getClass(), expected, actual);
     }
 
-    private boolean fieldsMatch(Class<?> aClass, Object expected, Object actual) {
+    private boolean fieldsMatch(Class<?> aClass, Object expectedValue, Object actual) {
         boolean match = true;
         for (Field field : aClass.getDeclaredFields()) {
             field.setAccessible(true);
             try {
-                Object expectedFieldValue = field.get(expected);
+                Object expectedFieldValue = field.get(expectedValue);
                 Object actualFieldValue = field.get(actual);
                 if (expectedFieldValue != null && actualFieldValue != null && expectedFieldValue.getClass().isArray()) {
                     if (!Arrays.deepEquals(new Object[]{expectedFieldValue}, new Object[]{actualFieldValue})) {
@@ -84,7 +84,7 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
             }
         }
         if (aClass.getSuperclass() != Object.class) {
-            match = fieldsMatch(aClass.getSuperclass(), expected, actual);
+            match = fieldsMatch(aClass.getSuperclass(), expectedValue, actual);
         }
         return match;
     }
