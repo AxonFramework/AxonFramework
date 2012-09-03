@@ -364,6 +364,14 @@ fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
                
             </programlistingco></para>
         <simplesect>
+            <title>Defining behavior of Command Callbacks</title>
+            <para>Saga's can dispatch commands using a callback to be notified of Command processing
+                results. Since there is no actual Command Handling done in tests, the behavior is
+                defined using a <code>CallbackBehavior</code> object. This object is registered
+                using <code>setCallbackBehavior()</code> on the fixture and defines if and how the
+                callback must be invoked when a command is dispatched.</para>
+        </simplesect>
+        <simplesect>
             <title>Injecting Resources</title>
             <para>Often, Sagas will interact with external resources. These resources aren't part of
                 the Saga's state, but are injected after a Saga is loaded or created. The test
@@ -377,6 +385,27 @@ fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
                     your Saga. It allows you to verify that the saga interacts correctly with your
                     external resources.</para>
             </tip>
+        </simplesect>
+        <simplesect>
+            <title>Using Command Gateways</title>
+            <para>Command Gateways provide Saga's with an easier way to dispatch Commands. Using a
+                custom command gateway also makes it easier to create a mock or stub to define its
+                behavior in tests. When providing a mock or stub, however, the actual command might
+                not be dispatched, making it impossible to verify the sent commands in the test
+                fixture.</para>
+            <para>Therefore, the fixture provides two methods that allow you to register Command
+                Gateways and optionally a mock defining its behavior:
+                    <code>registerCommandGateway(Class)</code> and
+                    <code>registerCommandGateway(Class, Object)</code>. Both methods return an
+                instance of the given class that represents the gateway to use. This instance is
+                also registered as a resource, to make it eligible for resource injection.</para>
+            <para>When the <code>registerCommandGateway(Class)</code> is used to register a gateway,
+                it dispatches Commands to the CommandBus managed by the fixture. The behavior of the
+                gateway is mostly defined by the <code>CallbackBehavior</code> defined on the
+                fixture. If no explicit <code>CallbackBehavior</code> is provided, callbacks are not
+                invoked, making it impossible to provide any return value for the gateway.</para>
+            <para>When the <code>registerCommandGateway(Class, Object)</code> is used to register a
+                gateway, the second parameter is used to define the behavior of the gateway.</para>
         </simplesect>
         <simplesect>
             <title>Time as a parameter in your tests</title>

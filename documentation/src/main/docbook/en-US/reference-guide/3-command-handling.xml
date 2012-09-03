@@ -837,7 +837,18 @@ try {
             not invoke any handlers at all. All it does is form a "bridge" between Command Bus
             implementations on different JVM's. Each instance of the
                 <code>DistributedCommandBus</code> on each JVM is called a "Segment".</para>
-        <!--TODO: Add schema of Distributed Command Bus and local segments here-->
+        <figure>
+            <title>Structure of the Distributed Command Bus</title>
+            <mediaobject>
+                <imageobject role="fo">
+                    <imagedata align="center" format="svg"
+                        fileref="distributed-command-bus.svg" width="10cm"/>
+                </imageobject>
+                <imageobject role="html">
+                    <imagedata format="png" fileref="distributed-command-bus.png"/>
+                </imageobject>
+            </mediaobject>
+        </figure>
         <para>
             <note>
                 <title>Dependencies</title>

@@ -389,7 +389,15 @@
                                 <code>EntityManager.clear()</code> after fetching a batch of events.
                             Failure to do so might result in <code>OutOfMemoryException</code>s when
                             loading large streams of events. </para>
-                    </warning></para>
+                    </warning><note>
+                        <title>Hibernate support</title>
+                        <para>The <code>EventEntryStore</code> implementation used by Axon
+                            automatically detects whether Hibernate is used as JPA implementation.
+                            If that is the case, it will use some Hiberante-specific features to
+                            optimize performance while reducing memory consumption. To prevent
+                            Hibernate specific logic, configure the JPA Event Store to use the
+                                <code>DefaultEventEntryStore</code> instead.</para>
+                    </note></para>
             </simplesect>
         </sect2>
         <sect2>
