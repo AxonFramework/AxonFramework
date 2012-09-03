@@ -17,8 +17,9 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -32,9 +33,9 @@ import java.util.concurrent.Executor;
  * @see TransactionManager
  * @since 2.0
  */
-public class AsynchronousCluster implements Cluster {
+public class AsynchronousCluster extends AbstractCluster {
 
-    private final Cluster delegate;
+    private static final Logger logger = LoggerFactory.getLogger(AsynchronousCluster.class);
     private final AsynchronousHandler asynchronousHandler;
 
     /**
@@ -69,31 +70,9 @@ public class AsynchronousCluster implements Cluster {
     public AsynchronousCluster(Executor executor, TransactionManager transactionManager,
                                SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
                                int batchSize, RetryPolicy retryPolicy, int retryInterval) {
-        this(executor, transactionManager, sequencingPolicy, new SimpleCluster(),
-             retryPolicy, batchSize, retryInterval);
-    }
 
-    /**
-     * Creates an AsynchronousCluster implementation that delegates handling to the given <code>delegate</code>,
-     * using the given <code>executor</code>, <code>transactionManager</code> and <code>sequencingPolicy</code>.
-     * Failure is processed according to the given <code>retryPolicy</code> and <code>retryInterval</code>. Processors
-     * will process at most <code>batchSize</code> events in a single batch.
-     *
-     * @param executor           The executor to process event batches with
-     * @param transactionManager The TransactionManager that manages transactions around event processing batches
-     * @param sequencingPolicy   The policy indicating which events must be processed sequentially, and which may be
-     *                           executed in parallel.
-     * @param batchSize          The number of events to process in a single batch (and transaction)
-     * @param delegate           The cluster implementation to delegate processing to
-     * @param retryPolicy        The policy to apply when event handling fails
-     * @param retryInterval      The time (in milliseconds) to wait between retries
-     */
-    public AsynchronousCluster(Executor executor, TransactionManager transactionManager,
-                               SequencingPolicy<? super EventMessage<?>> sequencingPolicy, Cluster delegate,
-                               RetryPolicy retryPolicy, int batchSize, int retryInterval) {
-        asynchronousHandler = new AsynchronousHandler(delegate, executor, transactionManager, sequencingPolicy,
+        asynchronousHandler = new AsynchronousHandler(executor, transactionManager, sequencingPolicy,
                                                       retryPolicy, batchSize, retryInterval);
-        this.delegate = delegate;
     }
 
     @Override
@@ -103,40 +82,46 @@ public class AsynchronousCluster implements Cluster {
         }
     }
 
-    @Override
-    public void subscribe(EventListener eventListener) {
-        delegate.subscribe(eventListener);
+    /**
+     * Performs the actual publication of the message to each of the event handlers. Exceptions thrown by event
+     * listeners are caught and are rethrown only after each of the handlers has handled it. In case multiple event
+     * listeners throw an exception, the first exception caught is rethrown.
+     *
+     * @param message The message to publish to each of the handlers
+     */
+    protected void doPublish(EventMessage<?> message) {
+        RuntimeException firstException = null;
+        for (EventListener member : getMembers()) {
+            try {
+                member.handle(message);
+            } catch (RuntimeException e) {
+                if (firstException == null) {
+                    firstException = e;
+                } else if (!firstException.getClass().equals(e.getClass())) {
+                    logger.warn("Exception thrown by an Event Listener is suppressed, "
+                                        + "as it is not the first event thrown.", e);
+                } else {
+                    logger.info("An exception thrown by an Event Listener is suppressed, as it is not the first event "
+                                        + "thrown, but is of the same type.");
+                }
+            }
+        }
+        if (firstException != null) {
+            throw firstException;
+        }
     }
 
-    @Override
-    public void unsubscribe(EventListener eventListener) {
-        delegate.unsubscribe(eventListener);
-    }
+    private final class AsynchronousHandler extends AsynchronousExecutionWrapper<EventMessage<?>> {
 
-    @Override
-    public Set<EventListener> getMembers() {
-        return delegate.getMembers();
-    }
-
-    @Override
-    public ClusterMetaData getMetaData() {
-        return delegate.getMetaData();
-    }
-
-    private static final class AsynchronousHandler extends AsynchronousExecutionWrapper<EventMessage<?>> {
-
-        private final Cluster delegate;
-
-        public AsynchronousHandler(Cluster delegate, Executor executor, TransactionManager transactionManager,
+        public AsynchronousHandler(Executor executor, TransactionManager transactionManager,
                                    SequencingPolicy<? super EventMessage<?>> sequencingPolicy, RetryPolicy retryPolicy,
                                    int batchSize, int retryInterval) {
             super(executor, transactionManager, sequencingPolicy, retryPolicy, batchSize, retryInterval);
-            this.delegate = delegate;
         }
 
         @Override
         protected void doHandle(EventMessage<?> message) {
-            delegate.publish(message);
+            doPublish(message);
         }
     }
 }
