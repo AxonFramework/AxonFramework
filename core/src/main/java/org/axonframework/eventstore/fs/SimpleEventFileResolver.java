@@ -25,6 +25,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 /**
  * Very straightforward implementation of the EventFileResolver that stores files in a directory structure underneath a
@@ -93,8 +95,16 @@ public class SimpleEventFileResolver implements EventFileResolver {
     }
 
     private File getEventsFile(String type, Object identifier, String extension) throws IOException {
-        return new File(getBaseDirForType(type), identifier + "." + extension);
+        return new File(getBaseDirForType(type), fsSafeIdentifier(identifier) + "." + extension);
     }
+
+    private static String fsSafeIdentifier(Object id) {
+        try {
+            return URLEncoder.encode(id.toString(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("System doesnt support UTF-8?", e);
+		}
+	}
 
     private File getBaseDirForType(String type) throws IOException {
 
