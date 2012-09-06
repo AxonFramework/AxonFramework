@@ -98,7 +98,7 @@ public class AutowiringClusterSelector implements ClusterSelector, ApplicationCo
             if (this.order == o.order) {
                 return this.name.compareTo(o.name);
             } else {
-                return this.order - o.order;
+                return (this.order < o.order) ? -1 : ((this.order == o.order) ? 0 : 1);
             }
         }
 

@@ -100,7 +100,7 @@ public class AutowiringClusterSelectorTest {
 
         @Bean
         public ClusterSelector firstSelector() {
-            return spy(new OrderedSelector(-1,
+            return spy(new OrderedSelector(Integer.MIN_VALUE,
                                            new ClassNamePatternClusterSelector(Pattern.compile(".*TestListener"),
                                                                                CLUSTER_1)));
         }
@@ -112,7 +112,7 @@ public class AutowiringClusterSelectorTest {
 
         @Bean
         public ClusterSelector thirdSelector() {
-            return spy(new OrderedSelector(1, new ClassNamePrefixClusterSelector("org", CLUSTER_3)));
+            return spy(new OrderedSelector(Integer.MAX_VALUE, new ClassNamePrefixClusterSelector("org", CLUSTER_3)));
         }
     }
 

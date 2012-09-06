@@ -61,7 +61,7 @@ public class StubScheduleToken implements ScheduleToken, Comparable<StubSchedule
     @Override
     public int compareTo(StubScheduleToken other) {
         if (scheduleTime.equals(other.scheduleTime)) {
-            return counter - other.counter;
+            return (counter < other.counter) ? -1 : ((counter == other.counter) ? 0 : 1);
         }
         return scheduleTime.compareTo(other.scheduleTime);
     }

@@ -178,9 +178,9 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         @Override
         public int compareTo(Score o) {
             if (declarationDepth != o.declarationDepth) {
-                return o.declarationDepth - declarationDepth;
+                return (o.declarationDepth < declarationDepth) ? -1 : ((o.declarationDepth == declarationDepth) ? 0 : 1);
             } else if (payloadDepth != o.payloadDepth) {
-                return o.payloadDepth - payloadDepth;
+                return (o.payloadDepth < payloadDepth) ? -1 : ((o.payloadDepth == payloadDepth) ? 0 : 1);
             } else {
                 return payloadName.compareTo(o.payloadName);
             }

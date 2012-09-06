@@ -175,7 +175,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         if (SELECTOR_CLASS_NAME_MATCHES_ELEMENT.equals(nodeName)) {
             return BeanDefinitionBuilder.genericBeanDefinition(ClassNamePatternClusterSelector.class)
                                         .addConstructorArgValue(item.getAttribute(PATTERN_ATTRIBUTE))
-                                        .addConstructorArgValue(clusterId)
+                                        .addConstructorArgReference(clusterId)
                                         .getBeanDefinition();
         } else if (SELECTOR_PACKAGE_ELEMENT.equals(nodeName)) {
             return BeanDefinitionBuilder.genericBeanDefinition(ClassNamePrefixClusterSelector.class)
