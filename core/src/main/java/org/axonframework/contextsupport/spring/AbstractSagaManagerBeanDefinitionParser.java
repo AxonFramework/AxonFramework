@@ -21,6 +21,7 @@ import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.saga.spring.SpringResourceInjector;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
@@ -58,6 +59,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         parseSagaFactoryAttribute(element, sagaManagerDefinition);
         parseEventBusAttribute(element, sagaManagerDefinition);
         parseTypesElement(element, sagaManagerDefinition);
+        parseSuppressExceptionsAttribute(element, sagaManagerDefinition.getPropertyValues());
 
         sagaManagerDefinition.setInitMethodName("subscribe");
         sagaManagerDefinition.setDestroyMethodName("unsubscribe");
@@ -164,6 +166,8 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
             registerEventBus(new AutowiredBean(EventBus.class), beanDefinition);
         }
     }
+
+    protected abstract void parseSuppressExceptionsAttribute(Element element, MutablePropertyValues beanDefinition);
 
     private Object getResourceInjector() {
         if (resourceInjector == null) {
