@@ -45,10 +45,9 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private final EventBus eventBus;
     private final SagaRepository sagaRepository;
-    private SagaFactory sagaFactory;
+    private final SagaFactory sagaFactory;
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
-    private final SagaHandlerExecutor executionWrapper;
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
 
     /**
@@ -62,12 +61,36 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         this.eventBus = eventBus;
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;
-        this.executionWrapper = new SynchronousSagaExecutionWrapper();
     }
 
     @Override
     public void handle(final EventMessage event) {
-        executionWrapper.scheduleLookupTask(new SagaLookupAndInvocationTask(event));
+        Set<Saga> sagas = findSagas(event);
+        for (final Saga saga : sagas) {
+            if (synchronizeSagaAccess) {
+                lock.obtainLock(saga.getSagaIdentifier());
+                try {
+                    invokeSagaHandler(event, saga);
+                } finally {
+                    releaseLock(saga);
+                }
+            } else {
+                invokeSagaHandler(event, saga);
+            }
+        }
+    }
+
+    private void releaseLock(final Saga saga) {
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
+                @Override
+                public void onCleanup(UnitOfWork unitOfWork) {
+                    lock.releaseLock(saga.getSagaIdentifier());
+                }
+            });
+        } else {
+            lock.releaseLock(saga.getSagaIdentifier());
+        }
     }
 
     /**
@@ -174,56 +197,5 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
-    }
-
-    private class SagaInvocationTask implements Runnable {
-
-        private final Saga saga;
-        private final EventMessage event;
-
-        public SagaInvocationTask(Saga saga, EventMessage event) {
-            this.saga = saga;
-            this.event = event;
-        }
-
-        @Override
-        public void run() {
-            if (synchronizeSagaAccess) {
-                lock.obtainLock(saga.getSagaIdentifier());
-                try {
-                    invokeSagaHandler(event, saga);
-                } finally {
-                    if (CurrentUnitOfWork.isStarted()) {
-                        CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
-                            @Override
-                            public void onCleanup(UnitOfWork unitOfWork) {
-                                lock.releaseLock(saga.getSagaIdentifier());
-                            }
-                        });
-                    } else {
-                        lock.releaseLock(saga.getSagaIdentifier());
-                    }
-                }
-            } else {
-                invokeSagaHandler(event, saga);
-            }
-        }
-    }
-
-    private class SagaLookupAndInvocationTask implements Runnable {
-
-        private final EventMessage event;
-
-        public SagaLookupAndInvocationTask(EventMessage event) {
-            this.event = event;
-        }
-
-        @Override
-        public void run() {
-            Set<Saga> sagas = findSagas(event);
-            for (final Saga saga : sagas) {
-                executionWrapper.scheduleEventProcessingTask(saga, new SagaInvocationTask(saga, event));
-            }
-        }
     }
 }
