@@ -20,8 +20,7 @@ import org.axonframework.domain.EventMessage;
 
 /**
  * Interface describing an implementation of a Saga. Sagas are instances that handle events and may possibly produce
- * new
- * commands or have other side effects. Typically, Sagas are used to manage long running business transactions.
+ * new commands or have other side effects. Typically, Sagas are used to manage long running business transactions.
  * <p/>
  * Multiple instances of a single type of Saga may exist. In that case, each Saga will be managing a different
  * transaction. Sagas need to be associated with concepts in order to receive specific events. These associations are

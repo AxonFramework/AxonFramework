@@ -25,9 +25,8 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaRepository;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike
@@ -38,8 +37,8 @@ import java.util.Set;
  */
 public class AnnotatedSagaManager extends AbstractSagaManager {
 
-    private final Set<SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>> managedSagaTypes =
-            new HashSet<SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>>();
+    private final Map<Class<? extends Saga>, SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>> managedSagaTypes =
+            new HashMap<Class<? extends Saga>, SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>>();
 
     /**
      * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
@@ -64,47 +63,29 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     @SuppressWarnings({"unchecked"})
     public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory, EventBus eventBus,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        super(eventBus, sagaRepository, sagaFactory);
+        super(eventBus, sagaRepository, sagaFactory, sagaClasses);
         for (Class<? extends AbstractAnnotatedSaga> sagaClass : sagaClasses) {
-            managedSagaTypes.add(SagaMethodMessageHandlerInspector.getInstance(sagaClass));
+            managedSagaTypes.put(sagaClass, SagaMethodMessageHandlerInspector.getInstance(sagaClass));
         }
     }
 
     @Override
-    protected Set<Saga> findSagas(EventMessage event) {
-        Set<Saga> sagasFound = new HashSet<Saga>();
-        for (SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> entry : managedSagaTypes) {
-            sagasFound.addAll(findSagas(event, entry));
-        }
-        return sagasFound;
+    protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector = managedSagaTypes.get(sagaType);
+        return inspector.getMessageHandler(event).getCreationPolicy();
     }
 
-    private <T extends AbstractAnnotatedSaga> Set<T> findSagas(EventMessage event,
-                                                               SagaMethodMessageHandlerInspector<T> inspector) {
-        SagaMethodMessageHandler configuration = inspector.getMessageHandler(event);
-        if (!configuration.isHandlerAvailable()) {
-            return Collections.emptySet();
+    @Override
+    protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
+        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector = managedSagaTypes.get(sagaType);
+        if (inspector == null) {
+            return null;
         }
-        AssociationValue associationValue = configuration.getAssociationValue(event);
-        Set<T> sagasFound;
-        if (associationValue == null) {
-            sagasFound = Collections.emptySet();
-        } else {
-            sagasFound = getSagaRepository().find(inspector.getSagaType(), associationValue);
-            if ((sagasFound.isEmpty()
-                    && configuration.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)
-                    || configuration.getCreationPolicy() == SagaCreationPolicy.ALWAYS) {
-                T saga = createSaga(inspector.getSagaType());
-                sagasFound.add(saga);
-                saga.associateWith(associationValue);
-                getSagaRepository().add(saga);
-            }
-        }
-        return sagasFound;
+        return inspector.getMessageHandler(event).getAssociationValue(event);
     }
 
     @Override
     public Class<?> getTargetType() {
-        return managedSagaTypes.iterator().next().getSagaType();
+        return managedSagaTypes.keySet().iterator().next();
     }
 }

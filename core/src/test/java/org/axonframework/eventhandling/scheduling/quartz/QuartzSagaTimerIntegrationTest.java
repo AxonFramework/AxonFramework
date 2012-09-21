@@ -35,7 +35,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Set;
@@ -95,20 +95,23 @@ public class QuartzSagaTimerIntegrationTest {
         EventListener listener = mock(EventListener.class);
         eventBus.subscribe(listener);
 
-        SimpleTimingSaga saga = new TransactionTemplate(transactionManager)
-                .execute(new TransactionCallback<SimpleTimingSaga>() {
+        new TransactionTemplate(transactionManager)
+                .execute(new TransactionCallbackWithoutResult() {
                     @Override
-                    public SimpleTimingSaga doInTransaction(TransactionStatus status) {
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
                         eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(randomAssociationValue)));
-                        Set<SimpleTimingSaga> actualResult =
+                        Set<String> actualResult =
                                 repository.find(SimpleTimingSaga.class,
                                                 new AssociationValue("association", randomAssociationValue));
                         assertEquals(1, actualResult.size());
-                        return actualResult.iterator().next();
                     }
                 });
 
-        saga.waitForEventProcessing(10000);
+        Thread.sleep(100);
+        Set<String> actualResult = repository.find(SimpleTimingSaga.class,
+                                                   new AssociationValue("association", randomAssociationValue));
+        assertEquals(1, actualResult.size());
+        SimpleTimingSaga saga = (SimpleTimingSaga) repository.load(actualResult.iterator().next());
         assertTrue("Expected saga to be triggered", saga.isTriggered());
         assertTrue("Job did not complete within 10 seconds", jobExecutionLatch.await(10, TimeUnit.SECONDS));
         JobExecutionException jobExecutionException = jobExecutionResult.get();

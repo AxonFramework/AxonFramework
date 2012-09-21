@@ -29,11 +29,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -60,21 +59,19 @@ public class SimpleEventSchedulerIntegrationTest {
 
     @Test
     public void testTimerExecution() throws InterruptedException, ExecutionException {
-        final String randomAssociationValue = UUID.randomUUID().toString();
-        SimpleTimingSaga saga = new TransactionTemplate(transactionManager)
-                .execute(new TransactionCallback<SimpleTimingSaga>() {
+        final String someAssociationValue = "value";
+        new TransactionTemplate(transactionManager)
+                .execute(new TransactionCallbackWithoutResult() {
                     @Override
-                    public SimpleTimingSaga doInTransaction(TransactionStatus status) {
-                        eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(randomAssociationValue)));
-                        Set<SimpleTimingSaga> actualResult =
-                                repository.find(SimpleTimingSaga.class,
-                                                new AssociationValue("association", randomAssociationValue));
-                        assertEquals(1, actualResult.size());
-                        return actualResult.iterator().next();
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(someAssociationValue)));
                     }
                 });
-
-        saga.waitForEventProcessing(10000);
+        Thread.sleep(100);
+        Set<String> actualResult = repository.find(SimpleTimingSaga.class,
+                                                   new AssociationValue("association", someAssociationValue));
+        assertEquals(1, actualResult.size());
+        SimpleTimingSaga saga = (SimpleTimingSaga) repository.load(actualResult.iterator().next());
         assertTrue("Expected saga to be triggered", saga.isTriggered());
         // we make sure all submitted jobs are executed successfully. get() will throw an exception if a job had failed
         for (Future<?> future : executorService.getResults()) {

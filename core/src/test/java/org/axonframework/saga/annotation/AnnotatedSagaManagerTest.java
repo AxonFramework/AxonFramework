@@ -20,16 +20,15 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static org.axonframework.common.TestUtils.setOf;
 import static org.junit.Assert.*;
 
 /**
@@ -38,7 +37,7 @@ import static org.junit.Assert.*;
 public class AnnotatedSagaManagerTest {
 
     private SagaRepository sagaRepository;
-    private SagaManager manager;
+    private AnnotatedSagaManager manager;
 
     @Before
     public void setUp() throws Exception {
@@ -116,7 +115,13 @@ public class AnnotatedSagaManagerTest {
     }
 
     private Set<MyTestSaga> repositoryContents(String lookupValue) {
-        return sagaRepository.find(MyTestSaga.class, new AssociationValue("myIdentifier", lookupValue));
+        final Set<String> identifiers = sagaRepository.find(MyTestSaga.class, new AssociationValue("myIdentifier",
+                                                                                                    lookupValue));
+        Set<MyTestSaga> sagas = new HashSet<MyTestSaga>();
+        for (String identifier : identifiers) {
+            sagas.add((MyTestSaga) sagaRepository.load(identifier));
+        }
+        return sagas;
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {

@@ -43,8 +43,8 @@ public class VirtualSagaRepository extends AbstractSagaRepository {
     private ConcurrentMap<AssociationValue, String> associations = new ConcurrentHashMap<AssociationValue, String>();
 
     @Override
-    protected <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier) {
-        return type.cast(deserialize(storage.get(sagaIdentifier)));
+    protected Saga loadSaga(String sagaIdentifier) {
+        return deserialize(storage.get(sagaIdentifier));
     }
 
     @Override

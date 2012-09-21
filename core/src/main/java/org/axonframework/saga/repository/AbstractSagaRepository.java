@@ -20,10 +20,7 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -37,67 +34,30 @@ import java.util.Set;
  */
 public abstract class AbstractSagaRepository implements SagaRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractSagaRepository.class);
-
-    private final SagaCache sagaCache = new SagaCache();
-
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
-        Set<String> sagaIdentifiers = findAssociatedSagaIdentifiers(type, associationValue);
-        Set<T> result = new HashSet<T>();
-        if (!sagaIdentifiers.isEmpty()) {
-            for (String sagaId : sagaIdentifiers) {
-                T cachedSaga = load(type, sagaId);
-                if (cachedSaga != null) {
-                    result.add(cachedSaga);
-                }
-            }
-            // the Saga repository may not reflect the latest changes yet, so we go through our cached sagas as well
-            Set<T> sagas = sagaCache.getAll(type);
-            for (T saga : sagas) {
-                if (saga.getAssociationValues().contains(associationValue)) {
-                    result.add(saga);
-                }
-            }
-        }
-        return result;
+    public Set<String> find(Class<? extends Saga> type, AssociationValue associationValue) {
+        return findAssociatedSagaIdentifiers(type, associationValue);
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
-    public <T extends Saga> T load(Class<T> type, String sagaIdentifier) {
-        Saga cachedSaga = sagaCache.get(sagaIdentifier);
-        if (cachedSaga == null) {
-            final Saga storedSaga = loadSaga(type, sagaIdentifier);
-            if (storedSaga == null) {
-                return null;
-            }
-            cachedSaga = sagaCache.put(storedSaga);
-            if (isSameInstance(cachedSaga, storedSaga)) {
-                logger.debug("Loaded saga with id {} was not cached yet.", sagaIdentifier);
-                cachedSaga.getAssociationValues().addChangeListener(
-                        new AssociationValueChangeListener(typeOf(cachedSaga), cachedSaga.getSagaIdentifier()));
-            } else {
-                logger.debug("Loaded saga with id {} has been replaced by a cached instance", sagaIdentifier);
-            }
+    public Saga load(String sagaIdentifier) {
+        final Saga saga = loadSaga(sagaIdentifier);
+        if (saga != null) {
+            saga.getAssociationValues().addChangeListener(
+                    new AssociationValueChangeListener(typeOf(saga), saga.getSagaIdentifier()));
         }
-        if (!type.isInstance(cachedSaga)) {
-            return null;
-        }
-        return (T) cachedSaga;
+        return saga;
     }
 
     @Override
     public void add(Saga saga) {
-        Saga cachedSaga = sagaCache.put(saga);
-        if (isSameInstance(cachedSaga, saga)) {
-            for (AssociationValue av : saga.getAssociationValues()) {
-                storeAssociationValue(av, typeOf(saga), saga.getSagaIdentifier());
-            }
-            saga.getAssociationValues().addChangeListener(
-                    new AssociationValueChangeListener(typeOf(saga), saga.getSagaIdentifier()));
-            storeSaga(saga);
+        final String sagaType = typeOf(saga);
+        for (AssociationValue av : saga.getAssociationValues()) {
+            storeAssociationValue(av, sagaType, saga.getSagaIdentifier());
         }
+        saga.getAssociationValues().addChangeListener(
+                new AssociationValueChangeListener(typeOf(saga), saga.getSagaIdentifier()));
+        storeSaga(saga);
     }
 
     private String typeOf(Saga saga) {
@@ -124,20 +84,6 @@ public abstract class AbstractSagaRepository implements SagaRepository {
      */
     protected abstract String typeOf(Class<? extends Saga> sagaClass);
 
-    /**
-     * Returns <code>true</code> if the two parameters point to exactly the same object instance. This method will
-     * always return <code>true</code> if sagaInstance.equals(anotherSaga) return <code>true</code>, but not
-     * necessarily
-     * vice versa.
-     *
-     * @param sagaInstance One instance to compare
-     * @param anotherSaga  Another instance to compare
-     * @return <code>true</code> if both references point to exactly the same instance
-     */
-    private boolean isSameInstance(Saga sagaInstance, Saga anotherSaga) {
-        return sagaInstance == anotherSaga; // NOSONAR (intentional)
-    }
-
     @Override
     public void commit(Saga saga) {
         if (!saga.isActive()) {
@@ -156,20 +102,13 @@ public abstract class AbstractSagaRepository implements SagaRepository {
     protected abstract void deleteSaga(Saga saga);
 
     /**
-     * Loads a known Saga instance by its unique identifier. Implementations are encouraged, but not required to return
-     * the same instance when two Sagas with equal identifiers are loaded.
-     * <p/>
-     * If the saga with given identifier is not of the given type, <code>null</code> should be returned instead.
+     * Loads a known Saga instance by its unique identifier.
      *
-     * @param type           The expected type of Saga
      * @param sagaIdentifier The unique identifier of the Saga to load
-     * @param <T>            The expected type of Saga
-     * @return The Saga instance
+     * @return The Saga instance, or <code>null</code> if none was found
      *
-     * @throws org.axonframework.saga.NoSuchSagaException
-     *          if no Saga with given identifier can be found
      */
-    protected abstract <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier);
+    protected abstract Saga loadSaga(String sagaIdentifier);
 
     /**
      * Update a stored Saga, by replacing it with the given <code>saga</code> instance.
@@ -205,23 +144,6 @@ public abstract class AbstractSagaRepository implements SagaRepository {
      */
     protected abstract void removeAssociationValue(AssociationValue associationValue,
                                                    String sagaType, String sagaIdentifier);
-
-    /**
-     * Returns the SagaCache used to prevent multiple instances of the same conceptual Saga (i.e. with same identifier)
-     * from being active in the JVM.
-     *
-     * @return the saga cache
-     */
-    protected SagaCache getSagaCache() {
-        return sagaCache;
-    }
-
-    /**
-     * Remove all elements from the cache pointing to Saga instances that have been garbage collected.
-     */
-    public void purgeCache() {
-        sagaCache.purge();
-    }
 
     private class AssociationValueChangeListener implements AssociationValues.ChangeListener {
 

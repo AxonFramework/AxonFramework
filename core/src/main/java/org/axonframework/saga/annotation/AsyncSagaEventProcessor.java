@@ -127,10 +127,12 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
 
     private boolean invokeExistingSagas(AsyncSagaProcessingEvent entry) {
         boolean sagaInvoked = false;
-        Set<? extends Saga> sagas = sagaRepository.find(entry.getSagaType(), entry.getAssociationValue());
-        for (Saga saga : sagas) {
-            if (ownedByCurrentProcessor(saga.getSagaIdentifier())) {
-                processedSagas.put(saga.getSagaIdentifier(), saga);
+        Set<String> sagaIds = sagaRepository.find(entry.getSagaType(), entry.getAssociationValue());
+        for (String sagaId : sagaIds) {
+            if (ownedByCurrentProcessor(sagaId)) {
+                if (!processedSagas.containsKey(sagaId)) {
+                    processedSagas.put(sagaId, sagaRepository.load(sagaId));
+                }
             }
         }
         for (Saga saga : processedSagas.values()) {

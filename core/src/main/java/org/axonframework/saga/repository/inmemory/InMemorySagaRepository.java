@@ -17,19 +17,13 @@
 package org.axonframework.saga.repository.inmemory;
 
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * SagaRepository implementation that stores all Saga instances in memory.
@@ -39,16 +33,15 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class InMemorySagaRepository implements SagaRepository {
 
-    private final ConcurrentMap<Class<?>, Set<Saga>> managedSagas = new ConcurrentHashMap<Class<?>, Set<Saga>>();
+    private final ConcurrentMap<String, Saga> managedSagas = new ConcurrentHashMap<String, Saga>();
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
-        Set<T> result = new HashSet<T>();
-        List<Saga> sagasOfType = new ArrayList<Saga>(getSagasOfType(type));
-        for (Saga saga : sagasOfType) {
-            if (saga.getAssociationValues().contains(associationValue)) {
-                result.add((T) saga);
+    public Set<String> find(Class<? extends Saga> type, AssociationValue associationValue) {
+        Set<String> result = new HashSet<String>();
+        for (Saga saga : managedSagas.values()) {
+            if (saga.getAssociationValues().contains(associationValue) && type.isInstance(saga)) {
+                result.add(saga.getSagaIdentifier());
             }
         }
         return result;
@@ -56,22 +49,16 @@ public class InMemorySagaRepository implements SagaRepository {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Saga> T load(Class<T> type, String sagaIdentifier) {
-        List<Saga> sagasOfType = new ArrayList<Saga>(getSagasOfType(type));
-        for (Saga saga : sagasOfType) {
-            if (saga.getSagaIdentifier().equals(sagaIdentifier)) {
-                return (T) saga;
-            }
-        }
-        throw new NoSuchSagaException(type, sagaIdentifier);
+    public Saga load(String sagaIdentifier) {
+        return managedSagas.get(sagaIdentifier);
     }
 
     @Override
     public void commit(Saga saga) {
         if (!saga.isActive()) {
-            getSagasOfType(saga.getClass()).remove(saga);
+            managedSagas.remove(saga.getSagaIdentifier());
         } else {
-            getSagasOfType(saga.getClass()).add(saga);
+            managedSagas.put(saga.getSagaIdentifier(), saga);
         }
     }
 
@@ -80,35 +67,12 @@ public class InMemorySagaRepository implements SagaRepository {
         commit(saga);
     }
 
-    private Set<Saga> getSagasOfType(Class<?> type) {
-        Set<Saga> sagasOfType = managedSagas.get(type);
-        if (sagasOfType == null) {
-            managedSagas.putIfAbsent(type, new ConcurrentSkipListSet<Saga>(new SagaIdentifierComparator()));
-            sagasOfType = managedSagas.get(type);
-        }
-        return sagasOfType;
-    }
-
     /**
      * Returns the number of Sagas currently contained in this repository.
      *
      * @return the number of Sagas currently contained in this repository
      */
     public int size() {
-        int size = 0;
-        for (Set<Saga> entry : managedSagas.values()) {
-            size += entry.size();
-        }
-        return size;
-    }
-
-    private static class SagaIdentifierComparator implements Comparator<Saga>, Serializable {
-
-        private static final long serialVersionUID = 2939897180067202510L;
-
-        @Override
-        public int compare(Saga o1, Saga o2) {
-            return o1.getSagaIdentifier().compareTo(o2.getSagaIdentifier());
-        }
+        return managedSagas.size();
     }
 }

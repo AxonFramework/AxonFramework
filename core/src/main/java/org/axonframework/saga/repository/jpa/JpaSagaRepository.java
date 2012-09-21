@@ -18,14 +18,11 @@ package org.axonframework.saga.repository.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.serializer.JavaSerializer;
-import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,11 +61,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     public JpaSagaRepository(EntityManagerProvider entityManagerProvider) {
         this.entityManagerProvider = entityManagerProvider;
         serializer = new JavaSerializer();
-    }
-
-    @Override
-    public <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue) {
-        return super.find(type, associationValue);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -110,35 +102,31 @@ public class JpaSagaRepository extends AbstractSagaRepository {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected <T extends Saga> T loadSaga(Class<T> type, String sagaId) {
+    protected Saga loadSaga(String sagaId) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        List<byte[]> serializedSagaList = (List<byte[]>) entityManager
-                .createQuery("SELECT se.serializedSaga FROM SagaEntry se WHERE se.sagaId = :sagaId")
+        List<SerializedSaga> serializedSagaList = (List<SerializedSaga>) entityManager
+                .createQuery("SELECT new org.axonframework.saga.repository.jpa.SerializedSaga("
+                                     + "se.serializedSaga, se.sagaType, se.revision) "
+                                     + "FROM SagaEntry se "
+                                     + "WHERE se.sagaId = :sagaId")
                 .setParameter("sagaId", sagaId)
                 .setMaxResults(1)
                 .getResultList();
         if (serializedSagaList == null || serializedSagaList.isEmpty()) {
-            throw new NoSuchSagaException(type, sagaId);
-        }
-        byte[] serializedSaga = serializedSagaList.get(0);
-        SerializedType serializedType = serializer.typeForClass(type);
-        Saga loadedSaga = serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedSaga,
-                                                                                    byte[].class,
-                                                                                    serializedType));
-        if (!type.isInstance(loadedSaga)) {
-            logger.debug("Saga with id [{}] was of another type than expected. It is ignored.", sagaId);
             return null;
         }
-        T storedSaga = type.cast(loadedSaga);
+        SerializedSaga serializedSaga = serializedSagaList.get(0);
+        Saga loadedSaga = serializer.deserialize(serializedSaga);
         if (injector != null) {
-            injector.injectResources(storedSaga);
+            injector.injectResources(loadedSaga);
         }
         if (logger.isDebugEnabled()) {
             logger.debug("Loaded saga id [{}] of type [{}]", sagaId, loadedSaga.getClass().getName());
         }
-        return storedSaga;
+        return loadedSaga;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type, AssociationValue associationValue) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();

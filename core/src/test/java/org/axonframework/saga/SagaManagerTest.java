@@ -20,6 +20,8 @@ import org.apache.commons.collections.set.ListOrderedSet;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.saga.annotation.AssociationValuesImpl;
+import org.axonframework.saga.annotation.SagaCreationPolicy;
 import org.axonframework.testutils.MockException;
 import org.junit.*;
 
@@ -40,13 +42,11 @@ public class SagaManagerTest {
     private Saga mockSaga1;
     private Saga mockSaga2;
     private Saga mockSaga3;
-    private SagaFactory mockSagaFactory;
 
     @Before
     public void setUp() throws Exception {
         mockEventBus = mock(EventBus.class);
         mockSagaRepository = mock(SagaRepository.class);
-        mockSagaFactory = mock(SagaFactory.class);
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
         mockSaga3 = mock(Saga.class);
@@ -56,16 +56,34 @@ public class SagaManagerTest {
         when(mockSaga1.getSagaIdentifier()).thenReturn("saga1");
         when(mockSaga2.getSagaIdentifier()).thenReturn("saga2");
         when(mockSaga3.getSagaIdentifier()).thenReturn("saga3");
-        testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory) {
-            @Override
-            protected Set<Saga> findSagas(EventMessage event) {
-                return setOf(mockSaga1, mockSaga2, mockSaga3);
-            }
+        when(mockSagaRepository.load("saga1")).thenReturn(mockSaga1);
+        when(mockSagaRepository.load("saga2")).thenReturn(mockSaga2);
+        when(mockSagaRepository.load("saga3")).thenReturn(mockSaga3);
+        final AssociationValue associationValue = new AssociationValue("association", "value");
+        for(Saga saga : setOf(mockSaga1, mockSaga2, mockSaga3)) {
+            final AssociationValuesImpl associationValues = new AssociationValuesImpl();
+            associationValues.add(associationValue);
+            when(saga.getAssociationValues()).thenReturn(associationValues);
+        }
+        when(mockSagaRepository.find(isA(Class.class), eq(associationValue)))
+                .thenReturn(setOf("saga1", "saga2", "saga3"));
+        testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository, null, Saga.class) {
 
             @Override
             public Class<?> getTargetType() {
                 return Saga.class;
             }
+
+            @Override
+            protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+                return SagaCreationPolicy.NONE;
+            }
+
+            @Override
+            protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
+                return associationValue;
+            }
+
         };
     }
 

@@ -56,7 +56,7 @@ public class RepositoryContentValidator {
      * @param associationValue The value of the association
      */
     public void assertAssociationPresent(String associationKey, String associationValue) {
-        Set<? extends AbstractAnnotatedSaga> associatedSagas =
+        Set<String> associatedSagas =
                 sagaRepository.find(sagaType, new AssociationValue(associationKey, associationValue));
         if (associatedSagas.isEmpty()) {
             throw new AxonAssertionError(format(
@@ -74,7 +74,7 @@ public class RepositoryContentValidator {
      * @param associationValue The value of the association
      */
     public void assertNoAssociationPresent(String associationKey, String associationValue) {
-        Set<? extends AbstractAnnotatedSaga> associatedSagas =
+        Set<String> associatedSagas =
                 sagaRepository.find(sagaType, new AssociationValue(associationKey, associationValue));
         if (!associatedSagas.isEmpty()) {
             throw new AxonAssertionError(format(

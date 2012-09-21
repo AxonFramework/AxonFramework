@@ -78,7 +78,6 @@ public class AsyncSagaHandlingTest {
                     "message" + (t / aggregateIdentifiers.size()))));
         }
         sagaManager.stop();
-        sagaRepository.purgeCache();
 
         for (UUID id : aggregateIdentifiers) {
             validateSaga(id);
@@ -99,16 +98,16 @@ public class AsyncSagaHandlingTest {
             currentAssociation = newAssociation;
         }
         sagaManager.stop();
-        Set<AsyncSaga> result = sagaRepository.find(AsyncSaga.class,
-                                                    new AssociationValue("currentAssociation",
-                                                                         currentAssociation.toString()));
+        Set<String> result = sagaRepository.find(AsyncSaga.class,
+                                                 new AssociationValue("currentAssociation",
+                                                                      currentAssociation.toString()));
         assertEquals(1, result.size());
     }
 
     private void validateSaga(UUID myId) {
-        Set<AsyncSaga> sagas = sagaRepository.find(AsyncSaga.class, new AssociationValue("myId", myId.toString()));
+        Set<String> sagas = sagaRepository.find(AsyncSaga.class, new AssociationValue("myId", myId.toString()));
         assertEquals(1, sagas.size());
-        AsyncSaga saga = sagas.iterator().next();
+        AsyncSaga saga = (AsyncSaga) sagaRepository.load(sagas.iterator().next());
         Iterator<String> messageIterator = saga.getReceivedMessages().iterator();
         for (int t = 0; t < EVENTS_PER_SAGA; t++) {
             assertEquals("Message out of order in saga " + saga.getSagaIdentifier(),

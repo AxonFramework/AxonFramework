@@ -117,7 +117,7 @@ public class IdentifierBasedLock {
 
         private final PubliclyOwnedReentrantLock lock;
         // guarded by "lock"
-        private volatile boolean isClosed = false;
+        private boolean isClosed = false;
 
         private DisposableLock() {
             this.lock = new PubliclyOwnedReentrantLock();

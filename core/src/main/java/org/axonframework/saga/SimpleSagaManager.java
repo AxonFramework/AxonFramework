@@ -18,12 +18,11 @@ package org.axonframework.saga;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.saga.annotation.SagaCreationPolicy;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Simple SagaManager implementation. This implementation requires the Event that should cause new Saga's to be
@@ -65,25 +64,29 @@ public class SimpleSagaManager extends AbstractSagaManager {
      * @param sagaFactory              The factory creating new Saga instances
      * @param eventBus                 The event bus that the manager should register to
      */
+    @SuppressWarnings("unchecked")
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
-                             AssociationValueResolver associationValueResolver,
-                             SagaFactory sagaFactory, EventBus eventBus) {
-        super(eventBus, sagaRepository, sagaFactory);
+                             AssociationValueResolver associationValueResolver, SagaFactory sagaFactory,
+                             EventBus eventBus) {
+        super(eventBus, sagaRepository, sagaFactory, sagaType);
         this.sagaType = sagaType;
         this.associationValueResolver = associationValueResolver;
     }
 
     @Override
-    protected Set<Saga> findSagas(EventMessage event) {
-        AssociationValue associationValue = associationValueResolver.extractAssociationValue(event);
-        Set<Saga> sagas = new HashSet<Saga>(getSagaRepository().find(sagaType, associationValue));
-        if (sagas.isEmpty() && isAssignableClassIn(event.getPayloadType(), eventsToOptionallyCreateNewSagasFor)
-                || isAssignableClassIn(event.getPayloadType(), eventsToAlwaysCreateNewSagasFor)) {
-            Saga saga = createSaga(sagaType);
-            sagas.add(saga);
-            getSagaRepository().add(saga);
+    protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+        if (isAssignableClassIn(event.getPayloadType(), eventsToOptionallyCreateNewSagasFor)) {
+            return SagaCreationPolicy.IF_NONE_FOUND;
+        } else if (isAssignableClassIn(event.getPayloadType(), eventsToAlwaysCreateNewSagasFor)) {
+            return SagaCreationPolicy.ALWAYS;
+        } else {
+            return SagaCreationPolicy.NONE;
         }
-        return sagas;
+    }
+
+    @Override
+    protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
+        return associationValueResolver.extractAssociationValue(event);
     }
 
     private boolean isAssignableClassIn(Class<?> aClass, Collection<Class<?>> classCollection) {

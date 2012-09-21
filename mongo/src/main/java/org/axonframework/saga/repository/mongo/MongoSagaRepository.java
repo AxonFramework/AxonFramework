@@ -21,7 +21,6 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.NoSuchSagaException;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.AbstractSagaRepository;
@@ -84,21 +83,17 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
-    protected <T extends Saga> T loadSaga(Class<T> type, String sagaIdentifier) {
+    protected Saga loadSaga(String sagaIdentifier) {
         DBObject dbSaga = mongoTemplate.sagaCollection().findOne(SagaEntry.queryByIdentifier(sagaIdentifier));
         if (dbSaga == null) {
-            throw new NoSuchSagaException(type, sagaIdentifier);
+            return null;
         }
         SagaEntry sagaEntry = new SagaEntry(dbSaga);
         Saga loadedSaga = sagaEntry.getSaga(serializer);
-        if (!type.isInstance(loadedSaga)) {
-            return null;
-        }
-        T storedSaga = type.cast(loadedSaga);
         if (injector != null) {
-            injector.injectResources(storedSaga);
+            injector.injectResources(loadedSaga);
         }
-        return storedSaga;
+        return loadedSaga;
     }
 
     @Override

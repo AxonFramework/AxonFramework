@@ -18,7 +18,6 @@ package org.axonframework.saga.repository.concurrent;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.junit.*;
 
@@ -44,35 +43,30 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
     private static final int UPDATE_EVENT_COUNT = 250;
 
     private VirtualSagaRepository repository;
-    private SimpleEventBus eventBus;
     private List<Throwable> exceptions = new ArrayList<Throwable>();
     private AnnotatedSagaManager sagaManager;
 
     @Before
     public void setUp() throws Exception {
         repository = new VirtualSagaRepository();
-        eventBus = new SimpleEventBus();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testConcurrentAccessToSaga_NotSynchronized() throws Throwable {
-        sagaManager = new AnnotatedSagaManager(repository, eventBus, ConcurrentSaga.class);
+        sagaManager = new AnnotatedSagaManager(repository, null, ConcurrentSaga.class);
         sagaManager.setSynchronizeSagaAccess(false);
-        sagaManager.subscribe();
-        executeConcurrentAccessToSaga(ConcurrentSaga.class, false);
+        executeConcurrentAccessToSaga(ConcurrentSaga.class);
     }
 
     @Test
     public void testConcurrentAccessToSaga_Synchronized() throws Throwable {
-        sagaManager = new AnnotatedSagaManager(repository, eventBus, NonConcurrentSaga.class);
+        sagaManager = new AnnotatedSagaManager(repository, null, NonConcurrentSaga.class);
         sagaManager.setSynchronizeSagaAccess(true);
-        sagaManager.subscribe();
-        executeConcurrentAccessToSaga(NonConcurrentSaga.class, true);
+        executeConcurrentAccessToSaga(NonConcurrentSaga.class);
     }
 
-    public <T extends AbstractTestSaga> void executeConcurrentAccessToSaga(Class<T> type,
-                                                                           boolean lastEventMustBeDeletion)
-            throws Throwable {
+    public <T extends AbstractTestSaga> void executeConcurrentAccessToSaga(Class<T> type) throws Throwable {
         final CyclicBarrier startCdl = new CyclicBarrier(SAGA_COUNT);
         final BlockingQueue<EventMessage> eventsToPublish = new ArrayBlockingQueue<EventMessage>(
                 UPDATE_EVENT_COUNT * SAGA_COUNT);
@@ -82,7 +76,7 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
             @Override
             public void run() {
                 String id = Integer.toString(counter.getAndIncrement());
-                eventBus.publish(eventWith(new CreateEvent(id)));
+                sagaManager.handle(eventWith(new CreateEvent(id)));
                 try {
                     startCdl.await();
                 } catch (InterruptedException e) {
@@ -96,10 +90,10 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
                     if (item == null) {
                         mustContinue = false;
                     } else {
-                        eventBus.publish(item);
+                        sagaManager.handle(item);
                     }
                 }
-                eventBus.publish(eventWith(new DeleteEvent(id)));
+                sagaManager.handle(eventWith(new DeleteEvent(id)));
             }
         });
         awaitThreadTermination(threads);
@@ -112,9 +106,7 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
             assertTrue("Wrong number of events", events.size() <= UPDATE_EVENT_COUNT + 2);
             assertTrue("The first event should always be the creation event. Another event might indicate"
                                + "a lack of thread safety", CreateEvent.class.isInstance(events.get(0)));
-            if (lastEventMustBeDeletion) {
                 assertTrue("Last should be deletion", DeleteEvent.class.isInstance(events.get(events.size() - 1)));
-            }
         }
     }
 

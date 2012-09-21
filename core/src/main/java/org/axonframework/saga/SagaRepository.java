@@ -36,28 +36,22 @@ public interface SagaRepository {
      *
      * @param type             The type of Saga to return
      * @param associationValue The value that the returned Sagas must be associated with
-     * @param <T>              The type of Saga to return
      * @return A Set containing the found Saga instances. If none are found, an empty Set is returned. Will never
-     *         return
-     *         <code>null</code>.
+     *         return <code>null</code>.
      */
-    <T extends Saga> Set<T> find(Class<T> type, AssociationValue associationValue);
+    Set<String> find(Class<? extends Saga> type, AssociationValue associationValue);
 
     /**
      * Loads a known Saga instance by its unique identifier. Returned Sagas must be {@link #commit(Saga) committed}
      * after processing.
-     * <p/>
-     * If the saga with given <code>identifier</code> is not of the given <code>type</code>, <code>null</code> is
-     * returned.
+     * Due to the concurrent nature of Sagas, it is not unlikely for a Saga to have ceased to exist after it has been
+     * found based on associations. Therefore, a repository should return <code>null</code> in case a Saga doesn't
+     * exists, as opposed to throwing an exception.
      *
-     * @param type           The expected type of Saga
      * @param sagaIdentifier The unique identifier of the Saga to load
-     * @param <T>            The expected type of Saga
-     * @return The Saga instance, or <code>null</code> if the Saga is not of the given <code>type</code>
-     *
-     * @throws NoSuchSagaException if no Saga with given identifier can be found (at all)
+     * @return The Saga instance, or <code>null</code> if no such saga exists
      */
-    <T extends Saga> T load(Class<T> type, String sagaIdentifier) throws NoSuchSagaException;
+    Saga load(String sagaIdentifier);
 
     /**
      * Commits the changes made to the Saga instance. At this point, the repository may release any resources kept for

@@ -19,14 +19,17 @@ package org.axonframework.saga;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.junit.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 /**
  * @author Allard Buijze
@@ -37,9 +40,8 @@ public class SimpleSagaManagerTest {
     private SagaRepository repository;
     private EventMessage event = new GenericEventMessage<Object>(new Object());
     private Saga saga1;
-    private Saga sagaFromFactory;
-    private Set<Saga> sagasFromRepository;
     private EventBus eventBus;
+    private AssociationValue associationValue;
 
     @Before
     public void setUp() throws Exception {
@@ -48,44 +50,61 @@ public class SimpleSagaManagerTest {
         SagaFactory sagaFactory = mock(SagaFactory.class);
         eventBus = mock(EventBus.class);
         testSubject = new SimpleSagaManager(Saga.class, repository, associationValueResolver, sagaFactory, eventBus);
-        sagasFromRepository = new HashSet<Saga>();
+        Set<String> sagasFromRepository = new HashSet<String>();
 
         saga1 = mock(Saga.class);
         when(saga1.getSagaIdentifier()).thenReturn("saga1");
-        sagasFromRepository.add(saga1);
-        when(associationValueResolver.extractAssociationValue(event)).thenReturn(new AssociationValue("key", "val"));
-        when(repository.find(eq(Saga.class), eq(new AssociationValue("key", "val")))).thenReturn(sagasFromRepository);
-        sagaFromFactory = mock(Saga.class);
+        sagasFromRepository.add("saga1");
+        when(repository.load("saga1")).thenReturn(saga1);
+        associationValue = new AssociationValue("key", "val");
+        when(associationValueResolver.extractAssociationValue(isA(EventMessage.class))).thenReturn(associationValue);
+        when(repository.find(eq(Saga.class), eq(associationValue))).thenReturn(sagasFromRepository);
+        Saga sagaFromFactory = mock(Saga.class);
         when(sagaFromFactory.getSagaIdentifier()).thenReturn("sagaFromFactory");
-        when(sagaFactory.createSaga(Saga.class)).thenReturn(sagaFromFactory);
+        final AssociationValuesImpl associationValues = new AssociationValuesImpl();
+        when(sagaFromFactory.getAssociationValues()).thenReturn(associationValues);
+        when(sagaFactory.createSaga(isA(Class.class))).thenReturn(sagaFromFactory);
     }
 
     @Test
     public void testSagaAlwaysCreatedOnEvent() {
         testSubject.setEventsToAlwaysCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
-        Set<Saga> actualResult = testSubject.findSagas(event);
-        assertEquals(2, actualResult.size());
-        assertTrue(actualResult.contains(saga1));
-        assertTrue(actualResult.contains(sagaFromFactory));
+        testSubject.handle(event);
+
+        verify(repository).add(isA(Saga.class));
+        verify(repository, never()).commit(not(eq(saga1)));
     }
 
     @Test
     public void testSagaOptionallyCreatedOnEvent_SagasExist() {
         testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
-        Set<Saga> actualResult = testSubject.findSagas(event);
-        assertEquals(1, actualResult.size());
-        assertTrue(actualResult.contains(saga1));
-        assertFalse(actualResult.contains(sagaFromFactory));
+
+        activate(saga1);
+        testSubject.handle(event);
+
+        verify(repository).load("saga1");
+        verify(repository).commit(saga1);
+        verify(repository, never()).add(isA(Saga.class));
+        verify(repository, never()).commit(not(eq(saga1)));
     }
 
+    private void activate(Saga saga) {
+        when(saga.isActive()).thenReturn(true);
+        final AssociationValuesImpl value = new AssociationValuesImpl();
+        value.add(associationValue);
+        when(saga.getAssociationValues()).thenReturn(value);
+    }
+
+    @SuppressWarnings("unchecked")
     @Test
     public void testSagaOptionallyCreatedOnEvent_NoSagaFound() {
-        sagasFromRepository.clear();
+        when(repository.find(isA(Class.class), isA(AssociationValue.class))).thenReturn(Collections.<String>emptySet());
         testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
-        Set<Saga> actualResult = testSubject.findSagas(event);
-        assertEquals(1, actualResult.size());
-        assertFalse(actualResult.contains(saga1));
-        assertTrue(actualResult.contains(sagaFromFactory));
+        testSubject.handle(event);
+
+        verify(repository, never()).load("saga1");
+        verify(repository).add(isA(Saga.class));
+        verify(repository, never()).commit(not(eq(saga1)));
     }
 
     @Test
@@ -95,19 +114,21 @@ public class SimpleSagaManagerTest {
         verify(repository).commit(saga1);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testAllSagasAreInvoked() {
         EventMessage event = new GenericEventMessage<Object>(new Object());
-        Set<Saga> sagas = new HashSet<Saga>();
         final Saga saga1 = mock(Saga.class);
         final Saga saga2 = mock(Saga.class);
-        when(saga1.isActive()).thenReturn(true);
-        when(saga2.isActive()).thenReturn(true);
         when(saga1.getSagaIdentifier()).thenReturn("saga1");
         when(saga2.getSagaIdentifier()).thenReturn("saga2");
-        sagas.add(saga1);
-        sagas.add(saga2);
-        when(testSubject.findSagas(event)).thenReturn(sagas);
+        activate(saga1);
+        activate(saga2);
+        when(repository.find(isA(Class.class), isA(AssociationValue.class)))
+                .thenReturn(new HashSet<String>(Arrays.asList("saga1", "saga2")));
+        when(repository.load("saga1")).thenReturn(saga1);
+        when(repository.load("saga2")).thenReturn(saga2);
+
         testSubject.handle(event);
         verify(saga1, times(1)).handle(event);
         verify(saga2, times(1)).handle(event);

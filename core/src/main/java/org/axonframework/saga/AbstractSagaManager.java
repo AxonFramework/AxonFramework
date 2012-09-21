@@ -17,16 +17,20 @@
 package org.axonframework.saga;
 
 import org.axonframework.common.Subscribable;
+import org.axonframework.common.lock.IdentifierBasedLock;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.saga.annotation.SagaCreationPolicy;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
-import org.axonframework.common.lock.IdentifierBasedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -45,9 +49,11 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private final EventBus eventBus;
     private final SagaRepository sagaRepository;
-    private final SagaFactory sagaFactory;
+    private SagaFactory sagaFactory;
+    private final Class<? extends Saga>[] sagaTypes;
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
+    private final SagaCache sagaCache = new SagaCache();
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
 
     /**
@@ -56,59 +62,126 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * @param eventBus       The event bus providing the events to route to sagas.
      * @param sagaRepository The repository providing the saga instances.
      * @param sagaFactory    The factory providing new saga instances
+     * @param sagaTypes      The types of Saga supported by this Saga Manager
      */
-    public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory) {
+    public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory,
+                               Class<? extends Saga>... sagaTypes) {
         this.eventBus = eventBus;
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;
+        this.sagaTypes = sagaTypes;
     }
 
     @Override
     public void handle(final EventMessage event) {
-        Set<Saga> sagas = findSagas(event);
-        for (final Saga saga : sagas) {
-            if (synchronizeSagaAccess) {
-                lock.obtainLock(saga.getSagaIdentifier());
-                try {
-                    invokeSagaHandler(event, saga);
-                } finally {
-                    releaseLock(saga);
+        for (Class<? extends Saga> sagaType : sagaTypes) {
+            AssociationValue associationValue = extractAssociationValue(sagaType, event);
+            Set<String> sagas = new HashSet<String>(sagaRepository.find(sagaType, associationValue));
+            sagas.addAll(sagaCache.getAll(sagaType, associationValue));
+            boolean sagaOfTypeInvoked = false;
+            for (final String sagaId : sagas) {
+                if (synchronizeSagaAccess) {
+                    lock.obtainLock(sagaId);
+                    Saga invokedSaga = null;
+                    try {
+                        invokedSaga = loadAndInvoke(event, sagaId, associationValue);
+                        if (invokedSaga != null) {
+                            sagaOfTypeInvoked = true;
+                        }
+                    } finally {
+                        doReleaseLock(sagaId, invokedSaga);
+                    }
+                } else {
+                    loadAndInvoke(event, sagaId, associationValue);
                 }
-            } else {
-                invokeSagaHandler(event, saga);
+            }
+            SagaCreationPolicy creationPolicy = getSagaCreationPolicy(sagaType, event);
+            if (creationPolicy == SagaCreationPolicy.ALWAYS
+                    || (!sagaOfTypeInvoked && creationPolicy == SagaCreationPolicy.IF_NONE_FOUND)) {
+                Saga newSaga = sagaFactory.createSaga(sagaType);
+                newSaga.getAssociationValues().add(associationValue);
+                if (synchronizeSagaAccess) {
+                    lock.obtainLock(newSaga.getSagaIdentifier());
+                    sagaCache.put(newSaga);
+                    try {
+                        doInvokeSaga(event, newSaga);
+                    } finally {
+                        try {
+                            sagaRepository.add(newSaga);
+                        } finally {
+                            doReleaseLock(newSaga.getSagaIdentifier(), newSaga);
+                        }
+                    }
+                } else {
+                    try {
+                        doInvokeSaga(event, newSaga);
+                    } finally {
+                        sagaRepository.add(newSaga);
+                    }
+                }
             }
         }
     }
 
-    private void releaseLock(final Saga saga) {
-        if (CurrentUnitOfWork.isStarted()) {
+    private void doReleaseLock(final String sagaId, final Saga sagaInstance) {
+        if (sagaInstance == null || !CurrentUnitOfWork.isStarted()) {
+            lock.releaseLock(sagaId);
+        } else if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
                 @Override
                 public void onCleanup(UnitOfWork unitOfWork) {
-                    lock.releaseLock(saga.getSagaIdentifier());
+                    // a reference to the saga is maintained to prevent it from GC until after the UoW commit
+                    lock.releaseLock(sagaInstance.getSagaIdentifier());
                 }
             });
-        } else {
-            lock.releaseLock(saga.getSagaIdentifier());
         }
     }
 
     /**
-     * Create a new instance of a Saga of the given <code>sagaType</code>. Resources must have been injected into the
-     * Saga before returning it.
+     * Returns the Saga Creation Policy for a Saga of the given <code>sagaType</code> and <code>event</code>.
      *
-     * @param sagaType The type of Saga to create an instance for
-     * @param <T>      The type of Saga to create an instance for
-     * @return A newly created Saga.
+     * @param sagaType The type of Saga to get the creation policy for
+     * @param event    The Event that is being dispatched to Saga instances
+     * @return the creation policy for the Saga
      */
-    protected <T extends Saga> T createSaga(Class<T> sagaType) {
-        return sagaFactory.createSaga(sagaType);
+    protected abstract SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event);
+
+    /**
+     * Extracts the AssociationValue from the given <code>event</code> as relevant for a Saga of given
+     * <code>sagaType</code>.
+     *
+     * @param sagaType The type of Saga about to handle the Event
+     * @param event    The event containing the association information
+     * @return the AssociationValue indicating which Sagas should handle given event
+     */
+    protected abstract AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event);
+
+    private Saga loadAndInvoke(EventMessage event, String sagaId, AssociationValue association) {
+        Saga saga = sagaRepository.load(sagaId);
+        if (saga == null || !saga.isActive() || !saga.getAssociationValues().contains(association)) {
+            return null;
+        }
+        sagaCache.put(saga);
+        try {
+            try {
+                saga.handle(event);
+            } catch (RuntimeException e) {
+                if (suppressExceptions) {
+                    logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
+                                        saga.getClass().getSimpleName(),
+                                        event.getPayloadType().getSimpleName()),
+                                 e);
+                } else {
+                    throw e;
+                }
+            }
+        } finally {
+            commit(saga);
+        }
+        return saga;
     }
 
-    private void invokeSagaHandler(EventMessage event, Saga saga) {
-        if (!saga.isActive()) {
-            return;
-        }
+    private void doInvokeSaga(EventMessage event, Saga saga) {
         try {
             saga.handle(event);
         } catch (RuntimeException e) {
@@ -120,19 +193,8 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
             } else {
                 throw e;
             }
-        } finally {
-            commit(saga);
         }
     }
-
-    /**
-     * Finds the saga instances that the given <code>event</code> needs to be routed to. The event is sent to each of
-     * the returned instances.
-     *
-     * @param event The event to find relevant Sagas for
-     * @return The Set of relevant Sagas
-     */
-    protected abstract Set<Saga> findSagas(EventMessage event);
 
     /**
      * Commits the given <code>saga</code> to the registered repository.
@@ -162,24 +224,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     }
 
     /**
-     * Returns the EventBus that delivers the events to route to Sagas.
-     *
-     * @return the EventBus that delivers the events to route to Sagas
-     */
-    protected EventBus getEventBus() {
-        return eventBus;
-    }
-
-    /**
-     * Returns the repository that provides access to Saga instances.
-     *
-     * @return the repository that provides access to Saga instances
-     */
-    protected SagaRepository getSagaRepository() {
-        return sagaRepository;
-    }
-
-    /**
      * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
      * logged. Defaults to <code>true</code>.
      *
@@ -197,5 +241,33 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
+    }
+
+    private static final class SagaCache {
+
+        private Map<Saga, Object> backingCache = new WeakHashMap<Saga, Object>();
+
+        public synchronized void put(Saga saga) {
+            backingCache.put(saga, new Object());
+        }
+
+        public synchronized int size() {
+            return backingCache.size();
+        }
+
+        public synchronized boolean isEmpty() {
+            return backingCache.isEmpty();
+        }
+
+        @SuppressWarnings("unchecked")
+        public synchronized Set<String> getAll(Class<? extends Saga> type, AssociationValue associationValue) {
+            Set<String> sagas = new HashSet<String>();
+            for (Saga saga : backingCache.keySet()) {
+                if (saga.getAssociationValues().contains(associationValue) && type.isInstance(saga)) {
+                    sagas.add(saga.getSagaIdentifier());
+                }
+            }
+            return sagas;
+        }
     }
 }

@@ -22,12 +22,6 @@ import org.axonframework.saga.annotation.StartSaga;
 import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 /**
  * @author Allard Buijze
  */
@@ -37,7 +31,6 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
 
     private transient EventScheduler timer;
     private volatile boolean triggered = false;
-    private transient CountDownLatch latch = new CountDownLatch(1);
     private static final Duration SCHEDULE_DURATION = new Duration(10);
 
     @StartSaga
@@ -50,7 +43,6 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
     @SagaEventHandler(associationProperty = "association")
     public void handle(MySagaExpiredEvent event) {
         this.triggered = true;
-        latch.countDown();
     }
 
     public boolean isTriggered() {
@@ -62,21 +54,4 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
         this.timer = timer;
     }
 
-    public void waitForEventProcessing(int timeout) throws InterruptedException {
-        latch.await(timeout, TimeUnit.MILLISECONDS);
-    }
-
-    // Java Serialization methods
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        this.latch = new CountDownLatch(1);
-        if (triggered) {
-            latch.countDown();
-        }
-    }
 }
