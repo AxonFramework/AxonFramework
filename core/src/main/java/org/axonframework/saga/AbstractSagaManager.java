@@ -76,49 +76,61 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     public void handle(final EventMessage event) {
         for (Class<? extends Saga> sagaType : sagaTypes) {
             AssociationValue associationValue = extractAssociationValue(sagaType, event);
-            Set<String> sagas = new HashSet<String>(sagaRepository.find(sagaType, associationValue));
-            sagas.addAll(sagaCache.getAll(sagaType, associationValue));
-            boolean sagaOfTypeInvoked = false;
-            for (final String sagaId : sagas) {
-                if (synchronizeSagaAccess) {
-                    lock.obtainLock(sagaId);
-                    Saga invokedSaga = null;
-                    try {
-                        invokedSaga = loadAndInvoke(event, sagaId, associationValue);
-                        if (invokedSaga != null) {
-                            sagaOfTypeInvoked = true;
-                        }
-                    } finally {
-                        doReleaseLock(sagaId, invokedSaga);
-                    }
-                } else {
-                    loadAndInvoke(event, sagaId, associationValue);
+            if (associationValue != null) {
+                boolean sagaOfTypeInvoked = invokeExistingSagas(event, sagaType, associationValue);
+                SagaCreationPolicy creationPolicy = getSagaCreationPolicy(sagaType, event);
+                if (creationPolicy == SagaCreationPolicy.ALWAYS
+                        || (!sagaOfTypeInvoked && creationPolicy == SagaCreationPolicy.IF_NONE_FOUND)) {
+                    startNewSaga(event, sagaType, associationValue);
                 }
             }
-            SagaCreationPolicy creationPolicy = getSagaCreationPolicy(sagaType, event);
-            if (creationPolicy == SagaCreationPolicy.ALWAYS
-                    || (!sagaOfTypeInvoked && creationPolicy == SagaCreationPolicy.IF_NONE_FOUND)) {
-                Saga newSaga = sagaFactory.createSaga(sagaType);
-                newSaga.getAssociationValues().add(associationValue);
-                if (synchronizeSagaAccess) {
-                    lock.obtainLock(newSaga.getSagaIdentifier());
-                    sagaCache.put(newSaga);
-                    try {
-                        doInvokeSaga(event, newSaga);
-                    } finally {
-                        try {
-                            sagaRepository.add(newSaga);
-                        } finally {
-                            doReleaseLock(newSaga.getSagaIdentifier(), newSaga);
-                        }
+        }
+    }
+
+    private boolean invokeExistingSagas(EventMessage event, Class<? extends Saga> sagaType,
+                                        AssociationValue associationValue) {
+        Set<String> sagas = new HashSet<String>(sagaRepository.find(sagaType, associationValue));
+        sagas.addAll(sagaCache.getAll(sagaType, associationValue));
+        boolean sagaOfTypeInvoked = false;
+        for (final String sagaId : sagas) {
+            if (synchronizeSagaAccess) {
+                lock.obtainLock(sagaId);
+                Saga invokedSaga = null;
+                try {
+                    invokedSaga = loadAndInvoke(event, sagaId, associationValue);
+                    if (invokedSaga != null) {
+                        sagaOfTypeInvoked = true;
                     }
-                } else {
-                    try {
-                        doInvokeSaga(event, newSaga);
-                    } finally {
-                        sagaRepository.add(newSaga);
-                    }
+                } finally {
+                    doReleaseLock(sagaId, invokedSaga);
                 }
+            } else {
+                loadAndInvoke(event, sagaId, associationValue);
+            }
+        }
+        return sagaOfTypeInvoked;
+    }
+
+    private void startNewSaga(EventMessage event, Class<? extends Saga> sagaType, AssociationValue associationValue) {
+        Saga newSaga = sagaFactory.createSaga(sagaType);
+        newSaga.getAssociationValues().add(associationValue);
+        if (synchronizeSagaAccess) {
+            lock.obtainLock(newSaga.getSagaIdentifier());
+            sagaCache.put(newSaga);
+            try {
+                doInvokeSaga(event, newSaga);
+            } finally {
+                try {
+                    sagaRepository.add(newSaga);
+                } finally {
+                    doReleaseLock(newSaga.getSagaIdentifier(), newSaga);
+                }
+            }
+        } else {
+            try {
+                doInvokeSaga(event, newSaga);
+            } finally {
+                sagaRepository.add(newSaga);
             }
         }
     }

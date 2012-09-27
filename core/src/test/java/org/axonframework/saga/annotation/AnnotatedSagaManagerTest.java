@@ -30,6 +30,11 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze
@@ -41,7 +46,7 @@ public class AnnotatedSagaManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        sagaRepository = new InMemorySagaRepository();
+        sagaRepository = spy(new InMemorySagaRepository());
         manager = new AnnotatedSagaManager(sagaRepository, new SimpleEventBus(), MyTestSaga.class);
     }
 
@@ -56,6 +61,12 @@ public class AnnotatedSagaManagerTest {
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
+    }
+
+    @Test
+    public void testHandleUnrelatedEvent() {
+        manager.handle(new GenericEventMessage("Unrelated"));
+        verify(sagaRepository, never()).find(any(Class.class), (AssociationValue) isNull());
     }
 
     @Test
