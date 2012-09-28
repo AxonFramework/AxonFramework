@@ -81,7 +81,7 @@
             <!-- for some reason, compilation fails if the persistence-api is not on the classpath with GAE 1.6 -->
             <groupId>javax.persistence</groupId>
             <artifactId>persistence-api</artifactId>
-            <version>1.0</version>
+            <version>1.0.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

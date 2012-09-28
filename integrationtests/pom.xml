@@ -56,7 +56,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.18</version>
+            <version>5.1.21</version>
             <scope>test</scope>
         </dependency>
 
@@ -75,7 +75,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-            <version>4.1.4.Final</version>
+            <version>4.1.7.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
