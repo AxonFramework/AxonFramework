@@ -36,7 +36,7 @@ import java.util.Map;
  * @author Frank Versnel
  * @since 2.0
  */
-public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
+public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, SerializationAware {
 
     private static final long serialVersionUID = 1946981128830316529L;
 
@@ -80,6 +80,16 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T> {
         eventMessage = original.eventMessage.withMetaData(metaData);
         this.aggregateIdentifier = original.getAggregateIdentifier();
         this.sequenceNumber = original.getSequenceNumber();
+    }
+
+    @Override
+    public <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation) {
+        return eventMessage.serializePayload(serializer, expectedRepresentation);
+    }
+
+    @Override
+    public <T> SerializedObject<T> serializeMetaData(Serializer serializer, Class<T> expectedRepresentation) {
+        return eventMessage.serializeMetaData(serializer, expectedRepresentation);
     }
 
     @Override

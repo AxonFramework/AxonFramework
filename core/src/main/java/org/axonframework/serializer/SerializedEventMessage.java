@@ -35,7 +35,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SerializedEventMessage<T> implements EventMessage<T> {
+public class SerializedEventMessage<T> implements EventMessage<T>, SerializationAware {
 
     private static final long serialVersionUID = -4704515337335869770L;
     private final DateTime timestamp;
@@ -59,6 +59,16 @@ public class SerializedEventMessage<T> implements EventMessage<T> {
     private SerializedEventMessage(SerializedEventMessage<T> original, Map<String, ?> metaData) {
         message = original.message.withMetaData(metaData);
         this.timestamp = original.getTimestamp();
+    }
+
+    @Override
+    public <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation) {
+        return message.serializePayload(serializer, expectedRepresentation);
+    }
+
+    @Override
+    public <T> SerializedObject<T> serializeMetaData(Serializer serializer, Class<T> expectedRepresentation) {
+        return message.serializeMetaData(serializer, expectedRepresentation);
     }
 
     @Override

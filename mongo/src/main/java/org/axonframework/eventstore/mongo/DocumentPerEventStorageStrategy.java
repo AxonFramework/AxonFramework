@@ -36,6 +36,9 @@ import org.joda.time.DateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
+import static org.axonframework.serializer.MessageSerializer.serializePayload;
+
 /**
  * Implementation of the StorageStrategy that stores each event as a separate document. This makes it easier to query
  * the event store for specific events, but does not allow for atomic storage of a single commit.
@@ -165,23 +168,21 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         /**
          * Constructor used to create a new event entry to store in Mongo.
          *
-         * @param aggregateType   String containing the aggregate type of the event
-         * @param event           The actual DomainEvent to store
-         * @param eventSerializer Serializer to use for the event to store
+         * @param aggregateType String containing the aggregate type of the event
+         * @param event         The actual DomainEvent to store
+         * @param serializer    Serializer to use for the event to store
          */
-        private EventEntry(String aggregateType, DomainEventMessage event, Serializer eventSerializer) {
+        private EventEntry(String aggregateType, DomainEventMessage event, Serializer serializer) {
             this.aggregateType = aggregateType;
             this.aggregateIdentifier = event.getAggregateIdentifier().toString();
             this.sequenceNumber = event.getSequenceNumber();
             this.eventIdentifier = event.getIdentifier();
             Class<?> serializationTarget = String.class;
-            if (eventSerializer.canSerializeTo(DBObject.class)) {
+            if (serializer.canSerializeTo(DBObject.class)) {
                 serializationTarget = DBObject.class;
             }
-            SerializedObject serializedPayloadObject = eventSerializer.serialize(
-                    event.getPayload(), serializationTarget);
-            SerializedObject serializedMetaDataObject = eventSerializer.serialize(
-                    event.getMetaData(), serializationTarget);
+            SerializedObject serializedPayloadObject = serializePayload(event, serializer, serializationTarget);
+            SerializedObject serializedMetaDataObject = serializeMetaData(event, serializer, serializationTarget);
 
             this.serializedPayload = serializedPayloadObject.getData();
             this.payloadType = serializedPayloadObject.getType().getName();

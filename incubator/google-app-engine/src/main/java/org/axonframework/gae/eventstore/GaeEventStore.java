@@ -33,6 +33,7 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.gae.serializer.GaeXStream;
+import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
@@ -55,7 +56,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
 
     private static final Logger logger = LoggerFactory.getLogger(GaeEventStore.class);
 
-    private final Serializer eventSerializer;
+    private final MessageSerializer eventSerializer;
     private final DatastoreService datastoreService;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
 
@@ -73,7 +74,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
      * @param eventSerializer The serializer to serialize payload and metadata of EventMessages with.
      */
     public GaeEventStore(Serializer eventSerializer) {
-        this.eventSerializer = eventSerializer;
+        this.eventSerializer = new MessageSerializer(eventSerializer);
         this.datastoreService = DatastoreServiceFactory.getDatastoreService();
     }
 

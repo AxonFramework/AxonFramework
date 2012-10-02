@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.io;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 
@@ -36,7 +37,7 @@ import java.io.IOException;
  */
 public class EventMessageWriter {
 
-    private final Serializer serializer;
+    private final MessageSerializer serializer;
     private final DataOutput out;
 
     /**
@@ -47,7 +48,7 @@ public class EventMessageWriter {
      */
     public EventMessageWriter(DataOutput output, Serializer serializer) {
         this.out = output;
-        this.serializer = serializer;
+        this.serializer = new MessageSerializer(serializer);
     }
 
     /**
@@ -69,8 +70,8 @@ public class EventMessageWriter {
             out.writeUTF(domainEventMessage.getAggregateIdentifier().toString());
             out.writeLong(domainEventMessage.getSequenceNumber());
         }
-        SerializedObject<byte[]> serializedPayload = serializer.serialize(eventMessage.getPayload(), byte[].class);
-        SerializedObject<byte[]> serializedMetaData = serializer.serialize(eventMessage.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedPayload = serializer.serializePayload(eventMessage, byte[].class);
+        SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(eventMessage, byte[].class);
 
         out.writeUTF(serializedPayload.getType().getName());
         String revision = serializedPayload.getType().getRevision();

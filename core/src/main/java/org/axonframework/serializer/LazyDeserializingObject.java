@@ -92,4 +92,22 @@ public class LazyDeserializingObject<T> {
     public boolean isDeserialized() {
         return deserializedObject != null;
     }
+
+    /**
+     * Returns the serializer to deserialize this object
+     *
+     * @return the serializer to deserialize this object
+     */
+    public Serializer getSerializer() {
+        return serializer;
+    }
+
+    /**
+     * Returns the serialized object to deserialize upon request
+     *
+     * @return the serialized object to deserialize upon request
+     */
+    public SerializedObject<?> getSerializedObject() {
+        return serializedObject;
+    }
 }

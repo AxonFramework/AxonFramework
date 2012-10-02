@@ -33,13 +33,14 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SerializedMessage<T> implements Message<T> {
+public class SerializedMessage<T> implements Message<T>, SerializationAware {
 
     private static final long serialVersionUID = 6332429891815042291L;
+    private static final ConverterFactory CONVERTER_FACTORY = new ChainingConverterFactory();
 
     private final String identifier;
-    private final transient LazyDeserializingObject<MetaData> serializedMetaData; // NOSONAR
-    private final transient LazyDeserializingObject<T> serializedPayload; // NOSONAR
+    private final LazyDeserializingObject<MetaData> serializedMetaData;
+    private final LazyDeserializingObject<T> serializedPayload;
 
     /**
      * Reconstructs a Message using the given <code>identifier</code>, <code>serializedPayload</code>,
@@ -61,6 +62,28 @@ public class SerializedMessage<T> implements Message<T> {
         this.identifier = message.getIdentifier();
         this.serializedMetaData = new LazyDeserializingObject<MetaData>(MetaData.from(metaData));
         this.serializedPayload = message.serializedPayload;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation) {
+        if (serializer.equals(serializedPayload.getSerializer())) {
+            final SerializedObject serializedObject = serializedPayload.getSerializedObject();
+            return CONVERTER_FACTORY.getConverter(serializedObject.getContentType(), expectedRepresentation)
+                    .convert(serializedObject);
+        }
+        return serializer.serialize(serializedPayload.getObject(), expectedRepresentation);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> SerializedObject<T> serializeMetaData(Serializer serializer, Class<T> expectedRepresentation) {
+        if (serializer.equals(serializedMetaData.getSerializer())) {
+            final SerializedObject serializedObject = serializedMetaData.getSerializedObject();
+            return CONVERTER_FACTORY.getConverter(serializedObject.getContentType(), expectedRepresentation)
+                                    .convert(serializedObject);
+        }
+        return serializer.serialize(serializedMetaData.getObject(), expectedRepresentation);
     }
 
     @Override

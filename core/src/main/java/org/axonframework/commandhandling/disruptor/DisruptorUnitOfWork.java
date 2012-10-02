@@ -24,6 +24,7 @@ import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.serializer.SerializationAwareDomainEventMessage;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -185,6 +186,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
         DomainEventMessage<T> message = (DomainEventMessage<T>) listeners.onEventRegistered(this, event);
+        message = SerializationAwareDomainEventMessage.wrap(message);
         eventsToPublish.add(message);
         return message;
     }

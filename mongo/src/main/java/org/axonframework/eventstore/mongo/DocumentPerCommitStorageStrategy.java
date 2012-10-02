@@ -37,6 +37,9 @@ import org.joda.time.DateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
+import static org.axonframework.serializer.MessageSerializer.serializePayload;
+
 /**
  * Implementation of the StorageStrategy that stores each commit as a single document. The document contains an array
  * containing each separate event.
@@ -333,16 +336,14 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         private final long sequenceNumber;
         private final String timestamp;
 
-        private EventEntry(Serializer eventSerializer, DomainEventMessage event) {
+        private EventEntry(Serializer serializer, DomainEventMessage event) {
             this.eventIdentifier = event.getIdentifier();
             Class<?> serializationTarget = String.class;
-            if (eventSerializer.canSerializeTo(DBObject.class)) {
+            if (serializer.canSerializeTo(DBObject.class)) {
                 serializationTarget = DBObject.class;
             }
-            SerializedObject serializedPayloadObject = eventSerializer.serialize(
-                    event.getPayload(), serializationTarget);
-            SerializedObject serializedMetaDataObject = eventSerializer.serialize(
-                    event.getMetaData(), serializationTarget);
+            SerializedObject serializedPayloadObject = serializePayload(event, serializer, serializationTarget);
+            SerializedObject serializedMetaDataObject = serializeMetaData(event, serializer, serializationTarget);
 
             this.serializedPayload = serializedPayloadObject.getData();
             this.payloadType = serializedPayloadObject.getType().getName();

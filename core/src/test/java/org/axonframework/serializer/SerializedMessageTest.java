@@ -20,6 +20,7 @@ import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 import org.junit.*;
 
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 
@@ -31,11 +32,11 @@ import static org.mockito.Mockito.*;
  */
 public class SerializedMessageTest {
 
-    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<String>("serialized",
+    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<String>("serializedPayload",
                                                                                             String.class,
                                                                                             "java.lang.Object",
                                                                                             "1");
-    private SerializedObject<String> serializedMetaData = new SerializedMetaData<String>("serialized",
+    private SerializedObject<String> serializedMetaData = new SerializedMetaData<String>("serializedMetaData",
                                                                                          String.class);
 
     private Object deserializedPayload = new Object();
@@ -93,5 +94,29 @@ public class SerializedMessageTest {
         assertEquals("value", message1.getMetaData().get("key"));
         assertEquals(1, message2.getMetaData().size());
         assertEquals("otherValue", message2.getMetaData().get("key"));
+    }
+
+    @Test
+    public void testSerializePayloadImmediately() {
+        SerializedMessage<Object> message = new SerializedMessage<Object>(eventId, serializedPayload,
+                                                                          serializedMetaData, serializer);
+
+        SerializedObject<byte[]> actual = message.serializePayload(serializer, byte[].class);
+        assertArrayEquals("serializedPayload".getBytes(Charset.forName("UTF-8")), actual.getData());
+        // this call is allowed
+        verify(serializer, atLeast(0)).classForType(isA(SerializedType.class));
+        verifyNoMoreInteractions(serializer);
+    }
+
+    @Test
+    public void testSerializeMetaDataImmediately() {
+        SerializedMessage<Object> message = new SerializedMessage<Object>(eventId, serializedPayload,
+                                                                          serializedMetaData, serializer);
+
+        SerializedObject<byte[]> actual = message.serializeMetaData(serializer, byte[].class);
+        assertArrayEquals("serializedMetaData".getBytes(Charset.forName("UTF-8")), actual.getData());
+        // this call is allowed
+        verify(serializer, atLeast(0)).classForType(isA(SerializedType.class));
+        verifyNoMoreInteractions(serializer);
     }
 }

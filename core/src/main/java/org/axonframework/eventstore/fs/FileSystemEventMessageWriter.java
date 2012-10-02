@@ -17,6 +17,7 @@
 package org.axonframework.eventstore.fs;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 
@@ -31,7 +32,7 @@ import java.io.IOException;
  */
 public class FileSystemEventMessageWriter {
 
-    private final Serializer serializer;
+    private final MessageSerializer messageSerializer;
     private final DataOutput out;
 
     /**
@@ -42,7 +43,7 @@ public class FileSystemEventMessageWriter {
      */
     public FileSystemEventMessageWriter(DataOutput output, Serializer serializer) {
         this.out = output;
-        this.serializer = serializer;
+        this.messageSerializer = new MessageSerializer(serializer);
     }
 
     /**
@@ -59,8 +60,8 @@ public class FileSystemEventMessageWriter {
         out.writeUTF(eventMessage.getAggregateIdentifier().toString());
         out.writeLong(eventMessage.getSequenceNumber());
 
-        SerializedObject<byte[]> serializedPayload = serializer.serialize(eventMessage.getPayload(), byte[].class);
-        SerializedObject<byte[]> serializedMetaData = serializer.serialize(eventMessage.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedPayload = messageSerializer.serializePayload(eventMessage, byte[].class);
+        SerializedObject<byte[]> serializedMetaData = messageSerializer.serializeMetaData(eventMessage, byte[].class);
 
         out.writeUTF(serializedPayload.getType().getName());
         String revision = serializedPayload.getType().getRevision();

@@ -32,6 +32,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
+import static org.axonframework.serializer.MessageSerializer.serializePayload;
+
 /**
  * JGroups message that contains a CommandMessage that needs to be dispatched on a remote command bus segment. This
  * class implements the {@link Streamable} interface for faster JGroups-specific serialization, but also supports
@@ -70,8 +73,8 @@ public class DispatchMessage implements Streamable, Externalizable {
     public DispatchMessage(CommandMessage<?> commandMessage, Serializer serializer, boolean expectReply) {
         this.commandIdentifier = commandMessage.getIdentifier();
         this.expectReply = expectReply;
-        SerializedObject<byte[]> payload = serializer.serialize(commandMessage.getPayload(), byte[].class);
-        SerializedObject<byte[]> metaData = serializer.serialize(commandMessage.getMetaData(), byte[].class);
+        SerializedObject<byte[]> payload = serializePayload(commandMessage, serializer, byte[].class);
+        SerializedObject<byte[]> metaData = serializeMetaData(commandMessage, serializer, byte[].class);
         payloadType = payload.getType().getName();
         payloadRevision = payload.getType().getRevision();
         serializedPayload = payload.getData();

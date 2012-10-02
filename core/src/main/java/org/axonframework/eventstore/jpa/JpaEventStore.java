@@ -30,6 +30,7 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
@@ -75,7 +76,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     private static final int DEFAULT_BATCH_SIZE = 100;
     private static final int DEFAULT_MAX_SNAPSHOTS_ARCHIVED = 1;
 
-    private final Serializer eventSerializer;
+    private final MessageSerializer serializer;
     private final EventEntryStore eventEntryStore;
     private int batchSize = DEFAULT_BATCH_SIZE;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
@@ -114,11 +115,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * events in the database using the default EventEntryStore.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
-     * @param eventSerializer       The serializer to (de)serialize domain events with.
+     * @param serializer            The serializer to (de)serialize domain events with.
      */
-    public JpaEventStore(EntityManagerProvider entityManagerProvider,
-                         Serializer eventSerializer) {
-        this(entityManagerProvider, eventSerializer, DefaultHibernateEventEntryStore.getSupportedImplementation());
+    public JpaEventStore(EntityManagerProvider entityManagerProvider, Serializer serializer) {
+        this(entityManagerProvider, serializer, DefaultHibernateEventEntryStore.getSupportedImplementation());
     }
 
     /**
@@ -126,13 +126,13 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * events in the database using the given <code>eventEntryStore</code>.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
-     * @param eventSerializer       The serializer to (de)serialize domain events with.
+     * @param serializer            The serializer to (de)serialize domain events with.
      * @param eventEntryStore       The instance providing persistence logic for Domain Event entries
      */
-    public JpaEventStore(EntityManagerProvider entityManagerProvider,
-                         Serializer eventSerializer, EventEntryStore eventEntryStore) {
+    public JpaEventStore(EntityManagerProvider entityManagerProvider, Serializer serializer,
+                         EventEntryStore eventEntryStore) {
         this.entityManagerProvider = entityManagerProvider;
-        this.eventSerializer = eventSerializer;
+        this.serializer = new MessageSerializer(serializer);
         this.eventEntryStore = eventEntryStore;
     }
 
@@ -147,9 +147,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
             while (events.hasNext()) {
                 event = events.next();
                 validateIdentifier(event.getAggregateIdentifier().getClass());
-                eventEntryStore.persistEvent(type, event, eventSerializer.serialize(event.getPayload(), byte[].class),
-                                             eventSerializer.serialize(event.getMetaData(), byte[].class),
-                                             entityManager);
+                SerializedObject<byte[]> serializedPayload = serializer.serializePayload(event, byte[].class);
+                SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(event, byte[].class);
+                eventEntryStore.persistEvent(type, event, serializedPayload, serializedMetaData, entityManager);
             }
             entityManager.flush();
         } catch (RuntimeException exception) {
@@ -181,8 +181,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
                 snapshotEvent = new GenericDomainEventMessage<Object>(
                         identifier,
                         lastSnapshotEvent.getSequenceNumber(),
-                        eventSerializer.deserialize(lastSnapshotEvent.getPayload()),
-                        (Map<String, Object>) eventSerializer.deserialize(lastSnapshotEvent.getMetaData()));
+                        serializer.deserialize(lastSnapshotEvent.getPayload()),
+                        (Map<String, Object>) serializer.deserialize(lastSnapshotEvent.getMetaData()));
                 snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
             } catch (RuntimeException ex) {
                 logger.warn("Error while reading snapshot event entry. "
@@ -216,7 +216,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
         for (SerializedObject object : objects) {
             events.add(new SerializedDomainEventMessage<Object>(
-                    new UpcastSerializedDomainEventData(entry, identifier, object), eventSerializer));
+                    new UpcastSerializedDomainEventData(entry, identifier, object), serializer));
         }
         return events;
     }
@@ -232,10 +232,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         // Persist snapshot before pruning redundant archived ones, in order to prevent snapshot misses when reloading
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
-        eventEntryStore.persistSnapshot(type, snapshotEvent,
-                                        eventSerializer.serialize(snapshotEvent.getPayload(), byte[].class),
-                                        eventSerializer.serialize(snapshotEvent.getMetaData(), byte[].class),
-                                        entityManager);
+        SerializedObject<byte[]> serializedPayload = serializer.serializePayload(snapshotEvent, byte[].class);
+        SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(snapshotEvent, byte[].class);
+        eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData, entityManager);
 
         if (maxSnapshotsArchived > 0) {
             eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived,

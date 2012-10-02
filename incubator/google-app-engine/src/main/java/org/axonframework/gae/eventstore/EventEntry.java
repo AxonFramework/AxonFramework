@@ -35,6 +35,10 @@ import org.joda.time.DateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
+import static org.axonframework.serializer.MessageSerializer.serializePayload;
+
+
 /**
  * Class that represents an event to store in the google app engine data store.
  *
@@ -66,20 +70,20 @@ public class EventEntry implements SerializedDomainEventData<String> {
     /**
      * Constructor used to create a new event entry to store in Mongo
      *
-     * @param aggregateType   String containing the aggregate type of the event
-     * @param event           The actual DomainEvent to store
-     * @param eventSerializer Serializer to use for the event to store
+     * @param aggregateType String containing the aggregate type of the event
+     * @param event         The actual DomainEvent to store
+     * @param serializer    Serializer to use for the event to store
      */
-    EventEntry(String aggregateType, DomainEventMessage event, Serializer eventSerializer) {
+    EventEntry(String aggregateType, DomainEventMessage event, Serializer serializer) {
         this.eventIdentifier = event.getIdentifier();
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
-        SerializedObject<String> serializedObject = eventSerializer.serialize(event.getPayload(), String.class);
+        SerializedObject<String> serializedObject = serializePayload(event, serializer, String.class);
         this.serializedEvent = serializedObject.getData();
         this.eventType = serializedObject.getType().getName();
         this.eventRevision = serializedObject.getType().getRevision();
-        this.serializedMetaData = eventSerializer.serialize(event.getMetaData(), String.class).getData();
+        this.serializedMetaData = serializeMetaData(event, serializer, String.class).getData();
         this.timeStamp = event.getTimestamp().toString();
     }
 

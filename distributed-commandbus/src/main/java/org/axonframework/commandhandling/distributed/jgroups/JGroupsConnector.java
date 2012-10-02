@@ -26,6 +26,7 @@ import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
@@ -76,7 +77,7 @@ public class JGroupsConnector implements CommandBusConnector {
     private volatile ConsistentHash consistentHash = ConsistentHash.emptyRing();
     private final String clusterName;
     private final CommandBus localSegment;
-    private final Serializer serializer;
+    private final MessageSerializer serializer;
     private final JoinCondition joinedCondition = new JoinCondition();
     private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks =
             new ConcurrentHashMap<String, MemberAwareCommandCallback>();
@@ -104,7 +105,7 @@ public class JGroupsConnector implements CommandBusConnector {
         this.channel = channel;
         this.clusterName = clusterName;
         this.localSegment = localSegment;
-        this.serializer = serializer;
+        this.serializer = new MessageSerializer(serializer);
         this.messageReceiver = new MessageReceiver();
     }
 

@@ -47,6 +47,9 @@ import org.joda.time.DateTime;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
+import static org.axonframework.serializer.MessageSerializer.serializePayload;
+
 /**
  * @author Ming Fang
  * @author Allard Buijze
@@ -148,8 +151,8 @@ public class CassandraEventStore implements SnapshotEventStore {
     private void write(long recordNum, DomainEventMessage event, ColumnFamilyTemplate<String, Composite> template) {
         String rowId = event.getAggregateIdentifier().toString();
 
-        SerializedObject<byte[]> serializedPayload = serializer.serialize(event.getPayload(), byte[].class);
-        SerializedObject<byte[]> meta = serializer.serialize(event.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedPayload = serializePayload(event, serializer, byte[].class);
+        SerializedObject<byte[]> meta = serializeMetaData(event, serializer, byte[].class);
         String revision = serializedPayload.getType().getRevision();
         if (revision == null) {
             revision = "";
