@@ -71,19 +71,28 @@ public class MongoSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type, AssociationValue associationValue) {
-        final BasicDBList value = new BasicDBList();
-        value.add(new BasicDBObject("associations.key", associationValue.getKey()));
-        value.add(new BasicDBObject("associations.value", associationValue.getValue()));
-        value.add(new BasicDBObject("sagaType", typeOf(type)));
+        final BasicDBObject value = associationValueQuery(type, associationValue);
 
-        DBCursor dbCursor = mongoTemplate.sagaCollection().find(new BasicDBObject("$and", value),
-                                                                new BasicDBObject("sagaIdentifier", 1));
+        DBCursor dbCursor = mongoTemplate.sagaCollection().find(value, new BasicDBObject("sagaIdentifier", 1));
         Set<String> found = new TreeSet<String>();
         while (dbCursor.hasNext()) {
             found.add((String) dbCursor.next().get("sagaIdentifier"));
         }
         return found;
     }
+
+	private BasicDBObject associationValueQuery(Class<? extends Saga> type,
+			AssociationValue associationValue) {
+		final BasicDBObject value = new BasicDBObject();
+        value.put("sagaType", typeOf(type));
+
+        final BasicDBObject dbAssociation = new BasicDBObject();
+        dbAssociation.put("key", associationValue.getKey());
+        dbAssociation.put("value", associationValue.getValue());
+
+        value.put("associations", dbAssociation);
+		return value;
+	}
 
     @Override
     protected String typeOf(Class<? extends Saga> sagaClass) {
