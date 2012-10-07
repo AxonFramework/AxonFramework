@@ -107,8 +107,10 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
         Collection<AbstractEventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
             for (AbstractEventSourcedEntity entity : childEntities) {
-                entity.registerAggregateRoot(this);
-                entity.handleRecursively(event);
+                if (entity != null) {
+                    entity.registerAggregateRoot(this);
+                    entity.handleRecursively(event);
+                }
             }
         }
     }

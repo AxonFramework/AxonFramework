@@ -78,8 +78,10 @@ public abstract class AbstractEventSourcedEntity {
         Collection<AbstractEventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
             for (AbstractEventSourcedEntity entity : childEntities) {
-                entity.registerAggregateRoot(aggregateRoot);
-                entity.handleRecursively(event);
+                if (entity != null) {
+                    entity.registerAggregateRoot(aggregateRoot);
+                    entity.handleRecursively(event);
+                }
             }
         }
     }
