@@ -30,12 +30,11 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 
 /**
- * JPA implementation of the Saga Repository. It uses an {@link EntityManager} to persist the actual saga in a backing
+ * JPA implementation of the Saga Repository. It uses an {@link javax.persistence.EntityManager} to persist the actual saga in a backing
  * store.
  * <p/>
  * After each operations that modified the backing store, {@link javax.persistence.EntityManager#flush()} is invoked to
@@ -61,6 +60,32 @@ public class JpaSagaRepository extends AbstractSagaRepository {
     public JpaSagaRepository(EntityManagerProvider entityManagerProvider) {
         this.entityManagerProvider = entityManagerProvider;
         serializer = new JavaSerializer();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Saga load(String sagaId) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        List<SerializedSaga> serializedSagaList = (List<SerializedSaga>) entityManager
+                .createQuery("SELECT new org.axonframework.saga.repository.jpa.SerializedSaga("
+                                     + "se.serializedSaga, se.sagaType, se.revision) "
+                                     + "FROM SagaEntry se "
+                                     + "WHERE se.sagaId = :sagaId")
+                .setParameter("sagaId", sagaId)
+                .setMaxResults(1)
+                .getResultList();
+        if (serializedSagaList == null || serializedSagaList.isEmpty()) {
+            return null;
+        }
+        SerializedSaga serializedSaga = serializedSagaList.get(0);
+        Saga loadedSaga = serializer.deserialize(serializedSaga);
+        if (injector != null) {
+            injector.injectResources(loadedSaga);
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Loaded saga id [{}] of type [{}]", sagaId, loadedSaga.getClass().getName());
+        }
+        return loadedSaga;
     }
 
     @SuppressWarnings({"unchecked"})
@@ -98,32 +123,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
         if (useExplicitFlush) {
             entityManager.flush();
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Saga loadSaga(String sagaId) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        List<SerializedSaga> serializedSagaList = (List<SerializedSaga>) entityManager
-                .createQuery("SELECT new org.axonframework.saga.repository.jpa.SerializedSaga("
-                                     + "se.serializedSaga, se.sagaType, se.revision) "
-                                     + "FROM SagaEntry se "
-                                     + "WHERE se.sagaId = :sagaId")
-                .setParameter("sagaId", sagaId)
-                .setMaxResults(1)
-                .getResultList();
-        if (serializedSagaList == null || serializedSagaList.isEmpty()) {
-            return null;
-        }
-        SerializedSaga serializedSaga = serializedSagaList.get(0);
-        Saga loadedSaga = serializer.deserialize(serializedSaga);
-        if (injector != null) {
-            injector.injectResources(loadedSaga);
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Loaded saga id [{}] of type [{}]", sagaId, loadedSaga.getClass().getName());
-        }
-        return loadedSaga;
     }
 
     @SuppressWarnings("unchecked")
@@ -206,7 +205,6 @@ public class JpaSagaRepository extends AbstractSagaRepository {
      *
      * @param resourceInjector The resource injector
      */
-    @Resource
     public void setResourceInjector(ResourceInjector resourceInjector) {
         this.injector = resourceInjector;
     }

@@ -29,7 +29,6 @@ import org.axonframework.serializer.Serializer;
 
 import java.util.Set;
 import java.util.TreeSet;
-import javax.annotation.Resource;
 
 /**
  * Implementations of the SagaRepository that stores Sagas and their associations in a Mongo Database. Each Saga and
@@ -57,6 +56,20 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     }
 
     @Override
+    public Saga load(String sagaIdentifier) {
+        DBObject dbSaga = mongoTemplate.sagaCollection().findOne(SagaEntry.queryByIdentifier(sagaIdentifier));
+        if (dbSaga == null) {
+            return null;
+        }
+        SagaEntry sagaEntry = new SagaEntry(dbSaga);
+        Saga loadedSaga = sagaEntry.getSaga(serializer);
+        if (injector != null) {
+            injector.injectResources(loadedSaga);
+        }
+        return loadedSaga;
+    }
+
+    @Override
     protected Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type, AssociationValue associationValue) {
         final BasicDBList value = new BasicDBList();
         value.add(new BasicDBObject("associations.key", associationValue.getKey()));
@@ -80,20 +93,6 @@ public class MongoSagaRepository extends AbstractSagaRepository {
     @Override
     protected void deleteSaga(Saga saga) {
         mongoTemplate.sagaCollection().findAndRemove(SagaEntry.queryByIdentifier(saga.getSagaIdentifier()));
-    }
-
-    @Override
-    protected Saga loadSaga(String sagaIdentifier) {
-        DBObject dbSaga = mongoTemplate.sagaCollection().findOne(SagaEntry.queryByIdentifier(sagaIdentifier));
-        if (dbSaga == null) {
-            return null;
-        }
-        SagaEntry sagaEntry = new SagaEntry(dbSaga);
-        Saga loadedSaga = sagaEntry.getSaga(serializer);
-        if (injector != null) {
-            injector.injectResources(loadedSaga);
-        }
-        return loadedSaga;
     }
 
     @Override
@@ -146,7 +145,6 @@ public class MongoSagaRepository extends AbstractSagaRepository {
      *
      * @param resourceInjector The resource injector
      */
-    @Resource
     public void setResourceInjector(ResourceInjector resourceInjector) {
         this.injector = resourceInjector;
     }

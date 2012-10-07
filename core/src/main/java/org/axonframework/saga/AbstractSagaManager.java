@@ -27,10 +27,7 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -53,7 +50,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     private final Class<? extends Saga>[] sagaTypes;
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
-    private final SagaCache sagaCache = new SagaCache();
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
 
     /**
@@ -89,8 +85,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private boolean invokeExistingSagas(EventMessage event, Class<? extends Saga> sagaType,
                                         AssociationValue associationValue) {
-        Set<String> sagas = new HashSet<String>(sagaRepository.find(sagaType, associationValue));
-        sagas.addAll(sagaCache.getAll(sagaType, associationValue));
+        Set<String> sagas = sagaRepository.find(sagaType, associationValue);
         boolean sagaOfTypeInvoked = false;
         for (final String sagaId : sagas) {
             if (synchronizeSagaAccess) {
@@ -116,7 +111,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         newSaga.getAssociationValues().add(associationValue);
         if (synchronizeSagaAccess) {
             lock.obtainLock(newSaga.getSagaIdentifier());
-            sagaCache.put(newSaga);
             try {
                 doInvokeSaga(event, newSaga);
             } finally {
@@ -173,7 +167,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         if (saga == null || !saga.isActive() || !saga.getAssociationValues().contains(association)) {
             return null;
         }
-        sagaCache.put(saga);
         try {
             try {
                 saga.handle(event);
@@ -253,33 +246,5 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
-    }
-
-    private static final class SagaCache {
-
-        private Map<Saga, Object> backingCache = new WeakHashMap<Saga, Object>();
-
-        public synchronized void put(Saga saga) {
-            backingCache.put(saga, new Object());
-        }
-
-        public synchronized int size() {
-            return backingCache.size();
-        }
-
-        public synchronized boolean isEmpty() {
-            return backingCache.isEmpty();
-        }
-
-        @SuppressWarnings("unchecked")
-        public synchronized Set<String> getAll(Class<? extends Saga> type, AssociationValue associationValue) {
-            Set<String> sagas = new HashSet<String>();
-            for (Saga saga : backingCache.keySet()) {
-                if (saga.getAssociationValues().contains(associationValue) && type.isInstance(saga)) {
-                    sagas.add(saga.getSagaIdentifier());
-                }
-            }
-            return sagas;
-        }
     }
 }

@@ -19,21 +19,14 @@ package org.axonframework.saga.annotation;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
- * Default implementation of the AssociationValues interface. This implementation is fully serializable. Registered
- * ChangeListeners are cleared upon serialization and need to be reregistered after deserialization.
+ * Default implementation of the AssociationValues interface. This implementation is fully serializable.
  *
  * @author Allard Buijze
  * @since 0.7
@@ -42,18 +35,9 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
 
     private static final long serialVersionUID = 8273718165811296962L;
 
-    private Set<AssociationValue> values = new TreeSet<AssociationValue>(new AssociationValueComparator());
-    private transient Set<ChangeListener> handlers = new HashSet<ChangeListener>();
-
-    @Override
-    public void addChangeListener(ChangeListener changeListener) {
-        handlers.add(changeListener);
-    }
-
-    @Override
-    public void removeChangeListener(ChangeListener changeListener) {
-        handlers.remove(changeListener);
-    }
+    private final Set<AssociationValue> values = new HashSet<AssociationValue>();
+    private transient Set<AssociationValue> addedValues = new HashSet<AssociationValue>();
+    private transient Set<AssociationValue> removedValues = new HashSet<AssociationValue>();
 
     @Override
     public int size() {
@@ -61,13 +45,8 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
     }
 
     @Override
-    public boolean isEmpty() {
-        return values.isEmpty();
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        return values.contains(o);
+    public boolean contains(AssociationValue associationValue) {
+        return values.contains(associationValue);
     }
 
     @Override
@@ -76,106 +55,66 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
     }
 
     @Override
-    public Object[] toArray() {
-        return values.toArray();
-    }
-
-    @Override
-    public <T> T[] toArray(T[] a) {
-        return values.toArray(a);
-    }
-
-    @Override
     public boolean add(AssociationValue associationValue) {
-        boolean added = values.add(associationValue);
+        final boolean added = values.add(associationValue);
         if (added) {
-            for (ChangeListener cl : handlers) {
-                cl.onAssociationValueAdded(associationValue);
-            }
+                initializeChangeTrackers();
+                if (!removedValues.remove(associationValue)) {
+                    addedValues.add(associationValue);
+                }
         }
         return added;
     }
 
     @Override
-    public boolean remove(Object o) {
-        boolean removed = values.remove(o);
+    public boolean remove(AssociationValue associationValue) {
+        final boolean removed = values.remove(associationValue);
         if (removed) {
-            for (ChangeListener cl : handlers) {
-                cl.onAssociationValueRemoved((AssociationValue) o);
+                initializeChangeTrackers();
+                if (!addedValues.remove(associationValue)) {
+                    removedValues.add(associationValue);
             }
         }
         return removed;
     }
 
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        return values.containsAll(c);
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends AssociationValue> c) {
-        boolean added = false;
-        for (AssociationValue val : c) {
-            added |= add(val);
+    private void initializeChangeTrackers() {
+        if (removedValues == null) {
+            removedValues = new HashSet<AssociationValue>();
         }
-        return added;
+        if (addedValues == null) {
+            addedValues = new HashSet<AssociationValue>();
+        }
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
-        return values.retainAll(c);
+    public Set<AssociationValue> asSet() {
+        return Collections.unmodifiableSet(values);
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
-        return values.removeAll(c);
+    public Set<AssociationValue> removedAssociations() {
+        if (removedValues == null || removedValues.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return removedValues;
     }
 
     @Override
-    public void clear() {
-        values.clear();
+    public Set<AssociationValue> addedAssociations() {
+        if (addedValues == null || addedValues.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return addedValues;
     }
 
     @Override
-    public boolean equals(Object o) {
-        return values.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        return values.hashCode();
-    }
-
-    // Java Serialization methods
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        handlers = new HashSet<ChangeListener>();
-    }
-
-    private static class AssociationValueComparator implements Comparator<AssociationValue>, Serializable {
-
-        private static final long serialVersionUID = -7771326798202988182L;
-
-        @Override
-        public int compare(AssociationValue o1, AssociationValue o2) {
-            if (o1 == null && o2 == null) {
-                return 0;
-            } else if (o1 == null) {
-                return -1;
-            } else if (o2 == null) {
-                return 1;
-            }
-            int result = o1.getKey().compareTo(o2.getKey());
-            if (result == 0) {
-                return o1.getValue().compareTo(o2.getValue());
-            }
-            return result;
-
+    public void commit() {
+        if (addedValues != null) {
+            addedValues.clear();
+        }
+        if (removedValues != null) {
+            removedValues.clear();
         }
     }
 }

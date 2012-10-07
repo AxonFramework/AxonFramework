@@ -79,10 +79,10 @@ public class MongoSagaRepositoryTest {
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaFound() {
         MyTestSaga testSaga = new MyTestSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
-        repository.add(testSaga);
-        repository.add(otherTestSaga);
         testSaga.registerAssociationValue(new AssociationValue("key", "value"));
         otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        repository.add(testSaga);
+        repository.add(otherTestSaga);
         Set<String> actual = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, actual.size());
         assertEquals(MyTestSaga.class, repository.load(actual.iterator().next()).getClass());
@@ -100,11 +100,11 @@ public class MongoSagaRepositoryTest {
     @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_NoSagaFound() {
         MyTestSaga testSaga = new MyTestSaga("test1");
+        testSaga.registerAssociationValue(new AssociationValue("key", "value"));
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
+        otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
         repository.add(testSaga);
         repository.add(otherTestSaga);
-        testSaga.registerAssociationValue(new AssociationValue("key", "value"));
-        otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
         Set<String> actual = repository.find(InexistentSaga.class, new AssociationValue("key", "value"));
         assertTrue("Didn't expect any sagas", actual.isEmpty());
     }
@@ -115,10 +115,10 @@ public class MongoSagaRepositoryTest {
         MyTestSaga testSaga = new MyTestSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
         repository.add(testSaga);
-        repository.add(otherTestSaga);
         testSaga.registerAssociationValue(new AssociationValue("key", "value"));
         otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
         testSaga.end(); // make the saga inactive
+        repository.add(otherTestSaga);
         repository.commit(testSaga); //remove the saga because it is inactive
         Set<String> actual = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertTrue("Didn't expect any sagas", actual.isEmpty());
@@ -188,6 +188,7 @@ public class MongoSagaRepositoryTest {
         MyTestSaga saga = new MyTestSaga(identifier);
         repository.add(saga);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
+        repository.commit(saga);
         Set<String> loaded = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded.size());
         MyTestSaga loadedSaga = (MyTestSaga) repository.load(loaded.iterator().next());
@@ -222,6 +223,7 @@ public class MongoSagaRepositoryTest {
 
         MyTestSaga loaded = (MyTestSaga) repository.load(identifier);
         loaded.removeAssociationValue("key", "value");
+        repository.commit(loaded);
         Set<String> found = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
         assertEquals(0, found.size());
     }

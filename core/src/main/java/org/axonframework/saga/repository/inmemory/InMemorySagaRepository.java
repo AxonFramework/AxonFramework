@@ -60,6 +60,7 @@ public class InMemorySagaRepository implements SagaRepository {
         } else {
             managedSagas.put(saga.getSagaIdentifier(), saga);
         }
+        saga.getAssociationValues().commit();
     }
 
     @Override

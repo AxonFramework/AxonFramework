@@ -66,7 +66,7 @@ public class SagaEntry {
         this.serializedSaga = serialized.getData();
         this.sagaType = serializer.typeForClass(saga.getClass()).getName();
         this.saga = saga;
-        this.associationValues = this.saga.getAssociationValues();
+        this.associationValues = new HashSet<AssociationValue>(this.saga.getAssociationValues().asSet());
     }
 
     /**
@@ -120,7 +120,7 @@ public class SagaEntry {
         return values;
     }
 
-    private static List toDBList(Set<AssociationValue> associationValues) {
+    private static List toDBList(Iterable<AssociationValue> associationValues) {
         BasicDBList list = new BasicDBList();
         for (AssociationValue associationValue : associationValues) {
             list.add(new BasicDBObject(ASSOCIATION_KEY, associationValue.getKey())

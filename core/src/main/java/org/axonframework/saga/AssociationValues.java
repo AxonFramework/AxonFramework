@@ -19,47 +19,84 @@ package org.axonframework.saga;
 import java.util.Set;
 
 /**
- * Interface describing a collection of {@link AssociationValue Association Values} for a single {@link Saga} instance.
+ * Interface describing a container of {@link AssociationValue Association Values} for a single {@link Saga} instance.
+ * This container tracks changes made to its contents between commits (see {@link #commit()}).
  *
  * @author Allard Buijze
  * @since 0.7
  */
-public interface AssociationValues extends Set<AssociationValue> {
+public interface AssociationValues extends Iterable<AssociationValue> {
 
     /**
-     * Registers a listener that is notified when AssociationValue instances are wither added or removed from this
-     * collection.
+     * Returns the Set of association values that have been removed since the last {@link #commit()}.
+     * <p/>
+     * If an association was added and then removed (or vice versa), without any calls to {@link #commit()} in
+     * between, it is not returned.
      *
-     * @param changeListener The listener to register
+     * @return the Set of association values removed since the last {@link #commit()}.
      */
-    void addChangeListener(ChangeListener changeListener);
+    Set<AssociationValue> removedAssociations();
 
     /**
-     * Removes the registered changeListener.
+     * Returns the Set of association values that have been added since the last  {@link #commit()}.
+     * <p/>
+     * If an association was added and then removed (or vice versa), without any calls to {@link #commit()} in
+     * between, it is not returned.
      *
-     * @param changeListener The listener to remove
+     * @return the Set of association values added since the last {@link #commit()}.
      */
-    void removeChangeListener(ChangeListener changeListener);
+    Set<AssociationValue> addedAssociations();
 
     /**
-     * Interface describing instances that listen for modification in an AssociationValues instance. Methods on this
-     * interface are invoked immediately <em>after</em> the event has occurred, and before the changes have been
-     * committed to a repository.
+     * Resets the tracked changes.
      */
-    interface ChangeListener {
+    void commit();
 
-        /**
-         * Invoked when an AssociationValue has been added to the collection.
-         *
-         * @param newAssociationValue The AssociationValue that has been added
-         */
-        void onAssociationValueAdded(AssociationValue newAssociationValue);
+    /**
+     * Returns the number of AssociationValue instances available in this container
+     *
+     * @return the number of AssociationValue instances available
+     */
+    int size();
 
-        /**
-         * Invoked when an AssociationValue is removed from the collection.
-         *
-         * @param associationValue The AssociationValue that has been removed
-         */
-        void onAssociationValueRemoved(AssociationValue associationValue);
-    }
+    /**
+     * Indicates whether this instance contains the given <code>associationValue</code>.
+     *
+     * @param associationValue the association value to verify
+     * @return <code>true</code> if the association value is available in this instance, otherwise <code>false</code>
+     */
+    boolean contains(AssociationValue associationValue);
+
+    /**
+     * Adds the given <code>associationValue</code>, if it has not been previously added.
+     * <p/>
+     * When added (method returns <code>true</code>), the given <code>associationValue</code> will be returned on the
+     * next call to {@link #addedAssociations()}, unless it has been removed after the last call to {@link
+     * #removedAssociations()}.
+     *
+     * @param associationValue The association value to add
+     * @return <code>true</code> if the value was added, <code>false</code> if it was already contained in this
+     *         instance
+     */
+    boolean add(AssociationValue associationValue);
+
+    /**
+     * Removes the given <code>associationValue</code>, if it is contained by this instance.
+     * <p/>
+     * When removed (method returns <code>true</code>), the given <code>associationValue</code> will be returned on the
+     * next call to {@link #removedAssociations()}, unless it has been added after the last call to {@link
+     * #addedAssociations()}.
+     *
+     * @param associationValue The association value to remove
+     * @return <code>true</code> if the value was removed, <code>false</code> if it was not contained in this instance
+     */
+    boolean remove(AssociationValue associationValue);
+
+    /**
+     * Returns this instance as a Set of Association Values. The returned set is a read-only view on this container.
+     * Any changes made to the container after this invocation <em>may</em> be reflected in the returned Set.
+     *
+     * @return a read only view on the contents of this container
+     */
+    Set<AssociationValue> asSet();
 }

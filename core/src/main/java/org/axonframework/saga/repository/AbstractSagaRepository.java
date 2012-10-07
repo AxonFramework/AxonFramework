@@ -40,28 +40,32 @@ public abstract class AbstractSagaRepository implements SagaRepository {
     }
 
     @Override
-    public Saga load(String sagaIdentifier) {
-        final Saga saga = loadSaga(sagaIdentifier);
-        if (saga != null) {
-            saga.getAssociationValues().addChangeListener(
-                    new AssociationValueChangeListener(typeOf(saga), saga.getSagaIdentifier()));
-        }
-        return saga;
-    }
-
-    @Override
     public void add(Saga saga) {
-        final String sagaType = typeOf(saga);
-        for (AssociationValue av : saga.getAssociationValues()) {
+        final String sagaType = typeOf(saga.getClass());
+        final AssociationValues associationValues = saga.getAssociationValues();
+        for (AssociationValue av : associationValues.addedAssociations()) {
             storeAssociationValue(av, sagaType, saga.getSagaIdentifier());
         }
-        saga.getAssociationValues().addChangeListener(
-                new AssociationValueChangeListener(typeOf(saga), saga.getSagaIdentifier()));
+        associationValues.commit();
         storeSaga(saga);
     }
 
-    private String typeOf(Saga saga) {
-        return typeOf(saga.getClass());
+    @Override
+    public void commit(Saga saga) {
+        if (!saga.isActive()) {
+            deleteSaga(saga);
+        } else {
+            final String sagaType = typeOf(saga.getClass());
+            final AssociationValues associationValues = saga.getAssociationValues();
+            for (AssociationValue associationValue : associationValues.addedAssociations()) {
+                storeAssociationValue(associationValue, sagaType, saga.getSagaIdentifier());
+            }
+            for (AssociationValue associationValue : associationValues.removedAssociations()) {
+                removeAssociationValue(associationValue, sagaType, saga.getSagaIdentifier());
+            }
+            associationValues.commit();
+            updateSaga(saga);
+        }
     }
 
     /**
@@ -84,15 +88,6 @@ public abstract class AbstractSagaRepository implements SagaRepository {
      */
     protected abstract String typeOf(Class<? extends Saga> sagaClass);
 
-    @Override
-    public void commit(Saga saga) {
-        if (!saga.isActive()) {
-            deleteSaga(saga);
-        } else {
-            updateSaga(saga);
-        }
-    }
-
     /**
      * Remove the given saga as well as all known association values pointing to it from the repository. If no such
      * saga exists, nothing happens.
@@ -100,15 +95,6 @@ public abstract class AbstractSagaRepository implements SagaRepository {
      * @param saga The saga instance to remove from the repository
      */
     protected abstract void deleteSaga(Saga saga);
-
-    /**
-     * Loads a known Saga instance by its unique identifier.
-     *
-     * @param sagaIdentifier The unique identifier of the Saga to load
-     * @return The Saga instance, or <code>null</code> if none was found
-     *
-     */
-    protected abstract Saga loadSaga(String sagaIdentifier);
 
     /**
      * Update a stored Saga, by replacing it with the given <code>saga</code> instance.
@@ -144,26 +130,4 @@ public abstract class AbstractSagaRepository implements SagaRepository {
      */
     protected abstract void removeAssociationValue(AssociationValue associationValue,
                                                    String sagaType, String sagaIdentifier);
-
-    private class AssociationValueChangeListener implements AssociationValues.ChangeListener {
-
-        private final String sagaType;
-        private final String sagaIdentifier;
-
-        public AssociationValueChangeListener(String sagaType, String sagaIdentifier) {
-            this.sagaType = sagaType;
-            this.sagaIdentifier = sagaIdentifier;
-        }
-
-        @Override
-        public void onAssociationValueAdded(AssociationValue newAssociationValue) {
-            storeAssociationValue(newAssociationValue, sagaType, sagaIdentifier);
-        }
-
-        @SuppressWarnings({"unchecked"})
-        @Override
-        public void onAssociationValueRemoved(AssociationValue associationValue) {
-            removeAssociationValue(associationValue, sagaType, sagaIdentifier);
-        }
-    }
 }

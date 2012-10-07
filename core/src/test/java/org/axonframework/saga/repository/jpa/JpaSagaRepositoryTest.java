@@ -21,6 +21,7 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
+import org.axonframework.saga.repository.StubSaga;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
@@ -64,15 +65,15 @@ public class JpaSagaRepositoryTest {
     @DirtiesContext
     @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaFound() {
-        MyTestSaga testSaga = new MyTestSaga("test1");
+        StubSaga testSaga = new StubSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
-        repository.add(testSaga);
-        repository.add(otherTestSaga);
         testSaga.registerAssociationValue(new AssociationValue("key", "value"));
         otherTestSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        repository.add(testSaga);
+        repository.add(otherTestSaga);
         entityManager.flush();
         entityManager.clear();
-        Set<String> actual = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
+        Set<String> actual = repository.find(StubSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, actual.size());
         assertEquals("test1", actual.iterator().next());
     }
@@ -80,7 +81,7 @@ public class JpaSagaRepositoryTest {
     @DirtiesContext
     @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_NoSagaFound() {
-        MyTestSaga testSaga = new MyTestSaga("test1");
+        StubSaga testSaga = new StubSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
         repository.add(testSaga);
         repository.add(otherTestSaga);
@@ -95,7 +96,7 @@ public class JpaSagaRepositoryTest {
     @Test
     @DirtiesContext
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaDeleted() {
-        MyTestSaga testSaga = new MyTestSaga("test1");
+        StubSaga testSaga = new StubSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
         repository.add(testSaga);
         repository.add(otherTestSaga);
@@ -105,7 +106,7 @@ public class JpaSagaRepositoryTest {
         repository.commit(testSaga);
         entityManager.flush();
         entityManager.clear();
-        Set<String> actual = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
+        Set<String> actual = repository.find(StubSaga.class, new AssociationValue("key", "value"));
         assertTrue("Didn't expect any sagas", actual.isEmpty());
     }
 
@@ -113,7 +114,7 @@ public class JpaSagaRepositoryTest {
     @Test
     public void testAddAndLoadSaga_ByIdentifier() {
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         repository.add(saga);
         Saga loaded = repository.load(identifier);
         assertEquals(identifier, loaded.getSagaIdentifier());
@@ -124,10 +125,10 @@ public class JpaSagaRepositoryTest {
     @Test
     public void testAddAndLoadSaga_ByAssociationValue() {
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
         repository.add(saga);
-        Set<String> loaded = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
+        Set<String> loaded = repository.find(StubSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded.size());
         Saga loadedSaga = repository.load(loaded.iterator().next());
         assertEquals(identifier, loadedSaga.getSagaIdentifier());
@@ -138,10 +139,11 @@ public class JpaSagaRepositoryTest {
     @DirtiesContext
     public void testAddAndLoadSaga_AssociateValueAfterStorage() {
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         repository.add(saga);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
-        Set<String> loaded = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
+        repository.commit(saga);
+        Set<String> loaded = repository.find(StubSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded.size());
         Saga loadedSaga = repository.load(loaded.iterator().next());
         assertEquals(identifier, loadedSaga.getSagaIdentifier());
@@ -153,7 +155,7 @@ public class JpaSagaRepositoryTest {
     public void testLoadUncachedSaga_ByIdentifier() {
         repository.setSerializer(new XStreamSerializer());
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         entityManager.persist(new SagaEntry(saga, new XStreamSerializer()));
         entityManager.flush();
         entityManager.clear();
@@ -166,13 +168,13 @@ public class JpaSagaRepositoryTest {
     @Test
     public void testLoadUncachedSaga_ByAssociationValue() {
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         entityManager.persist(new SagaEntry(saga, serializer));
         entityManager.persist(new AssociationValueEntry(serializer.typeForClass(saga.getClass()).getName(),
                                                         identifier, new AssociationValue("key", "value")));
         entityManager.flush();
         entityManager.clear();
-        Set<String> loaded = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
+        Set<String> loaded = repository.find(StubSaga.class, new AssociationValue("key", "value"));
         assertEquals(1, loaded.size());
         Saga loadedSaga = repository.load(loaded.iterator().next());
         assertEquals(identifier, loadedSaga.getSagaIdentifier());
@@ -188,16 +190,17 @@ public class JpaSagaRepositoryTest {
     @Test
     public void testLoadSaga_AssociationValueRemoved() {
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         saga.registerAssociationValue(new AssociationValue("key", "value"));
         entityManager.persist(new SagaEntry(saga, serializer));
         entityManager.persist(new AssociationValueEntry(serializer.typeForClass(saga.getClass()).getName(),
                                                         identifier, new AssociationValue("key", "value")));
         entityManager.flush();
         entityManager.clear();
-        MyTestSaga loaded = (MyTestSaga) repository.load(identifier);
+        StubSaga loaded = (StubSaga) repository.load(identifier);
         loaded.removeAssociationValue("key", "value");
-        Set<String> found = repository.find(MyTestSaga.class, new AssociationValue("key", "value"));
+        repository.commit(loaded);
+        Set<String> found = repository.find(StubSaga.class, new AssociationValue("key", "value"));
         assertEquals(0, found.size());
     }
 
@@ -205,32 +208,30 @@ public class JpaSagaRepositoryTest {
     @Test
     public void testSaveSaga() {
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         entityManager.persist(new SagaEntry(saga, new XStreamSerializer()));
-        MyTestSaga loaded = (MyTestSaga) repository.load(identifier);
-        loaded.counter = 1;
+        StubSaga loaded = (StubSaga) repository.load(identifier);
         repository.commit(loaded);
 
         entityManager.clear();
 
         SagaEntry entry = entityManager.find(SagaEntry.class, identifier);
-        MyTestSaga actualSaga = (MyTestSaga) entry.getSaga(new XStreamSerializer());
+        StubSaga actualSaga = (StubSaga) entry.getSaga(new XStreamSerializer());
         assertNotSame(loaded, actualSaga);
-        assertEquals(1, actualSaga.counter);
     }
 
     @DirtiesContext
     @Test
     public void testEndSaga() {
         String identifier = UUID.randomUUID().toString();
-        MyTestSaga saga = new MyTestSaga(identifier);
+        StubSaga saga = new StubSaga(identifier);
         saga.associate("key", "value");
         repository.add(saga);
         entityManager.flush();
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
                                  .setParameter("id", identifier)
                                  .getResultList().isEmpty());
-        MyTestSaga loaded = (MyTestSaga) repository.load(identifier);
+        StubSaga loaded = (StubSaga) repository.load(identifier);
         loaded.end();
         repository.commit(loaded);
 
@@ -240,33 +241,6 @@ public class JpaSagaRepositoryTest {
         assertTrue(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
                                 .setParameter("id", identifier)
                                 .getResultList().isEmpty());
-    }
-
-    public static class MyTestSaga extends AbstractAnnotatedSaga {
-
-        private static final long serialVersionUID = -1562911263884220240L;
-        private int counter = 0;
-
-        public MyTestSaga(String identifier) {
-            super(identifier);
-        }
-
-        public void registerAssociationValue(AssociationValue associationValue) {
-            associateWith(associationValue);
-        }
-
-        public void removeAssociationValue(String key, String value) {
-            removeAssociationWith(key, value);
-        }
-
-        @Override
-        public void end() {
-            super.end();
-        }
-
-        public void associate(String key, String value) {
-            associateWith(key, value);
-        }
     }
 
     public static class MyOtherTestSaga extends AbstractAnnotatedSaga {
