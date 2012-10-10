@@ -29,6 +29,10 @@ import org.axonframework.common.SerializationException;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
+import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.AssociationValues;
+import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
+import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.joda.time.DateTime;
 
 import java.lang.reflect.Constructor;
@@ -125,9 +129,17 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         xStream.aliasPackage("axon.domain", "org.axonframework.domain");
         xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
 
+        // Message serialization
         xStream.alias("domain-event", GenericDomainEventMessage.class);
         xStream.alias("event", GenericEventMessage.class);
         xStream.alias("command", GenericCommandMessage.class);
+
+        // Configuration to enhance Saga serialization
+        xStream.addDefaultImplementation(AssociationValuesImpl.class, AssociationValues.class);
+        xStream.aliasField("associations", AbstractAnnotatedSaga.class, "associationValues");
+        xStream.alias("association", AssociationValue.class);
+        xStream.aliasField("key", AssociationValue.class, "propertyKey");
+        xStream.aliasField("value", AssociationValue.class, "propertyValue");
 
         // for backward compatibility
         xStream.alias("localDateTime", DateTime.class);
