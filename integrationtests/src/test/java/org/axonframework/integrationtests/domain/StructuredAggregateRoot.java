@@ -18,38 +18,35 @@ package org.axonframework.integrationtests.domain;
 
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcedMember;
 
 import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
-public class StructuredAggregateRoot extends AbstractAnnotatedAggregateRoot {
+public class StructuredAggregateRoot extends AbstractAnnotatedAggregateRoot<UUID> {
 
     private int invocations;
+    @EventSourcedMember
     private StructuredEntity entity;
-    private final Object identifier;
+    @AggregateIdentifier
+    private UUID identifier;
 
     public StructuredAggregateRoot() {
-        this.identifier = UUID.randomUUID();
-        apply(new InvocationEvent(1));
-    }
-
-    public StructuredAggregateRoot(Object identifier) {
-        this.identifier = identifier;
+        apply(new InvocationEvent(UUID.randomUUID(), 1));
     }
 
     public void invoke() {
-        apply(new InvocationEvent(invocations + 1));
-    }
-
-    @Override
-    public Object getIdentifier() {
-        return identifier;
+        apply(new InvocationEvent(identifier, invocations + 1));
     }
 
     @EventHandler
     public void handleEvent(InvocationEvent event) {
+        if (identifier == null) {
+            identifier = event.getAggregateIdentifier();
+        }
         this.invocations = event.getInvocationCount();
         if (invocations == 1) {
             entity = new StructuredEntity();

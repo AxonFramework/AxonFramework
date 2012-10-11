@@ -21,7 +21,6 @@ import org.junit.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -102,21 +101,6 @@ public class ReflectionUtilsTest {
         assertFalse(ReflectionUtils.isAccessible(field1));
         assertFalse(ReflectionUtils.isAccessible(field2));
         assertTrue(ReflectionUtils.isAccessible(field3));
-    }
-
-    @Test
-    public void testfindFieldValuesOfType_Nulls() {
-        ContainsCollectionsType item = new ContainsCollectionsType(null, null, null);
-        assertEquals(2, ReflectionUtils.findFieldValuesOfType(item, String.class).size());
-    }
-
-    @Test
-    public void testfindFieldValuesOfType_WithCollections() {
-        ContainsCollectionsType item = new ContainsCollectionsType(Arrays.asList("one"),
-                                                                   Collections.singletonMap("two",
-                                                                                            "three"),
-                                                                   Collections.singleton("four"));
-        assertEquals(6, ReflectionUtils.findFieldValuesOfType(item, String.class).size());
     }
 
     @Test

@@ -16,18 +16,26 @@
 
 package org.axonframework.integrationtests.domain;
 
+import java.util.UUID;
+
 /**
  * @author Allard Buijze
  */
 public class InvocationEvent {
 
+    private final UUID aggregateIdentifier;
     private final int invocationCount;
 
-    public InvocationEvent(int invocationCount) {
+    public InvocationEvent(UUID aggregateIdentifier, int invocationCount) {
+        this.aggregateIdentifier = aggregateIdentifier;
         this.invocationCount = invocationCount;
     }
 
     public int getInvocationCount() {
         return invocationCount;
+    }
+
+    public UUID getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 }

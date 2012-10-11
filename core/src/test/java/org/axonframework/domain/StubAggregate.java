@@ -17,7 +17,9 @@
 package org.axonframework.domain;
 
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventSourcedEntity;
 
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -62,5 +64,10 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     public void delete() {
         apply(new StubDomainEvent());
         markDeleted();
+    }
+
+    @Override
+    protected Collection<EventSourcedEntity> getChildEntities() {
+        return null;
     }
 }

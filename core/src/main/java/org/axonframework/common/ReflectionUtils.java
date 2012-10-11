@@ -16,7 +16,6 @@
 
 package org.axonframework.common;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -24,15 +23,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.axonframework.common.CollectionUtils.filterByType;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -44,44 +37,6 @@ public abstract class ReflectionUtils {
 
     private ReflectionUtils() {
         // utility class
-    }
-
-    /**
-     * Returns a collection of values contained in the fields of the given <code>instance</code> that are assignable to
-     * the given <code>type</code>. If the given <code>instance</code> contains fields with Collections or Maps, the
-     * contents of them are investigated as well. Collections inside these collections (e.g. a List of Maps) are not
-     * evaluated.
-     *
-     * @param instance The instance to search the fields in
-     * @param type     The type that the values in the fields must be assignable to
-     * @param <T>      The type that the values in the fields must be assignable to
-     * @return a collection of values contained in the fields of the given <code>instance</code>. Can be empty. Is
-     *         never
-     *         <code>null</code>.
-     */
-    public static <T> Collection<T> findFieldValuesOfType(final Object instance, final Class<T> type) {
-        final Set<T> children = new HashSet<T>();
-        for (Field field : fieldsOf(instance.getClass())) {
-            if (type.isAssignableFrom(field.getType())) { // it's an entity!
-                Object fieldValue = getFieldValue(field, instance);
-                if (fieldValue != null) {
-                    children.add(type.cast(fieldValue));
-                }
-            } else if (Iterable.class.isAssignableFrom(field.getType())) {
-                // it's a collection
-                Iterable<?> iterable = (Iterable<?>) getFieldValue(field, instance);
-                if (iterable != null) {
-                    children.addAll(filterByType(iterable, type));
-                }
-            } else if (Map.class.isAssignableFrom(field.getType())) {
-                Map map = (Map) getFieldValue(field, instance);
-                if (map != null) {
-                    children.addAll(filterByType(map.keySet(), type));
-                    children.addAll(filterByType(map.values(), type));
-                }
-            }
-        }
-        return children;
     }
 
     /**
@@ -235,45 +190,5 @@ public abstract class ReflectionUtils {
             currentClazz = currentClazz.getSuperclass();
         } while (currentClazz != null);
         return Collections.unmodifiableList(methods);
-    }
-
-    /**
-     * Inspects the given <code>type</code> and returns the annotation of given <code>annotationType</code>. This
-     * method investigates the entire hierarchy of given <code>type</code>, including declared interfaces and other
-     * annotations.
-     *
-     * @param type           The type to find the annotation on
-     * @param annotationType The type of annotation to find
-     * @param <A>            The type of annotation
-     * @return the found annotation, or <code>null</code> if not found.
-     */
-    public static <A extends Annotation> A findAnnotation(Class<?> type, Class<A> annotationType) {
-        // check if the class is annotated directly
-        A annotation = type.getAnnotation(annotationType);
-        if (annotation != null) {
-            return annotation;
-        }
-        // check if any of the declared interfaces are annotated
-        for (Class<?> ifc : type.getInterfaces()) {
-            annotation = findAnnotation(ifc, annotationType);
-            if (annotation != null) {
-                return annotation;
-            }
-        }
-        // check if any other annotations are annotated (meta-annotations)
-        if (!Annotation.class.isAssignableFrom(type)) {
-            for (Annotation ann : type.getAnnotations()) {
-                annotation = findAnnotation(ann.annotationType(), annotationType);
-                if (annotation != null) {
-                    return annotation;
-                }
-            }
-        }
-        // move up the hierarchy
-        Class<?> superClass = type.getSuperclass();
-        if (superClass == null || superClass == Object.class) {
-            return null;
-        }
-        return findAnnotation(superClass, annotationType);
     }
 }

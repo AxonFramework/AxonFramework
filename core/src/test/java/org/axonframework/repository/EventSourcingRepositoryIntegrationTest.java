@@ -23,6 +23,7 @@ import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -30,6 +31,7 @@ import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -192,6 +194,11 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         @Override
         public UUID getIdentifier() {
             return identifier;
+        }
+
+        @Override
+        protected Collection<EventSourcedEntity> getChildEntities() {
+            return null;
         }
     }
 

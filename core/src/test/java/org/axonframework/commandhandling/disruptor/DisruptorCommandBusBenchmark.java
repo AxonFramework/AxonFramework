@@ -28,7 +28,7 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
+import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
@@ -106,7 +106,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        protected Collection<AbstractEventSourcedEntity> getChildEntities() {
+        protected Collection<EventSourcedEntity> getChildEntities() {
             return Collections.emptyList();
         }
     }

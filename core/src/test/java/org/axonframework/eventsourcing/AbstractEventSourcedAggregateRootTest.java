@@ -24,9 +24,8 @@ import org.axonframework.domain.StubDomainEvent;
 import org.junit.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -65,23 +64,16 @@ public class AbstractEventSourcedAggregateRootTest {
 
         testSubject.apply(new StubDomainEvent());
 
-        Map.Entry<SimpleEntity, SimpleEntity> firstMapEntry;
         assertEquals(1, testSubject.getInvocationCount());
         assertEquals(1, testSubject.getUncommittedEventCount());
         assertEquals(1, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(1, testSubject.getSimpleEntityList().get(0).getInvocationCount());
-        firstMapEntry = testSubject.getSimpleEntityMap().entrySet().iterator().next();
-        assertEquals(1, firstMapEntry.getKey().getInvocationCount());
-        assertEquals(1, firstMapEntry.getValue().getInvocationCount());
 
         testSubject.getSimpleEntity().applyEvent();
         assertEquals(2, testSubject.getInvocationCount());
         assertEquals(2, testSubject.getUncommittedEventCount());
         assertEquals(2, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(2, testSubject.getSimpleEntityList().get(0).getInvocationCount());
-        firstMapEntry = testSubject.getSimpleEntityMap().entrySet().iterator().next();
-        assertEquals(2, firstMapEntry.getKey().getInvocationCount());
-        assertEquals(2, firstMapEntry.getValue().getInvocationCount());
 
         assertEquals(null, testSubject.getVersion());
 
@@ -98,7 +90,6 @@ public class AbstractEventSourcedAggregateRootTest {
         private int invocationCount;
         private SimpleEntity childEntity;
         private List<SimpleEntity> childEntitiesList = new ArrayList<SimpleEntity>();
-        private Map<SimpleEntity, SimpleEntity> childEntitiesMap = new HashMap<SimpleEntity, SimpleEntity>();
         private String identifier;
 
         CompositeAggregateRoot(String identifier) {
@@ -116,9 +107,6 @@ public class AbstractEventSourcedAggregateRootTest {
                 childEntity = new SimpleEntity();
             }
             childEntitiesList.add(new SimpleEntity());
-            if (childEntitiesMap.isEmpty()) {
-                childEntitiesMap.put(new SimpleEntity(), new SimpleEntity());
-            }
         }
 
         public int getInvocationCount() {
@@ -133,13 +121,17 @@ public class AbstractEventSourcedAggregateRootTest {
             return childEntitiesList;
         }
 
-        public Map<SimpleEntity, SimpleEntity> getSimpleEntityMap() {
-            return childEntitiesMap;
-        }
-
         @Override
         public String getIdentifier() {
             return identifier;
+        }
+
+        @Override
+        protected Collection<EventSourcedEntity> getChildEntities() {
+            List<EventSourcedEntity> children = new ArrayList<EventSourcedEntity>();
+            children.add(childEntity);
+            children.addAll(childEntitiesList);
+            return children;
         }
     }
 
@@ -161,6 +153,11 @@ public class AbstractEventSourcedAggregateRootTest {
 
         public void applyEvent() {
             apply(new StubDomainEvent());
+        }
+
+        @Override
+        protected Collection<EventSourcedEntity> getChildEntities() {
+            return null;
         }
     }
 }

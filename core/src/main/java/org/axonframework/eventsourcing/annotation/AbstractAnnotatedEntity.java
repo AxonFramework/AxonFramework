@@ -19,20 +19,30 @@ package org.axonframework.eventsourcing.annotation;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
+import org.axonframework.eventsourcing.EventSourcedEntity;
+
+import java.util.Collection;
 
 /**
  * Convenience super type for entities (other than aggregate roots) that have their event handler methods annotated
- * with
- * the {@link org.axonframework.eventhandling.annotation.EventHandler} annotation.
+ * with the {@link org.axonframework.eventhandling.annotation.EventHandler} annotation.
  * <p/>
- * Note that each entity receive <strong>all</strong> events applied in the entire aggregate. Entities are responsible
+ * Note that each entity receives <strong>all</strong> events applied in the entire aggregate. Entities are responsible
  * for filtering out the actual events to take action on.
+ * <p/>
+ * If this entity is a child of another <code>AbstractAnnotatedEntity</code> or
+ * <code>AbstractAnnotatedAggregateRoot</code>, the field that this entity is stored in should be annotated with {@link
+ * EventSourcedMember}. Alternatively, the {@link
+ * org.axonframework.eventsourcing.AbstractEventSourcedEntity#getChildEntities()} or {@link
+ * org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#getChildEntities()} should return a collection
+ * containing this entity instance.
  *
  * @author Allard Buijze
  * @since 0.7
  */
 public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity {
 
+    private transient AggregateAnnotationInspector inspector;
     private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
 
     /**
@@ -52,9 +62,26 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
     @Override
     protected void handle(DomainEventMessage event) {
         // some deserialization mechanisms don't use the default constructor to initialize a class.
+        ensureInspectorInitialized();
+        ensureInvokerInitialized();
+        eventHandlerInvoker.invokeEventHandlerMethod(event);
+    }
+
+    @Override
+    protected Collection<EventSourcedEntity> getChildEntities() {
+        ensureInspectorInitialized();
+        return inspector.getChildEntities(this);
+    }
+
+    private void ensureInvokerInitialized() {
         if (eventHandlerInvoker == null) {
             eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
         }
-        eventHandlerInvoker.invokeEventHandlerMethod(event);
+    }
+
+    private void ensureInspectorInitialized() {
+        if (inspector == null) {
+            inspector = AggregateAnnotationInspector.getInspector(getClass());
+        }
     }
 }

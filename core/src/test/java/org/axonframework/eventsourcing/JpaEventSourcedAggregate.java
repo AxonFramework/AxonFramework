@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 
+import java.util.Collection;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -63,6 +64,12 @@ public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot 
     public Object getIdentifier() {
         return identifier;
     }
+
+    @Override
+    protected Collection<EventSourcedEntity> getChildEntities() {
+        return null;
+    }
+
 
     public static class MyAggregateDeletedEvent {
 

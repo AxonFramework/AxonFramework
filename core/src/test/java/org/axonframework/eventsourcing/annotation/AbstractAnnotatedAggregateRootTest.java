@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.*;
 
 import java.util.UUID;
-
 import javax.persistence.Id;
 
 import static org.junit.Assert.*;
@@ -83,7 +82,7 @@ public class AbstractAnnotatedAggregateRootTest {
         }
     }
 
-private static class JavaxPersistenceIdIdentifiedAggregate extends AbstractAnnotatedAggregateRoot {
+    private static class JavaxPersistenceIdIdentifiedAggregate extends AbstractAnnotatedAggregateRoot {
 
         @Id
         private String aggregateIdentifier;
@@ -101,7 +100,9 @@ private static class JavaxPersistenceIdIdentifiedAggregate extends AbstractAnnot
     private static class SimpleAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
         private int invocationCount;
-        private volatile SimpleEntity entity;
+        @EventSourcedMember
+        private SimpleEntity entity;
+        @AggregateIdentifier
         private final UUID identifier;
 
         private SimpleAggregateRoot() {
@@ -129,10 +130,6 @@ private static class JavaxPersistenceIdIdentifiedAggregate extends AbstractAnnot
             apply(new StubDomainEvent());
         }
 
-        @Override
-        public UUID getIdentifier() {
-            return identifier;
-        }
     }
 
     private static class SimpleEntity extends AbstractAnnotatedEntity {

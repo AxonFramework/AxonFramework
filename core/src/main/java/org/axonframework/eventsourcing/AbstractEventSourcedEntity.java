@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.Assert;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.MetaData;
 
@@ -30,36 +30,12 @@ import java.util.Collection;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractEventSourcedEntity {
+public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
 
     private volatile AbstractEventSourcedAggregateRoot aggregateRoot;
 
-    /**
-     * Returns a list of event sourced entities directly referenced by this entity.
-     * <p/>
-     * The default implementation uses reflection to find references to <code>AbstractEventSourcedEntity</code>
-     * implementations.
-     * <p/>
-     * It will look for them in the following locations: <ul><li> directly referenced in a field;<li> inside fields
-     * containing an {@link Iterable};<li>inside both they keys and the values of fields containing a {@link
-     * java.util.Map}</ul>
-     *
-     * @return a list of event sourced entities contained in this aggregate
-     */
-    protected Collection<AbstractEventSourcedEntity> getChildEntities() {
-        return ReflectionUtils.findFieldValuesOfType(this, AbstractEventSourcedEntity.class);
-    }
-
-    /**
-     * Register the aggregate root with this entity. The entity uses this aggregate root to report applied Domain
-     * Events. The aggregate root is responsible for tracking all applied events.
-     * <p/>
-     * A parent entity is responsible for invoking this method on its child entities prior to propagating events to it.
-     * Typically, this means all entities have their aggregate root set before any actions are taken on it.
-     *
-     * @param aggregateRootToRegister the root of the aggregate this entity is part of.
-     */
-    protected void registerAggregateRoot(AbstractEventSourcedAggregateRoot aggregateRootToRegister) {
+    @Override
+    public void registerAggregateRoot(AbstractEventSourcedAggregateRoot aggregateRootToRegister) {
         if (this.aggregateRoot != null && this.aggregateRoot != aggregateRootToRegister) {
             throw new IllegalStateException("Cannot register new aggregate. "
                                                     + "This entity is already part of another aggregate");
@@ -67,17 +43,12 @@ public abstract class AbstractEventSourcedEntity {
         this.aggregateRoot = aggregateRootToRegister;
     }
 
-    /**
-     * Report the given <code>event</code> for handling in the current instance (<code>this</code>), as well as all the
-     * entities referenced by this instance.
-     *
-     * @param event The event to handle
-     */
-    void handleRecursively(DomainEventMessage event) {
+    @Override
+    public void handleRecursively(DomainEventMessage event) {
         handle(event);
-        Collection<AbstractEventSourcedEntity> childEntities = getChildEntities();
+        Collection<? extends EventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
-            for (AbstractEventSourcedEntity entity : childEntities) {
+            for (EventSourcedEntity entity : childEntities) {
                 if (entity != null) {
                     entity.registerAggregateRoot(aggregateRoot);
                     entity.handleRecursively(event);
@@ -85,6 +56,14 @@ public abstract class AbstractEventSourcedEntity {
             }
         }
     }
+
+    /**
+     * Returns a collection of event sourced entities directly referenced by this entity. May return null or an empty
+     * list to indicate no child entities are available. The collection may also contain null values.
+     *
+     * @return a list of event sourced entities contained in this aggregate
+     */
+    protected abstract Collection<? extends EventSourcedEntity> getChildEntities();
 
     /**
      * Apply state changes based on the given event.
@@ -118,6 +97,8 @@ public abstract class AbstractEventSourcedEntity {
      * @param metaData any meta-data that must be registered with the Event
      */
     protected void apply(Object event, MetaData metaData) {
+        Assert.notNull(aggregateRoot, "The aggregate root is unknown. "
+                + "Is this entity properly registered as the child of an aggregate member?");
         aggregateRoot.apply(event, metaData);
     }
 }

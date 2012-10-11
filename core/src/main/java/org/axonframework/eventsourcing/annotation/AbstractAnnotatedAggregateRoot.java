@@ -19,15 +19,10 @@ package org.axonframework.eventsourcing.annotation;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.IncompatibleAggregateException;
+import org.axonframework.eventsourcing.EventSourcedEntity;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
+import java.util.Collection;
 import javax.persistence.MappedSuperclass;
-
-import static java.lang.String.format;
-import static org.axonframework.common.ReflectionUtils.ensureAccessible;
-import static org.axonframework.common.ReflectionUtils.fieldsOf;
 
 /**
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
@@ -45,15 +40,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
 
     private static final long serialVersionUID = -1206026570158467937L;
     private transient AnnotationEventHandlerInvoker eventHandlerInvoker; // NOSONAR
-    private transient Field identifierField; // NOSONAR
-
-    /**
-     * Initialize the aggregate root with a random identifier.
-     */
-    protected AbstractAnnotatedAggregateRoot() {
-        super();
-        eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
-    }
+    private transient AggregateAnnotationInspector inspector; // NOSONAR
 
     /**
      * Calls the appropriate {@link org.axonframework.eventhandling.annotation.EventHandler} annotated handler with the
@@ -64,49 +51,33 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
      */
     @Override
     protected void handle(DomainEventMessage event) {
-        if (eventHandlerInvoker == null) {
-            eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
-        }
+        ensureInspectorInitialized();
+        ensureInvokerInitialized();
         eventHandlerInvoker.invokeEventHandlerMethod(event);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public I getIdentifier() {
-        if (identifierField == null) {
-            identifierField = locateIdentifierField(this);
-        }
-        try {
-            return (I) identifierField.get(this);
-        } catch (IllegalAccessException e) {
-            throw new IncompatibleAggregateException(format("The field [%s.%s] is not accessible.",
-                                                            getClass().getSimpleName(),
-                                                            identifierField.getName()), e);
+        ensureInspectorInitialized();
+        return inspector.getIdentifier(this);
+    }
+
+    @Override
+    protected Collection<EventSourcedEntity> getChildEntities() {
+        ensureInspectorInitialized();
+        return inspector.getChildEntities(this);
+    }
+
+    private void ensureInvokerInitialized() {
+        if (eventHandlerInvoker == null) {
+            eventHandlerInvoker = inspector.createEventHandlerInvoker(this);
         }
     }
 
-    private Field locateIdentifierField(AbstractAnnotatedAggregateRoot instance) {
-        for (Field candidate : fieldsOf(instance.getClass())) {
-            if (containsIdentifierAnnotation(candidate.getAnnotations())) {
-                ensureAccessible(candidate);
-                return candidate;
-            }
+    private void ensureInspectorInitialized() {
+        if (inspector == null) {
+            inspector = AggregateAnnotationInspector.getInspector(getClass());
         }
-        throw new IncompatibleAggregateException(format("The aggregate class [%s] does not specify an Identifier. "
-                                                                + "Ensure that the field containing the aggregate "
-                                                                + "identifier is annotated with @AggregateIdentifier.",
-                                                        instance.getClass().getSimpleName()));
-    }
-
-    private boolean containsIdentifierAnnotation(Annotation[] annotations) {
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof AggregateIdentifier) {
-                return true;
-            } else if (annotation.toString().startsWith("@javax.persistence.Id(")) {
-                // this way, the JPA annotations don't need to be on the classpath
-                return true;
-            }
-        }
-        return false;
     }
 }

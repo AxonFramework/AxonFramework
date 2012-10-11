@@ -23,6 +23,7 @@ import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.testutils.MockException;
 import org.junit.*;
 
+import java.util.Collection;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -73,6 +74,11 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
+        protected Collection<EventSourcedEntity> getChildEntities() {
+            return null;
+        }
+
+        @Override
         protected void handle(DomainEventMessage event) {
         }
 
@@ -100,5 +106,11 @@ public class GenericAggregateFactoryTest {
         public Object getIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");
         }
+
+        @Override
+        protected Collection<EventSourcedEntity> getChildEntities() {
+            return null;
+        }
+
     }
 }

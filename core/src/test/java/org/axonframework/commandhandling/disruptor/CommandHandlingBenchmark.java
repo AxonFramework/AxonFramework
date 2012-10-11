@@ -24,7 +24,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
+import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
@@ -103,7 +103,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        protected Collection<AbstractEventSourcedEntity> getChildEntities() {
+        protected Collection<EventSourcedEntity> getChildEntities() {
             return Collections.emptyList();
         }
     }

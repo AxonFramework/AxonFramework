@@ -29,6 +29,7 @@ import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.ConflictResolver;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
@@ -45,6 +46,7 @@ import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -315,6 +317,11 @@ public class EventSourcingRepositoryTest {
         @Override
         protected void apply(Object eventPayload) {
             super.apply(eventPayload);
+        }
+
+        @Override
+        protected Collection<EventSourcedEntity> getChildEntities() {
+            return null;
         }
 
         @Override

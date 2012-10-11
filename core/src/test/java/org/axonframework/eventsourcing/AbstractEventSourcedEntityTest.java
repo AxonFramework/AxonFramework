@@ -22,6 +22,8 @@ import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
 import org.junit.*;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -81,6 +83,11 @@ public class AbstractEventSourcedEntityTest {
 
         private int invocationCount = 0;
         private StubEntity child;
+
+        @Override
+        protected Collection<? extends EventSourcedEntity> getChildEntities() {
+            return Collections.singleton(child);
+        }
 
         @Override
         protected void handle(DomainEventMessage event) {
