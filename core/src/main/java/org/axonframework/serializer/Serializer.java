@@ -70,11 +70,16 @@ public interface Serializer {
     /**
      * Returns the class for the given type identifier. The result of this method must guarantee that the deserialized
      * SerializedObject with the given <code>type</code> is an instance of the returned Class.
+     * <p/>
+     * If a class cannot be resolved (i.e. because the class is not available on this JVM's classpath) this method
+     * throws UnknownSerializedTypeException.
      *
      * @param type The type identifier of the object
-     * @return the Class representing the type of the serialized Object.
+     * @return the Class representing the type of the serialized Object
+     *
+     * @throws UnknownSerializedTypeException if the <code>type</code> cannot be resolved to a class
      */
-    Class classForType(SerializedType type);
+    Class classForType(SerializedType type) throws UnknownSerializedTypeException;
 
     /**
      * Returns the type identifier for the given class. This is the type identifier of the Serialized object as

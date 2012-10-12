@@ -19,13 +19,11 @@ package org.axonframework.serializer.bson;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.thoughtworks.xstream.XStream;
-import org.axonframework.common.SerializationException;
 import org.axonframework.serializer.AbstractXStreamSerializer;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ConverterFactory;
 import org.axonframework.serializer.RevisionResolver;
 import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
 
 import java.nio.charset.Charset;
 
@@ -147,14 +145,5 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
         DBObject serialized = (DBObject) convert(serializedObject.getContentType(),
                                                  DBObject.class, serializedObject.getData());
         return getXStream().unmarshal(new DBObjectHierarchicalStreamReader(serialized));
-    }
-
-    @Override
-    public Class classForType(SerializedType type) {
-        try {
-            return getClass().getClassLoader().loadClass(type.getName());
-        } catch (ClassNotFoundException e) {
-            throw new SerializationException("Cannot load class for expected type: " + type.getName(), e);
-        }
     }
 }

@@ -23,6 +23,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.converters.collections.MapConverter;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.SerializationException;
@@ -226,7 +227,11 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      */
     @Override
     public Class classForType(SerializedType type) {
-        return xStream.getMapper().realClass(type.getName());
+        try {
+            return xStream.getMapper().realClass(type.getName());
+        } catch (CannotResolveClassException e) {
+            throw new UnknownSerializedTypeException(type, e);
+        }
     }
 
     @Override

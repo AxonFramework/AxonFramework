@@ -91,9 +91,7 @@ public class JavaSerializer implements Serializer {
         try {
             return Class.forName(type.getName());
         } catch (ClassNotFoundException e) {
-            logger.warn("Could not load class for serialized type [{}] revision {}",
-                        type.getName(), type.getRevision());
-            return null;
+            throw new UnknownSerializedTypeException(type, e);
         }
     }
 

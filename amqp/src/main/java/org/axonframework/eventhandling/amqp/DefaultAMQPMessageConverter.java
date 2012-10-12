@@ -90,7 +90,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
             return in.readEventMessage();
         } catch (IOException e) {
             // ByteArrayInputStream doesn't throw IOException... anyway...
-            throw new EventPublicationFailedException("Failed to serialize an EventMessage", e);
+            throw new EventPublicationFailedException("Failed to deserialize an EventMessage", e);
         }
     }
 

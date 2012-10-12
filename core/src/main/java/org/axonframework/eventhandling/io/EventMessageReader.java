@@ -62,6 +62,8 @@ public class EventMessageReader {
      *
      * @throws IOException          when an error occurs reading from the underlying input
      * @throws java.io.EOFException when the end of the stream was reached before the message was entirely read
+     * @throws org.axonframework.serializer.UnknownSerializedTypeException
+     *                              if the type of the serialized object cannot be resolved to a class
      */
     public <T> EventMessage<T> readEventMessage() throws IOException {
         final int firstByte = in.read();

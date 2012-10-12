@@ -78,7 +78,7 @@ public class ClusterMessageListenerTest {
         byte[] body = baos.toByteArray();
         body = new String(body, Charset.forName("UTF-8")).replace("string", "strong")
                                                          .getBytes(Charset.forName("UTF-8"));
-        testSubject.onMessage(new Message(body, null));
+        testSubject.onMessage(new Message(body, new MessageProperties()));
 
         verify(cluster, never()).publish(any(EventMessage.class));
     }

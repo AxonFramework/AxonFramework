@@ -49,6 +49,7 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
      * @param serializedPayload  The serialized payload of the message
      * @param serializedMetaData The serialized meta data of the message
      * @param serializer         The serializer to deserialize the payload and meta data with
+     * @throws UnknownSerializedTypeException if the type of the serialized object cannot be resolved to a class
      */
     public SerializedEventMessage(String eventIdentifier, DateTime timestamp, SerializedObject<?> serializedPayload,
                                   SerializedObject<?> serializedMetaData, Serializer serializer) {

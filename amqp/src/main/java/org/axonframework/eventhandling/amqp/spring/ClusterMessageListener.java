@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.amqp.spring;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
+import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -55,17 +56,16 @@ public class ClusterMessageListener implements MessageListener {
 
     @Override
     public void onMessage(Message message) {
-        EventMessage eventMessage = null;
         try {
-            eventMessage = messageConverter.readAMQPMessage(message.getBody(),
-                                                            message.getMessageProperties().getHeaders());
-        } catch (RuntimeException e) {
-            logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
-        }
-        if (eventMessage != null) {
-            for (Cluster cluster : clusters) {
-                cluster.publish(eventMessage);
+            EventMessage eventMessage = messageConverter.readAMQPMessage(message.getBody(),
+                                                                         message.getMessageProperties().getHeaders());
+            if (eventMessage != null) {
+                for (Cluster cluster : clusters) {
+                    cluster.publish(eventMessage);
+                }
             }
+        } catch (UnknownSerializedTypeException e) {
+            logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
         }
     }
 

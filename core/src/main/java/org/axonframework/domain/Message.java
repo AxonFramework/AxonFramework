@@ -66,8 +66,6 @@ public interface Message<T> extends Serializable {
      * lazy loading or deserialization.
      *
      * @return the type of payload.
-     *
-     * @see Class#getName()
      */
     Class getPayloadType();
 

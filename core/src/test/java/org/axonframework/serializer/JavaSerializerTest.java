@@ -54,7 +54,13 @@ public class JavaSerializerTest {
 
     @Test
     public void testClassForType_UnknownClass() {
-        assertNull(testSubject.classForType(new SimpleSerializedType("unknown", "0")));
+        try {
+            testSubject.classForType(new SimpleSerializedType("unknown", "0"));
+            fail("Expected UnknownSerializedTypeException");
+        } catch (UnknownSerializedTypeException e) {
+            assertTrue("Wrong message in exception", e.getMessage().contains("unknown"));
+            assertTrue("Wrong message in exception", e.getMessage().contains("0"));
+        }
     }
 
     private static class MySerializableObject implements Serializable {

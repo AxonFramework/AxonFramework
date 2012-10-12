@@ -51,6 +51,7 @@ public class LazyDeserializingObject<T> {
     /**
      * @param serializedObject The serialized payload of the message
      * @param serializer       The serializer to deserialize the payload data with
+     * @throws UnknownSerializedTypeException if the type of the serialized object cannot be resolved to a class
      */
     public LazyDeserializingObject(SerializedObject<?> serializedObject, Serializer serializer) {
         Assert.notNull(serializedObject, "The given serializedObject may not be null");
@@ -61,8 +62,7 @@ public class LazyDeserializingObject<T> {
     }
 
     /**
-     * Returns the class of the serialized object, or <code>null</code> if no serialized object or serializer was
-     * provided.
+     * Returns the class of the serialized object.
      *
      * @return the class of the serialized object
      */
