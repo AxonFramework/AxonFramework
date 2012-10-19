@@ -36,7 +36,6 @@
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
 
-
     <axon:saga-manager id="sagaManagerNotSuppressingExceptions" saga-factory="sagaFactory" suppress-exceptions="false">
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
@@ -79,6 +78,13 @@
     </axon:cluster>
 
     <axon:cluster id="defaultCluster" default="true"/>
+
+    <axon:cluster id="replayingCluster">
+        <axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
+        <axon:selectors>
+            <axon:package prefix="does.not.exist"/>
+        </axon:selectors>
+    </axon:cluster>
 
     <bean id="sagaSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 

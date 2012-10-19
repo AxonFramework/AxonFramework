@@ -25,8 +25,15 @@ import org.axonframework.eventhandling.ClusterSelector;
 import org.axonframework.eventhandling.DefaultClusterSelector;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
+import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
+import org.axonframework.eventhandling.replay.ReplayingCluster;
+import org.axonframework.eventhandling.transactionmanagers.SpringTransactionManager;
+import org.axonframework.eventstore.management.EventStoreManagement;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConstructorArgumentValues;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
@@ -36,6 +43,7 @@ import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.core.Ordered;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
@@ -62,14 +70,22 @@ import java.util.Map;
 public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     private static final String META_DATA_ELEMENT = "meta-data";
+
+    private static final String REPLAY_ELEMENT = "replay-config";
+    private static final String TRANSACTION_MANAGER_ATTRIBUTE = "transaction-manager";
+    private static final String EVENT_STORE_ATTRIBUTE = "event-store";
+    private static final String COMMIT_THRESHOLD_ATTRIBUTE = "commit-threshold";
+    private static final String INCOMING_MESSAGE_HANDLER_REF = "incoming-message-handler-ref";
+    private static final String INCOMING_MESSAGES_ATTRIBUTE = "incoming-messages";
+
     private static final String SELECTORS_ELEMENT = "selectors";
     private static final String SELECTOR_CLASS_NAME_MATCHES_ELEMENT = "class-name-matches";
     private static final String SELECTOR_PACKAGE_ELEMENT = "package";
+
     private static final String SELECTOR_ANNOTATION_ELEMENT = "annotation";
-
     private static final String DEFAULT_SELECTOR_SUFFIX = "$defaultSelector";
-    private static final String SELECTOR_SUFFIX = "$selector";
 
+    private static final String SELECTOR_SUFFIX = "$selector";
     private static final String PREFIX_ATTRIBUTE = "prefix";
     private static final String PATTERN_ATTRIBUTE = "pattern";
     private static final String DEFAULT_ATTRIBUTE = "default";
@@ -110,8 +126,49 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             throw new AxonConfigurationException(
                     "Cluster with id '" + clusterId + "' is not a default cluster, nor defines any selectors");
         }
-
+        if (DomUtils.getChildElementByTagName(element, REPLAY_ELEMENT) != null) {
+            return wrapInReplayingCluster(DomUtils.getChildElementByTagName(element, REPLAY_ELEMENT), clusterBean);
+        }
         return clusterBean;
+    }
+
+    private AbstractBeanDefinition wrapInReplayingCluster(Element replayElement,
+                                                          AbstractBeanDefinition targetClusterDefinition) {
+        GenericBeanDefinition replayingCluster = new GenericBeanDefinition();
+        replayingCluster.setBeanClass(ReplayingCluster.class);
+        final ConstructorArgumentValues constructor = replayingCluster.getConstructorArgumentValues();
+        constructor.addIndexedArgumentValue(0, targetClusterDefinition);
+        if (replayElement.hasAttribute(EVENT_STORE_ATTRIBUTE)) {
+            constructor.addIndexedArgumentValue(1, new RuntimeBeanReference(
+                    replayElement.getAttribute(EVENT_STORE_ATTRIBUTE)));
+        } else {
+            constructor.addIndexedArgumentValue(1, new AutowiredBean(EventStoreManagement.class));
+        }
+        if (replayElement.hasAttribute(TRANSACTION_MANAGER_ATTRIBUTE)) {
+            constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
+                    .genericBeanDefinition(SpringTransactionManager.class)
+                    .addConstructorArgReference(replayElement.getAttribute(TRANSACTION_MANAGER_ATTRIBUTE))
+                    .getBeanDefinition());
+        } else {
+            constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
+                    .genericBeanDefinition(SpringTransactionManager.class)
+                    .addConstructorArgValue(new AutowiredBean(PlatformTransactionManager.class))
+                    .getBeanDefinition());
+        }
+        constructor.addIndexedArgumentValue(3, replayElement.getAttribute(COMMIT_THRESHOLD_ATTRIBUTE));
+        Object incomingMessageHandlerDefinition = BeanDefinitionBuilder.genericBeanDefinition(
+                BackloggingIncomingMessageHandler.class).getBeanDefinition();
+        if (replayElement.hasAttribute(INCOMING_MESSAGE_HANDLER_REF)) {
+            incomingMessageHandlerDefinition = new RuntimeBeanReference(
+                    replayElement.getAttribute(INCOMING_MESSAGE_HANDLER_REF));
+        } else {
+            if ("discard".equals(replayElement.getAttribute(INCOMING_MESSAGES_ATTRIBUTE))) {
+                incomingMessageHandlerDefinition = BeanDefinitionBuilder.genericBeanDefinition(
+                        DiscardingIncomingMessageHandler.class).getBeanDefinition();
+            }
+        }
+        constructor.addIndexedArgumentValue(4, incomingMessageHandlerDefinition);
+        return replayingCluster;
     }
 
     private boolean parseClusterSelector(Element element, ParserContext parserContext, String clusterId) {

@@ -115,6 +115,91 @@
                                 </xsd:choice>
                             </xsd:complexType>
                         </xsd:element>
+                        <xsd:element name="replay-config" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Indicates this cluster is capable of replaying events from an Event Store. This
+                                    means a ReplayingCluster will be created.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                            <xsd:complexType>
+                                <xsd:attribute name="transaction-manager" type="xsd:string">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            The transaction manager to manage the transactions during the replay. By
+                                            default, it is autowired.
+                                        </xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type
+                                                        type="org.springframework.transaction.PlatformTransactionManager"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="event-store" type="xsd:string">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            The reference to the event store providing the events to replay. This Event
+                                            Store must implement EventStoreManagement. By default, it is autowired from
+                                            the application context.
+                                        </xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type
+                                                        type="org.axonframework.eventstore.management.EventStoreManagement"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="commit-threshold" type="xsd:integer" use="optional" default="-1">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            The number of events to process before committing a running transaction.
+                                            Defaults to -1, which means no commits are done until the end of the replay
+                                            process.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="incoming-message-handler-ref" type="xsd:string" use="optional">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            A reference to the IncomingMessageHandler that deals with incoming messages
+                                            during replay. If this attribute is specified, the 'incoming-messages'
+                                            attribute is ignored. Defaults to a message handler that backlogs incoming
+                                            messages and processed them at the end of the replay.
+                                        </xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type
+                                                        type="org.axonframework.eventhandling.replay.IncomingMessageHandler"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="incoming-messages" use="optional"
+                                               default="backlog">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            Shorthand configuration to specify an Axon-provided IncomingMessageHandler
+                                            implementation. Defaults to 'backlog'.
+                                        </xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type
+                                                        type="org.axonframework.eventhandling.replay.IncomingMessageHandler"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                    <xsd:simpleType>
+                                        <xsd:restriction base="xsd:string">
+                                            <xsd:enumeration value="backlog"/>
+                                            <xsd:enumeration value="discard"/>
+                                        </xsd:restriction>
+                                    </xsd:simpleType>
+                                </xsd:attribute>
+                            </xsd:complexType>
+                        </xsd:element>
                     </xsd:all>
                     <xsd:attribute name="type" type="xsd:string"/>
                     <xsd:attribute name="order" type="xsd:int">
