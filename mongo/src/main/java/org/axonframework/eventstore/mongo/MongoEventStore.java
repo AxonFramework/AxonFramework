@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.mongo;
 
+import com.mongodb.Bytes;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
@@ -172,6 +173,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     public void visitEvents(Criteria criteria, EventVisitor visitor) {
         DBCursor cursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
                                                                 (MongoCriteria) criteria);
+        cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
         CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null);
         while (events.hasNext()) {
             visitor.doWithEvent(events.next());
