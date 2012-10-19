@@ -30,9 +30,24 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public abstract class AbstractCluster implements Cluster {
 
+    private final String name;
     private final Set<EventListener> eventListeners = new CopyOnWriteArraySet<EventListener>();
     private final Set<EventListener> immutableEventListeners = Collections.unmodifiableSet(eventListeners);
     private final ClusterMetaData clusterMetaData = new DefaultClusterMetaData();
+
+    /**
+     * Initializes the cluster with given <code>name</code>.
+     *
+     * @param name The name of this cluster
+     */
+    protected AbstractCluster(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
 
     @Override
     public void subscribe(EventListener eventListener) {

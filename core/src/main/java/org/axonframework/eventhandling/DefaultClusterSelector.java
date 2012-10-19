@@ -25,14 +25,15 @@ package org.axonframework.eventhandling;
  */
 public class DefaultClusterSelector implements ClusterSelector {
 
+    private static final String DEFAULT_CLUSTER_IDENTIFIER = "default";
     private final Cluster defaultCluster;
 
     /**
-     * Initializes the DefaultClusterSelector using a {@link org.axonframework.eventhandling.SimpleCluster}, to which
-     * this instance will assign all Event Listeners.
+     * Initializes the DefaultClusterSelector using a {@link org.axonframework.eventhandling.SimpleCluster} with
+     * identifier "default", to which this instance will assign all Event Listeners.
      */
     public DefaultClusterSelector() {
-        this.defaultCluster = new SimpleCluster();
+        this.defaultCluster = new SimpleCluster(DEFAULT_CLUSTER_IDENTIFIER);
     }
 
     /**

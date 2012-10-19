@@ -40,9 +40,9 @@ import static org.mockito.Mockito.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 public class AutowiringClusterSelectorTest {
 
-    private static final SimpleCluster CLUSTER_1 = new SimpleCluster();
-    private static final SimpleCluster CLUSTER_2 = new SimpleCluster();
-    private static final SimpleCluster CLUSTER_3 = new SimpleCluster();
+    private static final SimpleCluster CLUSTER_1 = new SimpleCluster("cluster1");
+    private static final SimpleCluster CLUSTER_2 = new SimpleCluster("cluster2");
+    private static final SimpleCluster CLUSTER_3 = new SimpleCluster("cluster3");
 
     @Autowired
     private AutowiringClusterSelector testSubject;

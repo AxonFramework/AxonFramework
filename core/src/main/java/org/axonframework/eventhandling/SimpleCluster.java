@@ -28,6 +28,15 @@ import org.axonframework.domain.EventMessage;
  */
 public class SimpleCluster extends AbstractCluster {
 
+    /**
+     * Initializes the cluster with given <code>name</code>.
+     *
+     * @param name The name of this cluster
+     */
+    public SimpleCluster(String name) {
+        super(name);
+    }
+
     @Override
     public void publish(EventMessage... events) {
         for(EventMessage event : events) {

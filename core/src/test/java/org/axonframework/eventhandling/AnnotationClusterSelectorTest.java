@@ -39,7 +39,7 @@ public class AnnotationClusterSelectorTest {
 
     @Before
     public void setUp() throws Exception {
-        cluster = new SimpleCluster();
+        cluster = new SimpleCluster("cluster");
         testSubject = new AnnotationClusterSelector(MyAnnotation.class, cluster);
     }
 

@@ -31,9 +31,9 @@ public class ClassNamePrefixClusterSelectorTest {
 
     @Test
     public void testLongestPrefixEvaluatedFirst() {
-        Cluster defaultCluster = new SimpleCluster();
-        Cluster cluster1 = new SimpleCluster();
-        Cluster cluster2 = new SimpleCluster();
+        Cluster defaultCluster = new SimpleCluster("default");
+        Cluster cluster1 = new SimpleCluster("cluster1");
+        Cluster cluster2 = new SimpleCluster("cluster2");
 
         Map<String, Cluster> mappings = new HashMap<String, Cluster>();
         mappings.put("org.axonframework", cluster1);
@@ -51,7 +51,7 @@ public class ClassNamePrefixClusterSelectorTest {
 
     @Test
     public void testInitializeWithSingleMapping() {
-        Cluster cluster1 = new SimpleCluster();
+        Cluster cluster1 = new SimpleCluster("cluster1");
 
         ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector("org.axonframework", cluster1);
 
@@ -65,8 +65,8 @@ public class ClassNamePrefixClusterSelectorTest {
 
     @Test
     public void testRevertsToDefaultWhenNoMappingFound() {
-        Cluster defaultCluster = new SimpleCluster();
-        Cluster cluster1 = new SimpleCluster();
+        Cluster defaultCluster = new SimpleCluster("default");
+        Cluster cluster1 = new SimpleCluster("cluster");
 
         Map<String, Cluster> mappings = new HashMap<String, Cluster>();
         mappings.put("javax.", cluster1);
@@ -82,7 +82,7 @@ public class ClassNamePrefixClusterSelectorTest {
 
     @Test
     public void testReturnsNullWhenNoMappingFound() {
-        Cluster cluster1 = new SimpleCluster();
+        Cluster cluster1 = new SimpleCluster("cluster1");
 
         Map<String, Cluster> mappings = new HashMap<String, Cluster>();
         mappings.put("javax.", cluster1);

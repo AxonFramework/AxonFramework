@@ -90,6 +90,8 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
                 innerCluster.setBeanClassName(clusterType);
             } else {
                 innerCluster.setBeanClass(SimpleCluster.class);
+                innerCluster.getConstructorArgumentValues()
+                            .addIndexedArgumentValue(0, resolveId(element, innerCluster, parserContext));
             }
         }
         Map metaData = parseMetaData(element, parserContext, null);
@@ -105,7 +107,8 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         boolean hasDefault = parseDefaultSelector(element, parserContext, clusterId);
 
         if (!hasSelectors && !hasDefault) {
-            throw new AxonConfigurationException("Cluster with id '" + clusterId + "' is not a default cluster, nor defines any selectors");
+            throw new AxonConfigurationException(
+                    "Cluster with id '" + clusterId + "' is not a default cluster, nor defines any selectors");
         }
 
         return clusterBean;

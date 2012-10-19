@@ -48,8 +48,9 @@ public class AsynchronousClusterTest {
                 return null;
             }
         }).when(executor).execute(isA(Runnable.class));
-        testSubject = new AsynchronousCluster(executor, mockTransactionManager, new SequentialPerAggregatePolicy(),
-                                              10, RetryPolicy.SKIP_FAILED_EVENT, 100);
+        testSubject = new AsynchronousCluster("async", executor, mockTransactionManager,
+                                              new SequentialPerAggregatePolicy(), 10,
+                                              RetryPolicy.SKIP_FAILED_EVENT, 100);
     }
 
     @Test

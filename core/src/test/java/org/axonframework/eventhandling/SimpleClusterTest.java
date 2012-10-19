@@ -33,7 +33,7 @@ public class SimpleClusterTest {
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new SimpleCluster();
+        testSubject = new SimpleCluster("cluster");
         eventListener = mock(EventListener.class);
     }
 

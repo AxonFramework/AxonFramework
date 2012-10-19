@@ -47,7 +47,6 @@ import org.springframework.context.ApplicationContextAware;
 import java.io.IOException;
 import java.util.Map;
 
-import static org.axonframework.eventhandling.ClusterMetaData.CLUSTER_NAME_PROPERTY;
 import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQP_CONFIG_PROPERTY;
 
 /**
@@ -137,10 +136,8 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         AMQPConsumerConfiguration config;
         if (clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
             config = (AMQPConsumerConfiguration) clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY);
-        } else if (clusterMetaData.getProperty(CLUSTER_NAME_PROPERTY) instanceof String) {
-            config = new DefaultAMQPConsumerConfiguration((String) clusterMetaData.getProperty(CLUSTER_NAME_PROPERTY));
-        } else {
-            config = new DefaultAMQPConsumerConfiguration(null);
+        } else  {
+            config = new DefaultAMQPConsumerConfiguration(cluster.getName());
         }
         getListenerContainerLifecycleManager().registerCluster(cluster, config, messageConverter);
     }

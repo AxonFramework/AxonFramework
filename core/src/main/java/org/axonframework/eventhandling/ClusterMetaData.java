@@ -25,11 +25,6 @@ package org.axonframework.eventhandling;
 public interface ClusterMetaData {
 
     /**
-     * Key of the Cluster Meta Data property that defines the name of the cluster.
-     */
-    String CLUSTER_NAME_PROPERTY = "ClusterName";
-
-    /**
      * Returns the property stored using the given {@code key}. If no property has been stored using that key, it
      * returns {@code null}.
      *

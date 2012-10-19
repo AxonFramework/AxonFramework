@@ -31,6 +31,15 @@ import java.util.Set;
 public interface Cluster {
 
     /**
+     * Returns the name of this cluster. This name is used to detect distributed instances of the
+     * same cluster. Multiple instances referring to the same logical cluster (on different JVM's) must have the same
+     * name.
+     *
+     * @return the name of this cluster
+     */
+    String getName();
+
+    /**
      * Publishes the given Events to the members of this cluster.
      * <p/>
      * Implementations may do this synchronously or asynchronously. Although {@link EventListener EventListeners} are

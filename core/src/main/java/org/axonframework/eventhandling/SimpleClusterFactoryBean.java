@@ -24,8 +24,8 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * FactoryBean that creates an instance of a SimpleCluster, allowing easier access to the MetaData. By default, the
- * bean name is set as the Cluster name (<code>ClusterName</code> property).
+ * FactoryBean that creates an instance of a SimpleCluster, allowing easier access to the MetaData. The bean name is
+ * set as the Cluster identifier.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -53,8 +53,7 @@ public class SimpleClusterFactoryBean implements FactoryBean<Cluster>, Initializ
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.cluster = new SimpleCluster();
-        cluster.getMetaData().setProperty("ClusterName", beanName);
+        this.cluster = new SimpleCluster(beanName);
         for (Map.Entry<String, Object> entry : metaDataValues.entrySet()) {
             cluster.getMetaData().setProperty(entry.getKey(), entry.getValue());
         }

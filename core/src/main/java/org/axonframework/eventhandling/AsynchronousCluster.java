@@ -43,14 +43,15 @@ public class AsynchronousCluster extends AbstractCluster {
      * <code>transactionManager</code> and <code>sequencingPolicy</code>. Failed events are retried if they are not
      * explicitly non-transient with an interval of 2000 millis. Batch size is 50 events.
      *
+     * @param identifier         The unique identifier of this cluster
      * @param executor           The executor to process event batches with
      * @param transactionManager The TransactionManager that manages transactions around event processing batches
      * @param sequencingPolicy   The policy indicating which events must be processed sequentially, and which may be
      *                           executed in parallel.
      */
-    public AsynchronousCluster(Executor executor, TransactionManager transactionManager,
+    public AsynchronousCluster(String identifier, Executor executor, TransactionManager transactionManager,
                                SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this(executor, transactionManager, sequencingPolicy, 50, RetryPolicy.RETRY_LAST_EVENT, 2000);
+        this(identifier, executor, transactionManager, sequencingPolicy, 50, RetryPolicy.RETRY_LAST_EVENT, 2000);
     }
 
     /**
@@ -59,6 +60,7 @@ public class AsynchronousCluster extends AbstractCluster {
      * <code>retryPolicy</code> and <code>retryInterval</code>. Processors will process at most <code>batchSize</code>
      * events in a single batch.
      *
+     * @param identifier         The unique identifier of this cluster
      * @param executor           The executor to process event batches with
      * @param transactionManager The TransactionManager that manages transactions around event processing batches
      * @param sequencingPolicy   The policy indicating which events must be processed sequentially, and which may be
@@ -67,10 +69,10 @@ public class AsynchronousCluster extends AbstractCluster {
      * @param retryPolicy        The policy to apply when event handling fails
      * @param retryInterval      The time (in milliseconds) to wait between retries
      */
-    public AsynchronousCluster(Executor executor, TransactionManager transactionManager,
+    public AsynchronousCluster(String identifier, Executor executor, TransactionManager transactionManager,
                                SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
                                int batchSize, RetryPolicy retryPolicy, int retryInterval) {
-
+        super(identifier);
         asynchronousHandler = new AsynchronousHandler(executor, transactionManager, sequencingPolicy,
                                                       retryPolicy, batchSize, retryInterval);
     }

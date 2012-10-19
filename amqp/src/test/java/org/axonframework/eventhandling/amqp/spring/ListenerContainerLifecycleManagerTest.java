@@ -66,13 +66,13 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test
     public void testTwoClustersForSingleQueue() {
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener = containersCreated.get(0).getMessageListener();
         verify((ClusterMessageListener) messageListener, never()).addCluster(isA(SimpleCluster.class));
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster2"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -83,13 +83,13 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test
     public void testTwoClustersForDifferentQueues() {
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener1 = containersCreated.get(0).getMessageListener();
 
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster2"),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -103,10 +103,10 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test
     public void testLifecycleOperationsPropagatedToAllListeners() throws Exception {
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster2"),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -129,10 +129,10 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test
     public void testContainerManagerIsRunningIfAtLeastOneContainerIsRunning() throws Exception {
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster2"),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -148,21 +148,21 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test(expected = AxonConfigurationException.class)
     public void testClusterIsRejectedIfNoQueueSpecified() {
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster1"),
                                     new DefaultAMQPConsumerConfiguration(null),
                                     new DefaultAMQPMessageConverter(serializer));
     }
 
     @Test
     public void testClusterIsCreatedAfterContainerStart() {
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener = containersCreated.get(0).getMessageListener();
         verify((ClusterMessageListener) messageListener, never()).addCluster(isA(SimpleCluster.class));
         testSubject.start();
-        testSubject.registerCluster(new SimpleCluster(),
+        testSubject.registerCluster(new SimpleCluster("cluster2"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
 
