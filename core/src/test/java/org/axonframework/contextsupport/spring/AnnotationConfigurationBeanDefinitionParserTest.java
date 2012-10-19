@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBean
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
+import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
@@ -41,6 +42,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.EntityManager;
@@ -130,6 +132,19 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
                                                                               identifier), MetaData.emptyInstance()));
 
         verify(sagaFactory).createSaga(StubSaga.class);
+    }
+
+    @Test
+    @DirtiesContext
+    public void testSagaManagerWiring_suppressExceptionsFalse() throws NoSuchFieldException, IllegalAccessException {
+        // this part should prove correct autowiring of the saga manager
+        AbstractSagaManager sagaManager = beanFactory.getBean("sagaManagerNotSuppressingExceptions", AbstractSagaManager.class);
+        assertNotNull(sagaManager);
+
+        final Field field = AbstractSagaManager.class.getDeclaredField("suppressExceptions");
+        field.setAccessible(true);
+        final Boolean suppressExceptions = (Boolean) field.get(sagaManager);
+        assertFalse(suppressExceptions);
     }
 
     @Test

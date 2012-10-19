@@ -1051,6 +1051,13 @@
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="suppress-exceptions" use="optional" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation>Exceptions thrown when invoking the saga is rethrown if set
+                                to false, and swallowed and logged if set to true. Defaults to true.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>
