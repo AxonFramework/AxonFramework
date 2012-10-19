@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.serializer;
+
+import org.axonframework.common.AxonNonTransientException;
 
 /**
  * Indicates that an exception occurred while serializing or deserializing an object.

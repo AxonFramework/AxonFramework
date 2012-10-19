@@ -26,7 +26,6 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.common.SerializationException;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
@@ -169,8 +168,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
         T result = doSerialize(object, expectedType, xStream);
-        return new SimpleSerializedObject<T>(result, expectedType, typeIdentifierOf(object.getClass()),
-                                             revisionOf(object.getClass()));
+        return new SimpleSerializedObject<T>(result, expectedType, typeForClass(object.getClass()));
     }
 
     /**

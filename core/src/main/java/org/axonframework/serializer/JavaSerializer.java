@@ -16,7 +16,6 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.common.SerializationException;
 import org.axonframework.common.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
