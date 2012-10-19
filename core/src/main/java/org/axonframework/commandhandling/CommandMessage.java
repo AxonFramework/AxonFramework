@@ -31,6 +31,14 @@ import java.util.Map;
 public interface CommandMessage<T> extends Message<T> {
 
     /**
+     * Returns the name of the command to execute. This is an indication of what should be done, using the payload as
+     * parameter.
+     *
+     * @return the name of the command
+     */
+    String getCommandName();
+
+    /**
      * Returns a copy of this CommandMessage with the given <code>metaData</code>. The payload remains unchanged.
      * <p/>
      * While the implementation returned may be different than the implementation of <code>this</code>, implementations
@@ -50,5 +58,4 @@ public interface CommandMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     CommandMessage<T> andMetaData(Map<String, ?> metaData);
-
 }

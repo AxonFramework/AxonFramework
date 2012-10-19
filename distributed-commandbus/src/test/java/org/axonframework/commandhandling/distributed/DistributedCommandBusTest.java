@@ -110,15 +110,15 @@ public class DistributedCommandBusTest {
 
     @Test
     public void testSubscribeIsDoneOnConnector() {
-        testSubject.subscribe(Object.class, mockHandler);
+        testSubject.subscribe(Object.class.getName(), mockHandler);
 
-        verify(mockConnector).subscribe(Object.class, mockHandler);
+        verify(mockConnector).subscribe(Object.class.getName(), mockHandler);
     }
 
     @Test
     public void testUnsubscribeIsDoneOnConnector() {
-        testSubject.unsubscribe(Object.class, mockHandler);
+        testSubject.unsubscribe(Object.class.getName(), mockHandler);
 
-        verify(mockConnector).unsubscribe(Object.class, mockHandler);
+        verify(mockConnector).unsubscribe(Object.class.getName(), mockHandler);
     }
 }

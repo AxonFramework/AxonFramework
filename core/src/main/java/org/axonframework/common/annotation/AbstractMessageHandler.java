@@ -150,6 +150,8 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         return parameterValueResolvers;
     }
 
+    public abstract <T extends Annotation> T getAnnotation(Class<T> annotationType);
+
     private static final class Score implements Comparable<Score> {
 
         private final int declarationDepth;

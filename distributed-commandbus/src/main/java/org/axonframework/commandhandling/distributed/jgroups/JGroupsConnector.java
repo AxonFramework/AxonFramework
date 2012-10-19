@@ -81,7 +81,7 @@ public class JGroupsConnector implements CommandBusConnector {
     private final JoinCondition joinedCondition = new JoinCondition();
     private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks =
             new ConcurrentHashMap<String, MemberAwareCommandCallback>();
-    private final Set<String> supportedCommandTypes = new CopyOnWriteArraySet<String>();
+    private final Set<String> supportedCommandNames = new CopyOnWriteArraySet<String>();
     private volatile int currentLoadFactor;
     private final JGroupsConnector.MessageReceiver messageReceiver;
 
@@ -149,7 +149,7 @@ public class JGroupsConnector implements CommandBusConnector {
         try {
             if (channel.isConnected()) {
                 channel.send(new Message(dest, new JoinMessage(currentLoadFactor,
-                                                               new HashSet<String>(supportedCommandTypes)))
+                                                               new HashSet<String>(supportedCommandNames)))
                                      .setFlag(Message.Flag.RSVP));
             }
         } catch (Exception e) {
@@ -211,17 +211,17 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     @Override
-    public synchronized <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        localSegment.subscribe(commandType, handler);
-        if (supportedCommandTypes.add(commandType.getName())) {
+    public synchronized <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
+        localSegment.subscribe(commandName, handler);
+        if (supportedCommandNames.add(commandName)) {
             sendMembershipUpdate(null);
         }
     }
 
     @Override
-    public synchronized <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        if (localSegment.unsubscribe(commandType, handler)) {
-            if (supportedCommandTypes.remove(commandType.getName())) {
+    public synchronized <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
+        if (localSegment.unsubscribe(commandName, handler)) {
+            if (supportedCommandNames.remove(commandName)) {
                 sendMembershipUpdate(null);
             }
             return true;
@@ -332,7 +332,7 @@ public class JGroupsConnector implements CommandBusConnector {
             String channelName = channel.getName(msg.getSrc());
 
             consistentHash = consistentHash.withAdditionalNode(channelName, joinMessage.getLoadFactor(),
-                                                               joinMessage.getCommandTypes());
+                                                               joinMessage.getCommandNames());
             if (logger.isInfoEnabled() && !msg.getSrc().equals(channel.getAddress())) {
                 logger.info("{} joined with load factor: {}", msg.getSrc(), joinMessage.getLoadFactor());
             }
@@ -372,8 +372,8 @@ public class JGroupsConnector implements CommandBusConnector {
                                                                 result,
                                                                 null, serializer));
                 } catch (Exception e) {
-                    logger.error("Unable to send reply to command [type: {}, id: {}]. ",
-                                 new Object[]{commandMessage.getPayloadType().getSimpleName(),
+                    logger.error("Unable to send reply to command [name: {}, id: {}]. ",
+                                 new Object[]{commandMessage.getCommandName(),
                                          commandMessage.getIdentifier(),
                                          e});
                 }

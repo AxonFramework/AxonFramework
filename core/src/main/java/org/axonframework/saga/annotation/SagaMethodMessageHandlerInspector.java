@@ -66,7 +66,8 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
      */
     protected SagaMethodMessageHandlerInspector(Class<T> sagaType) {
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(sagaType,
-                                                                                            SagaEventHandler.class);
+                                                                                            SagaEventHandler.class,
+                                                                                            true);
         for (MethodMessageHandler handler : inspector.getHandlers()) {
             handlers.add(SagaMethodMessageHandler.getInstance(handler));
         }

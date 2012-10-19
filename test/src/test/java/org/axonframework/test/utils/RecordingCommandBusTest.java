@@ -97,8 +97,8 @@ public class RecordingCommandBusTest {
                 return null;
             }
         };
-        testSubject.subscribe(String.class, handler);
+        testSubject.subscribe(String.class.getName(), handler);
         assertTrue(testSubject.isSubscribed(handler));
-        assertTrue(testSubject.isSubscribed(String.class, handler));
+        assertTrue(testSubject.isSubscribed(String.class.getName(), handler));
     }
 }

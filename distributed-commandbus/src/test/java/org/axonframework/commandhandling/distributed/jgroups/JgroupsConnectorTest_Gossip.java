@@ -69,11 +69,11 @@ public class JgroupsConnectorTest_Gossip {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        connector1.subscribe(String.class, new CountingCommandHandler<String>(counter1));
+        connector1.subscribe(String.class.getName(), new CountingCommandHandler<String>(counter1));
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(Long.class, new CountingCommandHandler<Long>(counter2));
+        connector2.subscribe(Long.class.getName(), new CountingCommandHandler<Long>(counter2));
         connector2.connect(80);
 
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());

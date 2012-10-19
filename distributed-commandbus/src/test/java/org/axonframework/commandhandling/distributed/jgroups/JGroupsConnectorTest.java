@@ -71,11 +71,11 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        connector1.subscribe(String.class, new CountingCommandHandler(counter1));
+        connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(String.class, new CountingCommandHandler(counter2));
+        connector2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
         connector2.connect(80);
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
@@ -115,12 +115,12 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        connector1.subscribe(String.class, new CountingCommandHandler(counter1));
+        connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
         channel1.connect("test");
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(Long.class, new CountingCommandHandler(counter2));
+        connector2.subscribe(Long.class.getName(), new CountingCommandHandler(counter2));
         channel2.connect("test");
         connector2.connect(80);
 
@@ -164,11 +164,11 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        connector1.subscribe(String.class, new CountingCommandHandler(counter1));
+        connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(Object.class, new CountingCommandHandler(counter2));
+        connector2.subscribe(Object.class.getName(), new CountingCommandHandler(counter2));
         connector2.connect(80);
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 

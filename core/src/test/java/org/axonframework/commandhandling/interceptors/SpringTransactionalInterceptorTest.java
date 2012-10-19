@@ -58,7 +58,7 @@ public class SpringTransactionalInterceptorTest {
         commandBus = new SimpleCommandBus();
         commandBus.setHandlerInterceptors(Arrays.asList(testSubject));
         commandHandler = mock(CommandHandler.class);
-        commandBus.subscribe(Object.class, commandHandler);
+        commandBus.subscribe(Object.class.getName(), commandHandler);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})

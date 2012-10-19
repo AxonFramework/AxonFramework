@@ -71,6 +71,15 @@ public class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
+    public void testHandlerDispatching_WithCustomCommandName() throws Throwable {
+        Object actualReturnValue = testSubject.handle(new GenericCommandMessage("almostLong", 1L, null), mockUnitOfWork);
+        assertEquals(1L, actualReturnValue);
+        assertEquals(0, mockTarget.voidHandlerInvoked);
+        assertEquals(0, mockTarget.returningHandlerInvoked);
+        assertEquals(1, mockTarget.almostDuplicateReturningHandlerInvoked);
+    }
+
+    @Test
     public void testHandlerDispatching_ThrowingException() throws Throwable {
         try {
             testSubject.handle(GenericCommandMessage.asCommandMessage(new HashSet()), mockUnitOfWork);
@@ -84,10 +93,11 @@ public class AnnotationCommandHandlerAdapterTest {
     public void testSubscribe() {
         testSubject.subscribe();
 
-        verify(mockBus).subscribe(Long.class, testSubject);
-        verify(mockBus).subscribe(String.class, testSubject);
-        verify(mockBus).subscribe(HashSet.class, testSubject);
-        verify(mockBus).subscribe(ArrayList.class, testSubject);
+        verify(mockBus).subscribe(Long.class.getName(), testSubject);
+        verify(mockBus).subscribe(String.class.getName(), testSubject);
+        verify(mockBus).subscribe(HashSet.class.getName(), testSubject);
+        verify(mockBus).subscribe(ArrayList.class.getName(), testSubject);
+        verify(mockBus).subscribe("almostLong", testSubject);
         verifyNoMoreInteractions(mockBus);
     }
 
@@ -100,11 +110,19 @@ public class AnnotationCommandHandlerAdapterTest {
 
         private int voidHandlerInvoked;
         private int returningHandlerInvoked;
+        private int almostDuplicateReturningHandlerInvoked;
 
         @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
         public void myVoidHandler(String stringCommand, UnitOfWork unitOfWork) {
             voidHandlerInvoked++;
+        }
+
+        @CommandHandler(commandName = "almostLong")
+        public Long myAlmostDuplicateReturningHandler(Long longCommand, UnitOfWork unitOfWork) {
+            assertNotNull("The UnitOfWork was not passed to the command handler", unitOfWork);
+            almostDuplicateReturningHandlerInvoked++;
+            return longCommand;
         }
 
         @CommandHandler

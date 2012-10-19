@@ -99,11 +99,21 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
      * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the
      * command bus used by this fixture.
      *
-     * @param commandType    The type of command to register the handler for
+     * @param payloadType    The type of command to register the handler for
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandler(Class<?> commandType, CommandHandler commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, CommandHandler commandHandler);
+
+    /**
+     * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the
+     * command bus used by this fixture.
+     *
+     * @param commandName    The name of the command to register the handler for
+     * @param commandHandler The handler to register
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler);
 
     /**
      * Registers a resource that is eligible for injection in {@link

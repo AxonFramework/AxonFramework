@@ -47,6 +47,7 @@ public class DispatchMessage implements Streamable, Externalizable {
 
     private static final long serialVersionUID = -8792911964758889674L;
 
+    private String commandName;
     private String commandIdentifier;
     private boolean expectReply;
     private String payloadType;
@@ -79,6 +80,7 @@ public class DispatchMessage implements Streamable, Externalizable {
         payloadRevision = payload.getType().getRevision();
         serializedPayload = payload.getData();
         serializedMetaData = metaData.getData();
+        commandName = commandMessage.getCommandName();
     }
 
     /**
@@ -103,11 +105,12 @@ public class DispatchMessage implements Streamable, Externalizable {
                                                                                          payloadRevision));
         final MetaData metaData = (MetaData) serializer.deserialize(new SerializedMetaData<byte[]>(serializedMetaData,
                                                                                                    byte[].class));
-        return new GenericCommandMessage<Object>(commandIdentifier, payload, metaData);
+        return new GenericCommandMessage<Object>(commandIdentifier, commandName, payload, metaData);
     }
 
     @Override
     public void writeTo(DataOutput out) throws IOException {
+        out.writeUTF(commandName);
         out.writeUTF(commandIdentifier);
         out.writeBoolean(expectReply);
         out.writeUTF(payloadType);
@@ -120,6 +123,7 @@ public class DispatchMessage implements Streamable, Externalizable {
 
     @Override
     public void readFrom(DataInput in) throws IOException {
+        commandName = in.readUTF();
         commandIdentifier = in.readUTF();
         expectReply = in.readBoolean();
         payloadType = in.readUTF();

@@ -77,7 +77,7 @@ public class AuditingInterceptorIntegrationTest {
      */
     @Test
     public void testAuditingInterceptorAlsoAddsInformationToEventsOfNewlyCreatedAggregate() {
-        commandBus.subscribe(String.class, new CommandHandler<String>() {
+        commandBus.subscribe(String.class.getName(), new CommandHandler<String>() {
             @Override
             public Object handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
                 StubAggregate aggregate = new StubAggregate("aggregateId");

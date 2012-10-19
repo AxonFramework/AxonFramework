@@ -55,7 +55,7 @@ public class DisruptorCommandBusBenchmark {
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
         DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore, eventBus);
-        commandBus.subscribe(StubCommand.class, stubHandler);
+        commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
         inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
@@ -83,13 +83,6 @@ public class DisruptorCommandBusBenchmark {
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
 
         private String identifier;
-
-        private StubAggregate(String identifier) {
-            this.identifier = identifier;
-        }
-
-        private StubAggregate() {
-        }
 
         @Override
         public Object getIdentifier() {

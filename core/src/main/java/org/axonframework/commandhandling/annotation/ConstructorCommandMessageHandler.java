@@ -22,6 +22,7 @@ import org.axonframework.common.annotation.UnsupportedHandlerException;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Message;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -106,5 +107,10 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
         } catch (InstantiationException e) {
             throw new InvocationTargetException(e.getCause()); // NOSONAR
         }
+    }
+
+    @Override
+    public <T extends Annotation> T getAnnotation(Class<T> annotationType) {
+        return constructor.getAnnotation(annotationType);
     }
 }

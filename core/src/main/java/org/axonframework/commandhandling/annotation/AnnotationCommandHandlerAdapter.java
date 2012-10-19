@@ -19,16 +19,14 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Subscribable;
-import org.axonframework.common.annotation.MessageHandlerInvoker;
-import org.axonframework.domain.Message;
+import org.axonframework.common.annotation.MethodMessageHandler;
+import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.unitofwork.UnitOfWork;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -45,7 +43,8 @@ public class AnnotationCommandHandlerAdapter
         implements org.axonframework.commandhandling.CommandHandler<Object>, Subscribable {
 
     private final CommandBus commandBus;
-    private final MessageHandlerInvoker invoker;
+    private final Map<String, MethodMessageHandler> handlers = new HashMap<String, MethodMessageHandler>();
+    private final Object target;
 
     /**
      * Subscribe the annotated command handler to the given command bus.
@@ -71,7 +70,14 @@ public class AnnotationCommandHandlerAdapter
      * @param commandBus The command bus to which the handlers must be subscribed
      */
     public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
-        this.invoker = new MessageHandlerInvoker(target, CommandHandler.class);
+        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
+                                                                                            CommandHandler.class,
+                                                                                            true);
+        for (MethodMessageHandler handler : inspector.getHandlers()) {
+            String commandName = CommandMessageHandlerUtils.resolveAcceptedCommandName(handler);
+            handlers.put(commandName, handler);
+        }
+        this.target = target;
         this.commandBus = commandBus;
     }
 
@@ -89,7 +95,11 @@ public class AnnotationCommandHandlerAdapter
     @Override
     public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
         try {
-            return invoker.invokeHandlerMethod(command, ErrorReportingNoMethodFoundCallback.INSTANCE);
+            final MethodMessageHandler handler = handlers.get(command.getCommandName());
+            if (handler == null) {
+                throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());
+            }
+            return handler.invoke(target, command);
         } catch (InvocationTargetException e) {
             throw e.getCause();
         }
@@ -103,8 +113,7 @@ public class AnnotationCommandHandlerAdapter
     @Override
     @PostConstruct
     public void subscribe() {
-        List<Class<?>> acceptedCommands = findAcceptedHandlerParameters();
-        for (Class<?> acceptedCommand : acceptedCommands) {
+        for (String acceptedCommand : handlers.keySet()) {
             commandBus.subscribe(acceptedCommand, this);
         }
     }
@@ -115,30 +124,8 @@ public class AnnotationCommandHandlerAdapter
     @Override
     @PreDestroy
     public void unsubscribe() {
-        List<Class<?>> acceptedCommands = findAcceptedHandlerParameters();
-        for (Class<?> acceptedCommand : acceptedCommands) {
+        for (String acceptedCommand : handlers.keySet()) {
             commandBus.unsubscribe(acceptedCommand, this);
-        }
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private <T> List<Class<? extends T>> findAcceptedHandlerParameters() {
-        final List<Class<? extends T>> handlerParameters = new LinkedList<Class<? extends T>>();
-        for (Method m : ReflectionUtils.methodsOf(invoker.getTargetType())) {
-            if (m.isAnnotationPresent(CommandHandler.class)) {
-                handlerParameters.add((Class<T>) m.getParameterTypes()[0]);
-            }
-        }
-        return handlerParameters;
-    }
-
-    private static class ErrorReportingNoMethodFoundCallback implements MessageHandlerInvoker.NoMethodFoundCallback {
-
-        private static final ErrorReportingNoMethodFoundCallback INSTANCE = new ErrorReportingNoMethodFoundCallback();
-
-        @Override
-        public Object onNoMethodFound(Message message) {
-            throw new NoHandlerForCommandException(String.format("No Handler found for 0%s]", message.toString()));
         }
     }
 }

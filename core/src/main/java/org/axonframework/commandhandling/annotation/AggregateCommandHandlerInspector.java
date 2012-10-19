@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.MethodMessageHandler;
+import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.domain.AggregateRoot;
 
 import java.lang.reflect.Constructor;
@@ -46,7 +46,7 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
      */
     @SuppressWarnings({"unchecked"})
     protected AggregateCommandHandlerInspector(Class<T> targetType) {
-        inspector = MethodMessageHandlerInspector.getInstance(targetType, CommandHandler.class);
+        inspector = MethodMessageHandlerInspector.getInstance(targetType, CommandHandler.class, true);
         for (Constructor constructor : targetType.getConstructors()) {
             if (constructor.isAnnotationPresent(CommandHandler.class)) {
                 constructorCommandHandlers.add(ConstructorCommandMessageHandler.forConstructor(constructor));

@@ -127,11 +127,16 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     @Override
+    public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, CommandHandler commandHandler) {
+        return registerCommandHandler(payloadType.getName(), commandHandler);
+    }
+
+    @Override
     @SuppressWarnings({"unchecked"})
-    public FixtureConfiguration<T> registerCommandHandler(Class<?> commandType, CommandHandler commandHandler) {
+    public FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler) {
         explicitCommandHandlersSet = true;
         registerInjectableResources();
-        commandBus.subscribe(commandType, commandHandler);
+        commandBus.subscribe(commandName, commandHandler);
         return this;
     }
 

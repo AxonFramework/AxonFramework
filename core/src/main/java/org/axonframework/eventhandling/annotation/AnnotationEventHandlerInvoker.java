@@ -39,7 +39,7 @@ public class AnnotationEventHandlerInvoker {
      * @param target the bean on which to invoke event handlers
      */
     public AnnotationEventHandlerInvoker(Object target) {
-        invoker = new MessageHandlerInvoker(target, EventHandler.class);
+        invoker = new MessageHandlerInvoker(target, EventHandler.class, false);
     }
 
     /**
@@ -58,14 +58,5 @@ public class AnnotationEventHandlerInvoker {
             }
             throw new EventHandlerInvocationException("An exception occurred while invoking the handler method.", e);
         }
-    }
-
-    /**
-     * Returns the target instance containing the @EventHandler annotated methods.
-     *
-     * @return the target instance containing the @EventHandler annotated methods
-     */
-    public Object getTarget() {
-        return invoker.getTarget();
     }
 }

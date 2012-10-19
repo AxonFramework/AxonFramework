@@ -40,7 +40,7 @@ public class SagaEventHandlerInvoker {
      * @param target The target to invoke methods on
      */
     public SagaEventHandlerInvoker(Object target) {
-        invoker = new MessageHandlerInvoker(target, SagaEventHandler.class);
+        invoker = new MessageHandlerInvoker(target, SagaEventHandler.class, false);
     }
 
     /**

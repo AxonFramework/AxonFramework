@@ -37,8 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class RecordingCommandBus implements CommandBus {
 
-    private ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions =
-            new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
+    private ConcurrentMap<String, CommandHandler<?>> subscriptions = new ConcurrentHashMap<String, CommandHandler<?>>();
     private List<CommandMessage<?>> dispatchedCommands = new ArrayList<CommandMessage<?>>();
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
@@ -59,15 +58,15 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        if (!subscriptions.containsKey(commandType)) {
-            subscriptions.put(commandType, handler);
+    public <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
+        if (!subscriptions.containsKey(commandName)) {
+            subscriptions.put(commandName, handler);
         }
     }
 
     @Override
-    public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        return subscriptions.remove(commandType, handler);
+    public <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
+        return subscriptions.remove(commandName, handler);
     }
 
     /**
@@ -98,21 +97,21 @@ public class RecordingCommandBus implements CommandBus {
      * Indicates whether the given <code>commandHandler</code> is subscribed to commands of the given
      * <code>commandType</code> on this command bus.
      *
-     * @param commandType    The type of command to verify the subscription for
+     * @param commandName    The name of the command to verify the subscription for
      * @param commandHandler The command handler to verify the subscription for
      * @param <C>            The type of command to verify the subscription for
      * @return <code>true</code> if the handler is subscribed, otherwise <code>false</code>.
      */
-    public <C> boolean isSubscribed(Class<C> commandType, CommandHandler<? super C> commandHandler) {
-        return subscriptions.containsKey(commandType) && subscriptions.get(commandType).equals(commandHandler);
+    public <C> boolean isSubscribed(String commandName, CommandHandler<? super C> commandHandler) {
+        return subscriptions.containsKey(commandName) && subscriptions.get(commandName).equals(commandHandler);
     }
 
     /**
-     * Returns a Map will all Command Types and their Command Handler that have been subscribed to this command bus.
+     * Returns a Map will all Command Names and their Command Handler that have been subscribed to this command bus.
      *
-     * @return a Map will all Command Types and their Command Handler
+     * @return a Map will all Command Names and their Command Handler
      */
-    public Map<Class<?>, CommandHandler<?>> getSubscriptions() {
+    public Map<String, CommandHandler<?>> getSubscriptions() {
         return subscriptions;
     }
 

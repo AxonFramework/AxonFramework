@@ -47,8 +47,8 @@ public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
-    private final ConcurrentMap<Class<?>, CommandHandler<?>> subscriptions =
-            new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
+    private final ConcurrentMap<String, CommandHandler<?>> subscriptions =
+            new ConcurrentHashMap<String, CommandHandler<?>>();
     private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
     private volatile Iterable<? extends CommandHandlerInterceptor> handlerInterceptors = Collections.emptyList();
     private volatile Iterable<? extends CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
@@ -107,16 +107,16 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     private CommandHandler findCommandHandlerFor(CommandMessage<?> command) {
-        final CommandHandler handler = subscriptions.get(command.getPayloadType());
+        final CommandHandler handler = subscriptions.get(command.getCommandName());
         if (handler == null) {
-            throw new NoHandlerForCommandException(format("No handler was subscribed to commands of type [%s]",
-                                                          command.getPayloadType().getSimpleName()));
+            throw new NoHandlerForCommandException(format("No handler was subscribed to command [%s]",
+                                                          command.getCommandName()));
         }
         return handler;
     }
 
     private Object doDispatch(CommandMessage<?> command, CommandHandler commandHandler) throws Throwable {
-        logger.debug("Dispatching command [{}]", command.getPayload());
+        logger.debug("Dispatching command [{}]", command.getCommandName());
         statistics.recordReceivedCommand();
         UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, handlerInterceptors);
@@ -141,23 +141,23 @@ public class SimpleCommandBus implements CommandBus {
      * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>. If a subscription already
      * exists for the given type, then the new handler takes over the subscription.
      *
-     * @param commandType The type of command to subscribe the handler to
+     * @param commandName The type of command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
      * @param <T>         The Type of command
      */
     @Override
-    public <T> void subscribe(Class<T> commandType, CommandHandler<? super T> handler) {
-        subscriptions.put(commandType, handler);
-        statistics.reportHandlerRegistered(commandType.getSimpleName());
+    public <T> void subscribe(String commandName, CommandHandler<? super T> handler) {
+        subscriptions.put(commandName, handler);
+        statistics.reportHandlerRegistered(commandName);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public <T> boolean unsubscribe(Class<T> commandType, CommandHandler<? super T> handler) {
-        if (subscriptions.remove(commandType, handler)) {
-            statistics.recordUnregisteredHandler(commandType.getSimpleName());
+    public <T> boolean unsubscribe(String commandName, CommandHandler<? super T> handler) {
+        if (subscriptions.remove(commandName, handler)) {
+            statistics.recordUnregisteredHandler(commandName);
             return true;
         }
         return false;
@@ -185,15 +185,21 @@ public class SimpleCommandBus implements CommandBus {
 
     /**
      * Convenience method that allows you to register command handlers using a Dependency Injection framework. The
-     * parameter of this method is a <code>Map&lt;Class&lt;T&gt;, CommandHandler&lt;? super T&gt;&gt;</code>. The key
-     * represents the type of command to register the handler for, the value is the actual handler.
+     * parameter of this method is a <code>Map&lt;Object&lt;T&gt;, CommandHandler&lt;? super T&gt;&gt;</code>. The key
+     * represents the type (either as a String or Class) of command to register the handler for, the value is the actual handler.
      *
      * @param handlers The handlers to subscribe in the form of a Map of Class - CommandHandler entries.
      */
     @SuppressWarnings({"unchecked"})
     public void setSubscriptions(Map<?, ?> handlers) {
         for (Map.Entry<?, ?> entry : handlers.entrySet()) {
-            subscribe((Class<?>) entry.getKey(), (CommandHandler) entry.getValue());
+            String commandName;
+            if (entry.getKey() instanceof Class) {
+                commandName = ((Class) entry.getKey()).getName();
+            } else {
+                commandName = entry.getKey().toString();
+            }
+            subscribe(commandName, (CommandHandler) entry.getValue());
         }
     }
 

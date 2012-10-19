@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.Message;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -62,6 +63,23 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
         return new MethodMessageHandler(method, resolvers, payloadType);
     }
 
+    @Override
+    public Object invoke(Object target, Message message) throws InvocationTargetException, IllegalAccessException {
+        Assert.isTrue(method.getDeclaringClass().isInstance(target),
+                      "Given target is not an instance of the method's owner.");
+        Assert.notNull(message, "Event may not be null");
+        Object[] parameterValues = new Object[getParameterValueResolvers().length];
+        for (int i = 0; i < parameterValues.length; i++) {
+            parameterValues[i] = getParameterValueResolvers()[i].resolveParameterValue(message);
+        }
+        return method.invoke(target, parameterValues);
+    }
+
+    @Override
+    public <T extends Annotation> T getAnnotation(Class<T> annotationType) {
+        return method.getAnnotation(annotationType);
+    }
+
     private static void validate(Method method, ParameterResolver[] parameterResolvers) {
         if (method.getParameterTypes()[0].isPrimitive()) {
             throw new UnsupportedHandlerException(format("The first parameter of %s may not be a primitive type",
@@ -91,18 +109,6 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
     private MethodMessageHandler(Method method, ParameterResolver[] parameterValueResolvers, Class payloadType) {
         super(payloadType, method.getDeclaringClass(), parameterValueResolvers);
         this.method = method;
-    }
-
-    @Override
-    public Object invoke(Object target, Message message) throws InvocationTargetException, IllegalAccessException {
-        Assert.isTrue(method.getDeclaringClass().isInstance(target),
-                      "Given target is not an instance of the method's owner.");
-        Assert.notNull(message, "Event may not be null");
-        Object[] parameterValues = new Object[getParameterValueResolvers().length];
-        for (int i = 0; i < parameterValues.length; i++) {
-            parameterValues[i] = getParameterValueResolvers()[i].resolveParameterValue(message);
-        }
-        return method.invoke(target, parameterValues);
     }
 
     /**

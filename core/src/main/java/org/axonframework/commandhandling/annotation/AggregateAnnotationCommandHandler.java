@@ -33,6 +33,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import static org.axonframework.commandhandling.annotation.CommandMessageHandlerUtils.resolveAcceptedCommandName;
+
 /**
  * Command handler that handles commands based on {@link org.axonframework.commandhandling.annotation.CommandHandler}
  * annotations on an aggregate. Those annotations may appear on methods, in which case a specific aggregate instance
@@ -49,8 +51,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     private final AggregateCommandHandlerInspector<T> inspector;
     private final Repository<T> repository;
 
-    private final Map<Class<Object>, CommandHandler<Object>> registeredCommandHandlers =
-            new HashMap<Class<Object>, CommandHandler<Object>>();
+    private final Map<String, CommandHandler<Object>> registeredCommandHandlers =
+            new HashMap<String, CommandHandler<Object>>();
     private final CommandTargetResolver commandTargetResolver;
 
     /**
@@ -124,7 +126,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     @Override
     @PreDestroy
     public synchronized void unsubscribe() {
-        for (Map.Entry<Class<Object>, CommandHandler<Object>> handlerEntry : registeredCommandHandlers.entrySet()) {
+        for (Map.Entry<String, CommandHandler<Object>> handlerEntry : registeredCommandHandlers.entrySet()) {
             commandBus.unsubscribe(handlerEntry.getKey(), handlerEntry.getValue());
         }
     }
@@ -145,12 +147,12 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
                     }
                 }
             };
-            commandBus.subscribe(commandHandler.getPayloadType(), handler);
-            registeredCommandHandlers.put(commandHandler.getPayloadType(), handler);
+            commandBus.subscribe(resolveAcceptedCommandName(commandHandler), handler);
+            registeredCommandHandlers.put(resolveAcceptedCommandName(commandHandler), handler);
         }
 
         for (final ConstructorCommandMessageHandler<T> handler : inspector.getConstructorHandlers()) {
-            commandBus.subscribe(handler.getPayloadType(), new AnnotatedConstructorCommandHandler(handler));
+            commandBus.subscribe(resolveAcceptedCommandName(handler), new AnnotatedConstructorCommandHandler(handler));
         }
     }
 

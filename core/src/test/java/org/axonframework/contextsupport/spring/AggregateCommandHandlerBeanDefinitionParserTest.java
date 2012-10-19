@@ -72,9 +72,9 @@ public class AggregateCommandHandlerBeanDefinitionParserTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testBothCommandHandlersRegisterWithTheCommandBus() {
-        verify(mockCommandBus1).subscribe(eq(SimpleAnnotatedAggregate.CreateSimpleAggregateCommand.class),
+        verify(mockCommandBus1).subscribe(eq(SimpleAnnotatedAggregate.CreateSimpleAggregateCommand.class.getName()),
                                           any(CommandHandler.class));
-        verify(mockCommandBus2).subscribe(eq(SimpleAnnotatedAggregate.CreateSimpleAggregateCommand.class),
+        verify(mockCommandBus2).subscribe(eq(SimpleAnnotatedAggregate.CreateSimpleAggregateCommand.class.getName()),
                                           any(CommandHandler.class));
     }
 

@@ -74,7 +74,7 @@ public class AsynchronousCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testDispatchWithCallback() throws Throwable {
-        testSubject.subscribe(Object.class, commandHandler);
+        testSubject.subscribe(Object.class.getName(), commandHandler);
         CommandCallback<Object> mockCallback = mock(CommandCallback.class);
         testSubject.dispatch(asCommandMessage(new Object()), mockCallback);
 
@@ -93,7 +93,7 @@ public class AsynchronousCommandBusTest {
     @Test
     public void testDispatchWithoutCallback() throws Throwable {
         CommandHandler commandHandler = mock(CommandHandler.class);
-        testSubject.subscribe(Object.class, commandHandler);
+        testSubject.subscribe(Object.class.getName(), commandHandler);
         testSubject.dispatch(asCommandMessage(new Object()));
 
         InOrder inOrder = inOrder(executorService, commandHandler, dispatchInterceptor, handlerInterceptor);

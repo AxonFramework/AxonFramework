@@ -110,7 +110,7 @@ public class DisruptorCommandBusTest {
                                             .setExecutor(customExecutor)
                                             .setInvokerThreadCount(2)
                                             .setPublisherThreadCount(3));
-        testSubject.subscribe(StubCommand.class, stubHandler);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
@@ -197,9 +197,9 @@ public class DisruptorCommandBusTest {
                                             .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
                                             .setInvokerThreadCount(2)
                                             .setPublisherThreadCount(3));
-        testSubject.subscribe(StubCommand.class, stubHandler);
-        testSubject.subscribe(CreateCommand.class, stubHandler);
-        testSubject.subscribe(ErrorCommand.class, stubHandler);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
@@ -240,9 +240,9 @@ public class DisruptorCommandBusTest {
                                                       .setWaitStrategy(new SleepingWaitStrategy())
                                                       .setInvokerThreadCount(2)
                                                       .setPublisherThreadCount(3));
-        testSubject.subscribe(StubCommand.class, stubHandler);
-        testSubject.subscribe(CreateCommand.class, stubHandler);
-        testSubject.subscribe(ErrorCommand.class, stubHandler);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(
                 testSubject.createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
 
@@ -262,7 +262,7 @@ public class DisruptorCommandBusTest {
     @Test(expected = IllegalStateException.class)
     public void testCommandRejectedAfterShutdown() throws InterruptedException {
         testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus);
-        testSubject.subscribe(StubCommand.class, stubHandler);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
 
@@ -273,7 +273,7 @@ public class DisruptorCommandBusTest {
     @Test
     public void testCommandProcessedAndEventsStored() throws InterruptedException {
         testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus);
-        testSubject.subscribe(StubCommand.class, stubHandler);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
 
@@ -296,7 +296,7 @@ public class DisruptorCommandBusTest {
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         StubHandler spy = spy(stubHandler);
-        testSubject.subscribe(StubCommand.class, spy);
+        testSubject.subscribe(StubCommand.class.getName(), spy);
         List<CommandMessage<StubCommand>> dispatchedCommands = new ArrayList<CommandMessage<StubCommand>>();
         for (int i = 0; i < 10; i++) {
             CommandMessage<StubCommand> subsequentCommand = new GenericCommandMessage<StubCommand>(

@@ -53,8 +53,8 @@ public class SimpleCommandBusTest {
 
     @Test
     public void testDispatchCommand_HandlerSubscribed() {
-        HashMap<Class<String>, MyStringCommandHandler> subscriptions = new HashMap<Class<String>, MyStringCommandHandler>();
-        subscriptions.put(String.class, new MyStringCommandHandler());
+        HashMap<String, MyStringCommandHandler> subscriptions = new HashMap<String, MyStringCommandHandler>();
+        subscriptions.put(String.class.getName(), new MyStringCommandHandler());
         testSubject.setSubscriptions(subscriptions);
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"),
                              new CommandCallback<CommandMessage<?>>() {
@@ -75,7 +75,7 @@ public class SimpleCommandBusTest {
     public void testDispatchCommand_ImplicitUnitOfWorkIsCommittedOnReturnValue() {
         UnitOfWorkFactory spyUnitOfWorkFactory = spy(new DefaultUnitOfWorkFactory());
         testSubject.setUnitOfWorkFactory(spyUnitOfWorkFactory);
-        testSubject.subscribe(String.class, new CommandHandler<String>() {
+        testSubject.subscribe(String.class.getName(), new CommandHandler<String>() {
             @Override
             public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
                 assertTrue(CurrentUnitOfWork.isStarted());
@@ -104,7 +104,7 @@ public class SimpleCommandBusTest {
 
     @Test
     public void testDispatchCommand_ImplicitUnitOfWorkIsRolledBackOnException() {
-        testSubject.subscribe(String.class, new CommandHandler<String>() {
+        testSubject.subscribe(String.class.getName(), new CommandHandler<String>() {
             @Override
             public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
                 assertTrue(CurrentUnitOfWork.isStarted());
@@ -134,7 +134,7 @@ public class SimpleCommandBusTest {
         when(mockUnitOfWorkFactory.createUnitOfWork()).thenReturn(mockUnitOfWork);
 
         testSubject.setUnitOfWorkFactory(mockUnitOfWorkFactory);
-        testSubject.subscribe(String.class, new CommandHandler<String>() {
+        testSubject.subscribe(String.class.getName(), new CommandHandler<String>() {
             @Override
             public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
                 throw new Exception();
@@ -166,14 +166,14 @@ public class SimpleCommandBusTest {
     @Test(expected = NoHandlerForCommandException.class)
     public void testDispatchCommand_HandlerUnsubscribed() throws Exception {
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
-        testSubject.subscribe(String.class, commandHandler);
-        testSubject.unsubscribe(String.class, commandHandler);
+        testSubject.subscribe(String.class.getName(), commandHandler);
+        testSubject.unsubscribe(String.class.getName(), commandHandler);
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"));
     }
 
     @Test
     public void testUnsubscribe_HandlerNotKnown() {
-        testSubject.unsubscribe(String.class, new MyStringCommandHandler());
+        testSubject.unsubscribe(String.class.getName(), new MyStringCommandHandler());
     }
 
     @SuppressWarnings({"unchecked"})
@@ -201,7 +201,7 @@ public class SimpleCommandBusTest {
                 });
         testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Hi there!");
-        testSubject.subscribe(String.class, commandHandler);
+        testSubject.subscribe(String.class.getName(), commandHandler);
 
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"), new CommandCallback<Object>() {
             @Override
@@ -251,7 +251,7 @@ public class SimpleCommandBusTest {
         testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class)))
                 .thenThrow(new RuntimeException("Faking failed command handling"));
-        testSubject.subscribe(String.class, commandHandler);
+        testSubject.subscribe(String.class.getName(), commandHandler);
 
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"), new CommandCallback<Object>() {
             @Override
@@ -290,7 +290,7 @@ public class SimpleCommandBusTest {
         testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         CommandHandler<String> commandHandler = mock(CommandHandler.class);
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Hi there!");
-        testSubject.subscribe(String.class, commandHandler);
+        testSubject.subscribe(String.class.getName(), commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
         doThrow(someException).when(mockInterceptor2).handle(isA(CommandMessage.class),
                                                              isA(UnitOfWork.class),

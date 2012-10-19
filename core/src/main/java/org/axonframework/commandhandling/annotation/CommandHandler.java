@@ -43,4 +43,9 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface CommandHandler {
 
+    /**
+     * The name of the Command this handler listens to. Defaults to the fully qualified class name of the payload type
+     * (i.e. first parameter).
+     */
+    String commandName() default "";
 }

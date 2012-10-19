@@ -67,7 +67,7 @@ public class CommandHandlingBenchmark {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
         };
-        cb.subscribe(String.class, new MyCommandHandler(repository));
+        cb.subscribe(String.class.getName(), new MyCommandHandler(repository));
 //        new AnnotationCommandHandlerAdapter(new MyCommandHandler(repository), cb).subscribe();
 
 

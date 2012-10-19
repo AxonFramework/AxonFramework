@@ -92,9 +92,9 @@ public class DisruptorCommandBusTest_MultiThreaded {
                                             .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
                                             .setInvokerThreadCount(2)
                                             .setPublisherThreadCount(3));
-        testSubject.subscribe(StubCommand.class, stubHandler);
-        testSubject.subscribe(CreateCommand.class, stubHandler);
-        testSubject.subscribe(ErrorCommand.class, stubHandler);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         Repository<StubAggregate> spiedRepository = spy(testSubject
                                                                 .createRepository(new GenericAggregateFactory<StubAggregate>(
                                                                         StubAggregate.class)));

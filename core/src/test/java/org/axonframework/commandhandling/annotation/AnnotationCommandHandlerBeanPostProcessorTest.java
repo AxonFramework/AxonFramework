@@ -95,13 +95,13 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         CommandHandler postProcessedBean = (CommandHandler) testSubject.postProcessAfterInitialization(result1,
                                                                                                        "beanName");
 
-        verify(mockCommandBus).subscribe(eq(MyCommand.class), isA(CommandHandler.class));
+        verify(mockCommandBus).subscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
 
-        verify(mockCommandBus, never()).unsubscribe(eq(MyCommand.class), isA(CommandHandler.class));
+        verify(mockCommandBus, never()).unsubscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
 
         testSubject.postProcessBeforeDestruction(postProcessedBean, "beanName");
 
-        verify(mockCommandBus).unsubscribe(eq(MyCommand.class), isA(CommandHandler.class));
+        verify(mockCommandBus).unsubscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
     }
 
     public static class AnnotatedCommandHandler {

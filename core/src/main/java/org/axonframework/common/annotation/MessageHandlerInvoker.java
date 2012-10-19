@@ -36,17 +36,20 @@ public final class MessageHandlerInvoker {
      * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
      * given <code>annotationType</code>.
      *
-     * @param target         The target to invoke methods on
-     * @param annotationType The type of annotation used to demarcate the handler methods
+     * @param target          The target to invoke methods on
+     * @param annotationType  The type of annotation used to demarcate the handler methods
+     * @param allowDuplicates Whether or not to accept multiple handlers listening to messages with the same payload
+     *                        type
      */
-    public MessageHandlerInvoker(Object target, Class<? extends Annotation> annotationType) {
-        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(), annotationType);
+    public MessageHandlerInvoker(Object target, Class<? extends Annotation> annotationType, boolean allowDuplicates) {
+        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(), annotationType, allowDuplicates);
         this.target = target;
     }
 
     /**
      * Invoke the handler demarcated with the given <code>annotationClass</code> on the target for the given
-     * <code>event</code>.
+     * <code>event</code>. Returns the result of the execution of the handler method, or <code>null</code> if no
+     * suitable handler was found.
      *
      * @param parameter the event to handle
      * @return the return value of the invocation
@@ -55,28 +58,11 @@ public final class MessageHandlerInvoker {
      * @throws InvocationTargetException when the handler throws a checked Exception
      */
     public Object invokeHandlerMethod(Message parameter) throws InvocationTargetException, IllegalAccessException {
-        return invokeHandlerMethod(parameter, NullReturningCallback.INSTANCE);
-    }
-
-    /**
-     * Invoke the handler demarcated with the given <code>annotationClass</code> on the target for the given
-     * <code>event</code>. If no suitable handler is found, the given <code>onNoMethodFound</code> callback is invoked.
-     *
-     * @param parameter       the event to handle
-     * @param onNoMethodFound what to do when no such handler is found.
-     * @return the return value of the invocation
-     *
-     * @throws IllegalAccessException    when the security manager does not allow the invocation
-     * @throws InvocationTargetException when the handler throws a checked Exception
-     */
-    public Object invokeHandlerMethod(Message parameter, NoMethodFoundCallback onNoMethodFound)
-            throws InvocationTargetException, IllegalAccessException {
         MethodMessageHandler m = findHandlerMethod(parameter);
         if (m == null) {
             // event listener doesn't support this type of event
-            return onNoMethodFound.onNoMethodFound(parameter);
+            return null;
         }
-
         return m.invoke(target, parameter);
     }
 
@@ -92,15 +78,6 @@ public final class MessageHandlerInvoker {
     }
 
     /**
-     * Returns the target on which handler methods are invoked.
-     *
-     * @return the target on which handler methods are invoked
-     */
-    public Object getTarget() {
-        return target;
-    }
-
-    /**
      * Returns the targetType on which handler methods are invoked. This is the runtime type of the object that
      * contains the method that handles the messages (not per se the Class that declares the method).
      *
@@ -108,30 +85,5 @@ public final class MessageHandlerInvoker {
      */
     public Class getTargetType() {
         return inspector.getTargetType();
-    }
-
-    /**
-     * Callback used in cases where the handler did not find a suitable method to invoke.
-     */
-    public interface NoMethodFoundCallback<T extends Message> {
-
-        /**
-         * Indicates what needs to happen when no handler is found for a given parameter. The default behavior is to
-         * return <code>null</code>.
-         *
-         * @param parameter The parameter for which no handler could be found
-         * @return the value to return when no handler method is found. Defaults to <code>null</code>.
-         */
-        Object onNoMethodFound(Message parameter);
-    }
-
-    private static class NullReturningCallback implements NoMethodFoundCallback {
-
-        private static final NullReturningCallback INSTANCE = new NullReturningCallback();
-
-        @Override
-        public Object onNoMethodFound(Message parameter) {
-            return null;
-        }
     }
 }

@@ -115,8 +115,8 @@ public class DistributedCommandBus implements CommandBus {
      * In the DistributedCommandBus, the handler is subscribed to the local segment only.
      */
     @Override
-    public <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        connector.subscribe(commandType, handler);
+    public <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
+        connector.subscribe(commandName, handler);
     }
 
     /**
@@ -125,8 +125,8 @@ public class DistributedCommandBus implements CommandBus {
      * In the DistributedCommandBus, the handler is unsubscribed from the local segment only.
      */
     @Override
-    public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        return connector.unsubscribe(commandType, handler);
+    public <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
+        return connector.unsubscribe(commandName, handler);
     }
 
     /**

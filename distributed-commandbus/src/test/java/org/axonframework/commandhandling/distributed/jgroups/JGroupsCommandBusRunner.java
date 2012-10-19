@@ -62,7 +62,7 @@ public class JGroupsCommandBusRunner {
                 return command.getPayload().toString();
             }
         });
-        dcb.subscribe(String.class, new CommandHandler<String>() {
+        dcb.subscribe(String.class.getName(), new CommandHandler<String>() {
             @Override
             public Object handle(CommandMessage<String> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
                 logger.error("Received message: " + stringCommandMessage.getPayload());
@@ -81,7 +81,7 @@ public class JGroupsCommandBusRunner {
                 System.out.println("This is not a number.");
             }
         }
-        dcb.subscribe(String.class, new CommandHandler<String>() {
+        dcb.subscribe(String.class.getName(), new CommandHandler<String>() {
             @Override
             public Object handle(CommandMessage<String> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
                 System.out.println("Received message: " + stringCommandMessage.getPayload());

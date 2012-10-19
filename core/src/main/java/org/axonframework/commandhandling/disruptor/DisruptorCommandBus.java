@@ -102,8 +102,8 @@ public class DisruptorCommandBus implements CommandBus {
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
 
-    private final ConcurrentMap<Class<?>, CommandHandler<?>> commandHandlers =
-            new ConcurrentHashMap<Class<?>, CommandHandler<?>>();
+    private final ConcurrentMap<String, CommandHandler<?>> commandHandlers =
+            new ConcurrentHashMap<String, CommandHandler<?>>();
     private final Disruptor<CommandHandlingEntry> disruptor;
     private final CommandHandlerInvoker[] commandHandlerInvokers;
     private final List<CommandDispatchInterceptor> dispatchInterceptors;
@@ -217,7 +217,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
-        event.reset(command, commandHandlers.get(command.getPayloadType()), invokerSegment, publisherSegment,
+        event.reset(command, commandHandlers.get(command.getCommandName()), invokerSegment, publisherSegment,
                     new BlacklistDetectingCallback<R>(callback, command, disruptor.getRingBuffer(), this,
                                                       rescheduleOnCorruptState),
                     invokerInterceptors, publisherInterceptors);
@@ -243,13 +243,13 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void subscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        commandHandlers.put(commandType, handler);
+    public <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
+        commandHandlers.put(commandName, handler);
     }
 
     @Override
-    public <C> boolean unsubscribe(Class<C> commandType, CommandHandler<? super C> handler) {
-        return commandHandlers.remove(commandType, handler);
+    public <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
+        return commandHandlers.remove(commandName, handler);
     }
 
     /**

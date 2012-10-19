@@ -33,7 +33,8 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     private static final long serialVersionUID = 8754588074137370013L;
 
     private final String identifier;
-    private final T command;
+    private final String commandName;
+    private final T payload;
     private final MetaData metaData;
 
     /**
@@ -55,23 +56,36 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     /**
      * Create a CommandMessage with the given <code>command</code> as payload and empty metaData
      *
-     * @param command the payload for the Message
+     * @param payload the payload for the Message
      */
-    public GenericCommandMessage(T command) {
-        this(command, MetaData.emptyInstance());
+    public GenericCommandMessage(T payload) {
+        this(payload, MetaData.emptyInstance());
     }
 
     /**
      * Create a CommandMessage with the given <code>command</code> as payload.
      *
-     * @param command     the payload for the Message
+     * @param payload     the payload for the Message
      * @param newMetaData The meta data for this message
      */
-    public GenericCommandMessage(T command, Map<String, ?> newMetaData) {
-        this.command = command;
+    public GenericCommandMessage(T payload, Map<String, ?> newMetaData) {
+        this(payload.getClass().getName(), payload, newMetaData);
+    }
+
+    /**
+     * Create a CommandMessage with the given <code>command</code> as payload.
+     *
+     * @param commandName The name of the command
+     * @param payload     the payload for the Message
+     * @param newMetaData The meta data for this message
+     */
+    public GenericCommandMessage(String commandName, T payload, Map<String, ?> newMetaData) {
+        this.commandName = commandName;
+        this.payload = payload;
         this.metaData = MetaData.from(newMetaData);
         this.identifier = IdentifierFactory.getInstance().generateIdentifier();
     }
+
 
     /**
      * Create a CommandMessage with the given <code>command</code> as payload and a custom chosen
@@ -79,12 +93,14 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      * already been assigned an identifier.
      *
      * @param identifier  the unique identifier of this message
-     * @param command     the payload for the Message
-     * @param newMetaData The meta data for this message
+     * @param commandName The name of the command
+     * @param payload     the payload for the Message
+     * @param newMetaData The meta data for this message (<code>null</code> results in empty meta data)
      */
-    public GenericCommandMessage(String identifier, T command, Map<String, ?> newMetaData) {
+    public GenericCommandMessage(String identifier, String commandName, T payload, Map<String, ?> newMetaData) {
         this.identifier = identifier;
-        this.command = command;
+        this.commandName = commandName;
+        this.payload = payload;
         this.metaData = MetaData.from(newMetaData);
     }
 
@@ -97,8 +113,14 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      */
     protected GenericCommandMessage(GenericCommandMessage<T> original, Map<String, ?> metaData) {
         this.identifier = original.getIdentifier();
-        this.command = original.getPayload();
+        this.commandName = original.getCommandName();
+        this.payload = original.getPayload();
         this.metaData = MetaData.from(metaData);
+    }
+
+    @Override
+    public String getCommandName() {
+        return commandName;
     }
 
     @Override
@@ -108,12 +130,12 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
 
     @Override
     public T getPayload() {
-        return command;
+        return payload;
     }
 
     @Override
     public Class getPayloadType() {
-        return command.getClass();
+        return payload.getClass();
     }
 
     @Override

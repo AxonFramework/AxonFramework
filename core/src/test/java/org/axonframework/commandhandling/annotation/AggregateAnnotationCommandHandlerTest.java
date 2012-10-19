@@ -91,9 +91,9 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Test
     public void testCommandHandlerSubscribesToCommands() {
-        verify(commandBus).subscribe(eq(CreateCommand.class),
+        verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
                                      any(org.axonframework.commandhandling.CommandHandler.class));
-        verify(commandBus).subscribe(eq(UpdateCommandWithAnnotatedMethod.class),
+        verify(commandBus).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
                                      any(org.axonframework.commandhandling.CommandHandler.class));
     }
 
