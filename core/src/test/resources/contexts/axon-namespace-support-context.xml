@@ -36,6 +36,11 @@
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
 
+
+    <axon:saga-manager id="sagaManagerNotSuppressingExceptions" saga-factory="sagaFactory" suppress-exceptions="false">
+        <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
+    </axon:saga-manager>
+
     <axon:saga-manager id="asyncSagaManager" saga-factory="sagaFactory">
         <axon:async executor="taskExecutor"/>
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>

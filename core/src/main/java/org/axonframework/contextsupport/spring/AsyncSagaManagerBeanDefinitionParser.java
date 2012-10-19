@@ -79,6 +79,10 @@ public class AsyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBea
         sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, eventBusDefinition);
     }
 
+    @Override
+    protected void parseSuppressExceptionsAttribute(Element element, MutablePropertyValues beanDefinition) {
+    }
+
     private void parseTransactionManagerAttribute(Element element, MutablePropertyValues propertyValues) {
         if (element.hasAttribute(TRANSACTION_MANAGER_ATTRIBUTE)) {
             BeanDefinition bd =
