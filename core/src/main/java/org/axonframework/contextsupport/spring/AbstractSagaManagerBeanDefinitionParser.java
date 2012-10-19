@@ -167,6 +167,12 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         }
     }
 
+    /**
+     * Process the "supress-exceptions" setting on the given <code>element</code>.
+     *
+     * @param element        The element representing the saga manager's bean definition
+     * @param beanDefinition The bean definition of the Saga Manager
+     */
     protected abstract void parseSuppressExceptionsAttribute(Element element, MutablePropertyValues beanDefinition);
 
     private Object getResourceInjector() {
