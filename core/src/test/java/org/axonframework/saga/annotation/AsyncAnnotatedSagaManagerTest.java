@@ -60,7 +60,7 @@ public class AsyncAnnotatedSagaManagerTest {
     public void testSingleSagaLifeCycle() throws InterruptedException {
         testSubject.start();
         assertEquals(0, sagaRepository.getKnownSagas());
-        for (EventMessage message : createSimpleLifeCycle("one", "two")) {
+        for (EventMessage message : createSimpleLifeCycle("one", "two", true)) {
             testSubject.handle(message);
         }
         testSubject.stop();
@@ -74,8 +74,9 @@ public class AsyncAnnotatedSagaManagerTest {
     public void testMultipleDisconnectedSagaLifeCycle() throws InterruptedException {
         testSubject.start();
         assertEquals(0, sagaRepository.getKnownSagas());
-        for (int t=0;t<1000;t++) {
-            for (EventMessage message : createSimpleLifeCycle("association-"+t, "newAssociation-"+t)) {
+        for (int t = 0; t < 1000; t++) {
+            for (EventMessage message : createSimpleLifeCycle("association-" + t, "newAssociation-" + t,
+                                                              (t & 1) == 0)) {
                 testSubject.handle(message);
             }
         }
@@ -86,9 +87,36 @@ public class AsyncAnnotatedSagaManagerTest {
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
 
-    private List<EventMessage> createSimpleLifeCycle(String firstAssociation, String newAssociation) {
+    @Test
+    public void testMultipleDisconnectedSagaLifeCycle_WithOptionalStart() throws InterruptedException {
+        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
+                                                    ThirdStubAsyncSaga.class);
+        testSubject.setSagaRepository(sagaRepository);
+        executorService = Executors.newCachedThreadPool();
+        testSubject.setExecutor(executorService);
+        testSubject.setProcessorCount(3);
+        testSubject.setBufferSize(64);
+
+        testSubject.start();
+        assertEquals(0, sagaRepository.getKnownSagas());
+        for (int t = 0; t < 500; t++) {
+            for (EventMessage message : createSimpleLifeCycle("association-" + t, "newAssociation-" + t, false)) {
+                testSubject.handle(message);
+            }
+        }
+        testSubject.stop();
+        executorService.shutdown();
+        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertEquals("Incorrect known saga count", 1500, sagaRepository.getKnownSagas());
+        assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
+    }
+
+    private List<EventMessage> createSimpleLifeCycle(String firstAssociation, String newAssociation,
+                                                     boolean includeForceStart) {
         List<EventMessage> publicationList = new ArrayList<EventMessage>();
-        publicationList.add(asEventMessage(new ForceCreateNewEvent(firstAssociation)));
+        if (includeForceStart) {
+            publicationList.add(asEventMessage(new ForceCreateNewEvent(firstAssociation)));
+        }
         publicationList.add(asEventMessage(new OptionallyCreateNewEvent(firstAssociation)));
         publicationList.add(asEventMessage(new UpdateEvent(firstAssociation)));
         publicationList.add(asEventMessage(new AddAssociationEvent(firstAssociation, newAssociation)));
@@ -100,6 +128,14 @@ public class AsyncAnnotatedSagaManagerTest {
     @After
     public void tearDown() {
         testSubject.stop();
+    }
+
+    public static class ThirdStubAsyncSaga extends AnotherStubAsyncSaga {
+
+    }
+
+    public static class AnotherStubAsyncSaga extends StubAsyncSaga {
+
     }
 
     public static class StubAsyncSaga extends AbstractAnnotatedSaga {
