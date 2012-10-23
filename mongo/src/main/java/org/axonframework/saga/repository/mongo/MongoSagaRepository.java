@@ -16,7 +16,6 @@
 
 package org.axonframework.saga.repository.mongo;
 
-import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
@@ -81,9 +80,8 @@ public class MongoSagaRepository extends AbstractSagaRepository {
         return found;
     }
 
-	private BasicDBObject associationValueQuery(Class<? extends Saga> type,
-			AssociationValue associationValue) {
-		final BasicDBObject value = new BasicDBObject();
+    private BasicDBObject associationValueQuery(Class<? extends Saga> type, AssociationValue associationValue) {
+        final BasicDBObject value = new BasicDBObject();
         value.put("sagaType", typeOf(type));
 
         final BasicDBObject dbAssociation = new BasicDBObject();
@@ -91,8 +89,8 @@ public class MongoSagaRepository extends AbstractSagaRepository {
         dbAssociation.put("value", associationValue.getValue());
 
         value.put("associations", dbAssociation);
-		return value;
-	}
+        return value;
+    }
 
     @Override
     protected String typeOf(Class<? extends Saga> sagaClass) {

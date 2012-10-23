@@ -39,7 +39,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
 
     private List<Class<?>> eventsToAlwaysCreateNewSagasFor = Collections.emptyList();
     private List<Class<?>> eventsToOptionallyCreateNewSagasFor = Collections.emptyList();
-    private Class<? extends Saga> sagaType;
+    private final Class<? extends Saga> sagaType;
 
     /**
      * Initialize a SimpleSagaManager backed by the given resources, using a GenericSagaFactory.
@@ -74,7 +74,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
     }
 
     @Override
-    protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+    protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> type, EventMessage event) {
         if (isAssignableClassIn(event.getPayloadType(), eventsToOptionallyCreateNewSagasFor)) {
             return SagaCreationPolicy.IF_NONE_FOUND;
         } else if (isAssignableClassIn(event.getPayloadType(), eventsToAlwaysCreateNewSagasFor)) {
@@ -85,7 +85,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
     }
 
     @Override
-    protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
+    protected AssociationValue extractAssociationValue(Class<? extends Saga> type, EventMessage event) {
         return associationValueResolver.extractAssociationValue(event);
     }
 

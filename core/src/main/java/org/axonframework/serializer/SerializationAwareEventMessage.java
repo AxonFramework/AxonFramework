@@ -17,7 +17,6 @@
 package org.axonframework.serializer;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 import org.joda.time.DateTime;
 
@@ -29,6 +28,7 @@ import java.util.Map;
  * single serialization will actually occur. Subsequent invocations will return the same <code>SerializedObject</code>
  * instance as the first.
  *
+ * @param <T> The payload type of the Message
  * @author Allard Buijze
  * @since 2.0
  */
@@ -49,7 +49,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
      * @param <T>     The payload type of the message
      * @return a serialization aware version of the given message
      */
-    public static <T> Message<T> wrap(EventMessage<T> message) {
+    public static <T> EventMessage<T> wrap(EventMessage<T> message) {
         if (message instanceof SerializationAware) {
             return message;
         }

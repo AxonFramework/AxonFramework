@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.annotation;
 import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerProxy;
 
 import javax.annotation.PostConstruct;
@@ -30,7 +29,7 @@ import javax.annotation.PreDestroy;
  * org.axonframework.eventhandling.EventListener}.
  *
  * @author Allard Buijze
- * @see EventListener
+ * @see org.axonframework.eventhandling.EventListener
  * @since 0.1
  */
 public class AnnotationEventListenerAdapter implements Subscribable, EventListenerProxy {

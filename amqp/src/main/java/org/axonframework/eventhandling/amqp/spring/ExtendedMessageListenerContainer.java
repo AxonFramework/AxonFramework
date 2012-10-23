@@ -437,8 +437,8 @@ public class ExtendedMessageListenerContainer extends SimpleMessageListenerConta
             } catch (IOException e) {
                 if (e.getCause() instanceof ShutdownSignalException
                         && e.getCause().getMessage().contains("exclusive")) {
-                    throw new IOException( "Access is refused, as another Channel already has "
-                                                   + "exclusive access to this queue", e);
+                    throw new IOException("Access is refused, as another Channel already has "
+                                                  + "exclusive access to this queue", e);
                 }
                 throw e;
             }

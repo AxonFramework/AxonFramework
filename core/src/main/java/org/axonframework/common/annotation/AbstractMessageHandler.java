@@ -150,6 +150,14 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         return parameterValueResolvers;
     }
 
+    /**
+     * Returns the member-level annotation of given <code>annotationType</code>, or <code>null</code> if no such
+     * annotation is present.
+     *
+     * @param annotationType The type of annotation to retrieve
+     * @param <T>            The type of annotation to retrieve
+     * @return the annotation instance, or <code>null</code> if no such annotation is present.
+     */
     public abstract <T extends Annotation> T getAnnotation(Class<T> annotationType);
 
     private static final class Score implements Comparable<Score> {
@@ -180,7 +188,8 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         @Override
         public int compareTo(Score o) {
             if (declarationDepth != o.declarationDepth) {
-                return (o.declarationDepth < declarationDepth) ? -1 : ((o.declarationDepth == declarationDepth) ? 0 : 1);
+                return (o.declarationDepth < declarationDepth) ? -1 : ((o.declarationDepth
+                        == declarationDepth) ? 0 : 1);
             } else if (payloadDepth != o.payloadDepth) {
                 return (o.payloadDepth < payloadDepth) ? -1 : ((o.payloadDepth == payloadDepth) ? 0 : 1);
             } else {

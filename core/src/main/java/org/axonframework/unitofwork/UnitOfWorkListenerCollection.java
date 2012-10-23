@@ -56,8 +56,9 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
     @Override
     public void afterCommit(UnitOfWork unitOfWork) {
         logger.debug("Notifying listeners after commit");
-        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext(); ) {
-            UnitOfWorkListener listener = listenerIter.next();
+        Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
+        while (descendingIterator.hasNext()) {
+            UnitOfWorkListener listener = descendingIterator.next();
             if (logger.isDebugEnabled()) {
                 logger.debug("Notifying listener [{}] after commit", listener.getClass().getName());
             }
@@ -73,8 +74,9 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
     @Override
     public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
         logger.debug("Notifying listeners of rollback");
-        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext(); ) {
-            UnitOfWorkListener listener = listenerIter.next();
+        Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
+        while (descendingIterator.hasNext()) {
+            UnitOfWorkListener listener = descendingIterator.next();
             if (logger.isDebugEnabled()) {
                 logger.debug("Notifying listener [{}] of rollback", listener.getClass().getName());
             }
@@ -121,8 +123,9 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
     @Override
     public void onCleanup(UnitOfWork unitOfWork) {
         logger.debug("Notifying listeners of cleanup");
-        for (Iterator<UnitOfWorkListener> listenerIter = listeners.descendingIterator(); listenerIter.hasNext(); ) {
-            UnitOfWorkListener listener = listenerIter.next();
+        Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
+        while (descendingIterator.hasNext()) {
+            UnitOfWorkListener listener = descendingIterator.next();
             try {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());

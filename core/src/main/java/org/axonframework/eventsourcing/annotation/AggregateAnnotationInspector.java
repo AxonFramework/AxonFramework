@@ -43,7 +43,7 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AggregateAnnotationInspector {
+public final class AggregateAnnotationInspector {
 
     private static final Map<Class<?>, AggregateAnnotationInspector> INSTANCES = new ConcurrentHashMap<Class<?>, AggregateAnnotationInspector>();
     private final Field[] childEntityFields;

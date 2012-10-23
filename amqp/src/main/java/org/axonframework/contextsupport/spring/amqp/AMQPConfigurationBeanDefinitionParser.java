@@ -24,6 +24,7 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -76,7 +77,7 @@ public class AMQPConfigurationBeanDefinitionParser extends AbstractBeanDefinitio
         // this one needs upper-casing for Spring to understand
         if (element.hasAttribute(ATTRIBUTE_ACKNOWLEDGE)) {
             builder.addPropertyValue(PROPERTY_ACKNOWLEDGE_MODE,
-                                     element.getAttribute(ATTRIBUTE_ACKNOWLEDGE).toUpperCase());
+                                     element.getAttribute(ATTRIBUTE_ACKNOWLEDGE).toUpperCase(Locale.ROOT));
         }
         return builder.getBeanDefinition();
     }

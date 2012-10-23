@@ -17,8 +17,6 @@
 package org.axonframework.serializer;
 
 import org.axonframework.common.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,7 +35,6 @@ import java.io.ObjectOutputStream;
  */
 public class JavaSerializer implements Serializer {
 
-    private static final Logger logger = LoggerFactory.getLogger(JavaSerializer.class);
     private final ConverterFactory converterFactory = new ChainingConverterFactory();
 
     @Override

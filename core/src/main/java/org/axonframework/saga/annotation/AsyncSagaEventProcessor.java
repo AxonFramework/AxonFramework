@@ -137,8 +137,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             }
         }
         for (Saga saga : processedSagas.values()) {
-            if (sagaType.isInstance(saga) &&
-                    saga.getAssociationValues().contains(entry.getAssociationValue())) {
+            if (sagaType.isInstance(saga) && saga.getAssociationValues().contains(entry.getAssociationValue())) {
                 saga.handle(entry.getPublishedEvent());
                 sagaInvoked = true;
             }
