@@ -21,7 +21,6 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
-import org.axonframework.saga.annotation.SagaCreationPolicy;
 import org.axonframework.testutils.MockException;
 import org.junit.*;
 

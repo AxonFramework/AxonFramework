@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.SagaCreationPolicy;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

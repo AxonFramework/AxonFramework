@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.saga.annotation;
+package org.axonframework.saga;
 
 /**
  * Enumeration containing the possible Creation Policies for Sagas.

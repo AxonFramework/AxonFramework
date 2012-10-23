@@ -20,7 +20,6 @@ import org.axonframework.common.Subscribable;
 import org.axonframework.common.lock.IdentifierBasedLock;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.saga.annotation.SagaCreationPolicy;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;

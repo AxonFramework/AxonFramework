@@ -22,6 +22,7 @@ import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.Saga;
+import org.axonframework.saga.SagaCreationPolicy;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaRepository;
 

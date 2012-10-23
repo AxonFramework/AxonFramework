@@ -18,7 +18,6 @@ package org.axonframework.saga;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.saga.annotation.SagaCreationPolicy;
 
 import java.util.Collection;
 import java.util.Collections;
