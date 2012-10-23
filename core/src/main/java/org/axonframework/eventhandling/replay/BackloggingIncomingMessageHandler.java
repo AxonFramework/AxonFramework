@@ -97,8 +97,8 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     }
 
     @Override
-    public void releaseMessage(DomainEventMessage message) { // NOSONAR - Synchronization not needed here
-        if (message.getTimestamp().isAfter(backlogThreshold)) {
+    public void releaseMessage(DomainEventMessage message) {
+        if (message.getTimestamp().isAfter(backlogThreshold)) { // NOSONAR - Synchronization not needed here
             replayedMessages.add(message.getIdentifier());
         }
     }
