@@ -80,14 +80,14 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
         Assert.isFalse(inReplay, "This message handler is already performing a replay. "
                 + "Are you using the same instances on multiple cluster?");
         inReplay = true;
-        backlogThreshold = new DateTime().minus(timeMargin);
+        backlogThreshold = new DateTime().minus(timeMargin); // NOSONAR - Partially synchronization variable
     }
 
     @Override
     public synchronized void onIncomingMessages(Cluster destination, EventMessage... messages) {
         if (inReplay) {
             for (EventMessage message : messages) {
-                if (message.getTimestamp().isAfter(backlogThreshold)) {
+                if (message.getTimestamp().isAfter(backlogThreshold)) { // NOSONAR - Partially synchronization variable
                     backlog.add(message);
                 }
             }
