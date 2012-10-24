@@ -1,11 +1,31 @@
-include 'amqp'
-include 'core'
-include 'disruptor-commandbus'
-include 'distributed-commandbus'
-include 'integration'
-include 'integrationtests'
-include 'mongo'
-include 'spring-insight-plugin'
-include 'test'
+def modules = []
+modules << new Module(name: 'axon-core', moduleDir: 'core')
+modules << new Module(name: 'axon-amqp', moduleDir: 'amqp')
+modules << new Module(name: 'axon-monitoring-jmx', moduleDir: 'monitoring-jmx')
+modules << new Module(name: 'axon-distributed-commandbus', moduleDir: 'distributed-commandbus')
+modules << new Module(name: 'axon-integration', moduleDir: 'integration')
+modules << new Module(name: 'axon-integrationtests', moduleDir: 'integrationtests')
+modules << new Module(name: 'axon-mongo', moduleDir: 'mongo')
+modules << new Module(name: 'axon-test', moduleDir: 'test')
+modules << new Module(name: 'axon-documentation', moduleDir: 'documentation')
+modules << new Module(name: 'axon-spring-insight-plugin', moduleDir: 'spring-insight-plugin')
+modules << new Module(name: 'axon-googleappengine', moduleDir: 'incubator/google-app-engine')
+modules << new Module(name: 'axon-redis', moduleDir: 'incubator/redis')
+modules << new Module(name: 'axon-cassandra', moduleDir: 'incubator/cassandra')
+
+modules.each {
+    include it.name
+}
 
 rootProject.name = 'axon'
+
+rootProject.children.each { childProject ->
+    def module = modules.find { m -> m.name == childProject.name }
+    childProject.dir = new File(settingsDir, module.moduleDir)
+}
+
+class Module {
+    String name
+    String moduleDir
+}
+
