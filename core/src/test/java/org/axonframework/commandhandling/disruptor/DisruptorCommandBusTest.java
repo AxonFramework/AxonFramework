@@ -33,6 +33,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -42,9 +43,14 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.Repository;
+import org.axonframework.serializer.SerializationAware;
+import org.axonframework.serializer.Serializer;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
+import org.dom4j.Document;
+import org.hamcrest.Description;
 import org.junit.*;
+import org.junit.internal.matchers.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -64,6 +70,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.*;
+import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.*;
 
 /**
@@ -182,6 +189,84 @@ public class DisruptorCommandBusTest {
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
         verify(mockCallback, times(990)).onSuccess(any());
         verify(mockCallback, times(10)).onFailure(isA(RuntimeException.class));
+    }
+
+    @Test
+    public void testSerializationOptimization() {
+        final DisruptorConfiguration configuration = new DisruptorConfiguration();
+        final Serializer serializer = mock(Serializer.class);
+        configuration.setSerializer(serializer);
+        configuration.setSerializerThreadCount(3);
+        configuration.setSerializedRepresentation(Document.class);
+        EventBus mockEventBus = mock(EventBus.class);
+        EventStore mockEventStore = mock(EventStore.class);
+        testSubject = new DisruptorCommandBus(mockEventStore, mockEventBus, configuration);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
+        stubHandler.setRepository(testSubject
+                                          .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
+        testSubject.dispatch(new GenericCommandMessage<CreateCommand>(new CreateCommand(aggregateIdentifier)));
+        for (int t = 0; t < 10; t++) {
+            testSubject.dispatch(new GenericCommandMessage<StubCommand>(new StubCommand(aggregateIdentifier)));
+        }
+        testSubject.stop();
+        verify(mockEventBus, times(1)).publish(argThat(new IsSerializationAware()),
+                                               argThat(new IsSerializationAware()));
+        verify(mockEventBus, times(10)).publish(argThat(new IsSerializationAware()));
+        verify(mockEventStore, times(11)).appendEvents(isA(String.class),
+                                                       argThat(new StreamWithSerializationAwareEvents()));
+        // make sure the pre-serializer kicked in and serialized all the messages
+        verify(serializer, times(12)).serialize(isA(SomethingDoneEvent.class), eq(Document.class));
+        verify(serializer, times(12)).serialize(isA(MetaData.class), eq(Document.class));
+    }
+
+    @Test
+    public void testSerializationOptimization_DisabledByDefault() {
+        final DisruptorConfiguration configuration = new DisruptorConfiguration();
+        configuration.setSerializerThreadCount(3);
+        EventBus mockEventBus = mock(EventBus.class);
+        EventStore mockEventStore = mock(EventStore.class);
+        testSubject = new DisruptorCommandBus(mockEventStore, mockEventBus, configuration);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
+        stubHandler.setRepository(testSubject
+                                          .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
+        testSubject.dispatch(new GenericCommandMessage<CreateCommand>(new CreateCommand(aggregateIdentifier)));
+        for (int t = 0; t < 10; t++) {
+            testSubject.dispatch(new GenericCommandMessage<StubCommand>(new StubCommand(aggregateIdentifier)));
+        }
+        testSubject.stop();
+        verify(mockEventBus, times(1)).publish(argThat(not(new IsSerializationAware())),
+                                               argThat(not(new IsSerializationAware())));
+        verify(mockEventBus, times(10)).publish(argThat(not(new IsSerializationAware())));
+    }
+
+    @Test
+    public void testSerializationOptimization_DisabledOnZeroSerializerThreads() {
+        final DisruptorConfiguration configuration = new DisruptorConfiguration();
+        final Serializer serializer = mock(Serializer.class);
+        configuration.setSerializer(serializer);
+        configuration.setSerializerThreadCount(0);
+        EventBus mockEventBus = mock(EventBus.class);
+        EventStore mockEventStore = mock(EventStore.class);
+        testSubject = new DisruptorCommandBus(mockEventStore, mockEventBus, configuration);
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
+        stubHandler.setRepository(testSubject
+                                          .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
+        testSubject.dispatch(new GenericCommandMessage<CreateCommand>(new CreateCommand(aggregateIdentifier)));
+        for (int t = 0; t < 10; t++) {
+            testSubject.dispatch(new GenericCommandMessage<StubCommand>(new StubCommand(aggregateIdentifier)));
+        }
+        testSubject.stop();
+        verify(serializer, never()).serialize(isA(SomethingDoneEvent.class), eq(byte[].class));
+        verify(serializer, never()).serialize(isA(MetaData.class), eq(byte[].class));
+        verify(mockEventBus, times(1)).publish(argThat(not(new IsSerializationAware())),
+                                               argThat(not(new IsSerializationAware())));
+        verify(mockEventBus, times(10)).publish(argThat(not(new IsSerializationAware())));
     }
 
     private CommandCallback dispatchCommands(CommandHandlerInterceptor mockInterceptor, ExecutorService customExecutor,
@@ -499,6 +584,37 @@ public class DisruptorCommandBusTest {
         @Override
         public Object answer(InvocationOnMock invocation) throws Throwable {
             return invocation.getArguments()[index];
+        }
+    }
+
+    private static class IsSerializationAware extends TypeSafeMatcher<EventMessage> {
+
+        @Override
+        public boolean matchesSafely(EventMessage item) {
+            return item instanceof SerializationAware;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("Serialization aware messages");
+        }
+    }
+
+    private static class StreamWithSerializationAwareEvents extends TypeSafeMatcher<DomainEventStream> {
+
+        @Override
+        public boolean matchesSafely(DomainEventStream item) {
+            while (item.hasNext()) {
+                if (!(item.next() instanceof SerializationAware)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("Stream with Serialization Aware events");
         }
     }
 }

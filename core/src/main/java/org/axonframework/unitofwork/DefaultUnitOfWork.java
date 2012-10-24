@@ -21,7 +21,6 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.serializer.SerializationAwareDomainEventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -261,7 +260,6 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
             if (registeredAggregates.containsKey(aggregate)) {
                 event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);
-                event = SerializationAwareDomainEventMessage.wrap(event);
                 doPublish(event, eventBus);
             }
             return event;

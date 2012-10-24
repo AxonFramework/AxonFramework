@@ -24,6 +24,7 @@ import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
@@ -77,5 +78,8 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
             List interceptors = (List) propertyValue.getValue();
             assertEquals(property + " has wrong value", 2, interceptors.size());
         }
+        assertTrue(config.getPropertyValues().getPropertyValue("serializer").getValue() instanceof BeanReference);
+        assertEquals("3", config.getPropertyValues().getPropertyValue("serializerThreadCount").getValue());
+        assertEquals("org.dom4j.Document", config.getPropertyValues().getPropertyValue("serializedRepresentation").getValue());
     }
 }

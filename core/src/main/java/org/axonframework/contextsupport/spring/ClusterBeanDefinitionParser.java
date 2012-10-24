@@ -106,9 +106,9 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
                 innerCluster.setBeanClassName(clusterType);
             } else {
                 innerCluster.setBeanClass(SimpleCluster.class);
-                innerCluster.getConstructorArgumentValues()
-                            .addIndexedArgumentValue(0, resolveId(element, innerCluster, parserContext));
             }
+            innerCluster.getConstructorArgumentValues()
+                        .addIndexedArgumentValue(0, resolveId(element, innerCluster, parserContext));
         }
         Map metaData = parseMetaData(element, parserContext, null);
 

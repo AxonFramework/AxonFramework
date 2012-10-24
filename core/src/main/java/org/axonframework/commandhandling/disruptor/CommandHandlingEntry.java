@@ -48,6 +48,7 @@ public class CommandHandlingEntry {
     private boolean isRecoverEntry;
     private Object aggregateIdentifier;
     private int invokerSegmentId;
+    private int serializerSegmentId;
 
     /**
      * Initializes the CommandHandlingEntry
@@ -173,6 +174,15 @@ public class CommandHandlingEntry {
     }
 
     /**
+     * Returns the Segment ID that identifies the serializer thread to process this entry
+     *
+     * @return the Segment ID that identifies the serializer thread to process this entry
+     */
+    public int getSerializerSegmentId() {
+        return serializerSegmentId;
+    }
+
+    /**
      * Returns the Identifier of the publisher that is chosen to handle this entry.
      *
      * @return the Identifier of the publisher that is chosen to handle this entry
@@ -184,21 +194,23 @@ public class CommandHandlingEntry {
     /**
      * Resets this entry, preparing it for use for another command.
      *
-     * @param newCommand            The new command the entry is used for
-     * @param newCommandHandler     The Command Handler responsible for handling <code>newCommand</code>
-     * @param newInvokerSegmentId   The SegmentID of the invoker that should process this entry
-     * @param newPublisherSegmentId The SegmentID of the invoker that should process this entry
-     * @param newCallback           The callback to report the result of command execution to
-     * @param invokerInterceptors   The interceptors to invoke during the command handler invocation phase
-     * @param publisherInterceptors The interceptors to invoke during the publication phase
+     * @param newCommand             The new command the entry is used for
+     * @param newCommandHandler      The Command Handler responsible for handling <code>newCommand</code>
+     * @param newInvokerSegmentId    The SegmentID of the invoker that should process this entry
+     * @param newPublisherSegmentId  The SegmentID of the publisher that should process this entry
+     * @param newSerializerSegmentId The SegmentID of the serializer that should process this entry
+     * @param newCallback            The callback to report the result of command execution to
+     * @param invokerInterceptors    The interceptors to invoke during the command handler invocation phase
+     * @param publisherInterceptors  The interceptors to invoke during the publication phase
      */
     public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler, int newInvokerSegmentId,
-                      int newPublisherSegmentId,
+                      int newPublisherSegmentId, int newSerializerSegmentId,
                       BlacklistDetectingCallback newCallback, List<CommandHandlerInterceptor> invokerInterceptors,
                       List<CommandHandlerInterceptor> publisherInterceptors) {
         this.command = newCommand;
         this.invokerSegmentId = newInvokerSegmentId;
         this.publisherSegmentId = newPublisherSegmentId;
+        this.serializerSegmentId = newSerializerSegmentId;
         this.callback = newCallback;
         this.isRecoverEntry = false;
         this.aggregateIdentifier = null;
@@ -230,6 +242,7 @@ public class CommandHandlingEntry {
         invocationInterceptorChain = null;
         unitOfWork = null;
         invokerSegmentId = -1;
+        serializerSegmentId = -1;
     }
 
     /**

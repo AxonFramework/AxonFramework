@@ -68,12 +68,15 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         REF_PROPERTY_MAPPING.put("cache", "cache");
         REF_PROPERTY_MAPPING.put("executor", "executor");
         REF_PROPERTY_MAPPING.put("rollback-configuration", "rollbackConfiguration");
+        REF_PROPERTY_MAPPING.put("serializer", "serializer");
         REF_PROPERTY_MAPPING.put("command-target-resolver", "commandTargetResolver");
 
         VALUE_PROPERTY_MAPPING.put("cooling-down-period", "coolingDownPeriod");
         VALUE_PROPERTY_MAPPING.put("invoker-threads", "invokerThreadCount");
+        VALUE_PROPERTY_MAPPING.put("serializer-threads", "serializerThreadCount");
         VALUE_PROPERTY_MAPPING.put("publisher-threads", "publisherThreadCount");
         VALUE_PROPERTY_MAPPING.put("reschedule-commands-on-corrupt-state", "rescheduleCommandsOnCorruptState");
+        VALUE_PROPERTY_MAPPING.put("serialized-representation", "serializedRepresentation");
 
         LIST_PROPERTY_MAPPING.put("invoker-interceptors", "invokerInterceptors");
         LIST_PROPERTY_MAPPING.put("publisher-interceptors", "publisherInterceptors");

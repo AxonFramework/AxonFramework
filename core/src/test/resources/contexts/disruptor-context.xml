@@ -25,7 +25,8 @@
                                 executor="executor" cooling-down-period="20" invoker-threads="2"
                                 publisher-threads="2" rollback-configuration="rollbackConfig"
                                 reschedule-commands-on-corrupt-state="false" command-target-resolver="ctr"
-                                wait-strategy="sleep">
+                                serializer="mockSerializer" serializer-threads="3"
+                                serialized-representation="org.dom4j.Document" wait-strategy="sleep">
         <axon:dispatcher-interceptors>
             <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
                 <property name="mockType" value="org.axonframework.commandhandling.CommandDispatchInterceptor"/>
@@ -84,5 +85,8 @@
         <property name="mockType" value="net.sf.jsr107cache.Cache"/>
     </bean>
 
+    <bean id="mockSerializer" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.serializer.Serializer"/>
+    </bean>
 
 </beans>

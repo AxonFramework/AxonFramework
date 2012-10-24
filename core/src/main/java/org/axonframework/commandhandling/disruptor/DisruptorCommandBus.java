@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.EventHandlerGroup;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
@@ -25,6 +26,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.commandhandling.interceptors.SerializationOptimizingInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.eventhandling.EventBus;
@@ -32,9 +34,11 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
+import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -116,6 +120,7 @@ public class DisruptorCommandBus implements CommandBus {
     private final long coolingDownPeriod;
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
+    private final int serializerCount;
 
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
@@ -150,29 +155,66 @@ public class DisruptorCommandBus implements CommandBus {
             executorService = null;
         }
         rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
-        invokerInterceptors = configuration.getInvokerInterceptors();
-        publisherInterceptors = configuration.getPublisherInterceptors();
-        dispatchInterceptors = configuration.getDispatchInterceptors();
+        invokerInterceptors = new ArrayList<CommandHandlerInterceptor>(configuration.getInvokerInterceptors());
+        publisherInterceptors = new ArrayList<CommandHandlerInterceptor>(configuration.getPublisherInterceptors());
+        dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(configuration.getDispatchInterceptors());
         disruptor = new Disruptor<CommandHandlingEntry>(new CommandHandlingEntry.Factory(),
                                                         executor,
                                                         configuration.getClaimStrategy(),
                                                         configuration.getWaitStrategy());
         commandTargetResolver = configuration.getCommandTargetResolver();
-        commandHandlerInvokers = new CommandHandlerInvoker[configuration.getInvokerThreadCount()];
-        for (int t = 0; t < commandHandlerInvokers.length; t++) {
-            commandHandlerInvokers[t] = new CommandHandlerInvoker(eventStore, configuration.getCache(), t);
+
+        // configure invoker Threads
+        commandHandlerInvokers = initializeInvokerThreads(eventStore, configuration);
+        // configure serializer Threads
+        SerializerHandler[] serializerThreads = initializeSerializerThreads(configuration);
+        serializerCount = serializerThreads.length;
+        // configure publisher Threads
+        EventPublisher[] publishers = initializePublisherThreads(eventStore, eventBus, configuration, executor);
+        publisherCount = publishers.length;
+        disruptor.handleExceptionsWith(new ExceptionHandler());
+
+        EventHandlerGroup<CommandHandlingEntry> eventHandlerGroup = disruptor.handleEventsWith(commandHandlerInvokers);
+        if (serializerThreads.length > 0) {
+            eventHandlerGroup = eventHandlerGroup.then(serializerThreads);
+            invokerInterceptors.add(new SerializationOptimizingInterceptor());
         }
-        publisherCount = configuration.getPublisherThreadCount();
-        EventPublisher[] publishers = new EventPublisher[publisherCount];
-        for (int t = 0; t < publisherCount; t++) {
+        eventHandlerGroup.then(publishers);
+
+        coolingDownPeriod = configuration.getCoolingDownPeriod();
+        disruptor.start();
+    }
+
+    private EventPublisher[] initializePublisherThreads(EventStore eventStore, EventBus eventBus,
+                                                        DisruptorConfiguration configuration, Executor executor) {
+        EventPublisher[] publishers = new EventPublisher[configuration.getPublisherThreadCount()];
+        for (int t = 0; t < publishers.length; t++) {
             publishers[t] = new EventPublisher(eventStore, eventBus, executor,
                                                configuration.getRollbackConfiguration(), t);
         }
-        disruptor.handleExceptionsWith(new ExceptionHandler());
-        disruptor.handleEventsWith(commandHandlerInvokers)
-                 .then(publishers);
-        coolingDownPeriod = configuration.getCoolingDownPeriod();
-        disruptor.start();
+        return publishers;
+    }
+
+    private SerializerHandler[] initializeSerializerThreads(DisruptorConfiguration configuration) {
+        if (!configuration.isPreSerializationConfigured()) {
+            return new SerializerHandler[0];
+        }
+        Serializer serializer = configuration.getSerializer();
+        SerializerHandler[] serializerThreads = new SerializerHandler[configuration.getSerializerThreadCount()];
+        for (int t = 0; t < serializerThreads.length; t++) {
+            serializerThreads[t] = new SerializerHandler(serializer, t, configuration.getSerializedRepresentation());
+        }
+        return serializerThreads;
+    }
+
+    private CommandHandlerInvoker[] initializeInvokerThreads(EventStore eventStore,
+                                                             DisruptorConfiguration configuration) {
+        CommandHandlerInvoker[] invokers;
+        invokers = new CommandHandlerInvoker[configuration.getInvokerThreadCount()];
+        for (int t = 0; t < invokers.length; t++) {
+            invokers[t] = new CommandHandlerInvoker(eventStore, configuration.getCache(), t);
+        }
+        return invokers;
     }
 
     @Override
@@ -203,23 +245,27 @@ public class DisruptorCommandBus implements CommandBus {
         RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
         int invokerSegment = 0;
         int publisherSegment = 0;
-        if ((commandHandlerInvokers.length > 1 || publisherCount > 1)) {
+        int serializerSegment = 0;
+        if ((commandHandlerInvokers.length > 1 || publisherCount > 1 || serializerCount > 0)) {
             Object aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
             if (aggregateIdentifier != null) {
-                int idHash = aggregateIdentifier.hashCode();
+                int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
                 if (commandHandlerInvokers.length > 1) {
-                    invokerSegment = Math.abs(idHash % commandHandlerInvokers.length);
+                    invokerSegment = idHash % commandHandlerInvokers.length;
+                }
+                if (serializerCount > 1) {
+                    serializerSegment = idHash % serializerCount;
                 }
                 if (publisherCount > 1) {
-                    publisherSegment = Math.abs(idHash % publisherCount);
+                    publisherSegment = idHash % publisherCount;
                 }
             }
         }
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
         event.reset(command, commandHandlers.get(command.getCommandName()), invokerSegment, publisherSegment,
-                    new BlacklistDetectingCallback<R>(callback, command, disruptor.getRingBuffer(), this,
-                                                      rescheduleOnCorruptState),
+                    serializerSegment, new BlacklistDetectingCallback<R>(callback, command, disruptor.getRingBuffer(),
+                                                                         this, rescheduleOnCorruptState),
                     invokerInterceptors, publisherInterceptors);
         ringBuffer.publish(sequence);
     }

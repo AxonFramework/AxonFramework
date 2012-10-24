@@ -434,21 +434,49 @@
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="invoker-threads" type="xsd:int">
+                    <xsd:attribute name="serializer" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>The bean name of the serializer to use to pre-serialize events messages.
+                                This setting should only be provided if the given serializer is also used by the Event
+                                Store and Event Bus.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.axonframework.serializer.Serializer"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="invoker-threads" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>The number of threads that should execute the command handler invocation.
                                 Defaults to 1.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="publisher-threads" type="xsd:int">
+                    <xsd:attribute name="serializer-threads" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>The number of threads that should pre-serialize generated events.
+                                Defaults to 1. Is ignored if no serializer is provided.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="serialized-representation" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>The type of data the serialized object should be represented in.
+                                Defaults to a byte array (byte[]).
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="publisher-threads" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>The number of threads that should store and publish generated events.
                                 Defaults to 1.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="buffer-size" type="xsd:int">
+                    <xsd:attribute name="buffer-size" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>The number of positions in the CommandBus' buffer. This value must be a
                                 power of 2 (e.g. 128, 256, 512, 1024, etc). Defaults to 4096.

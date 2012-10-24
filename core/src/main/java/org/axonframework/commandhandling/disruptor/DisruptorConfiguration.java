@@ -29,6 +29,7 @@ import org.axonframework.commandhandling.RollbackOnUncheckedExceptionConfigurati
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.common.Assert;
 import org.axonframework.common.NoCache;
+import org.axonframework.serializer.Serializer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +63,9 @@ public class DisruptorConfiguration {
     private CommandTargetResolver commandTargetResolver;
     private int invokerThreadCount = 1;
     private int publisherThreadCount = 1;
+    private int serializerThreadCount = 1;
+    private Serializer serializer;
+    private Class<?> serializedRepresentation = byte[].class;
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
@@ -355,7 +359,8 @@ public class DisruptorConfiguration {
     /**
      * Sets the CommandTargetResolver that must be used to indicate which Aggregate instance will be invoked by an
      * incoming command. The DisruptorCommandBus only uses this value if {@link #setInvokerThreadCount(int)
-     * invokerThreadCount} or {@link #setPublisherThreadCount(int) publisherThreadCount} are greater than 1.
+     * invokerThreadCount}, {@link #setSerializerThreadCount(int) serializerThreadCount} or {@link
+     * #setPublisherThreadCount(int) publisherThreadCount} is greater than 1.
      * <p/>
      * Defaults to an {@link AnnotationCommandTargetResolver} instance.
      *
@@ -413,6 +418,84 @@ public class DisruptorConfiguration {
     public DisruptorConfiguration setPublisherThreadCount(int count) {
         Assert.isTrue(invokerThreadCount > 0, "PublisherCount must be at least 1");
         this.publisherThreadCount = count;
+        return this;
+    }
+
+    /**
+     * Returns the configured number of threads that should perform the pre-serialization step. This value is ignored
+     * unless a serializer is set using {@link #setSerializer(org.axonframework.serializer.Serializer)}.
+     *
+     * @return the number of threads to perform pre-serialization with
+     */
+    public int getSerializerThreadCount() {
+        return serializerThreadCount;
+    }
+
+    /**
+     * Sets the number of threads that should perform the pre-serialization step. This value is ignored
+     * unless a serializer is set using {@link #setSerializer(org.axonframework.serializer.Serializer)}.
+     *
+     * @param serializerThreadCount the number of threads to perform pre-serialization with
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setSerializerThreadCount(int serializerThreadCount) {
+        this.serializerThreadCount = serializerThreadCount;
+        return this;
+    }
+
+    /**
+     * Returns the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization should be
+     * done.
+     *
+     * @return the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization should be
+     *         done
+     */
+    public Serializer getSerializer() {
+        return serializer;
+    }
+
+    /**
+     * Returns the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization should be
+     * done. Defaults to <code>null</code>.
+     *
+     * @param serializer the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization
+     *                   should be done
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setSerializer(Serializer serializer) {
+        this.serializer = serializer;
+        return this;
+    }
+
+    /**
+     * Indicates whether pre-serialization is configured. Is <code>true</code> when a serializer and at
+     * least one thread is configured.
+     *
+     * @return whether pre-serialization is configured
+     */
+    public boolean isPreSerializationConfigured() {
+        return serializer != null && serializerThreadCount > 0;
+    }
+
+    /**
+     * Returns the type of data the serialized object should be represented in. Defaults to a byte array.
+     *
+     * @return the type of data the serialized object should be represented in
+     */
+    public Class<?> getSerializedRepresentation() {
+        return serializedRepresentation;
+    }
+
+    /**
+     * Sets the type of data the serialized object should be represented in. Defaults to a byte array
+     * (<code>byte[]</code>).
+     *
+     * @param serializedRepresentation the type of data the serialized object should be represented in. May not be
+     *                                 <code>null</code>.
+     */
+    public DisruptorConfiguration setSerializedRepresentation(Class<?> serializedRepresentation) {
+        Assert.notNull(serializedRepresentation, "Serialized representation may not be null");
+        this.serializedRepresentation = serializedRepresentation;
         return this;
     }
 }
