@@ -53,10 +53,19 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     private final TransactionManager transactionManager;
     private Object backingTransaction;
 
+    /**
+     * Initializes a Unit of Work (without starting it) that is not bound to any transaction.
+     */
     public DefaultUnitOfWork() {
         this(null);
     }
 
+    /**
+     * Initializes a Unit of Work (without starting it) that is binds to the transaction created by the given
+     * <code>transactionManager</code> when the Unit of Work starts.
+     *
+     * @param transactionManager The transaction manager to manage the transaction around this Unit of Work
+     */
     public DefaultUnitOfWork(TransactionManager<?> transactionManager) {
         this.transactionManager = transactionManager;
     }
@@ -110,6 +119,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
         return transactionManager != null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void doRollback(Throwable cause) {
         registeredAggregates.clear();
@@ -123,6 +133,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void doCommit() {
         publishEvents();

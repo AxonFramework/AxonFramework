@@ -437,11 +437,11 @@ public class DisruptorConfiguration {
      * Sets the number of threads that should perform the pre-serialization step. This value is ignored
      * unless a serializer is set using {@link #setSerializer(org.axonframework.serializer.Serializer)}.
      *
-     * @param serializerThreadCount the number of threads to perform pre-serialization with
+     * @param newSerializerThreadCount the number of threads to perform pre-serialization with
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setSerializerThreadCount(int serializerThreadCount) {
-        this.serializerThreadCount = serializerThreadCount;
+    public DisruptorConfiguration setSerializerThreadCount(int newSerializerThreadCount) {
+        this.serializerThreadCount = newSerializerThreadCount;
         return this;
     }
 
@@ -460,12 +460,12 @@ public class DisruptorConfiguration {
      * Returns the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization should be
      * done. Defaults to <code>null</code>.
      *
-     * @param serializer the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization
+     * @param newSerializer the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization
      *                   should be done
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setSerializer(Serializer serializer) {
-        this.serializer = serializer;
+    public DisruptorConfiguration setSerializer(Serializer newSerializer) {
+        this.serializer = newSerializer;
         return this;
     }
 
@@ -492,13 +492,13 @@ public class DisruptorConfiguration {
      * Sets the type of data the serialized object should be represented in. Defaults to a byte array
      * (<code>byte[]</code>).
      *
-     * @param serializedRepresentation the type of data the serialized object should be represented in. May not be
+     * @param newSerializedRepresentation the type of data the serialized object should be represented in. May not be
      *                                 <code>null</code>.
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setSerializedRepresentation(Class<?> serializedRepresentation) {
-        Assert.notNull(serializedRepresentation, "Serialized representation may not be null");
-        this.serializedRepresentation = serializedRepresentation;
+    public DisruptorConfiguration setSerializedRepresentation(Class<?> newSerializedRepresentation) {
+        Assert.notNull(newSerializedRepresentation, "Serialized representation may not be null");
+        this.serializedRepresentation = newSerializedRepresentation;
         return this;
     }
 
@@ -516,12 +516,12 @@ public class DisruptorConfiguration {
      * Sets the transaction manager to use to manage a transaction around the storage and publication of events.
      * The default is to not have publication and storage of events wrapped in a transaction.
      *
-     * @param transactionManager the transaction manager to use to manage a transaction around the storage and
+     * @param newTransactionManager the transaction manager to use to manage a transaction around the storage and
      *                           publication of events
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setTransactionManager(TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
+    public DisruptorConfiguration setTransactionManager(TransactionManager newTransactionManager) {
+        this.transactionManager = newTransactionManager;
         return this;
     }
 }

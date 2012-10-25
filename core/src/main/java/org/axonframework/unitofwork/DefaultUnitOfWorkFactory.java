@@ -26,10 +26,20 @@ public class DefaultUnitOfWorkFactory implements UnitOfWorkFactory {
 
     private final TransactionManager transactionManager;
 
+    /**
+     * Initializes the Unit of Work Factory to create Unit of Work that are not bound to any transaction.
+     */
     public DefaultUnitOfWorkFactory() {
         this(null);
     }
 
+    /**
+     * Initializes the factory to create Unit of Work bound to transactions managed by the given
+     * <code>transactionManager</code>
+     *
+     * @param transactionManager The transaction manager to manage the transactions for Unit Of Work created by this
+     *                           factory
+     */
     public DefaultUnitOfWorkFactory(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
     }

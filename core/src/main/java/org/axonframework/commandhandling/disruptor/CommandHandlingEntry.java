@@ -207,8 +207,8 @@ public class CommandHandlingEntry {
      * @param invokerInterceptors    The interceptors to invoke during the command handler invocation phase
      * @param publisherInterceptors  The interceptors to invoke during the publication phase
      */
-    public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler, int newInvokerSegmentId,
-                      int newPublisherSegmentId, int newSerializerSegmentId,
+    public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler, // NOSONAR - Not important
+                      int newInvokerSegmentId, int newPublisherSegmentId, int newSerializerSegmentId,
                       BlacklistDetectingCallback newCallback, List<CommandHandlerInterceptor> invokerInterceptors,
                       List<CommandHandlerInterceptor> publisherInterceptors) {
         this.command = newCommand;
