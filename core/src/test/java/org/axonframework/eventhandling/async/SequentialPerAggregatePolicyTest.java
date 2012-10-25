@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.junit.*;
 
@@ -28,15 +29,22 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class FullConcurrencyPolicyTest {
+public class SequentialPerAggregatePolicyTest {
 
     @Test
-    public void testSequencingIdentifier() {
+    public void testSequentialIdentifier() {
         // ok, pretty useless, but everything should be tested
-        FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
+        Object aggregateIdentifier = UUID.randomUUID();
+        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
+        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
+        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
+        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<String>("bla"));
+
+        assertEquals(id1, id2);
+        assertFalse(id1.equals(id3));
+        assertFalse(id2.equals(id3));
+        assertNull(id4);
     }
 
     private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {

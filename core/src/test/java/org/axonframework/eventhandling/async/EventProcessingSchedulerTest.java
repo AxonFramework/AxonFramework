@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.TransactionManager;
 import org.junit.*;

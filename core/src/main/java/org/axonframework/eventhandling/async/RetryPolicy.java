@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 /**
  * This policy tells the EventProcessingScheduler how it should deal with failed transactions. <ul> <li>{@link

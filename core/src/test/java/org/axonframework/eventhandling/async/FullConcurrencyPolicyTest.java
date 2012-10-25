@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -28,24 +28,19 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class SequentialPolicyTest {
+public class FullConcurrencyPolicyTest {
 
     @Test
     public void testSequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
-        SequentialPolicy testSubject = new SequentialPolicy();
-        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
-        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
-
-        assertEquals(id1, id2);
-        assertEquals(id2, id3);
-        // this can only fail if equals is not implemented correctly
-        assertEquals(id1, id3);
+        FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
     }
 
     private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0, new Object(),
-                                                     MetaData.emptyInstance());
+        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0,
+                                                     new Object(), MetaData.emptyInstance());
     }
 }

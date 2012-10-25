@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 /**
  * Interface to a policy definition for concurrent processing, for example event handling.

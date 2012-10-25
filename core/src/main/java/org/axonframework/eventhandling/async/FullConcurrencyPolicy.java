@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
-
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+package org.axonframework.eventhandling.async;
 
 /**
- * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different
- * aggregates may be processed in different threads, as will events that do not extend the DomainEvent type.
+ * SequencingPolicy that does not enforce any sequencing requirements on event processing.
  *
  * @author Allard Buijze
  * @since 0.3
  */
-public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessage> {
+public class FullConcurrencyPolicy implements SequencingPolicy<Object> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Object getSequenceIdentifierFor(EventMessage event) {
-        if (DomainEventMessage.class.isInstance(event)) {
-            return ((DomainEventMessage) event).getAggregateIdentifier();
-        }
+    public Object getSequenceIdentifierFor(Object event) {
         return null;
     }
 }

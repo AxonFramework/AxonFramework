@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 /**
- * SequencingPolicy that does not enforce any sequencing requirements on event processing.
+ * SequencingPolicy that requires serialized handling of all events delivered to an event handler. This is the default
+ * policy for event handlers.
  *
  * @author Allard Buijze
  * @since 0.3
  */
-public class FullConcurrencyPolicy implements SequencingPolicy<Object> {
+public class SequentialPolicy implements SequencingPolicy<Object> {
+
+    private static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Object getSequenceIdentifierFor(Object event) {
-        return null;
+    public Object getSequenceIdentifierFor(Object task) {
+        return FULL_SEQUENTIAL_POLICY;
     }
 }

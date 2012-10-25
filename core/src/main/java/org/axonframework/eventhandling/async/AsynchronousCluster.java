@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.AbstractCluster;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

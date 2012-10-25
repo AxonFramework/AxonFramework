@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.junit.*;
 
@@ -29,26 +28,24 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class SequentialPerAggregatePolicyTest {
+public class SequentialPolicyTest {
 
     @Test
-    public void testSequentialIdentifier() {
+    public void testSequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
-        SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
-        Object aggregateIdentifier = UUID.randomUUID();
-        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
-        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
+        SequentialPolicy testSubject = new SequentialPolicy();
+        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
+        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
         Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
-        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<String>("bla"));
 
         assertEquals(id1, id2);
-        assertFalse(id1.equals(id3));
-        assertFalse(id2.equals(id3));
-        assertNull(id4);
+        assertEquals(id2, id3);
+        // this can only fail if equals is not implemented correctly
+        assertEquals(id1, id3);
     }
 
     private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0,
-                                                     new Object(), MetaData.emptyInstance());
+        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0, new Object(),
+                                                     MetaData.emptyInstance());
     }
 }

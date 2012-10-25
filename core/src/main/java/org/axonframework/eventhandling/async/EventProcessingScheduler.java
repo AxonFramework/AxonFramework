@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.async;
 
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.unitofwork.TransactionManager;
