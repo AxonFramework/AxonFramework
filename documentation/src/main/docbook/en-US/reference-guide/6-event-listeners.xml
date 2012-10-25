@@ -517,4 +517,86 @@ public class SubListener extends TopListener {
 &lt;/axon:cluster></programlisting>
         </sect2>
     </sect1>
+    <sect1>
+        <title>Replaying Events on a Cluster</title>
+        <para>One of the advantages of Event Sourcing is that you keep track of the entire history
+            of the application. This history allows you to extract valuable information and build
+            new models out of them. For example, when a screen is added to the application, you can
+            create a new query model and database tables, and have these filled using events you
+            have collected in the past. Sometimes, replays of the Event Store are also needed to fix
+            data that has been corrupted due to a bug.</para>
+        <simplesect>
+            <title>Configuration of Replays</title>
+            <para>Axon provides the <code>ReplayingCluster</code>, a wrapper around another
+                    <code>Cluster</code> implementation that adds the replay capability. The
+                ReplayingCluster is initialized with a number of resources. First of all, it needs
+                another Cluster implementation. That other cluster is the actual cluster that takes
+                care of dispatching Event Messages to subscribed listeners. It also needs a
+                reference to the Event Store (implementing <code>EventStoreManagement</code>) that
+                will supply the Events for the replay. A transaction manager is used to wrap the
+                replay in a transaction. Since a single transaction may be too large to be
+                efficient, you can configure a "commit threshold" to indicate the number of messages
+                that should be processed before performing an intermediate commit. Finally, you need
+                to supply an <code>IncomingMessageHandler</code>. The
+                    <code>IncomingMessageHandler</code> tells the ReplayingCluster what to do when
+                an Event Message is published to the cluster while it is replaying.</para>
+            <warning>
+                <para>Make sure not to replay onto Clusters that contain Event Listeners that do not
+                    support replaying. A typical example is an Event Listener that sends emails.
+                    Replaying on a cluster that contains such an Event Listener can have nasty
+                    side-effects.</para>
+            </warning>
+            <para>Axon provides two <code>IncomingMessageHandler</code> implementations. The
+                    <code>BackloggingIncomingMessageHandler</code> simply backlogs any incoming
+                events (in-memory) and postpones processing of these events until the replay is
+                finished. If an event is backlogged, but was also part of the replay, it is
+                automatically removed from the backlog to prevent duplicate processing. The other
+                implementation is the <code>DiscardingIncomingMessageHandler</code>. As the name
+                suggests, it simply discards any messages published during a replay. This
+                implementation will ensure the fastest replay, but is not safe to use when you
+                expect messages to be published to the cluster during the replay. You can also
+                create your own implementation. The JavaDoc describes the requirements (incl. thread
+                safety) for each method.</para>
+            <note>
+                <para>Although it is technically possible to do a full replay at runtime, it should
+                    be considered a maintenance operation and be executed while the cluster is not
+                    in active use by the application.</para>
+            </note>
+        </simplesect>
+        <simplesect>
+            <title>ReplayCluster configuration in Spring</title>
+            <para>In Spring, a Cluster can be marked as replayable by adding the
+                    <code>&lt;axon:replay-config></code> element as a child if the
+                    <code>&lt;axon:cluster></code> element. When the replay-config element is
+                present, Axon will automatically wrap the cluster in a <code>ReplayingCluster</code>
+                using the provided configuration. This also means that
+                    <code>applicationContext.getBean(clusterName)</code> will return a bean of type
+                    <code>ReplayingCluster</code>.</para>
+        </simplesect>
+        <simplesect>
+            <title>Preparing for a replay</title>
+            <para>In many cases, the data source used by Event Listeners needs to be prepared for a
+                replay. Database tables, for example, typically need to be cleared. Event Listeners
+                can implement the <code>ReplayAware</code> interface. When they do, their
+                    <code>beforeReplay</code> and <code>afterReplay</code> will be invoked before
+                and after the replay respectively. Both methods are invoked within the scope of a
+                transaction.</para>
+        </simplesect>
+        <simplesect>
+            <title>Triggering a Replay</title>
+            <para>Axon does not automatically trigger a replay. The ReplayingCluster provides two
+                methods that can start a replay: <code>startReplay()</code> and
+                    <code>startReplay(Executor)</code>. The first will execute the replay in the
+                calling thread, meaning that the call will return when the replay is finished. The
+                latter will execute the replay using teh given executor and return a Future object
+                that allows the caller to check if the replay is finished.</para>
+            <note>
+                <para>Note that a replay may take a long time to finish, depending on the number of
+                    Events that need to be processed. Therefore, ensure that it is not possible to
+                    rebuild the model using other models already available, which is typically
+                    faster. Also make sure to properly test a replay before applying it in a
+                    production environment.</para>
+            </note>
+        </simplesect>
+    </sect1>
 </chapter>

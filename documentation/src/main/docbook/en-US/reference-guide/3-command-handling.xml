@@ -348,6 +348,11 @@
                                 thread group called "DisruptorCommandBus".</para>
                         </listitem>
                         <listitem>
+                            <para>TransactionManager: Defines the Transaction Manager that should
+                                ensure the storage of events and their publication are executed
+                                transactionally.</para>
+                        </listitem>
+                        <listitem>
                             <para>InvokerInterceptors: Defines the
                                     <code>CommandHandlerInterceptor</code>s that are to be used in
                                 the invocation process. This is the process that calls the actual
@@ -396,6 +401,20 @@
                                 events. A good starting point is half the number of cores, and could
                                 be increased if a lot of time is spent on IO.</para>
                         </listitem>
+                        <listitem>
+                            <para>SerializerThreadCount: The number of threads to use to
+                                pre-serialize events. This defaults to 1, but is ignored if no
+                                serializer is configured.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Serializer: The serializer to perform pre-serialization with. When
+                                a serializer is configured, the DisruptorCommandBus will wrap all
+                                generated events in a SerializationAware message. The serialized
+                                form of the payload and meta data is attached before they are
+                                published to the Event Store or Event Bus. This can drastically
+                                improve performance when the same serializer is used to store and
+                                publish events to a remote destination.</para>
+                        </listitem>
                     </itemizedlist></para>
                 <para>Spring users can use the &lt;axon:disruptor-command-bus> element for easier
                     configuration of the <code>DisruptorCommandBus</code>.</para>
@@ -432,13 +451,16 @@
                 <programlisting language="java">CommandBus commandBus = new SimpleCommandBus();
 
 // to subscribe a handler:
-commandBus.subscribe(MyPayloadType.class, myCommandHandler);
+commandBus.subscribe(MyPayloadType.class.getName(), myCommandHandler);
 
 // we can subscribe the same handler to different command types
-commandBus.subscribe(MyOtherPayload.class, myCommandHandler);
+commandBus.subscribe(MyOtherPayload.class.getName(), myCommandHandler);
 
 // we can also unsubscribe the handler from one of these types:
-commandBus.unsubscribe(MyOtherPayload.class, myCommandHandler);</programlisting></para>
+commandBus.unsubscribe(MyOtherPayload.class.getName(), myCommandHandler);
+
+// we don't have to use the payload to identifier the command type (but it's a good default)
+commandBus.subscribe("MyCustomCommand", myCommandHandler);</programlisting></para>
         </sect2>
         <sect2>
             <title>Annotation based handlers</title>
@@ -481,6 +503,11 @@ commandBus.unsubscribe(MyOtherPayload.class, myCommandHandler);</programlisting>
     @CommandHandler
     public void handleSomeCommand(SomeCommand command, @MetaData("userId") String userId) {
         // whatever logic here
+    }
+
+    @CommandHandler(commandName = "myCustomCommand")
+    public void handleCustomCommand(SomeCommand command) {
+       // handling logic here
     }
 
 }
@@ -708,8 +735,10 @@ try {
                     <para>Commit phase: before a Unit of Work is committed, the listeners'
                             <code>onPrepareCommit</code> methods are invoked. This method is
                         provided with the set of aggregates and list of Event Messages being stored.
-                        When the commit succeeded, the <code>afterCommit</code> method is invoked.
-                        If a commit failed, the <code>onRollback</code> is used. This method has a
+                        If a Unit of Work is bound to a transaction, the
+                            <code>onPrepareTransactionCommit</code> method is invoked. When the
+                        commit succeeded, the <code>afterCommit</code> method is invoked. If a
+                        commit failed, the <code>onRollback</code> is used. This method has a
                         parameter which defines the cause of the failure, ir available.</para>
                 </listitem>
                 <listitem>
@@ -719,6 +748,34 @@ try {
                         ready to clean up.</para>
                 </listitem>
             </itemizedlist>
+        </simplesect>
+        <simplesect>
+            <title>Binding the Unit of Work to a Transaction</title>
+            <para>The command handling process can be considered an atomic procedure; it should
+                either be processed entirely, or not at all. Axon Framework uses the Unit Of Work to
+                track actions performed by the command handlers. After the command handler
+                completed, Axon will try to commit the actions registered with the Unit Of Work.
+                This involves storing modified aggregates (see <xref linkend="domain-modeling"/>) in
+                their respective repository (see <xref linkend="repositories-and-event-stores"/>)
+                and publishing events on the Event Bus (see <xref linkend="event-processing"/>). </para>
+                <para>The Unit Of Work, however, it is not a replacement for a transaction. The Unit
+                Of Work only ensures that changes made to aggregates are stored upon successful
+                execution of a command handler. If an error occurs while storing an aggregate, any
+                aggregates already stored are not rolled back. </para>
+                <para>It is posssible to bind a transaction to a Unit of Work. Many CommandBus
+                implementations, like the SimpleCommandBus and DisruptorCommandBus, allow you to
+                configure a Transaction Manager. This Transaction Manager will then be used to
+                create the transactions to bind to the Unit of Work that is used to manage the
+                process of a Command. When a Unit of Work is bound to a transaction, it will ensure
+                the bound transaction is committed at the right point in time. It also allows you to
+                perform actions just before the transaction is committed, through the
+                    <code>UnitOfWorkListener</code>'s <code>onPrepareTransactionCommit</code>
+                method.</para>
+            <para>When creating Unit of Work programmatically, you can use the
+                    <code>DefaultUnitOfWork.startAndGet(TransactionManager)</code> method to create
+                a Unit of Work that is bound to a transaction. Alternatively, you can initialize the
+                    <code>DefaultUnitOfWorkFactory</code> with a <code>TransactionManager</code> to
+                allow it to create Transaction-bound Unit of Work.</para>
         </simplesect>
     </sect1>
     <sect1 xml:id="command-handler-interceptors">
@@ -772,30 +829,6 @@ try {
                 parameters: the command message, the current <code>UnitOfWork</code> and an
                     <code>InterceptorChain</code>. The <code>InterceptorChain</code> is used to
                 continue the dispatching process. </para>
-            <sect3 xml:id="transactional-interceptor">
-                <title>Transaction management</title>
-                <para>The command handling process can be considered an atomic procedure; it should
-                    either be processed entirely, or not at all. Axon Framework uses the Unit Of
-                    Work to track actions performed by the command handlers. After the command
-                    handler completed, Axon will try to commit the actions registered with the Unit
-                    Of Work. This involves storing modified aggregates (see <xref
-                        linkend="domain-modeling"/>) in their respective repository (see <xref
-                        linkend="repositories-and-event-stores"/>) and publishing events on the
-                    Event Bus (see <xref linkend="event-processing"/>). </para>
-                <para>The Unit Of Work, however, it is not a replacement for a transaction. The Unit
-                    Of Work only ensures that changes made to aggregates are stored upon successful
-                    execution of a command handler. If an error occurs while storing an aggregate,
-                    any aggregates already stored are not rolled back. If this is important to your
-                    application, consider using a Transaction Interceptor on the command bus that
-                    attaches a transaction to the Unit of Work. </para>
-                <para>Axon provides the <code>SpringTransactionalInterceptor</code>, which uses
-                    Spring's <code>PlatformTransactionManager</code> to manage the actual
-                    transactions. A transaction is committed after a successful commit of the Unit
-                    of Work, or rolled back as the Unit of Work is rolled back. </para>
-                <para>When building another transactional interceptor, you can extend from
-                        <code>AbstractTransactionalInterceptor</code>. All you need to define is how
-                    a transaction is started, committed and rolled back.</para>
-            </sect3>
             <sect3 xml:id="auditing-interceptor">
                 <title>Auditing</title>
                 <para>Well designed events will give clear insight in what has happened, when and

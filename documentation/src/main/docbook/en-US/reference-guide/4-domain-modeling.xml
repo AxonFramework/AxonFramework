@@ -347,13 +347,13 @@
                 of the entities within that aggregate.
             </para>
             <para>Axon provides support for event sourcing in complex aggregate structures. All
-                entities other than the aggregate root need to extend from
-                <code>AbstractEventSourcedEntity</code>. The
-                <code>EventSourcedAggregateRoot</code>
-                implementations provided by Axon
+                entities other than the aggregate root need to implement
+                    <code>EventSourcedEntity</code> (but extending
+                    <code>AbstractEventSourcedEntity</code> or <code>AbstractAnnotatedEntity</code>
+                makes implementing these entities easier). The
+                    <code>EventSourcedAggregateRoot</code> implementations provided by Axon
                 Framework are aware of these entities and will call their event handlers when
-                needed.
-            </para>
+                needed. </para>
             <para>When an entity (including the aggregate root) applies an Event, it is registered
                 with the Aggregate Root. The aggregate root applies the event locally first. Next,
                 it will evaluate all its fields for any implementations of
@@ -368,8 +368,9 @@
                 in an <code>@EventHandler</code> annotated method in their parent Entity (as
                 creation of an entity can be considered a state change of the Aggregate). Axon will
                 ensure that the Aggregate Root is properly registered in time. </para>
-            <para>Axon will automatically detect most of the child entities in the fields of an
-                Entity (albeit aggregate root or not). The following Entities are found: <itemizedlist>
+            <para>Fields that (may) contain child entities must be annotated with
+                    <code>@EventSourcedMember</code>. This annotation may be used on a number of
+                field types: <itemizedlist>
                     <listitem>
                         <para>directly referenced in a field;</para>
                     </listitem>
@@ -382,7 +383,10 @@
                                 <code>java.util.Map</code>
                         </para>
                     </listitem>
-                </itemizedlist>If you reference an Entity from any other location than the above
+                </itemizedlist></para>
+            <para>If the value contained in an <code>@EventSourcedMember</code> annotated field does
+                not implement <code>EventSourcedEntity</code>, it is simply ignored.</para>
+            <para>If you need to reference an Entity from any other location than the above
                 mentioned, you can override the <code>getChildEntities()</code> method. This method
                 should return a <code>Collection</code> of entities that should be notified of the
                 Event. Note that each entity is invoked once for each time it is located in the

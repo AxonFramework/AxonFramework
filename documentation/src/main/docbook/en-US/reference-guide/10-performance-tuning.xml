@@ -176,6 +176,29 @@
             to an output stream. The <code>ByteArrayOutputStream</code> and
                 <code>ByteArrayInputStream</code> allow writing to and reading from byte
             arrays.</para>
+        <sect2>
+            <title>Preventing duplicate serialization</title>
+            <para>Especially in distributed systems, Event Messages need to be serialized in
+                multiple occasions. In the case of a Command Handling component that uses Event
+                Sourcing, each message is serialized twice: once for the Event Store, and once to
+                publish it on the Event Bus. Axon's components are aware of this and have support
+                for SerializationAware messages. If a SerializationAware message is detected, its
+                methods are used to serialize an object, instead of simply passing the payload to a
+                serializer. This allows for performance optimizations.</para>
+            <para>By configuring the <code>SerializationOptimizingInterceptor</code>, all generated
+                Events are wrapped into <code>SerializationAware</code> messages, and thus benefit
+                from this optimization. Note that the optimization only helps if the same serializer
+                is used for different components. If you use the <code>DisruptorCommandBus</code>,
+                serialization can be optimized by providing a <code>Serializer</code> in the
+                    <code>DisruptorConfiguration</code>. The <code>DisruptorCommandBus</code> will
+                then use an extra thread (or more when configured) to pre-serialize the Event
+                Message using that serializer.</para>
+            <para>When you serialize messages yourself, and want to benefit from the
+                SerializationAware optimization, use the <code>MessageSerializer</code> class to
+                serialize the payload and meta data of messages. All optimization logic is
+                implemented in that class. See the JavaDoc of the MessageSerializer for more
+                details.</para>
+        </sect2>
     </sect1>
     <sect1 linkend="custom-identifier-generation">
         <title>Custom Identifier generation</title>

@@ -425,5 +425,24 @@
                     changes are lost due to concurrency issues.</para>
             </simplesect>
         </sect2>
+        <sect2>
+            <title>Caching</title>
+            <para>If a database backed Saga Repository is used, saving and loading Saga instances
+                may be an expensive operation. Especially in situations where the same Saga instance
+                is invoked multiple times within a short timespan, a cache can be beneficial to the
+                application's performance.</para>
+            <para>Axon provides the <code>CachingSagaRepository</code> implementation. It is a Saga
+                Repository that wraps another repository, which does the actual storage. When
+                loading Sagas or Association Values, the <code>CachingSagaRepository</code> will
+                first conult its caches, before delegating to the wrapped repository. When storing
+                information, all call are always delegated, to ensure that the backing storage
+                always has a consistent view on the Saga's state.</para>
+            <para>To configure caching, simply wrap any Saga repository in a
+                    <code>CachingSagaRepository</code>. The constructor of the CachingSagaRepository
+                takes three parameters: the repository to wrap and the caches to use for the
+                Association Values and Saga instances, respectively. The latter two arguments may
+                refer to the same cache, or to different ones. This depends on the eviction
+                requirements of your specific application.</para>
+        </sect2>
     </sect1>
 </chapter>
