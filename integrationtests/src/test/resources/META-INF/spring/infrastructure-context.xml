@@ -30,12 +30,10 @@
     </bean>
 
     <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
-        <property name="handlerInterceptors">
-            <list>
-                <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
-                    <property name="transactionManager" ref="transactionManager"/>
-                </bean>
-            </list>
+        <property name="transactionManager">
+            <bean class="org.axonframework.unitofwork.SpringTransactionManager">
+                <property name="transactionManager" ref="transactionManager"/>
+            </bean>
         </property>
     </bean>
 

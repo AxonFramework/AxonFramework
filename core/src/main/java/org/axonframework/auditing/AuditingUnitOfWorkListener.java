@@ -17,15 +17,13 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListener;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Listener implementation that adds auditing information to events being tracked by the unit of work this listener is
@@ -34,7 +32,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.7
  */
-public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
+public class AuditingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
 
     private final AuditDataProvider auditDataProvider;
     private final AuditLogger auditLogger;
@@ -76,14 +74,6 @@ public class AuditingUnitOfWorkListener implements UnitOfWorkListener {
         }
         recordedEvents.add(event);
         return event;
-    }
-
-    @Override
-    public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
-    }
-
-    @Override
-    public void onCleanup(UnitOfWork unitOfWork) {
     }
 
     /**

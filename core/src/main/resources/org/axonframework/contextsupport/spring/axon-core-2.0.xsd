@@ -306,6 +306,18 @@
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:all>
+                    <xsd:attribute name="transaction-manager" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>The transaction manager to execute commands in a transaction.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation>
+                                    <tool:assignable-to
+                                            type="org.springframework.transaction.PlatformTransactionManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>
@@ -350,7 +362,6 @@
                                     are executed in the thread that provides the Command Message to the Command Bus.
                                 </xsd:documentation>
                             </xsd:annotation>
-
                         </xsd:element>
                         <xsd:element name="repositories">
                             <xsd:annotation>
@@ -556,6 +567,20 @@
                             <xsd:documentation>The number of seconds to wait when shutting down to ensure no commands
                                 are being processed on the command bus any more.
                             </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="transaction-manager" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>The transaction manager to execute commands in a transaction. This
+                                transaction manager is used to execute the publication and storage of events in a
+                                transaction.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation>
+                                    <tool:assignable-to
+                                            type="org.springframework.transaction.PlatformTransactionManager"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>

@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.unitofwork.NoTransactionManager;
+import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +122,7 @@ public abstract class AsynchronousExecutionWrapper<T> {
             EventProcessingScheduler<T> currentScheduler = currentSchedulers.get(sequenceIdentifier);
             if (currentScheduler == null) {
                 currentSchedulers.putIfAbsent(sequenceIdentifier,
-                                         newProcessingScheduler(new SchedulerCleanUp(sequenceIdentifier)));
+                                              newProcessingScheduler(new SchedulerCleanUp(sequenceIdentifier)));
             } else {
                 taskScheduled = currentScheduler.scheduleEvent(task);
                 if (!taskScheduled) {

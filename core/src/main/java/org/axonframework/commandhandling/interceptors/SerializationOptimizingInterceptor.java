@@ -46,7 +46,7 @@ public class SerializationOptimizingInterceptor implements CommandHandlerInterce
         return interceptorChain.proceed();
     }
 
-    private static class SerializationOptimizingListener extends UnitOfWorkListenerAdapter {
+    private static final class SerializationOptimizingListener extends UnitOfWorkListenerAdapter {
 
         @Override
         public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {

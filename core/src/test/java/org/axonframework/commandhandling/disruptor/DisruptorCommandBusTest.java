@@ -45,6 +45,7 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.Repository;
 import org.axonframework.serializer.SerializationAware;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.dom4j.Document;
@@ -84,6 +85,7 @@ public class DisruptorCommandBusTest {
     private InMemoryEventStore inMemoryEventStore;
     private DisruptorCommandBus testSubject;
     private String aggregateIdentifier;
+    private TransactionManager mockTransactionManager;
 
     @Before
     public void setUp() throws Exception {
@@ -155,6 +157,25 @@ public class DisruptorCommandBusTest {
         inOrder.verify(mockUnitOfWorkListener).onCleanup(isA(UnitOfWork.class));
 
         verify(mockCallback).onSuccess(any());
+    }
+
+    @Test
+    public void testEventPublicationExecutedWithinTransaction() throws Throwable {
+        CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
+        ExecutorService customExecutor = Executors.newCachedThreadPool();
+        mockTransactionManager = mock(TransactionManager.class);
+        when(mockTransactionManager.startTransaction()).thenReturn(new Object());
+
+        dispatchCommands(mockInterceptor, customExecutor, new GenericCommandMessage<ErrorCommand>(
+                new ErrorCommand(aggregateIdentifier)));
+
+        assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
+        customExecutor.shutdown();
+        assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
+
+        verify(mockTransactionManager, times(1001)).startTransaction();
+        verify(mockTransactionManager, times(991)).commitTransaction(any());
+        verify(mockTransactionManager, times(10)).rollbackTransaction(any());
     }
 
     @SuppressWarnings("unchecked")
@@ -281,7 +302,8 @@ public class DisruptorCommandBusTest {
                                             .setExecutor(customExecutor)
                                             .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
                                             .setInvokerThreadCount(2)
-                                            .setPublisherThreadCount(3));
+                                            .setPublisherThreadCount(3)
+                                            .setTransactionManager(mockTransactionManager));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);

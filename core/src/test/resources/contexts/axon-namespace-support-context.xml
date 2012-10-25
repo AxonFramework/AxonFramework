@@ -128,7 +128,7 @@
             <bean class="org.axonframework.contextsupport.spring.StubDispatchInterceptor"/>
         </axon:dispatchInterceptors>
         <axon:handlerInterceptors>
-            <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor"/>
+            <bean class="org.axonframework.commandhandling.interceptors.LoggingInterceptor"/>
         </axon:handlerInterceptors>
     </axon:command-bus>
 
@@ -179,7 +179,7 @@
     <bean id="eventSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 
     <bean id="commandBusInterceptor"
-          class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
+          class="org.axonframework.commandhandling.interceptors.LoggingInterceptor">
     </bean>
 
     <axon:event-sourcing-repository id="testRepository" locking-strategy="PESSIMISTIC"

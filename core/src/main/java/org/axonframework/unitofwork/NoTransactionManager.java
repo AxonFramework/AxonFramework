@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.unitofwork;
 
 /**
  * TransactionManager implementation that does nothing. Is a placeholder implementation for the cases where no special

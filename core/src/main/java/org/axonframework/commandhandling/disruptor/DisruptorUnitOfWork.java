@@ -53,6 +53,16 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private EventSourcedAggregateRoot aggregate;
     private String aggregateType;
+    private final boolean transactional;
+
+    /**
+     * Creates a new Unit of Work for use in the DisruptorCommandBus.
+     *
+     * @param transactional Whether this Unit of Work is bound to a transaction
+     */
+    public DisruptorUnitOfWork(boolean transactional) {
+        this.transactional = transactional;
+    }
 
     @Override
     public void commit() {
@@ -68,6 +78,15 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      */
     public void onPrepareCommit() {
         listeners.onPrepareCommit(this, Collections.<AggregateRoot>singleton(aggregate), eventsToPublish);
+    }
+
+    /**
+     * Invokes this UnitOfWork's on-prepare-transaction-commit cycle.
+     *
+     * @param transaction The object representing the transaction to about to be committed
+     */
+    public void onPrepareTransactionCommit(Object transaction) {
+        listeners.onPrepareTransactionCommit(this, transaction);
     }
 
     /**
@@ -122,6 +141,11 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public boolean isStarted() {
         return !committed && rollbackReason == null;
+    }
+
+    @Override
+    public boolean isTransactional() {
+        return transactional;
     }
 
     @Override

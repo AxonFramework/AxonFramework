@@ -30,6 +30,7 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResol
 import org.axonframework.common.Assert;
 import org.axonframework.common.NoCache;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.unitofwork.TransactionManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +61,7 @@ public class DisruptorConfiguration {
     private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
     private final List<CommandDispatchInterceptor> dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>();
+    private TransactionManager transactionManager;
     private CommandTargetResolver commandTargetResolver;
     private int invokerThreadCount = 1;
     private int publisherThreadCount = 1;
@@ -492,10 +494,34 @@ public class DisruptorConfiguration {
      *
      * @param serializedRepresentation the type of data the serialized object should be represented in. May not be
      *                                 <code>null</code>.
+     * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setSerializedRepresentation(Class<?> serializedRepresentation) {
         Assert.notNull(serializedRepresentation, "Serialized representation may not be null");
         this.serializedRepresentation = serializedRepresentation;
+        return this;
+    }
+
+    /**
+     * Returns the transaction manager to use to manage a transaction around the storage and publication of events.
+     *
+     * @return the transaction manager to use to manage a transaction around the storage and publication of events, or
+     *         <code>null</code> if none is configured.
+     */
+    public TransactionManager getTransactionManager() {
+        return transactionManager;
+    }
+
+    /**
+     * Sets the transaction manager to use to manage a transaction around the storage and publication of events.
+     * The default is to not have publication and storage of events wrapped in a transaction.
+     *
+     * @param transactionManager the transaction manager to use to manage a transaction around the storage and
+     *                           publication of events
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
         return this;
     }
 }

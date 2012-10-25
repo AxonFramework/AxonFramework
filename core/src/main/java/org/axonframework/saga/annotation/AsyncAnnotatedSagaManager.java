@@ -25,13 +25,14 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.NoTransactionManager;
-import org.axonframework.eventhandling.TransactionManager;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.unitofwork.UnitOfWorkFactory;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -64,7 +65,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
 
     private SagaRepository sagaRepository = new InMemorySagaRepository();
     private volatile SagaFactory sagaFactory = new GenericSagaFactory();
-    private TransactionManager transactionManager = new NoTransactionManager();
+    private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private int processorCount = DEFAULT_PROCESSOR_COUNT;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
@@ -97,7 +98,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
                                                                 new MultiThreadedClaimStrategy(bufferSize),
                                                                 waitStrategy);
             disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository,
-                                                                               transactionManager, processorCount));
+                                                                               unitOfWorkFactory, processorCount));
             disruptor.start();
         }
         subscribe();
@@ -240,7 +241,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      */
     public synchronized void setTransactionManager(TransactionManager transactionManager) {
         Assert.state(disruptor == null, "Cannot set transactionManager when SagaManager has started");
-        this.transactionManager = transactionManager;
+        this.unitOfWorkFactory = new DefaultUnitOfWorkFactory(transactionManager);
     }
 
     /**

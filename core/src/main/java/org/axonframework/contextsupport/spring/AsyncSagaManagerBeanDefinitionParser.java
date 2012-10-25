@@ -16,8 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.eventhandling.NoTransactionManager;
-import org.axonframework.eventhandling.transactionmanagers.SpringTransactionManager;
+import org.axonframework.unitofwork.SpringTransactionManager;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
 import org.springframework.beans.MutablePropertyValues;
@@ -91,8 +90,6 @@ public class AsyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBea
                                                                element.getAttribute(TRANSACTION_MANAGER_ATTRIBUTE))
                                          .getBeanDefinition();
             propertyValues.addPropertyValue("transactionManager", bd);
-        } else {
-            propertyValues.addPropertyValue("transactionManager", new NoTransactionManager());
         }
     }
 

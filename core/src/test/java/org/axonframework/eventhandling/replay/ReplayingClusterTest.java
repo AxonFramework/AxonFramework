@@ -21,7 +21,7 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.TransactionManager;
+import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.testutils.MockException;

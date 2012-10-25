@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +56,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private final int segmentId;
     private final Set<Object> blackListedAggregates = new HashSet<Object>();
     private final Map<CommandMessage, Object> failedCreateCommands = new WeakHashMap<CommandMessage, Object>();
+    private final TransactionManager transactionManager;
 
     /**
      * Initializes the EventPublisher to publish Events to the given <code>eventStore</code> and <code>eventBus</code>
@@ -63,14 +65,18 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
      * @param eventStore            The EventStore persisting the generated events
      * @param eventBus              The EventBus to publish events on
      * @param executor              The executor which schedules response reporting
+     * @param transactionManager    The transaction manager that manages the transaction around event storage and
+     *                              publication
      * @param rollbackConfiguration The configuration that indicates which exceptions should result in a UnitOfWork
      * @param segmentId             The ID of the segment this publisher should handle
      */
     public EventPublisher(EventStore eventStore, EventBus eventBus, Executor executor,
-                          RollbackConfiguration rollbackConfiguration, int segmentId) {
+                          TransactionManager transactionManager, RollbackConfiguration rollbackConfiguration,
+                          int segmentId) {
         this.eventStore = eventStore;
         this.eventBus = eventBus;
         this.executor = executor;
+        this.transactionManager = transactionManager;
         this.rollbackConfiguration = rollbackConfiguration;
         this.segmentId = segmentId;
     }
@@ -162,17 +168,29 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         return exceptionResult;
     }
 
+    @SuppressWarnings("unchecked")
     private Throwable performCommit(DisruptorUnitOfWork unitOfWork, EventSourcedAggregateRoot aggregate,
                                     Throwable exceptionResult) {
         unitOfWork.onPrepareCommit();
+        Object transaction = null;
         try {
             if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
                 unitOfWork.rollback(exceptionResult);
             } else {
+                if (transactionManager != null) {
+                    transaction = transactionManager.startTransaction();
+                }
                 storeAndPublish(unitOfWork);
+                if (transaction != null) {
+                    unitOfWork.onPrepareTransactionCommit(transaction);
+                    transactionManager.commitTransaction(transaction);
+                }
                 unitOfWork.onAfterCommit();
             }
         } catch (Exception e) {
+            if (transaction != null) {
+                transactionManager.rollbackTransaction(transaction);
+            }
             exceptionResult = notifyBlacklisted(unitOfWork, aggregate.getIdentifier(), e);
         }
         return exceptionResult;

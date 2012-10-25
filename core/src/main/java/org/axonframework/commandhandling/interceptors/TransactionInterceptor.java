@@ -32,7 +32,11 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  * @param <T> The type of object representing the transaction
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated This class will not make it in Axon 2.0. Transaction responsibility has move to the Unit Of Work.
+ *             Configure a {@link org.axonframework.unitofwork.TransactionManager} directly on the Command Bus
+ *             implementation for transactional command handling.
  */
+@Deprecated
 public abstract class TransactionInterceptor<T> implements CommandHandlerInterceptor {
 
     @Override

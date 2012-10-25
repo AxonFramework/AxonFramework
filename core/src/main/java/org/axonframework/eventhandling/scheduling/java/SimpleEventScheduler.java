@@ -21,10 +21,11 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.NoTransactionManager;
-import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
@@ -55,7 +56,7 @@ public class SimpleEventScheduler implements EventScheduler {
 
     private final ScheduledExecutorService executorService;
     private final EventBus eventBus;
-    private final TransactionManager transactionManager;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final Map<String, Future<?>> tokens = new ConcurrentHashMap<String, Future<?>>();
 
     /**
@@ -66,7 +67,7 @@ public class SimpleEventScheduler implements EventScheduler {
      * @param eventBus        The Event Bus on which Events are to be published
      */
     public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus) {
-        this(executorService, eventBus, new NoTransactionManager());
+        this(executorService, eventBus, new DefaultUnitOfWorkFactory());
     }
 
     /**
@@ -74,18 +75,18 @@ public class SimpleEventScheduler implements EventScheduler {
      * mechanism, and publishes events to the given <code>eventBus</code>. The <code>eventTriggerCallback</code> is
      * invoked just before and after publication of a scheduled event.
      *
-     * @param executorService    The backing ScheduledExecutorService
-     * @param eventBus           The Event Bus on which Events are to be published
-     * @param transactionManager to manage transactions around event publication
+     * @param executorService   The backing ScheduledExecutorService
+     * @param eventBus          The Event Bus on which Events are to be published
+     * @param unitOfWorkFactory The factory that creates the Unit of Work to manage transactions
      */
     public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus,
-                                TransactionManager transactionManager) {
+                                UnitOfWorkFactory unitOfWorkFactory) {
         Assert.notNull(executorService, "The ScheduledExecutorService may not be null");
         Assert.notNull(eventBus, "The EventBus may not be null");
 
         this.executorService = executorService;
         this.eventBus = eventBus;
-        this.transactionManager = transactionManager;
+        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 
     @Override
@@ -131,16 +132,13 @@ public class SimpleEventScheduler implements EventScheduler {
             if (logger.isInfoEnabled()) {
                 logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
-            Object transaction = transactionManager.startTransaction();
+            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
             try {
-                eventBus.publish(eventMessage);
-            } catch (RuntimeException e) {
-                transactionManager.rollbackTransaction(transaction);
-                throw e;
+                unitOfWork.publishEvent(eventMessage, eventBus);
+                unitOfWork.commit();
             } finally {
                 tokens.remove(tokenId);
             }
-            transactionManager.commitTransaction(transaction);
         }
 
         /**

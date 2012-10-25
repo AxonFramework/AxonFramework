@@ -41,7 +41,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 0.6
  */
-public class DefaultUnitOfWork extends AbstractUnitOfWork {
+public class DefaultUnitOfWork extends NestableUnitOfWork {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultUnitOfWork.class);
 
@@ -50,6 +50,16 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     private final Map<EventBus, List<EventMessage<?>>> eventsToPublish = new HashMap<EventBus, List<EventMessage<?>>>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private Status dispatcherStatus = Status.READY;
+    private final TransactionManager transactionManager;
+    private Object backingTransaction;
+
+    public DefaultUnitOfWork() {
+        this(null);
+    }
+
+    public DefaultUnitOfWork(TransactionManager<?> transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 
     private static enum Status {
 
@@ -71,17 +81,56 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
         return uow;
     }
 
+    /**
+     * Starts a new DefaultUnitOfWork instance using the given <code>transactionManager</code> to provide a backing
+     * transaction, registering it a CurrentUnitOfWork. This methods returns the started UnitOfWork instance.
+     * <p/>
+     * Note that this Unit Of Work type is not meant to be shared among different Threads. A single DefaultUnitOfWork
+     * instance should be used exclusively by the Thread that created it.
+     *
+     * @param transactionManager The transaction manager to provide the backing transaction. May be <code>null</code>
+     *                           when not using transactions.
+     * @return the started UnitOfWork instance
+     */
+    public static UnitOfWork startAndGet(TransactionManager<?> transactionManager) {
+        DefaultUnitOfWork uow = new DefaultUnitOfWork(transactionManager);
+        uow.start();
+        return uow;
+    }
+
+    @Override
+    protected void doStart() {
+        if (isTransactional()) {
+            this.backingTransaction = transactionManager.startTransaction();
+        }
+    }
+
+    @Override
+    public boolean isTransactional() {
+        return transactionManager != null;
+    }
+
     @Override
     protected void doRollback(Throwable cause) {
         registeredAggregates.clear();
         eventsToPublish.clear();
-        notifyListenersRollback(cause);
+        try {
+            if (backingTransaction != null) {
+                transactionManager.rollbackTransaction(backingTransaction);
+            }
+        } finally {
+            notifyListenersRollback(cause);
+        }
     }
 
     @Override
     protected void doCommit() {
         publishEvents();
         commitInnerUnitOfWork();
+        if (backingTransaction != null) {
+            notifyListenersPrepareTransactionCommit(backingTransaction);
+            transactionManager.commitTransaction(backingTransaction);
+        }
         notifyListenersAfterCommit();
     }
 
@@ -154,6 +203,15 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     @Override
     protected void notifyListenersRollback(Throwable cause) {
         listeners.onRollback(this, cause);
+    }
+
+    /**
+     * Send a {@link UnitOfWorkListener#afterCommit(UnitOfWork)} notification to all registered listeners.
+     *
+     * @param transaction The object representing the transaction to about to be committed
+     */
+    protected void notifyListenersPrepareTransactionCommit(Object transaction) {
+        listeners.onPrepareTransactionCommit(this, transaction);
     }
 
     /**

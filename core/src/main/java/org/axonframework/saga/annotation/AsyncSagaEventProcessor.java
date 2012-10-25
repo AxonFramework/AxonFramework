@@ -17,9 +17,10 @@
 package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.EventHandler;
-import org.axonframework.eventhandling.TransactionManager;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkFactory;
 
 import java.util.Map;
 import java.util.Set;
@@ -34,41 +35,41 @@ import java.util.TreeMap;
  */
 public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingEvent> {
 
-    private final TransactionManager transactionManager;
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final SagaRepository sagaRepository;
     private final Map<String, Saga> processedSagas = new TreeMap<String, Saga>();
     private final int processorCount;
     private final int processorId;
-    private Object transactionStatus;
+    private UnitOfWork unitOfWork;
 
     /**
      * Creates the Disruptor Event Handlers for invoking Sagas. The size of the array returned is equal to the given
      * <code>processorCount</code>.
      *
-     * @param sagaRepository     The repository which provides access to the Sagas
-     * @param transactionManager The TransactionManager that creates and commits transactions
-     * @param processorCount     The number of processors to create
+     * @param sagaRepository    The repository which provides access to the Sagas
+     * @param unitOfWorkFactory The factory to create Unit of Work instances with
+     * @param processorCount    The number of processors to create
      * @return an array containing the Disruptor Event Handlers to invoke Sagas.
      */
     static EventHandler<AsyncSagaProcessingEvent>[] createInstances(SagaRepository sagaRepository,
-                                                                    TransactionManager transactionManager,
+                                                                    UnitOfWorkFactory unitOfWorkFactory,
                                                                     int processorCount) {
         AsyncSagaEventProcessor[] processors = new AsyncSagaEventProcessor[processorCount];
         for (int processorId = 0; processorId < processorCount; processorId++) {
             processors[processorId] = new AsyncSagaEventProcessor(sagaRepository,
                                                                   processorCount,
                                                                   processorId,
-                                                                  transactionManager);
+                                                                  unitOfWorkFactory);
         }
         return processors;
     }
 
     private AsyncSagaEventProcessor(SagaRepository sagaRepository, int processorCount,
-                                    int processorId, TransactionManager transactionManager) {
+                                    int processorId, UnitOfWorkFactory unitOfWorkFactory) {
         this.sagaRepository = sagaRepository;
         this.processorCount = processorCount;
         this.processorId = processorId;
-        this.transactionManager = transactionManager;
+        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 
     @Override
@@ -102,8 +103,8 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     }
 
     private void ensureLiveTransaction() {
-        if (transactionStatus == null) {
-            transactionStatus = transactionManager.startTransaction();
+        if (unitOfWork == null) {
+            unitOfWork = unitOfWorkFactory.createUnitOfWork();
         }
     }
 
@@ -115,9 +116,9 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                 sagaRepository.commit(saga);
             }
         }
-        if (transactionStatus != null) {
-            transactionManager.commitTransaction(transactionStatus);
-            transactionStatus = null;
+        if (unitOfWork != null) {
+            unitOfWork.commit();
+            unitOfWork = null;
         }
         processedSagas.clear();
         if (ensureNewTransaction) {

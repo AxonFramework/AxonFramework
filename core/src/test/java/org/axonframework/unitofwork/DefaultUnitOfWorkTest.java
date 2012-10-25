@@ -75,6 +75,48 @@ public class DefaultUnitOfWorkTest {
         assertFalse("A UnitOfWork was not properly cleared", CurrentUnitOfWork.isStarted());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTransactionBoundUnitOfWorkLifecycle() {
+        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
+        TransactionManager<Object> mockTransactionManager = mock(TransactionManager.class);
+        when(mockTransactionManager.startTransaction()).thenReturn(new Object());
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransactionManager);
+        uow.registerListener(mockListener);
+        verify(mockTransactionManager).startTransaction();
+        verifyZeroInteractions(mockListener);
+
+        uow.commit();
+
+        InOrder inOrder = inOrder(mockListener, mockTransactionManager);
+        inOrder.verify(mockListener).onPrepareCommit(eq(uow), anySet(), anyList());
+        inOrder.verify(mockListener).onPrepareTransactionCommit(eq(uow), any());
+        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockListener).afterCommit(eq(uow));
+        inOrder.verify(mockListener).onCleanup(uow);
+        verifyNoMoreInteractions(mockListener, mockTransactionManager);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTransactionBoundUnitOfWorkLifecycle_Rollback() {
+        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
+        TransactionManager<Object> mockTransactionManager = mock(TransactionManager.class);
+        when(mockTransactionManager.startTransaction()).thenReturn(new Object());
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransactionManager);
+        uow.registerListener(mockListener);
+        verify(mockTransactionManager).startTransaction();
+        verifyZeroInteractions(mockListener);
+
+        uow.rollback();
+
+        InOrder inOrder = inOrder(mockListener, mockTransactionManager);
+        inOrder.verify(mockTransactionManager).rollbackTransaction(any());
+        inOrder.verify(mockListener).onRollback(eq(uow), any(Throwable.class));
+        inOrder.verify(mockListener).onCleanup(uow);
+        verifyNoMoreInteractions(mockListener, mockTransactionManager);
+    }
+
     @Test
     public void testUnitOfWorkRegistersListenerWithParent() {
         UnitOfWork parentUoW = mock(UnitOfWork.class);

@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,10 +159,12 @@ public class DisruptorCommandBus implements CommandBus {
         invokerInterceptors = new ArrayList<CommandHandlerInterceptor>(configuration.getInvokerInterceptors());
         publisherInterceptors = new ArrayList<CommandHandlerInterceptor>(configuration.getPublisherInterceptors());
         dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(configuration.getDispatchInterceptors());
-        disruptor = new Disruptor<CommandHandlingEntry>(new CommandHandlingEntry.Factory(),
-                                                        executor,
-                                                        configuration.getClaimStrategy(),
-                                                        configuration.getWaitStrategy());
+        TransactionManager transactionManager = configuration.getTransactionManager();
+        disruptor = new Disruptor<CommandHandlingEntry>(
+                new CommandHandlingEntry.Factory(configuration.getTransactionManager() != null),
+                executor,
+                configuration.getClaimStrategy(),
+                configuration.getWaitStrategy());
         commandTargetResolver = configuration.getCommandTargetResolver();
 
         // configure invoker Threads
@@ -170,7 +173,8 @@ public class DisruptorCommandBus implements CommandBus {
         SerializerHandler[] serializerThreads = initializeSerializerThreads(configuration);
         serializerCount = serializerThreads.length;
         // configure publisher Threads
-        EventPublisher[] publishers = initializePublisherThreads(eventStore, eventBus, configuration, executor);
+        EventPublisher[] publishers = initializePublisherThreads(eventStore, eventBus, configuration, executor,
+                                                                 transactionManager);
         publisherCount = publishers.length;
         disruptor.handleExceptionsWith(new ExceptionHandler());
 
@@ -186,10 +190,11 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     private EventPublisher[] initializePublisherThreads(EventStore eventStore, EventBus eventBus,
-                                                        DisruptorConfiguration configuration, Executor executor) {
+                                                        DisruptorConfiguration configuration, Executor executor,
+                                                        TransactionManager transactionManager) {
         EventPublisher[] publishers = new EventPublisher[configuration.getPublisherThreadCount()];
         for (int t = 0; t < publishers.length; t++) {
-            publishers[t] = new EventPublisher(eventStore, eventBus, executor,
+            publishers[t] = new EventPublisher(eventStore, eventBus, executor, transactionManager,
                                                configuration.getRollbackConfiguration(), t);
         }
         return publishers;

@@ -17,7 +17,10 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.unitofwork.SpringTransactionManager;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -37,6 +40,8 @@ import java.util.List;
  */
 public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
+    private static final String ATTRIBUTE_TRANSACTION_MANAGER = "transaction-manager";
+
     /**
      * {@inheritDoc}
      */
@@ -50,9 +55,16 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
             commandBusDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, attribute);
         }
 
-
         parseDispatchInterceptorConfiguration(element, parserContext, commandBusDefinition);
         parseHandlerInterceptorConfiguration(element, parserContext, commandBusDefinition);
+        if (element.hasAttribute(ATTRIBUTE_TRANSACTION_MANAGER)) {
+            final BeanDefinition txManager =
+                    BeanDefinitionBuilder.genericBeanDefinition(SpringTransactionManager.class)
+                                         .addPropertyReference("transactionManager",
+                                                               element.getAttribute(ATTRIBUTE_TRANSACTION_MANAGER))
+                                         .getBeanDefinition();
+            commandBusDefinition.getPropertyValues().add("transactionManager", txManager);
+        }
 
         return commandBusDefinition;
     }
@@ -65,7 +77,7 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
      * @param commandBusDefinition The {@link org.springframework.beans.factory.config.BeanDefinition} being built.
      */
     private void parseHandlerInterceptorConfiguration(Element element, ParserContext parserContext,
-                                                       GenericBeanDefinition commandBusDefinition) {
+                                                      GenericBeanDefinition commandBusDefinition) {
         Element interceptorsElement = DomUtils.getChildElementByTagName(element, "handlerInterceptors");
         if (interceptorsElement != null) {
             List<?> interceptorsList = parserContext.getDelegate().parseListElement(interceptorsElement,

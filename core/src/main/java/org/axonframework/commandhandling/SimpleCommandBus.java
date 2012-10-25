@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.monitoring.MonitorRegistry;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -186,7 +187,8 @@ public class SimpleCommandBus implements CommandBus {
     /**
      * Convenience method that allows you to register command handlers using a Dependency Injection framework. The
      * parameter of this method is a <code>Map&lt;Object&lt;T&gt;, CommandHandler&lt;? super T&gt;&gt;</code>. The key
-     * represents the type (either as a String or Class) of command to register the handler for, the value is the actual handler.
+     * represents the type (either as a String or Class) of command to register the handler for, the value is the
+     * actual handler.
      *
      * @param handlers The handlers to subscribe in the form of a Map of Class - CommandHandler entries.
      */
@@ -206,11 +208,25 @@ public class SimpleCommandBus implements CommandBus {
     /**
      * Sets the UnitOfWorkFactory that provides the UnitOfWork instances for handling incoming commands. Defaults to a
      * {@link DefaultUnitOfWorkFactory}.
+     * <p/>
+     * This method should not be used in combination with
+     * {@link #setTransactionManager(org.axonframework.unitofwork.TransactionManager)}. For transaction support, ensure
+     * the provided UnitOfWorkFactory implementation binds each UnitOfWork to a transaction.
      *
      * @param unitOfWorkFactory The UnitOfWorkFactory providing UoW instances for this Command Bus.
      */
     public void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         this.unitOfWorkFactory = unitOfWorkFactory;
+    }
+
+    /**
+     * Sets the transaction manager that manages the transaction around command handling. This should not be used in
+     * combination with {@link #setUnitOfWorkFactory(org.axonframework.unitofwork.UnitOfWorkFactory)}.
+     *
+     * @param transactionManager the transaction manager to use
+     */
+    public void setTransactionManager(TransactionManager transactionManager) {
+        this.unitOfWorkFactory = new DefaultUnitOfWorkFactory(transactionManager);
     }
 
     /**

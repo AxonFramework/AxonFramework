@@ -20,6 +20,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.TransactionManager;
 import org.junit.*;
 import org.mockito.*;
 

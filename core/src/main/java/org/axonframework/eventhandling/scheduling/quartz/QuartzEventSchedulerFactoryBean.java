@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.transactionmanagers.SpringTransactionManager;
+import org.axonframework.unitofwork.SpringTransactionManager;
 import org.quartz.Scheduler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;

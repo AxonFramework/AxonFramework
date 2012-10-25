@@ -115,6 +115,18 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
         logger.debug("Listeners successfully notified");
     }
 
+    @Override
+    public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
+        logger.debug("Notifying listeners of transaction commit request");
+        for (UnitOfWorkListener listener : listeners) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Notifying listener [{}] of upcoming transaction commit", listener.getClass().getName());
+            }
+            listener.onPrepareTransactionCommit(unitOfWork, transaction);
+        }
+        logger.debug("Listeners successfully notified");
+    }
+
     /**
      * {@inheritDoc}
      * <p/>

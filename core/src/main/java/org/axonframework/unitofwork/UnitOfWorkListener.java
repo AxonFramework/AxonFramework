@@ -79,6 +79,20 @@ public interface UnitOfWorkListener {
     void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots, List<EventMessage> events);
 
     /**
+     * Invoked before the transaction bound to this Unit of Work is committed, but after all other commit activities
+     * (publication of events and saving of aggregates) are performed. This gives resource manager the opportunity to
+     * take actions that must be part of the same transaction.
+     * <p/>
+     * Note that this method is only invoked if the Unit of Work is bound to a transaction.
+     *
+     * @param unitOfWork  The Unit of Work of which the underlying transaction is being committed.
+     * @param transaction The object representing the (status of) the transaction, as returned by {@link
+     *                    org.axonframework.unitofwork.TransactionManager#startTransaction()}.
+     * @see org.axonframework.unitofwork.TransactionManager
+     */
+    void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction);
+
+    /**
      * Notifies listeners that the UnitOfWork is being cleaned up. This gives listeners the opportunity to clean up
      * resources that might have been used during commit or rollback, such as remaining locks, open files, etc.
      * <p/>

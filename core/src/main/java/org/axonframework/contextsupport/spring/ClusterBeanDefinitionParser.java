@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.ReplayingCluster;
-import org.axonframework.eventhandling.transactionmanagers.SpringTransactionManager;
+import org.axonframework.unitofwork.SpringTransactionManager;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanDefinition;

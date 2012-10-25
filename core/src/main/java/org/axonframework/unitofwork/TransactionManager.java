@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.unitofwork;
 
 /**
  * Interface towards a mechanism that manages transactions

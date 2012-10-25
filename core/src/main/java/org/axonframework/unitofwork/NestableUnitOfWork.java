@@ -16,14 +16,11 @@
 
 package org.axonframework.unitofwork;
 
-import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Abstract implementation of the UnitOfWork interface. Provides the necessary implementations to support most actions
@@ -34,13 +31,13 @@ import java.util.Set;
  * @see CurrentUnitOfWork
  * @since 0.7
  */
-public abstract class AbstractUnitOfWork implements UnitOfWork {
+public abstract class NestableUnitOfWork implements UnitOfWork {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
+    private static final Logger logger = LoggerFactory.getLogger(NestableUnitOfWork.class);
 
     private boolean isStarted;
     private UnitOfWork outerUnitOfWork;
-    private List<AbstractUnitOfWork> innerUnitsOfWork = new ArrayList<AbstractUnitOfWork>();
+    private List<NestableUnitOfWork> innerUnitsOfWork = new ArrayList<NestableUnitOfWork>();
 
     @Override
     public void commit() {
@@ -72,7 +69,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     private void performCleanup() {
-        for (AbstractUnitOfWork uow : innerUnitsOfWork) {
+        for (NestableUnitOfWork uow : innerUnitsOfWork) {
             uow.performCleanup();
         }
         notifyListenersCleanup();
@@ -107,7 +104,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
         try {
             if (isStarted()) {
-                for (AbstractUnitOfWork inner : innerUnitsOfWork) {
+                for (NestableUnitOfWork inner : innerUnitsOfWork) {
                     CurrentUnitOfWork.set(inner);
                     inner.rollback(cause);
                 }
@@ -130,8 +127,8 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         } else if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
             this.outerUnitOfWork = CurrentUnitOfWork.get();
-            if (outerUnitOfWork instanceof AbstractUnitOfWork) {
-                ((AbstractUnitOfWork) outerUnitOfWork).registerInnerUnitOfWork(this);
+            if (outerUnitOfWork instanceof NestableUnitOfWork) {
+                ((NestableUnitOfWork) outerUnitOfWork).registerInnerUnitOfWork(this);
             } else {
                 outerUnitOfWork.registerListener(new CommitOnOuterCommitTask());
             }
@@ -154,12 +151,8 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     /**
      * Performs logic required when starting this UnitOfWork instance.
-     * <p/>
-     * This implementation does nothing and may be freely overridden.
      */
-    protected void doStart() {
-    }
-
+    protected abstract void doStart();
     /**
      * Executes the logic required to commit this unit of work.
      */
@@ -201,14 +194,14 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
      * any listeners are notified of the commit.
      */
     protected void commitInnerUnitOfWork() {
-        for (AbstractUnitOfWork unitOfWork : innerUnitsOfWork) {
+        for (NestableUnitOfWork unitOfWork : innerUnitsOfWork) {
             if (unitOfWork.isStarted()) {
                 unitOfWork.performInnerCommit();
             }
         }
     }
 
-    private void registerInnerUnitOfWork(AbstractUnitOfWork unitOfWork) {
+    private void registerInnerUnitOfWork(NestableUnitOfWork unitOfWork) {
         innerUnitsOfWork.add(unitOfWork);
     }
 
@@ -219,17 +212,11 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     /**
      * Send a {@link org.axonframework.unitofwork.UnitOfWorkListener#onPrepareCommit(UnitOfWork, java.util.Set,
-     * java.util.List)}
-     * notification to all registered listeners.
+     * java.util.List)} notification to all registered listeners.
      */
     protected abstract void notifyListenersPrepareCommit();
 
-    private class CommitOnOuterCommitTask implements UnitOfWorkListener {
-
-        @Override
-        public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
-            return event;
-        }
+    private final class CommitOnOuterCommitTask extends UnitOfWorkListenerAdapter {
 
         @Override
         public void afterCommit(UnitOfWork unitOfWork) {
@@ -238,17 +225,12 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
         @Override
         public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-            CurrentUnitOfWork.set(AbstractUnitOfWork.this);
+            CurrentUnitOfWork.set(NestableUnitOfWork.this);
             try {
                 doRollback(failureCause);
             } finally {
-                CurrentUnitOfWork.clear(AbstractUnitOfWork.this);
+                CurrentUnitOfWork.clear(NestableUnitOfWork.this);
             }
-        }
-
-        @Override
-        public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-                                    List<EventMessage> events) {
         }
 
         @Override

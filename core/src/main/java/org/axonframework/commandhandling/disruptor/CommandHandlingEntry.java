@@ -49,11 +49,15 @@ public class CommandHandlingEntry {
     private Object aggregateIdentifier;
     private int invokerSegmentId;
     private int serializerSegmentId;
+    private final boolean transactional;
 
     /**
      * Initializes the CommandHandlingEntry
+     *
+     * @param transactional Whether this entry contains transactional Unit of Work
      */
-    public CommandHandlingEntry() {
+    public CommandHandlingEntry(boolean transactional) {
+        this.transactional = transactional;
         repeatingCommandHandler = new RepeatingCommandHandler();
     }
 
@@ -216,7 +220,7 @@ public class CommandHandlingEntry {
         this.aggregateIdentifier = null;
         this.result = null;
         this.exceptionResult = null;
-        this.unitOfWork = new DisruptorUnitOfWork();
+        this.unitOfWork = new DisruptorUnitOfWork(transactional);
         this.invocationInterceptorChain = new DefaultInterceptorChain(newCommand,
                                                                       unitOfWork,
                                                                       newCommandHandler,
@@ -250,9 +254,20 @@ public class CommandHandlingEntry {
      */
     public static class Factory implements EventFactory<CommandHandlingEntry> {
 
+        private final boolean transactional;
+
+        /**
+         * Initialize the factory with given <code>transactional</code> flag
+         *
+         * @param transactional whether the entries contain transactional Units of Work
+         */
+        public Factory(boolean transactional) {
+            this.transactional = transactional;
+        }
+
         @Override
         public CommandHandlingEntry newInstance() {
-            return new CommandHandlingEntry();
+            return new CommandHandlingEntry(transactional);
         }
     }
 

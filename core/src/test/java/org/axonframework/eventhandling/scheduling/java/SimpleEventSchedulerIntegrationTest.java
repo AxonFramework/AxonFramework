@@ -67,7 +67,8 @@ public class SimpleEventSchedulerIntegrationTest {
                         eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(someAssociationValue)));
                     }
                 });
-        Thread.sleep(100);
+        // the event is scheduled in 50ms, which is generally enough to get the saga committed
+        Thread.sleep(150);
         Set<String> actualResult = repository.find(SimpleTimingSaga.class,
                                                    new AssociationValue("association", someAssociationValue));
         assertEquals(1, actualResult.size());

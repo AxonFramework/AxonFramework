@@ -23,13 +23,7 @@
     <axon:annotation-config/>
 
     <axon:event-bus id="eventBus"/>
-    <axon:command-bus id="commandBus">
-        <axon:handlerInterceptors>
-            <bean class="org.axonframework.commandhandling.interceptors.SpringTransactionalInterceptor">
-                <property name="transactionManager" ref="transactionManager"/>
-            </bean>
-        </axon:handlerInterceptors>
-    </axon:command-bus>
+    <axon:command-bus id="commandBus" transaction-manager="transactionManager"/>
 
     <bean class="org.axonframework.unitofwork.nesting.TripleUnitOfWorkNestingTest$MyCommandHandler">
     </bean>

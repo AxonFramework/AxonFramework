@@ -76,7 +76,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         }
     }
 
-    private class DispatchCommand<R> implements Runnable {
+    private final class DispatchCommand<R> implements Runnable {
 
         private final CommandMessage<?> command;
         private final CommandCallback<R> callback;

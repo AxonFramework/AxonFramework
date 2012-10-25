@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ import java.util.concurrent.Executor;
  *
  * @author Allard Buijze
  * @see SequencingPolicy
- * @see TransactionManager
+ * @see org.axonframework.unitofwork.TransactionManager
  * @since 2.0
  */
 public class AsynchronousCluster extends AbstractCluster {

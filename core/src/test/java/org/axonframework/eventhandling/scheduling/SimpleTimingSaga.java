@@ -31,7 +31,7 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
 
     private transient EventScheduler timer;
     private volatile boolean triggered = false;
-    private static final Duration SCHEDULE_DURATION = new Duration(10);
+    private static final Duration SCHEDULE_DURATION = new Duration(50);
 
     @StartSaga
     @SagaEventHandler(associationProperty = "association")

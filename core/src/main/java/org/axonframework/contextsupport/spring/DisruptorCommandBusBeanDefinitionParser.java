@@ -26,6 +26,7 @@ import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.disruptor.DisruptorConfiguration;
 import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.unitofwork.SpringTransactionManager;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -59,6 +60,9 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     private static final String ATTRIBUTE_CLAIM_STRATEGY = "claim-strategy";
     private static final String ATTRIBUTE_BUFFER_SIZE = "buffer-size";
     private static final String ELEMENT_REPOSITORIES = "repositories";
+
+    private static final String ATTRIBUTE_TRANSACTION_MANAGER = "transaction-manager";
+    private static final String PROPERTY_TRANSACTION_MANAGER = "transactionManager";
 
     private static final Map<String, String> VALUE_PROPERTY_MAPPING = new HashMap<String, String>();
     private static final Map<String, String> REF_PROPERTY_MAPPING = new HashMap<String, String>();
@@ -115,6 +119,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         }
         parseClaimStrategy(element, builder);
         parseWaitStrategy(element, builder);
+        parseTransactionManager(element, builder);
 
         for (Map.Entry<String, String> entry : LIST_PROPERTY_MAPPING.entrySet()) {
             final Element interceptorsElement = DomUtils.getChildElementByTagName(element, entry.getKey());
@@ -123,9 +128,19 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                                          parserContext.getDelegate().parseListElement(interceptorsElement,
                                                                                       builder.getBeanDefinition()));
             }
-
         }
         return builder.getBeanDefinition();
+    }
+
+    private void parseTransactionManager(Element element, BeanDefinitionBuilder builder) {
+        if (element.hasAttribute(ATTRIBUTE_TRANSACTION_MANAGER)) {
+            final String txManagerId = element.getAttribute(ATTRIBUTE_TRANSACTION_MANAGER);
+            builder.addPropertyValue(PROPERTY_TRANSACTION_MANAGER,
+                                     BeanDefinitionBuilder.genericBeanDefinition(SpringTransactionManager.class)
+                                                          .addPropertyReference(PROPERTY_TRANSACTION_MANAGER,
+                                                                                txManagerId)
+                                                          .getBeanDefinition());
+        }
     }
 
     private void parseClaimStrategy(Element element, BeanDefinitionBuilder builder) {

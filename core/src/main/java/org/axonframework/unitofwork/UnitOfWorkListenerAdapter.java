@@ -46,6 +46,10 @@ public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
     public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
     }
 
+    @Override
+    public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
+    }
+
     /**
      * {@inheritDoc}
      */

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.transactionmanagers;
+package org.axonframework.unitofwork;
 
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -24,15 +24,11 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 /**
  * TransactionManager implementation that uses a {@link org.springframework.transaction.PlatformTransactionManager} as
  * underlying transaction manager.
- * <p/>
- * The transaction manager will commit the transaction when event handling is successful. If a non-transient
- * (non-recoverable) exception occurs, the failing event is discarded and the transaction is committed. If a transient
- * exception occurs, such as a failing connection, the transaction is rolled back and scheduled for a retry.
  *
  * @author Allard Buijze
- * @since 0.5
+ * @since 2.0
  */
-public class SpringTransactionManager extends AbstractTransactionManager<TransactionStatus> {
+public class SpringTransactionManager implements TransactionManager<TransactionStatus> {
 
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition;
@@ -66,19 +62,19 @@ public class SpringTransactionManager extends AbstractTransactionManager<Transac
     }
 
     @Override
-    protected TransactionStatus startUnderlyingTransaction() {
+    public TransactionStatus startTransaction() {
         return transactionManager.getTransaction(transactionDefinition);
     }
 
     @Override
-    protected void commitUnderlyingTransaction(TransactionStatus tx) {
+    public void commitTransaction(TransactionStatus tx) {
         if (tx.isNewTransaction()) {
             transactionManager.commit(tx);
         }
     }
 
     @Override
-    protected void rollbackUnderlyingTransaction(TransactionStatus tx) {
+    public void rollbackTransaction(TransactionStatus tx) {
         if (tx.isNewTransaction()) {
             transactionManager.rollback(tx);
         }

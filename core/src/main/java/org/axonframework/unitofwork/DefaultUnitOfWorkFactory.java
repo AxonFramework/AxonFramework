@@ -24,8 +24,18 @@ package org.axonframework.unitofwork;
  */
 public class DefaultUnitOfWorkFactory implements UnitOfWorkFactory {
 
+    private final TransactionManager transactionManager;
+
+    public DefaultUnitOfWorkFactory() {
+        this(null);
+    }
+
+    public DefaultUnitOfWorkFactory(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
     @Override
     public UnitOfWork createUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet();
+        return DefaultUnitOfWork.startAndGet(transactionManager);
     }
 }

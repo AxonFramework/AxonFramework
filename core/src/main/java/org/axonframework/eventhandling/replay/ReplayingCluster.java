@@ -22,7 +22,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.TransactionManager;
+import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.EventStoreManagement;
 

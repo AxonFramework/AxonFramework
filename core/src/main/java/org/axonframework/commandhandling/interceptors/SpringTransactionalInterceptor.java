@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.interceptors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -23,17 +25,32 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
  * A CommandHandlerInterceptor that uses a {@link PlatformTransactionManager} to manage transactions around command
- * handling. If any events are handled synchronously (i.e. in the thread that processes the command), these handlers can
+ * handling. If any events are handled synchronously (i.e. in the thread that processes the command), these handlers
+ * can
  * use the same transaction.
  *
  * @author Allard Buijze
  * @see org.springframework.transaction.PlatformTransactionManager
  * @since 0.5
+ * @deprecated This class will not make it in Axon 2.0. Transaction responsibility has move to the Unit Of Work.
+ *             Configure a {@link org.axonframework.unitofwork.TransactionManager} directly on the Command Bus
+ *             implementation for transactional command handling.
  */
+@Deprecated
 public class SpringTransactionalInterceptor extends TransactionInterceptor<TransactionStatus> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SpringTransactionalInterceptor.class);
 
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
+
+    /**
+     * Default constructor.
+     */
+    public SpringTransactionalInterceptor() {
+        logger.error("Warning!! Use of the SpringTransactionalInterceptor is deprecated. "
+                             + "Configure a TransactionManager on the Command Bus instead.");
+    }
 
     @Override
     protected TransactionStatus startTransaction() {
