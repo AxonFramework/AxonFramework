@@ -17,7 +17,6 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.unitofwork.SpringTransactionManager;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -59,7 +58,7 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
         parseHandlerInterceptorConfiguration(element, parserContext, commandBusDefinition);
         if (element.hasAttribute(ATTRIBUTE_TRANSACTION_MANAGER)) {
             final BeanDefinition txManager =
-                    BeanDefinitionBuilder.genericBeanDefinition(SpringTransactionManager.class)
+                    BeanDefinitionBuilder.genericBeanDefinition(TransactionManagerFactoryBean.class)
                                          .addPropertyReference("transactionManager",
                                                                element.getAttribute(ATTRIBUTE_TRANSACTION_MANAGER))
                                          .getBeanDefinition();

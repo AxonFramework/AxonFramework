@@ -26,7 +26,6 @@ import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.disruptor.DisruptorConfiguration;
 import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.unitofwork.SpringTransactionManager;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -136,7 +135,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         if (element.hasAttribute(ATTRIBUTE_TRANSACTION_MANAGER)) {
             final String txManagerId = element.getAttribute(ATTRIBUTE_TRANSACTION_MANAGER);
             builder.addPropertyValue(PROPERTY_TRANSACTION_MANAGER,
-                                     BeanDefinitionBuilder.genericBeanDefinition(SpringTransactionManager.class)
+                                     BeanDefinitionBuilder.genericBeanDefinition(TransactionManagerFactoryBean.class)
                                                           .addPropertyReference(PROPERTY_TRANSACTION_MANAGER,
                                                                                 txManagerId)
                                                           .getBeanDefinition());

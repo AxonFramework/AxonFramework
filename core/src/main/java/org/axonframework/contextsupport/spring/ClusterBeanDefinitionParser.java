@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.ReplayingCluster;
-import org.axonframework.unitofwork.SpringTransactionManager;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -146,13 +145,14 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         }
         if (replayElement.hasAttribute(TRANSACTION_MANAGER_ATTRIBUTE)) {
             constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
-                    .genericBeanDefinition(SpringTransactionManager.class)
-                    .addConstructorArgReference(replayElement.getAttribute(TRANSACTION_MANAGER_ATTRIBUTE))
+                    .genericBeanDefinition(TransactionManagerFactoryBean.class)
+                    .addPropertyReference("transactionManager",
+                                          replayElement.getAttribute(TRANSACTION_MANAGER_ATTRIBUTE))
                     .getBeanDefinition());
         } else {
             constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
-                    .genericBeanDefinition(SpringTransactionManager.class)
-                    .addConstructorArgValue(new AutowiredBean(PlatformTransactionManager.class))
+                    .genericBeanDefinition(TransactionManagerFactoryBean.class)
+                    .addPropertyValue("transactionManager", new AutowiredBean(PlatformTransactionManager.class))
                     .getBeanDefinition());
         }
         constructor.addIndexedArgumentValue(3, replayElement.getAttribute(COMMIT_THRESHOLD_ATTRIBUTE));
