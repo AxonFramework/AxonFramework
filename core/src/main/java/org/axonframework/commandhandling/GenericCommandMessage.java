@@ -53,6 +53,13 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
         return new GenericCommandMessage<Object>(command);
     }
 
+    public static CommandMessage asCommandMessage(Object command, Map<String, ?> newMetaData) {
+        if (CommandMessage.class.isInstance(command)) {
+            return (CommandMessage) command;
+        }
+        return new GenericCommandMessage<Object>(command, newMetaData);
+    }    
+    
     /**
      * Create a CommandMessage with the given <code>command</code> as payload and empty metaData
      *
