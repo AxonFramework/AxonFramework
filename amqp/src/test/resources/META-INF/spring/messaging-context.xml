@@ -62,6 +62,7 @@
 
     <bean id="terminal" class="org.axonframework.eventhandling.amqp.spring.SpringAMQPTerminal">
         <property name="exchange" ref="eventBusExchange"/>
+        <property name="transactional" value="true"/>
     </bean>
 
     <bean id="serializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>

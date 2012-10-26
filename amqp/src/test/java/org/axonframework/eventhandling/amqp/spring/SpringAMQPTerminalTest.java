@@ -20,11 +20,14 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
+import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.NoTransactionManager;
+import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.springframework.amqp.rabbit.connection.Connection;
@@ -33,6 +36,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -84,12 +88,14 @@ public class SpringAMQPTerminalTest {
     }
 
     @Test
-    public void testSendMessage_WithUnitOfWork() throws IOException {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+    public void testSendMessage_WithTransactionalUnitOfWork() throws IOException {
+        TransactionManager<?> mockTransaction = new NoTransactionManager();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransaction);
 
         Connection connection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(connection);
         Channel transactionalChannel = mock(Channel.class);
+        when(transactionalChannel.isOpen()).thenReturn(true);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
         GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
@@ -107,6 +113,38 @@ public class SpringAMQPTerminalTest {
         uow.commit();
         verify(transactionalChannel).txCommit();
         verify(transactionalChannel).close();
+    }
+
+    @Test
+    public void testSendMessage_WithTransactionalUnitOfWork_ChannelClosedBeforeCommit() throws IOException {
+        TransactionManager<?> mockTransaction = new NoTransactionManager();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransaction);
+
+        Connection connection = mock(Connection.class);
+        when(connectionFactory.createConnection()).thenReturn(connection);
+        Channel transactionalChannel = mock(Channel.class);
+        when(transactionalChannel.isOpen()).thenReturn(false);
+        when(connection.createChannel(true)).thenReturn(transactionalChannel);
+        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        when(serializer.serialize(message.getPayload(), byte[].class))
+                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+        when(serializer.serialize(message.getMetaData(), byte[].class))
+                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+        testSubject.publish(message);
+
+        verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
+                                                  eq(false), eq(false),
+                                                  any(AMQP.BasicProperties.class), isA(byte[].class));
+        verify(transactionalChannel, never()).txCommit();
+        verify(transactionalChannel, never()).close();
+
+        try {
+        uow.commit();
+            fail("Expected exception");
+        } catch (EventPublicationFailedException e) {
+            assertNotNull(e.getMessage());
+        }
+        verify(transactionalChannel, never()).txCommit();
     }
 
     @Test

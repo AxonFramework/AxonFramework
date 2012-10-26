@@ -136,7 +136,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         AMQPConsumerConfiguration config;
         if (clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
             config = (AMQPConsumerConfiguration) clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY);
-        } else  {
+        } else {
             config = new DefaultAMQPConsumerConfiguration(cluster.getName());
         }
         getListenerContainerLifecycleManager().registerCluster(cluster, config, messageConverter);
@@ -182,7 +182,7 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      * If a delegate Terminal  is configured, the transaction will be committed <em>after</em> the delegate has
      * dispatched the events.
      *
-     * @param transactional whteher dispatching should be transactional or not
+     * @param transactional whether dispatching should be transactional or not
      */
     public void setTransactional(boolean transactional) {
         isTransactional = transactional;
@@ -305,6 +305,14 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
         public ChannelTransactionUnitOfWorkListener(Channel channel) {
             this.channel = channel;
             isOpen = true;
+        }
+
+        @Override
+        public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
+            if (isTransactional && isOpen && !channel.isOpen()) {
+                throw new EventPublicationFailedException("Unable to Commit transaction to AMQP: Channel is closed.",
+                                                          channel.getCloseReason());
+            }
         }
 
         @Override
