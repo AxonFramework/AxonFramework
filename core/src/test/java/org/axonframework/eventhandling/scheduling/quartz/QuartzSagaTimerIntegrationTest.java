@@ -107,11 +107,18 @@ public class QuartzSagaTimerIntegrationTest {
                     }
                 });
 
-        Thread.sleep(100);
-        Set<String> actualResult = repository.find(SimpleTimingSaga.class,
-                                                   new AssociationValue("association", randomAssociationValue));
-        assertEquals(1, actualResult.size());
-        SimpleTimingSaga saga = (SimpleTimingSaga) repository.load(actualResult.iterator().next());
+        SimpleTimingSaga saga = null;
+        long t1 = System.currentTimeMillis();
+        while (saga == null || !saga.isTriggered()) {
+            if (System.currentTimeMillis() - t1 > 1000) {
+                fail("Saga not triggered within 1000 milliseconds");
+            }
+            Set<String> actualResult;
+            actualResult = repository.find(SimpleTimingSaga.class,
+                                           new AssociationValue("association", randomAssociationValue));
+            assertEquals(1, actualResult.size());
+            saga = (SimpleTimingSaga) repository.load(actualResult.iterator().next());
+        }
         assertTrue("Expected saga to be triggered", saga.isTriggered());
         assertTrue("Job did not complete within 10 seconds", jobExecutionLatch.await(10, TimeUnit.SECONDS));
         JobExecutionException jobExecutionException = jobExecutionResult.get();
