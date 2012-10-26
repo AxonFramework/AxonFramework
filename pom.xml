@@ -40,14 +40,18 @@
         The Axon framework supports developers with the plumbing and wiring required to build a CQRS architecture, by
         providing (abstract) implementations of common CQRS building blocks.
     </description>
+    <inceptionYear>2010</inceptionYear>
     <url>http://www.axonframework.org</url>
-
     <licenses>
         <license>
             <name>Apache 2.0</name>
             <url>http://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
+    <issueManagement>
+        <system>YouTrack</system>
+        <url>http://issues.axonframework.org</url>
+    </issueManagement>
 
     <profiles>
         <profile>
