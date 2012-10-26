@@ -98,7 +98,7 @@ public class ReplayingCluster implements Cluster {
             Thread.currentThread().interrupt();
             throw new ReplayFailedException("Replay failed because it was interrupted", e);
         } catch (ExecutionException e) {
-            throw new ReplayFailedException("Replay failed due to an exception.", e.getCause());
+            throw new ReplayFailedException("Replay failed due to an exception.", e.getCause()); // NOSONAR
         }
     }
 
