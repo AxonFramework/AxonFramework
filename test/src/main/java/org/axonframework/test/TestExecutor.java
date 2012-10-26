@@ -16,6 +16,8 @@
 
 package org.axonframework.test;
 
+import java.util.Map;
+
 /**
  * Interface describing the operations available on a test fixture in the execution stage. In this stage, there is only
  * on operation: {@link #when(Object)}, which dispatches a command on this fixture's Command Bus.
@@ -35,4 +37,17 @@ public interface TestExecutor {
      * @return a ResultValidator that can be used to validate the resulting actions of the command execution
      */
     ResultValidator when(Object command);
+
+    /**
+     * Dispatches the given command and meta data to the appropriate command handler and records all
+     * activity in the fixture for result validation. If the given <code>command</code> is a {@link
+     * org.axonframework.commandhandling.CommandMessage} instance, it will be dispatched as-is, with given
+     * additional <code>metaData</code>. Any other object will cause the given <code>command</code> to be wrapped in a
+     * {@code CommandMessage} as its payload.
+     *
+     * @param command  The command to execute
+     * @param metaData The meta data to attach to the
+     * @return a ResultValidator that can be used to validate the resulting actions of the command execution
+     */
+    ResultValidator when(Object command, Map<String, ?> metaData);
 }

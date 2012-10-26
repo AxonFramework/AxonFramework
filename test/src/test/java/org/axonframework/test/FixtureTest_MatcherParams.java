@@ -16,17 +16,24 @@
 
 package org.axonframework.test;
 
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.Message;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.*;
+import org.mockito.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -141,6 +148,24 @@ public class FixtureTest_MatcherParams {
             assertTrue(e.getMessage().contains(" <|> org.axonframework.test.MyApplicationEvent"));
             assertTrue(e.getMessage().contains("probable cause"));
         }
+    }
+
+    @Test
+    public void testFixture_DispatchMetaDataInCommand() throws Throwable {
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
+        CommandHandler mockCommandHandler = mock(CommandHandler.class);
+        fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
+        fixture
+                .given(givenEvents)
+                .when(new StrangeCommand("aggregateId"), Collections.singletonMap("meta", "value"));
+
+        final ArgumentCaptor<CommandMessage> captor = ArgumentCaptor.forClass(CommandMessage.class);
+        verify(mockCommandHandler).handle(captor.capture(), isA(UnitOfWork.class));
+        List<CommandMessage> dispatched = captor.getAllValues();
+        assertEquals(1, dispatched.size());
+        assertEquals(1, dispatched.get(0).getMetaData().size());
+        assertEquals("value", dispatched.get(0).getMetaData().get("meta"));
     }
 
     @Test
