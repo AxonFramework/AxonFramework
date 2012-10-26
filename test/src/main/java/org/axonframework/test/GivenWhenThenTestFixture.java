@@ -58,6 +58,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
@@ -192,7 +193,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         return this;
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator when(Object command) {
         finalizeConfiguration();
@@ -205,6 +205,18 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         return resultValidator;
     }
 
+    @Override
+    public ResultValidator when(Object command, Map<String, ?> metadata) {
+        finalizeConfiguration();
+        ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
+        commandBus.setHandlerInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
+
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(command, metadata), resultValidator);
+
+        detectIllegalStateChanges();
+        return resultValidator;
+    }    
+    
     private void finalizeConfiguration() {
         registerInjectableResources();
         if (!explicitCommandHandlersSet) {
