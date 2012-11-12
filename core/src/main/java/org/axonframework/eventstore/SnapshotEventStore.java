@@ -20,8 +20,8 @@ import org.axonframework.domain.DomainEventMessage;
 
 /**
  * Interface describing an event store that is able to store snapshot events. Implementations must also take the stored
- * snapshots into account when loading events. That means that any call to {@link #readEvents(String,
- * org.axonframework.domain.AggregateIdentifier) readEvents(String, AggregateIdentifier)} should return an event stream
+ * snapshots into account when loading events. That means that any call to {@link #readEvents(String, Object)}
+ * readEvents(String, AggregateIdentifier)} should return an event stream
  * that starts with the latest suitable snapshot event available in the event store.
  *
  * @author Allard Buijze
