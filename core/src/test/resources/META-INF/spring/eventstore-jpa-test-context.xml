@@ -23,9 +23,6 @@
         <constructor-arg>
             <bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
         </constructor-arg>
-        <constructor-arg>
-            <bean class="org.axonframework.eventstore.jpa.DefaultEventEntryStore"/>
-        </constructor-arg>
         <property name="dataSource" ref="dataSource"/>
     </bean>
 

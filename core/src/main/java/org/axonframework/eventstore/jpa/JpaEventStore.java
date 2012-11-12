@@ -95,8 +95,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      */
     public JpaEventStore(EntityManagerProvider entityManagerProvider) {
-        this(entityManagerProvider, new XStreamSerializer(),
-             DefaultHibernateEventEntryStore.getSupportedImplementation());
+        this(entityManagerProvider, new XStreamSerializer(), new DefaultEventEntryStore());
     }
 
     /**
@@ -118,7 +117,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * @param serializer            The serializer to (de)serialize domain events with.
      */
     public JpaEventStore(EntityManagerProvider entityManagerProvider, Serializer serializer) {
-        this(entityManagerProvider, serializer, DefaultHibernateEventEntryStore.getSupportedImplementation());
+        this(entityManagerProvider, serializer, new DefaultEventEntryStore());
     }
 
     /**

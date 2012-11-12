@@ -23,6 +23,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +137,11 @@ public class DefaultEventEntryStore implements EventEntryStore {
                                                                     long firstSequenceNumber,
                                                                     int batchSize, EntityManager entityManager) {
 
-        return new BatchingAggregateStreamIterator(firstSequenceNumber, identifier, aggregateType, batchSize, entityManager);
+        return new BatchingAggregateStreamIterator(firstSequenceNumber,
+                                                   identifier,
+                                                   aggregateType,
+                                                   batchSize,
+                                                   entityManager);
     }
 
     private static final class BatchingAggregateStreamIterator implements Iterator<SerializedDomainEventData> {
@@ -209,7 +214,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
         private int currentBatchSize;
         private Iterator<SerializedDomainEventData> currentBatch;
         private SerializedDomainEventData next;
-        private int firstItem;
+        private SerializedDomainEventData lastItem;
         private final String whereClause;
         private final Map<String, Object> parameters;
         private final int batchSize;
@@ -221,7 +226,6 @@ public class DefaultEventEntryStore implements EventEntryStore {
             this.parameters = parameters;
             this.batchSize = batchSize;
             this.entityManager = entityManager;
-            this.firstItem = 0;
             List<SerializedDomainEventData> firstBatch = fetchBatch();
 
             this.currentBatchSize = firstBatch.size();
@@ -233,24 +237,58 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
         @SuppressWarnings("unchecked")
         private List<SerializedDomainEventData> fetchBatch() {
+            Map<String, Object> params = new HashMap<String, Object>(parameters);
             Query query = entityManager.createQuery(
                     String.format("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
                                           + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
                                           + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
-                                          + "FROM DomainEventEntry e %s ORDER BY e.timeStamp ASC, e.sequenceNumber ASC",
-                                  whereClause != null && whereClause.length() > 0 ? "WHERE " + whereClause : ""))
-                                       .setFirstResult(firstItem)
+                                          + "FROM DomainEventEntry e %s ORDER BY e.timeStamp ASC, "
+                                          + "e.sequenceNumber ASC, e.aggregateIdentifier ASC",
+                                  buildWhereClause(params)))
                                        .setMaxResults(batchSize);
-            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
                 Object value = entry.getValue();
                 if (value instanceof DateTime) {
                     value = entry.getValue().toString();
                 }
                 query.setParameter(entry.getKey(), value);
             }
-            final List resultList = query.getResultList();
-            firstItem += resultList.size();
+            final List<SerializedDomainEventData> resultList = query.getResultList();
+            if (!resultList.isEmpty()) {
+                lastItem = resultList.get(resultList.size() - 1);
+            }
             return resultList;
+        }
+
+        private String buildWhereClause(Map<String, Object> paramRegistry) {
+            if (lastItem == null && whereClause == null) {
+                return "";
+            }
+            StringBuilder sb = new StringBuilder("WHERE ");
+            if (lastItem != null) {
+                // although this may look like a long and inefficient where clause, it is (so far) the fastest way
+                // to find the next batch of items
+                sb.append("((")
+                  .append("e.timeStamp > :timestamp")
+                  .append(") OR (")
+                  .append("e.timeStamp = :timestamp AND e.sequenceNumber > :sequenceNumber")
+                  .append(") OR (")
+                  .append("e.timeStamp = :timestamp AND e.sequenceNumber = :sequenceNumber AND ")
+                  .append("e.aggregateIdentifier > :aggregateIdentifier))");
+                paramRegistry.put("timestamp", lastItem.getTimestamp());
+                paramRegistry.put("sequenceNumber", lastItem.getSequenceNumber());
+                paramRegistry.put("aggregateIdentifier", lastItem.getAggregateIdentifier());
+            }
+            if (whereClause != null && whereClause.length() > 0) {
+                if (lastItem != null) {
+                    sb.append(" AND (");
+                }
+                sb.append(whereClause);
+                if (lastItem != null) {
+                    sb.append(")");
+                }
+            }
+            return sb.toString();
         }
 
         @Override

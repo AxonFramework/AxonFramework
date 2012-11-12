@@ -26,7 +26,7 @@
     <tx:annotation-driven transaction-manager="transactionManager"/>
 
     <import resource="db-context.xml"/>
-    <import resource="eventstore-autodetect-jpa-impl-test-context.xml"/>
+    <import resource="eventstore-jpa-test-context.xml"/>
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 

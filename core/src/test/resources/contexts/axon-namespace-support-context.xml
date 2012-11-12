@@ -28,7 +28,7 @@
     <tx:annotation-driven transaction-manager="transactionManager"/>
 
     <import resource="classpath:/META-INF/spring/db-context.xml"/>
-    <import resource="classpath:/META-INF/spring/eventstore-autodetect-jpa-impl-test-context.xml"/>
+    <import resource="classpath:/META-INF/spring/eventstore-jpa-test-context.xml"/>
 
     <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 

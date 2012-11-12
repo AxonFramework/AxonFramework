@@ -37,11 +37,14 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
+import org.junit.runner.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -54,21 +57,28 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.same;
 
 /**
  * @author Allard Buijze
- * @author Frank Versnel
  */
-@Transactional()
-public abstract class JpaEventStoreTestCases {
+@Transactional
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {
+        "classpath:/META-INF/spring/db-context.xml",
+        "classpath:/META-INF/spring/eventstore-jpa-test-context.xml"})
+public class JpaEventStoreTest {
 
     @Autowired
     private JpaEventStore testSubject;
-
     @PersistenceContext
     private EntityManager entityManager;
-
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
 
