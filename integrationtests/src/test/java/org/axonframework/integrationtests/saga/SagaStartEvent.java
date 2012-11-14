@@ -21,12 +21,12 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
-public class SagaTriggeringEvent {
+public class SagaStartEvent {
 
     private final String message;
     private final UUID identifier;
 
-    public SagaTriggeringEvent(UUID aggregateIdentifier, String message) {
+    public SagaStartEvent(UUID aggregateIdentifier, String message) {
         identifier = aggregateIdentifier;
         this.message = message;
     }

@@ -38,7 +38,7 @@ public class AsyncSaga extends AbstractAnnotatedSaga {
 
     @StartSaga
     @SagaEventHandler(associationProperty = "myId")
-    public void handleSomeEvent(SagaTriggeringEvent event) {
+    public void handleSomeEvent(SagaStartEvent event) {
         receivedMessages.add(event.getMessage());
         associateWith("currentAssociation", event.getMyId().toString());
     }

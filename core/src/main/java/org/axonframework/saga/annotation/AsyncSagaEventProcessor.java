@@ -21,6 +21,8 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +43,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private final int processorCount;
     private final int processorId;
     private UnitOfWork unitOfWork;
+    private static final Logger logger = LoggerFactory.getLogger(AsyncSagaEventProcessor.class);
 
     /**
      * Creates the Disruptor Event Handlers for invoking Sagas. The size of the array returned is equal to the given
@@ -138,8 +141,13 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             }
         }
         for (Saga saga : processedSagas.values()) {
-            if (sagaType.isInstance(saga) && saga.getAssociationValues().contains(entry.getAssociationValue())) {
-                saga.handle(entry.getPublishedEvent());
+            if (sagaType.isInstance(saga) && saga.isActive()
+                    && saga.getAssociationValues().contains(entry.getAssociationValue())) {
+                try {
+                    saga.handle(entry.getPublishedEvent());
+                } catch (Exception e) {
+                    logger.error("Saga threw an exception while handling an Event. Ignoring and moving on...", e);
+                }
                 sagaInvoked = true;
             }
         }

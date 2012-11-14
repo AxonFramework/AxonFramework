@@ -121,7 +121,9 @@ public class AsyncAnnotatedSagaManagerTest {
         publicationList.add(asEventMessage(new UpdateEvent(firstAssociation)));
         publicationList.add(asEventMessage(new AddAssociationEvent(firstAssociation, newAssociation)));
         publicationList.add(asEventMessage(new OptionallyCreateNewEvent(newAssociation)));
-        publicationList.add(asEventMessage(new DeleteEvent(firstAssociation)));
+        publicationList.add(asEventMessage(new DeleteEvent(newAssociation)));
+        // this exception should never be thrown, as the previous event ends the saga
+        publicationList.add(asEventMessage(new GenerateErrorOnHandlingEvent(firstAssociation)));
         return publicationList;
     }
 
@@ -168,6 +170,11 @@ public class AsyncAnnotatedSagaManagerTest {
 //            updateInvocations++;
         }
 
+        @SagaEventHandler(associationProperty = "association")
+        public void createError(GenerateErrorOnHandlingEvent event) {
+            throw new RuntimeException("Handled an event that should cause an exception");
+        }
+
         @EndSaga
         @SagaEventHandler(associationProperty = "association")
         public void handleDelete(DeleteEvent event) {
@@ -199,6 +206,13 @@ public class AsyncAnnotatedSagaManagerTest {
     private static class DeleteEvent extends AbstractSagaTestEvent {
 
         private DeleteEvent(String association) {
+            super(association);
+        }
+    }
+
+    private static class GenerateErrorOnHandlingEvent extends AbstractSagaTestEvent {
+
+        private GenerateErrorOnHandlingEvent(String association) {
             super(association);
         }
     }

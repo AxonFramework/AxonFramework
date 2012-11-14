@@ -73,7 +73,7 @@ public class AsyncSagaHandlingTest {
     @DirtiesContext
     public void testInvokeRandomEvents() throws InterruptedException {
         for (int t = 0; t < EVENTS_PER_SAGA * aggregateIdentifiers.size(); t++) {
-            eventBus.publish(new GenericEventMessage<SagaTriggeringEvent>(new SagaTriggeringEvent(
+            eventBus.publish(new GenericEventMessage<SagaStartEvent>(new SagaStartEvent(
                     aggregateIdentifiers.get(t % aggregateIdentifiers.size()),
                     "message" + (t / aggregateIdentifiers.size()))));
         }
@@ -88,7 +88,7 @@ public class AsyncSagaHandlingTest {
     @Test
     public void testAssociationProcessingOrder() throws InterruptedException {
         UUID currentAssociation = UUID.randomUUID();
-        eventBus.publish(new GenericEventMessage<SagaTriggeringEvent>(new SagaTriggeringEvent(currentAssociation,
+        eventBus.publish(new GenericEventMessage<SagaStartEvent>(new SagaStartEvent(currentAssociation,
                                                                                               "message")));
         for (int t = 0; t < EVENTS_PER_SAGA; t++) {
             UUID newAssociation = UUID.randomUUID();
