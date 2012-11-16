@@ -17,6 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.EventHandler;
+import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -79,29 +80,31 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     public void onEvent(AsyncSagaProcessingEvent entry, long sequence, boolean endOfBatch) throws Exception {
         ensureLiveTransaction();
         boolean sagaInvoked = invokeExistingSagas(entry);
+        AssociationValue associationValue;
         switch (entry.getHandler().getCreationPolicy()) {
             case ALWAYS:
-                if (ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier())) {
+                associationValue = entry.getAssociationValue();
+                if (associationValue != null && ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier())) {
                     processedSagas.put(entry.getNewSaga().getSagaIdentifier(), entry.getNewSaga());
                     entry.getNewSaga().handle(entry.getPublishedEvent());
-                    entry.getNewSaga().associateWith(entry.getAssociationValue());
+                    entry.getNewSaga().associateWith(associationValue);
                     sagaRepository.add(entry.getNewSaga());
                 }
                 break;
             case IF_NONE_FOUND:
-                persistProcessedSagas(true);
-                boolean shouldCreate = entry.waitForSagaCreationVote(
+                associationValue = entry.getAssociationValue();
+                boolean shouldCreate = associationValue != null && entry.waitForSagaCreationVote(
                         sagaInvoked, processorCount, ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier()));
                 if (shouldCreate) {
                     processedSagas.put(entry.getNewSaga().getSagaIdentifier(), entry.getNewSaga());
                     entry.getNewSaga().handle(entry.getPublishedEvent());
-                    entry.getNewSaga().associateWith(entry.getAssociationValue());
+                    entry.getNewSaga().associateWith(associationValue);
                     sagaRepository.add(entry.getNewSaga());
                 }
         }
 
         if (endOfBatch) {
-            persistProcessedSagas(false);
+            persistProcessedSagas();
         }
     }
 
@@ -112,7 +115,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     }
 
     @SuppressWarnings("unchecked")
-    private void persistProcessedSagas(boolean ensureNewTransaction) {
+    private void persistProcessedSagas() {
         if (!processedSagas.isEmpty()) {
             ensureLiveTransaction();
             for (Saga saga : processedSagas.values()) {
@@ -124,9 +127,6 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             unitOfWork = null;
         }
         processedSagas.clear();
-        if (ensureNewTransaction) {
-            ensureLiveTransaction();
-        }
     }
 
     private boolean invokeExistingSagas(AsyncSagaProcessingEvent entry) {

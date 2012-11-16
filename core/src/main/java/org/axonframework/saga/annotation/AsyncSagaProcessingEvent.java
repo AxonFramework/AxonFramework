@@ -20,6 +20,7 @@ import com.lmax.disruptor.EventFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
+import org.axonframework.saga.SagaCreationPolicy;
 
 /**
  * Placeholder for information required by the AsyncSagaEventProcessor for processing Events.
@@ -33,6 +34,7 @@ public class AsyncSagaProcessingEvent {
     private SagaMethodMessageHandler handler;
     private Class<? extends AbstractAnnotatedSaga> sagaType;
     private AbstractAnnotatedSaga newSaga;
+    private AssociationValue associationValue;
     private final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
 
     /**
@@ -45,30 +47,12 @@ public class AsyncSagaProcessingEvent {
     }
 
     /**
-     * Sets the event that has been published on the EventBus. This is the event that will trigger Sagas.
-     *
-     * @param publishedEvent the event that has been published on the EventBus
-     */
-    public void setPublishedEvent(EventMessage publishedEvent) {
-        this.publishedEvent = publishedEvent;
-    }
-
-    /**
      * Returns the handler that can process the published Event.
      *
      * @return the handler that can process the published Event
      */
     public SagaMethodMessageHandler getHandler() {
         return handler;
-    }
-
-    /**
-     * Sets the handler that can process the published Event.
-     *
-     * @param handler the handler that can process the published Event
-     */
-    public void setHandler(SagaMethodMessageHandler handler) {
-        this.handler = handler;
     }
 
     /**
@@ -80,7 +64,7 @@ public class AsyncSagaProcessingEvent {
         if (handler == null) {
             return null;
         }
-        return handler.getAssociationValue(publishedEvent);
+        return associationValue;
     }
 
     /**
@@ -90,26 +74,6 @@ public class AsyncSagaProcessingEvent {
      */
     public Class<? extends Saga> getSagaType() {
         return sagaType;
-    }
-
-    /**
-     * Sets the type of Saga being processed
-     *
-     * @param sagaType the type of Saga being processed
-     */
-    public void setSagaType(Class<? extends AbstractAnnotatedSaga> sagaType) {
-        this.sagaType = sagaType;
-    }
-
-    /**
-     * Clears the event for the next processing cycle.
-     */
-    public void clear() {
-        handler = null;
-        publishedEvent = null;
-        sagaType = null;
-        elector.clear();
-        newSaga = null;
     }
 
     /**
@@ -127,15 +91,6 @@ public class AsyncSagaProcessingEvent {
     }
 
     /**
-     * Sets the new Saga instance that should be used when processing an Event that creates a new Saga instance
-     *
-     * @param newSaga the new Saga instance
-     */
-    public void setNewSaga(AbstractAnnotatedSaga newSaga) {
-        this.newSaga = newSaga;
-    }
-
-    /**
      * Returns the new Saga instance that should be used when processing an Event that creates a new Saga instance
      *
      * @return the new Saga instance
@@ -145,9 +100,30 @@ public class AsyncSagaProcessingEvent {
     }
 
     /**
+     * Reset this entry for processing a new EventMessage
+     *
+     * @param event           The EventMessage to process
+     * @param sagaType        The type of Saga to process this EventMessage
+     * @param handler         The handler handling this message
+     * @param newSagaInstance The saga instance to use when a new saga is to be created
+     */
+    public void reset(EventMessage event, Class<? extends AbstractAnnotatedSaga> sagaType,
+                      SagaMethodMessageHandler handler, AbstractAnnotatedSaga newSagaInstance) {
+        this.elector.clear();
+        this.publishedEvent = event;
+        this.sagaType = sagaType;
+        this.handler = handler;
+        this.newSaga = newSagaInstance;
+        if (handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
+            this.associationValue = handler.getAssociationValue(event);
+        }
+    }
+
+    /**
      * The Factory class for AsyncSagaProcessingEvent instances.
      */
     static class Factory implements EventFactory<AsyncSagaProcessingEvent> {
+
         @Override
         public AsyncSagaProcessingEvent newInstance() {
             return new AsyncSagaProcessingEvent();

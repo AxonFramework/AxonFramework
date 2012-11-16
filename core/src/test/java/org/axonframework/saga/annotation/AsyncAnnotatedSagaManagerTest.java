@@ -87,7 +87,31 @@ public class AsyncAnnotatedSagaManagerTest {
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
+    public void testNullAssociationIgnoresEvent() throws InterruptedException {
+        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
+                                                    ThirdStubAsyncSaga.class);
+        testSubject.setSagaRepository(sagaRepository);
+        executorService = Executors.newCachedThreadPool();
+        testSubject.setExecutor(executorService);
+        testSubject.setProcessorCount(3);
+        testSubject.setBufferSize(64);
+
+        testSubject.start();
+
+        testSubject.handle(asEventMessage(new ForceCreateNewEvent(null)));
+        testSubject.handle(asEventMessage(new OptionallyCreateNewEvent(null)));
+
+        testSubject.stop();
+        executorService.shutdown();
+        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertEquals("Incorrect known saga count", 0, sagaRepository.getKnownSagas());
+        assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
+    }
+
+
+        @Test
     public void testMultipleDisconnectedSagaLifeCycle_WithOptionalStart() throws InterruptedException {
         testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
                                                     ThirdStubAsyncSaga.class);

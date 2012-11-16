@@ -25,13 +25,13 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
 
 import java.util.concurrent.Executor;
@@ -135,22 +135,20 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     @SuppressWarnings({"unchecked"})
     @Override
     public void handle(final EventMessage event) {
-        for (final SagaMethodMessageHandlerInspector annotationInspector : sagaAnnotationInspectors) {
-            final SagaMethodMessageHandler handler = annotationInspector.getMessageHandler(event);
+        for (final SagaMethodMessageHandlerInspector inspector : sagaAnnotationInspectors) {
+            final SagaMethodMessageHandler handler = inspector.getMessageHandler(event);
             if (handler.isHandlerAvailable()) {
                 final AbstractAnnotatedSaga newSagaInstance;
                 switch (handler.getCreationPolicy()) {
                     case ALWAYS:
                     case IF_NONE_FOUND:
-                        newSagaInstance = (AbstractAnnotatedSaga) sagaFactory.createSaga(annotationInspector
-                                                                                                 .getSagaType());
+                        newSagaInstance = (AbstractAnnotatedSaga) sagaFactory.createSaga(inspector.getSagaType());
                         break;
                     default:
                         newSagaInstance = null;
                         break;
                 }
-                disruptor.publishEvent(new SagaProcessingEventTranslator(event, annotationInspector, handler,
-                                                                         newSagaInstance));
+                disruptor.publishEvent(new SagaProcessingEventTranslator(event, inspector, handler, newSagaInstance));
             }
         }
     }
@@ -161,14 +159,14 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     }
 
     private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
+
         private final EventMessage event;
         private final SagaMethodMessageHandlerInspector annotationInspector;
         private final SagaMethodMessageHandler handler;
         private final AbstractAnnotatedSaga newSagaInstance;
 
         private SagaProcessingEventTranslator(EventMessage event, SagaMethodMessageHandlerInspector annotationInspector,
-                                              SagaMethodMessageHandler handler,
-                                              AbstractAnnotatedSaga newSagaInstance) {
+                                              SagaMethodMessageHandler handler, AbstractAnnotatedSaga newSagaInstance) {
             this.event = event;
             this.annotationInspector = annotationInspector;
             this.handler = handler;
@@ -178,11 +176,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
         @SuppressWarnings({"unchecked"})
         @Override
         public void translateTo(AsyncSagaProcessingEvent entry, long sequence) {
-            entry.clear();
-            entry.setPublishedEvent(event);
-            entry.setSagaType(annotationInspector.getSagaType());
-            entry.setHandler(handler);
-            entry.setNewSaga(newSagaInstance);
+            entry.reset(event, annotationInspector.getSagaType(), handler, newSagaInstance);
         }
     }
 
