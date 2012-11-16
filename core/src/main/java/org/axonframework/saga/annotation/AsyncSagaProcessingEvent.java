@@ -20,7 +20,6 @@ import com.lmax.disruptor.EventFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaCreationPolicy;
 
 /**
  * Placeholder for information required by the AsyncSagaEventProcessor for processing Events.
@@ -114,9 +113,7 @@ public class AsyncSagaProcessingEvent {
         this.sagaType = sagaType;
         this.handler = handler;
         this.newSaga = newSagaInstance;
-        if (handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
-            this.associationValue = handler.getAssociationValue(event);
-        }
+        this.associationValue = handler.getAssociationValue(event);
     }
 
     /**

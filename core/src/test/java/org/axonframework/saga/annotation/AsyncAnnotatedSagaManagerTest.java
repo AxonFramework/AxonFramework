@@ -16,6 +16,8 @@
 
 package org.axonframework.saga.annotation;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.Saga;
@@ -42,10 +44,14 @@ public class AsyncAnnotatedSagaManagerTest {
     private EventBus eventBus;
     private AsyncAnnotatedSagaManagerTest.StubInMemorySagaRepository sagaRepository;
     private ExecutorService executorService;
+    private static final Logger logger = Logger.getLogger(AsyncSagaEventProcessor.class);
+    private Level oldLevel;
 
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
+        oldLevel = logger.getLevel();
+        logger.setLevel(Level.OFF);
         eventBus = mock(EventBus.class);
         testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class);
         sagaRepository = new StubInMemorySagaRepository();
@@ -54,6 +60,12 @@ public class AsyncAnnotatedSagaManagerTest {
         testSubject.setExecutor(executorService);
         testSubject.setProcessorCount(3);
         testSubject.setBufferSize(64);
+    }
+
+    @After
+    public void tearDown() {
+        testSubject.stop();
+        logger.setLevel(oldLevel);
     }
 
     @Test
@@ -110,8 +122,30 @@ public class AsyncAnnotatedSagaManagerTest {
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testExceptionsFromHandlerAreIgnored() throws InterruptedException {
+        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class);
+        testSubject.setSagaRepository(sagaRepository);
+        executorService = Executors.newCachedThreadPool();
+        testSubject.setExecutor(executorService);
+        testSubject.setProcessorCount(3);
+        testSubject.setBufferSize(64);
 
-        @Test
+        testSubject.start();
+
+        testSubject.handle(asEventMessage(new ForceCreateNewEvent("test")));
+        testSubject.handle(asEventMessage(new GenerateErrorOnHandlingEvent("test")));
+
+        testSubject.stop();
+        executorService.shutdown();
+        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
+        assertEquals("Incorrect live saga count", 1, sagaRepository.getLiveSagas());
+        logger.setLevel(oldLevel);
+    }
+
+    @Test
     public void testMultipleDisconnectedSagaLifeCycle_WithOptionalStart() throws InterruptedException {
         testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
                                                     ThirdStubAsyncSaga.class);
@@ -147,13 +181,7 @@ public class AsyncAnnotatedSagaManagerTest {
         publicationList.add(asEventMessage(new OptionallyCreateNewEvent(newAssociation)));
         publicationList.add(asEventMessage(new DeleteEvent(newAssociation)));
         // this exception should never be thrown, as the previous event ends the saga
-        publicationList.add(asEventMessage(new GenerateErrorOnHandlingEvent(firstAssociation)));
         return publicationList;
-    }
-
-    @After
-    public void tearDown() {
-        testSubject.stop();
     }
 
     public static class ThirdStubAsyncSaga extends AnotherStubAsyncSaga {
@@ -166,37 +194,28 @@ public class AsyncAnnotatedSagaManagerTest {
 
     public static class StubAsyncSaga extends AbstractAnnotatedSaga {
 
-        private int optionallyNewInvocations;
-        private int forceNewInvocations;
-        private int updateInvocations;
-        private int deleteInvocations;
-
         @StartSaga(forceNew = false)
         @SagaEventHandler(associationProperty = "association")
         public void handleOptionallyCreateNew(OptionallyCreateNewEvent event) {
-//            optionallyNewInvocations++;
         }
 
         @StartSaga(forceNew = true)
         @SagaEventHandler(associationProperty = "association")
         public void handleOptionallyCreateNew(ForceCreateNewEvent event) {
-//            optionallyNewInvocations++;
         }
 
         @SagaEventHandler(associationProperty = "association")
         public void handleAddAssociation(AddAssociationEvent event) {
-//            updateInvocations++;
             associateWith("association", event.getNewAssociation());
         }
 
         @SagaEventHandler(associationProperty = "association")
         public void handleUpdate(UpdateEvent event) {
-//            updateInvocations++;
         }
 
         @SagaEventHandler(associationProperty = "association")
         public void createError(GenerateErrorOnHandlingEvent event) {
-            throw new RuntimeException("Handled an event that should cause an exception");
+            throw new RuntimeException("Stub");
         }
 
         @EndSaga
