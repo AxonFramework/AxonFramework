@@ -66,18 +66,6 @@
             </modules>
         </profile>
         <profile>
-            <id>with-insight-plugin</id>
-            <activation>
-                <property>
-                    <name>allmodules</name>
-                </property>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <modules>
-                <module>spring-insight-plugin</module>
-            </modules>
-        </profile>
-        <profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>
