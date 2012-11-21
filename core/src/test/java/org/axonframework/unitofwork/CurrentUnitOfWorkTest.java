@@ -33,6 +33,13 @@ public class CurrentUnitOfWorkTest {
         }
     }
 
+    @After
+    public void tearDown() {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
+
     @Test(expected = IllegalStateException.class)
     public void testGetSession_NoCurrentSession() {
         CurrentUnitOfWork.get();

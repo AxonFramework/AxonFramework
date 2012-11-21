@@ -35,13 +35,16 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class SimleListenerPublishingEventTest {
+public class SimpleListenerPublishingEventTest {
 
     private EventBus eventBus;
     private EventListener eventListener;
 
     @Before
     public void setUp() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
         eventBus = new SimpleEventBus();
         eventListener = mock(EventListener.class);
         eventBus.subscribe(eventListener);
