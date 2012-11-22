@@ -25,6 +25,7 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -78,13 +79,13 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
 
     @Override
     public void onEvent(AsyncSagaProcessingEvent entry, long sequence, boolean endOfBatch) throws Exception {
-        ensureLiveTransaction();
         boolean sagaInvoked = invokeExistingSagas(entry);
         AssociationValue associationValue;
         switch (entry.getHandler().getCreationPolicy()) {
             case ALWAYS:
                 associationValue = entry.getAssociationValue();
                 if (associationValue != null && ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier())) {
+                    ensureActiveUnitOfWork();
                     processedSagas.put(entry.getNewSaga().getSagaIdentifier(), entry.getNewSaga());
                     entry.getNewSaga().handle(entry.getPublishedEvent());
                     entry.getNewSaga().associateWith(associationValue);
@@ -96,6 +97,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                 boolean shouldCreate = associationValue != null && entry.waitForSagaCreationVote(
                         sagaInvoked, processorCount, ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier()));
                 if (shouldCreate) {
+                    ensureActiveUnitOfWork();
                     processedSagas.put(entry.getNewSaga().getSagaIdentifier(), entry.getNewSaga());
                     entry.getNewSaga().handle(entry.getPublishedEvent());
                     entry.getNewSaga().associateWith(associationValue);
@@ -108,25 +110,27 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         }
     }
 
-    private void ensureLiveTransaction() {
-        if (unitOfWork == null) {
+    private void ensureActiveUnitOfWork() {
+        if (unitOfWork == null || !unitOfWork.isStarted()) {
             unitOfWork = unitOfWorkFactory.createUnitOfWork();
         }
     }
 
     @SuppressWarnings("unchecked")
     private void persistProcessedSagas() {
+        Set<String> committedSagas = new HashSet<String>();
         if (!processedSagas.isEmpty()) {
-            ensureLiveTransaction();
+            ensureActiveUnitOfWork();
             for (Saga saga : processedSagas.values()) {
                 sagaRepository.commit(saga);
+                committedSagas.add(saga.getSagaIdentifier());
             }
         }
         if (unitOfWork != null) {
             unitOfWork.commit();
             unitOfWork = null;
         }
-        processedSagas.clear();
+        processedSagas.keySet().removeAll(committedSagas);
     }
 
     private boolean invokeExistingSagas(AsyncSagaProcessingEvent entry) {
@@ -136,6 +140,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         for (String sagaId : sagaIds) {
             if (ownedByCurrentProcessor(sagaId)) {
                 if (!processedSagas.containsKey(sagaId)) {
+                    ensureActiveUnitOfWork();
                     processedSagas.put(sagaId, sagaRepository.load(sagaId));
                 }
             }
@@ -144,6 +149,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             if (sagaType.isInstance(saga) && saga.isActive()
                     && saga.getAssociationValues().contains(entry.getAssociationValue())) {
                 try {
+                    ensureActiveUnitOfWork();
                     saga.handle(entry.getPublishedEvent());
                 } catch (Exception e) {
                     logger.error("Saga threw an exception while handling an Event. Ignoring and moving on...", e);

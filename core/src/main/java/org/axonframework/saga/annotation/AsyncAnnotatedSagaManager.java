@@ -18,6 +18,7 @@ package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventTranslator;
+import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
@@ -33,6 +34,8 @@ import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -99,6 +102,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
                                                                 waitStrategy);
             disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository,
                                                                                unitOfWorkFactory, processorCount));
+            disruptor.handleExceptionsWith(new LoggingExceptionHandler());
+
             disruptor.start();
         }
         subscribe();
@@ -278,5 +283,26 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     public synchronized void setWaitStrategy(WaitStrategy waitStrategy) {
         Assert.state(disruptor == null, "Cannot set waitStrategy when SagaManager has started");
         this.waitStrategy = waitStrategy;
+    }
+
+    private static final class LoggingExceptionHandler implements ExceptionHandler {
+
+        private static final Logger logger = LoggerFactory.getLogger(LoggingExceptionHandler.class);
+
+        @Override
+        public void handleEventException(Throwable ex, long sequence, Object event) {
+            logger.warn("A fatal exception occurred while processing an Event for a Saga. "
+                                + "Processing will continue with the next Event", ex);
+        }
+
+        @Override
+        public void handleOnStartException(Throwable ex) {
+            logger.warn("An exception occurred while starting the AsyncAnnotatedSagaManager.", ex);
+        }
+
+        @Override
+        public void handleOnShutdownException(Throwable ex) {
+            logger.warn("An exception occurred while shutting down the AsyncAnnotatedSagaManager.", ex);
+        }
     }
 }
