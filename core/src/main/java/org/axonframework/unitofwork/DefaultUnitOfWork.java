@@ -138,7 +138,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     protected void doCommit() {
         publishEvents();
         commitInnerUnitOfWork();
-        if (backingTransaction != null) {
+        if (isTransactional()) {
             notifyListenersPrepareTransactionCommit(backingTransaction);
             transactionManager.commitTransaction(backingTransaction);
         }
@@ -159,10 +159,9 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
             }
             return similarAggregate;
         }
-        EventRegistrationCallback eventRegistrationCallback = new UoWEventRegistrationCallback(aggregate, eventBus);
+        EventRegistrationCallback eventRegistrationCallback = new UoWEventRegistrationCallback(eventBus);
 
-        registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, saveAggregateCallback
-        ));
+        registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, saveAggregateCallback));
 
         // listen for new events registered in the aggregate
         aggregate.addEventRegistrationCallback(eventRegistrationCallback);
@@ -174,8 +173,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     }
 
     @SuppressWarnings({"unchecked"})
-    private <T extends AggregateRoot> T findSimilarAggregate(Class<T> aggregateType,
-                                                             Object identifier) {
+    private <T extends AggregateRoot> T findSimilarAggregate(Class<T> aggregateType, Object identifier) {
         for (AggregateRoot aggregate : registeredAggregates.keySet()) {
             if (aggregateType.isInstance(aggregate) && identifier.equals(aggregate.getIdentifier())) {
                 return (T) aggregate;
@@ -317,20 +315,16 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
 
     private class UoWEventRegistrationCallback implements EventRegistrationCallback {
 
-        private final AggregateRoot aggregate;
         private final EventBus eventBus;
 
-        public UoWEventRegistrationCallback(AggregateRoot aggregate, EventBus eventBus) {
-            this.aggregate = aggregate;
+        public UoWEventRegistrationCallback(EventBus eventBus) {
             this.eventBus = eventBus;
         }
 
         @Override
         public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
-            if (registeredAggregates.containsKey(aggregate)) {
-                event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);
-                doPublish(event, eventBus);
-            }
+            event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);
+            doPublish(event, eventBus);
             return event;
         }
     }

@@ -80,4 +80,14 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     public Object getIdentifier() {
         return identifier;
     }
+
+    @Override
+    public int hashCode() {
+        // This hashCode implementation is EVIL! But it's on purpose, because it shouldn't matter for Axon.
+        int result = counter;
+        result = 31 * result + (lastNumber != null ? lastNumber.hashCode() : 0);
+        result = 31 * result + (identifier != null ? identifier.hashCode() : 0);
+        result = 31 * result + (entity != null ? entity.hashCode() : 0);
+        return result;
+    }
 }
