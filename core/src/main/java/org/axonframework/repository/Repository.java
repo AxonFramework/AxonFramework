@@ -16,8 +16,6 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateRoot;
-
 /**
  * The repository provides an abstraction of the storage of aggregates.
  *
@@ -25,7 +23,7 @@ import org.axonframework.domain.AggregateRoot;
  * @param <T> The type of aggregate this repository stores.
  * @since 0.1
  */
-public interface Repository<T extends AggregateRoot> {
+public interface Repository<T> {
 
     /**
      * Load the aggregate with the given unique <code>aggregateIdentifier</code>, expecting the version of the aggregate

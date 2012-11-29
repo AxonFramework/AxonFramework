@@ -25,8 +25,7 @@ import org.junit.*;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -66,6 +65,19 @@ public class FixtureTest_Generic {
             DomainEventMessage next = events.next();
             assertEquals("AggregateId", next.getAggregateIdentifier());
             assertEquals(t, next.getSequenceNumber());
+        }
+    }
+
+    @Test
+    public void testReadAggregate_WrongIdentifier() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
+        TestExecutor exec = fixture.given(new MyEvent("AggregateId", 1));
+        try {
+            exec.when(new TestCommand("OtherIdentifier"));
+            fail("Expected an AssertionError");
+        } catch (AssertionError e) {
+            assertTrue(e.getMessage().contains("OtherIdentifier"));
+            assertTrue(e.getMessage().contains("AggregateId"));
         }
     }
 

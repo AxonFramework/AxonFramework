@@ -74,13 +74,14 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
 
     @Override
     public void add(T aggregate) {
-        lockManager.obtainLock(aggregate.getIdentifier());
+        final Object aggregateIdentifier = aggregate.getIdentifier();
+        lockManager.obtainLock(aggregateIdentifier);
         try {
             super.add(aggregate);
-            CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
+            CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregateIdentifier));
         } catch (RuntimeException ex) {
             logger.debug("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
-            lockManager.releaseLock(aggregate.getIdentifier());
+            lockManager.releaseLock(aggregateIdentifier);
             throw ex;
         }
     }
@@ -97,7 +98,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
         lockManager.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
-            CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregate));
+            CurrentUnitOfWork.get().registerListener(new LockCleaningListener(aggregateIdentifier));
             return aggregate;
         } catch (RuntimeException ex) {
             logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
@@ -175,15 +176,15 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     private class LockCleaningListener extends UnitOfWorkListenerAdapter {
 
-        private final T aggregate;
+        private final Object aggregateIdentifier;
 
-        public LockCleaningListener(T aggregate) {
-            this.aggregate = aggregate;
+        public LockCleaningListener(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
         }
 
         @Override
         public void onCleanup(UnitOfWork unitOfWork) {
-            lockManager.releaseLock(aggregate.getIdentifier());
+            lockManager.releaseLock(aggregateIdentifier);
         }
     }
 }
