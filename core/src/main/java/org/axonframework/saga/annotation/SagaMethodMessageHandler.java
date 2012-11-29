@@ -18,6 +18,8 @@ package org.axonframework.saga.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
+import org.axonframework.common.annotation.PropertyAccessor;
+import org.axonframework.common.annotation.PropertyAccessorFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaCreationPolicy;
@@ -63,10 +65,12 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     public static SagaMethodMessageHandler getInstance(MethodMessageHandler methodHandler) {
         Method handlerMethod = methodHandler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
+        PropertyAccessor propertyAccessor = PropertyAccessorFactory.instanceFor(handlerAnnotation);
         String associationPropertyName = handlerAnnotation.associationProperty();
+        Class<?> messageType = methodHandler.getPayloadType();
         Method associationProperty;
         try {
-            associationProperty = methodHandler.getPayloadType().getMethod(methodForProperty(associationPropertyName));
+            associationProperty =  propertyAccessor.methodFor(associationPropertyName, messageType);
         } catch (NoSuchMethodException e) {
             throw new AxonConfigurationException(format("SagaEventHandler %s.%s defines a property %s that is not "
                                                                 + "defined on the Event it declares to handle (%s)",
