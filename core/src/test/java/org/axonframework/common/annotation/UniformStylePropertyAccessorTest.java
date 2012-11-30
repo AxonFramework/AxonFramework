@@ -1,13 +1,14 @@
 package org.axonframework.common.annotation;
 
-public class UnifiedStylePropertyAccessorTest extends PropertyAccessorTest {
-    static class TestMessage extends PropertyAccessorTest.TestMessage {
+public class UniformStylePropertyAccessorTest extends PropertyAccessorTest {
+    static class TestMessage {
         private String testProperty = text;
 
         public String testProperty() {
             return testProperty;
         }
     }
+
     @Override
     protected TestMessage message() {
         return new TestMessage();
@@ -15,6 +16,6 @@ public class UnifiedStylePropertyAccessorTest extends PropertyAccessorTest {
 
     @Override
     protected PropertyAccessor propertyAccessor() {
-        return new UnifiedStylePropertyAccessor();
+        return new UniformStylePropertyAccessor();
     }
 }

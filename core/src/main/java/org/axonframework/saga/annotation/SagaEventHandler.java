@@ -63,5 +63,9 @@ public @interface SagaEventHandler {
      */
     String keyName() default "";
 
+    /**
+     * Property accessor that will be used to retrieve value of {@link #associationProperty()}
+     * Defaults to {@link BeanStylePropertyAccessor}
+     */
     Class<? extends PropertyAccessor> accessor() default BeanStylePropertyAccessor.class;
 }

@@ -65,19 +65,23 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     public static SagaMethodMessageHandler getInstance(MethodMessageHandler methodHandler) {
         Method handlerMethod = methodHandler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
-        PropertyAccessor propertyAccessor = PropertyAccessorFactory.instanceFor(handlerAnnotation);
+        PropertyAccessor propertyAccessor = PropertyAccessorFactory.createFor(handlerAnnotation.accessor());
         String associationPropertyName = handlerAnnotation.associationProperty();
         Class<?> messageType = methodHandler.getPayloadType();
         Method associationProperty;
         try {
             associationProperty =  propertyAccessor.methodFor(associationPropertyName, messageType);
         } catch (NoSuchMethodException e) {
-            throw new AxonConfigurationException(format("SagaEventHandler %s.%s defines a property %s that is not "
-                                                                + "defined on the Event it declares to handle (%s)",
-                                                        methodHandler.getMethod().getDeclaringClass().getName(),
-                                                        methodHandler.getMethodName(), associationPropertyName,
-                                                        methodHandler.getPayloadType().getName()),
-                                                 e);
+            throw new AxonConfigurationException(
+                    format("SagaEventHandler %s.%s defines a property %s" +
+                            "that is not defined on the Event it declares to handle (%s). " +
+                            "Tried to access property using %s",
+                            handlerMethod.getDeclaringClass().getName(),
+                            methodHandler.getMethodName(),
+                            associationPropertyName,
+                            methodHandler.getPayloadType().getName(),
+                            propertyAccessor.getClass().getSimpleName()),
+                    e);
         }
         String associationKey = handlerAnnotation.keyName().isEmpty()
                 ? associationPropertyName

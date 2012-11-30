@@ -1,7 +1,7 @@
 package org.axonframework.common.annotation;
 
 public class BeanPropertyAccessorTest extends PropertyAccessorTest {
-    class TestMessage extends PropertyAccessorTest.TestMessage {
+    class TestMessage {
         private String testProperty = text;
 
         public String getTestProperty() {

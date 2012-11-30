@@ -1,6 +1,5 @@
 package org.axonframework.common.annotation;
 
-import org.axonframework.common.annotation.PropertyAccessor;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -17,15 +16,13 @@ public abstract class PropertyAccessorTest {
 
     @Test
     public void testMethodFor_PresentProperty() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        TestMessage msg = message();
+        Object msg = message();
         Method method = propertyAccessor().methodFor("testProperty", msg.getClass());
-        assertEquals(TestMessage.text, method.invoke(msg));
+        assertEquals(text, method.invoke(msg));
     }
 
-    abstract protected <T extends TestMessage> T message();
+    abstract protected Object message();
     abstract protected PropertyAccessor propertyAccessor();
 
-    protected static class TestMessage {
-        protected static String text = "some";
-    }
+    protected static String text = "some";
 }
