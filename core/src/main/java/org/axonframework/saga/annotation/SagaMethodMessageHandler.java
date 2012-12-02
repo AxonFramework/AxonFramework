@@ -16,19 +16,15 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.annotation.PropertyAccessor;
-import org.axonframework.common.annotation.PropertyAccessorFactory;
+import org.axonframework.common.PropertyAccessor;
+import org.axonframework.common.PropertyAccessorFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaCreationPolicy;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Locale;
 
-import static java.lang.String.format;
 
 /**
  * A data holder containing information of {@link SagaEventHandler} annotated methods.
@@ -53,7 +49,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     private final SagaCreationPolicy creationPolicy;
     private final MethodMessageHandler handlerMethod;
     private final String associationKey;
-    private final Method associationProperty;
+    private final PropertyAccessor associationProperty;
 
     /**
      * Create a SagaMethodMessageHandler for the given <code>methodHandler</code>. The SagaMethodMessageHandler add
@@ -65,24 +61,9 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     public static SagaMethodMessageHandler getInstance(MethodMessageHandler methodHandler) {
         Method handlerMethod = methodHandler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
-        PropertyAccessor propertyAccessor = PropertyAccessorFactory.createFor(handlerAnnotation.accessor());
         String associationPropertyName = handlerAnnotation.associationProperty();
-        Class<?> messageType = methodHandler.getPayloadType();
-        Method associationProperty;
-        try {
-            associationProperty =  propertyAccessor.methodFor(associationPropertyName, messageType);
-        } catch (NoSuchMethodException e) {
-            throw new AxonConfigurationException(
-                    format("SagaEventHandler %s.%s defines a property %s" +
-                            "that is not defined on the Event it declares to handle (%s). " +
-                            "Tried to access property using %s",
-                            handlerMethod.getDeclaringClass().getName(),
-                            methodHandler.getMethodName(),
-                            associationPropertyName,
-                            methodHandler.getPayloadType().getName(),
-                            propertyAccessor.getClass().getSimpleName()),
-                    e);
-        }
+        PropertyAccessor associationPropertyAccessor =
+                PropertyAccessorFactory.createFor(associationPropertyName);
         String associationKey = handlerAnnotation.keyName().isEmpty()
                 ? associationPropertyName
                 : handlerAnnotation.keyName();
@@ -95,7 +76,8 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         } else {
             sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
         }
-        return new SagaMethodMessageHandler(sagaCreationPolicy, methodHandler, associationKey, associationProperty);
+
+        return new SagaMethodMessageHandler(sagaCreationPolicy, methodHandler, associationKey, associationPropertyAccessor);
     }
 
     /**
@@ -107,7 +89,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param associationProperty The association property configured for this handler
      */
     protected SagaMethodMessageHandler(SagaCreationPolicy creationPolicy, MethodMessageHandler handler,
-                                       String associationKey, Method associationProperty) {
+                                       String associationKey, PropertyAccessor associationProperty) {
         this.creationPolicy = creationPolicy;
         this.handlerMethod = handler;
         this.associationKey = associationKey;
@@ -134,19 +116,9 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         if (associationProperty == null) {
             return null;
         }
-        try {
-            Object associationValue = associationProperty.invoke(eventMessage.getPayload());
-            return associationValue == null ? null : new AssociationValue(associationKey, associationValue.toString());
-        } catch (InvocationTargetException e) {
-            throw new AxonConfigurationException(
-                    format("Error invoking '%s.%s'. Property methods should not throw exceptions",
-                           associationProperty.getDeclaringClass().getName(),
-                           associationProperty.getName()), e);
-        } catch (IllegalAccessException e) {
-            throw new AxonConfigurationException(format("Cannot access '%s.%s'. Property methods should be accessible.",
-                                                        associationProperty.getDeclaringClass().getName(),
-                                                        associationProperty.getName()), e);
-        }
+
+        Object associationValue = associationProperty.getValue(eventMessage.getPayload());
+        return associationValue == null ? null : new AssociationValue(associationKey, associationValue.toString());
     }
 
     /**
@@ -156,10 +128,6 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      */
     public SagaCreationPolicy getCreationPolicy() {
         return creationPolicy;
-    }
-
-    private static String methodForProperty(String propertyName) {
-        return "get" + propertyName.substring(0, 1).toUpperCase(Locale.ENGLISH) + propertyName.substring(1);
     }
 
     /**

@@ -16,8 +16,8 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.common.annotation.BeanStylePropertyAccessor;
-import org.axonframework.common.annotation.PropertyAccessor;
+import org.axonframework.common.BeanStylePropertyAccessor;
+import org.axonframework.common.PropertyAccessor;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -63,9 +63,4 @@ public @interface SagaEventHandler {
      */
     String keyName() default "";
 
-    /**
-     * Property accessor that will be used to retrieve value of {@link #associationProperty()}
-     * Defaults to {@link BeanStylePropertyAccessor}
-     */
-    Class<? extends PropertyAccessor> accessor() default BeanStylePropertyAccessor.class;
 }

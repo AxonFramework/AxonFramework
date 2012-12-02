@@ -61,7 +61,7 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the class on which the method with name "<code>methodName</code>" and parameters of type
+     * Returns the class on which the method with name "<code>getter</code>" and parameters of type
      * <code>parameterTypes</code> is declared. The given <code>instanceClass</code> is the instance on which the
      * method cn be called. If the method is not available on the given <code>instanceClass</code>, <code>null</code>
      * is returned.
