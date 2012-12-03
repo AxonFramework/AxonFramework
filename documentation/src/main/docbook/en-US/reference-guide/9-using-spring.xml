@@ -38,8 +38,7 @@
 
     &lt;context:annotation-config/>
 
-&lt;/beans></programlisting>
-        </para>
+&lt;/beans></programlisting></para>
 	</sect1>
     <sect1>
             <title>Using the Axon namespace shortcut</title>
@@ -229,6 +228,24 @@
                     <code>AnnotationCommandHandlerBeanPostProcessor</code> in the application
                 context. This will cause the command handler to be wired twice.</para>
         </warning>
+            <simplesect>
+                <title>Wiring AggregateCommandHandlers</title>
+                <para>When the <code>@CommandHandler</code> annotations are placed on the Aggregate,
+                    Spring will not be able to automatically configure them. You will need to
+                    specify a bean for each of the annotated Aggregate Roots as follows:</para>
+                <programlisting>&lt;bean class="org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler"
+      init-method="subscribe">
+    &lt;constructor-arg value="fully.qualified.AggregateClass"/>
+    &lt;constructor-arg ref="ref-to-repo"/>
+    &lt;constructor-arg ref="ref-to-command-bus"/>
+&lt;/bean>
+
+&lt;!-- or, when using Namespace support -->
+
+&lt;axon:aggregate-command-handler aggregate-type="fully.qualified.AggregateClass" 
+                                repository="ref-to-repo" 
+                                command-bus="ref-to-command-bus"/></programlisting>
+            </simplesect>
     	</sect2>
         <sect2>
             <title>Annotation support using the axon namespace</title>
@@ -327,13 +344,10 @@
             <para>
                 <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean id="eventBus" class="org.axonframework.commandhandling.CommandBus">
-        &lt;property name="interceptors">
+    &lt;bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
+        &lt;property name="handlerInterceptors">
             &lt;list>
-                &lt;bean class="org.axonframework...SpringTransactionalInterceptor">
-                    &lt;property name="transactionManager" ref="transactionManager"/>
-                &lt;/bean>
-                &lt;bean class="other-interceptors"/>
+                &lt;bean class="my-interceptors"/>
             &lt;/list>
         &lt;/property>
     &lt;/bean>
@@ -349,13 +363,13 @@
             <para>Configuring command interceptors for your command bus is also possible using the
                     <code>&lt;axon:command-bus></code> element, like so:
                 <programlisting language="xml">&lt;axon:command-bus id="commandBus">
-	&lt;axon:dispatchInterceptors>
-		&lt;ref>interceptor-zero&lt;/ref>
+    &lt;axon:dispatchInterceptors>
+        &lt;ref>interceptor-zero&lt;/ref>
     &lt;/axon:dispatchInterceptors>
     &lt;axon:handlerInterceptors>
-		&lt;ref>interceptor-one&lt;/ref>
-		&lt;ref>interceptor-two&lt;/ref>
-	&lt;/axon:handlerInterceptors>
+        &lt;ref>interceptor-one&lt;/ref>
+        &lt;ref>interceptor-two&lt;/ref>
+    &lt;/axon:handlerInterceptors>
 &lt;/axon:command-bus></programlisting>
                 Of course you are not limited to bean references; you can also include local bean
                 definitions if you want. </para>
@@ -415,10 +429,10 @@
 &lt;!-- declare transaction manager, data source, EntityManagerFactoryBean, etc --></programlisting>
         </para>
         	<para>Using the Axon namespace support, you can quickly configure event stores backed
-                either by the file system or a JPA layer using the one of the following elements:
-                <programlisting language="xml">&lt;axon:jpa-event-store id="jpaEventStore"/>
+            either by the file system or a JPA layer using the one of the following elements:
+            <programlisting language="xml">&lt;axon:jpa-event-store id="jpaEventStore"/>
 
-&lt;axon:filesystem-event-store id="fileSystemEventStore" baseDir="/data"/></programlisting></para>
+&lt;axon:filesystem-event-store id="fileSystemEventStore" base-dir="/data"/></programlisting></para>
         
     </sect1>
     <sect1 xml:id="spring-snapshotting">

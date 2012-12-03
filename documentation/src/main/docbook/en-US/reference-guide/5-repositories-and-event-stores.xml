@@ -73,6 +73,9 @@
                 aggregate is saved. The actual persistence mechanism must still be implemented. This
                 implementation doesn't provide any locking mechanism and expects the underlying data
                 storage mechanism to provide it. </para>
+            <para>The <code>AbstractRepository</code> also ensures that activity is synchronized
+                with the current Unit of Work. That means the aggregate is saved when the Unit of
+                Work is committed.</para>
         </simplesect>
         <simplesect xml:id="locking-repository">
             <title><code>LockingRepository</code>
@@ -253,13 +256,11 @@
             aggregates. Typically, event stores are capable of storing events from multiple
             types of aggregates, but it is not a requirement.
         </para>
-        <para>Axon provides a number of implementations of event stores, both are capable of storing
-            all domain events (those raised from an Aggregate). These event stores use a
-            <code>Serializer</code>
-            to serialize and deserialize the event. By default, Axon
+        <para>Axon provides a number of implementations of event stores, all capable of storing all
+            domain events (those raised from an Aggregate). These event stores use a
+                <code>Serializer</code> to serialize and deserialize the event. By default, Axon
             provides an implementation of the Event Serializer that serializes events to XML: the
-            <code>XStreamSerializer</code>.
-        </para>
+                <code>XStreamSerializer</code>. </para>
         <sect2>
             <title><code>FileSystemEventStore</code>
             </title>
@@ -269,6 +270,9 @@
                 well. The only configuration needed is the location where the event store may store
                 its files and the serializer to use to actually serialize and deserialize the
                 events. </para>
+            <para>Note that the FileSystemEventStore is not aware of transactions and cannot
+                automatically recover from crashes. It is therefore not a suitable implementation
+                for production environments.</para>
         </sect2>
         <sect2>
             <title><code>JpaEventStore</code>
@@ -452,6 +456,14 @@
                 change. For more information about aliases, visit the <link
                     xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
                     >XStream website</link>. </para>
+            <note>
+                <title>Spring XML Configuration and Serializer Customization</title>
+                <para>Configuring the serializer using Java code (or other JVM languages) is easy.
+                    However, configuring it in a Spring XML Application Context is not so trivial,
+                    due to its limitations to invoke methods. One of the options is to create a
+                        <code>FactoryBean</code> that creates an instance of an XStreamSerializer
+                    and configures it in code. Check the Spring Reference </para>
+            </note>
             <para>You may also implement your own Serializer, simply by creating a class that
                 implements <code>Serializer</code>, and configuring the Event Store to use that
                 implementation instead of the default. </para>
@@ -472,7 +484,7 @@
             new structure. </para>
         <para>Upcasters are classes that take one input event of revision <code>x</code> and output
             zero or more new events of revision <code>x + 1</code>. Moreover, upcasters are
-            processed in a chain, meaning that the output of one upcaster is send to the input of
+            processed in a chain, meaning that the output of one upcaster is sent to the input of
             the next. This allows you to update events in an incremental manner, writing an Upcaster
             for each new event revision, making them small, isolated, and easy to understand. </para>
         <note>
@@ -756,31 +768,27 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                     </listitem>
                 </itemizedlist>
             </para>
-            <para>The
-                <code>AggregateSnapshotter</code>
-                provides on more property:
-                <itemizedlist>
+            <para>The <code>AggregateSnapshotter</code> provides on more property: <itemizedlist>
                     <listitem>
                         <para><code>AggregateFactories</code> is the property that allows you to set
-                            the factories that will create instances of your aggregates. All Axon
-                            provided repositories implement the <code>AggregateFactory</code>
-                            interface, and are capable of processing
-                            <code>AggregateSnapshot</code>s. Configuring multiple aggregate
-                            factories allows you to use a single Snapshotter to create snapshots for
-                            a variety of aggregate types. </para>
+                            the factories that will create instances of your aggregates. Configuring
+                            multiple aggregate factories allows you to use a single Snapshotter to
+                            create snapshots for a variety of aggregate types. The
+                                <code>EventSourcingRepository</code> implementations provide access
+                            to the <code>AggregateFactory</code> they use. This can be used to
+                            configure the same aggregate factories int he Snapshotter as the ones
+                            used in the repositories.</para>
                     </listitem>
-                </itemizedlist>
-            </para>
+                </itemizedlist></para>
             <note>
                 <para>If you use an executor that executes snapshot creation in another thread, make
                     sure you configure the correct transaction management for your underlying event
                     store, if necessary. Spring users can use the
-                    <code>SpringAggregateSnapshotter</code>, which allows you to configure a
-                    <code>PlatformTransactionManager</code>. The
-                    <code>SpringAggregateSnapshotter</code>
-                    will autowire all repositores, if
-                    they are not explicitly configured.
-                </para>
+                        <code>SpringAggregateSnapshotter</code>, which allows you to configure a
+                        <code>PlatformTransactionManager</code>. The
+                        <code>SpringAggregateSnapshotter</code> will autowire all aggregate
+                    factories (either directly, or via the Repository), if a list is not explicitly
+                    configured. </para>
             </note>
         </sect2>
         <sect2>

@@ -103,7 +103,15 @@
                     is annotated with <code>@SagaEventHandler(associationProperty="orderId")</code>,
                     this Event is routed to all Sagas that have been associated with an
                         <code>AssociationValue</code> with key "orderId" and value "123". This may
-                    either be exactly one, more than one, or even none at all.</para></simplesect>
+                    either be exactly one, more than one, or even none at all.</para>
+                <para>Sometimes, the name of the property you want to association is not the name of
+                    the association you want to use. For example, you have a Saga that matches Sell
+                    orders against Buy orders, you could have a Transaction object that contains the
+                    "buyOrderId" and a "sellOrderId". If you want the saga to associate that value
+                    as "orderId", you can define a different keyName in the
+                        <code>@SagaEventHandler</code> annotation. It would then become
+                        <code>@SagaEventHandler(associationProperty="sellOrderId",
+                        keyName="orderId")</code></para></simplesect>
             <simplesect>
                 <title>Associating Sagas with Domain Concepts</title>
                 <para>When a Saga manages a transaction around one or more domain concepts, such as
@@ -236,9 +244,10 @@
                 <para>One or more components will be listening for scheduled Events. These
                     components might rely on a Transaction being bound to the Thread that invokes
                     them. Scheduled Events are published by Threads managed by the
-                        <code>EventScheduler</code>. To manage threads, you can configure a
-                        <code>EventTriggerCallback</code> to listen for publication of scheduled
-                    Events and manage transactions around them.</para>
+                        <code>EventScheduler</code>. To manage transactions on these threads, you
+                    can configure a <code>TransactionManager</code> or
+                        a<code>UnitOfWorkFactory</code> that creates Transaction Bound Unit of
+                    Work.</para>
                 <note>
                     <para>Spring users can use the <code>QuartzEventSchedulerFactoryBean</code> or
                             <code>SimpleEventSchedulerFactoryBean</code> for easier configuration.
@@ -308,7 +317,7 @@
                     create new instances for. This is done through the
                         <code>setEventsToAlwaysCreateNewSagasFor</code> and
                         <code>setEventsToOptionallyCreateNewSagasFor</code> methods. They both
-                    accept a List of Saga classes.</para>
+                    accept a List of Event classes.</para>
             </simplesect>
             <simplesect>
                 <title>AnnotatedSagaManager</title>
@@ -351,9 +360,7 @@
                 <para>Because Transactions are often Thread bound, you may need to configure a
                     Transaction Manager with the SagaManager. This transaction manager is invoked
                     before and after each invocation to the Saga Repository and before and after
-                    each batch of Events has been processed by the Saga itself. The Transaction
-                    Manager has the opportunity to configure the batch size each time a transaction
-                    starts.</para>
+                    each batch of Events has been processed by the Saga itself.</para>
                 <para>In a Spring application context, a Saga Manager can be marked as asynchronous
                     by adding the <code>executor</code> and optionally the
                         <code>transaction-manager</code> attributes to the <code>saga-manager</code>
@@ -399,14 +406,6 @@
                     sagas using a <code>Serializer</code> (similar to Event serialization, you can
                     use either a <code>JavaSerializer</code> or an
                     <code>XStreamSerializer</code>).</para>
-                <note>
-                    <para>In order to ensure that only a single instance exists for each conceptual
-                        Saga, the JpaSagaRepository uses a specialized cache. Unlike many other
-                        caches, the primary goal of this cache is to prevent multiple instances of a
-                        single Saga. These Sagas are Weakly Referenced. That means that once a Saga
-                        is no longer referenced, the Garbage Collector may clean them up. When the
-                        Saga is needed, a new instance is automatically created.</para>
-                </note>
                 <para>The JpaSagaRepository is configured with a JPA <code>EntityManager</code>, a
                         <code>ResourceInjector</code> and a <code>Serializer</code>. Optionally,
                     you can choose whether to explicitly flush the <code>EntityManager</code> after
@@ -434,7 +433,7 @@
             <para>Axon provides the <code>CachingSagaRepository</code> implementation. It is a Saga
                 Repository that wraps another repository, which does the actual storage. When
                 loading Sagas or Association Values, the <code>CachingSagaRepository</code> will
-                first conult its caches, before delegating to the wrapped repository. When storing
+                first consult its caches, before delegating to the wrapped repository. When storing
                 information, all call are always delegated, to ensure that the backing storage
                 always has a consistent view on the Saga's state.</para>
             <para>To configure caching, simply wrap any Saga repository in a

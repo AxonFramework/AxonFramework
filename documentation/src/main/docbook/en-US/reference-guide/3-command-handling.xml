@@ -649,16 +649,12 @@ handler.unsubscribe();</programlisting>
         <para>In most cases, you are unlikely to need access to the Unit of Work. It is mainly used
             by the building blocks that Axon provides. If you do need access to it, for whatever
             reason, there are a few ways to obtain it. The Command Handler receives the Unit Of Work
-            through a parameter in the handle method. If you use annotation support, you may add the
-            optional second parameter of type
-            <code>UnitOfWork</code>
-            to your annotated method. In
-            other locations, you can retrieve the Unit of Work bound to the current thread by
-            calling<code>CurrentUnitOfWork.get()</code>. Note that this method will throw an
-            exception if there is no Unit of Work bound to the current thread. Use
-            <code>CurrentUnitOfWork.isStarted()</code>
-            to find out if one is available.
-        </para>
+            through a parameter in the handle method. If you use annotation support, you may add a
+            parameter of type <code>UnitOfWork</code> to your annotated method. In other locations,
+            you can retrieve the Unit of Work bound to the current thread by calling
+                <code>CurrentUnitOfWork.get()</code>. Note that this method will throw an exception
+            if there is no Unit of Work bound to the current thread. Use
+                <code>CurrentUnitOfWork.isStarted()</code> to find out if one is available. </para>
         <para>One reason to require access to the current Unit of Work is to dispatch Events as part
             of a transaction, but those Events do not originate from an Aggregate. For example, you
             might want to publish an Event from a Command Handler, but don't require that Event to
@@ -675,26 +671,24 @@ handler.unsubscribe();</programlisting>
                 a Command should never contain more than one action. If you stick to that practice,
                 a Unit of Work will contain a single action, making it safe to use as-is. If you
                 have more actions in your Unit of Work, then you could consider attaching a
-                transaction to the Unit of Work's commit. See <xref
-                    linkend="transactional-interceptor"/>. </para>
+                transaction to the Unit of Work's commit. See <xref linkend="binding-uow-to-tx"/>. </para>
         </note>
         <simplesect>
             <title>UnitOfWork and Exceptions</title>
             <para>Your command handlers may throw an Exception as a result of command processing. By
-                default, these exceptions will cause the UnifOfWork to roll back all changes. As a
-                result, no Events are stored or published. In some cases, however, you might want to
-                commit the Unif of Work and still notify the dispatcher of the command of an
+                default, unchecked exceptions will cause the UnifOfWork to roll back all changes. As
+                a result, no Events are stored or published. In some cases, however, you might want
+                to commit the Unif of Work and still notify the dispatcher of the command of an
                 exception through the callback. The <code>SimpleCommandBus</code> allows you to
                 provide a <code>RollbackConfiguration</code>. The <code>RollbackConfiguration</code>
                 instance indicates whether an exception should perform a rollback on the Unit of
                 Work, or a commit. Axon provides two implementation, which should cover most of the
                 cases. </para>
-            <para>The <code>RollbackOnAllExceptionsConfiguration</code>, which is the default, will
-                cause a rollback on any exception (or error). The other is the
-                    <code>RollbackOnUncheckedExceptionConfiguration</code>, which will commit the
-                Unit of Work on checked exceptions (those not extending
-                    <code>RuntimeException</code>) while still performing a rollback on Errors and
-                Runtime Exceptions. </para>
+            <para>The <code>RollbackOnAllExceptionsConfiguration</code> will cause a rollback on any
+                exception (or error). The default configuration, the
+                    <code>RollbackOnUncheckedExceptionConfiguration</code>, will commit the Unit of
+                Work on checked exceptions (those not extending <code>RuntimeException</code>) while
+                still performing a rollback on Errors and Runtime Exceptions. </para>
         </simplesect>
         <simplesect>
             <title>Programatically managing a Unit of Work</title>
@@ -704,7 +698,7 @@ handler.unsubscribe();</programlisting>
                 (or roll back) a Unit of Work instead. </para>
             <para>In most cases, the DefaultUnitOfWork will provide you with the functionality you
                 need. It expects Command processing to happen within a single thread. To start a new
-                Unit Of Work, simply call<code>DefaultUnitOfWork.startAndGet();</code>. This will
+                Unit Of Work, simply call <code>DefaultUnitOfWork.startAndGet();</code>. This will
                 start a Unit of Work, bind it to the current thread (making it accessible via
                     <code>CurrentUnitOfWork.get()</code>), and return it. When processing is done,
                 either invoke <code>unitOfWork.commit();</code> or
@@ -739,7 +733,7 @@ try {
                             <code>onPrepareTransactionCommit</code> method is invoked. When the
                         commit succeeded, the <code>afterCommit</code> method is invoked. If a
                         commit failed, the <code>onRollback</code> is used. This method has a
-                        parameter which defines the cause of the failure, ir available.</para>
+                        parameter which defines the cause of the failure, if available.</para>
                 </listitem>
                 <listitem>
                     <para>Cleanup phase: This is the phase where any of the resources held by this
@@ -749,7 +743,7 @@ try {
                 </listitem>
             </itemizedlist>
         </simplesect>
-        <simplesect>
+        <simplesect xml:id="binding-uow-to-tx">
             <title>Binding the Unit of Work to a Transaction</title>
             <para>The command handling process can be considered an atomic procedure; it should
                 either be processed entirely, or not at all. Axon Framework uses the Unit Of Work to
@@ -758,11 +752,11 @@ try {
                 This involves storing modified aggregates (see <xref linkend="domain-modeling"/>) in
                 their respective repository (see <xref linkend="repositories-and-event-stores"/>)
                 and publishing events on the Event Bus (see <xref linkend="event-processing"/>). </para>
-                <para>The Unit Of Work, however, it is not a replacement for a transaction. The Unit
-                Of Work only ensures that changes made to aggregates are stored upon successful
+            <para>The Unit Of Work, however, it is not a replacement for a transaction. The Unit Of
+                Work only ensures that changes made to aggregates are stored upon successful
                 execution of a command handler. If an error occurs while storing an aggregate, any
                 aggregates already stored are not rolled back. </para>
-                <para>It is posssible to bind a transaction to a Unit of Work. Many CommandBus
+            <para>It is posssible to bind a transaction to a Unit of Work. Many CommandBus
                 implementations, like the SimpleCommandBus and DisruptorCommandBus, allow you to
                 configure a Transaction Manager. This Transaction Manager will then be used to
                 create the transactions to bind to the Unit of Work that is used to manage the
@@ -802,7 +796,7 @@ try {
                     availability of such information. This is called structural validation. </para>
                 <para>Axon Framework has support for JSR 303 Bean Validation based validation. This
                     allows you to annotate the fields on commands with annotations like
-                        <code>@NotEmpty</code> and<code>@Pattern</code>. You need to include a JSR
+                        <code>@NotEmpty</code> and <code>@Pattern</code>. You need to include a JSR
                     303 implementation (such as Hibernate-Validator) on your classpath. Then,
                     configure a <code>BeanValidationInterceptor</code> on your Command Bus, and it
                     will automatically find and configure your validator implementation. While it
@@ -811,8 +805,7 @@ try {
                             Therefore, this interceptor is generally placed in the very front of the
                             interceptor chain. In some cases, a Logging or Auditing interceptor
                             might need to be placed in front, with the validating interceptor
-                            immediately following it. Transaction Management is better done after
-                            structural validation, as it often requires remote resources. </para>
+                            immediately following it. </para>
                     </tip></para>
                 <para>The BeanValidationInterceptor also implements
                         <code>CommandHandlerInterceptor</code>, allowing you to configure it as a
@@ -905,7 +898,7 @@ try {
             uses the <code>@TargetAggregateIdentifier</code> annotation on the Command Messages
             payload to extract the Routing Key. Obviously, you can also provide your own
             implementation.</para>
-        <para>By default, the RoutingKeyResolver implementations will throw an exception when no key
+        <para>By default, the RoutingStrategy implementations will throw an exception when no key
             can be resolved from a Command Message. This behavior can be altered by providing a
             UnresolvedRoutingKeyPolicy in the constructor of the MetaDataRoutingStrategy or
             AnnotationRoutingStrategy. There are three possible policies:<itemizedlist>
@@ -994,7 +987,7 @@ commandBus.subscribe(AnotherCommandType.class, handler2);
                         <code>JGroupsConnectorFactoryBean</code>. It automatically connects the
                     Connector when the ApplicationContext is started, and does a proper disconnect
                     when the <code>ApplicationContext</code> is shut down. Furthermore, it uses
-                    sensible defaults for a testing envinroment (but should not be considered
+                    sensible defaults for a testing environment (but should not be considered
                     production ready) and autowiring for the configuration.</para>
             </simplesect>
         </sect2>
