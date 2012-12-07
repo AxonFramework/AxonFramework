@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.quickstart.handler;
+package org.axonframework.quickstart.annotated;
 
+import org.axonframework.quickstart.annotated.ToDoItem;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
-import org.axonframework.test.FixtureConfiguration;
 import org.axonframework.test.Fixtures;
+import org.axonframework.test.FixtureConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Notice that we need to register the command handlers with the fixture.
- *
  * @author Jettro Coenradie
  */
 public class ToDoItemTest {
@@ -36,8 +35,6 @@ public class ToDoItemTest {
     @Before
     public void setUp() throws Exception {
         fixture = Fixtures.newGivenWhenThenFixture(ToDoItem.class);
-        fixture.registerCommandHandler(CreateToDoItemCommand.class,new CreateToDoCommandHandler(fixture.getRepository()));
-        fixture.registerCommandHandler(MarkCompletedCommand.class,new MarkCompletedCommandHandler(fixture.getRepository()));
     }
 
     @Test
@@ -53,5 +50,4 @@ public class ToDoItemTest {
                 .when(new MarkCompletedCommand("todo1"))
                 .expectEvents(new ToDoItemCompletedEvent("todo1"));
     }
-
 }
