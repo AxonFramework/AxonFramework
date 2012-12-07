@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.quickstart;
+package org.axonframework.quickstart.annotated;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.annotation.EventHandler;

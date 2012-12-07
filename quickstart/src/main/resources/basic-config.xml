@@ -31,15 +31,15 @@
     <axon:event-bus id="eventBus"/>
 
     <axon:event-sourcing-repository id="toDoRepository"
-                                    aggregate-type="org.axonframework.quickstart.ToDoItem"/>
+                                    aggregate-type="org.axonframework.quickstart.annotated.ToDoItem"/>
 
     <axon:aggregate-command-handler id="toDoItemHandler"
-                                    aggregate-type="org.axonframework.quickstart.ToDoItem"
+                                    aggregate-type="org.axonframework.quickstart.annotated.ToDoItem"
                                     repository="toDoRepository"
                                     command-bus="commandBus"/>
 
     <axon:annotation-config/>
 
-    <bean class="org.axonframework.quickstart.ToDoEventHandler"/>
+    <bean class="org.axonframework.quickstart.annotated.ToDoEventHandler"/>
 
 </beans>

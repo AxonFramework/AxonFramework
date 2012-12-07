@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.quickstart;
+package org.axonframework.quickstart.handler;
 
+import org.axonframework.quickstart.annotated.ToDoItem;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
