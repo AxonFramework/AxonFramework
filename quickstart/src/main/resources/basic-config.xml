@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:axon="http://www.axonframework.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
+
+    <axon:command-bus id="commandBus"/>
+
+    <bean id="commandGateway" class="org.axonframework.commandhandling.gateway.CommandGatewayFactoryBean">
+        <property name="commandBus" ref="commandBus"/>
+    </bean>
+
+    <axon:filesystem-event-store id="eventStore" base-dir="events"/>
+
+    <axon:event-bus id="eventBus"/>
+
+    <axon:event-sourcing-repository id="toDoRepository"
+                                    aggregate-type="org.axonframework.quickstart.ToDoItem"/>
+
+    <axon:aggregate-command-handler id="toDoItemHandler"
+                                    aggregate-type="org.axonframework.quickstart.ToDoItem"
+                                    repository="toDoRepository"
+                                    command-bus="commandBus"/>
+
+    <axon:annotation-config/>
+
+    <bean class="org.axonframework.quickstart.ToDoEventHandler"/>
+
+</beans>

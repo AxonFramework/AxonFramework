@@ -30,6 +30,7 @@
         <module>incubator/google-app-engine</module>
         <module>amqp</module>
         <module>monitoring-jmx</module>
+        <module>quickstart</module>
     </modules>
     <packaging>pom</packaging>
 
