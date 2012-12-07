@@ -33,7 +33,7 @@ import java.io.File;
 
 /**
  * Setting up the basic ToDoItem sample with a simple command and event bus and a file based event store. The
- * configuration takes place in java code.
+ * configuration takes place in java code. We use annotations to find the command and event handlers.
  *
  * @author Jettro Coenradie
  */

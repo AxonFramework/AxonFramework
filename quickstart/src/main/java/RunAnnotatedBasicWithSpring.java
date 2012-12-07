@@ -20,11 +20,11 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * Setting up the basic ToDoItem sample with a simple command and event bus and a file based event store. The
- * configuration takes place using spring.
+ * configuration takes place using spring. We use annotations to find the command and event handlers.
  *
  * @author Jettro Coenradie
  */
-public class RunBasicWithSpring {
+public class RunAnnotatedBasicWithSpring {
     public static void main(String[] args) {
         // Load the spring beans from the xml configuration file.
         ApplicationContext applicationContext = new ClassPathXmlApplicationContext("basic-config.xml");

@@ -21,7 +21,7 @@ import org.axonframework.quickstart.api.MarkCompletedCommand;
 import java.util.UUID;
 
 /**
- * Runner to be used by all different specifications: basic, basic with spring
+ * Runner that uses the provided CommandGateway to send some commands to our application.
  *
  * @author Jettro Coenradie
  */

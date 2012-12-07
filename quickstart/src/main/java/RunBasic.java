@@ -32,8 +32,8 @@ import org.axonframework.quickstart.handler.ToDoItem;
 import java.io.File;
 
 /**
- * Setting up the basic ToDoItem sample with a simple command and event bus and a file based event store. The
- * configuration takes place in java code.
+ * Setting up the basic ToDoItem sample with as little as possible help from axon utilities. The configuration takes
+ * place in java code. In this class we setup the application infrastructure.
  *
  * @author Jettro Coenradie
  */
@@ -57,13 +57,16 @@ public class RunBasic {
         repository.setEventStore(eventStore);
         repository.setEventBus(eventBus);
 
-        commandBus.subscribe("org.axonframework.quickstart.api.CreateToDoItemCommand", new CreateToDoCommandHandler(repository));
-        commandBus.subscribe("org.axonframework.quickstart.api.MarkCompletedCommand", new MarkCompletedCommandHandler(repository));
+        // Register the Command Handlers with the command bus by subscribing to the name of the command
+        commandBus.subscribe("org.axonframework.quickstart.api.CreateToDoItemCommand",
+                new CreateToDoCommandHandler(repository));
+        commandBus.subscribe("org.axonframework.quickstart.api.MarkCompletedCommand",
+                new MarkCompletedCommandHandler(repository));
 
         // We register an event listener to see which events are created
         eventBus.subscribe(new ToDoEventListener());
 
-        // and let's send some Commands on the CommandBus.
+        // and let's send some Commands on the CommandBus using the special runner configured with our CommandGateway.
         ToDoItemRunner runner = new ToDoItemRunner(commandGateway);
         runner.run();
     }

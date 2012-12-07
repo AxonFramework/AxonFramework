@@ -22,6 +22,8 @@ import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 
 /**
+ * Event listener for all events, results are printed to system out.
+ *
  * @author Jettro Coenradie
  */
 public class ToDoEventListener implements EventListener {
