@@ -411,6 +411,42 @@ public class GatewayProxyFactoryTest {
     }
 
     @Test(timeout = 2000)
+    public void testCreateGateway_WaitForResultAndInvokeCallbacks_Success() {
+        CountDownLatch cdl = new CountDownLatch(1);
+
+        final CommandCallback callback1 = mock(CommandCallback.class);
+        final CommandCallback callback2 = mock(CommandCallback.class);
+
+        doAnswer(new Success(cdl, "OK"))
+                .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        Object result = gateway.fireAndWaitAndInvokeCallbacks("Command", callback1, callback2);
+        assertEquals(0, cdl.getCount());
+
+        assertNotNull(result);
+        verify(callback1).onSuccess(result);
+        verify(callback2).onSuccess(result);
+    }
+
+
+    @Test(timeout = 2000)
+    public void testCreateGateway_WaitForResultAndInvokeCallbacks_Failure() {
+        final CommandCallback callback1 = mock(CommandCallback.class);
+        final CommandCallback callback2 = mock(CommandCallback.class);
+
+        final RuntimeException exception = new RuntimeException();
+        doAnswer(new Failure(exception))
+                .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+        try {
+            gateway.fireAndWaitAndInvokeCallbacks("Command", callback1, callback2);
+            fail("Expected exception");
+        } catch (CommandExecutionException e) {
+            verify(callback1).onFailure(exception);
+            verify(callback2).onFailure(exception);
+        }
+    }
+
+    @Test(timeout = 2000)
     public void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() throws Throwable {
         final AtomicReference<Object> result = new AtomicReference<Object>();
         final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
@@ -463,6 +499,8 @@ public class GatewayProxyFactoryTest {
         Future<Object> fireAndGetFuture(Object command);
 
         Future<Object> futureWithTimeout(Object command, int timeout, TimeUnit unit);
+
+        Object fireAndWaitAndInvokeCallbacks(Object command, CommandCallback first, CommandCallback second);
     }
 
     public static class ExpectedException extends Exception {

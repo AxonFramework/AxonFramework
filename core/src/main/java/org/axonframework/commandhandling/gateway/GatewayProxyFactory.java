@@ -17,8 +17,10 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.annotation.MetaData;
 
@@ -27,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -160,9 +163,16 @@ public class GatewayProxyFactory {
         for (Method gatewayMethod : gatewayInterface.getMethods()) {
             MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterAnnotations());
 
-            InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
-                                                                           dispatchInterceptors, extractors);
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
+            boolean hasCallbacks = false;
+            for (Class<?> argument : arguments) {
+                if (CommandCallback.class.isAssignableFrom(argument)) {
+                    hasCallbacks = true;
+                }
+            }
+            InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
+                                                                           dispatchInterceptors, extractors,
+                                                                           hasCallbacks);
             if (Future.class.equals(gatewayMethod.getReturnType())) {
                 // no wrapping
             } else if (arguments.length >= 3
@@ -345,14 +355,17 @@ public class GatewayProxyFactory {
             implements InvocationHandler<Future<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
+        private final boolean hasCallbacks;
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
                                               List<CommandDispatchInterceptor> commandDispatchInterceptors,
-                                              MetaDataExtractor[] metaDataExtractors) {
+                                              MetaDataExtractor[] metaDataExtractors, boolean hasCallbacks) {
             super(commandBus, retryScheduler, commandDispatchInterceptors);
             this.metaDataExtractors = metaDataExtractors;
+            this.hasCallbacks = hasCallbacks;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Future<R> invoke(Object proxy, Method invokedMethod, Object[] args) {
             Object command = args[0];
@@ -365,7 +378,45 @@ public class GatewayProxyFactory {
                     command = asCommandMessage(command).withMetaData(metaDataValues);
                 }
             }
-            return doSend(command);
+            if (hasCallbacks) {
+                List<CommandCallback<R>> callbacks = new LinkedList<CommandCallback<R>>();
+                FutureCallback<R> future = new FutureCallback<R>();
+                callbacks.add(future);
+                for (Object arg : args) {
+                    if (arg instanceof CommandCallback) {
+                        final CommandCallback<R> callback = (CommandCallback<R>) arg;
+                        callbacks.add(callback);
+                    }
+                }
+                send(command, new CompositeCallback(callbacks));
+                return future;
+            } else {
+                return doSend(command);
+            }
+        }
+    }
+
+    private static class CompositeCallback<R> implements CommandCallback<R> {
+
+        private final List<CommandCallback<R>> callbacks;
+
+        @SuppressWarnings("unchecked")
+        public CompositeCallback(List<CommandCallback<R>> callbacks) {
+            this.callbacks = new ArrayList<CommandCallback<R>>(callbacks);
+        }
+
+        @Override
+        public void onSuccess(R result) {
+            for (CommandCallback<R> callback : callbacks) {
+                callback.onSuccess(result);
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+            for (CommandCallback callback : callbacks) {
+                callback.onFailure(cause);
+            }
         }
     }
 
