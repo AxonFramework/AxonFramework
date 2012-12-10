@@ -51,9 +51,19 @@ public class AbstractAnnotatedSagaTest {
     }
 
     @Test
-    public void testEndedAfterInvocation() {
+    public void testEndedAfterInvocation_BeanProperty() {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
         testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
+        testSubject.handle(new GenericEventMessage<Object>(new Object()));
+        testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));
+        assertEquals(2, testSubject.invocationCount);
+        assertFalse(testSubject.isActive());
+    }
+
+    @Test
+    public void testEndedAfterInvocation_UniformAccessPrinciple() {
+        StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+        testSubject.handle(new GenericEventMessage<UniformAccessEvent>(new UniformAccessEvent("id")));
         testSubject.handle(new GenericEventMessage<Object>(new Object()));
         testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));
         assertEquals(2, testSubject.invocationCount);
@@ -67,6 +77,11 @@ public class AbstractAnnotatedSagaTest {
 
         @SagaEventHandler(associationProperty = "propertyName")
         public void handleStubDomainEvent(RegularEvent event) {
+            invocationCount++;
+        }
+
+        @SagaEventHandler(associationProperty = "propertyName")
+        public void handleStubDomainEvent(UniformAccessEvent event) {
             invocationCount++;
         }
 
@@ -86,6 +101,19 @@ public class AbstractAnnotatedSagaTest {
         }
 
         public String getPropertyName() {
+            return propertyName;
+        }
+    }
+
+    private static class UniformAccessEvent {
+
+        private final String propertyName;
+
+        public UniformAccessEvent(String propertyName) {
+            this.propertyName = propertyName;
+        }
+
+        public String propertyName() {
             return propertyName;
         }
     }

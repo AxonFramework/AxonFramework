@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
  * A data holder containing information of {@link SagaEventHandler} annotated methods.
@@ -64,16 +65,13 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         Method handlerMethod = methodHandler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
         String associationPropertyName = handlerAnnotation.associationProperty();
-        Method associationProperty;
-        try {
-            associationProperty = methodHandler.getPayloadType().getMethod(methodForProperty(associationPropertyName));
-        } catch (NoSuchMethodException e) {
+        Method associationProperty = methodForProperty(methodHandler.getPayloadType(), associationPropertyName);
+        if (associationProperty == null) {
             throw new AxonConfigurationException(format("SagaEventHandler %s.%s defines a property %s that is not "
                                                                 + "defined on the Event it declares to handle (%s)",
                                                         methodHandler.getMethod().getDeclaringClass().getName(),
                                                         methodHandler.getMethodName(), associationPropertyName,
-                                                        methodHandler.getPayloadType().getName()),
-                                                 e);
+                                                        methodHandler.getPayloadType().getName()));
         }
         String associationKey = handlerAnnotation.keyName().isEmpty()
                 ? associationPropertyName
@@ -150,8 +148,17 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         return creationPolicy;
     }
 
-    private static String methodForProperty(String propertyName) {
-        return "get" + propertyName.substring(0, 1).toUpperCase(Locale.ENGLISH) + propertyName.substring(1);
+    private static Method methodForProperty(Class<?> declaringClass, String propertyName) {
+        String getter = "get" + propertyName.substring(0, 1).toUpperCase(Locale.ENGLISH) + propertyName.substring(1);
+        for (Method method : methodsOf(declaringClass)) {
+            String methodName = method.getName();
+            if (method.getParameterTypes().length == 0
+                    && !Void.TYPE.equals(method.getReturnType())
+                    && (propertyName.equals(methodName) || getter.equals(methodName))) {
+                return method;
+            }
+        }
+        return null;
     }
 
     /**
