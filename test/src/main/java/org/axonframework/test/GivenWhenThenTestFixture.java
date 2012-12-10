@@ -214,6 +214,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
         detectIllegalStateChanges();
+        resultValidator.assertValidRecording();
         return resultValidator;
     }
 
@@ -483,15 +484,18 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         @Override
         public T load(Object aggregateIdentifier, Long expectedVersion) {
             T aggregate = delegate.load(aggregateIdentifier, expectedVersion);
-            if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.getIdentifier())) {
-
-            }
+            validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
 
         @Override
         public T load(Object aggregateIdentifier) {
-            T aggregate = delegate.load(aggregateIdentifier);
+            T aggregate = delegate.load(aggregateIdentifier, null);
+            validateIdentifier(aggregateIdentifier, aggregate);
+            return aggregate;
+        }
+
+        private void validateIdentifier(Object aggregateIdentifier, T aggregate) {
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.getIdentifier())) {
                 throw new AssertionError(String.format(
                         "The aggregate used in this fixture was initialized with an identifier different than "
@@ -499,7 +503,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                                 + "Make sure the identifier passed in the Command matches that of the given Events.",
                         aggregateIdentifier, aggregate.getIdentifier()));
             }
-            return aggregate;
         }
 
         @Override
