@@ -36,6 +36,7 @@ import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
@@ -119,6 +120,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         eventSourcingRepository.setEventBus(eventBus);
         eventSourcingRepository.setEventStore(eventStore);
         return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
+        return registerRepository(new EventSourcingRepository<T>(aggregateFactory));
     }
 
     @Override

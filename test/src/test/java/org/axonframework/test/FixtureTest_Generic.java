@@ -20,12 +20,16 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventstore.EventStoreException;
 import org.junit.*;
 
 import java.util.UUID;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -37,6 +41,21 @@ public class FixtureTest_Generic {
     @Before
     public void setUp() {
         fixture = Fixtures.newGivenWhenThenFixture(StandardAggregate.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testConfigureCustomAggregateFactory() {
+        AggregateFactory<StandardAggregate> mockAggregateFactory = mock(AggregateFactory.class);
+        when(mockAggregateFactory.createAggregate(isA(String.class), isA(DomainEventMessage.class)))
+                .thenReturn(new StandardAggregate());
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
+        fixture.registerAggregateFactory(mockAggregateFactory);
+
+        fixture.given(new MyEvent("id1", 1))
+                .when(new TestCommand("id1"));
+
+        verify(mockAggregateFactory).createAggregate(eq("id1"), isA(DomainEventMessage.class));
     }
 
     @Test
@@ -76,8 +95,8 @@ public class FixtureTest_Generic {
             exec.when(new TestCommand("OtherIdentifier"));
             fail("Expected an AssertionError");
         } catch (AssertionError e) {
-            assertTrue(e.getMessage().contains("OtherIdentifier"));
-            assertTrue(e.getMessage().contains("AggregateId"));
+            assertTrue("Wrong message. Was: " + e.getMessage(), e.getMessage().contains("OtherIdentifier"));
+            assertTrue("Wrong message. Was: " + e.getMessage(), e.getMessage().contains("AggregateId"));
         }
     }
 
