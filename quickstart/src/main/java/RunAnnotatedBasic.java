@@ -38,6 +38,7 @@ import java.io.File;
  * @author Jettro Coenradie
  */
 public class RunAnnotatedBasic {
+
     public static void main(String[] args) {
         // let's start with the Command Bus
         CommandBus commandBus = new SimpleCommandBus();
@@ -66,5 +67,4 @@ public class RunAnnotatedBasic {
         ToDoItemRunner runner = new ToDoItemRunner(commandGateway);
         runner.run();
     }
-
 }

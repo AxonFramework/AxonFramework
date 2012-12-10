@@ -59,9 +59,9 @@ public class RunBasic {
 
         // Register the Command Handlers with the command bus by subscribing to the name of the command
         commandBus.subscribe("org.axonframework.quickstart.api.CreateToDoItemCommand",
-                new CreateToDoCommandHandler(repository));
+                             new CreateToDoCommandHandler(repository));
         commandBus.subscribe("org.axonframework.quickstart.api.MarkCompletedCommand",
-                new MarkCompletedCommandHandler(repository));
+                             new MarkCompletedCommandHandler(repository));
 
         // We register an event listener to see which events are created
         eventBus.subscribe(new ToDoEventListener());

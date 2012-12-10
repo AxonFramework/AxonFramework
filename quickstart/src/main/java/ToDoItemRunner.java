@@ -26,6 +26,7 @@ import java.util.UUID;
  * @author Jettro Coenradie
  */
 public class ToDoItemRunner {
+
     private final CommandGateway commandGateway;
 
     public ToDoItemRunner(CommandGateway commandGateway) {

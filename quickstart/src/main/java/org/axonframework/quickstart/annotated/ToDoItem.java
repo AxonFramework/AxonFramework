@@ -51,5 +51,4 @@ public class ToDoItem extends AbstractAnnotatedAggregateRoot {
     public void on(ToDoItemCreatedEvent event) {
         this.id = event.getTodoId();
     }
-
 }

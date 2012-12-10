@@ -22,6 +22,7 @@ package org.axonframework.quickstart.api;
  * @author Jettro Coenradie
  */
 public class ToDoItemCreatedEvent {
+
     private final String todoId;
     private final String description;
 

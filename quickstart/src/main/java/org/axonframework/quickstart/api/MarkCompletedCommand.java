@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
  * @author Jettro Coenradie
  */
 public class MarkCompletedCommand {
+
     @TargetAggregateIdentifier
     private final String todoId;
 

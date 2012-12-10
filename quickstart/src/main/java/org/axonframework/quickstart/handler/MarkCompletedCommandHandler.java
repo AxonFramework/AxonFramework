@@ -26,6 +26,7 @@ import org.axonframework.unitofwork.UnitOfWork;
  * @author Jettro Coenradie
  */
 public class MarkCompletedCommandHandler implements CommandHandler<MarkCompletedCommand> {
+
     private Repository<ToDoItem> repository;
 
     public MarkCompletedCommandHandler(Repository<ToDoItem> repository) {

@@ -29,7 +29,9 @@ public class ToDoEventHandler {
 
     @EventHandler
     public void handle(ToDoItemCreatedEvent event) {
-        System.out.println(String.format("We've got something to do: %s (%s)", event.getDescription(), event.getTodoId()));
+        System.out.println(String.format("We've got something to do: %s (%s)",
+                                         event.getDescription(),
+                                         event.getTodoId()));
     }
 
     @EventHandler

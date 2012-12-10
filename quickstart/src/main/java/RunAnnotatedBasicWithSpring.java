@@ -25,6 +25,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  * @author Jettro Coenradie
  */
 public class RunAnnotatedBasicWithSpring {
+
     public static void main(String[] args) {
         // Load the spring beans from the xml configuration file.
         ApplicationContext applicationContext = new ClassPathXmlApplicationContext("basic-config.xml");

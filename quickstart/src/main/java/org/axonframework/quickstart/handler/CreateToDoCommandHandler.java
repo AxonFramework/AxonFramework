@@ -26,6 +26,7 @@ import org.axonframework.unitofwork.UnitOfWork;
  * @author Jettro Coenradie
  */
 public class CreateToDoCommandHandler implements CommandHandler<CreateToDoItemCommand> {
+
     private Repository<ToDoItem> repository;
 
     public CreateToDoCommandHandler(Repository<ToDoItem> repository) {

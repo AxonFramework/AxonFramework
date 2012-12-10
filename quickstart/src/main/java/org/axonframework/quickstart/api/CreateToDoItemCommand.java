@@ -22,6 +22,7 @@ package org.axonframework.quickstart.api;
  * @author Jettro Coenradie
  */
 public class CreateToDoItemCommand {
+
     private final String todoId;
     private final String description;
 
@@ -37,5 +38,4 @@ public class CreateToDoItemCommand {
     public String getDescription() {
         return description;
     }
-
 }
