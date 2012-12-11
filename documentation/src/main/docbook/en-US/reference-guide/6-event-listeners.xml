@@ -182,9 +182,10 @@
                                 injected.</para>
                         </listitem>
                         <listitem>
-                            <para>Parameters of type <code>org.joda.time.DateTime</code> will
-                                resolve to the timestamp of the <code>EventMessage</code>. This is
-                                the time at which the Event was generated.</para>
+                            <para>Parameters annotated with <code>@Timestamp</code> and of type
+                                    <code>org.joda.time.DateTime</code> will resolve to the
+                                timestamp of the <code>EventMessage</code>. This is the time at
+                                which the Event was generated.</para>
                         </listitem>
                         <listitem>
                             <para>Parameters assignable to Message will have the entire
@@ -587,7 +588,7 @@ public class SubListener extends TopListener {
                 present, Axon will automatically wrap the cluster in a <code>ReplayingCluster</code>
                 using the provided configuration. This also means that
                     <code>applicationContext.getBean(clusterName)</code> will return a bean of type
-                    <code>ReplayingCluster</code>.</para>
+                    <code>ReplayingCluster</code>.<!--TODO: Example--></para>
         </simplesect>
         <simplesect>
             <title>Preparing for a replay</title>
