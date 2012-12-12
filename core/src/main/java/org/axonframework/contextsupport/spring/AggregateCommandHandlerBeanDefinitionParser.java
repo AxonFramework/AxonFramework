@@ -51,4 +51,9 @@ public class AggregateCommandHandlerBeanDefinitionParser extends AbstractBeanDef
         beanDefinition.setDestroyMethodName("unsubscribe");
         return beanDefinition;
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

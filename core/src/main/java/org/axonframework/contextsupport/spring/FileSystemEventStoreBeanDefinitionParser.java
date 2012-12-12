@@ -83,4 +83,9 @@ public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBean
             builder.addPropertyValue("upcasterChain", bd);
         }
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

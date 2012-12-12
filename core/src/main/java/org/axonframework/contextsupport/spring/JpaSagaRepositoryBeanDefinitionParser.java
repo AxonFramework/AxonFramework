@@ -87,4 +87,9 @@ public class JpaSagaRepositoryBeanDefinitionParser extends AbstractBeanDefinitio
             beanDefinition.addPropertyValue("resourceInjector", defaultResourceInjector);
         }
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

@@ -92,4 +92,9 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
             builder.addPropertyValue("upcasterChain", bd);
         }
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }
