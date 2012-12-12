@@ -1,4 +1,4 @@
-/*
+package org.axonframework.quickstart;/*
  * Copyright (c) 2010-2012. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,15 +25,9 @@ import java.util.UUID;
  *
  * @author Jettro Coenradie
  */
-public class ToDoItemRunner {
+public class CommandGenerator {
 
-    private final CommandGateway commandGateway;
-
-    public ToDoItemRunner(CommandGateway commandGateway) {
-        this.commandGateway = commandGateway;
-    }
-
-    public void run() {
+    public static void sendCommands(CommandGateway commandGateway) {
         final String itemId1 = UUID.randomUUID().toString();
         final String itemId2 = UUID.randomUUID().toString();
         commandGateway.send(new CreateToDoItemCommand(itemId1, "Check if it really works!"));

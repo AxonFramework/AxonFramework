@@ -25,13 +25,12 @@
         <version>2.0-SNAPSHOT</version>
     </parent>
 
+    <artifactId>axon-quickstart</artifactId>
     <name>Axon Quickstart</name>
 
     <description>
-        This guide takes you through the steps needed to set up a simple Axon 2 based architecture.
+        Module containing some examples for several building blocks available in Axon 2.
     </description>
-
-    <artifactId>axon-quickstart</artifactId>
 
     <dependencies>
         <!-- Axon dependencies -->
@@ -44,6 +43,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>axon-test</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!--Spring dependencies, for spring samples required. -->
@@ -105,4 +105,14 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

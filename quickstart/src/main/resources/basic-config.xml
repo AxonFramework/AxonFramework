@@ -33,8 +33,7 @@
     <axon:event-sourcing-repository id="toDoRepository"
                                     aggregate-type="org.axonframework.quickstart.annotated.ToDoItem"/>
 
-    <axon:aggregate-command-handler id="toDoItemHandler"
-                                    aggregate-type="org.axonframework.quickstart.annotated.ToDoItem"
+    <axon:aggregate-command-handler aggregate-type="org.axonframework.quickstart.annotated.ToDoItem"
                                     repository="toDoRepository"
                                     command-bus="commandBus"/>
 

@@ -30,6 +30,7 @@
         <module>incubator/google-app-engine</module>
         <module>amqp</module>
         <module>monitoring-jmx</module>
+        <module>quickstart</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -63,17 +64,6 @@
             </activation>
             <modules>
                 <module>documentation</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>all-but-release</id>
-            <activation>
-                <property>
-                    <name>!performRelease</name>
-                </property>
-            </activation>
-            <modules>
-                <module>quickstart</module>
             </modules>
         </profile>
         <profile>

@@ -1,4 +1,4 @@
-/*
+package org.axonframework.quickstart;/*
  * Copyright (c) 2010-2012. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,6 @@ public class RunAnnotatedBasicWithSpring {
         CommandGateway commandGateway = applicationContext.getBean("commandGateway", CommandGateway.class);
 
         // and let's send some Commands on the CommandBus.
-        ToDoItemRunner runner = new ToDoItemRunner(commandGateway);
-        runner.run();
+        CommandGenerator.sendCommands(commandGateway);
     }
 }
