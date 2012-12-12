@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
@@ -334,24 +335,24 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <developers>
         <developer>
             <name>Allard Buijze</name>
-            <email>allard@jteam.nl</email>
-            <organization>JTeam</organization>
-            <organizationUrl>www.jteam.nl</organizationUrl>
+            <email>allard.buijze@trifork.nl</email>
+            <organization>Trifork</organization>
+            <organizationUrl>www.trifork.nl</organizationUrl>
             <roles>
                 <role>Project Owner</role>
             </roles>
         </developer>
         <developer>
             <name>Jettro Coenradie</name>
-            <email>jettro@jteam.nl</email>
-            <organization>JTeam</organization>
-            <organizationUrl>www.jteam.nl</organizationUrl>
+            <email>jettro.coenradie@trifork.nl</email>
+            <organization>Trifork</organization>
+            <organizationUrl>www.trifork.nl</organizationUrl>
             <roles>
                 <role>Committer</role>
                 <role>Sample Application Developer</role>
