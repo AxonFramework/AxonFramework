@@ -72,6 +72,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     private int processorCount = DEFAULT_PROCESSOR_COUNT;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
+    private SagaManagerStatus sagaManagerStatus = new SagaManagerStatus();
 
     /**
      * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code> to listen to
@@ -97,12 +98,15 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      */
     public synchronized void start() {
         if (disruptor == null) {
+            sagaManagerStatus.setStatus(true);
             disruptor = new Disruptor<AsyncSagaProcessingEvent>(new AsyncSagaProcessingEvent.Factory(), executor,
                                                                 new MultiThreadedClaimStrategy(bufferSize),
                                                                 waitStrategy);
-            disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository,
-                                                                               unitOfWorkFactory, processorCount));
             disruptor.handleExceptionsWith(new LoggingExceptionHandler());
+            disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository,
+                                                                               unitOfWorkFactory, processorCount,
+                                                                               disruptor.getRingBuffer(),
+                                                                               sagaManagerStatus));
 
             disruptor.start();
         }
@@ -117,6 +121,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      * If the Saga Manager was already stopped, nothing happens.
      */
     public synchronized void stop() {
+        sagaManagerStatus.setStatus(false);
         unsubscribe();
         if (disruptor != null) {
             disruptor.shutdown();
@@ -303,6 +308,19 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
         @Override
         public void handleOnShutdownException(Throwable ex) {
             logger.warn("An exception occurred while shutting down the AsyncAnnotatedSagaManager.", ex);
+        }
+    }
+
+    static class SagaManagerStatus {
+
+        private volatile boolean isRunning;
+
+        private void setStatus(boolean running) {
+            isRunning = running;
+        }
+
+        public boolean isRunning() {
+            return isRunning;
         }
     }
 }
