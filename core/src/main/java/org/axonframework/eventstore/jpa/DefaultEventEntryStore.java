@@ -187,6 +187,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
             return current;
         }
 
+        @SuppressWarnings("unchecked")
         private List<SerializedDomainEventData> fetchBatch(long firstSequenceNumber) {
             return entityManager.createQuery(
                     "SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
@@ -195,7 +196,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
                             + "FROM DomainEventEntry e "
                             + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
                             + "AND e.sequenceNumber >= :seq "
-                            + "ORDER BY e.sequenceNumber ASC", SerializedDomainEventData.class)
+                            + "ORDER BY e.sequenceNumber ASC")
                                 .setParameter("id", id.toString())
                                 .setParameter("type", typeId)
                                 .setParameter("seq", firstSequenceNumber)

@@ -482,7 +482,10 @@ public class JpaEventStoreTest {
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>("123", 0L,
-                                                      "Mock contents", MetaData.emptyInstance()),
+                                                      "Mock contents", MetaData.emptyInstance())));
+        entityManager.flush();
+        entityManager.clear();
+        testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>("123", 0L,
                                                       "Mock contents", MetaData.emptyInstance())));
     }
@@ -493,7 +496,10 @@ public class JpaEventStoreTest {
         try {
             testSubject.appendEvents("test", new SimpleDomainEventStream(
                     new GenericDomainEventMessage<String>("123", (long) 0,
-                                                          "Mock contents", MetaData.emptyInstance()),
+                                                          "Mock contents", MetaData.emptyInstance())));
+            entityManager.flush();
+            entityManager.clear();
+            testSubject.appendEvents("test", new SimpleDomainEventStream(
                     new GenericDomainEventMessage<String>("123", (long) 0,
                                                           "Mock contents", MetaData.emptyInstance())));
         } catch (ConcurrencyException ex) {
