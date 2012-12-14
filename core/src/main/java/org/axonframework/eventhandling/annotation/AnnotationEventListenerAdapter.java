@@ -20,6 +20,7 @@ import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.replay.ReplayAware;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -32,10 +33,11 @@ import javax.annotation.PreDestroy;
  * @see org.axonframework.eventhandling.EventListener
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter implements Subscribable, EventListenerProxy {
+public class AnnotationEventListenerAdapter implements Subscribable, EventListenerProxy, ReplayAware {
 
     private final AnnotationEventHandlerInvoker invoker;
     private final EventBus eventBus;
+    private final ReplayAware replayAware;
     private final Class<?> listenerType;
 
     /**
@@ -63,6 +65,12 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
         this.invoker = new AnnotationEventHandlerInvoker(annotatedEventListener);
         this.listenerType = annotatedEventListener.getClass();
         this.eventBus = eventBus;
+        if (annotatedEventListener instanceof ReplayAware) {
+            this.replayAware = (ReplayAware) annotatedEventListener;
+        } else {
+            // as soon as annotations are supported, their handlers should come here...
+            this.replayAware = new NoOpReplayAware();
+        }
     }
 
     /**
@@ -95,5 +103,26 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     @Override
     public Class<?> getTargetType() {
         return listenerType;
+    }
+
+    @Override
+    public void beforeReplay() {
+        replayAware.beforeReplay();
+    }
+
+    @Override
+    public void afterReplay() {
+        replayAware.afterReplay();
+    }
+
+    private static final class NoOpReplayAware implements ReplayAware {
+
+        @Override
+        public void beforeReplay() {
+        }
+
+        @Override
+        public void afterReplay() {
+        }
     }
 }

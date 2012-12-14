@@ -20,11 +20,16 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.ClusteringEventBus;
+import org.axonframework.eventhandling.DefaultClusterSelector;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.TransactionManager;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
@@ -76,6 +81,19 @@ public class ReplayingClusterTest {
         testSubject.unsubscribe(replayAware);
         verify(delegateCluster).unsubscribe(listener);
         verify(delegateCluster).unsubscribe(replayAware);
+    }
+
+    @Test
+    public void testAnnotatedHandlersRecognized() {
+        EventBus eventBus = new ClusteringEventBus(new DefaultClusterSelector(testSubject));
+        MyReplayAwareListener annotatedBean = new MyReplayAwareListener();
+        AnnotationEventListenerAdapter.subscribe(annotatedBean, eventBus);
+
+        testSubject.startReplay();
+
+        assertEquals(0, annotatedBean.counter);
+        assertEquals(1, annotatedBean.before);
+        assertEquals(1, annotatedBean.after);
     }
 
     @Test
@@ -237,5 +255,27 @@ public class ReplayingClusterTest {
 
     interface ReplayAwareListener extends ReplayAware, EventListener {
 
+    }
+
+    private static class MyReplayAwareListener implements ReplayAware {
+
+        public int counter;
+        public int before;
+        public int after;
+
+        @EventHandler
+        public void handleAll(Object payload) {
+            counter++;
+        }
+
+        @Override
+        public void beforeReplay() {
+            before++;
+        }
+
+        @Override
+        public void afterReplay() {
+            after++;
+        }
     }
 }
