@@ -106,6 +106,7 @@ public class AsyncAnnotatedSagaManagerTest {
         for (EventMessage message : createSimpleLifeCycle("one", "two", true)) {
             testSubject.handle(message);
         }
+        Thread.sleep(100);
         testSubject.stop();
         executorService.shutdown();
         assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
