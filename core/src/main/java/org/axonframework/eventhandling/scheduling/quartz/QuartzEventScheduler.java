@@ -20,9 +20,11 @@ import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.quartz.JobBuilder;
@@ -56,7 +58,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private EventBus eventBus;
     private String groupIdentifier = DEFAULT_GROUP_NAME;
     private volatile boolean initialized;
-    private TransactionManager transactionManager;
+    private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
 
     @Override
     public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
@@ -143,7 +145,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         Assert.notNull(scheduler, "A Scheduler must be provided.");
         Assert.notNull(eventBus, "An EventBus must be provided.");
         scheduler.getContext().put(FireEventJob.EVENT_BUS_KEY, eventBus);
-        scheduler.getContext().put(FireEventJob.TRANSACTION_MANAGER_KEY, transactionManager);
+        scheduler.getContext().put(FireEventJob.UNIT_OF_WORK_FACTORY_KEY, unitOfWorkFactory);
         initialized = true;
     }
 
@@ -177,11 +179,26 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Sets the transaction manager that manages a transaction around the publication of an event
+     * Sets the transaction manager that manages a transaction around the publication of an event. Using this method
+     * will configure a DefaultUnitOfWorkFactory. To use an alternative Unit of Work Factory, use {@link
+     * #setUnitOfWorkFactory(org.axonframework.unitofwork.UnitOfWorkFactory)} which is configured with the proper
+     * transaction manager.
      *
      * @param transactionManager the callback to invoke before and after publication of a scheduled event
      */
     public void setTransactionManager(TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
+        this.unitOfWorkFactory = new DefaultUnitOfWorkFactory(transactionManager);
+    }
+
+    /**
+     * Sets the Unit of Work Factory instance which provides the UnitOfWork that manages the publication of the
+     * scheduled event. Defaults to a DefaultUnitOfWorkFactory without a managed transaction, unless {@link
+     * #setTransactionManager(org.axonframework.unitofwork.TransactionManager)} is used. In that case, a Transactional
+     * instance of a DefaultUnitOfWorkFactory is used.
+     *
+     * @param unitOfWorkFactory The UnitOfWorkFactory that creates the Unit Of Work for the Event Publication
+     */
+    public void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
+        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 }
