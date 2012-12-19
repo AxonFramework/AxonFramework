@@ -16,9 +16,6 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.common.BeanStylePropertyAccessor;
-import org.axonframework.common.PropertyAccessor;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

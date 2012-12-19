@@ -1,6 +1,6 @@
-package org.axonframework.common;
+package org.axonframework.common.property;
 
-public class BeanPropertyAccessorTest extends PropertyAccessorTest {
+public class BeanGetterTest extends GetterTest<BeanGetterTest.TestMessage> {
     class TestMessage {
         private String testProperty = text;
 
@@ -15,10 +15,6 @@ public class BeanPropertyAccessorTest extends PropertyAccessorTest {
         public String getExcProperty() {
             throw new RuntimeException("GetTestException");
         }
-
-        public void setExcProperty() {
-            throw new RuntimeException("SetTestException");
-        }
     }
 
     @Override
@@ -27,7 +23,7 @@ public class BeanPropertyAccessorTest extends PropertyAccessorTest {
     }
 
     @Override
-    protected PropertyAccessor propertyAccessor(String property) {
-        return new BeanStylePropertyAccessor(property);
+    protected Getter getter(String property) {
+        return new BeanPropertyAccessStrategy().getterFor(TestMessage.class, property);
     }
 }

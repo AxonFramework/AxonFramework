@@ -1,0 +1,2 @@
+org.axonframework.common.property.UniformPropertyAccessStrategy
+org.axonframework.common.property.BeanPropertyAccessStrategy

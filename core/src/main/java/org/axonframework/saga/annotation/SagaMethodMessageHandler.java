@@ -17,8 +17,8 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.PropertyAccessor;
-import org.axonframework.common.PropertyAccessorFactory;
+import org.axonframework.common.property.PropertyAccessStrategy;
+import org.axonframework.common.property.Getter;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaCreationPolicy;
@@ -49,7 +49,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     private final SagaCreationPolicy creationPolicy;
     private final MethodMessageHandler handlerMethod;
     private final String associationKey;
-    private final PropertyAccessor associationProperty;
+    private final Getter associationProperty;
 
     /**
      * Create a SagaMethodMessageHandler for the given <code>methodHandler</code>. The SagaMethodMessageHandler add
@@ -62,8 +62,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         Method handlerMethod = methodHandler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
         String associationPropertyName = handlerAnnotation.associationProperty();
-        PropertyAccessor associationPropertyAccessor =
-                PropertyAccessorFactory.createFor(associationPropertyName);
+        Getter associationProperty = PropertyAccessStrategy.getter(methodHandler.getPayloadType(), associationPropertyName);
         String associationKey = handlerAnnotation.keyName().isEmpty()
                 ? associationPropertyName
                 : handlerAnnotation.keyName();
@@ -77,7 +76,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
             sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
         }
 
-        return new SagaMethodMessageHandler(sagaCreationPolicy, methodHandler, associationKey, associationPropertyAccessor);
+        return new SagaMethodMessageHandler(sagaCreationPolicy, methodHandler, associationKey, associationProperty);
     }
 
     /**
@@ -89,7 +88,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param associationProperty The association property configured for this handler
      */
     protected SagaMethodMessageHandler(SagaCreationPolicy creationPolicy, MethodMessageHandler handler,
-                                       String associationKey, PropertyAccessor associationProperty) {
+                                       String associationKey, Getter associationProperty) {
         this.creationPolicy = creationPolicy;
         this.handlerMethod = handler;
         this.associationKey = associationKey;
