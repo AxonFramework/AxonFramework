@@ -39,7 +39,7 @@ public class JavaSerializerTest {
         SerializedObject<byte[]> serializedObject = testSubject.serialize(new MySerializableObject("hello"),
                                                                           byte[].class);
         assertEquals(MySerializableObject.class.getName(), serializedObject.getType().getName());
-        assertEquals(null, serializedObject.getType().getRevision());
+        assertEquals("2166108932776672373", serializedObject.getType().getRevision());
 
         Object actualResult = testSubject.deserialize(serializedObject);
         assertTrue(actualResult instanceof MySerializableObject);
@@ -48,7 +48,16 @@ public class JavaSerializerTest {
 
     @Test
     public void testClassForType() {
-        Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(), "0"));
+        Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(),
+                                                                         "2166108932776672373"));
+        assertEquals(MySerializableObject.class, actual);
+    }
+
+    @Test
+    public void testClassForType_CustomRevisionResolver() {
+        testSubject = new JavaSerializer(new FixedValueRevisionResolver("fixed"));
+        Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(),
+                                                                         "fixed"));
         assertEquals(MySerializableObject.class, actual);
     }
 
