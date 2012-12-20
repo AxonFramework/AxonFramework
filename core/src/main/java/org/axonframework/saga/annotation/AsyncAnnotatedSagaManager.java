@@ -311,6 +311,9 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
         }
     }
 
+    /**
+     * Exposes the running state of the SagaManager.
+     */
     static class SagaManagerStatus {
 
         private volatile boolean isRunning;
@@ -319,6 +322,11 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
             isRunning = running;
         }
 
+        /**
+         * Indicates whether the SagaManager that provided this instance is (still) running.
+         *
+         * @return <code>true</code> if the SagaManager is running, otherwise <code>false</code>
+         */
         public boolean isRunning() {
             return isRunning;
         }

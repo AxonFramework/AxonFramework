@@ -79,13 +79,6 @@ public class FireEventJob implements Job {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void doCommit(TransactionManager transactionManager, Object transaction) {
-        if (transactionManager != null && transaction != null) {
-            transactionManager.commitTransaction(transaction);
-        }
-    }
-
     /**
      * Creates a new message for the scheduled event. This ensures that a new identifier and timestamp will always
      * be generated, so that the timestamp will reflect the actual moment the trigger occurred.

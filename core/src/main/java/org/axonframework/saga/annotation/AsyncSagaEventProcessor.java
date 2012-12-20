@@ -137,11 +137,9 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         final Class<? extends Saga> sagaType = entry.getSagaType();
         Set<String> sagaIds = sagaRepository.find(sagaType, entry.getAssociationValue());
         for (String sagaId : sagaIds) {
-            if (ownedByCurrentProcessor(sagaId)) {
-                if (!processedSagas.containsKey(sagaId)) {
-                    ensureActiveUnitOfWork();
-                    processedSagas.put(sagaId, sagaRepository.load(sagaId));
-                }
+            if (ownedByCurrentProcessor(sagaId) && !processedSagas.containsKey(sagaId)) {
+                ensureActiveUnitOfWork();
+                processedSagas.put(sagaId, sagaRepository.load(sagaId));
             }
         }
         for (Saga saga : processedSagas.values()) {
