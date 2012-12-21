@@ -1223,6 +1223,32 @@
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="beans:identifiedType">
+                    <xsd:all>
+                        <xsd:element name="cache-config" minOccurs="0" maxOccurs="1">
+                            <xsd:complexType>
+                                <xsd:attribute name="saga-cache" use="optional" type="xsd:string">
+                                    <xsd:annotation>
+                                        <xsd:documentation>Reference to the cache that stores Sagas.</xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type type="net.sf.jsr107cache.Cache"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="associations-cache" use="optional" type="xsd:string">
+                                    <xsd:annotation>
+                                        <xsd:documentation>Reference to the cache that stores association values.</xsd:documentation>
+                                        <xsd:appinfo>
+                                            <tool:annotation kind="ref">
+                                                <tool:expected-type type="net.sf.jsr107cache.Cache"/>
+                                            </tool:annotation>
+                                        </xsd:appinfo>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:all>
                     <xsd:attribute name="resource-injector" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the resource injector that provides the resources to Saga

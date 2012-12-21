@@ -70,6 +70,14 @@
                               use-explicit-flush="false" saga-serializer="sagaSerializer"
                               entity-manager-provider="myEntityManagerProvider"/>
 
+    <axon:jpa-saga-repository id="cachingSagaRepository" resource-injector="mockResourceInjector">
+        <axon:cache-config saga-cache="mockCache" associations-cache="mockCache"/>
+    </axon:jpa-saga-repository>
+
+    <axon:jpa-saga-repository id="noCacheSagaRepository" resource-injector="mockResourceInjector">
+        <axon:cache-config />
+    </axon:jpa-saga-repository>
+
     <axon:cluster id="firstCluster" order="2">
         <axon:meta-data>
             <entry key="meta" value="value"/>
