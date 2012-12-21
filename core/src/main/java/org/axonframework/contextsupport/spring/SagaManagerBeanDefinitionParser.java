@@ -49,4 +49,9 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
         }
         return sync.parseInternal(element, parserContext);
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

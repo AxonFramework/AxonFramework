@@ -19,6 +19,7 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
@@ -81,11 +82,29 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
     /**
      * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository will be wired
      * with an Event Store and Event Bus implementation suitable for this test fixture.
+     * <p/>
+     * Should not be used in combination with {@link
+     * #registerAggregateFactory(org.axonframework.eventsourcing.AggregateFactory)}, as that will overwrite any
+     * repository previously registered.
      *
      * @param repository The repository to use in the test case
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
+
+    /**
+     * Registers the given <code>aggregateFactory</code> with the fixture. The repository used by the fixture will use
+     * the given factory to create new aggregate instances. Defaults to an Aggregate Factory that uses the no-arg
+     * constructor to create new instances.
+     * <p/>
+     * Should not be used in combination with {@link
+     * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)}, as that will overwrite any
+     * aggregate factory previously registered.
+     *
+     * @param aggregateFactory The Aggregate Factory to create empty aggregates with
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory);
 
     /**
      * Registers an <code>annotatedCommandHandler</code> with this fixture. This will register this command handler

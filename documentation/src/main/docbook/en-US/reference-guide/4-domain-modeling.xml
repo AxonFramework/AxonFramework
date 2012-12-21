@@ -117,10 +117,9 @@
                     Aggregate's boundaries.
                 </quote>
             </para>
-            <para>A more extensive definition can be found on:<link
+            <para>A more extensive definition can be found on: <link
                     xlink:href="http://domaindrivendesign.org/freelinking/Aggregate"
-                    >http://domaindrivendesign.org/freelinking/Aggregate</link>.
-            </para>
+                    >http://domaindrivendesign.org/freelinking/Aggregate</link>. </para>
         </note>
         <para>For example, a "Contact" aggregate could contain two entities: Contact and Address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
@@ -335,6 +334,11 @@
                             <code>@SuppressWarnings("UnusedDeclaration")</code> annotation to the
                         method.</para>
                 </note>
+                <para>The <code>AbstractAnnotatedAggregateRoot</code> also requires that the field
+                    containing the aggregate identifier is annotated with
+                        <code>@AggregateIdentifier</code>. If you use JPA and have JPA annotations
+                    on the aggregate, Axon can also use the <code>@Id</code> annotation provided by
+                    JPA.</para>
 
             </simplesect>
         </sect2>
@@ -356,18 +360,17 @@
                 needed. </para>
             <para>When an entity (including the aggregate root) applies an Event, it is registered
                 with the Aggregate Root. The aggregate root applies the event locally first. Next,
-                it will evaluate all its fields for any implementations of
-                <code>AbstractEventSourcedEntity</code>
-                and handle the event on them. Each
-                entity does the same thing to its fields.
-            </para>
+                it will evaluate all fields annotated with <code>@EventSourcedMember</code> for any
+                implementations of <code>EventSourcedEntity</code> and handle the event on them.
+                Each entity does the same thing to its fields. </para>
             <para>To register an Event, the Entity must know about the Aggregate Root. Axon will
                 automatically register the Aggregate Root with an Entity before applying any Events
                 to it. This means that Entities (in constrast to the Aggregate Root) should never
                 apply an Event in their constructor. Non-Aggregate Root Entities should be created
                 in an <code>@EventHandler</code> annotated method in their parent Entity (as
                 creation of an entity can be considered a state change of the Aggregate). Axon will
-                ensure that the Aggregate Root is properly registered in time. </para>
+                ensure that the Aggregate Root is properly registered in time. This also means that
+                a single Entity cannot be part of more than one aggregate at any time.</para>
             <para>Fields that (may) contain child entities must be annotated with
                     <code>@EventSourcedMember</code>. This annotation may be used on a number of
                 field types: <itemizedlist>
@@ -392,10 +395,8 @@
                 Event. Note that each entity is invoked once for each time it is located in the
                 returned <code>Collection</code>. </para>
             <para>Note that in high-performance situations, the reflective approach to finding child
-                entities can be very costly. In that case, you should always override the
-                <code>getChildEntities()</code>
-                method.
-            </para>
+                entities can be costly. In that case, you can override the
+                    <code>getChildEntities()</code> method.</para>
         </sect2>
     </sect1>
 

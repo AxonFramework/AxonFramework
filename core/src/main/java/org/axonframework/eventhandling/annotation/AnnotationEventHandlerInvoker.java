@@ -40,6 +40,7 @@ public class AnnotationEventHandlerInvoker {
      */
     public AnnotationEventHandlerInvoker(Object target) {
         invoker = new MessageHandlerInvoker(target, EventHandler.class, false);
+
     }
 
     /**

@@ -66,4 +66,9 @@ public class EventBusBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
         return eventBusDefinition;
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

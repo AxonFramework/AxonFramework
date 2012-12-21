@@ -101,4 +101,9 @@ public class SimpleCommandBusBeanDefinitionParser extends AbstractBeanDefinition
             commandBusDefinition.getPropertyValues().add("dispatchInterceptors", interceptorsList);
         }
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

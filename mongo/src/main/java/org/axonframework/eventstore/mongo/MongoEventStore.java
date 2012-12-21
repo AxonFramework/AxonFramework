@@ -46,7 +46,7 @@ import javax.annotation.PostConstruct;
 
 /**
  * <p>Implementation of the <code>EventStore</code> based on a MongoDB instance or replica set. Sharding and pairing
- * are not explicitly supported.</p> <p>This event store implementation needs a serializer as well as a {@see
+ * are not explicitly supported.</p> <p>This event store implementation needs a serializer as well as a {@link
  * MongoTemplate} to interact with the mongo database.</p> <p><strong>Warning:</strong> This implementation is
  * still in progress and may be subject to alterations. The implementation works, but has not been optimized to fully
  * leverage MongoDB's features, yet.</p>

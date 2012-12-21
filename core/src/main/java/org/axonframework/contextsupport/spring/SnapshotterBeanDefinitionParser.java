@@ -67,4 +67,9 @@ public class SnapshotterBeanDefinitionParser extends AbstractSingleBeanDefinitio
             builder.addPropertyReference("transactionManager", element.getAttribute(TRANSACTION_MANAGER_ATTRIBUTE));
         }
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

@@ -52,8 +52,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     }
 
     /**
-     * Sets the aggregate factory to use. The aggregate factory is responsible for creating the aggregates that should
-     * be stored within the {@link AggregateSnapshot AggegateSnapshots}.
+     * Sets the aggregate factory to use. The aggregate factory is responsible for creating the aggregates stores
+     * inside the snapshot events.
      *
      * @param aggregateFactories The list of aggregate factories creating the aggregates to store. May not be
      *                           <code>null</code> or contain any <code>null</code> values.

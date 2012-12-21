@@ -185,4 +185,9 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
                     "No class of name " + aggregateRootTypeString + " was found on the classpath", e);
         }
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

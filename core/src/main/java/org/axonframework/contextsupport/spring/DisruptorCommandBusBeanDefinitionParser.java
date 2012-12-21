@@ -198,4 +198,9 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         definition.setFactoryMethodName(METHOD_CREATE_REPOSITORY);
         parserContext.getRegistry().registerBeanDefinition(id, definition);
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

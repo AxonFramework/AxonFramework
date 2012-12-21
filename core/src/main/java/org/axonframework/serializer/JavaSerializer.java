@@ -36,6 +36,24 @@ import java.io.ObjectOutputStream;
 public class JavaSerializer implements Serializer {
 
     private final ConverterFactory converterFactory = new ChainingConverterFactory();
+    private final RevisionResolver revisionResolver;
+
+    /**
+     * Initialize the serializer using a SerialVersionUIDRevisionResolver, which uses the SerialVersionUID field of the
+     * serializable object as the Revision.
+     */
+    public JavaSerializer() {
+        this(new SerialVersionUIDRevisionResolver());
+    }
+
+    /**
+     * Initialize the serializer using a SerialVersionUIDRevisionResolver.
+     *
+     * @param revisionResolver The revision resolver providing the revision numbers for a given class
+     */
+    public JavaSerializer(RevisionResolver revisionResolver) {
+        this.revisionResolver = revisionResolver;
+    }
 
     @Override
     public <T> SerializedObject<T> serialize(Object instance, Class<T> expectedType) {
@@ -68,9 +86,9 @@ public class JavaSerializer implements Serializer {
         SerializedObject<InputStream> converted = converterFactory.getConverter(serializedObject.getContentType(),
                                                                                 InputStream.class)
                                                                   .convert(serializedObject);
-        InputStream stream = converted.getData();
+        ObjectInputStream ois = null;
         try {
-            ObjectInputStream ois = new ObjectInputStream(stream);
+            ois = new ObjectInputStream(converted.getData());
             return (T) ois.readObject();
         } catch (ClassNotFoundException e) {
             throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
@@ -78,7 +96,7 @@ public class JavaSerializer implements Serializer {
             throw new SerializationException("The theoretically impossible has just happened: "
                                                      + "An IOException while reading to a ByteArrayInputStream.", e);
         } finally {
-            IOUtils.closeQuietly(stream);
+            IOUtils.closeQuietly(ois);
         }
     }
 
@@ -96,20 +114,7 @@ public class JavaSerializer implements Serializer {
         return new SimpleSerializedType(type.getName(), revisionOf(type));
     }
 
-    /**
-     * Returns the revision for the given <code>type</code>. The default implementation checks for an {@link
-     * Revision @Revision} annotation, and returns <code>0</code> if none was found. This method can be safely
-     * overridden by subclasses.
-     * <p/>
-     * The revision is used by upcasters to decide whether they need to process a certain serialized event.
-     * Generally, the revision needs to be increased each time the structure of an event has been changed in an
-     * incompatible manner.
-     *
-     * @param type The type for which to return the revision
-     * @return the revision for the given <code>type</code>
-     */
-    protected String revisionOf(Class<?> type) {
-        Revision revision = type.getAnnotation(Revision.class);
-        return revision == null ? null : revision.value();
+    private String revisionOf(Class<?> type) {
+        return revisionResolver.revisionOf(type);
     }
 }

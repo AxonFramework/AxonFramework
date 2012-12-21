@@ -31,8 +31,6 @@
                 <include>*:axon-amqp</include>
                 <include>*:axon-mongo</include>
                 <include>*:axon-distributed-commandbus</include>
-                <include>*:axon-disruptor-commandbus</include>
-                <include>*:insight-plugin-axon</include>
             </includes>
             <binaries>
                 <outputDirectory>dist</outputDirectory>
@@ -49,6 +47,14 @@
             </binaries>
             <sources>
                 <outputDirectoryMapping>sources/${module.artifactId}/src/</outputDirectoryMapping>
+            </sources>
+        </moduleSet>
+        <moduleSet>
+            <includes>
+                <include>*:axon-quickstart</include>
+            </includes>
+            <sources>
+                <outputDirectoryMapping>quickstart/src</outputDirectoryMapping>
             </sources>
         </moduleSet>
     </moduleSets>

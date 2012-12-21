@@ -21,8 +21,12 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.Saga;
+import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.joda.time.Duration;
 import org.junit.*;
+import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 import org.quartz.JobKey;
@@ -86,6 +90,62 @@ public class QuartzEventSchedulerTest {
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus).publish(isA(EventMessage.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testScheduleJob_TransactionalUnitOfWork() throws InterruptedException, SchedulerException {
+        final TransactionManager transactionManager = mock(TransactionManager.class);
+        testSubject.setTransactionManager(transactionManager);
+        testSubject.initialize();
+        final CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                latch.countDown();
+                return null;
+            }
+        }).when(eventBus).publish(isA(EventMessage.class));
+        Saga mockSaga = mock(Saga.class);
+        when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
+        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent());
+        assertTrue(token.toString().contains("Quartz"));
+        assertTrue(token.toString().contains(GROUP_ID));
+        latch.await(1, TimeUnit.SECONDS);
+        InOrder inOrder = inOrder(transactionManager, eventBus);
+        inOrder.verify(transactionManager).startTransaction();
+        inOrder.verify(eventBus).publish(isA(EventMessage.class));
+        inOrder.verify(transactionManager).commitTransaction(any());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testScheduleJob_CustomUnitOfWork() throws InterruptedException, SchedulerException {
+        final UnitOfWorkFactory unitOfWorkFactory = mock(UnitOfWorkFactory.class);
+        UnitOfWork unitOfWork = mock(UnitOfWork.class);
+        when(unitOfWorkFactory.createUnitOfWork()).thenReturn(unitOfWork);
+        testSubject.setUnitOfWorkFactory(unitOfWorkFactory);
+        testSubject.initialize();
+        final CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                latch.countDown();
+                return null;
+            }
+        }).when(eventBus).publish(isA(EventMessage.class));
+        Saga mockSaga = mock(Saga.class);
+        when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
+        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent());
+        assertTrue(token.toString().contains("Quartz"));
+        assertTrue(token.toString().contains(GROUP_ID));
+        latch.await(1, TimeUnit.SECONDS);
+        InOrder inOrder = inOrder(unitOfWorkFactory, unitOfWork, eventBus);
+        inOrder.verify(unitOfWorkFactory).createUnitOfWork();
+        inOrder.verify(unitOfWork).commit();
+
+        // the unit of work doesn't actually publish...
+        verify(eventBus, never()).publish(isA(EventMessage.class));
     }
 
     @Test

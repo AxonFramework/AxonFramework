@@ -33,7 +33,10 @@
     <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 
     <axon:saga-manager id="sagaManager" saga-factory="sagaFactory">
-        <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
+        <axon:types>
+            org.axonframework.contextsupport.spring.StubSaga
+            org.axonframework.eventhandling.scheduling.SimpleTimingSaga
+        </axon:types>
     </axon:saga-manager>
 
     <axon:saga-manager id="sagaManagerNotSuppressingExceptions" saga-factory="sagaFactory" suppress-exceptions="false">
@@ -66,6 +69,14 @@
     <axon:jpa-saga-repository id="allDefinedSagaRepository" resource-injector="mockResourceInjector"
                               use-explicit-flush="false" saga-serializer="sagaSerializer"
                               entity-manager-provider="myEntityManagerProvider"/>
+
+    <axon:jpa-saga-repository id="cachingSagaRepository" resource-injector="mockResourceInjector">
+        <axon:cache-config saga-cache="mockCache" associations-cache="mockCache"/>
+    </axon:jpa-saga-repository>
+
+    <axon:jpa-saga-repository id="noCacheSagaRepository" resource-injector="mockResourceInjector">
+        <axon:cache-config />
+    </axon:jpa-saga-repository>
 
     <axon:cluster id="firstCluster" order="2">
         <axon:meta-data>

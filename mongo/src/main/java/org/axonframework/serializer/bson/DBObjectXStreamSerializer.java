@@ -142,8 +142,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     @SuppressWarnings("unchecked")
     @Override
     protected Object doDeserialize(SerializedObject serializedObject, XStream xStream) {
-        DBObject serialized = (DBObject) convert(serializedObject.getContentType(),
-                                                 DBObject.class, serializedObject.getData());
+        DBObject serialized = convert(serializedObject.getContentType(), DBObject.class, serializedObject.getData());
         return getXStream().unmarshal(new DBObjectHierarchicalStreamReader(serialized));
     }
 }

@@ -52,7 +52,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -482,7 +481,10 @@ public class JpaEventStoreTest {
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>("123", 0L,
-                                                      "Mock contents", MetaData.emptyInstance()),
+                                                      "Mock contents", MetaData.emptyInstance())));
+        entityManager.flush();
+        entityManager.clear();
+        testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>("123", 0L,
                                                       "Mock contents", MetaData.emptyInstance())));
     }
@@ -493,15 +495,18 @@ public class JpaEventStoreTest {
         try {
             testSubject.appendEvents("test", new SimpleDomainEventStream(
                     new GenericDomainEventMessage<String>("123", (long) 0,
-                                                          "Mock contents", MetaData.emptyInstance()),
+                                                          "Mock contents", MetaData.emptyInstance())));
+            entityManager.flush();
+            entityManager.clear();
+            testSubject.appendEvents("test", new SimpleDomainEventStream(
                     new GenericDomainEventMessage<String>("123", (long) 0,
                                                           "Mock contents", MetaData.emptyInstance())));
         } catch (ConcurrencyException ex) {
             fail("Didn't expect exception to be translated");
-        } catch (EntityExistsException ex) {
+        } catch (Exception ex) {
             assertTrue("Got the right exception, "
                                + "but the message doesn't seem to mention 'DomainEventEntry': " + ex.getMessage(),
-                       ex.getMessage().contains("DomainEventEntry"));
+                       ex.getMessage().toLowerCase().contains("domainevententry"));
         }
     }
 

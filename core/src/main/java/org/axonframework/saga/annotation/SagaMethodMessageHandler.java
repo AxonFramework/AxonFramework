@@ -16,15 +16,17 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.common.property.Getter;
+import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaCreationPolicy;
 
 import java.lang.reflect.Method;
 
+import static java.lang.String.format;
 
 /**
  * A data holder containing information of {@link SagaEventHandler} annotated methods.
@@ -62,7 +64,15 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         Method handlerMethod = methodHandler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
         String associationPropertyName = handlerAnnotation.associationProperty();
-        Getter associationProperty = PropertyAccessStrategy.getter(methodHandler.getPayloadType(), associationPropertyName);
+        Getter associationProperty = PropertyAccessStrategy.getter(methodHandler.getPayloadType(),
+                                                                   associationPropertyName);
+        if (associationProperty == null) {
+            throw new AxonConfigurationException(format("SagaEventHandler %s.%s defines a property %s that is not "
+                                                                + "defined on the Event it declares to handle (%s)",
+                                                        methodHandler.getMethod().getDeclaringClass().getName(),
+                                                        methodHandler.getMethodName(), associationPropertyName,
+                                                        methodHandler.getPayloadType().getName()));
+        }
         String associationKey = handlerAnnotation.keyName().isEmpty()
                 ? associationPropertyName
                 : handlerAnnotation.keyName();

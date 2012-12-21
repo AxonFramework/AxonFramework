@@ -84,4 +84,9 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
             builder.addPropertyReference("eventStore", element.getAttribute(EVENT_STORE));
         }
     }
+
+    @Override
+    protected boolean shouldGenerateIdAsFallback() {
+        return true;
+    }
 }

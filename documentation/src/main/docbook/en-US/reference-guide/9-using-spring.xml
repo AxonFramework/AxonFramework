@@ -38,8 +38,7 @@
 
     &lt;context:annotation-config/>
 
-&lt;/beans></programlisting>
-        </para>
+&lt;/beans></programlisting></para>
 	</sect1>
     <sect1>
             <title>Using the Axon namespace shortcut</title>
@@ -229,6 +228,24 @@
                     <code>AnnotationCommandHandlerBeanPostProcessor</code> in the application
                 context. This will cause the command handler to be wired twice.</para>
         </warning>
+            <simplesect>
+                <title>Wiring AggregateCommandHandlers</title>
+                <para>When the <code>@CommandHandler</code> annotations are placed on the Aggregate,
+                    Spring will not be able to automatically configure them. You will need to
+                    specify a bean for each of the annotated Aggregate Roots as follows:</para>
+                <programlisting>&lt;bean class="org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler"
+      init-method="subscribe">
+    &lt;constructor-arg value="fully.qualified.AggregateClass"/>
+    &lt;constructor-arg ref="ref-to-repo"/>
+    &lt;constructor-arg ref="ref-to-command-bus"/>
+&lt;/bean>
+
+&lt;!-- or, when using Namespace support -->
+
+&lt;axon:aggregate-command-handler aggregate-type="fully.qualified.AggregateClass" 
+                                repository="ref-to-repo" 
+                                command-bus="ref-to-command-bus"/></programlisting>
+            </simplesect>
     	</sect2>
         <sect2>
             <title>Annotation support using the axon namespace</title>
@@ -298,8 +315,6 @@
     
     <sect1>
         <title>Wiring the event bus</title>
-        <simplesect>
-            <title>The basics</title>
             <para>In a typical Axon application there is only one event bus. Wiring it is just a
                 matter of creating a bean of a subtype of <code>EventBus</code>. The
                     <code>SimpleEventBus</code> is the provided implementation.
@@ -307,14 +322,58 @@
 
     &lt;bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-&lt;/beans></programlisting></para>
-        </simplesect>
-        <simplesect>
-            <title>Using the Axon namespace</title>
-            <para>Setting up an event bus can also be accomplished using support from the axon
-                namespace:
-                <programlisting language="xml">&lt;axon:event-bus id="eventBus"/></programlisting></para>
-        </simplesect>
+&lt;/beans>
+
+&lt;!-- or using the namespace:
+
+&lt;axon:event-bus id="eventBus"/></programlisting></para>
+        <sect2>
+            <title>Configuration of Clusters</title>
+            <para>Using a Clustering Event Bus in Spring is very simple. In the Spring context, you
+                just need to define the clusters you wish to use and tell them which Event Listeners
+                you would like to be part of that Cluster. Axon will create the necessary
+                infrastructure to assign listeners to the clusters.</para>
+            <programlisting>&lt;axon:cluster id="myFirstCluster">
+    &lt;axon:selectors>
+        &lt;axon:package prefix="com.mycompany.mypackage"/>
+    &lt;/axon:selectors>
+&lt;/axon:cluster>
+
+&lt;axon:cluster id="defaultCluster" default="true"/></programlisting>
+            <para>The example above will create two clusters. Event Listeners in the package
+                    <code>com.mycompany.mypackage</code> will be assigned to
+                    <code>myFirstCluster</code>, while all others are assigned to
+                    <code>defaultCluster</code>. Note that the latter does not have any selectors.
+                Selectors are optional if the cluster is a default.</para>
+            <para>If there are conflicting selectors, and you would like to influence the order in
+                which they are evaluated, you can add the <code>order</code> attribute to a cluster.
+                Clusters with a lower value are evaluated before those with a higher value. Only if
+                there are no matching selectors at all, Axon will assign a Listener to the Cluster
+                with <code>default="true"</code>. If no suitable cluster for any listener is found,
+                Axon throws an exception.</para>
+            <tip>
+                <title>Organizing Cluster definitions in context files</title>
+                <para>When you have an application that consists of a number of modules (represented
+                    in separate config files), it is possible to define the
+                        <code>&lt;axon:cluster></code> in the Context where the listeners are also
+                    defined. This makes the application more modular and less dependent on a
+                    centralized configuration.</para>
+            </tip>
+        </sect2>
+        <sect2>
+            <title>Replayable Clusters</title>
+            <para>To make a cluster replayable, simply add the <code>&lt;axon:replay-config></code>
+                element to a <code>&lt;axon:cluster></code>, as in the example below:</para>
+            <programlisting>&lt;axon:cluster id="replayingCluster">
+    &lt;axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
+    &lt;axon:selectors>
+        &lt;axon:package prefix="com.mycompany.mypackage"/>
+    &lt;/axon:selectors>
+&lt;/axon:cluster></programlisting>
+            <para>The <code>&lt;axon:replay-config></code> element provides the necessary
+                configuration to execute replays on a Cluster. The resulting Cluster bean will be of
+                type <code>ReplayingCluster</code>. </para>
+        </sect2>
 
     </sect1>
     <sect1>
@@ -327,13 +386,10 @@
             <para>
                 <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean id="eventBus" class="org.axonframework.commandhandling.CommandBus">
-        &lt;property name="interceptors">
+    &lt;bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
+        &lt;property name="handlerInterceptors">
             &lt;list>
-                &lt;bean class="org.axonframework...SpringTransactionalInterceptor">
-                    &lt;property name="transactionManager" ref="transactionManager"/>
-                &lt;/bean>
-                &lt;bean class="other-interceptors"/>
+                &lt;bean class="my-interceptors"/>
             &lt;/list>
         &lt;/property>
     &lt;/bean>
@@ -349,13 +405,13 @@
             <para>Configuring command interceptors for your command bus is also possible using the
                     <code>&lt;axon:command-bus></code> element, like so:
                 <programlisting language="xml">&lt;axon:command-bus id="commandBus">
-	&lt;axon:dispatchInterceptors>
-		&lt;ref>interceptor-zero&lt;/ref>
+    &lt;axon:dispatchInterceptors>
+        &lt;ref>interceptor-zero&lt;/ref>
     &lt;/axon:dispatchInterceptors>
     &lt;axon:handlerInterceptors>
-		&lt;ref>interceptor-one&lt;/ref>
-		&lt;ref>interceptor-two&lt;/ref>
-	&lt;/axon:handlerInterceptors>
+        &lt;ref>interceptor-one&lt;/ref>
+        &lt;ref>interceptor-two&lt;/ref>
+    &lt;/axon:handlerInterceptors>
 &lt;/axon:command-bus></programlisting>
                 Of course you are not limited to bean references; you can also include local bean
                 definitions if you want. </para>
@@ -400,25 +456,28 @@
     </sect1>
     <sect1>
         <title>Wiring the Event Store</title>
-        <para>All event sourcing repositorties need an event store. Wiring the
+        <para>All event sourcing repositorties need an Event Store. Wiring the
                 <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> is very
-            similar, but the <code>JpaEventStore</code> needs to run in a Spring managed
-            transaction. Unless you use the <code>SpringTransactionalInterceptor</code> on your
-            command bus, you need to declare the annotation-driven transaction-manager as shown in
-            the sample below.</para>
+            similar, but the <code>JpaEventStore</code> needs a way to get a hold of an
+            EntityManager. In general, applications use a Container Managed EntityManager:</para>
         <para>
-            <programlisting language="xml">&lt;bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore"/>
-
-&lt;!-- enable the configuration of transactional behavior based on annotations -->
-&lt;tx:annotation-driven transaction-manager="txManager"/>
+            <programlisting language="xml">&lt;bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
+    &lt;constructor-arg>
+        &lt;bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
+    &lt;/constructor-arg>
+&lt;/bean>
 
 &lt;!-- declare transaction manager, data source, EntityManagerFactoryBean, etc --></programlisting>
         </para>
         	<para>Using the Axon namespace support, you can quickly configure event stores backed
-                either by the file system or a JPA layer using the one of the following elements:
-                <programlisting language="xml">&lt;axon:jpa-event-store id="jpaEventStore"/>
+            either by the file system or a JPA layer using the one of the following elements:
+            <programlisting language="xml">&lt;axon:jpa-event-store id="jpaEventStore"/>
 
-&lt;axon:filesystem-event-store id="fileSystemEventStore" baseDir="/data"/></programlisting></para>
+&lt;axon:filesystem-event-store id="fileSystemEventStore" base-dir="/data"/></programlisting></para>
+        <para>The annotation support will automatically configure a Container Managed EntityManager
+            on the Jpa Event Store, but you may also configure a custom implementation using the
+                <code>entity-manager-provider</code> attribute. This is useful when an application
+            uses more than one EntityManagerFactory.</para>
         
     </sect1>
     <sect1 xml:id="spring-snapshotting">
@@ -468,7 +527,7 @@
             Spring. If you have multiple <code>PlatformTransactionManager</code> beans in your
             context, you should explicitly configure the one to use.</para>
     </sect1>
-    <sect1>
+    <sect1 xml:id="spring-sagas">
         <title>Configuring Sagas</title>
         <para>To use Sagas, two infrastructure components are required: the SagaManager and the
             SagaRepository. Each have their own element in the Spring application context.</para>
@@ -478,21 +537,21 @@
                    resource-injector="resourceInjector">
     &lt;axon:async executor="taskExecutor" transaction-manager="transactionManager" />
     &lt;axon:types>
-        fully.qualified.ClassName,
+        fully.qualified.ClassName
         another.ClassName
     &lt;/axon:types>
 &lt;/axon:saga-manager></programlisting></para>
-        <para>All properties, except for the <code>id</code> are optional. The
-                <code>saga-repository</code> will default to an in-memory repository, meaning that
-            Sagas will be lost when the VM is shut down. The <code>saga-factory</code> can be
-            provided if the Saga instances do not have a no-argument accessible constructor, or when
-            special initialization is required. An <code>async</code> element with
-                <code>executor</code> can be provided if Sagas should not be invoked by the event
-            dispatching thread. When using asynchronous event handling it is required to provide the
-                <code>transaction-manager</code> attribute. The default resource injector uses the
-            Spring Context to autowire Saga instances with Spring Beans.</para>
-        <para>Use the <code>types</code> element to provide a comma-separated list of fully
-            qualified class names of the annotated sagas.</para>
+        <para>All properties are optional. The <code>saga-repository</code> will default to an
+            in-memory repository, meaning that Sagas will be lost when the VM is shut down. The
+                <code>saga-factory</code> can be provided if the Saga instances do not have a
+            no-argument accessible constructor, or when special initialization is required. An
+                <code>async</code> element with <code>executor</code> can be provided if Sagas
+            should not be invoked by the event dispatching thread. When using asynchronous event
+            handling it is required to provide the <code>transaction-manager</code> attribute. The
+            default resource injector uses the Spring Context to autowire Saga instances with Spring
+            Beans.</para>
+        <para>Use the <code>types</code> element to provide a comma and/or newline separated list of
+            fully qualified class names of the annotated sagas.</para>
         <para>When an in-memory Saga repository does not suffice, you can easily configure one that
             uses JPA as persistence mechanism as
             follows:<programlisting language="xml">&lt;axon:jpa-saga-repository id="sagaRepository" resource-injector="resourceInjector"
