@@ -143,7 +143,7 @@
 
     private boolean paid = false;
     private boolean delivered = false;
-    private transient CommandBus commandBus;
+    private transient CommandGateway commandGateway;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "orderId")
@@ -155,8 +155,8 @@
         associateWith("shipmentId", shipmentId);
         associateWith("invoiceId", invoiceId);
         // send the commands
-        commandBus.dispatch(new PrepareShippingCommand(...));
-        commandBus.dispatch(new CreateInvoiceCommand(...));
+        commandGateway.send(new PrepareShippingCommand(...));
+        commandGateway.send(new CreateInvoiceCommand(...));
     }
 
     @SagaEventHandler(associationProperty = "shipmentId")
@@ -262,20 +262,45 @@
                 address to components. Usually, these resources aren't really part of the Saga's
                 state and shouldn't be persisted as such. But once a Saga is reconstructed, these
                 resources must be injected before an Event is routed to that instance.</para>
-            <para>For that purpose, there is the <code>ResourceInjector</code>. It is use by the
-                    <code>SagaRepository</code> to inject resources into a Saga. Axon provides a
-                    <code>SpringResourceInjector</code>, which injects annotated fields and methods
-                with Resources from the Application Context, and a
+            <para>For that purpose, there is the <code>ResourceInjector</code>. It is used by the
+                    <code>SagaRepository</code> (for existing Saga instances) and the
+                    <code>SagaFactory</code> (for newly created instances) to inject resources into
+                a Saga. Axon provides a <code>SpringResourceInjector</code>, which injects annotated
+                fields and methods with Resources from the Application Context, and a
                     <code>SimpleResourceInjector</code>, which detects setters and injects resources
                 which have been registered with it.</para>
-            
-                <tip>
-                    <title>Mark fields holding injected resources <code>transient</code></title>
-                    <para>Since resources should not be persisted with the Saga, make sure to add
-                    the <code>transient</code> keyword to those fields. This will prevent the
+            <tip>
+                <title>Mark fields holding injected resources <code>transient</code></title>
+                <para>Since resources should not be persisted with the Saga, make sure to add the
+                        <code>transient</code> keyword to those fields. This will prevent the
                     serialization mechanism to attempt to write the contents of these fields to the
                     repository. The repository will automatically re-inject the required resources
-                    after a Saga has been deserialized.</para></tip>
+                    after a Saga has been deserialized.</para>
+            </tip>
+            <simplesect>
+                <title>SimpleResourceInjector</title>
+                <para>The <code>SimpleResourceInjector</code> uses, as the name suggests, a simple
+                    mechanism to detect required resources. It scans the methods of a Saga to find
+                    one that starts with "set" and contains a single parameter, of a type that
+                    matches with of its known resources.</para>
+                <para>The <code>SimpleResourceInjector</code> is initialized with a collection of
+                    objects that a Saga may depend on. If a Saga has a setter method (name starts
+                    with "set" and has a single parameter) in which a resource can be passed, it
+                    will invoke that method.</para>
+            </simplesect>
+            <simplesect>
+                <title>SpringResourceInjector</title>
+                <para>The <code>SpringResourceInjector</code> uses Spring's dependency injection
+                    mechanism to inject resources into an aggregate. This means you can use setter
+                    injection or direct field injection if you require. The method or field to be
+                    injected needs to be annotated in order for Spring to recognize it as a
+                    dependency, for example with <code>@Autowired</code>.</para>
+                <para>Note that when you use the Axon namespace in Spring to create a Saga
+                    Repository or Saga Manager, the <code>SpringResourceInjector</code> is
+                    configured by default. For more information about wiring Sagas with Spring, see
+                        <xref xmlns:xlink="http://www.w3.org/1999/xlink" linkend="spring-sagas"
+                    />.</para>
+            </simplesect>
             
         </sect2>
     </sect1>
@@ -285,7 +310,7 @@
             infrastructure classes are required. The most important components are the
                 <code>SagaManager</code> and the <code>SagaRepository</code>.</para>
         <sect2 xml:id="saga-manager">
-            <title><code>SagaManager</code></title>
+            <title>Saga Manager</title>
             <para>The <code>SagaManager</code> is responsible for redirecting Events to the
                 appropriate Saga instances and managing their life cycle. There are two
                     <code>SagaManager</code> implementations in Axon Framework: the
@@ -381,7 +406,7 @@
             </simplesect>
         </sect2>
         <sect2>
-            <title><code>SagaRepository</code></title>
+            <title>Saga Repository</title>
             <para>The <code>SagaRepository</code> is responsible for storing and retrieving Sagas,
                 for use by the <code>SagaManager</code>. It is capable of retrieving specific Saga
                 instances by their identifier as well as by their Association Values.</para>
@@ -407,10 +432,10 @@
                     use either a <code>JavaSerializer</code> or an
                     <code>XStreamSerializer</code>).</para>
                 <para>The JpaSagaRepository is configured with a JPA <code>EntityManager</code>, a
-                        <code>ResourceInjector</code> and a <code>Serializer</code>. Optionally,
-                    you can choose whether to explicitly flush the <code>EntityManager</code> after
-                    each operation. This will ensure that data is sent to the database, even before
-                    a transaction is committed. the default is to use explicit flushes.</para>
+                        <code>ResourceInjector</code> and a <code>Serializer</code>. Optionally, you
+                    can choose whether to explicitly flush the <code>EntityManager</code>after each
+                    operation. This will ensure that data is sent to the database, even before a
+                    transaction is committed. the default is to use explicit flushes.</para>
             </simplesect>
             <simplesect>
                 <title><code>MongoSagaRepository</code></title>
@@ -427,9 +452,9 @@
         <sect2>
             <title>Caching</title>
             <para>If a database backed Saga Repository is used, saving and loading Saga instances
-                may be an expensive operation. Especially in situations where the same Saga instance
-                is invoked multiple times within a short timespan, a cache can be beneficial to the
-                application's performance.</para>
+                may be a relatively expensive operation. Especially in situations where the same
+                Saga instance is invoked multiple times within a short timespan, a cache can be
+                beneficial to the application's performance.</para>
             <para>Axon provides the <code>CachingSagaRepository</code> implementation. It is a Saga
                 Repository that wraps another repository, which does the actual storage. When
                 loading Sagas or Association Values, the <code>CachingSagaRepository</code> will

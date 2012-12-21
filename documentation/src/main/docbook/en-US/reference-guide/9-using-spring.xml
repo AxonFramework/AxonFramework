@@ -527,7 +527,7 @@
             Spring. If you have multiple <code>PlatformTransactionManager</code> beans in your
             context, you should explicitly configure the one to use.</para>
     </sect1>
-    <sect1>
+    <sect1 xml:id="spring-sagas">
         <title>Configuring Sagas</title>
         <para>To use Sagas, two infrastructure components are required: the SagaManager and the
             SagaRepository. Each have their own element in the Spring application context.</para>
@@ -537,21 +537,21 @@
                    resource-injector="resourceInjector">
     &lt;axon:async executor="taskExecutor" transaction-manager="transactionManager" />
     &lt;axon:types>
-        fully.qualified.ClassName,
+        fully.qualified.ClassName
         another.ClassName
     &lt;/axon:types>
 &lt;/axon:saga-manager></programlisting></para>
-        <para>All properties, except for the <code>id</code> are optional. The
-                <code>saga-repository</code> will default to an in-memory repository, meaning that
-            Sagas will be lost when the VM is shut down. The <code>saga-factory</code> can be
-            provided if the Saga instances do not have a no-argument accessible constructor, or when
-            special initialization is required. An <code>async</code> element with
-                <code>executor</code> can be provided if Sagas should not be invoked by the event
-            dispatching thread. When using asynchronous event handling it is required to provide the
-                <code>transaction-manager</code> attribute. The default resource injector uses the
-            Spring Context to autowire Saga instances with Spring Beans.</para>
-        <para>Use the <code>types</code> element to provide a comma-separated list of fully
-            qualified class names of the annotated sagas.</para>
+        <para>All properties are optional. The <code>saga-repository</code> will default to an
+            in-memory repository, meaning that Sagas will be lost when the VM is shut down. The
+                <code>saga-factory</code> can be provided if the Saga instances do not have a
+            no-argument accessible constructor, or when special initialization is required. An
+                <code>async</code> element with <code>executor</code> can be provided if Sagas
+            should not be invoked by the event dispatching thread. When using asynchronous event
+            handling it is required to provide the <code>transaction-manager</code> attribute. The
+            default resource injector uses the Spring Context to autowire Saga instances with Spring
+            Beans.</para>
+        <para>Use the <code>types</code> element to provide a comma and/or newline separated list of
+            fully qualified class names of the annotated sagas.</para>
         <para>When an in-memory Saga repository does not suffice, you can easily configure one that
             uses JPA as persistence mechanism as
             follows:<programlisting language="xml">&lt;axon:jpa-saga-repository id="sagaRepository" resource-injector="resourceInjector"
