@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -43,10 +44,11 @@ import java.util.concurrent.ScheduledExecutorService;
  * @since 1.1
  */
 public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventScheduler>, InitializingBean,
-        ApplicationContextAware {
+        DisposableBean, ApplicationContextAware {
 
     private EventBus eventBus;
     private ScheduledExecutorService executorService;
+    private ScheduledExecutorService executorServiceToShutDown;
     private SimpleEventScheduler eventScheduler;
     private ApplicationContext applicationContext;
     private PlatformTransactionManager transactionManager;
@@ -71,6 +73,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     public void afterPropertiesSet() throws Exception {
         if (executorService == null) {
             executorService = Executors.newSingleThreadScheduledExecutor();
+            executorServiceToShutDown = executorService;
         }
         if (eventBus == null) {
             eventBus = applicationContext.getBean(EventBus.class);
@@ -80,6 +83,13 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
         } else {
             this.eventScheduler = new SimpleEventScheduler(executorService, eventBus, new DefaultUnitOfWorkFactory(
                     new SpringTransactionManager(transactionManager, transactionDefinition)));
+        }
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        if (executorServiceToShutDown != null) {
+            executorServiceToShutDown.shutdown();
         }
     }
 
