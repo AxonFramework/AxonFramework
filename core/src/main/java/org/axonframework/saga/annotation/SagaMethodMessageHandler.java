@@ -18,7 +18,7 @@ package org.axonframework.saga.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.property.Getter;
+import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
@@ -51,7 +51,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     private final SagaCreationPolicy creationPolicy;
     private final MethodMessageHandler handlerMethod;
     private final String associationKey;
-    private final Getter associationProperty;
+    private final Property associationProperty;
 
     /**
      * Create a SagaMethodMessageHandler for the given <code>methodHandler</code>. The SagaMethodMessageHandler add
@@ -60,12 +60,13 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param methodHandler The handler for incoming events
      * @return a SagaMethodMessageHandler for the handler
      */
+    @SuppressWarnings("unchecked")
     public static SagaMethodMessageHandler getInstance(MethodMessageHandler methodHandler) {
         Method handlerMethod = methodHandler.getMethod();
         SagaEventHandler handlerAnnotation = handlerMethod.getAnnotation(SagaEventHandler.class);
         String associationPropertyName = handlerAnnotation.associationProperty();
-        Getter associationProperty = PropertyAccessStrategy.getter(methodHandler.getPayloadType(),
-                                                                   associationPropertyName);
+        Property associationProperty = PropertyAccessStrategy.getProperty(methodHandler.getPayloadType(),
+                                                                          associationPropertyName);
         if (associationProperty == null) {
             throw new AxonConfigurationException(format("SagaEventHandler %s.%s defines a property %s that is not "
                                                                 + "defined on the Event it declares to handle (%s)",
@@ -98,7 +99,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param associationProperty The association property configured for this handler
      */
     protected SagaMethodMessageHandler(SagaCreationPolicy creationPolicy, MethodMessageHandler handler,
-                                       String associationKey, Getter associationProperty) {
+                                       String associationKey, Property associationProperty) {
         this.creationPolicy = creationPolicy;
         this.handlerMethod = handler;
         this.associationKey = associationKey;

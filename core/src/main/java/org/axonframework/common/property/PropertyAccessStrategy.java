@@ -1,9 +1,9 @@
 package org.axonframework.common.property;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.SortedSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 
 /**
@@ -16,18 +16,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p/>
  * The factory implementations must be public, non-abstract, have a default public constructor and extend the
  * PropertyAccessStrategy class.
+ * <p/>
+ * Note that this class is not considered public API and may undergo incompatible changes between versions.
  *
+ * @author Maxim Fedorov
+ * @author Allard Buijze
  * @see java.util.ServiceLoader
  * @see java.util.ServiceLoader#load(Class)
  * @since 2.0
  */
-public abstract class PropertyAccessStrategy {
+public abstract class PropertyAccessStrategy implements Comparable<PropertyAccessStrategy> {
 
     private static final ServiceLoader<PropertyAccessStrategy> LOADER =
             ServiceLoader.load(PropertyAccessStrategy.class);
 
-    private static final List<PropertyAccessStrategy> STRATEGIES = new CopyOnWriteArrayList<PropertyAccessStrategy>();
-    private static final PropertyAccessStrategy DEFAULT = new BeanPropertyAccessStrategy();
+    private static final SortedSet<PropertyAccessStrategy> STRATEGIES = new ConcurrentSkipListSet<PropertyAccessStrategy>();
 
     static {
         for (PropertyAccessStrategy factory : LOADER) {
@@ -46,30 +49,69 @@ public abstract class PropertyAccessStrategy {
     }
 
     /**
-     * Iterates over all known {@link PropertyAccessStrategy} implementations to create a {@link Getter}
-     * instance for the given parameters. Strategies invoked in the order they are found on the classpath.
-     * The first to provide a suitable getter will be used. {@link BeanPropertyAccessStrategy} is always the last one
-     * to be inspected.
+     * Removes all strategies registered using the {@link #register(PropertyAccessStrategy)} method.
      *
-     * @param targetClass class that contains property
-     * @param property    name of the property to create getter for
-     * @return suitable {@link Getter}, or <code>null</code> if none is found
+     * @param strategy The strategy instance to unregister
      */
-    public static Getter getter(Class<?> targetClass, String property) {
-        Getter getter = null;
-        Iterator<PropertyAccessStrategy> strategies = STRATEGIES.iterator();
-        while (getter == null && strategies.hasNext()) {
-            getter = strategies.next().getterFor(targetClass, property);
-        }
-        if (getter == null) {
-            getter = DEFAULT.getterFor(targetClass, property);
-        }
-
-        return getter;
+    public static void unregister(PropertyAccessStrategy strategy) {
+        STRATEGIES.remove(strategy);
     }
 
+    /**
+     * Iterates over all known {@link PropertyAccessStrategy} implementations to create a {@link Property}
+     * instance for the given parameters. Strategies are invoked in the order they are found on the classpath.
+     * The first to provide a suitable Property instance will be used.
+     *
+     * @param targetClass  class that contains property
+     * @param propertyName name of the property to create propertyReader for
+     * @param <T>          Thy type defining the property
+     * @return suitable {@link Property}, or <code>null</code> if none is found
+     */
+    public static <T> Property<T> getProperty(Class<T> targetClass, String propertyName) {
+        Property<T> property = null;
+        Iterator<PropertyAccessStrategy> strategies = STRATEGIES.iterator();
+        while (property == null && strategies.hasNext()) {
+            property = strategies.next().propertyFor(targetClass, propertyName);
+        }
 
-    protected abstract Getter getterFor(Class<?> targetClass, String property);
+        return property;
+    }
 
+    @Override
+    public final int compareTo(PropertyAccessStrategy o) {
+        if (o == this) {
+            return 0;
+        }
+        final int diff = o.getPriority() - getPriority();
+        if (diff == 0) {
+            // we don't want equality...
+            return getClass().getName().compareTo(o.getClass().getName());
+        }
+        return diff;
+    }
+
+    /**
+     * The priority of this strategy. In general, implementations that have a higher certainty to provide a good
+     * Property instance for any given property name should have a higher priority. When two instances have the same
+     * priority, their relative order is undefined.
+     * <p/>
+     * The JavaBean Property strategy has a value of 0. To ensure evaluation before that strategy, use any value higher
+     * than that number, otherwise lower.
+     *
+     * @return a value reflecting relative priority, <code>Integer.MAX_VALUE</code> being evaluated first
+     */
+    protected abstract int getPriority();
+
+    /**
+     * Returns a Property instance for the given <code>property</code>, defined in given
+     * <code>targetClass</code>, or <code>null</code> if no such property is found on the class.
+     *
+     * @param targetClass The class on which to find the property
+     * @param property    The name of the property to find
+     * @param <T>         The type of class on which to find the property
+     * @return the Property instance providing access to the property value, or <code>null</code> if property could not
+     *         be found.
+     */
+    protected abstract <T> Property<T> propertyFor(Class<T> targetClass, String property);
 }
 
