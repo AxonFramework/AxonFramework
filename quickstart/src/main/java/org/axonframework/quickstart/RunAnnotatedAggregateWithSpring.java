@@ -24,7 +24,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  *
  * @author Jettro Coenradie
  */
-public class RunAnnotatedBasicWithSpring {
+public class RunAnnotatedAggregateWithSpring {
 
     public static void main(String[] args) {
         // Load the spring beans from the xml configuration file.
