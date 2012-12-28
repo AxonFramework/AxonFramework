@@ -27,9 +27,11 @@ import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
+import org.axonframework.eventhandling.replay.IncomingMessageHandler;
 import org.axonframework.eventhandling.replay.ReplayingCluster;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -156,16 +158,15 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
                     .getBeanDefinition());
         }
         constructor.addIndexedArgumentValue(3, replayElement.getAttribute(COMMIT_THRESHOLD_ATTRIBUTE));
-        Object incomingMessageHandlerDefinition = BeanDefinitionBuilder.genericBeanDefinition(
-                BackloggingIncomingMessageHandler.class).getBeanDefinition();
+        Object incomingMessageHandlerDefinition;
         if (replayElement.hasAttribute(INCOMING_MESSAGE_HANDLER_REF)) {
             incomingMessageHandlerDefinition = new RuntimeBeanReference(
                     replayElement.getAttribute(INCOMING_MESSAGE_HANDLER_REF));
         } else {
-            if ("discard".equals(replayElement.getAttribute(INCOMING_MESSAGES_ATTRIBUTE))) {
-                incomingMessageHandlerDefinition = BeanDefinitionBuilder.genericBeanDefinition(
-                        DiscardingIncomingMessageHandler.class).getBeanDefinition();
-            }
+            incomingMessageHandlerDefinition = BeanDefinitionBuilder
+                    .genericBeanDefinition(IncomingMessageHandlerFactoryBean.class)
+                    .addPropertyValue("policy", replayElement.getAttribute(INCOMING_MESSAGES_ATTRIBUTE))
+                    .getBeanDefinition();
         }
         constructor.addIndexedArgumentValue(4, incomingMessageHandlerDefinition);
         return replayingCluster;
@@ -174,15 +175,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
     private boolean parseClusterSelector(Element element, ParserContext parserContext, String clusterId) {
         AbstractBeanDefinition selector = new GenericBeanDefinition();
         selector.setBeanClass(OrderedClusterSelector.class);
-
-        String orderString = element.getAttribute(ORDER_ATTRIBUTE);
-        int order;
-        if (!StringUtils.hasText(orderString)) {
-            order = Ordered.LOWEST_PRECEDENCE - 1;
-        } else {
-            order = Integer.parseInt(orderString);
-        }
-        selector.getConstructorArgumentValues().addIndexedArgumentValue(0, order);
+        selector.getConstructorArgumentValues().addIndexedArgumentValue(0, element.getAttribute(ORDER_ATTRIBUTE));
 
         Element selectorsElement = DomUtils.getChildElementByTagName(element, SELECTORS_ELEMENT);
         List<BeanDefinition> selectors = new ManagedList<BeanDefinition>();
@@ -303,6 +296,41 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
                 cluster = selectorIterator.next().selectCluster(eventListener);
             }
             return cluster;
+        }
+    }
+
+    private static class IncomingMessageHandlerFactoryBean implements FactoryBean<IncomingMessageHandler>,
+            InitializingBean {
+
+        private IncomingMessageHandler messageHandler;
+        private String policy = "backlog";
+
+        @Override
+        public IncomingMessageHandler getObject() throws Exception {
+            return messageHandler;
+        }
+
+        @Override
+        public Class<?> getObjectType() {
+            return IncomingMessageHandler.class;
+        }
+
+        @Override
+        public boolean isSingleton() {
+            return true;
+        }
+
+        @Override
+        public void afterPropertiesSet() throws Exception {
+            if ("discard".equals(policy)) {
+                messageHandler = new DiscardingIncomingMessageHandler();
+            } else {
+                messageHandler = new BackloggingIncomingMessageHandler();
+            }
+        }
+
+        public void setPolicy(String policy) {
+            this.policy = policy;
         }
     }
 }

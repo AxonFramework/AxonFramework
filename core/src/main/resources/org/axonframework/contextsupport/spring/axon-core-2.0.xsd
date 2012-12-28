@@ -150,7 +150,7 @@
                                 </xsd:appinfo>
                             </xsd:annotation>
                         </xsd:attribute>
-                        <xsd:attribute name="commit-threshold" type="xsd:integer" use="optional" default="-1">
+                        <xsd:attribute name="commit-threshold" type="xsd:string" use="optional" default="-1">
                             <xsd:annotation>
                                 <xsd:documentation>
                                     The number of events to process before committing a running transaction.
@@ -182,18 +182,16 @@
                                     Shorthand configuration to specify an Axon-provided IncomingMessageHandler
                                     implementation. Defaults to 'backlog'.
                                 </xsd:documentation>
-                                <xsd:appinfo>
-                                    <tool:annotation kind="ref">
-                                        <tool:expected-type
-                                                type="org.axonframework.eventhandling.replay.IncomingMessageHandler"/>
-                                    </tool:annotation>
-                                </xsd:appinfo>
                             </xsd:annotation>
                             <xsd:simpleType>
-                                <xsd:restriction base="xsd:string">
-                                    <xsd:enumeration value="backlog"/>
-                                    <xsd:enumeration value="discard"/>
-                                </xsd:restriction>
+                                <xsd:union memberTypes="xsd:string">
+                                    <xsd:simpleType>
+                                        <xsd:restriction base="xsd:string">
+                                            <xsd:enumeration value="backlog"/>
+                                            <xsd:enumeration value="discard"/>
+                                        </xsd:restriction>
+                                    </xsd:simpleType>
+                                </xsd:union>
                             </xsd:simpleType>
                         </xsd:attribute>
                     </xsd:complexType>
@@ -207,7 +205,7 @@
                 </xsd:annotation>
             </xsd:attribute>
             <xsd:attribute name="type" type="xsd:string"/>
-            <xsd:attribute name="order" type="xsd:int">
+            <xsd:attribute name="order" type="xsd:string" default="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Defines the relative order in which this cluster should be evaluated, compared to other
@@ -216,7 +214,7 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
-            <xsd:attribute name="default" type="xsd:boolean" default="false">
+            <xsd:attribute name="default" type="xsd:string" default="false">
                 <xsd:annotation>
                     <xsd:documentation>
                         Indicates whether this cluster should be selected as the default cluster. Only one
@@ -500,15 +498,20 @@
                     <xsd:attribute name="claim-strategy">
                         <xsd:annotation>
                             <xsd:documentation>The strategy to use to claim positions in the CommandBus' buffer.
-                                Defaults to a multi-threaded strategy. If only a single thread ever produces commands
+                                Defaults to a 'multi-threaded' strategy. If only a single thread ever produces commands
                                 for this Command Bus, consider using the 'single-threaded' strategy.
                             </xsd:documentation>
                         </xsd:annotation>
                         <xsd:simpleType>
-                            <xsd:restriction base="xsd:string">
-                                <xsd:enumeration value="multi-threaded"/>
-                                <xsd:enumeration value="single-threaded"/>
-                            </xsd:restriction>
+                            <xsd:union memberTypes="xsd:string">
+                                <!-- Trick to support IDE auto-complete -->
+                                <xsd:simpleType>
+                                    <xsd:restriction base="xsd:string">
+                                        <xsd:enumeration value="multi-threaded"/>
+                                        <xsd:enumeration value="single-threaded"/>
+                                    </xsd:restriction>
+                                </xsd:simpleType>
+                            </xsd:union>
                         </xsd:simpleType>
                     </xsd:attribute>
                     <xsd:attribute name="wait-strategy">
@@ -520,15 +523,20 @@
                             </xsd:documentation>
                         </xsd:annotation>
                         <xsd:simpleType>
-                            <xsd:restriction base="xsd:string">
-                                <xsd:enumeration value="busy-spin"/>
-                                <xsd:enumeration value="yield"/>
-                                <xsd:enumeration value="sleep"/>
-                                <xsd:enumeration value="block"/>
-                            </xsd:restriction>
+                            <xsd:union memberTypes="xsd:string">
+                                <!-- Trick to support IDE auto-complete -->
+                                <xsd:simpleType>
+                                    <xsd:restriction base="xsd:string">
+                                        <xsd:enumeration value="busy-spin"/>
+                                        <xsd:enumeration value="yield"/>
+                                        <xsd:enumeration value="sleep"/>
+                                        <xsd:enumeration value="block"/>
+                                    </xsd:restriction>
+                                </xsd:simpleType>
+                            </xsd:union>
                         </xsd:simpleType>
                     </xsd:attribute>
-                    <xsd:attribute name="reschedule-commands-on-corrupt-state" type="xsd:boolean">
+                    <xsd:attribute name="reschedule-commands-on-corrupt-state" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Whether to reschedule commands that have been executed against an
                                 aggregate in a corrupt state. 'false' will cause those commands to fail. Defaults to
@@ -565,7 +573,7 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="cooling-down-period" type="xsd:int">
+                    <xsd:attribute name="cooling-down-period" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>The number of seconds to wait when shutting down to ensure no commands
                                 are being processed on the command bus any more.
@@ -767,7 +775,7 @@
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="max-snapshots-archived" use="optional" type="xsd:integer">
+                    <xsd:attribute name="max-snapshots-archived" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Sets the maximum number of snapshots to archive for an aggregate.
                                 The EventStore will keep at most this number of snapshots per aggregate. Defaults to 1.
@@ -775,7 +783,7 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="batch-size" use="optional" type="xsd:integer">
+                    <xsd:attribute name="batch-size" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Sets the number of events that should be read at each database access.
                                 When more than this number of events must be read to rebuild an aggregate's state, the
@@ -1031,7 +1039,7 @@
     <xsd:complexType name="snapshotterTriggerType">
         <xsd:complexContent>
             <xsd:extension base="beans:identifiedType">
-                <xsd:attribute name="event-count-threshold" use="required" type="xsd:positiveInteger">
+                <xsd:attribute name="event-count-threshold" use="required" type="xsd:string">
                     <xsd:annotation>
                         <xsd:documentation>The amount of events that will trigger a snapshot to
                             be created. More specifically, if the framework detects that more
@@ -1115,7 +1123,7 @@
                                         </xsd:appinfo>
                                     </xsd:annotation>
                                 </xsd:attribute>
-                                <xsd:attribute name="buffer-size" use="optional" type="xsd:integer">
+                                <xsd:attribute name="buffer-size" use="optional" type="xsd:string">
                                     <xsd:annotation>
                                         <xsd:documentation>The size of the processing buffer. This equals to the number
                                             of events that may be awaiting processing before the input is blocked.
@@ -1123,7 +1131,7 @@
                                         </xsd:documentation>
                                     </xsd:annotation>
                                 </xsd:attribute>
-                                <xsd:attribute name="processor-count" use="optional" type="xsd:integer">
+                                <xsd:attribute name="processor-count" use="optional" type="xsd:string">
                                     <xsd:annotation>
                                         <xsd:documentation>The number of the processors (threads) that will process
                                             incoming events. Make sure that the given executor is capable of
@@ -1193,7 +1201,7 @@
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="suppress-exceptions" use="optional" type="xsd:boolean">
+                    <xsd:attribute name="suppress-exceptions" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Exception thrown when invoking the saga is rethrown if set
                                 to false, and suppressed and logged if set to true. Defaults to true. This setting is
@@ -1238,7 +1246,8 @@
                                 </xsd:attribute>
                                 <xsd:attribute name="associations-cache" use="optional" type="xsd:string">
                                     <xsd:annotation>
-                                        <xsd:documentation>Reference to the cache that stores association values.</xsd:documentation>
+                                        <xsd:documentation>Reference to the cache that stores association values.
+                                        </xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
                                                 <tool:expected-type type="net.sf.jsr107cache.Cache"/>
@@ -1288,7 +1297,7 @@
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="use-explicit-flush" use="optional" type="xsd:boolean" default="true">
+                    <xsd:attribute name="use-explicit-flush" use="optional" type="xsd:string" default="true">
                         <xsd:annotation>
                             <xsd:documentation>Indicates whether the repository should perform an explicit
                                 EntityManager.flush() when changes are made. Defaults to true.

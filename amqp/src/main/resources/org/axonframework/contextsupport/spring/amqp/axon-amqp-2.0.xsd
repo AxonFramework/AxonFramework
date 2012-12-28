@@ -46,7 +46,7 @@
                     <xsd:all>
                         <xsd:element name="default-configuration" minOccurs="0" type="amqpConfiguration"/>
                     </xsd:all>
-                    <xsd:attribute name="durable" type="xsd:boolean" use="optional">
+                    <xsd:attribute name="durable" type="xsd:string" use="optional">
                         <xsd:annotation>
                             <xsd:documentation>
                                 Indicates whether the Durable flag should be set on messages. Durable message will
@@ -55,7 +55,7 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="transactional" type="xsd:boolean" use="optional">
+                    <xsd:attribute name="transactional" type="xsd:string" use="optional">
                         <xsd:annotation>
                             <xsd:documentation>
                                 Indicates whether messages should be dispatched withing a AMQP Transaction (using
@@ -200,11 +200,15 @@
                 </xsd:documentation>
             </xsd:annotation>
             <xsd:simpleType>
-                <xsd:restriction base="xsd:NMTOKEN">
-                    <xsd:enumeration value="auto"/>
-                    <xsd:enumeration value="manual"/>
-                    <xsd:enumeration value="none"/>
-                </xsd:restriction>
+                <xsd:union>
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:NMTOKEN">
+                            <xsd:enumeration value="auto"/>
+                            <xsd:enumeration value="manual"/>
+                            <xsd:enumeration value="none"/>
+                        </xsd:restriction>
+                    </xsd:simpleType>
+                </xsd:union>
             </xsd:simpleType>
         </xsd:attribute>
         <xsd:attribute name="transaction-manager" type="xsd:string">
@@ -219,7 +223,7 @@
                 </xsd:appinfo>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="concurrency" type="xsd:int">
+        <xsd:attribute name="concurrency" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The number of concurrent consumers to start for each listener.
@@ -251,21 +255,21 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="recovery-interval" type="xsd:long">
+        <xsd:attribute name="recovery-interval" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The interval (in millis) at which a reconnect will be attempted if a connection was lost or rejected
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="receive-timeout" type="xsd:long">
+        <xsd:attribute name="receive-timeout" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The maximum amount of time (in millis) to wait while receiving a message.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="shutdown-timeout" type="xsd:long">
+        <xsd:attribute name="shutdown-timeout" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The maximum amount of time (millis) to wait for a shutdown confirmation from the server
@@ -273,7 +277,7 @@
             </xsd:annotation>
 
         </xsd:attribute>
-        <xsd:attribute name="exclusive" type="xsd:boolean">
+        <xsd:attribute name="exclusive" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     Whether or not this connection should consumer from a queue in exclusive mode. When a consumer

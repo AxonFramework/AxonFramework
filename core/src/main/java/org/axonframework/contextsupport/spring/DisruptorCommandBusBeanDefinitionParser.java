@@ -18,14 +18,18 @@ package org.axonframework.contextsupport.spring;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.BusySpinWaitStrategy;
+import com.lmax.disruptor.ClaimStrategy;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
+import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.disruptor.DisruptorConfiguration;
 import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -144,36 +148,23 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
 
     private void parseClaimStrategy(Element element, BeanDefinitionBuilder builder) {
         if (element.hasAttribute(ATTRIBUTE_BUFFER_SIZE) || element.hasAttribute(ATTRIBUTE_CLAIM_STRATEGY)) {
-            int bufferSize = DisruptorConfiguration.DEFAULT_BUFFER_SIZE;
+            final BeanDefinitionBuilder claimStrategy = BeanDefinitionBuilder
+                    .genericBeanDefinition(ClaimStrategyFactoryBean.class)
+                    .addPropertyValue("strategy", element.getAttribute(ATTRIBUTE_CLAIM_STRATEGY));
             if (element.hasAttribute(ATTRIBUTE_BUFFER_SIZE)) {
-                bufferSize = Integer.parseInt(element.getAttribute(ATTRIBUTE_BUFFER_SIZE));
+                claimStrategy.addPropertyValue("bufferSize", element.getAttribute(ATTRIBUTE_BUFFER_SIZE));
             }
-            if (element.hasAttribute(ATTRIBUTE_CLAIM_STRATEGY)
-                    && "single-threaded".equals(element.getAttribute(ATTRIBUTE_CLAIM_STRATEGY))) {
-                builder.addPropertyValue(PROPERTY_CLAIM_STRATEGY,
-                                         new SingleThreadedClaimStrategy(bufferSize));
-            } else {
-                builder.addPropertyValue(PROPERTY_CLAIM_STRATEGY,
-                                         new MultiThreadedClaimStrategy(bufferSize));
-            }
+            builder.addPropertyValue(PROPERTY_CLAIM_STRATEGY, claimStrategy.getBeanDefinition());
         }
     }
 
     private void parseWaitStrategy(Element element, BeanDefinitionBuilder builder) {
         if (element.hasAttribute(ATTRIBUTE_WAIT_STRATEGY)) {
             String waitStrategy = element.getAttribute(ATTRIBUTE_WAIT_STRATEGY);
-            if ("busy-spin".equals(waitStrategy)) {
-                builder.addPropertyValue(PROPERTY_WAIT_STRATEGY, new BusySpinWaitStrategy());
-            } else if ("yield".equals(waitStrategy)) {
-                builder.addPropertyValue(PROPERTY_WAIT_STRATEGY, new YieldingWaitStrategy());
-            } else if ("sleep".equals(waitStrategy)) {
-                builder.addPropertyValue(PROPERTY_WAIT_STRATEGY, new SleepingWaitStrategy());
-            } else if ("block".equals(waitStrategy)) {
-                builder.addPropertyValue(PROPERTY_WAIT_STRATEGY, new BlockingWaitStrategy());
-            } else {
-                throw new IllegalArgumentException("WaitStrategy is not one of the allowed values: "
-                                                           + "busy-spin, yield, sleep or block.");
-            }
+            builder.addPropertyValue(PROPERTY_WAIT_STRATEGY,
+                                     BeanDefinitionBuilder.genericBeanDefinition(WaitStrategyFactoryBean.class)
+                                                          .addPropertyValue(PROPERTY_WAIT_STRATEGY, waitStrategy)
+                                                          .getBeanDefinition());
         }
     }
 
@@ -202,5 +193,109 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     @Override
     protected boolean shouldGenerateIdAsFallback() {
         return true;
+    }
+
+    /**
+     * Factory bean that creates a ClaimStrategy instance.
+     */
+    private static class ClaimStrategyFactoryBean implements FactoryBean<ClaimStrategy>, InitializingBean {
+
+        private ClaimStrategy claimStrategy;
+        private int bufferSize = DisruptorConfiguration.DEFAULT_BUFFER_SIZE;
+        private String strategy;
+
+        @Override
+        public ClaimStrategy getObject() throws Exception {
+            return claimStrategy;
+        }
+
+        @Override
+        public Class<?> getObjectType() {
+            return ClaimStrategy.class;
+        }
+
+        @Override
+        public boolean isSingleton() {
+            return true;
+        }
+
+        @Override
+        public void afterPropertiesSet() throws Exception {
+            if ("single-threaded".equals(strategy)) {
+                claimStrategy = new SingleThreadedClaimStrategy(bufferSize);
+            } else {
+                claimStrategy = new MultiThreadedClaimStrategy(bufferSize);
+            }
+        }
+
+        /**
+         * Sets the size of the Disruptor's buffer.
+         *
+         * @param bufferSize the size of the Disruptor's buffer
+         */
+        @SuppressWarnings("UnusedDeclaration")
+        public void setBufferSize(int bufferSize) {
+            this.bufferSize = bufferSize;
+        }
+
+        /**
+         * Sets the name of the claim strategy to use.
+         *
+         * @param strategy the name of the claim strategy to use
+         */
+        @SuppressWarnings("UnusedDeclaration")
+        public void setStrategy(String strategy) {
+            Assert.isTrue("single-threaded".equals(strategy) || "multi-threaded".equals(strategy),
+                          "The given value for claim strategy (" + strategy
+                                  + ") is not valid. It must either be 'single-threaded' or 'multi-threaded'.");
+            this.strategy = strategy;
+        }
+    }
+
+    private static class WaitStrategyFactoryBean implements FactoryBean<WaitStrategy>, InitializingBean {
+
+        private WaitStrategy waitStrategy;
+        private String strategy;
+
+        @Override
+        public WaitStrategy getObject() throws Exception {
+            return waitStrategy;
+        }
+
+        @Override
+        public Class<?> getObjectType() {
+            return WaitStrategy.class;
+        }
+
+        @Override
+        public boolean isSingleton() {
+            return true;
+        }
+
+        @Override
+        public void afterPropertiesSet() throws Exception {
+            if ("busy-spin".equals(strategy)) {
+                waitStrategy = new BusySpinWaitStrategy();
+            } else if ("yield".equals(strategy)) {
+                waitStrategy = new YieldingWaitStrategy();
+            } else if ("sleep".equals(strategy)) {
+                waitStrategy = new SleepingWaitStrategy();
+            } else if ("block".equals(strategy)) {
+                waitStrategy = new BlockingWaitStrategy();
+            } else {
+                throw new IllegalArgumentException("WaitStrategy is not one of the allowed values: "
+                                                           + "busy-spin, yield, sleep or block.");
+            }
+        }
+
+        /**
+         * Sets the wait strategy to use
+         *
+         * @param strategy the wait strategy to use
+         */
+        @SuppressWarnings("UnusedDeclaration")
+        public void setWaitStrategy(String strategy) {
+            this.strategy = strategy;
+        }
     }
 }

@@ -68,8 +68,7 @@ public class SyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBean
     @Override
     protected void parseSuppressExceptionsAttribute(Element element, MutablePropertyValues beanDefinition)  {
         if (element.hasAttribute(SUPPRESS_EXCEPTIONS_ATTRIBUTE)) {
-            final boolean suppressExceptions = Boolean.parseBoolean(element.getAttribute(SUPPRESS_EXCEPTIONS_ATTRIBUTE));
-            beanDefinition.addPropertyValue("suppressExceptions", suppressExceptions);
+            beanDefinition.addPropertyValue("suppressExceptions", element.getAttribute(SUPPRESS_EXCEPTIONS_ATTRIBUTE));
         }
     }
 }

@@ -17,16 +17,19 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-2.0.xsd">
+       http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-2.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:property-placeholder />
 
     <axon:disruptor-command-bus id="disruptorCommandBus" event-bus="eventBus" event-store="eventStore"
-                                buffer-size="2048" cache="mockCache" claim-strategy="single-threaded"
-                                executor="executor" cooling-down-period="20" invoker-threads="2"
+                                buffer-size="${value:2048}" cache="mockCache" claim-strategy="${does-not-exist:single-threaded}"
+                                executor="executor" cooling-down-period="${val:20}" invoker-threads="${val:2}"
                                 publisher-threads="2" rollback-configuration="rollbackConfig"
                                 reschedule-commands-on-corrupt-state="false" command-target-resolver="ctr"
                                 serializer="mockSerializer" serializer-threads="3"
-                                serialized-representation="org.dom4j.Document" wait-strategy="sleep">
+                                serialized-representation="org.dom4j.Document" wait-strategy="${def:sleep}">
         <axon:dispatcher-interceptors>
             <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
                 <property name="mockType" value="org.axonframework.commandhandling.CommandDispatchInterceptor"/>
