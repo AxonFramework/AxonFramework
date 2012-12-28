@@ -95,10 +95,15 @@
                     to the Terminal about the expected behavior.</para>
                 <note>
                     <title>Clusters and Cluster Selectors in Spring</title>
-                    <para>Spring users can define clusters using the &lt;cluster> element. This
+                    <para>Spring users can define clusters using the &lt;axon:cluster> element. This
                         element allows you to define the selection criteria for Event Handlers in
                         that cluster. These criteria are transformed into cluster selectors and used
-                        to assign each Listener to one of the clusters.</para>
+                        to assign each Listener to one of the clusters. By default, this creates a
+                        cluster that handles events in the publishing thread. To use a cluster with
+                        other semantics, you can define a bean inside the &lt;axon:cluster> element
+                        that specifies the Cluster implementation to use.</para>
+                    <para>The Clusters are automatically detected and connected to the Event Bus in
+                        the application context.</para>
                 </note>
             </simplesect>
             <simplesect>

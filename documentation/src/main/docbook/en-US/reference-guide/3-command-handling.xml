@@ -314,7 +314,8 @@
                     uses the Command's Meta Data fields. </para>
                 <para>Optionally, you can provide a <code>DisruptorConfiguration</code> instance,
                     which allows you to tweak the configuration to optimize performance for your
-                    specific environment.<itemizedlist>
+                    specific environment. Spring users can use the &lt;axon:disruptor-command-bus>
+                    element for easier configuration of the <code>DisruptorCommandBus</code>.<itemizedlist>
                         <listitem>
                             <para>ClaimStrategy: Sets the ClaimStrategy instance, which defines how
                                 a Thread dispatching a command can claim a "position" in the
@@ -416,8 +417,6 @@
                                 publish events to a remote destination.</para>
                         </listitem>
                     </itemizedlist></para>
-                <para>Spring users can use the &lt;axon:disruptor-command-bus> element for easier
-                    configuration of the <code>DisruptorCommandBus</code>.</para>
             </simplesect>
         </sect2>
     </sect1>
@@ -676,7 +675,7 @@ handler.unsubscribe();</programlisting>
         <simplesect>
             <title>UnitOfWork and Exceptions</title>
             <para>Your command handlers may throw an Exception as a result of command processing. By
-                default, unchecked exceptions will cause the UnifOfWork to roll back all changes. As
+                default, unchecked exceptions will cause the UnitOfWork to roll back all changes. As
                 a result, no Events are stored or published. In some cases, however, you might want
                 to commit the Unif of Work and still notify the dispatcher of the command of an
                 exception through the callback. The <code>SimpleCommandBus</code> allows you to
