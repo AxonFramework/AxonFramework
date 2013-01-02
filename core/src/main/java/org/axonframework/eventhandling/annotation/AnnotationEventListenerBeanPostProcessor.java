@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AbstractAnnotationHandlerBeanPostProcessor;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
@@ -51,6 +52,8 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
      */
     @Override
     protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
+        Assert.notNull(eventBus, "No EventBus has been found in the application context, yet there are "
+                + "@EventHandler annotated beans that expect one.");
         return AnnotationEventListenerAdapter.subscribe(bean, eventBus);
     }
 
@@ -70,13 +73,14 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
         // if no EventBus is set, find one in the application context
         if (eventBus == null) {
             Map<String, EventBus> beans = getApplicationContext().getBeansOfType(EventBus.class);
-            if (beans.size() != 1) {
+            if (beans.size() > 1) {
                 throw new IllegalStateException(
                         "If no specific EventBus is provided, the application context must "
                                 + "contain exactly one bean of type EventBus. The current application context has: "
                                 + beans.size());
+            } else if (beans.size() > 0) {
+                this.eventBus = beans.entrySet().iterator().next().getValue();
             }
-            this.eventBus = beans.entrySet().iterator().next().getValue();
         }
     }
 
