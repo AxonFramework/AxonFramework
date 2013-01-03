@@ -27,17 +27,50 @@ import org.springframework.beans.factory.support.GenericBeanDefinition;
  * @author Allard Buijze
  * @since 1.0
  */
-public class AutowiredBean extends GenericBeanDefinition {
-
-    private static final long serialVersionUID = 3453343985343784967L;
+public final class AutowiredBean {
 
     /**
-     * Creates an autowired dependency on the given <code>autowiredType</code>.
-     *
-     * @param autowiredType The type of bean to autowire.
+     * Prevent instantiation of this utility class
      */
-    public AutowiredBean(Class<?> autowiredType) {
-        setBeanClass(AutowiredDependencyFactoryBean.class);
-        getConstructorArgumentValues().addGenericArgumentValue(autowiredType);
+    private AutowiredBean() {
+    }
+
+    /**
+     * Creates an autowired dependency on the given <code>autowiredTypes</code>. A lookup is done on the first type,
+     * if no beans of that type are found, the next is evaluated, and so on. If more than one bean of any type is found
+     * when it is evaluated, an exception is thrown.
+     * <p/>
+     * Beans that are not eligible for autowiring (as defined in Spring configuration) are ignored altogether.
+     *
+     * @param autowiredTypes The types of bean to autowire.
+     * @return the bean definition that will inject a bean of the required type
+     */
+    public static GenericBeanDefinition createAutowiredBean(Class<?>... autowiredTypes) {
+        final GenericBeanDefinition autowiredBeanDef = new GenericBeanDefinition();
+        autowiredBeanDef.setBeanClass(AutowiredDependencyFactoryBean.class);
+        autowiredBeanDef.getConstructorArgumentValues().addGenericArgumentValue(autowiredTypes);
+        return autowiredBeanDef;
+    }
+
+    /**
+     * Creates an autowired dependency on the given <code>autowiredTypes</code>. A lookup is done on the first type,
+     * if no beans of that type are found, the next is evaluated, and so on. If more than one bean of any type is found
+     * when it is evaluated, an exception is thrown.
+     * <p/>
+     * If there are no autowire candidates, the given <code>fallback</code> is used to take its place. If
+     * <code>fallback</code> is <code>null</code>, an exception will be thrown.
+     * <p/>
+     * Beans that are not eligible for autowiring (as defined in Spring configuration) are ignored altogether.
+     *
+     * @param fallback       The bean to select when no autowired dependencies can be found
+     * @param autowiredTypes The types of bean to autowire.
+     * @return the bean definition that will inject a bean of the required type
+     */
+    public static GenericBeanDefinition createAutowiredBeanWithFallback(Object fallback, Class<?>... autowiredTypes) {
+        final GenericBeanDefinition autowiredBeanDef = new GenericBeanDefinition();
+        autowiredBeanDef.setBeanClass(AutowiredDependencyFactoryBean.class);
+        autowiredBeanDef.getConstructorArgumentValues().addIndexedArgumentValue(0, fallback);
+        autowiredBeanDef.getConstructorArgumentValues().addIndexedArgumentValue(1, autowiredTypes);
+        return autowiredBeanDef;
     }
 }

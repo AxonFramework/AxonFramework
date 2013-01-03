@@ -34,6 +34,8 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
+
 /**
  * The RepositoryBeanDefinitionParser is responsible for parsing the <code>repository</code> element from the Axon
  * namespace. It creates a {@link org.springframework.beans.factory.config.BeanDefinition} based on the {@link
@@ -142,7 +144,7 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
         if (element.hasAttribute(referenceName)) {
             properties.add(propertyName, new RuntimeBeanReference(element.getAttribute(referenceName)));
         } else if (autowiredType != null) {
-            properties.add(propertyName, new AutowiredBean(autowiredType));
+            properties.add(propertyName, createAutowiredBean(autowiredType));
         }
     }
 

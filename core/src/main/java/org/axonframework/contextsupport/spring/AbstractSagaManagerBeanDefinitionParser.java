@@ -33,6 +33,8 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
+
 /**
  * Abstract SagaManager parser that parses common properties for all SagaManager implementations.
  *
@@ -176,7 +178,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         if (element.hasAttribute(EVENT_BUS_ATTRIBUTE)) {
             registerEventBus(new RuntimeBeanReference(element.getAttribute(EVENT_BUS_ATTRIBUTE)), beanDefinition);
         } else {
-            registerEventBus(new AutowiredBean(EventBus.class), beanDefinition);
+            registerEventBus(createAutowiredBean(EventBus.class), beanDefinition);
         }
     }
 

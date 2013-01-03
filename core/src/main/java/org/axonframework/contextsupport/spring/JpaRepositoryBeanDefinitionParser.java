@@ -25,6 +25,8 @@ import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.w3c.dom.Element;
 
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
+
 /**
  * @author Allard Buijze
  */
@@ -75,7 +77,7 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
         if (element.hasAttribute(EVENT_BUS)) {
             builder.addPropertyReference("eventBus", element.getAttribute(EVENT_BUS));
         } else {
-            builder.addPropertyValue("eventBus", new AutowiredBean(EventBus.class));
+            builder.addPropertyValue("eventBus", createAutowiredBean(EventBus.class));
         }
     }
 

@@ -50,7 +50,11 @@ public class JpaRepositoryBeanDefinitionParserTest {
         assertNotNull(beanDefinition.getConstructorArgumentValues().getArgumentValue(1, Class.class));
 
         assertTrue(beanDefinition.getPropertyValues().getPropertyValue("eventBus")
-                                 .getValue() instanceof AutowiredBean);
+                                 .getValue() instanceof BeanDefinition);
+        final BeanDefinition eventBusDefinition = (BeanDefinition) beanDefinition.getPropertyValues()
+                                                                                 .getPropertyValue("eventBus")
+                                                                                 .getValue();
+        assertEquals(AutowiredDependencyFactoryBean.class.getName(), eventBusDefinition.getBeanClassName());
     }
 
     @Test

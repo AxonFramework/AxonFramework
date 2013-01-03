@@ -24,6 +24,8 @@ import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
+
 /**
  * The SnapshotterBeanDefinitionParser is responsible for parsing the <code>snapshotter</code> element form the Axon
  * namespace. It creates a {@link org.springframework.beans.factory.config.BeanDefinition} based either on a {@link
@@ -54,7 +56,7 @@ public class SnapshotterBeanDefinitionParser extends AbstractSingleBeanDefinitio
         if (element.hasAttribute(EVENT_STORE_ATTRIBUTE)) {
             builder.addPropertyReference("eventStore", element.getAttribute(EVENT_STORE_ATTRIBUTE));
         } else {
-            builder.addPropertyValue("eventStore", new AutowiredBean(SnapshotEventStore.class));
+            builder.addPropertyValue("eventStore", createAutowiredBean(SnapshotEventStore.class));
         }
 
         if (element.hasAttribute(EXECUTOR_ATTRIBUTE)) {

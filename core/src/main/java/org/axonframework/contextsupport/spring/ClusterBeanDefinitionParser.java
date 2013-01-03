@@ -30,6 +30,8 @@ import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.IncomingMessageHandler;
 import org.axonframework.eventhandling.replay.ReplayingCluster;
 import org.axonframework.eventstore.management.EventStoreManagement;
+import org.axonframework.unitofwork.NoTransactionManager;
+import org.axonframework.unitofwork.TransactionManager;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -53,6 +55,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBeanWithFallback;
 
 /**
  * BeanDefinitionParser implementation that parses "cluster" elements. It creates the cluster as well as a selector
@@ -143,7 +147,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             constructor.addIndexedArgumentValue(1, new RuntimeBeanReference(
                     replayElement.getAttribute(EVENT_STORE_ATTRIBUTE)));
         } else {
-            constructor.addIndexedArgumentValue(1, new AutowiredBean(EventStoreManagement.class));
+            constructor.addIndexedArgumentValue(1, AutowiredBean.createAutowiredBean(EventStoreManagement.class));
         }
         if (replayElement.hasAttribute(TRANSACTION_MANAGER_ATTRIBUTE)) {
             constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
@@ -154,7 +158,10 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         } else {
             constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
                     .genericBeanDefinition(TransactionManagerFactoryBean.class)
-                    .addPropertyValue("transactionManager", new AutowiredBean(PlatformTransactionManager.class))
+                    .addPropertyValue("transactionManager",
+                                      createAutowiredBeanWithFallback(new NoTransactionManager(),
+                                                                      TransactionManager.class,
+                                                                      PlatformTransactionManager.class))
                     .getBeanDefinition());
         }
         constructor.addIndexedArgumentValue(3, replayElement.getAttribute(COMMIT_THRESHOLD_ATTRIBUTE));

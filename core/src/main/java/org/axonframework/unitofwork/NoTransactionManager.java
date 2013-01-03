@@ -28,7 +28,7 @@ public class NoTransactionManager implements TransactionManager {
     /**
      * An object to represent the transaction, preventing NPE if any component want to toString it
      */
-    private static final Object STATUS = new Object();
+    private static final String STATUS = "NoTransactionStatus";
 
     @Override
     public Object startTransaction() {
