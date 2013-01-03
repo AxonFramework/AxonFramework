@@ -83,7 +83,7 @@ public class RunEventReplay {
                 new GenericDomainEventMessage<ToDoItemCreatedEvent>(
                         "todo1", 0, new ToDoItemCreatedEvent("todo1", "Need to do something")),
                 new GenericDomainEventMessage<ToDoItemCreatedEvent>(
-                        "todo2", 0, new ToDoItemCreatedEvent("todo2", "Need to do something")),
+                        "todo2", 0, new ToDoItemCreatedEvent("todo2", "Another thing to do")),
                 new GenericDomainEventMessage<ToDoItemCompletedEvent>("todo2", 0, new ToDoItemCompletedEvent("todo2"))
         };
         eventStore.appendEvents("mock", new SimpleDomainEventStream(domainEventMessages));
@@ -123,7 +123,7 @@ public class RunEventReplay {
         @EventHandler
         public void onEvent(EventMessage event) {
             System.out.println(
-                    "Received " + event.getPayloadType().getSimpleName() + " in " + getClass().getSimpleName()
+                    "Received " + event.getPayload().toString() + " in " + getClass().getSimpleName()
                             + " on thread named "
                             + Thread.currentThread().getName());
         }

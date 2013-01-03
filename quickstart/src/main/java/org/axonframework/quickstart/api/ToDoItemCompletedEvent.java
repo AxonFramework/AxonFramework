@@ -32,4 +32,9 @@ public class ToDoItemCompletedEvent {
     public String getTodoId() {
         return todoId;
     }
+
+    @Override
+    public String toString() {
+        return "ToDoItemCompletedEvent(" + todoId + ")";
+    }
 }

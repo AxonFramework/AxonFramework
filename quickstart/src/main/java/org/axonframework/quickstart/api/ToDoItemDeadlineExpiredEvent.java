@@ -30,4 +30,9 @@ public class ToDoItemDeadlineExpiredEvent {
     public String getTodoId() {
         return todoId;
     }
+
+    @Override
+    public String toString() {
+        return "ToDoItemDeadlineExpiredEvent(" + todoId + ")";
+    }
 }

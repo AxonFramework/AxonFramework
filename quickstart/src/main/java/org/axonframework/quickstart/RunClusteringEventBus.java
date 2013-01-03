@@ -85,7 +85,7 @@ public class RunClusteringEventBus {
 
         @EventHandler
         public void onEvent(EventMessage event) {
-            System.out.println("Received " + event.getPayloadType().getSimpleName() + " on thread named "
+            System.out.println("Received " + event.getPayload().toString() + " on thread named "
                                        + Thread.currentThread().getName());
         }
     }

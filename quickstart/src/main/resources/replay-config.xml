@@ -29,12 +29,9 @@
     <!-- Create a cluster -->
     <axon:cluster id="cluster" default="true">
         <!-- Enable replaying on this cluster by adding replay configuration -->
-        <axon:replay-config incoming-messages="backlog" event-store="eventStore" transaction-manager="txManager"/>
+        <axon:replay-config incoming-messages="backlog" event-store="eventStore" />
         <!-- Here, we define which handlers we want to be part of this cluster -->
     </axon:cluster>
-
-    <!-- we don't need transactions in our scenario -->
-    <bean id="txManager" class="org.axonframework.unitofwork.NoTransactionManager"/>
 
     <!-- We need a thread pool to execute the replay asynchronously-->
     <bean id="asyncExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean">

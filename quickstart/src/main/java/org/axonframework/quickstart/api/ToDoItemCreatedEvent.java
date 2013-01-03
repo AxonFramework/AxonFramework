@@ -38,4 +38,9 @@ public class ToDoItemCreatedEvent {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public String toString() {
+        return "ToDoItemCreatedEvent(" + todoId + ", '" + description + "')";
+    }
 }
