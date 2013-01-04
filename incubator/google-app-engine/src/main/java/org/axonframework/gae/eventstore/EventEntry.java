@@ -28,6 +28,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
 import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
@@ -108,23 +109,30 @@ public class EventEntry implements SerializedDomainEventData<String> {
      * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
      *
      * @param actualAggregateIdentifier The actual aggregate identifier instance used to perform the lookup
-     * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
+     * @param serializer                Serializer used to de-serialize the stored DomainEvent
      * @param upcasterChain             Set of upcasters to use when an event needs upcasting before de-serialization
      * @return The actual DomainEventMessage instances stored in this entry
      */
     @SuppressWarnings("unchecked")
-    public List<DomainEventMessage> getDomainEvent(Object actualAggregateIdentifier, Serializer eventSerializer,
+    public List<DomainEventMessage> getDomainEvent(Object actualAggregateIdentifier, Serializer serializer,
                                                    UpcasterChain upcasterChain) {
+        final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(this,
+                                                                                                        serializer);
         List<SerializedObject> upcastEvents = upcasterChain.upcast(
-                new SimpleSerializedObject<String>(serializedEvent, String.class, eventType, eventRevision));
+                new SimpleSerializedObject<String>(serializedEvent, String.class, eventType, eventRevision), context);
         List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastEvents.size());
         for (SerializedObject upcastEvent : upcastEvents) {
-            messages.add(new SerializedDomainEventMessage<Object>(
+            DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
                     new UpcastSerializedDomainEventData(this,
                                                         actualAggregateIdentifier == null
                                                                 ? aggregateIdentifier : actualAggregateIdentifier,
                                                         upcastEvent),
-                    eventSerializer));
+                    serializer);
+            // prevents duplicate deserialization of meta data when it has already been access during upcasting
+            if (context.getSerializedMetaData().isDeserialized()) {
+                message = message.withMetaData(context.getSerializedMetaData().getObject());
+            }
+            messages.add(message);
         }
         return messages;
     }

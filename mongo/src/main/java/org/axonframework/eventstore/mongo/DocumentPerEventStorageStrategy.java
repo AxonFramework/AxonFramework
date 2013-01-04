@@ -29,6 +29,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
 import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
@@ -222,16 +223,25 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
                                                         UpcasterChain upcasterChain) {
             Class<?> representationType = getRepresentationType();
+            final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(
+                    this,
+                    eventSerializer);
             List<SerializedObject> upcastObjects = upcasterChain.upcast(
-                    new SimpleSerializedObject(serializedPayload, representationType, payloadType, payloadRevision));
+                    new SimpleSerializedObject(serializedPayload, representationType, payloadType, payloadRevision),
+                    context);
             List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastObjects.size());
             for (SerializedObject upcastObject : upcastObjects) {
-                messages.add(new SerializedDomainEventMessage(
+                DomainEventMessage message = new SerializedDomainEventMessage(
                         new UpcastSerializedDomainEventData(this,
                                                             actualAggregateIdentifier == null
                                                                     ? aggregateIdentifier : actualAggregateIdentifier,
                                                             upcastObject),
-                        eventSerializer));
+                        eventSerializer);
+                // prevents duplicate deserialization of meta data when it has already been access during upcasting
+                if (context.getSerializedMetaData().isDeserialized()) {
+                    message = message.withMetaData(context.getSerializedMetaData().getObject());
+                }
+                messages.add(message);
             }
             return messages;
         }

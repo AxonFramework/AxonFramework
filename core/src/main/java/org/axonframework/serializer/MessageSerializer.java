@@ -131,4 +131,9 @@ public class MessageSerializer implements Serializer {
     public SerializedType typeForClass(Class type) {
         return serializer.typeForClass(type);
     }
+
+    @Override
+    public ConverterFactory getConverterFactory() {
+        return serializer.getConverterFactory();
+    }
 }

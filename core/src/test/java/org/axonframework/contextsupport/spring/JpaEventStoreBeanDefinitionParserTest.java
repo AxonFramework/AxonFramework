@@ -71,7 +71,7 @@ public class JpaEventStoreBeanDefinitionParserTest {
         ValueHolder converterFactory = upcasterChainDefinition.getConstructorArgumentValues()
                                                               .getGenericArgumentValue(RuntimeBeanReference.class);
         ValueHolder upcasterList = upcasterChainDefinition.getConstructorArgumentValues()
-                                                          .getGenericArgumentValue(List.class);
+                                                          .getIndexedArgumentValue(1, List.class);
         assertNotNull(upcasterList);
         assertEquals(1, ((List) upcasterList.getValue()).size());
         assertNotNull(converterFactory);
@@ -86,9 +86,9 @@ public class JpaEventStoreBeanDefinitionParserTest {
         PropertyValue upcasterChain = definition.getPropertyValues().getPropertyValue("upcasterChain");
         BeanDefinition upcasterChainDefinition = (BeanDefinition) upcasterChain.getValue();
         assertEquals(LazyUpcasterChain.class.getName(), upcasterChainDefinition.getBeanClassName());
-        assertEquals(1, upcasterChainDefinition.getConstructorArgumentValues().getArgumentCount());
+        assertEquals(2, upcasterChainDefinition.getConstructorArgumentValues().getArgumentCount());
         ValueHolder upcasterList = upcasterChainDefinition.getConstructorArgumentValues()
-                                                          .getGenericArgumentValue(List.class);
+                                                          .getIndexedArgumentValue(1, List.class);
         assertNotNull(upcasterList);
         assertEquals(2, ((List) upcasterList.getValue()).size());
 

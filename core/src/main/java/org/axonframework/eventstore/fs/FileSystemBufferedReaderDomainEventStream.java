@@ -23,6 +23,7 @@ import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
 import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 
@@ -64,8 +65,8 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
      * The reader will be closed when the last event has been read from it, or when an exception occurs while
      * reading or deserializing an event.
      *
-     * @param inputStream The inputStream providing serialized DomainEvents
-     * @param serializer  The serializer to deserialize the DomainEvents
+     * @param inputStream   The inputStream providing serialized DomainEvents
+     * @param serializer    The serializer to deserialize the DomainEvents
      * @param upcasterChain used to upcast events directly after being read
      */
     public FileSystemBufferedReaderDomainEventStream(InputStream inputStream,
@@ -82,7 +83,7 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
     @Override
     public boolean hasNext() {
         // Load new events if no more events are left in the queue.
-        if(next.isEmpty()) {
+        if (next.isEmpty()) {
             next.addAll(doReadNext());
         }
 
@@ -116,12 +117,21 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
     }
 
     @SuppressWarnings("unchecked")
-    private List<DomainEventMessage> upcast(SerializedDomainEventData entry) {
-        List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload());
+    private List<DomainEventMessage> upcast(final SerializedDomainEventData entry) {
+        final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry,
+                                                                                                        serializer);
+        List<SerializedObject> objects = upcasterChain.upcast(
+                entry.getPayload(), context);
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
         for (SerializedObject object : objects) {
-            events.add(new SerializedDomainEventMessage<Object>(
-                    new UpcastSerializedDomainEventData(entry, entry.getAggregateIdentifier(), object), serializer));
+            DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
+                    new UpcastSerializedDomainEventData(entry, entry.getAggregateIdentifier(), object), serializer);
+
+            // prevents duplicate deserialization of meta data when it has already been access during upcasting
+            if (context.getSerializedMetaData().isDeserialized()) {
+                message = message.withMetaData(context.getSerializedMetaData().getObject());
+            }
+            events.add(message);
         }
         return events;
     }

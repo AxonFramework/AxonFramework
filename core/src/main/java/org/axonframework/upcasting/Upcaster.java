@@ -65,10 +65,11 @@ public interface Upcaster<T> {
      *
      * @param intermediateRepresentation The representation of the object to upcast
      * @param expectedTypes              The expected types of the returned serialized objects.
-     * @return the new representation of the object
+     * @param context                    An instance describing the context of the object to upcast
+     * @return the new representations of the object
      */
     List<SerializedObject<?>> upcast(SerializedObject<T> intermediateRepresentation,
-                                     List<SerializedType> expectedTypes);
+                                     List<SerializedType> expectedTypes, UpcastingContext context);
 
     /**
      * Upcast the given <code>serializedType</code> into its new format. Generally, this involves increasing the

@@ -62,12 +62,12 @@ public abstract class AbstractUpcasterChain implements UpcasterChain {
     }
 
     @Override
-    public List<SerializedObject> upcast(SerializedObject serializedObject) {
+    public List<SerializedObject> upcast(SerializedObject serializedObject, UpcastingContext upcastingContext) {
         if (upcasters.isEmpty()) {
             return singletonList(serializedObject);
         }
         Iterator<Upcaster> upcasterIterator = upcasters.iterator();
-        return upcastInternal(singletonList(serializedObject), upcasterIterator);
+        return upcastInternal(singletonList(serializedObject), upcasterIterator, upcastingContext);
     }
 
     /**
@@ -99,17 +99,20 @@ public abstract class AbstractUpcasterChain implements UpcasterChain {
      * Each item in the returned List of SerializedObject must match the given list of <code>targetTypes</code>. These
      * types are returned by the invocation of {@link Upcaster#upcast(org.axonframework.serializer.SerializedType)}.
      *
-     * @param upcaster     The upcaster to perform the upcasting with
-     * @param sourceObject The SerializedObject to upcast
-     * @param targetTypes  The types expected in the returned List of SerializedObject
-     * @param <T>          The representation type expected by the upcaster
+     * @param upcaster              The upcaster to perform the upcasting with
+     * @param sourceObject          The SerializedObject to upcast
+     * @param targetTypes           The types expected in the returned List of SerializedObject
+     * @param context The container of properties of the Domain Event Message being upcast
+     * @param <T>                   The representation type expected by the upcaster
      * @return The List of SerializedObject representing the upcast <code>sourceObject</code>
      */
     protected abstract <T> List<SerializedObject<?>> doUpcast(Upcaster<T> upcaster, SerializedObject<?> sourceObject,
-                                                              List<SerializedType> targetTypes);
+                                                              List<SerializedType> targetTypes,
+                                                              UpcastingContext context);
 
     private List<SerializedObject> upcastInternal(List<SerializedObject> serializedObjects,
-                                                  Iterator<Upcaster> upcasterIterator) {
+                                                  Iterator<Upcaster> upcasterIterator,
+                                                  UpcastingContext context) {
         if (!upcasterIterator.hasNext()) {
             return serializedObjects;
         }
@@ -118,11 +121,11 @@ public abstract class AbstractUpcasterChain implements UpcasterChain {
         for (SerializedObject serializedObject : serializedObjects) {
             if (currentUpcaster.canUpcast(serializedObject.getType())) {
                 List<SerializedType> upcastTypes = currentUpcaster.upcast(serializedObject.getType());
-                upcastObjects.addAll(doUpcast(currentUpcaster, serializedObject, upcastTypes));
+                upcastObjects.addAll(doUpcast(currentUpcaster, serializedObject, upcastTypes, context));
             } else {
                 upcastObjects.add(serializedObject);
             }
         }
-        return upcastInternal(upcastObjects, upcasterIterator);
+        return upcastInternal(upcastObjects, upcasterIterator, context);
     }
 }

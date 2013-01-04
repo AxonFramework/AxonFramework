@@ -36,6 +36,7 @@ import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
 import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterAware;
@@ -211,11 +212,21 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
     @SuppressWarnings("unchecked")
     private List<DomainEventMessage> upcastAndDeserialize(SerializedDomainEventData entry, Object identifier) {
-        List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload());
+        final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry,
+                                                                                                        serializer);
+        List<SerializedObject> objects = upcasterChain.upcast(
+                entry.getPayload(), context);
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
         for (SerializedObject object : objects) {
-            events.add(new SerializedDomainEventMessage<Object>(
-                    new UpcastSerializedDomainEventData(entry, identifier, object), serializer));
+            DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
+                    new UpcastSerializedDomainEventData(entry, identifier, object), serializer);
+
+            // prevents duplicate deserialization of meta data when it has already been access during upcasting
+            if (context.getSerializedMetaData().isDeserialized()) {
+                message = message.withMetaData(context.getSerializedMetaData().getObject());
+            }
+
+            events.add(message);
         }
         return events;
     }

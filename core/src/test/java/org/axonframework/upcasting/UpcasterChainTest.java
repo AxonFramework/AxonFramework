@@ -46,6 +46,8 @@ public abstract class UpcasterChainTest {
     private SerializedObject intermediate2;
     private SerializedObject intermediate3;
 
+    private UpcastingContext upcastingContext;
+
     @Before
     public void setUp() throws Exception {
         object1 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type1", "0");
@@ -54,6 +56,7 @@ public abstract class UpcasterChainTest {
         intermediate1 = new MockIntermediateRepresentation(object1, byte[].class);
         intermediate2 = new MockIntermediateRepresentation(object2, byte[].class);
         intermediate3 = new MockIntermediateRepresentation(object3, byte[].class);
+        upcastingContext = mock(UpcastingContext.class);
     }
 
     @Test
@@ -64,10 +67,10 @@ public abstract class UpcasterChainTest {
 
         UpcasterChain chain = createUpcasterChain(null, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
 
-        List<SerializedObject> actual1 = chain.upcast(object1);
+        List<SerializedObject> actual1 = chain.upcast(object1, upcastingContext);
         assertEquals(object3.getType(), actual1.get(0).getType());
 
-        List<SerializedObject> actual2 = chain.upcast(object2);
+        List<SerializedObject> actual2 = chain.upcast(object2, upcastingContext);
         assertEquals(object3.getType(), actual2.get(0).getType());
     }
 
@@ -97,7 +100,7 @@ public abstract class UpcasterChainTest {
 
         UpcasterChain chain = createUpcasterChain(mockConverterFactory, mockUpcaster12);
 
-        List<SerializedObject> actualObjects = chain.upcast(object1);
+        List<SerializedObject> actualObjects = chain.upcast(object1, upcastingContext);
         for (SerializedObject actual :  actualObjects) {
             // chaining may be lazy
             actual.getData();
@@ -120,7 +123,7 @@ public abstract class UpcasterChainTest {
 
         UpcasterChain chain = createUpcasterChain(mockConverterFactory, mockUpcaster12);
         try {
-            chain.upcast(object1);
+            chain.upcast(object1, upcastingContext);
         } catch (CannotConvertBetweenTypesException e) {
             assertSame(mockException, e);
             verify(mockConverterFactory).getConverter(intermediate1.getContentType(), Document.class);
@@ -132,7 +135,7 @@ public abstract class UpcasterChainTest {
         Upcaster mockUpcaster = new StubUpcaster(intermediate1.getType(), byte[].class, intermediate2, intermediate3);
 
         UpcasterChain chain = createUpcasterChain(null, mockUpcaster);
-        List<SerializedObject> upcastedObjects = chain.upcast(object1);
+        List<SerializedObject> upcastedObjects = chain.upcast(object1, upcastingContext);
 
         assertEquals(2, upcastedObjects.size());
         assertEquals(intermediate2.getData(), upcastedObjects.get(0).getData());
@@ -200,7 +203,7 @@ public abstract class UpcasterChainTest {
 
         @Override
         public List<SerializedObject<?>> upcast(SerializedObject<T> intermediateRepresentation,
-                                                List<SerializedType> expectedTypes) {
+                                                List<SerializedType> expectedTypes, UpcastingContext context) {
             assertEquals(expectedType, intermediateRepresentation.getType());
             return upcastResult;
         }
