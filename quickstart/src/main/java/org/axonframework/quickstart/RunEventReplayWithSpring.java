@@ -17,26 +17,15 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventhandling.replay.ReplayAware;
 import org.axonframework.eventhandling.replay.ReplayingCluster;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventVisitor;
-import org.axonframework.eventstore.management.Criteria;
-import org.axonframework.eventstore.management.CriteriaBuilder;
-import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 import org.axonframework.quickstart.api.ToDoItemDeadlineExpiredEvent;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -55,7 +44,7 @@ public class RunEventReplayWithSpring {
         ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("replay-config.xml");
 
         // we get our resources from the application context
-        StubEventStore eventStore = applicationContext.getBean("eventStore", StubEventStore.class);
+        RunEventReplay.StubEventStore eventStore = applicationContext.getBean("eventStore", RunEventReplay.StubEventStore.class);
         EventBus eventBus = applicationContext.getBean(EventBus.class);
         ExecutorService executor = applicationContext.getBean(ExecutorService.class);
         // and finally, the ReplayingCluster. As you can see the bean is an instance of ReplayingCluster, because we
@@ -101,62 +90,4 @@ public class RunEventReplayWithSpring {
         }
     }
 
-    public static class ThreadPrintingEventListener {
-
-        @EventHandler
-        public void onEvent(EventMessage event) {
-            System.out.println(
-                    "Received " + event.getPayload().toString() + " in " + getClass().getSimpleName()
-                            + " on thread named "
-                            + Thread.currentThread().getName());
-        }
-    }
-
-    public static class AnotherThreadPrintingEventListener extends ThreadPrintingEventListener
-            implements ReplayAware {
-
-        @Override
-        public void beforeReplay() {
-            System.out.println("Seems like we're starting a replay");
-        }
-
-        @Override
-        public void afterReplay() {
-            System.out.println("Seems like we've done replaying");
-        }
-    }
-
-    private static class StubEventStore implements EventStoreManagement, EventStore {
-
-        private final List<DomainEventMessage> eventMessages = new CopyOnWriteArrayList<DomainEventMessage>();
-
-        @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            while (events.hasNext()) {
-                eventMessages.add(events.next());
-            }
-        }
-
-        @Override
-        public void visitEvents(EventVisitor visitor) {
-            for (DomainEventMessage eventMessage : eventMessages) {
-                visitor.doWithEvent(eventMessage);
-            }
-        }
-
-        @Override
-        public void visitEvents(Criteria criteria, EventVisitor visitor) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        @Override
-        public CriteriaBuilder newCriteriaBuilder() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-    }
 }

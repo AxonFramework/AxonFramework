@@ -118,7 +118,7 @@ public class RunEventReplay {
         }
     }
 
-    private static class ThreadPrintingEventListener {
+    public static class ThreadPrintingEventListener {
 
         @EventHandler
         public void onEvent(EventMessage event) {
@@ -129,7 +129,7 @@ public class RunEventReplay {
         }
     }
 
-    private static class AnotherThreadPrintingEventListener extends ThreadPrintingEventListener
+    public static class AnotherThreadPrintingEventListener extends ThreadPrintingEventListener
             implements ReplayAware {
 
         @Override
@@ -143,7 +143,7 @@ public class RunEventReplay {
         }
     }
 
-    private static class StubEventStore implements EventStoreManagement, EventStore {
+    public static class StubEventStore implements EventStoreManagement, EventStore {
 
         private final List<DomainEventMessage> eventMessages = new CopyOnWriteArrayList<DomainEventMessage>();
 
