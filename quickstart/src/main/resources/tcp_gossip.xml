@@ -24,60 +24,21 @@
 <config xmlns="urn:org:jgroups"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/JGroups-3.0.xsd">
-    <TCP bind_addr="${jgroups.bind_addr:127.0.0.1}" bind_port="${jgroups.bind_port:7800}"
-         loopback="true"
-         recv_buf_size="${tcp.recv_buf_size:20M}"
-         send_buf_size="${tcp.send_buf_size:640K}"
-         discard_incompatible_packets="true"
-         max_bundle_size="64K"
-         max_bundle_timeout="30"
-         enable_bundling="true"
+    <TCP bind_addr="${jgroups.bind_addr:127.0.0.1}"
+         bind_port="${jgroups.bind_port:7800}"
          use_send_queues="true"
-         sock_conn_timeout="300"
+         sock_conn_timeout="300"/>
 
-         timer_type="new"
-         timer.min_threads="4"
-         timer.max_threads="10"
-         timer.keep_alive_time="3000"
-         timer.queue_max_size="500"
-
-         thread_pool.enabled="true"
-         thread_pool.min_threads="1"
-         thread_pool.max_threads="10"
-         thread_pool.keep_alive_time="5000"
-         thread_pool.queue_enabled="false"
-         thread_pool.queue_max_size="100"
-         thread_pool.rejection_policy="run"
-
-         oob_thread_pool.enabled="true"
-         oob_thread_pool.min_threads="1"
-         oob_thread_pool.max_threads="8"
-         oob_thread_pool.keep_alive_time="5000"
-         oob_thread_pool.queue_enabled="false"
-         oob_thread_pool.queue_max_size="100"
-         oob_thread_pool.rejection_policy="run"/>
-
-    <TCPGOSSIP initial_hosts="127.0.0.1[12001]" num_initial_members="2" timeout="1500"/>
-    <MERGE2 min_interval="1000"
-            max_interval="3000"/>
-    <FD_SOCK/>
-    <FD timeout="3000" max_tries="3"/>
-    <VERIFY_SUSPECT timeout="1500"/>
-    <BARRIER/>
-    <pbcast.NAKACK use_mcast_xmit="false"
-                   exponential_backoff="500"
-                   discard_delivered_msgs="true"/>
-    <UNICAST2 />
-    <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
-                   max_bytes="4M"/>
-    <pbcast.GMS print_local_addr="true" join_timeout="3000"
-
-                view_bundling="true"/>
-    <UFC max_credits="2M"
-         min_threshold="0.4"/>
-    <MFC max_credits="2M"
-         min_threshold="0.4"/>
-    <FRAG2 frag_size="60K"/>
-    <!--<pbcast.STATE_TRANSFER/>-->
+    <TCPGOSSIP initial_hosts="127.0.0.1[12001]" timeout="1500"/>
+    <MERGE2/>
+    <FD/>
+    <VERIFY_SUSPECT/>
+    <pbcast.NAKACK2 use_mcast_xmit="false"/>
+    <UNICAST2/>
+    <pbcast.STABLE/>
+    <pbcast.GMS/>
+    <UFC/>
+    <MFC/>
+    <FRAG2/>
     <pbcast.STATE_TRANSFER/>
 </config>
