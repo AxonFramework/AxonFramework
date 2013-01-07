@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2013. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
@@ -47,15 +63,15 @@ public class RunSaga {
 
         // let's register a Command Handler that writes to System Out so we can see what happens
         commandBus.subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                             new CommandHandler<MarkToDoItemOverdueCommand>() {
-                                 @Override
-                                 public Object handle(CommandMessage<MarkToDoItemOverdueCommand> commandMessage,
-                                                      UnitOfWork unitOfWork) throws Throwable {
-                                     System.out.println(String.format("Got command to mark [%s] overdue!",
-                                                                      commandMessage.getPayload().getTodoId()));
-                                     return null;
-                                 }
-                             });
+                new CommandHandler<MarkToDoItemOverdueCommand>() {
+                    @Override
+                    public Object handle(CommandMessage<MarkToDoItemOverdueCommand> commandMessage,
+                                         UnitOfWork unitOfWork) throws Throwable {
+                        System.out.println(String.format("Got command to mark [%s] overdue!",
+                                commandMessage.getPayload().getTodoId()));
+                        return null;
+                    }
+                });
 
         // The Saga will schedule some deadlines in our sample
         final ScheduledExecutorService executorService = newSingleThreadScheduledExecutor();
@@ -71,7 +87,7 @@ public class RunSaga {
 
         // Sagas instances are managed and tracked by a SagaManager.
         AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(sagaRepository, sagaFactory,
-                                                                    eventBus, ToDoSaga.class);
+                eventBus, ToDoSaga.class);
 
         // and we need to subscribe the Saga Manager to the Event Bus
         sagaManager.subscribe();

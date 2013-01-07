@@ -1,5 +1,5 @@
-package org.axonframework.quickstart;/*
- * Copyright (c) 2010-2012. Axon Framework
+/*
+ * Copyright (c) 2010-2013. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@ package org.axonframework.quickstart;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -61,9 +63,9 @@ public class RunBasicCommandHandling {
 
         // Register the Command Handlers with the command bus by subscribing to the name of the command
         commandBus.subscribe(CreateToDoItemCommand.class.getName(),
-                             new CreateToDoCommandHandler(repository));
+                new CreateToDoCommandHandler(repository));
         commandBus.subscribe(MarkCompletedCommand.class.getName(),
-                             new MarkCompletedCommandHandler(repository));
+                new MarkCompletedCommandHandler(repository));
 
         // We register an event listener to see which events are created
         eventBus.subscribe(new ToDoEventListener());
