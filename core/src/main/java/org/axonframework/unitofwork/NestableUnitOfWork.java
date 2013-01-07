@@ -124,7 +124,10 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
         logger.debug("Starting Unit Of Work.");
         if (isStarted) {
             throw new IllegalStateException("UnitOfWork is already started");
-        } else if (CurrentUnitOfWork.isStarted()) {
+        }
+
+        doStart();
+        if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
             this.outerUnitOfWork = CurrentUnitOfWork.get();
             if (outerUnitOfWork instanceof NestableUnitOfWork) {
@@ -136,7 +139,6 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
         logger.debug("Registering Unit Of Work as CurrentUnitOfWork");
         CurrentUnitOfWork.set(this);
         isStarted = true;
-        doStart();
     }
 
     @Override
@@ -153,6 +155,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
      * Performs logic required when starting this UnitOfWork instance.
      */
     protected abstract void doStart();
+
     /**
      * Executes the logic required to commit this unit of work.
      */
