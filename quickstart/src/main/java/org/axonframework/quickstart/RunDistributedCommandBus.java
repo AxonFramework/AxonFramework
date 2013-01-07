@@ -17,9 +17,9 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -28,7 +28,6 @@ import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
 
@@ -72,9 +71,8 @@ public class RunDistributedCommandBus {
         // Setup the distributed command bus using the connector and the routing strategy
         DistributedCommandBus commandBus = new DistributedCommandBus(connector);
 
-        // Register the Command Handlers with the command bus by subscribing to the name of the command
-        commandBus.subscribe(CreateToDoItemCommand.class.getName(), new CreateToDoLoggingCommandHandler());
-        commandBus.subscribe(MarkCompletedCommand.class.getName(), new MarkCompletedLoggingCommandHandler());
+        // Register the Command Handlers with the command bus using the annotated methods of the object.
+        AnnotationCommandHandlerAdapter.subscribe(new ToDoLoggingCommandHandler(), commandBus);
 
         // Start the connection to the distributed command bus
         connector.connect(loadFactor);
@@ -89,20 +87,20 @@ public class RunDistributedCommandBus {
         }
     }
 
-    private static Integer determineNumberOfCommandLoops() {
+    public static Integer determineNumberOfCommandLoops() {
         Integer numberOfLoops = readNumberFromCommandlinePlusDefault("Please enter the number of times to send commands", 1);
         System.out.println(String.format("Sending %d times the commands to the cluster.", numberOfLoops));
         return numberOfLoops;
     }
 
-    private static Integer determineLoadFactor() {
+    public static Integer determineLoadFactor() {
         Integer loadFactor = readNumberFromCommandlinePlusDefault("Please enter the load factor to join with", 100);
         System.out.println(String.format("Using a load factor %d when connecting to the cluster.", loadFactor));
         return loadFactor;
     }
 
 
-    private static Integer readNumberFromCommandlinePlusDefault(String message, int defaultValue) {
+    public static Integer readNumberFromCommandlinePlusDefault(String message, int defaultValue) {
         Scanner scanner = new Scanner(System.in);
         Integer numberOfLoops = null;
         while (numberOfLoops == null) {
@@ -122,26 +120,18 @@ public class RunDistributedCommandBus {
     }
 
     /* Handlers used to log the incoming commands */
-    public static class CreateToDoLoggingCommandHandler implements CommandHandler<CreateToDoItemCommand> {
+    public static class ToDoLoggingCommandHandler {
         private AtomicInteger numberOfReceivedCommands = new AtomicInteger(0);
 
-        @Override
-        public Object handle(CommandMessage<CreateToDoItemCommand> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+        @CommandHandler
+        public void handle(CreateToDoItemCommand commandMessage) {
             int commandCounter = numberOfReceivedCommands.incrementAndGet();
-            System.out.println(String.format("[%d] Received a Create todo item command with id: %s", commandCounter, commandMessage.getPayload().getTodoId()));
-            return null;
+            System.out.println(String.format("[%d] Received a Create todo item command with id: %s", commandCounter, commandMessage.getTodoId()));
+        }
+
+        @CommandHandler
+        public void handle(MarkCompletedCommand commandMessage) {
+            System.out.println(String.format("Received a Mark completed command with id: %s", commandMessage.getTodoId()));
         }
     }
-
-    public static class MarkCompletedLoggingCommandHandler implements CommandHandler<MarkCompletedCommand> {
-        private AtomicInteger numberOfReceivedCommands = new AtomicInteger(0);
-
-        @Override
-        public Object handle(CommandMessage<MarkCompletedCommand> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-            int commandCounter = numberOfReceivedCommands.incrementAndGet();
-            System.out.println(String.format("[%d] Received a Mark completed command with id: %s", commandCounter, commandMessage.getPayload().getTodoId()));
-            return null;
-        }
-    }
-
 }
