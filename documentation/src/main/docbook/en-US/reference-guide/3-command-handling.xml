@@ -857,7 +857,7 @@ try {
             instances of Command Buses in different JVM's to act as one. Commands dispatched on one
             JVM's Command Bus should be seamlessly transported to a Command Handler in another JVM
             while sending back any results.</para>
-        <para>That's where the <code>DistributedCommandBus</code> comes in. Unlike the the other
+        <para>That's where the <code>DistributedCommandBus</code> comes in. Unlike the other
                 <code>CommandBus</code> implementations, the <code>DistributedCommandBus</code> does
             not invoke any handlers at all. All it does is form a "bridge" between Command Bus
             implementations on different JVM's. Each instance of the
@@ -880,7 +880,7 @@ try {
                 <para>The distributed command bus is not part of the Axon Framework Core module, but
                     in the <emphasis>axon-distributed-commandbus</emphasis> module. If you use
                     Maven, make sure you have the appropriate dependencies set. The groupId and
-                    version are identifical to those of the Core module. </para>
+                    version are identical to those of the Core module. </para>
             </note>
         </para>
         <para>The <code>DistributedCommandBus</code> relies on two components: a
@@ -966,12 +966,12 @@ DistributedCommandBus commandBus = new DistributedCommandBus(connector);
 
 // on one node:
 connector.connect(50);
-commandBus.subscribe(CommandType.class, handler);
+commandBus.subscribe(CommandType.class.getName(), handler);
 
 // on another node with more CPU:
 connector.connect(150);
-commandBus.subscribe(CommandType.class, handler);
-commandBus.subscribe(AnotherCommandType.class, handler2);
+commandBus.subscribe(CommandType.class.getName(), handler);
+commandBus.subscribe(AnotherCommandType.class.getName(), handler2);
 
 // from now on, just deal with commandBus as if it is local...</programlisting>
             <note>
