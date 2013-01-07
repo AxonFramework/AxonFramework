@@ -1,5 +1,5 @@
-package org.axonframework.quickstart;/*
- * Copyright (c) 2010-2012. Axon Framework
+/*
+ * Copyright (c) 2010-2013. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@ package org.axonframework.quickstart;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
@@ -30,8 +32,8 @@ public class CommandGenerator {
     public static void sendCommands(CommandGateway commandGateway) {
         final String itemId1 = UUID.randomUUID().toString();
         final String itemId2 = UUID.randomUUID().toString();
-        commandGateway.send(new CreateToDoItemCommand(itemId1, "Check if it really works!"));
-        commandGateway.send(new CreateToDoItemCommand(itemId2, "Think about the next steps!"));
-        commandGateway.send(new MarkCompletedCommand(itemId1));
+        commandGateway.sendAndWait(new CreateToDoItemCommand(itemId1, "Check if it really works!"));
+        commandGateway.sendAndWait(new CreateToDoItemCommand(itemId2, "Think about the next steps!"));
+        commandGateway.sendAndWait(new MarkCompletedCommand(itemId1));
     }
 }

@@ -16,6 +16,8 @@
 
 package org.axonframework.quickstart.api;
 
+import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+
 /**
  * Command used to create a new ToDoItem
  *
@@ -23,6 +25,7 @@ package org.axonframework.quickstart.api;
  */
 public class CreateToDoItemCommand {
 
+    @TargetAggregateIdentifier
     private final String todoId;
     private final String description;
 
