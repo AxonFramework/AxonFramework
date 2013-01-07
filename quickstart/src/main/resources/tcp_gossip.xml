@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2010-2012. Axon Framework
+  ~ Copyright (c) 2010-2013. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@
     <pbcast.NAKACK use_mcast_xmit="false"
                    exponential_backoff="500"
                    discard_delivered_msgs="true"/>
+    <UNICAST2 />
     <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
                    max_bytes="4M"/>
     <pbcast.GMS print_local_addr="true" join_timeout="3000"
