@@ -34,9 +34,6 @@
             <constructor-arg value="async"/>
             <constructor-arg ref="asyncExecutor"/>
             <constructor-arg>
-                <bean class="org.axonframework.unitofwork.NoTransactionManager"/>
-            </constructor-arg>
-            <constructor-arg>
                 <bean class="org.axonframework.eventhandling.async.FullConcurrencyPolicy"/>
             </constructor-arg>
         </bean>

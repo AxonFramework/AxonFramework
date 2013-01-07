@@ -30,7 +30,6 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.AsynchronousCluster;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
-import org.axonframework.unitofwork.NoTransactionManager;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
@@ -54,8 +53,7 @@ public class RunClusteringEventBus {
 
         // we initialize the asynchronous cluster. We don't need transactions (NoTransactionManager) and allow all
         // events to be handled concurrently (FullConcurrencyPolicy).
-        Cluster asyncCluster = new AsynchronousCluster("async", executor, new NoTransactionManager(),
-                                                       new FullConcurrencyPolicy());
+        Cluster asyncCluster = new AsynchronousCluster("async", executor, new FullConcurrencyPolicy());
         // and we initialize a simple cluster
         Cluster standardCluster = new SimpleCluster("simple");
 
