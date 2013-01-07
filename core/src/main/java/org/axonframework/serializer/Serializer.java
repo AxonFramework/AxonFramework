@@ -89,4 +89,12 @@ public interface Serializer {
      * @return The type identifier of the object
      */
     SerializedType typeForClass(Class type);
+
+    /**
+     * Returns the converter factory used by this Serializer to convert between serialized representations. Generally,
+     * this ConverterFactory depends on the type of data the serializer serializes to.
+     *
+     * @return the converter factory used by this Serializer
+     */
+    ConverterFactory getConverterFactory();
 }

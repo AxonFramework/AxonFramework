@@ -16,6 +16,9 @@
 
 package org.axonframework.contextsupport.spring;
 
+import org.axonframework.serializer.ChainingConverterFactory;
+import org.axonframework.serializer.ConverterFactory;
+import org.axonframework.serializer.Serializer;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -23,6 +26,8 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
+
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBeanWithFallback;
 
 /**
  * BeanDefinitionParser that parses UpcasterChain elements.
@@ -33,6 +38,7 @@ import org.w3c.dom.Element;
 public class UpcasterChainBeanDefinitionParser {
 
     private static final String CONVERTER_FACTORY_ATTRIBUTE = "converter-factory";
+    private static final String SERIALIZER_ATTRIBUTE = "serializer";
     private static final String STRATEGY_ATTRIBUTE = "strategy";
     private static final String STRATEGY_EAGER = "eager";
 
@@ -44,6 +50,21 @@ public class UpcasterChainBeanDefinitionParser {
      * @return The BeanDefinition representing the UpcasterChainBean
      */
     public BeanDefinition parse(Element element, ParserContext parserContext) {
+        return parse(element, parserContext, createAutowiredBeanWithFallback(new ChainingConverterFactory(),
+                                                                             ConverterFactory.class,
+                                                                             Serializer.class));
+    }
+
+    /**
+     * Parses the given <code>element</code>, using the given <code>defaultSerializer</code> if none is explicitly
+     * configured.
+     *
+     * @param element           The element in the application context representing the UpcasterChain
+     * @param parserContext     The parserContext from the application context
+     * @param defaultSerializer The serializer (definition) to use when none is explicitly configured
+     * @return The BeanDefinition representing the UpcasterChainBean
+     */
+    public BeanDefinition parse(Element element, ParserContext parserContext, Object defaultSerializer) {
         String strategy = element.getAttribute(STRATEGY_ATTRIBUTE);
         Class<?> chainType = LazyUpcasterChain.class;
         if (STRATEGY_EAGER.equals(strategy)) {
@@ -51,11 +72,16 @@ public class UpcasterChainBeanDefinitionParser {
         }
         BeanDefinition bd = BeanDefinitionBuilder.genericBeanDefinition(chainType)
                                                  .getBeanDefinition();
-        bd.getConstructorArgumentValues().addGenericArgumentValue(parserContext.getDelegate()
-                                                                               .parseListElement(element, bd));
+        bd.getConstructorArgumentValues().addIndexedArgumentValue(1, parserContext.getDelegate()
+                                                                                  .parseListElement(element, bd));
         if (element.hasAttribute(CONVERTER_FACTORY_ATTRIBUTE)) {
             bd.getConstructorArgumentValues()
               .addGenericArgumentValue(new RuntimeBeanReference(element.getAttribute(CONVERTER_FACTORY_ATTRIBUTE)));
+        } else if (element.hasAttribute(SERIALIZER_ATTRIBUTE)) {
+            bd.getConstructorArgumentValues().addGenericArgumentValue(new RuntimeBeanReference(element.getAttribute(
+                    SERIALIZER_ATTRIBUTE)));
+        } else {
+            bd.getConstructorArgumentValues().addIndexedArgumentValue(0, defaultSerializer);
         }
         return bd;
     }

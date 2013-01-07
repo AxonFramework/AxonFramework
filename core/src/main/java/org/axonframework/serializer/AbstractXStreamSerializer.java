@@ -302,6 +302,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      *
      * @return the ConverterFactory used by this serialized
      */
+    @Override
     public ConverterFactory getConverterFactory() {
         return converterFactory;
     }
@@ -335,6 +336,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             writer.setValue(source.toString());
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
             try {

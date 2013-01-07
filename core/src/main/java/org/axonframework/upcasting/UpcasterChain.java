@@ -37,8 +37,9 @@ public interface UpcasterChain {
      * Pass the given <code>serializedObject</code> through the chain of upcasters. The result is a list of zero or
      * more serializedObjects representing the latest revision of the payload object.
      *
-     * @param serializedObject the serialized object to upcast
+     * @param serializedObject  the serialized object to upcast
+     * @param upcastingContext the container of properties of the Message transporting the object being upcast
      * @return the upcast SerializedObjects
      */
-    List<SerializedObject> upcast(SerializedObject serializedObject);
+    List<SerializedObject> upcast(SerializedObject serializedObject, UpcastingContext upcastingContext);
 }

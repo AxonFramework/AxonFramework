@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.axonframework.upcasting.UpcastingContext;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
@@ -131,7 +132,8 @@ public class MongoEventStoreTest_DocPerCommit {
     public void testStoreAndLoadEvents_WithUpcaster() {
         assertNotNull(testSubject);
         UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
-        when(mockUpcasterChain.upcast(isA(SerializedObject.class))).thenAnswer(new Answer<Object>() {
+        when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
+                .thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];

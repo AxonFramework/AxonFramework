@@ -19,6 +19,7 @@ package org.axonframework.upcasting;
 import org.axonframework.serializer.ConverterFactory;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
+import org.axonframework.serializer.Serializer;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,13 +46,24 @@ public class SimpleUpcasterChain extends AbstractUpcasterChain {
 
     /**
      * Initializes the UpcasterChain with given <code>upcasters</code> and a {@link
-     * org.axonframework.serializer.ChainingConverterFactory} to
-     * convert between content types.
+     * org.axonframework.serializer.ChainingConverterFactory} to convert between content types.
      *
      * @param upcasters the upcasters to form the chain
      */
     public SimpleUpcasterChain(List<Upcaster> upcasters) {
         super(upcasters);
+    }
+
+    /**
+     * Initializes the UpcasterChain with given <code>serializer</code> and <code>upcasters</code>. The
+     * <code>serializer</code> is used to fetch the ConverterFactory instance it uses. This ConverterFactory is
+     * generally adapted to the exact form of serialization used by the serializer.
+     *
+     * @param serializer The serializer used to serialize the data
+     * @param upcasters  The upcasters to form this chain
+     */
+    public SimpleUpcasterChain(Serializer serializer, List<Upcaster> upcasters) {
+        super(serializer.getConverterFactory(), upcasters);
     }
 
     /**
@@ -77,9 +89,10 @@ public class SimpleUpcasterChain extends AbstractUpcasterChain {
 
     @Override
     protected <T> List<SerializedObject<?>> doUpcast(Upcaster<T> upcaster, SerializedObject<?> sourceObject,
-                                                     List<SerializedType> targetTypes) {
+                                                     List<SerializedType> targetTypes,
+                                                     UpcastingContext context) {
         SerializedObject<T> converted = ensureCorrectContentType(sourceObject,
                                                                  upcaster.expectedRepresentationType());
-        return upcaster.upcast(converted, targetTypes);
+        return upcaster.upcast(converted, targetTypes, context);
     }
 }

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.async;
 
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventListener;
@@ -27,6 +28,7 @@ import org.mockito.stubbing.*;
 
 import java.util.concurrent.Executor;
 
+import static org.axonframework.domain.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -51,8 +53,23 @@ public class AsynchronousClusterTest {
             }
         }).when(executor).execute(isA(Runnable.class));
         testSubject = new AsynchronousCluster("async", executor, mockTransactionManager,
-                                              new SequentialPerAggregatePolicy(), 10,
-                                              RetryPolicy.SKIP_FAILED_EVENT, 100);
+                                              new SequentialPerAggregatePolicy(),
+                                              new DefaultErrorHandler(RetryPolicy.proceed()));
+    }
+
+    @Test
+    public void testSimpleConfig_ProceedOnFailure() {
+        testSubject = new AsynchronousCluster("async", new DirectExecutor(), new SequentialPerAggregatePolicy());
+
+        EventListener mockEventListener = mock(EventListener.class);
+        testSubject.subscribe(mockEventListener);
+
+        doThrow(new MockException()).when(mockEventListener).handle(isA(EventMessage.class));
+
+        testSubject.publish(asEventMessage(new Object()));
+        testSubject.publish(asEventMessage(new Object()));
+
+        verify(mockEventListener, times(2)).handle(isA(EventMessage.class));
     }
 
     @Test

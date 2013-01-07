@@ -114,6 +114,11 @@ public class JavaSerializer implements Serializer {
         return new SimpleSerializedType(type.getName(), revisionOf(type));
     }
 
+    @Override
+    public ConverterFactory getConverterFactory() {
+        return converterFactory;
+    }
+
     private String revisionOf(Class<?> type) {
         return revisionResolver.revisionOf(type);
     }

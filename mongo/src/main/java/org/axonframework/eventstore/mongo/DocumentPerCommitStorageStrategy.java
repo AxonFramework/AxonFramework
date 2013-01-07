@@ -23,7 +23,9 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
+import org.axonframework.serializer.LazyDeserializingObject;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
@@ -32,6 +34,7 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
+import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
@@ -211,15 +214,26 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
                                                         UpcasterChain upcasterChain) {
             List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
-            for (EventEntry eventEntry : eventEntries) {
-                List<SerializedObject> upcastObjects = upcasterChain.upcast(eventEntry.getPayload());
+            for (final EventEntry eventEntry : eventEntries) {
+                final EntryBasedUpcastingContext context = new EntryBasedUpcastingContext(this,
+                                                                                          eventEntry,
+                                                                                          eventSerializer);
+                List<SerializedObject> upcastObjects = upcasterChain.upcast(
+                        eventEntry.getPayload(), context);
                 for (SerializedObject upcastObject : upcastObjects) {
-                    messages.add(new SerializedDomainEventMessage(
+                    DomainEventMessage message = new SerializedDomainEventMessage(
                             new UpcastSerializedDomainEventData(
                                     new DomainEventData(this, eventEntry),
                                     actualAggregateIdentifier == null ? aggregateIdentifier : actualAggregateIdentifier,
                                     upcastObject),
-                            eventSerializer));
+                            eventSerializer);
+
+                    // prevents duplicate deserialization of meta data when it has already been access during upcasting
+                    if (context.getSerializedMetaData().isDeserialized()) {
+                        message = message.withMetaData(context.getSerializedMetaData().getObject());
+                    }
+
+                    messages.add(message);
                 }
             }
             return messages;
@@ -311,6 +325,48 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             @Override
             public SerializedObject getPayload() {
                 return eventEntry.getPayload();
+            }
+        }
+
+        private static class EntryBasedUpcastingContext implements UpcastingContext {
+
+            private final EventEntry eventEntry;
+            private final Object aggregateIdentifier;
+            private final LazyDeserializingObject<MetaData> serializedMetaData;
+
+            public EntryBasedUpcastingContext(CommitEntry commitEntry, EventEntry eventEntry, Serializer serializer) {
+                this.eventEntry = eventEntry;
+                this.aggregateIdentifier = commitEntry.getAggregateIdentifier();
+                this.serializedMetaData = new LazyDeserializingObject<MetaData>(eventEntry.getMetaData(), serializer);
+            }
+
+            @Override
+            public String getMessageIdentifier() {
+                return eventEntry.getEventIdentifier();
+            }
+
+            @Override
+            public Object getAggregateIdentifier() {
+                return aggregateIdentifier;
+            }
+
+            @Override
+            public Long getSequenceNumber() {
+                return eventEntry.getSequenceNumber();
+            }
+
+            @Override
+            public DateTime getTimestamp() {
+                return eventEntry.getTimestamp();
+            }
+
+            @Override
+            public MetaData getMetaData() {
+                return serializedMetaData.getObject();
+            }
+
+            public LazyDeserializingObject<MetaData> getSerializedMetaData() {
+                return serializedMetaData;
             }
         }
     }

@@ -21,10 +21,12 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.junit.*;
 import org.mockito.*;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -33,17 +35,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.mockito.AdditionalMatchers.*;
+import static org.mockito.AdditionalMatchers.gt;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.eq;
 
 /**
  * @author Allard Buijze
  */
 @SuppressWarnings("unchecked")
-public class EventProcessingSchedulerTest {
+public class EventProcessorTest {
 
-    private EventProcessingScheduler<EventMessage> testSubject;
+    private EventProcessor testSubject;
     private TransactionManager mockTransactionManager;
 
     @Before
@@ -53,34 +54,23 @@ public class EventProcessingSchedulerTest {
     }
 
     @Test
-    public void testEventProcessingSchedule_EventBatchRetried() {
-        MockEventListener listener = executeEventProcessing(RetryPolicy.RETRY_TRANSACTION, 50, 5000);
+    public void testEventProcessingSchedule_EventRetried() {
+        MockEventListener listener = executeEventProcessing(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS));
 
-        // each event is handled twice, since we retry the entire batch
-        assertEquals(5, listener.handledEvents.size());
-        verify(mockTransactionManager, times(2)).startTransaction();
-        verify(mockTransactionManager, times(1)).commitTransaction(any());
+        verify(mockTransactionManager, times(4)).startTransaction();
+        verify(mockTransactionManager, times(3)).commitTransaction(any());
         verify(mockTransactionManager, times(1)).rollbackTransaction(any());
-    }
-
-    @Test
-    public void testEventProcessingSchedule_SingleEventRetried() {
-        MockEventListener listener = executeEventProcessing(RetryPolicy.RETRY_LAST_EVENT, 50, 5000);
-
-        // each event is handled twice, since we retry the entire batch
         assertEquals(4, listener.handledEvents.size());
-        verify(mockTransactionManager, times(2)).startTransaction();
-        verify(mockTransactionManager, times(2)).commitTransaction(any());
     }
 
     @Test
     public void testEventProcessingSchedule_FailedEventIgnored() {
-        MockEventListener listener = executeEventProcessing(RetryPolicy.SKIP_FAILED_EVENT, 50, 5000);
+        MockEventListener listener = executeEventProcessing(RetryPolicy.proceed());
 
         // each event is handled twice, since we retry the entire batch
         assertEquals(3, listener.handledEvents.size());
-        verify(mockTransactionManager, times(2)).startTransaction();
-        verify(mockTransactionManager, times(2)).commitTransaction(any());
+        verify(mockTransactionManager, times(3)).startTransaction();
+        verify(mockTransactionManager, times(3)).commitTransaction(any());
     }
 
     @Test
@@ -89,14 +79,10 @@ public class EventProcessingSchedulerTest {
         EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
-        testSubject = new EventProcessingScheduler<EventMessage>(mockTransactionManager, mockExecutorService,
-                                                                 new NullShutdownCallback(),
-                                                                 RetryPolicy.RETRY_TRANSACTION, 2, 500) {
-            @Override
-            protected void doHandle(EventMessage event) {
-                listener.handle(event);
-            }
-        };
+        testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
+                                         new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
+                                         new DefaultUnitOfWorkFactory(mockTransactionManager),
+                                         Collections.singleton(listener));
 
         doThrow(new MockException()).doNothing().when(listener).handle(event1);
 
@@ -112,6 +98,8 @@ public class EventProcessingSchedulerTest {
         inOrder.verify(mockTransactionManager).rollbackTransaction(any());
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event1);
+        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event2);
         inOrder.verify(mockTransactionManager).commitTransaction(any());
     }
@@ -122,15 +110,10 @@ public class EventProcessingSchedulerTest {
         EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
         ExecutorService mockExecutorService = mock(ExecutorService.class);
-        testSubject = new EventProcessingScheduler<EventMessage>(mockTransactionManager, mockExecutorService,
-                                                                 new NullShutdownCallback(),
-                                                                 RetryPolicy.RETRY_TRANSACTION, 50, 500) {
-            @Override
-            protected void doHandle(EventMessage event) {
-                listener.handle(event);
-            }
-        };
-
+        testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
+                                         new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
+                                         new DefaultUnitOfWorkFactory(mockTransactionManager),
+                                         Collections.singleton(listener));
         doThrow(new MockException()).doNothing().when(listener).handle(event1);
         testSubject.scheduleEvent(event1);
         testSubject.scheduleEvent(event2);
@@ -149,6 +132,8 @@ public class EventProcessingSchedulerTest {
         inOrder.verify(mockTransactionManager).rollbackTransaction(any());
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event1);
+        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event2);
         inOrder.verify(mockTransactionManager).commitTransaction(any());
     }
@@ -161,43 +146,37 @@ public class EventProcessingSchedulerTest {
         EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
-        ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
-        testSubject = new EventProcessingScheduler<EventMessage>(mockTransactionManager, mockExecutorService,
-                                                                 new NullShutdownCallback(),
-                                                                 RetryPolicy.RETRY_TRANSACTION, 50, 500) {
-            @Override
-            protected void doHandle(EventMessage event) {
-                listener.handle(event);
-            }
-        };
+        ExecutorService mockExecutorService = mock(ExecutorService.class);
+        testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
+                                         new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
+                                         new DefaultUnitOfWorkFactory(mockTransactionManager),
+                                         Collections.singleton(listener));
 
         doThrow(new MockException()).doReturn(new Object()).when(mockTransactionManager).startTransaction();
         testSubject.scheduleEvent(event1);
         testSubject.scheduleEvent(event2);
         testSubject.run();
-        verify(mockExecutorService).schedule(eq(testSubject), gt(400L), eq(TimeUnit.MILLISECONDS));
+        verify(mockExecutorService, times(2)).execute(eq(testSubject));
+        verify(listener, never()).handle(event1);
         // since the scheduler is a mock, we simulate the execution:
         testSubject.run();
         InOrder inOrder = inOrder(listener, mockTransactionManager);
         inOrder.verify(mockTransactionManager, times(2)).startTransaction();
         // make sure the first event is not skipped by verifying that event1 is handled
         inOrder.verify(listener).handle(event1);
+        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event2);
         inOrder.verify(mockTransactionManager).commitTransaction(any());
     }
 
-    private MockEventListener executeEventProcessing(RetryPolicy policy, final int batchSize, final int retryInterval) {
+    private MockEventListener executeEventProcessing(RetryPolicy policy) {
         ExecutorService mockExecutorService = mock(ExecutorService.class);
         final MockEventListener listener = new MockEventListener();
-        testSubject = new EventProcessingScheduler<EventMessage>(mockTransactionManager, mockExecutorService,
-                                                                 new NullShutdownCallback(),
-                                                                 policy, batchSize, retryInterval) {
-            @Override
-            protected void doHandle(EventMessage event) {
-                listener.handle(event);
-            }
-        };
-
+        testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
+                                         new DefaultErrorHandler(policy),
+                                         new DefaultUnitOfWorkFactory(mockTransactionManager),
+                                         Collections.<EventListener>singleton(listener));
         doNothing().doThrow(new RejectedExecutionException()).when(mockExecutorService).execute(isA(Runnable.class));
         testSubject.scheduleEvent(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
         listener.failOnEvent = 2;
@@ -222,10 +201,10 @@ public class EventProcessingSchedulerTest {
         }
     }
 
-    private static class NullShutdownCallback implements EventProcessingScheduler.ShutdownCallback {
+    private static class NullShutdownCallback implements EventProcessor.ShutdownCallback {
 
         @Override
-        public void afterShutdown(EventProcessingScheduler scheduler) {
+        public void afterShutdown(EventProcessor scheduler) {
         }
     }
 }

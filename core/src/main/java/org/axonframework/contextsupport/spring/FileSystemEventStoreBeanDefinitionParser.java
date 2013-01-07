@@ -18,14 +18,17 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
+import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
-import java.io.File;
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBeanWithFallback;
 
 /**
  * The FileSystemEventStoreBeanDefinitionParser is responsible for parsing the <code>eventStore</code> element form the
@@ -66,20 +69,22 @@ public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBean
      */
     @Override
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+        Object defaultSerializer;
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {
-            builder.addConstructorArgReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
+            defaultSerializer = new RuntimeBeanReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
+        } else {
+            defaultSerializer = createAutowiredBeanWithFallback(new XStreamSerializer(), Serializer.class);
         }
+        builder.addConstructorArgValue(defaultSerializer);
 
         String baseDirValue = element.getAttribute(BASE_DIR_ATTRIBUTE);
-        if (!baseDirValue.endsWith("/")) {
-            baseDirValue = baseDirValue + "/";
-        }
-        SimpleEventFileResolver fileResolver = new SimpleEventFileResolver(new File(baseDirValue));
-        builder.addConstructorArgValue(fileResolver);
+        builder.addConstructorArgValue(BeanDefinitionBuilder.genericBeanDefinition(SimpleEventFileResolver.class)
+                                                            .addConstructorArgValue(baseDirValue)
+                                                            .getBeanDefinition());
 
         Element upcasters = DomUtils.getChildElementByTagName(element, UPCASTERS_ELEMENT);
         if (upcasters != null) {
-            BeanDefinition bd = upcasterChainParser.parse(upcasters, parserContext);
+            BeanDefinition bd = upcasterChainParser.parse(upcasters, parserContext, defaultSerializer);
             builder.addPropertyValue("upcasterChain", bd);
         }
     }

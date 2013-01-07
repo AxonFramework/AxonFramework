@@ -40,10 +40,10 @@
     </bean>
 
     <!-- We use a stub event store for simplicity -->
-    <bean id="eventStore" class="org.axonframework.quickstart.RunEventReplayWithSpring$StubEventStore"/>
+    <bean id="eventStore" class="org.axonframework.quickstart.RunEventReplay$StubEventStore"/>
 
     <!-- And we define our event listener beans -->
-    <bean class="org.axonframework.quickstart.RunEventReplayWithSpring$ThreadPrintingEventListener"/>
-    <bean class="org.axonframework.quickstart.RunEventReplayWithSpring$AnotherThreadPrintingEventListener"/>
+    <bean class="org.axonframework.quickstart.RunEventReplay$ThreadPrintingEventListener"/>
+    <bean class="org.axonframework.quickstart.RunEventReplay$AnotherThreadPrintingEventListener"/>
 
 </beans>

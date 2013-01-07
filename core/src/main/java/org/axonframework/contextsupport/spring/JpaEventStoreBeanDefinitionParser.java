@@ -18,12 +18,16 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.eventstore.jpa.JpaEventStore;
-import org.springframework.beans.factory.config.BeanDefinition;
+import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
+
+import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBeanWithFallback;
 
 /**
  * The JpaEventStoreBeanDefinitionParser is responsible for parsing the <code>eventStore</code> element form the Axon
@@ -70,9 +74,13 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
                     BeanDefinitionBuilder.genericBeanDefinition(ContainerManagedEntityManagerProvider.class)
                                          .getBeanDefinition());
         }
+        Object serializer;
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {
-            builder.addConstructorArgReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
+            serializer = new RuntimeBeanReference(element.getAttribute(EVENT_SERIALIZER_ATTRIBUTE));
+        } else {
+            serializer = createAutowiredBeanWithFallback(new XStreamSerializer(), Serializer.class);
         }
+        builder.addConstructorArgValue(serializer);
         if (element.hasAttribute(DATA_SOURCE_ATTRIBUTE)) {
             builder.addPropertyReference("dataSource", element.getAttribute(DATA_SOURCE_ATTRIBUTE));
         }
@@ -88,8 +96,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         }
         Element upcasters = DomUtils.getChildElementByTagName(element, UPCASTERS_ELEMENT);
         if (upcasters != null) {
-            BeanDefinition bd = upcasterChainParser.parse(upcasters, parserContext);
-            builder.addPropertyValue("upcasterChain", bd);
+            builder.addPropertyValue("upcasterChain", upcasterChainParser.parse(upcasters, parserContext, serializer));
         }
     }
 
