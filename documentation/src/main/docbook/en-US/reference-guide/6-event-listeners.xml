@@ -294,7 +294,7 @@ public class SubListener extends TopListener {
             provides the <code>AsynchronousCluster</code> implementation, which dispatches Events to
             Event Listeners asynchronously from the thread that published them to the
             cluster.</para>
-        <para>The <code>AsynchronousCluster</code> needs is an <code>Executor</code>, for example a
+        <para>The <code>AsynchronousCluster</code> needs an <code>Executor</code>, for example a
                 <code>ThreadPoolExecutor</code> and a <code>SequencingPolicy</code>, a definition of
             which events may be processed in parallel, and which sequentially. Finally a
                 <code>TransactionManager</code> can be provided to process events within a
@@ -309,9 +309,9 @@ public class SubListener extends TopListener {
             to schedule processing in the cases of delayed retries.</para>
         <para>The <code>SequencingPolicy</code> defines whether events must be handled sequentially,
             in parallel or a combination of both. Policies return a sequence identifier of a given
-            event. If two events have the same sequence identifier, this means that they must be
-            handled sequentially be the event handler. A <code>null</code> sequence identifier means
-            the event may be processed in parallel with any other event. </para>
+            event. If the policy returns an equal itentifier for two events, this means that they
+            must be handled sequentially be the event handler. A <code>null</code> sequence
+            identifier means the event may be processed in parallel with any other event. </para>
         <para>Axon provides a number of common policies you can use: <itemizedlist>
                 <listitem>
                     <para>The <code>FullConcurrencyPolicy</code> will tell Axon that this event
@@ -345,53 +345,59 @@ public class SubListener extends TopListener {
                 <code>AsynchronousCluster</code> to add transactional processing of events. To
             optimize processing, events can be processed in small batches inside a transaction. When
             using Spring, you can use the <code>SpringTransactionManager</code> to manage
-            transactions with Spring's <code>PlatformTransactionManager</code> .</para>
+            transactions with Spring's <code>PlatformTransactionManager</code> . For more
+            customization of transactional behavior, you can alternatively configure a
+                <code>UnitOfWorkFactory</code>. That factory will be used to generate the Unit of
+            Work wrapping the Event Handling process. By default, a
+                <code>DefaultUnitOfWorkFactory</code> is used, which uses the provided
+                <code>TransactionManager</code>, if any, to manage the backing Transactions.</para>
         <simplesect>
             <title>Error handling</title>
-            <para>By default, events that raise an exception, are retried if that exception is not
-                explicitly non-transient. In some cases, applications require a different approach.
-                You can specify the <code>RetryPolicy</code> to use in the constructor of the
-                    <code>AsynchronousCluster</code>. There are three policies, each for a specific
-                scenario: <itemizedlist>
+            <para>The <code>AsynchronousCluster</code> uses an <code>ErrorHandler</code> to decide
+                what needs to be done when an Event Listener or Unit of Work throws an Exception.
+                The default behavior depends on the availability of a TransactionManager. If a
+                    <code>TransactionManager</code> is provided, the default
+                    <code>ErrorHandler</code> will request a rollback and retry the Event Handling
+                after 2 seconds. If no <code>TransactionManager</code> is provided, the defautl
+                    <code>ErrorHandler</code> will simply log the Exception and proceed with the
+                next Event Listener, guaranteeing that each Event Listener will receive each Event.
+                In any situation, a rollback will <emphasis>not</emphasis> be requested when the
+                exception is explicitly non-transient (i.e. is caused by an
+                    <code>AxonNonTransientException</code>).</para>
+            <para>You can change this behavior by configuring another
+                    <emphasis>ErrorHandler</emphasis>, or by creating your own. The ErrorHandler
+                interface has a single method, which provides the Exception that occurred, the
+                EventMessage being processed and a reference to the EventListener throwing the
+                exception. The return value is of type RetryPolicy. The RetryPolicy tells the Event
+                Processor what it needs to do with the failure. There are three static methods on
+                RetryPolicy for the most common scenarios:</para>
+            <para><itemizedlist>
                     <listitem>
-                        <para><code>RETRY_TRANSACTION</code> tells the event handler scheduler that
-                            the entire transaction should be retried. It will reschedule all the
-                            events in the current transaction for processing. This policy is
-                            suitable when the event listener processes events to a transactional
-                            data source that rolls back an entire transaction. </para>
+                        <para><code>retryAfter(int timeout, TimeUnit unit)</code> tells the
+                            scheduler that the Unit of Work should be rolled back, and the Event
+                            Message should be rescheduled for handling after the given amount of
+                            time. This means that some Event Listeners may have received the Event
+                            more than once. </para>
                     </listitem>
                     <listitem>
-                        <para><code>RETRY_LAST_EVENT</code> is the policy that tells the scheduler
-                            to only retry the last event in the transaction. This is suitable if the
-                            underlying data source does not support transactions or if the
-                            transaction was committed without the last event. </para>
+                        <para><code>proceed()</code> tells the scheduler to ignore the Exception and
+                            proceed with the processing of the Event Message. This may be with the
+                            intent to skip the Event on the Event Listener, or because the
+                                <code>ErrorHandler</code> has managed to resolve the problem by
+                            retrying invoking the <code>EventHandler</code> itself.</para>
                     </listitem>
                     <listitem>
-                        <para><code>SKIP_FAILED_EVENT</code> will tell the scheduler to ignore the
-                            exception and continue processing with the next event. The event
-                            listener can still try to commit the underlying transaction to persist
-                            any changed made while processing other events in this transaction. This
-                            is the default policy. </para>
+                        <para><code>skip()</code> tells the scheduler to rollback the Unit of Work
+                            and proceed with the next Event Message. If all Event Listeners properly
+                            support Transactions, will effectively mean that the Event is skipped
+                            altogether.</para>
                     </listitem>
-                </itemizedlist></para>
-            <para>If Event Handling fails with an explicitly non-transient exception (i.e. one that
-                indicates a problem that will not be solved without programmatic intervention), the
-                event is skipped, regardless of the <code>RetryPolicy</code> provided.</para>
-            <para>
-                <note>
-                    <title>Exceptions and guaranteed delivery to each event listener</title>
-                    <para>Multiple event listeners may be subscribed to the same cluster. If one of
-                        these throws an exception, it could prevent the publication of messages to
-                        the other listeners in the same cluster. To prevent this, the
-                        AsynchronousCluster will always publish all Event Messages to all listeners.
-                        If one or more listeners throws an exception, the first exception thrown is
-                        propagated <emphasis>after</emphasis> each of the listeners is invoked.
-                        Other exceptions are suppressed (and logged).</para>
-                </note>
-            </para>
-            <para>When the chosen policy forces a retry of event processing, the processing is
-                delayed by the number of milliseconds defined in the <code>retryInterval</code>
-                property. The default interval is 2 seconds. </para>
+                </itemizedlist>If the <code>RetryPolicy</code> you wish to use does not depend on
+                the type of <code>Exception</code>, <code>EventMessage</code> or
+                    <code>EventListener</code>, you can use the <code>DefaultErrorHandler</code> and
+                pass the desired <code>RetryPolicy</code> as its constructor parameter. It will
+                return that <code>RetryPolicy</code> on each exception, unless it requests a retry
+                of an Event that caused an explicitly non-transient exception.</para>
         </simplesect>
     </sect1>
     <sect1>
