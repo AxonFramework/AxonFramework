@@ -113,7 +113,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
         String typeIdentifier = aggregateFactory.getTypeIdentifier();
         if (!repositories.containsKey(typeIdentifier)) {
-            DisruptorRepository<T> repository = new DisruptorRepository<T>(aggregateFactory, eventStore);
+            DisruptorRepository<T> repository = new DisruptorRepository<T>(aggregateFactory, cache, eventStore);
             repositories.putIfAbsent(typeIdentifier, repository);
         }
         return repositories.get(typeIdentifier);
@@ -147,9 +147,11 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private final AggregateFactory<T> aggregateFactory;
         private final Map<T, Object> firstLevelCache = new WeakHashMap<T, Object>();
         private final String typeIdentifier;
+        private final Cache cache;
 
-        private DisruptorRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore) {
+        private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore) {
             this.aggregateFactory = aggregateFactory;
+            this.cache = cache;
             this.eventStore = eventStore;
             typeIdentifier = this.aggregateFactory.getTypeIdentifier();
         }
@@ -175,6 +177,12 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 }
             }
             if (aggregateRoot == null) {
+                Object cachedItem = cache.get(aggregateIdentifier);
+                if (cachedItem != null && aggregateFactory.getAggregateType().isInstance(cachedItem)) {
+                    aggregateRoot = aggregateFactory.getAggregateType().cast(cachedItem);
+                }
+            }
+            if (aggregateRoot == null) {
                 logger.debug("Aggregate {} not in first level cache, loading fresh one from Event Store",
                              aggregateIdentifier);
                 try {
@@ -193,6 +201,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                             e);
                 }
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
+                cache.put(aggregateIdentifier, aggregateRoot);
             }
             if (aggregateRoot != null) {
                 DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
@@ -208,6 +217,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             unitOfWork.setAggregateType(typeIdentifier);
             unitOfWork.registerAggregate(aggregate, null, null);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
+            cache.put(aggregate.getIdentifier(), aggregate);
         }
 
         private void removeFromCache(Object aggregateIdentifier) {
