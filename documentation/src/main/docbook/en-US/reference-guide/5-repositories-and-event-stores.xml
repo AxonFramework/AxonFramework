@@ -544,7 +544,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
 
     @Override
     public List&lt;SerializedObject&lt;Document>> upcast(SerializedObject&lt;Document> intermediateRepresentation,
-                                                   List&lt;SerializedType> expectedTypes) {
+                                                   List&lt;SerializedType> expectedTypes, UpcastingContext context) {
         Document administrativeDetailsUpdatedEvent = intermediateRepresentation.getData();
 
         Document addressUpdatedEvent =
@@ -652,6 +652,11 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                 to type <code>y</code>, perform the conversion and pass the converted value into the
                 requested upcaster. For performance reasons, conversion will only be performed if
                 the <code>canUpcast</code> method on the receiving upcaster yields true. </para>
+            <para>The ContentTypeConverters may depend on the type of serializer used. Attempting to
+                convert a byte[] to a dom4j Document will not make any sence unless a Serializer was
+                used that writes an event as XML. To make sure the UpcasterChain has access to the
+                serializer-specific ContentTypeConverters, you can pass a reference to the
+                serializer to the constructor of the UpcasterChain.</para>
             <tip>
                 <para>To achieve the best performance, ensure that all upcasters in the same chain
                     (where one's output is another's input) work on the same content type. </para>

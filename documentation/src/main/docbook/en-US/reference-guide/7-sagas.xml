@@ -403,6 +403,18 @@
                     Spring's interface for transaction managers. Generally you can use the same
                     transaction manager as the other components in your application (e.g.
                         <code>JpaTransactionManager</code>).</para>
+                <note>
+                    <title>Exceptions while processing Events</title>
+                    <para>Since the processing is asynchronous, Exceptions cannot be propagated to
+                        the components publishing the Event. Exceptions raised by Sagas while
+                        handling an Event are logged and discarded. When an exception occurs while
+                        persisting Saga state, the SagaManager will retry persisting the Saga at a
+                        later stage. If there are incoming Events, they are processed using the
+                        in-memory representation, re-attemtping the persistence later on.</para>
+                    <para>When shutting down the application, the SagaManager will do a final
+                        attempt to persist the Sagas to their repository, and give up if it does not
+                        succeed, allowing the application to finish the shutdown process.</para>
+                </note>
             </simplesect>
         </sect2>
         <sect2>
@@ -467,6 +479,16 @@
                 Association Values and Saga instances, respectively. The latter two arguments may
                 refer to the same cache, or to different ones. This depends on the eviction
                 requirements of your specific application.</para>
+            <simplesect>
+                <title>Spring namespace support</title>
+                <para>Spring users can use the <code>&lt;axon:cache-config></code> element to add
+                    caching behavior to a <code>&lt;axon:jpa-saga-repository></code> element. It is
+                    configured with two cache references (which may refer to the same cache): one
+                    which stores the cached Saga instances, and one that stores the
+                    associations.<programlisting>&lt;axon:jpa-saga-repository id="cachingSagaRepository">
+    &lt;axon:cache-config saga-cache="sagaCacheRef" associations-cache="associationCacheRef"/>
+&lt;/axon:jpa-saga-repository></programlisting></para>
+            </simplesect>
         </sect2>
     </sect1>
 </chapter>

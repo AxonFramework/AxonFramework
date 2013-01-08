@@ -94,6 +94,13 @@
                         parameter</para>
                 </listitem>
                 <listitem>
+                    <para>Parameters of type <code>CommandCallback</code> will have their
+                            <code>onSuccess</code> or <code>onFailure</code> invoked after the
+                        Command is handled. You may pass in more than one callback, and it may be
+                        combined with a return value. In that case, the invocations of the callback
+                        will always match with the return value (or exception).</para>
+                </listitem>
+                <listitem>
                     <para>The last two parameters may be of types <code>long</code> (or
                             <code>int</code>) and <code>TimeUnit</code>. In that case the method
                         will block at most as long as these parameters indicate. How the method
