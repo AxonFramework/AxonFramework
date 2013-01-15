@@ -53,7 +53,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
     @Test
     public void testCommandBusIsNotAutowiredWhenProvided() throws Exception {
 
-        testSubject.afterPropertiesSet();
+        testSubject.initializeAdapterFor(new Object());
 
         verify(mockApplicationContext, never()).getBeansOfType(CommandBus.class);
     }
@@ -65,7 +65,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         map.put("ignored", mockCommandBus);
         when(mockApplicationContext.getBeansOfType(CommandBus.class)).thenReturn(map);
 
-        testSubject.afterPropertiesSet();
+        testSubject.initializeAdapterFor(new Object());
 
         verify(mockApplicationContext).getBeansOfType(CommandBus.class);
     }

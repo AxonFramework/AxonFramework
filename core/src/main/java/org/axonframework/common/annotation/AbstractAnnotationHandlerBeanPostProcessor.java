@@ -27,7 +27,6 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -47,7 +46,7 @@ import java.util.Map;
  * @since 0.4
  */
 public abstract class AbstractAnnotationHandlerBeanPostProcessor
-        implements DestructionAwareBeanPostProcessor, ApplicationContextAware, InitializingBean {
+        implements DestructionAwareBeanPostProcessor, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractAnnotationHandlerBeanPostProcessor.class);
 

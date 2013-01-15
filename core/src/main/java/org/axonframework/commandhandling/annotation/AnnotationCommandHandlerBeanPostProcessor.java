@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AbstractAnnotationHandlerBeanPostProcessor;
 import org.axonframework.domain.AggregateRoot;
 import org.springframework.util.ReflectionUtils;
@@ -50,8 +49,7 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
 
     @Override
     protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean) {
-        Assert.notNull(commandBus, "No CommandBus has been found in the application context, yet there are "
-                + "@CommandHandler annotated beans that expect one.");
+        ensureCommandBusInitialized();
         return AnnotationCommandHandlerAdapter.subscribe(bean, commandBus);
     }
 
@@ -59,17 +57,16 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
      * {@inheritDoc}
      */
     @SuppressWarnings({"unchecked"})
-    @Override
-    public void afterPropertiesSet() throws Exception {
+    private void ensureCommandBusInitialized() {
         // if no CommandBus is set, find one in the application context
         if (commandBus == null) {
             Map<String, CommandBus> beans = getApplicationContext().getBeansOfType(CommandBus.class);
-            if (beans.size() > 1) {
+            if (beans.size() != 1) {
                 throw new IllegalStateException(
                         "If no specific CommandBus is provided, the application context must "
                                 + "contain exactly one bean of type CommandBus. The current application context has: "
                                 + beans.size());
-            } else if (beans.size() > 0) {
+            } else {
                 this.commandBus = beans.entrySet().iterator().next().getValue();
             }
         }

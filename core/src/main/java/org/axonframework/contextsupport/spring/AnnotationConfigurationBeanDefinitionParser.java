@@ -40,10 +40,6 @@ import org.w3c.dom.Element;
 public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     /**
-     * The executor attribute text.
-     */
-    private static final String EXECUTOR_ATTRIBUTE = "executor";
-    /**
      * The eventBus attribute text.
      */
     private static final String EVENT_BUS_ATTRIBUTE = "event-bus";
@@ -93,12 +89,6 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
             RuntimeBeanReference beanReference = new RuntimeBeanReference(eventBusReference);
             beanDefinition.getPropertyValues().addPropertyValue("eventBus", beanReference);
         }
-        if (element.hasAttribute(EXECUTOR_ATTRIBUTE)) {
-            String executorReference = element.getAttribute(EXECUTOR_ATTRIBUTE);
-            RuntimeBeanReference beanReference = new RuntimeBeanReference(executorReference);
-            beanDefinition.getPropertyValues().addPropertyValue(EXECUTOR_ATTRIBUTE, beanReference);
-        }
-
         parserContext.getRegistry().registerBeanDefinition(EVENT_LISTENER_BEAN_NAME, beanDefinition);
     }
 

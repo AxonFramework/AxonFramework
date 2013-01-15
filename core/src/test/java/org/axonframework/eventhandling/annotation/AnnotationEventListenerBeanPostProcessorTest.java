@@ -57,7 +57,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     @Test
     public void testEventBusIsNotAutowiredWhenProvided() throws Exception {
 
-        testSubject.afterPropertiesSet();
+        testSubject.initializeAdapterFor(new Object());
 
         verify(mockApplicationContext, never()).getBeansOfType(EventBus.class);
     }
@@ -69,7 +69,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         map.put("ignored", mockEventBus);
         when(mockApplicationContext.getBeansOfType(EventBus.class)).thenReturn(map);
 
-        testSubject.afterPropertiesSet();
+        testSubject.initializeAdapterFor(new Object());
 
         verify(mockApplicationContext).getBeansOfType(EventBus.class);
     }
