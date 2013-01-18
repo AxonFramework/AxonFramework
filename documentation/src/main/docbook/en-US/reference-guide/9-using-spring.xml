@@ -374,6 +374,17 @@
                 configuration to execute replays on a Cluster. The resulting Cluster bean will be of
                 type <code>ReplayingCluster</code>. </para>
         </sect2>
+        <sect2>
+            <title>Custom Cluster implementation</title>
+            <para>It is also possible to use the &lt;cluster> element while using a custom Cluster
+                implementation:</para>
+            <programlisting>&lt;axon:cluster id="custoCluster">
+    &lt;bean class="com.mycompany.MyPersonalClusterImplementation"/>
+    &lt;axon:selectors>
+        &lt;axon:package prefix="com.mycompany.mypackage"/>
+    &lt;/axon:selectors>
+&lt;/axon:cluster></programlisting>
+        </sect2>
 
     </sect1>
     <sect1>

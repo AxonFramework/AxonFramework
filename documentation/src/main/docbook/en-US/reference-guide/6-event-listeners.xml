@@ -294,6 +294,14 @@ public class SubListener extends TopListener {
             provides the <code>AsynchronousCluster</code> implementation, which dispatches Events to
             Event Listeners asynchronously from the thread that published them to the
             cluster.</para>
+        <note>
+            <title>Configuring the Asynchronous Cluster in Spring</title>
+            <para>In Spring, you can place a Spring <code>&lt;bean></code> element inside the
+                    <code>&lt;axon:cluster></code> element, to indicate which cluster implementation
+                you wish to use. Simply specify the bean configuration of an
+                    <code>AsynchronousCluster</code> implementation to make a Cluster
+                asynchronous.</para>
+        </note>
         <para>The <code>AsynchronousCluster</code> needs an <code>Executor</code>, for example a
                 <code>ThreadPoolExecutor</code> and a <code>SequencingPolicy</code>, a definition of
             which events may be processed in parallel, and which sequentially. Finally a
