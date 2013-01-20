@@ -198,7 +198,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     /**
      * Factory bean that creates a ClaimStrategy instance.
      */
-    private static class ClaimStrategyFactoryBean implements FactoryBean<ClaimStrategy>, InitializingBean {
+    private static final class ClaimStrategyFactoryBean implements FactoryBean<ClaimStrategy>, InitializingBean {
 
         private ClaimStrategy claimStrategy;
         private int bufferSize = DisruptorConfiguration.DEFAULT_BUFFER_SIZE;
@@ -252,7 +252,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         }
     }
 
-    private static class WaitStrategyFactoryBean implements FactoryBean<WaitStrategy> {
+    private static final class WaitStrategyFactoryBean implements FactoryBean<WaitStrategy> {
 
         private final WaitStrategy waitStrategy;
 

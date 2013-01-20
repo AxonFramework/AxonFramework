@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
 public class RedisEventStore implements EventStore {
 
     private Serializer eventSerializer;
-    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset UTF8 = TF_8;
     private RedisConnectionProvider redisConnectionProvider;
 
     @Override
