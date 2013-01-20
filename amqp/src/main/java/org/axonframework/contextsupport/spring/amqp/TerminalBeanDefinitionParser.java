@@ -84,20 +84,22 @@ public class TerminalBeanDefinitionParser extends AbstractBeanDefinitionParser {
             }
         }
 
-        // Report connectionFactory to listener if defined
-        if (element.hasAttribute("connection-factory")) {
-	        listenerContainerDefinition.getPropertyValues()
-	        	.add(BEAN_REFERENCE_PROPERTIES.get("connection-factory"), 
-	        			new RuntimeBeanReference(element.getAttribute("connection-factory")));
-        }        
         parserContext.getRegistry().registerBeanDefinition(containerBeanName, listenerContainerDefinition);
-        
+
         return terminalDefinition;
     }
 
     private GenericBeanDefinition createContainerManager(Element element, ParserContext parserContext) {
         GenericBeanDefinition listenerContainerDefinition = new GenericBeanDefinition();
         listenerContainerDefinition.setBeanClass(ListenerContainerLifecycleManager.class);
+
+        // If a connection factory is defined on the terminal, it should also be used by the container manager
+        if (element.hasAttribute("connection-factory")) {
+            listenerContainerDefinition.getPropertyValues().add("connectionFactory",
+                                                                new RuntimeBeanReference(element.getAttribute(
+                                                                        "connection-factory")));
+        }
+
         final Element defaultConfig = DomUtils.getChildElementByTagName(element, DEFAULT_CONFIG_ELEMENT);
         if (defaultConfig != null) {
             listenerContainerDefinition.getPropertyValues()
