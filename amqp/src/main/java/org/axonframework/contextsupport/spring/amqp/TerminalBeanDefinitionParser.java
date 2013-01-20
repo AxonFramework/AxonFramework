@@ -68,7 +68,6 @@ public class TerminalBeanDefinitionParser extends AbstractBeanDefinitionParser {
         GenericBeanDefinition listenerContainerDefinition = createContainerManager(element, parserContext);
         final String containerBeanName = resolveId(element, terminalDefinition, parserContext)
                 + CONTAINER_MANAGER_SUFFIX;
-        parserContext.getRegistry().registerBeanDefinition(containerBeanName, listenerContainerDefinition);
 
         terminalDefinition.getPropertyValues().add(PROPERTY_CONTAINER_LIFECYCLE_MANAGER,
                                                    new RuntimeBeanReference(containerBeanName));
@@ -85,6 +84,14 @@ public class TerminalBeanDefinitionParser extends AbstractBeanDefinitionParser {
             }
         }
 
+        // Report connectionFactory to listener if defined
+        if (element.hasAttribute("connection-factory")) {
+	        listenerContainerDefinition.getPropertyValues()
+	        	.add(BEAN_REFERENCE_PROPERTIES.get("connection-factory"), 
+	        			new RuntimeBeanReference(element.getAttribute("connection-factory")));
+        }        
+        parserContext.getRegistry().registerBeanDefinition(containerBeanName, listenerContainerDefinition);
+        
         return terminalDefinition;
     }
 
