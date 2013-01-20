@@ -101,19 +101,19 @@ public class AsyncSagaProcessingEvent {
     /**
      * Reset this entry for processing a new EventMessage
      *
-     * @param event           The EventMessage to process
-     * @param sagaType        The type of Saga to process this EventMessage
-     * @param handler         The handler handling this message
-     * @param newSagaInstance The saga instance to use when a new saga is to be created
+     * @param nextEvent           The EventMessage to process
+     * @param nextSagaType        The type of Saga to process this EventMessage
+     * @param nextHandler         The handler handling this message
+     * @param nextSagaInstance The saga instance to use when a new saga is to be created
      */
-    public void reset(EventMessage event, Class<? extends AbstractAnnotatedSaga> sagaType,
-                      SagaMethodMessageHandler handler, AbstractAnnotatedSaga newSagaInstance) {
+    public void reset(EventMessage nextEvent, Class<? extends AbstractAnnotatedSaga> nextSagaType,
+                      SagaMethodMessageHandler nextHandler, AbstractAnnotatedSaga nextSagaInstance) {
         this.elector.clear();
-        this.publishedEvent = event;
-        this.sagaType = sagaType;
-        this.handler = handler;
-        this.newSaga = newSagaInstance;
-        this.associationValue = handler.getAssociationValue(event);
+        this.publishedEvent = nextEvent;
+        this.sagaType = nextSagaType;
+        this.handler = nextHandler;
+        this.newSaga = nextSagaInstance;
+        this.associationValue = nextHandler.getAssociationValue(nextEvent);
     }
 
     /**

@@ -163,7 +163,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
             String waitStrategy = element.getAttribute(ATTRIBUTE_WAIT_STRATEGY);
             builder.addPropertyValue(PROPERTY_WAIT_STRATEGY,
                                      BeanDefinitionBuilder.genericBeanDefinition(WaitStrategyFactoryBean.class)
-                                                          .addPropertyValue(PROPERTY_WAIT_STRATEGY, waitStrategy)
+                                                          .addConstructorArgValue(waitStrategy)
                                                           .getBeanDefinition());
         }
     }
@@ -252,10 +252,25 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         }
     }
 
-    private static class WaitStrategyFactoryBean implements FactoryBean<WaitStrategy>, InitializingBean {
+    private static class WaitStrategyFactoryBean implements FactoryBean<WaitStrategy> {
 
-        private WaitStrategy waitStrategy;
-        private String strategy;
+        private final WaitStrategy waitStrategy;
+
+        @SuppressWarnings("UnusedDeclaration")
+        private WaitStrategyFactoryBean(String strategyName) {
+            if ("busy-spin".equals(strategyName)) {
+                waitStrategy = new BusySpinWaitStrategy();
+            } else if ("yield".equals(strategyName)) {
+                waitStrategy = new YieldingWaitStrategy();
+            } else if ("sleep".equals(strategyName)) {
+                waitStrategy = new SleepingWaitStrategy();
+            } else if ("block".equals(strategyName)) {
+                waitStrategy = new BlockingWaitStrategy();
+            } else {
+                throw new IllegalArgumentException("WaitStrategy is not one of the allowed values: "
+                                                           + "busy-spin, yield, sleep or block.");
+            }
+        }
 
         @Override
         public WaitStrategy getObject() throws Exception {
@@ -270,32 +285,6 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         @Override
         public boolean isSingleton() {
             return true;
-        }
-
-        @Override
-        public void afterPropertiesSet() throws Exception {
-            if ("busy-spin".equals(strategy)) {
-                waitStrategy = new BusySpinWaitStrategy();
-            } else if ("yield".equals(strategy)) {
-                waitStrategy = new YieldingWaitStrategy();
-            } else if ("sleep".equals(strategy)) {
-                waitStrategy = new SleepingWaitStrategy();
-            } else if ("block".equals(strategy)) {
-                waitStrategy = new BlockingWaitStrategy();
-            } else {
-                throw new IllegalArgumentException("WaitStrategy is not one of the allowed values: "
-                                                           + "busy-spin, yield, sleep or block.");
-            }
-        }
-
-        /**
-         * Sets the wait strategy to use
-         *
-         * @param strategy the wait strategy to use
-         */
-        @SuppressWarnings("UnusedDeclaration")
-        public void setWaitStrategy(String strategy) {
-            this.strategy = strategy;
         }
     }
 }

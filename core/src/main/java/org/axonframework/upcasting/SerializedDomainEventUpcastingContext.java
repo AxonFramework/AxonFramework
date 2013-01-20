@@ -37,8 +37,8 @@ public class SerializedDomainEventUpcastingContext implements UpcastingContext {
     private final LazyDeserializingObject<MetaData> serializedMetaData;
 
     /**
-     * Initializes the UpcastingContext using given serialized <code>domainEventData/code>. Deserialization of the meta
-     * data contained in the <code>domainEventData</code> is done on first access of the meta data.
+     * Initializes the UpcastingContext using given serialized <code>domainEventData</code>. Deserialization of the
+     * meta data contained in the <code>domainEventData</code> is done on first access of the meta data.
      *
      * @param domainEventData the object containing information about the domain event from which an object is being
      *                        upcast

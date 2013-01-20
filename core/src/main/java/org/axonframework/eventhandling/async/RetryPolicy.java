@@ -94,7 +94,7 @@ public abstract class RetryPolicy {
      */
     public abstract boolean requiresRollback();
 
-    private static class SimpleRetryPolicy extends RetryPolicy {
+    private static final class SimpleRetryPolicy extends RetryPolicy {
 
         private final long waitTime;
         private final boolean rollback;
