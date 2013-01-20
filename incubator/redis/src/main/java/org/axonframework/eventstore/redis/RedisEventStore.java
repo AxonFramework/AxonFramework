@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.redis;
 
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
@@ -24,22 +25,19 @@ import org.axonframework.serializer.Serializer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 
-import java.nio.charset.Charset;
-
 /**
  * @author Allard Buijze
  */
 public class RedisEventStore implements EventStore {
 
     private Serializer eventSerializer;
-    private static final Charset UTF8 = TF_8;
     private RedisConnectionProvider redisConnectionProvider;
 
     @Override
     public void appendEvents(String type, final DomainEventStream events) {
         Jedis jedis = redisConnectionProvider.newConnection();
         DomainEventMessage firstEvent = events.peek();
-        final byte[] key = (type + "." + firstEvent.getAggregateIdentifier()).getBytes(UTF8);
+        final byte[] key = (type + "." + firstEvent.getAggregateIdentifier()).getBytes(IOUtils.UTF8);
         jedis.watch(key);
         Long eventCount = jedis.llen(key);
         if ((firstEvent.getSequenceNumber() != 0 && eventCount == null)
@@ -58,8 +56,8 @@ public class RedisEventStore implements EventStore {
             Transaction multi = jedis.multi();
             while (events.hasNext()) {
                 DomainEventMessage domainEvent = events.next();
-                multi.rpush(new String(key, UTF8), new String(eventSerializer.serialize(domainEvent, byte[].class)
-                                                                             .getData(), UTF8));
+                multi.rpush(new String(key, IOUtils.UTF8), new String(eventSerializer.serialize(domainEvent, byte[].class)
+                                                                             .getData(), IOUtils.UTF8));
             }
             multi.exec();
 //                }
