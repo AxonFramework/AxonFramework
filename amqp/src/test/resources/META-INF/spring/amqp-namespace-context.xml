@@ -17,10 +17,13 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:amqp="http://www.axonframework.org/schema/amqp"
-       xmlns:axon="http://www.axonframework.org/schema/core"
+       xmlns:axon="http://www.axonframework.org/schema/core" xmlns:rabbit="http://www.springframework.org/schema/rabbit"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
             http://www.axonframework.org/schema/amqp http://www.axonframework.org/schema/axon-amqp-2.0.xsd
+            http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd
             http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core-2.0.xsd">
+
+	<rabbit:connection-factory id="connectionFactory2"/>
 
     <amqp:terminal id="terminal1" exchange-name="Exchange" durable="true" transactional="false"
                    connection-factory="connectionFactory" message-converter="messageConverter"
