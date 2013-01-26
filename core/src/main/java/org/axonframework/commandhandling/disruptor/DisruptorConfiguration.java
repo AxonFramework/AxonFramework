@@ -418,7 +418,7 @@ public class DisruptorConfiguration {
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setPublisherThreadCount(int count) {
-        Assert.isTrue(invokerThreadCount > 0, "PublisherCount must be at least 1");
+        Assert.isTrue(count > 0, "PublisherCount must be at least 1");
         this.publisherThreadCount = count;
         return this;
     }
@@ -441,6 +441,7 @@ public class DisruptorConfiguration {
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setSerializerThreadCount(int newSerializerThreadCount) {
+        Assert.isTrue(newSerializerThreadCount >= 0, "SerializerThreadCount must be >= 0");
         this.serializerThreadCount = newSerializerThreadCount;
         return this;
     }
