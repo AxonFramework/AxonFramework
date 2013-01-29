@@ -68,6 +68,7 @@ public class SpringBeanParameterResolverFactoryTest {
         assertEquals(1, counter.get());
     }
 
+    @Ignore
     @Test(expected = BeanCreationException.class)
     public void testMethodsAreProperlyInjected_ErrorOnMissingParameterType() {
         // this should generate an error

@@ -44,7 +44,7 @@ subprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.2'
+    gradleVersion = '1.4'
 }
 
 File script(String name) {
@@ -211,29 +211,10 @@ project(':axon-amqp') {
     }
 }
 
-project(':axon-spring-insight-plugin') {
-    apply plugin: 'java'
-    apply from: script('aspectj')
-
-    configurations {
-        testAgent
-    }
-
+project(':axon-quickstart') {
     dependencies {
         compile project(':axon-core')
-        compile 'com.springsource.insight:insight-idk:1.5.0.RELEASE'
-
-        compile 'org.aspectj:aspectjrt:1.6.11'
-
-        ajc 'org.aspectj:aspectjtools:1.6.11'
-
-        testAgent 'org.aspectj:aspectjweaver:1.6.11'
-    }
-
-    // defer resolution until execution time
-    test.doFirst {
-        jvmArgs "-javaagent:${configurations.testAgent.singleFile}"
+        compile project(':axon-distributed-commandbus')
+        compile project(':axon-test')
     }
 }
-
-

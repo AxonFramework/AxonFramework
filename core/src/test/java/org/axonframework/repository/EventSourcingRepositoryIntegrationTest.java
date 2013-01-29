@@ -65,7 +65,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         assertEquals(CONCURRENT_MODIFIERS, getSuccessfulModifications());
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 600000)
     public void testOptimisticLocking() throws Throwable {
         // unfortunately, we cannot use @Before on the setUp, because of the TemporaryFolder
         initializeRepository(new OptimisticLockManager());
