@@ -115,7 +115,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         }
         executor.shutdown();
         assertTrue("Commands did not execute in a reasonable time. Are there any unreleased locks remaining?",
-                   executor.awaitTermination(20, TimeUnit.SECONDS));
+                   executor.awaitTermination(2, TimeUnit.SECONDS));
 
         assertEquals(new HashSet(handledMessages).size(), handledMessages.size());
     }

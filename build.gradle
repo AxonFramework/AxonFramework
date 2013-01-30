@@ -26,7 +26,7 @@ subprojects {
         testCompile "org.springframework:spring-test:3.1.2.RELEASE"
         testCompile "junit:junit-dep:4.10"
         testCompile "org.mockito:mockito-core:1.8.5"
-        testCompile("log4j:log4j:1.2.16") {
+        testCompile("log4j:log4j:1.2.17") {
             exclude module: 'jmxtools'
             exclude module: 'jmxri'
             exclude module: 'mail'
@@ -57,17 +57,17 @@ project(':axon-core') {
         compile 'com.googlecode.disruptor:disruptor:2.10.3'
         compile 'org.springframework:spring-context-support:3.1.2.RELEASE'
         compile 'org.springframework:spring-orm:3.1.2.RELEASE'
-        compile 'joda-time:joda-time:1.6.2'
+        compile 'joda-time:joda-time:2.1'
         compile 'net.sf.jsr107cache:jsr107cache:1.1'
-        compile('org.quartz-scheduler:quartz:2.1.4') {
+        compile('org.quartz-scheduler:quartz:2.1.6') {
             exclude module: 'c3p0'
         }
 
-        compile 'org.hibernate:hibernate-core:4.1.7.Final'
+        testCompile 'org.hibernate:hibernate-core:4.1.7.Final'
         compile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
         compile 'javax.validation:validation-api:1.0.0.GA'
-        compile 'com.thoughtworks.xstream:xstream:1.4.2'
-        compile 'commons-io:commons-io:1.4'
+        compile 'com.thoughtworks.xstream:xstream:1.4.3'
+        compile 'commons-io:commons-io:2.4'
         compile('dom4j:dom4j:1.6.1') {
             exclude module: 'xml-apis'
         }
@@ -78,7 +78,7 @@ project(':axon-core') {
         testCompile 'commons-collections:commons-collections:3.2.1'
         testCompile 'com.eaio.uuid:uuid:3.2'
 
-        testRuntime 'commons-codec:commons-codec:1.5'
+        testRuntime 'commons-codec:commons-codec:1.7'
         testRuntime 'org.hibernate:hibernate-entitymanager:4.1.7.Final'
         testRuntime('org.hibernate:hibernate-validator:4.3.0.Final') {
             exclude module: 'jaxb-api'
@@ -86,7 +86,7 @@ project(':axon-core') {
         }
         testRuntime 'net.sf.ehcache:ehcache-core:2.4.7'
         testRuntime 'org.hsqldb:hsqldb:2.2.8'
-        testRuntime 'mysql:mysql-connector-java:5.1.18'
+        testRuntime 'mysql:mysql-connector-java:5.1.21'
         testRuntime 'c3p0:c3p0:0.9.1.2'
     }
 }
@@ -139,7 +139,7 @@ project(':axon-integrationtests') {
         testRuntime 'org.hibernate:hibernate-entitymanager:4.1.7.Final'
         testRuntime 'org.hsqldb:hsqldb:2.2.8'
         testRuntime 'mysql:mysql-connector-java:5.1.21'
-        testCompile 'cglib:cglib-nodep:2.2'
+        testCompile 'cglib:cglib-nodep:2.2.2'
         testRuntime 'c3p0:c3p0:0.9.1.2'
         testRuntime 'org.springframework:spring-orm:3.1.2.RELEASE'
         testRuntime 'org.springframework:spring-jdbc:3.1.2.RELEASE'
