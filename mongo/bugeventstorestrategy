@@ -1,0 +1,1 @@
+There is a bug when loading an object from the domainevent store where you cast sequenceNumber to Long, and it cannot because is an Integer.
