@@ -199,7 +199,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
          */
         private EventEntry(DBObject dbObject) {
             this.aggregateIdentifier = (String) dbObject.get(AGGREGATE_IDENTIFIER_PROPERTY);
-            this.sequenceNumber = (Long) dbObject.get(SEQUENCE_NUMBER_PROPERTY);
+            this.sequenceNumber = ((Number) dbObject.get(SEQUENCE_NUMBER_PROPERTY)).longValue();
             this.serializedPayload = dbObject.get(SERIALIZED_PAYLOAD_PROPERTY);
             this.timeStamp = (String) dbObject.get(TIME_STAMP_PROPERTY);
             this.aggregateType = (String) dbObject.get(AGGREGATE_TYPE_PROPERTY);

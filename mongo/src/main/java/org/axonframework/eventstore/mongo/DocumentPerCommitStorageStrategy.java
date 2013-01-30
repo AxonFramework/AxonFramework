@@ -188,8 +188,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         @SuppressWarnings("unchecked")
         private CommitEntry(DBObject dbObject) {
             this.aggregateIdentifier = (String) dbObject.get(AGGREGATE_IDENTIFIER_PROPERTY);
-            this.firstSequenceNumber = (Long) dbObject.get(FIRST_SEQUENCE_NUMBER_PROPERTY);
-            this.lastSequenceNumber = (Long) dbObject.get(LAST_SEQUENCE_NUMBER_PROPERTY);
+            this.firstSequenceNumber = ((Number) dbObject.get(FIRST_SEQUENCE_NUMBER_PROPERTY)).longValue();
+            this.lastSequenceNumber = ((Number) dbObject.get(LAST_SEQUENCE_NUMBER_PROPERTY)).longValue();
             this.firstTimestamp = (String) dbObject.get(FIRST_TIME_STAMP_PROPERTY);
             this.lastTimestamp = (String) dbObject.get(LAST_TIME_STAMP_PROPERTY);
             this.aggregateType = (String) dbObject.get(AGGREGATE_TYPE_PROPERTY);
