@@ -31,6 +31,7 @@ import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,6 +49,7 @@ public class JGroupsConnectorTest {
     private CommandBus mockCommandBus1;
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
+    private String clusterName;
 
     @Before
     public void setUp() throws Exception {
@@ -55,8 +57,9 @@ public class JGroupsConnectorTest {
         channel2 = createChannel();
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
-        connector1 = new JGroupsConnector(channel1, "test", mockCommandBus1, new XStreamSerializer());
-        connector2 = new JGroupsConnector(channel2, "test", mockCommandBus2, new XStreamSerializer());
+        clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
+        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, new XStreamSerializer());
+        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, new XStreamSerializer());
     }
 
     @After
@@ -116,12 +119,12 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter2 = new AtomicInteger(0);
 
         connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
-        channel1.connect("test");
+        channel1.connect(clusterName);
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
         connector2.subscribe(Long.class.getName(), new CountingCommandHandler(counter2));
-        channel2.connect("test");
+        channel2.connect(clusterName);
         connector2.connect(80);
 
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());

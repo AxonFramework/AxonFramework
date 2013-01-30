@@ -27,6 +27,7 @@ import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
 import org.junit.*;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,6 +46,7 @@ public class JgroupsConnectorTest_Gossip {
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
     private GossipRouter gossipRouter;
+    private String clusterName;
 
     @Before
     public void setUp() throws Exception {
@@ -52,8 +54,9 @@ public class JgroupsConnectorTest_Gossip {
         channel2 = createChannel();
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
-        connector1 = new JGroupsConnector(channel1, "test", mockCommandBus1, new XStreamSerializer());
-        connector2 = new JGroupsConnector(channel2, "test", mockCommandBus2, new XStreamSerializer());
+        clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
+        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, new XStreamSerializer());
+        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, new XStreamSerializer());
         gossipRouter = new GossipRouter(12001, "127.0.0.1");
     }
 
