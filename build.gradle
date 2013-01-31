@@ -1,0 +1,220 @@
+description = 'Axon Framework'
+
+allprojects {
+    group = 'org.axonframework'
+    version = '2.0-SNAPSHOT'
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'signing'
+
+    sourceCompatibility = 1.6
+
+    [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://repo.springsource.org/libs-release-s3"
+        }
+    }
+
+    dependencies {
+        compile 'org.slf4j:slf4j-api:1.6.1'
+
+        testCompile "org.springframework:spring-test:3.1.2.RELEASE"
+        testCompile "junit:junit-dep:4.10"
+        testCompile "org.mockito:mockito-core:1.8.5"
+        testCompile("log4j:log4j:1.2.17") {
+            exclude module: 'jmxtools'
+            exclude module: 'jmxri'
+            exclude module: 'mail'
+            exclude module: 'jms'
+        }
+        testCompile "org.slf4j:slf4j-log4j12:1.6.1"
+
+        testRuntime "org.slf4j:jul-to-slf4j:1.6.1"
+        testRuntime "org.slf4j:jcl-over-slf4j:1.6.1"
+    }
+
+    configurations {
+        all*.exclude module: 'commons-logging'
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.4'
+}
+
+File script(String name) {
+    project.file("gradle/${name}.gradle")
+}
+
+
+project(':axon-core') {
+    dependencies {
+        compile 'com.googlecode.disruptor:disruptor:2.10.3'
+        compile 'org.springframework:spring-context-support:3.1.2.RELEASE'
+        compile 'org.springframework:spring-orm:3.1.2.RELEASE'
+        compile 'joda-time:joda-time:2.1'
+        compile 'net.sf.jsr107cache:jsr107cache:1.1'
+        compile('org.quartz-scheduler:quartz:2.1.6') {
+            exclude module: 'c3p0'
+        }
+
+        testCompile 'org.hibernate:hibernate-core:4.1.7.Final'
+        compile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+        compile 'javax.validation:validation-api:1.0.0.GA'
+        compile 'com.thoughtworks.xstream:xstream:1.4.3'
+        compile 'commons-io:commons-io:2.4'
+        compile('dom4j:dom4j:1.6.1') {
+            exclude module: 'xml-apis'
+        }
+
+        testCompile 'org.springframework.security:spring-security-config:3.1.0.RELEASE'
+        testCompile 'cglib:cglib-nodep:2.2'
+        testCompile 'net.sf.ehcache:ehcache-jcache:1.2'
+        testCompile 'commons-collections:commons-collections:3.2.1'
+        testCompile 'com.eaio.uuid:uuid:3.2'
+
+        testRuntime 'commons-codec:commons-codec:1.7'
+        testRuntime 'org.hibernate:hibernate-entitymanager:4.1.7.Final'
+        testRuntime('org.hibernate:hibernate-validator:4.3.0.Final') {
+            exclude module: 'jaxb-api'
+            exclude module: 'jaxb-impl'
+        }
+        testRuntime 'net.sf.ehcache:ehcache-core:2.4.7'
+        testRuntime 'org.hsqldb:hsqldb:2.2.8'
+        testRuntime 'mysql:mysql-connector-java:5.1.21'
+        testRuntime 'c3p0:c3p0:0.9.1.2'
+    }
+}
+
+project(':axon-integration') {
+    dependencies {
+        compile project(':axon-core')
+        compile 'org.springframework.integration:spring-integration-core:2.0.5.RELEASE'
+    }
+}
+
+project(':axon-test') {
+    dependencies {
+        compile project(':axon-core')
+        compile 'org.hamcrest:hamcrest-core:1.2.1'
+    }
+}
+
+project(':axon-distributed-commandbus') {
+    dependencies {
+        compile project(':axon-core')
+        compile 'org.jgroups:jgroups:3.0.9.Final'
+
+        testCompile 'org.powermock:powermock-api-mockito:1.4.11'
+        testCompile 'org.powermock:powermock-module-junit4:1.4.11'
+    }
+}
+
+project(':axon-integrationtests') {
+    task testJar(type: Jar) {
+        classifier = 'tests'
+        from sourceSets.test.output
+    }
+
+    configurations {
+        tests
+    }
+
+    artifacts {
+        tests testJar
+    }
+
+    dependencies {
+        testCompile project(':axon-core')
+        testCompile project(':axon-mongo')
+        testCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+        testCompile 'com.eaio.uuid:uuid:3.2'
+
+        testRuntime project(':axon-test')
+        testRuntime 'org.hibernate:hibernate-entitymanager:4.1.7.Final'
+        testRuntime 'org.hsqldb:hsqldb:2.2.8'
+        testRuntime 'mysql:mysql-connector-java:5.1.21'
+        testCompile 'cglib:cglib-nodep:2.2.2'
+        testRuntime 'c3p0:c3p0:0.9.1.2'
+        testRuntime 'org.springframework:spring-orm:3.1.2.RELEASE'
+        testRuntime 'org.springframework:spring-jdbc:3.1.2.RELEASE'
+        testRuntime 'org.hibernate:hibernate-validator:4.3.0.Final'
+    }
+}
+
+project(':axon-mongo') {
+    dependencies {
+        compile project(':axon-core')
+        compile 'org.mongodb:mongo-java-driver:2.7.2'
+
+        testCompile project(path: ':axon-integrationtests', configuration: 'tests')
+        testRuntime 'com.eaio.uuid:uuid:3.2'
+    }
+}
+
+project(':axon-redis') {
+    dependencies {
+        compile project(':axon-core')
+        compile 'redis.clients:jedis:2.0.0'
+
+        testCompile project(path: ':axon-integrationtests', configuration: 'tests')
+    }
+}
+
+project(':axon-cassandra') {
+    dependencies {
+        compile project(':axon-core')
+        compile('org.apache.cassandra:cassandra-all:1.1.2') {
+            exclude module: 'slf4j-log4j12'
+            exclude module: 'log4j'
+        }
+        compile 'org.hectorclient:hector-core:1.1-0'
+
+
+        testCompile project(path: ':axon-integrationtests', configuration: 'tests')
+        testCompile 'org.springframework:spring-context:3.1.2.RELEASE'
+    }
+}
+
+project(':axon-monitoring-jmx') {
+    dependencies {
+        compile project(':axon-core')
+    }
+}
+
+project(':axon-googleappengine') {
+    dependencies {
+        compile project(':axon-core')
+        compile 'com.google.appengine:appengine-api-1.0-sdk:1.6.4.1'
+
+        testCompile 'com.google.appengine:appengine-api-stubs:1.6.4.1'
+        testCompile 'com.google.appengine:appengine-testing:1.6.4.1'
+//        testCompile project(path: ':axon-integrationtests', configuration: 'tests')
+    }
+}
+
+project(':axon-amqp') {
+    dependencies {
+        compile project(':axon-core')
+        compile 'com.rabbitmq:amqp-client:2.8.6'
+        compile 'org.springframework.amqp:spring-rabbit:1.1.2.RELEASE'
+
+        testCompile 'org.powermock:powermock-api-mockito:1.4.12'
+        testCompile 'org.powermock:powermock-module-junit4:1.4.12'
+
+        testRuntime 'cglib:cglib-nodep:2.2'
+    }
+}
+
+project(':axon-quickstart') {
+    dependencies {
+        compile project(':axon-core')
+        compile project(':axon-distributed-commandbus')
+        compile project(':axon-test')
+    }
+}
