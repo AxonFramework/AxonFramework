@@ -274,12 +274,12 @@
         <title>Commercial Support</title>
         <para>Axon Framework is open source and freely available for anyone to use. However, if you
             have very specific requirements, or just want to be assured of someone to be standby to
-            help you in case of trouble, Orange11 provides several commercial support services for
+            help you in case of trouble, Trifork provides several commercial support services for
             Axon Framework. These services include Training, Consultancy and Operational Support and
             are provided by the people that know Axon more than anyone else.</para>
-        <para>For more information about Orange11 and its services, visit <link
-                xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://www.orange11.nl"
-                >www.orange11.nl</link>.</para>
+        <para>For more information about Trifork and its services, visit <link
+                xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://www.trifork.nl"
+                >www.trifork.nl</link>.</para>
     </sect1>
     <sect1 xml:id="license">
         <title>License information</title>
