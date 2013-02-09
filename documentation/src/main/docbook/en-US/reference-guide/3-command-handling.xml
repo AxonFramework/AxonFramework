@@ -182,7 +182,7 @@
     void sendCommand(MyPayloadType command);
 
     // method that attaches meta data and will wait for a result for 10 seconds
-    @Timeout(value = 20, unit = TimeUnit.SECONDS)
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
     ReturnValue sendCommandAndWaitForAResult(MyPayloadType command, 
                                              @MetaData("userId") String userId);
 
@@ -310,9 +310,8 @@
                 <para>To construct a <code>DisruptorCommandBus</code> instance, you need an
                         <code>AggregateFactory</code>, an <code>EventBus</code> and
                         <code>EventStore</code>. These components are explained in <xref
-                        xmlns:xlink="http://www.w3.org/1999/xlink"
-                        linkend="repositories-and-event-stores"/> and <xref
-                        xmlns:xlink="http://www.w3.org/1999/xlink" linkend="event-bus"/>. Finally,
+                            linkend="repositories-and-event-stores"/> and <xref
+                            linkend="event-bus"/>. Finally,
                     you also need a <code>CommandTargetResolver</code>. This is a mechanism that
                     tells the disruptor which aggregate is the target of a specific Command. There
                     are two implementations provided by Axon: the
@@ -858,8 +857,9 @@ try {
     </sect1>
     <sect1>
         <title>Distributing the Command Bus</title>
-        <para>The CommandBus implementations described in <xref
-                xmlns:xlink="http://www.w3.org/1999/xlink" linkend="command-bus"/> only allow
+        <para>The CommandBus implementations described in
+            <xref
+                    linkend="command-bus"/> only allow
             Command Messages to be dispatched within a single JVM. Sometimes, you want multiple
             instances of Command Buses in different JVM's to act as one. Commands dispatched on one
             JVM's Command Bus should be seamlessly transported to a Command Handler in another JVM
