@@ -17,6 +17,7 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
@@ -25,7 +26,6 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.common.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -128,10 +128,14 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     @Override
-    public FixtureConfiguration<T> registerAnnotatedCommandHandler(Object annotatedCommandHandler) {
+    public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         explicitCommandHandlersSet = true;
-        registerInjectableResources();
-        AnnotationCommandHandlerAdapter.subscribe(annotatedCommandHandler, commandBus);
+        doWithInjectableResourcesAvailable(new Runnable() {
+            @Override
+            public void run() {
+                AnnotationCommandHandlerAdapter.subscribe(annotatedCommandHandler, commandBus);
+            }
+        });
         return this;
     }
 
@@ -144,15 +148,24 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     @SuppressWarnings({"unchecked"})
     public FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler) {
         explicitCommandHandlersSet = true;
-        registerInjectableResources();
         commandBus.subscribe(commandName, commandHandler);
         return this;
     }
 
-    private void registerInjectableResources() {
-        injectableResources.add(commandBus);
-        injectableResources.add(eventBus);
-        SimpleResourceParameterResolverFactory.register(injectableResources);
+    private void doWithInjectableResourcesAvailable(Runnable runnable) {
+        if (!injectableResources.contains(commandBus)) {
+            injectableResources.add(commandBus);
+        }
+        if (!injectableResources.contains(eventBus)) {
+            injectableResources.add(eventBus);
+        }
+        FixtureResourceParameterResolverFactory factory =
+                FixtureResourceParameterResolverFactory.register(injectableResources);
+        try {
+            runnable.run();
+        } finally {
+            factory.disable();
+        }
     }
 
     @Override
@@ -198,7 +211,9 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         finalizeConfiguration();
         clearGivenWhenState();
         for (Object command : commands) {
-            commandBus.dispatch(GenericCommandMessage.asCommandMessage(command));
+            ExecutionExceptionAwareCallback callback = new ExecutionExceptionAwareCallback();
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage(command), callback);
+            callback.assertSuccessful();
             givenEvents.addAll(storedEvents);
             storedEvents.clear();
         }
@@ -225,9 +240,13 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     private void finalizeConfiguration() {
-        registerInjectableResources();
         if (!explicitCommandHandlersSet) {
-            new AggregateAnnotationCommandHandler<T>(this.aggregateType, repository, commandBus).subscribe();
+            doWithInjectableResourcesAvailable(new Runnable() {
+                @Override
+                public void run() {
+                    new AggregateAnnotationCommandHandler<T>(aggregateType, repository, commandBus).subscribe();
+                }
+            });
         }
         explicitCommandHandlersSet = true;
     }
@@ -514,6 +533,28 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         @Override
         public void add(T aggregate) {
             delegate.add(aggregate);
+        }
+    }
+
+    private class ExecutionExceptionAwareCallback implements CommandCallback<Object> {
+
+        private FixtureExecutionException exception;
+
+        @Override
+        public void onSuccess(Object result) {
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+            if (cause instanceof FixtureExecutionException) {
+                this.exception = (FixtureExecutionException) cause;
+            }
+        }
+
+        public void assertSuccessful() {
+            if (exception != null) {
+                throw exception;
+            }
         }
     }
 }

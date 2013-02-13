@@ -41,6 +41,13 @@ public class FixtureTest_Annotated {
 
     @Test
     public void testAggregateIdentifier_ServerGeneratedIdentifier() {
+        fixture.registerInjectableResource(new HardToCreateResource());
+        fixture.given()
+               .when(new CreateAggregateCommand());
+    }
+
+    @Test(expected = FixtureExecutionException.class)
+    public void testUnavailableResourcesCausesFailure() {
         fixture.given()
                .when(new CreateAggregateCommand());
     }
@@ -60,8 +67,14 @@ public class FixtureTest_Annotated {
         }
     }
 
+    @Test(expected = FixtureExecutionException.class)
+    public void testFixtureGivenCommands_ResourcesNotAvailable() {
+        fixture.givenCommands(new CreateAggregateCommand("aggregateId"));
+    }
+
     @Test
-    public void testFixtureGivenCommands() {
+    public void testFixtureGivenCommands_ResourcesAvailable() {
+        fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenCommands(new CreateAggregateCommand("aggregateId"),
                               new TestCommand("aggregateId"),
                               new TestCommand("aggregateId"),
@@ -73,6 +86,7 @@ public class FixtureTest_Annotated {
     @Test(expected = FixtureExecutionException.class)
     public void testAggregate_InjectCustomResourceAfterCreatingAnnotatedHandler() {
         // a 'when' will cause command handlers to be registered.
+        fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2)).
                 when(new CreateAggregateCommand());
         fixture.registerInjectableResource("I am injectable");

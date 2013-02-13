@@ -47,7 +47,8 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @CommandHandler
-    public AnnotatedAggregate(CreateAggregateCommand command, EventBus eventBus) {
+    public AnnotatedAggregate(CreateAggregateCommand command, EventBus eventBus, HardToCreateResource resource) {
+        assertNotNull("resource should not be null", resource);
         assertNotNull("Expected EventBus to be injected as resource", eventBus);
         apply(new MyEvent(command.getAggregateIdentifier() == null ?
                                   UUID.randomUUID() : command.getAggregateIdentifier(), 0));
