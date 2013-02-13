@@ -40,6 +40,20 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
         delegate = new SimpleSerializedObject<T>(data, dataType, MetaData.class.getName(), null);
     }
 
+    /**
+     * Indicates whether the given <code>serializedObject</code> represents a serialized form of a MetaData object,
+     * such as the ones created by this class (see {@link #SerializedMetaData(Object, Class)}.
+     *
+     * @param serializedObject The object to check for Meta Data
+     * @return <code>true</code> if the serialized objects represents serialized meta data, otherwise
+     *         <code>false</code>.
+     */
+    public static boolean isSerializedMetaData(SerializedObject<?> serializedObject) {
+        return serializedObject != null
+                && serializedObject.getType() != null
+                && MetaData.class.getName().equals(serializedObject.getType().getName());
+    }
+
     @Override
     public T getData() {
         return delegate.getData();

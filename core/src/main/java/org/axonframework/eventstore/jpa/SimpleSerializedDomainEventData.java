@@ -36,12 +36,13 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
     private final String aggregateIdentifier;
     private final long sequenceNumber;
     private final DateTime timestamp;
-    private final SimpleSerializedObject<byte[]> simpleSerializedObject;
-    private final SerializedMetaData<byte[]> serializedMetaData;
+    private final SerializedObject<byte[]> serializedPayload;
+    private final SerializedObject<byte[]> serializedMetaData;
 
     /**
-     * Initialize an instance using given properties.
-     *
+     * Initialize an instance using given properties. This constructor assumes the default SerializedType for meta data
+     * (name = 'org.axonframework.domain.MetaData' and revision = <em>null</em>).
+     * <p/>
      * Note that the given <code>timestamp</code> must be in a format supported by {@link} DateTime#DateTime(Object)}.
      *
      * @param eventIdentifier     The identifier of the event
@@ -57,13 +58,36 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
     public SimpleSerializedDomainEventData(String eventIdentifier, String aggregateIdentifier, // NOSONAR - Long ctor
                                            long sequenceNumber, Object timestamp, String payloadType,
                                            String payloadRevision, byte[] payload, byte[] metaData) { // NOSONAR
+        this(eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
+             new SimpleSerializedObject<byte[]>(payload, byte[].class,  // NOSONAR
+                                                payloadType, payloadRevision),
+             new SerializedMetaData<byte[]>(metaData, byte[].class)); // NOSONAR Ignore array copy
+    }
+
+    /**
+     * Initialize an instance using given properties. In contrast to the other constructor, this one allows to
+     * explicitly indicate the SerializedType used to represent MetaData.
+     * <p/>
+     * Note that the given <code>timestamp</code> must be in a format supported by {@link} DateTime#DateTime(Object)}.
+     *
+     * @param eventIdentifier     The identifier of the event
+     * @param aggregateIdentifier The identifier of the aggregate
+     * @param sequenceNumber      The sequence number of the event
+     * @param timestamp           The timestamp of the event (format must be supported by {@link
+     *                            DateTime#DateTime(Object)})
+     * @param serializedPayload   The serialized representation of the event
+     * @param serializedMetaData  The serialized representation of the meta data
+     */
+    public SimpleSerializedDomainEventData(String eventIdentifier, String aggregateIdentifier, // NOSONAR - Long ctor
+                                           long sequenceNumber, Object timestamp,
+                                           SerializedObject<byte[]> serializedPayload,
+                                           SerializedObject<byte[]> serializedMetaData) {
         this.eventIdentifier = eventIdentifier;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
         this.timestamp = new DateTime(timestamp);
-        this.simpleSerializedObject = new SimpleSerializedObject<byte[]>(payload, byte[].class,  // NOSONAR
-                                                                         payloadType, payloadRevision);
-        this.serializedMetaData = new SerializedMetaData<byte[]>(metaData, byte[].class); // NOSONAR Ignore array copy
+        this.serializedPayload = serializedPayload;
+        this.serializedMetaData = serializedMetaData;
     }
 
     @Override
@@ -93,6 +117,6 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
 
     @Override
     public SerializedObject getPayload() {
-        return simpleSerializedObject;
+        return serializedPayload;
     }
 }
