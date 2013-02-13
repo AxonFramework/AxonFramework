@@ -27,6 +27,8 @@ import org.axonframework.domain.MetaData;
  */
 public class SerializedMetaData<T> implements SerializedObject<T> {
 
+    private static final String METADATA_CLASS_NAME = MetaData.class.getName();
+
     private final SimpleSerializedObject<T> delegate;
 
     /**
@@ -37,7 +39,7 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
      * @param dataType The type of data
      */
     public SerializedMetaData(T data, Class<T> dataType) {
-        delegate = new SimpleSerializedObject<T>(data, dataType, MetaData.class.getName(), null);
+        delegate = new SimpleSerializedObject<T>(data, dataType, METADATA_CLASS_NAME, null);
     }
 
     /**
@@ -51,7 +53,7 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
     public static boolean isSerializedMetaData(SerializedObject<?> serializedObject) {
         return serializedObject != null
                 && serializedObject.getType() != null
-                && MetaData.class.getName().equals(serializedObject.getType().getName());
+                && METADATA_CLASS_NAME.equals(serializedObject.getType().getName());
     }
 
     @Override
