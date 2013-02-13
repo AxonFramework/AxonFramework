@@ -113,6 +113,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     /**
      * Initialize a JpaEventStore which serializes events using the given <code>eventSerializer</code> and stores the
      * events in the database using the default EventEntryStore.
+     * <p/>
+     * <p/>
+     * <em>Note: the SerializedType of Message Meta Data is not stored in the DefaultEventEntryStore. Upon retrieval,
+     * it is set to the default value (name = "org.axonframework.domain.MetaData", revision = null).</em>
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      * @param serializer            The serializer to (de)serialize domain events with.

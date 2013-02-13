@@ -67,6 +67,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     /**
      * Constructor that accepts a Serializer and the MongoTemplate. A Document-Per-Event storage strategy is used,
      * causing each event to be stored in a separate Mongo Document.
+     * <p/>
+     * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
+     * (name = "org.axonframework.domain.MetaData", revision = null).</em>
      *
      * @param eventSerializer Your own Serializer
      * @param mongo           Mongo instance to obtain the database and the collections.
@@ -125,7 +128,8 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         }
 
         try {
-            mongoTemplate.domainEventCollection().insert(storageStrategy.createDocuments(type, eventSerializer, messages));
+            mongoTemplate.domainEventCollection()
+                         .insert(storageStrategy.createDocuments(type, eventSerializer, messages));
         } catch (MongoException.DuplicateKey e) {
             throw new ConcurrencyException("Trying to insert an Event for an aggregate with a sequence "
                                                    + "number that is already present in the Event Store", e);
@@ -172,7 +176,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     @Override
     public void visitEvents(Criteria criteria, EventVisitor visitor) {
         DBCursor cursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
-                                                                (MongoCriteria) criteria);
+                                                     (MongoCriteria) criteria);
         cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
         CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null);
         while (events.hasNext()) {

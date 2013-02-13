@@ -69,7 +69,10 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
 
     /**
      * Initialize the FileSystemEventStore using the given <code>serializer</code>. The serializer must be capable of
-     * serializing at least DomainEvents.
+     * serializing the payload and meta data of Event Messages.
+     * <p/>
+     * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
+     * (name = "org.axonframework.domain.MetaData", revision = null).
      *
      * @param serializer        The serializer capable of serializing (at least) DomainEvents
      * @param eventFileResolver The EventFileResolver providing access to event files
