@@ -69,6 +69,9 @@ import static org.axonframework.serializer.MessageSerializer.serializePayload;
  * </ul>
  * </li>
  * </ul>
+ * <p/>
+ * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
+ * (name = "org.axonframework.domain.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @author Allard Buijze
  * @since 2.0

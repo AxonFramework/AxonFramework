@@ -56,6 +56,9 @@ import static org.axonframework.serializer.MessageSerializer.serializePayload;
  * <li>serializedMetaData => [meta data of the event]</li>
  * <li>eventIdentifier => [identifier of the event]</li>
  * </ul>
+ * <p/>
+ * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
+ * (name = "org.axonframework.domain.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @author Allard Buijze
  * @since 2.0

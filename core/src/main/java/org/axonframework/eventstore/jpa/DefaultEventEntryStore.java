@@ -35,6 +35,10 @@ import javax.persistence.Query;
  * SnapshotEventEntry entities.
  * <p/>
  * This implementation requires that the aforementioned instances are available in the current persistence context.
+ * <p/>
+ * <em>Note: the SerializedType of Message Meta Data is not stored in this EventEntryStore. Upon retrieval,
+ * it is set to the default value (name = "org.axonframework.domain.MetaData", revision = null). See {@link
+ * org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @author Allard Buijze
  * @since 1.2
