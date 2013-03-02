@@ -68,14 +68,14 @@ public class SpringTransactionManager implements TransactionManager<TransactionS
 
     @Override
     public void commitTransaction(TransactionStatus tx) {
-        if (tx.isNewTransaction()) {
+        if (tx.isNewTransaction() && !tx.isCompleted()) {
             transactionManager.commit(tx);
         }
     }
 
     @Override
     public void rollbackTransaction(TransactionStatus tx) {
-        if (tx.isNewTransaction()) {
+        if (tx.isNewTransaction() && !tx.isCompleted()) {
             transactionManager.rollback(tx);
         }
     }
