@@ -64,4 +64,40 @@ public class SpringTransactionManagerTest {
         verify(transactionManager).getTransaction(isA(DefaultTransactionDefinition.class));
         verify(transactionManager).commit(underlyingTransactionStatus);
     }
+
+    @Test
+    public void testCommitTransaction_NoCommitOnInactiveTransaction() {
+        TransactionStatus transaction = testSubject.startTransaction();
+        when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
+        testSubject.commitTransaction(transaction);
+
+        verify(transactionManager, never()).commit(underlyingTransactionStatus);
+    }
+
+    @Test
+    public void testCommitTransaction_NoRollbackOnInactiveTransaction() {
+        TransactionStatus transaction = testSubject.startTransaction();
+        when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
+        testSubject.rollbackTransaction(transaction);
+
+        verify(transactionManager, never()).rollback(underlyingTransactionStatus);
+    }
+
+    @Test
+    public void testCommitTransaction_NoCommitOnNestedTransaction() {
+        TransactionStatus transaction = testSubject.startTransaction();
+        when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
+        testSubject.commitTransaction(transaction);
+
+        verify(transactionManager, never()).commit(underlyingTransactionStatus);
+    }
+
+    @Test
+    public void testCommitTransaction_NoRollbackOnNestedTransaction() {
+        TransactionStatus transaction = testSubject.startTransaction();
+        when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
+        testSubject.rollbackTransaction(transaction);
+
+        verify(transactionManager, never()).rollback(underlyingTransactionStatus);
+    }
 }
