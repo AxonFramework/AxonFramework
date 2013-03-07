@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2012. Axon Framework
+  ~ Copyright (c) 2010-2013. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -292,6 +292,8 @@
             <xsd:annotation>
                 <xsd:documentation>
                     The name of the queue from which the consumer should read events.
+                    Note that this attribute is ignored when used in a Terminal's default configuration! The default
+                    queue name for any Cluster is the name of that cluster. (See reference guide chapter 6.4.1)
                 </xsd:documentation>
             </xsd:annotation>
 
