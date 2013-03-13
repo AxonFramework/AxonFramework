@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.jpa.criteria;
 
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.Map;
 
@@ -163,4 +163,31 @@ public class JpaCriteriaBuilderTest {
         assertEquals(2, parameters.getParameters().size());
         assertEquals("gte", parameters.getParameters().get("param0"));
         assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get("param1"));
-    }}
+    }
+
+    @Test
+    public void testBuildCriteria_WithLimit() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan("less")
+                .limit(20, 1000);
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+        assertTrue(criteria.hasLimit());
+        assertEquals(20, criteria.getStartAt());
+        assertEquals(1000, criteria.getBatchSize());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testBuildCriteria_WithLimitCalledTwice() throws Exception {
+        JpaCriteriaBuilder builder = new JpaCriteriaBuilder();
+        JpaCriteria criteria = (JpaCriteria) builder.property("property").lessThan("less")
+                .limit(1, 10)
+                .limit(20, 1000);
+
+        StringBuilder query = new StringBuilder();
+        ParameterRegistry parameters = new ParameterRegistry();
+        criteria.parse("entry", query, parameters);
+    }
+}

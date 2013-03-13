@@ -17,6 +17,7 @@
 package org.axonframework.eventstore.mongo.criteria;
 
 import com.mongodb.DBObject;
+import org.axonframework.eventstore.management.AbstractCriteria;
 import org.axonframework.eventstore.management.Criteria;
 
 /**
@@ -25,7 +26,7 @@ import org.axonframework.eventstore.management.Criteria;
  * @author Allard Buijze
  * @since 2.0
  */
-public abstract class MongoCriteria implements Criteria {
+public abstract class MongoCriteria extends AbstractCriteria {
 
     @Override
     public Criteria and(Criteria criteria) {

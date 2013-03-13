@@ -23,12 +23,12 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 
 /**
  * Implementation of the EventEntryStore that stores events in DomainEventEntry entities and snapshot events in
@@ -79,9 +79,9 @@ public class DefaultEventEntryStore implements EventEntryStore {
     @Override
     @SuppressWarnings({"unchecked"})
     public Iterator<SerializedDomainEventData> fetchFiltered(String whereClause, Map<String, Object> parameters,
-                                                             int batchSize,
+                                                             int start, int batchSize,
                                                              EntityManager entityManager) {
-        return new BatchingIterator(whereClause, parameters, batchSize, entityManager);
+        return new BatchingIterator(whereClause, parameters, start, batchSize, entityManager);
     }
 
     @Override
@@ -222,13 +222,15 @@ public class DefaultEventEntryStore implements EventEntryStore {
         private SerializedDomainEventData lastItem;
         private final String whereClause;
         private final Map<String, Object> parameters;
+        private final int startAt;
         private final int batchSize;
         private final EntityManager entityManager;
 
-        public BatchingIterator(
-                String whereClause, Map<String, Object> parameters, int batchSize, EntityManager entityManager) {
+        public BatchingIterator(String whereClause, Map<String, Object> parameters, int startAt, int batchSize,
+                                EntityManager entityManager) {
             this.whereClause = whereClause;
             this.parameters = parameters;
+            this.startAt = startAt;
             this.batchSize = batchSize;
             this.entityManager = entityManager;
             List<SerializedDomainEventData> firstBatch = fetchBatch();
@@ -250,7 +252,8 @@ public class DefaultEventEntryStore implements EventEntryStore {
                                           + "FROM DomainEventEntry e %s ORDER BY e.timeStamp ASC, "
                                           + "e.sequenceNumber ASC, e.aggregateIdentifier ASC",
                                   buildWhereClause(params)))
-                                       .setMaxResults(batchSize);
+                                        .setFirstResult(startAt)
+                                        .setMaxResults(batchSize);
             for (Map.Entry<String, Object> entry : params.entrySet()) {
                 Object value = entry.getValue();
                 if (value instanceof DateTime) {

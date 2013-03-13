@@ -17,55 +17,41 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.*;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
-import org.axonframework.serializer.ChainingConverterFactory;
-import org.axonframework.serializer.ConverterFactory;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.SimpleSerializedType;
+import org.axonframework.serializer.*;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.same;
 
 /**
  * @author Allard Buijze
@@ -433,6 +419,26 @@ public class JpaEventStoreTest {
 
         testSubject.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEventMessage.class));
+    }
+
+    @Test
+    public void testVisitEventsWithLimits() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        ArgumentCaptor<DomainEventMessage> eventCaptor = ArgumentCaptor.forClass(DomainEventMessage.class);
+        List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
+        String aggregateIdentifier = "id";
+        for (int t = 0; t < 110; t++) {
+            domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
+                                                                   "Mock contents", MetaData.emptyInstance()));
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+
+        CriteriaBuilder builder = testSubject.newCriteriaBuilder();
+        Criteria criteria = builder.property("sequenceNumber").greaterThanEquals(0L);
+        criteria.limit(10, 5);
+        testSubject.visitEvents(criteria, eventVisitor);
+        verify(eventVisitor, times(5)).doWithEvent(eventCaptor.capture());
+        assertEquals(10L, eventCaptor.getAllValues().get(0).getSequenceNumber());
     }
 
     @Test
