@@ -106,11 +106,9 @@ public class SynchronousLoopbackTest {
 
     protected void initializeRepository(LockManager lockingStrategy) {
         EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<CountingAggregate>(
-                CountingAggregate.class,
+                CountingAggregate.class, eventStore,
                 lockingStrategy);
         repository.setEventBus(eventBus);
-        repository.setEventStore(this.eventStore);
-
         AnnotationCommandHandlerAdapter.subscribe(new CounterCommandHandler(repository), commandBus);
     }
 

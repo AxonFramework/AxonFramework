@@ -91,18 +91,27 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
         } else {
             repositoryDefinition.setBeanClass(EventSourcingRepository.class);
         }
-        parseLockingStrategy(element, repositoryDefinition);
 
         parseAggregateRootType(element, repositoryDefinition);
+        parseEventStore(element, repositoryDefinition);
+        parseLockingStrategy(element, repositoryDefinition);
         parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues(),
                                 EventBus.class);
-        parseReferenceAttribute(element, EVENT_STORE_ATTRIBUTE, "eventStore", repositoryDefinition.getPropertyValues(),
-                                EventStore.class);
         parseReferenceAttribute(element, CONFLICT_RESOLVER_ATTRIBUTE, "conflictResolver",
                                 repositoryDefinition.getPropertyValues(), null);
         parseReferenceAttribute(element, CACHE_ATTRIBUTE, "cache", repositoryDefinition.getPropertyValues(), null);
         parseProcessors(element, parserContext, repositoryDefinition);
         return repositoryDefinition;
+    }
+
+    private void parseEventStore(Element element, GenericBeanDefinition repositoryDefinition) {
+        final Object eventStore;
+        if (element.hasAttribute(EVENT_STORE_ATTRIBUTE)) {
+            eventStore = new RuntimeBeanReference(element.getAttribute(EVENT_STORE_ATTRIBUTE));
+        } else {
+            eventStore = createAutowiredBean(EventStore.class);
+        }
+        repositoryDefinition.getConstructorArgumentValues().addIndexedArgumentValue(1, eventStore);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -158,12 +167,12 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     private void parseLockingStrategy(Element element, GenericBeanDefinition builder) {
         if (element.hasAttribute(LOCK_MANAGER_ATTRIBUTE)) {
             String lockManager = element.getAttribute(LOCK_MANAGER_ATTRIBUTE);
-            builder.getConstructorArgumentValues().addGenericArgumentValue(new RuntimeBeanReference(lockManager));
+            builder.getConstructorArgumentValues().addIndexedArgumentValue(2, new RuntimeBeanReference(lockManager));
         } else if (element.hasAttribute(LOCKING_STRATEGY_ATTRIBUTE)) {
             LockingStrategy strategy = LockingStrategy.valueOf(element.getAttribute(LOCKING_STRATEGY_ATTRIBUTE));
             GenericBeanDefinition lockManager = new GenericBeanDefinition();
             lockManager.setBeanClass(strategy.getLockManagerType());
-            builder.getConstructorArgumentValues().addGenericArgumentValue(lockManager);
+            builder.getConstructorArgumentValues().addIndexedArgumentValue(2, lockManager);
         }
     }
 
@@ -181,7 +190,7 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
         try {
             Class<?> aggregateRootType = Class.forName(aggregateRootTypeString);
             builder.getConstructorArgumentValues()
-                   .addGenericArgumentValue(new GenericAggregateFactory(aggregateRootType));
+                   .addIndexedArgumentValue(0, new GenericAggregateFactory(aggregateRootType));
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(
                     "No class of name " + aggregateRootTypeString + " was found on the classpath", e);

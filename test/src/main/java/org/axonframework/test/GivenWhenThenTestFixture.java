@@ -107,8 +107,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
         clearGivenWhenState();
-        final EventSourcingRepository<T> eventSourcingRepository = new EventSourcingRepository<T>(aggregateType);
-        eventSourcingRepository.setEventStore(eventStore);
+        final EventSourcingRepository<T> eventSourcingRepository = new EventSourcingRepository<T>(aggregateType,
+                                                                                                  eventStore);
         eventSourcingRepository.setEventBus(eventBus);
         repository = new IdentifierValidatingRepository<T>(eventSourcingRepository);
         this.aggregateType = aggregateType;
@@ -118,13 +118,12 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
         this.repository = new IdentifierValidatingRepository<T>(eventSourcingRepository);
         eventSourcingRepository.setEventBus(eventBus);
-        eventSourcingRepository.setEventStore(eventStore);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(new EventSourcingRepository<T>(aggregateFactory));
+        return registerRepository(new EventSourcingRepository<T>(aggregateFactory, eventStore));
     }
 
     @Override

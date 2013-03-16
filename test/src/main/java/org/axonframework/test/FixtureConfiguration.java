@@ -80,8 +80,8 @@ import java.util.List;
 public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
 
     /**
-     * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository will be wired
-     * with an Event Store and Event Bus implementation suitable for this test fixture.
+     * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository must be wired
+     * with the Event Store of this test fixture.
      * <p/>
      * Should not be used in combination with {@link
      * #registerAggregateFactory(org.axonframework.eventsourcing.AggregateFactory)}, as that will overwrite any

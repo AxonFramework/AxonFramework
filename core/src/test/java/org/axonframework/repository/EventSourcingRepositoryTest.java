@@ -62,14 +62,15 @@ public class EventSourcingRepositoryTest {
     private EventBus mockEventBus;
     private EventSourcingRepository<TestAggregate> testSubject;
     private UnitOfWork unitOfWork;
+    private SubtAggregateFactory subtAggregateFactory;
 
     @Before
     public void setUp() {
         mockEventStore = mock(SnapshotEventStore.class);
         mockEventBus = mock(EventBus.class);
-        testSubject = new EventSourcingRepository<TestAggregate>(new SubtAggregateFactory());
+        subtAggregateFactory = new SubtAggregateFactory();
+        testSubject = new EventSourcingRepository<TestAggregate>(subtAggregateFactory, mockEventStore);
         testSubject.setEventBus(mockEventBus);
-        testSubject.setEventStore(mockEventStore);
         unitOfWork = DefaultUnitOfWork.startAndGet();
     }
 
@@ -250,10 +251,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testSaveEventsWithDecorators() {
-        SpyEventPreprocessor decorator1 = new SpyEventPreprocessor();
-        SpyEventPreprocessor decorator2 = new SpyEventPreprocessor();
-        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
-        testSubject.setEventStore(new EventStore() {
+        testSubject = new EventSourcingRepository<TestAggregate>(subtAggregateFactory, new EventStore() {
             @Override
             public void appendEvents(String type, DomainEventStream events) {
                 while (events.hasNext()) {
@@ -266,6 +264,10 @@ public class EventSourcingRepositoryTest {
                 return mockEventStore.readEvents(type, identifier);
             }
         });
+        testSubject.setEventBus(mockEventBus);
+        SpyEventPreprocessor decorator1 = new SpyEventPreprocessor();
+        SpyEventPreprocessor decorator2 = new SpyEventPreprocessor();
+        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
         UUID identifier = UUID.randomUUID();
         when(mockEventStore.readEvents("test", identifier)).thenReturn(
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 3,
