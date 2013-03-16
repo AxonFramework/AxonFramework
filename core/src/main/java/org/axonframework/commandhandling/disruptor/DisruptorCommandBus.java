@@ -147,6 +147,9 @@ public class DisruptorCommandBus implements CommandBus {
     @SuppressWarnings("unchecked")
     public DisruptorCommandBus(EventStore eventStore, EventBus eventBus,
                                DisruptorConfiguration configuration) {
+        Assert.notNull(eventStore, "eventStore may not be null");
+        Assert.notNull(eventBus, "eventBus may not be null");
+        Assert.notNull(configuration, "configuration may not be null");
         Executor executor = configuration.getExecutor();
         if (executor == null) {
             executorService = Executors.newCachedThreadPool(

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 
 import java.util.HashSet;
@@ -82,6 +83,8 @@ public class ClusteringEventBus implements EventBus {
      * @param terminal        The terminal responsible for publishing incoming events to each of the clusters
      */
     public ClusteringEventBus(ClusterSelector clusterSelector, EventBusTerminal terminal) {
+        Assert.notNull(clusterSelector, "clusterSelector may not be null");
+        Assert.notNull(terminal, "terminal may not be null");
         this.clusterSelector = clusterSelector;
         this.terminal = terminal;
     }

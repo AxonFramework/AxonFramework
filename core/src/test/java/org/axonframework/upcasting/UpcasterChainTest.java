@@ -65,13 +65,16 @@ public abstract class UpcasterChainTest {
         Upcaster mockUpcasterFake = mock(Upcaster.class, "Fake upcaster");
         Upcaster mockUpcaster23 = new StubUpcaster<byte[]>(intermediate2.getType(), intermediate3, byte[].class);
 
-        UpcasterChain chain = createUpcasterChain(null, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
+        final ConverterFactory converterFactory = mock(ConverterFactory.class);
+        UpcasterChain chain = createUpcasterChain(converterFactory, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
 
         List<SerializedObject> actual1 = chain.upcast(object1, upcastingContext);
         assertEquals(object3.getType(), actual1.get(0).getType());
 
         List<SerializedObject> actual2 = chain.upcast(object2, upcastingContext);
         assertEquals(object3.getType(), actual2.get(0).getType());
+
+        verifyZeroInteractions(converterFactory);
     }
 
     @Test
@@ -134,7 +137,8 @@ public abstract class UpcasterChainTest {
     public void testUpcastObjectToMultipleObjects() {
         Upcaster mockUpcaster = new StubUpcaster(intermediate1.getType(), byte[].class, intermediate2, intermediate3);
 
-        UpcasterChain chain = createUpcasterChain(null, mockUpcaster);
+        final ConverterFactory converterFactory = mock(ConverterFactory.class);
+        UpcasterChain chain = createUpcasterChain(converterFactory, mockUpcaster);
         List<SerializedObject> upcastedObjects = chain.upcast(object1, upcastingContext);
 
         assertEquals(2, upcastedObjects.size());
@@ -142,6 +146,7 @@ public abstract class UpcasterChainTest {
         assertEquals(intermediate2.getType(), upcastedObjects.get(0).getType());
         assertEquals(intermediate3.getData(), upcastedObjects.get(1).getData());
         assertEquals(intermediate3.getType(), upcastedObjects.get(1).getType());
+        verifyZeroInteractions(converterFactory);
     }
 
     protected abstract UpcasterChain createUpcasterChain(ConverterFactory converterFactory, Upcaster... upcasters);

@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,6 +44,7 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
      * @param unresolvedRoutingKeyPolicy The policy for unresolved routing keys.
      */
     public AbstractRoutingStrategy(UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
+        Assert.notNull(unresolvedRoutingKeyPolicy, "unresolvedRoutingKeyPolicy may not be null");
         this.unresolvedRoutingKeyPolicy = unresolvedRoutingKeyPolicy;
     }
 

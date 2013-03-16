@@ -31,7 +31,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Listeners are expected to implement asynchronous handling themselves.
  *
  * @author Allard Buijze
- * @see AsynchronousEventHandlerWrapper
  * @since 0.5
  */
 public class SimpleEventBus implements EventBus {

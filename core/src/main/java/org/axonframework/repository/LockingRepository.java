@@ -16,6 +16,7 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -69,6 +70,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     protected LockingRepository(Class<T> aggregateType, LockManager lockManager) {
         super(aggregateType);
+        Assert.notNull(lockManager, "lockManager may not be null");
         this.lockManager = lockManager;
     }
 

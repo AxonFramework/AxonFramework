@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.repository.jpa;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.ResourceInjector;
@@ -58,6 +59,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      */
     public JpaSagaRepository(EntityManagerProvider entityManagerProvider) {
+        Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
         serializer = new JavaSerializer();
     }

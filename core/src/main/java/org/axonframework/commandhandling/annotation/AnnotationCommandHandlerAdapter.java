@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
@@ -70,6 +71,8 @@ public class AnnotationCommandHandlerAdapter
      * @param commandBus The command bus to which the handlers must be subscribed
      */
     public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
+        Assert.notNull(target, "target may not be null");
+        Assert.notNull(commandBus, "commandBus may not be null");
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
                                                                                             CommandHandler.class,
                                                                                             true);

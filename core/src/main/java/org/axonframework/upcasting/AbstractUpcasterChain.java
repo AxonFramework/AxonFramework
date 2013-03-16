@@ -16,6 +16,7 @@
 
 package org.axonframework.upcasting;
 
+import org.axonframework.common.Assert;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ContentTypeConverter;
 import org.axonframework.serializer.ConverterFactory;
@@ -57,6 +58,7 @@ public abstract class AbstractUpcasterChain implements UpcasterChain {
      * @param upcasters        The upcasters to form this chain
      */
     protected AbstractUpcasterChain(ConverterFactory converterFactory, List<Upcaster> upcasters) {
+        Assert.notNull(converterFactory, "converterFactory may not be null");
         this.upcasters = upcasters;
         this.converterFactory = converterFactory;
     }

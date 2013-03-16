@@ -41,11 +41,13 @@ public class SagaManagerTest {
     private Saga mockSaga1;
     private Saga mockSaga2;
     private Saga mockSaga3;
+    private SagaFactory mockSagaFactory;
 
     @Before
     public void setUp() throws Exception {
         mockEventBus = mock(EventBus.class);
         mockSagaRepository = mock(SagaRepository.class);
+        mockSagaFactory = mock(SagaFactory.class);
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
         mockSaga3 = mock(Saga.class);
@@ -66,7 +68,7 @@ public class SagaManagerTest {
         }
         when(mockSagaRepository.find(isA(Class.class), eq(associationValue)))
                 .thenReturn(setOf("saga1", "saga2", "saga3"));
-        testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository, null, Saga.class) {
+        testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory, Saga.class) {
 
             @Override
             public Class<?> getTargetType() {

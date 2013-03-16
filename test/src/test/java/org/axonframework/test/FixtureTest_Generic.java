@@ -47,6 +47,8 @@ public class FixtureTest_Generic {
     @Test
     public void testConfigureCustomAggregateFactory() {
         AggregateFactory<StandardAggregate> mockAggregateFactory = mock(AggregateFactory.class);
+        when(mockAggregateFactory.getAggregateType()).thenReturn(StandardAggregate.class);
+        when(mockAggregateFactory.getTypeIdentifier()).thenReturn(StandardAggregate.class.getSimpleName());
         when(mockAggregateFactory.createAggregate(isA(String.class), isA(DomainEventMessage.class)))
                 .thenReturn(new StandardAggregate());
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));

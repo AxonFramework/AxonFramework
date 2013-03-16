@@ -53,7 +53,7 @@ public abstract class IdentifierFactory {
         }
         if (factory == null) {
             factory = new DefaultIdentifierFactory();
-            logger.info("No custom IdentifierFactory implementation found. Using default.");
+            logger.debug("Using default UUID-based IdentifierFactory");
         } else {
             logger.info("Found custom IdentifierFactory implementation: {}", factory.getClass().getName());
         }

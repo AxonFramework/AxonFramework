@@ -16,6 +16,7 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.AggregateRoot;
 
@@ -65,6 +66,7 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
                                 LockManager lockManager) {
         super(aggregateType, lockManager);
+        Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
     }
 

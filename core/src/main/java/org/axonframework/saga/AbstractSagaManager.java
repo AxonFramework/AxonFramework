@@ -16,6 +16,7 @@
 
 package org.axonframework.saga;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
 import org.axonframework.common.lock.IdentifierBasedLock;
 import org.axonframework.domain.EventMessage;
@@ -61,6 +62,9 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory,
                                Class<? extends Saga>... sagaTypes) {
+        Assert.notNull(eventBus, "eventBus may not be null");
+        Assert.notNull(sagaRepository, "sagaRepository may not be null");
+        Assert.notNull(sagaFactory, "sagaFactory may not be null");
         this.eventBus = eventBus;
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;

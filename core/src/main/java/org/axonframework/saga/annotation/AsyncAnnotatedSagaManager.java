@@ -85,6 +85,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      */
     @SuppressWarnings({"unchecked"})
     public AsyncAnnotatedSagaManager(EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
+        Assert.notNull(eventBus, "eventBus may not be null");
         this.eventBus = eventBus;
         sagaAnnotationInspectors = new SagaMethodMessageHandlerInspector[sagaTypes.length];
         for (int i = 0; i < sagaTypes.length; i++) {

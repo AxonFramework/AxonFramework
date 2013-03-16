@@ -17,6 +17,7 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
 
 import java.util.Collections;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class CorrelationAuditDataProvider implements AuditDataProvider {
      * @param correlationIdKey the key under which to store the Command Identifier in the resulting Event's MetaData
      */
     public CorrelationAuditDataProvider(String correlationIdKey) {
+        Assert.notNull(correlationIdKey, "correlationIdKey may not be null");
         this.correlationIdKey = correlationIdKey;
     }
 

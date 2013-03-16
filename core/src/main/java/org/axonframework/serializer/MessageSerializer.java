@@ -16,6 +16,7 @@
 
 package org.axonframework.serializer;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.Message;
 
 /**
@@ -42,6 +43,7 @@ public class MessageSerializer implements Serializer {
      * @param serializer the serializer to serialize and deserialize objects with
      */
     public MessageSerializer(Serializer serializer) {
+        Assert.notNull(serializer, "serializer may not be null");
         this.serializer = serializer;
     }
 

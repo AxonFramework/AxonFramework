@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
+import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.domain.AggregateRoot;
@@ -116,6 +117,10 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      */
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
                                              CommandBus commandBus, CommandTargetResolver commandTargetResolver) {
+        Assert.notNull(aggregateType, "aggregateType may not be null");
+        Assert.notNull(repository, "repository may not be null");
+        Assert.notNull(commandBus, "commandBus may not be null");
+        Assert.notNull(commandTargetResolver, "commandTargetResolver may not be null");
         this.repository = repository;
         this.commandBus = commandBus;
         this.commandTargetResolver = commandTargetResolver;
@@ -141,7 +146,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
                 public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
                     T aggregate = loadAggregate(command);
                     try {
-                    return commandHandler.invoke(aggregate, command);
+                        return commandHandler.invoke(aggregate, command);
                     } catch (InvocationTargetException e) {
                         throw e.getCause();
                     }
@@ -172,10 +177,11 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         @Override
         public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
             try {
-	            repository.add(handler.invoke(null, command));
+                repository.add(handler.invoke(null, command));
             } catch (InvocationTargetException e) {
                 throw e.getCause();
             }
-            return null;        }
+            return null;
+        }
     }
 }

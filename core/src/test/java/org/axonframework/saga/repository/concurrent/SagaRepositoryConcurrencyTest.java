@@ -18,6 +18,7 @@ package org.axonframework.saga.repository.concurrent;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.junit.*;
 
@@ -33,6 +34,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
@@ -45,23 +47,25 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
     private VirtualSagaRepository repository;
     private List<Throwable> exceptions = new ArrayList<Throwable>();
     private AnnotatedSagaManager sagaManager;
+    private EventBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         repository = new VirtualSagaRepository();
+        eventBus = mock(EventBus.class);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testConcurrentAccessToSaga_NotSynchronized() throws Throwable {
-        sagaManager = new AnnotatedSagaManager(repository, null, ConcurrentSaga.class);
+        sagaManager = new AnnotatedSagaManager(repository, eventBus, ConcurrentSaga.class);
         sagaManager.setSynchronizeSagaAccess(false);
         executeConcurrentAccessToSaga(ConcurrentSaga.class);
     }
 
     @Test
     public void testConcurrentAccessToSaga_Synchronized() throws Throwable {
-        sagaManager = new AnnotatedSagaManager(repository, null, NonConcurrentSaga.class);
+        sagaManager = new AnnotatedSagaManager(repository, eventBus, NonConcurrentSaga.class);
         sagaManager.setSynchronizeSagaAccess(true);
         executeConcurrentAccessToSaga(NonConcurrentSaga.class);
     }

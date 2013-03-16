@@ -51,6 +51,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param aggregateType The type of aggregate stored in this repository
      */
     protected AbstractRepository(Class<T> aggregateType) {
+        Assert.notNull(aggregateType, "aggregateType may not be null");
         this.aggregateType = aggregateType;
     }
 

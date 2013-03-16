@@ -21,8 +21,10 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.common.Assert;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -48,8 +50,13 @@ public abstract class AbstractCommandGateway {
      */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
                                      List<CommandDispatchInterceptor> commandDispatchInterceptors) {
+        Assert.notNull(commandBus, "commandBus may not be null");
         this.commandBus = commandBus;
-        this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+        if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+        } else {
+            this.dispatchInterceptors = Collections.emptyList();
+        }
         this.retryScheduler = retryScheduler;
     }
 

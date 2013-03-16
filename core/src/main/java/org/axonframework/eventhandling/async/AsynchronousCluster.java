@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.async;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.AbstractCluster;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
@@ -113,17 +114,20 @@ public class AsynchronousCluster extends AbstractCluster {
      * If transactions are required, the given <code>unitOfWorkFactory</code> should be configured to create
      * Transaction backed Unit of Work instances.
      *
-     * @param identifier        The unique identifier of this cluster
+     * @param name              The unique identifier of this cluster
      * @param executor          The executor to process event batches with
      * @param unitOfWorkFactory The Unit of Work Factory Manager that manages Units of Work around event processing
      * @param sequencingPolicy  The policy indicating which events must be processed sequentially, and which may be
      *                          executed in parallel.
      * @param errorHandler      The handler that handles error during event processing
      */
-    public AsynchronousCluster(String identifier, Executor executor, UnitOfWorkFactory unitOfWorkFactory,
+    public AsynchronousCluster(String name, Executor executor, UnitOfWorkFactory unitOfWorkFactory,
                                SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
                                ErrorHandler errorHandler) {
-        super(identifier);
+        super(name);
+        Assert.notNull(errorHandler, "errorHandler may not be null");
+        Assert.notNull(unitOfWorkFactory, "unitOfWorkFactory may not be null");
+        Assert.notNull(sequencingPolicy, "sequencingPolicy may not be null");
         this.errorHandler = errorHandler;
         this.executor = executor;
         this.unitOfWorkFactory = unitOfWorkFactory;

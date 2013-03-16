@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.common.Assert;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,6 +54,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * @param executor The executor that processes Command dispatching threads
      */
     public AsynchronousCommandBus(Executor executor) {
+        Assert.notNull(executor, "executor may not be null");
         this.executor = executor;
     }
 

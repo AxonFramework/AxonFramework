@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -78,6 +79,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
      * @param eventFileResolver The EventFileResolver providing access to event files
      */
     public FileSystemEventStore(Serializer serializer, EventFileResolver eventFileResolver) {
+        Assert.notNull(serializer, "serializer may not be null");
+        Assert.notNull(eventFileResolver, "eventFileResolver may not be null");
         this.eventSerializer = serializer;
         this.eventFileResolver = eventFileResolver;
     }

@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonNonTransientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
      * @param maxRetryCount The maximum number of retries allowed for a single command
      */
     public IntervalRetryScheduler(ScheduledExecutorService executor, int interval, int maxRetryCount) {
+        Assert.notNull(executor, "executor may not be null");
         this.retryExecutor = executor;
         this.retryInterval = interval;
         this.maxRetryCount = maxRetryCount;

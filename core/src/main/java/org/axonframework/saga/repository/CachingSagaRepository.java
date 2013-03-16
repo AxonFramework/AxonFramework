@@ -17,6 +17,7 @@
 package org.axonframework.saga.repository;
 
 import net.sf.jsr107cache.Cache;
+import org.axonframework.common.Assert;
 import org.axonframework.common.lock.IdentifierBasedLock;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
@@ -52,6 +53,9 @@ public class CachingSagaRepository implements SagaRepository {
      * @param sagaCache         The cache to store Saga instances in
      */
     public CachingSagaRepository(SagaRepository delegate, Cache associationsCache, Cache sagaCache) {
+        Assert.notNull(delegate, "You must provide a SagaRepository instance to delegate to");
+        Assert.notNull(associationsCache, "You must provide a Cache instance to store the association values");
+        Assert.notNull(sagaCache, "You must provide a Cache instance to store the sagas");
         this.delegate = delegate;
         this.associationsCache = associationsCache;
         this.sagaCache = sagaCache;

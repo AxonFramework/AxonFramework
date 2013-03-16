@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Assert;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -41,6 +43,7 @@ public abstract class AbstractCluster implements Cluster {
      * @param name The name of this cluster
      */
     protected AbstractCluster(String name) {
+        Assert.notNull(name, "name may not be null");
         this.name = name;
     }
 

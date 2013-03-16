@@ -105,6 +105,7 @@ public class DisruptorConfiguration {
      * @see com.lmax.disruptor.SingleThreadedClaimStrategy SingleThreadedClaimStrategy
      */
     public DisruptorConfiguration setClaimStrategy(ClaimStrategy claimStrategy) { //NOSONAR (setter may hide field)
+        Assert.notNull(claimStrategy, "claimStrategy must not be null");
         this.claimStrategy = claimStrategy;
         return this;
     }
@@ -138,6 +139,7 @@ public class DisruptorConfiguration {
      * @see com.lmax.disruptor.YieldingWaitStrategy YieldingWaitStrategy
      */
     public DisruptorConfiguration setWaitStrategy(WaitStrategy waitStrategy) { //NOSONAR (setter may hide field)
+        Assert.notNull(waitStrategy, "waitStrategy must not be null");
         this.waitStrategy = waitStrategy;
         return this;
     }
@@ -265,6 +267,7 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setRollbackConfiguration(
             RollbackConfiguration rollbackConfiguration) { //NOSONAR (setter may hide field)
+        Assert.notNull(rollbackConfiguration, "rollbackConfiguration may not be null");
         this.rollbackConfiguration = rollbackConfiguration;
         return this;
     }
@@ -371,6 +374,7 @@ public class DisruptorConfiguration {
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setCommandTargetResolver(CommandTargetResolver newCommandTargetResolver) {
+        Assert.notNull(newCommandTargetResolver, "newCommandTargetResolver may not be null");
         this.commandTargetResolver = newCommandTargetResolver;
         return this;
     }
@@ -461,8 +465,9 @@ public class DisruptorConfiguration {
      * Returns the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization should be
      * done. Defaults to <code>null</code>.
      *
-     * @param newSerializer the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization
-     *                   should be done
+     * @param newSerializer the serializer to perform pre-serialization with, or <code>null</code> if no
+     *                      pre-serialization
+     *                      should be done
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setSerializer(Serializer newSerializer) {
@@ -494,7 +499,7 @@ public class DisruptorConfiguration {
      * (<code>byte[]</code>).
      *
      * @param newSerializedRepresentation the type of data the serialized object should be represented in. May not be
-     *                                 <code>null</code>.
+     *                                    <code>null</code>.
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setSerializedRepresentation(Class<?> newSerializedRepresentation) {
@@ -515,10 +520,10 @@ public class DisruptorConfiguration {
 
     /**
      * Sets the transaction manager to use to manage a transaction around the storage and publication of events.
-     * The default is to not have publication and storage of events wrapped in a transaction.
+     * The default (<code>null</code>) is to not have publication and storage of events wrapped in a transaction.
      *
      * @param newTransactionManager the transaction manager to use to manage a transaction around the storage and
-     *                           publication of events
+     *                              publication of events
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setTransactionManager(TransactionManager newTransactionManager) {

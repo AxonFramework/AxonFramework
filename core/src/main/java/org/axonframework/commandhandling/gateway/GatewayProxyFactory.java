@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.annotation.MetaData;
 
@@ -28,6 +29,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -144,9 +146,14 @@ public class GatewayProxyFactory {
      */
     public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
                                List<CommandDispatchInterceptor> commandDispatchInterceptors) {
+        Assert.notNull(commandBus, "commandBus may not be null");
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
-        this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+        if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+        } else {
+            this.dispatchInterceptors = Collections.emptyList();
+        }
     }
 
     /**

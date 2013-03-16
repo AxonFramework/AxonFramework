@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -136,6 +137,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      */
     public JpaEventStore(EntityManagerProvider entityManagerProvider, Serializer serializer,
                          EventEntryStore eventEntryStore) {
+        Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
+        Assert.notNull(serializer, "serializer may not be null");
+        Assert.notNull(eventEntryStore, "eventEntryStore may not be null");
         this.entityManagerProvider = entityManagerProvider;
         this.serializer = new MessageSerializer(serializer);
         this.eventEntryStore = eventEntryStore;

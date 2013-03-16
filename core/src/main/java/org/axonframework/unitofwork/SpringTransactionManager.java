@@ -16,6 +16,7 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.common.Assert;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -39,6 +40,7 @@ public class SpringTransactionManager implements TransactionManager<TransactionS
      */
     public SpringTransactionManager(PlatformTransactionManager transactionManager,
                                     TransactionDefinition transactionDefinition) {
+        Assert.notNull(transactionManager, "transactionManager may not be null");
         this.transactionManager = transactionManager;
         this.transactionDefinition = transactionDefinition;
     }
@@ -50,8 +52,7 @@ public class SpringTransactionManager implements TransactionManager<TransactionS
      * @param transactionManager the transaction manager to use
      */
     public SpringTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-        this.transactionDefinition = new DefaultTransactionDefinition();
+        this(transactionManager, new DefaultTransactionDefinition());
     }
 
     /**

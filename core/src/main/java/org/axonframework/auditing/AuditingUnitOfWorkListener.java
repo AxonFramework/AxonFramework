@@ -17,6 +17,7 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -51,6 +52,9 @@ public class AuditingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
      */
     public AuditingUnitOfWorkListener(CommandMessage<?> command, AuditDataProvider auditDataProvider,
                                       AuditLogger auditLogger) {
+        Assert.notNull(command, "command may not be null");
+        Assert.notNull(auditDataProvider, "auditDataProvider may not be null");
+        Assert.notNull(auditLogger, "auditLogger may not be null");
         this.auditDataProvider = auditDataProvider;
         this.auditLogger = auditLogger;
         this.command = command;

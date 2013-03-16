@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,8 @@ public class DistributedCommandBus implements CommandBus {
      * @param routingStrategy the RoutingStrategy to define routing keys for each command
      */
     public DistributedCommandBus(CommandBusConnector connector, RoutingStrategy routingStrategy) {
+        Assert.notNull(connector, "connector may not be null");
+        Assert.notNull(routingStrategy, "routingStrategy may not be null");
         this.connector = connector;
         this.routingStrategy = routingStrategy;
     }

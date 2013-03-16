@@ -19,6 +19,7 @@ package org.axonframework.saga.repository.mongo;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import org.axonframework.common.Assert;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
@@ -50,6 +51,7 @@ public class MongoSagaRepository extends AbstractSagaRepository {
      * @param mongoTemplate the template providing access to the collections
      */
     public MongoSagaRepository(MongoTemplate mongoTemplate) {
+        Assert.notNull(mongoTemplate, "mongoTemplate may not be null");
         this.mongoTemplate = mongoTemplate;
         this.serializer = new JavaSerializer();
     }

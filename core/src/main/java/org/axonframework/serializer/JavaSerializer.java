@@ -16,6 +16,7 @@
 
 package org.axonframework.serializer;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -52,6 +53,7 @@ public class JavaSerializer implements Serializer {
      * @param revisionResolver The revision resolver providing the revision numbers for a given class
      */
     public JavaSerializer(RevisionResolver revisionResolver) {
+        Assert.notNull(revisionResolver, "revisionResolver may not be null");
         this.revisionResolver = revisionResolver;
     }
 

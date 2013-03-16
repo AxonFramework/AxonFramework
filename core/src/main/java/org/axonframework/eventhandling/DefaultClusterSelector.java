@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Assert;
+
 /**
  * ClusterSelector implementation that always selects the same cluster. This implementation
  * can serve as delegate for other cluster selectors for event listeners that do not belong to a specific cluster.
@@ -42,6 +44,7 @@ public class DefaultClusterSelector implements ClusterSelector {
      * @param defaultCluster The Cluster to assign to each listener
      */
     public DefaultClusterSelector(Cluster defaultCluster) {
+        Assert.notNull(defaultCluster, "defaultCluster may not be null");
         this.defaultCluster = defaultCluster;
     }
 

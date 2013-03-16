@@ -75,4 +75,16 @@ public abstract class Assert {
     public static void notNull(Object value, String message) {
         isTrue(value != null, message);
     }
+
+    /**
+     * Assert that the given <code>value</code> is not <code>null</code> or empty. If not, an IllegalArgumentException
+     * is thrown.
+     *
+     * @param value   the value to contain at least one character
+     * @param message The message to add to the exception when the assertion fails
+     */
+    public static void notEmpty(String value, String message) {
+        notNull(value, message);
+        isFalse(value.isEmpty(), message);
+    }
 }

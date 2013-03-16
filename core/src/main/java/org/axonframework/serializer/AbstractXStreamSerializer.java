@@ -26,6 +26,7 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.Assert;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
@@ -117,6 +118,10 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
                                         ConverterFactory converterFactory) {
+        Assert.notNull(charset, "charset may not be null");
+        Assert.notNull(xStream, "xStream may not be null");
+        Assert.notNull(converterFactory, "converterFactory may not be null");
+        Assert.notNull(revisionResolver, "revisionResolver may not be null");
         this.charset = charset;
         this.xStream = xStream;
         this.converterFactory = converterFactory;
