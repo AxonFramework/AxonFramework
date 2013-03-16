@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -29,13 +30,12 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Resource;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -52,9 +52,9 @@ import javax.annotation.Resource;
  */
 public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
 
-    private volatile EventStore eventStore;
+    private final EventStore eventStore;
     private ConflictResolver conflictResolver;
-    private Deque<EventStreamDecorator> eventStreamDecorators = new LinkedList<EventStreamDecorator>();
+    private Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<EventStreamDecorator>();
     private final AggregateFactory<T> aggregateFactory;
 
     /**
@@ -62,10 +62,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * aggregate instances of given <code>aggregateType</code>.
      *
      * @param aggregateType The type of aggregate stored in this repository
+     * @param eventStore The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
-    public EventSourcingRepository(final Class<T> aggregateType) {
-        this(new GenericAggregateFactory<T>(aggregateType));
+    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore) {
+        this(new GenericAggregateFactory<T>(aggregateType), eventStore);
     }
 
     /**
@@ -73,22 +74,28 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * create new aggregate instances.
      *
      * @param aggregateFactory The factory for new aggregate instances
+     * @param eventStore The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
-    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory) {
+    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore) {
         super(aggregateFactory.getAggregateType());
+        Assert.notNull(eventStore, "eventStore may not be null");
         this.aggregateFactory = aggregateFactory;
+        this.eventStore = eventStore;
     }
 
     /**
      * Initialize a repository with the given locking strategy.
      *
      * @param aggregateFactory The factory for new aggregate instances
+     * @param eventStore The event store that holds the event streams for this repository
      * @param lockManager      the locking strategy to apply to this repository
      */
-    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory,
-                                   final LockManager lockManager) {
+    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
+                                   LockManager lockManager) {
         super(aggregateFactory.getAggregateType(), lockManager);
+        Assert.notNull(eventStore, "eventStore may not be null");
+        this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
     }
 
@@ -97,11 +104,12 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * instances.
      *
      * @param aggregateType The type of aggregate to store in this repository
+     * @param eventStore The event store that holds the event streams for this repository
      * @param lockManager   the locking strategy to apply to this
      */
-    public EventSourcingRepository(final Class<T> aggregateType,
+    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
                                    final LockManager lockManager) {
-        this(new GenericAggregateFactory<T>(aggregateType), lockManager);
+        this(new GenericAggregateFactory<T>(aggregateType), eventStore, lockManager);
     }
 
     /**
@@ -207,16 +215,6 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         if (conflictResolver == null) {
             super.validateOnLoad(aggregate, expectedVersion);
         }
-    }
-
-    /**
-     * Sets the event store that would physically store the events.
-     *
-     * @param eventStore the event bus to publish events to
-     */
-    @Resource
-    public void setEventStore(EventStore eventStore) {
-        this.eventStore = eventStore;
     }
 
     /**

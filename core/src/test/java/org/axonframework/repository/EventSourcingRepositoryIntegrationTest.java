@@ -83,9 +83,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     private void initializeRepository(LockManager strategy) {
-        repository = new EventSourcingRepository<SimpleAggregateRoot>(new SimpleAggregateFactory(), strategy);
         eventStore = new InMemoryEventStore();
-        repository.setEventStore(eventStore);
+        repository = new EventSourcingRepository<SimpleAggregateRoot>(new SimpleAggregateFactory(), eventStore,
+                                                                      strategy);
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
 

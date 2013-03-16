@@ -55,10 +55,9 @@ public class AuditingInterceptorIntegrationTest {
     public void setUp() {
         this.commandBus = new SimpleCommandBus();
         this.eventBus = mock(EventBus.class);
-        this.repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class);
-        repository.setEventBus(eventBus);
         eventStore = mock(EventStore.class);
-        repository.setEventStore(eventStore);
+        this.repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class, eventStore);
+        repository.setEventBus(eventBus);
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventBus);

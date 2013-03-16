@@ -46,11 +46,10 @@ public class CommandHandlingTest {
 
     @Before
     public void setUp() {
-        repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class);
-        mockEventBus = mock(EventBus.class);
         mockEventStore = new StubEventStore();
+        repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class, mockEventStore);
+        mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
-        repository.setEventStore(mockEventStore);
         aggregateIdentifier = "testAggregateIdentifier";
     }
 

@@ -25,6 +25,7 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.PessimisticLockManager;
 import org.junit.*;
 import org.junit.runner.*;
@@ -133,7 +134,7 @@ public class RepositoryBeanDefinitionParserTest {
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition("testRepository");
         assertNotNull("BeanDefinition not created", beanDefinition);
 
-        assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        assertEquals("Wrong number of arguments", 3, beanDefinition.getConstructorArgumentValues().getArgumentCount());
         ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
                                                                                                    AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
@@ -144,20 +145,21 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues()
                                                    .getArgumentValue(1, BeanDefinition.class);
         assertNotNull("Second argument is wrong", secondArgument);
-        assertTrue("Second argument is wrong", secondArgument.getValue() instanceof BeanDefinition);
-        assertEquals("Second argument is wrong",
+        assertTrue("Second argument is wrong", secondArgument.getValue() instanceof RuntimeBeanReference);
+        assertEquals("Second argument is wrong", "eventStore",
+                     ((RuntimeBeanReference) secondArgument.getValue()).getBeanName());
+        ValueHolder thirdArgument = beanDefinition.getConstructorArgumentValues()
+                                                   .getArgumentValue(2, BeanDefinition.class);
+        assertNotNull("Third argument is wrong", thirdArgument);
+        assertTrue("Third argument is wrong", thirdArgument.getValue() instanceof BeanDefinition);
+        assertEquals("Third argument is wrong",
                      PessimisticLockManager.class.getName(),
-                     ((BeanDefinition) secondArgument.getValue()).getBeanClassName());
+                     ((BeanDefinition) thirdArgument.getValue()).getBeanClassName());
 
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
         assertNotNull("Property missing", eventBusPropertyValue);
         RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
         assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
-
-        PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
-        assertNotNull("Property missing", eventStorePropertyValue);
-        RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
-        assertEquals("Wrong reference", "eventStore", eventStoreReference.getBeanName());
 
         PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue(
                 "conflictResolver");
@@ -194,20 +196,21 @@ public class RepositoryBeanDefinitionParserTest {
                      EventSourcedAggregateRootMock.class.getSimpleName(),
                      ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
 
-        ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues()
-                                                   .getArgumentValue(1, BeanReference.class);
-        assertNotNull("Lock Manager reference is not resovled correctly", secondArgument);
-        assertEquals("nullLockManager", ((BeanReference) secondArgument.getValue()).getBeanName());
+        ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, EventStore.class);
+        assertNotNull("Second argument is wrong", secondArgument);
+        assertEquals("Second argument is wrong", RuntimeBeanReference.class, secondArgument.getValue().getClass());
+        assertEquals("Wrong reference", "eventStore", ((RuntimeBeanReference)secondArgument.getValue()).getBeanName());
+
+        ValueHolder thirdArgument = beanDefinition.getConstructorArgumentValues()
+                                                   .getArgumentValue(2, BeanReference.class);
+        assertNotNull("Lock Manager reference is not resolved correctly", thirdArgument);
+        assertEquals("nullLockManager", ((BeanReference) thirdArgument.getValue()).getBeanName());
 
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
         assertNotNull("Property missing", eventBusPropertyValue);
         RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
         assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
 
-        PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
-        assertNotNull("Property missing", eventStorePropertyValue);
-        RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
-        assertEquals("Wrong reference", "eventStore", eventStoreReference.getBeanName());
 
         PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue(
                 "conflictResolver");
@@ -238,7 +241,7 @@ public class RepositoryBeanDefinitionParserTest {
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition("defaultStrategyRepository");
         assertNotNull("BeanDefinition not created", beanDefinition);
 
-        assertEquals("Wrong number of arguments", 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+        assertEquals("Wrong number of arguments", 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
         ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
                                                                                                    AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
@@ -247,15 +250,16 @@ public class RepositoryBeanDefinitionParserTest {
                      EventSourcedAggregateRootMock.class.getSimpleName(),
                      ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
 
+
+        ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, EventStore.class);
+        assertNotNull("Second argument is wrong", secondArgument);
+        assertEquals("Second argument is wrong", RuntimeBeanReference.class, secondArgument.getValue().getClass());
+        assertEquals("Wrong reference", "eventStore", ((RuntimeBeanReference)secondArgument.getValue()).getBeanName());
+
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
         assertNotNull("Property missing", eventBusPropertyValue);
         RuntimeBeanReference eventBusReference = (RuntimeBeanReference) eventBusPropertyValue.getValue();
         assertEquals("Wrong reference", "eventBus", eventBusReference.getBeanName());
-
-        PropertyValue eventStorePropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventStore");
-        assertNotNull("Property missing", eventStorePropertyValue);
-        RuntimeBeanReference eventStoreReference = (RuntimeBeanReference) eventStorePropertyValue.getValue();
-        assertEquals("Wrong reference", "eventStore", eventStoreReference.getBeanName());
 
         PropertyValue conflictResolverPropertyValue = beanDefinition.getPropertyValues().getPropertyValue(
                 "conflictResolver");

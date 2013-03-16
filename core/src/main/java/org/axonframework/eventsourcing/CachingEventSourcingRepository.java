@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
 import org.axonframework.common.NoCache;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -45,10 +46,11 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * Optimistic locking is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
+     * @param eventStore The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
-    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory) {
-        this(aggregateFactory, new PessimisticLockManager());
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore) {
+        this(aggregateFactory, eventStore, new PessimisticLockManager());
     }
 
     /**
@@ -57,11 +59,13 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * Note that an optimistic locking strategy is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
+     * @param eventStore The event store that holds the event streams for this repository
      * @param lockManager      The lock manager restricting concurrent access to aggregate instances
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
-    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, LockManager lockManager) {
-        super(aggregateFactory, lockManager);
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
+                                          LockManager lockManager) {
+        super(aggregateFactory, eventStore, lockManager);
     }
 
     /**

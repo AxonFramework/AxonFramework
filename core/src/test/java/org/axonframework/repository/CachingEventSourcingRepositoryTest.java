@@ -52,12 +52,10 @@ public class CachingEventSourcingRepositoryTest {
 
     @Before
     public void setUp() {
-        testSubject = new CachingEventSourcingRepository<StubAggregate>(new StubAggregateFactory());
+        mockEventStore = new InMemoryEventStore();
+        testSubject = new CachingEventSourcingRepository<StubAggregate>(new StubAggregateFactory(), mockEventStore);
         mockEventBus = mock(EventBus.class);
         testSubject.setEventBus(mockEventBus);
-
-        mockEventStore = new InMemoryEventStore();
-        testSubject.setEventStore(mockEventStore);
 
         cache = new JCache(CacheManager.getInstance().getCache("testCache"));
         testSubject.setCache(cache);
