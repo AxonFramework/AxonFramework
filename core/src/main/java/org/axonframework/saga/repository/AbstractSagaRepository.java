@@ -41,13 +41,15 @@ public abstract class AbstractSagaRepository implements SagaRepository {
 
     @Override
     public void add(Saga saga) {
-        final String sagaType = typeOf(saga.getClass());
-        final AssociationValues associationValues = saga.getAssociationValues();
-        for (AssociationValue av : associationValues.addedAssociations()) {
-            storeAssociationValue(av, sagaType, saga.getSagaIdentifier());
+        if (saga.isActive()) {
+            final String sagaType = typeOf(saga.getClass());
+            final AssociationValues associationValues = saga.getAssociationValues();
+            for (AssociationValue av : associationValues.addedAssociations()) {
+                storeAssociationValue(av, sagaType, saga.getSagaIdentifier());
+            }
+            associationValues.commit();
+            storeSaga(saga);
         }
-        associationValues.commit();
-        storeSaga(saga);
     }
 
     @Override
