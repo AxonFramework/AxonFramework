@@ -59,7 +59,7 @@ public interface SagaRepository {
      * {@code false}), the repository should delete the saga from underlying storage and remove all stored association
      * values associated with that Saga.
      * <p/>
-     * Implementations *may* (temporary) return a cached version of the Saga, which is marked inactive.
+     * Implementations *may* (temporarily) return a cached version of the Saga, which is marked inactive.
      *
      * @param saga The Saga instance to commit
      */
@@ -68,6 +68,9 @@ public interface SagaRepository {
     /**
      * Registers a newly created Saga with the Repository. Once a Saga instance has been added, it can be found using
      * its association values or its unique identifier.
+     * <p/>
+     * Note that if the added Saga is marked inActive ({@link org.axonframework.saga.Saga#isActive()} returns
+     * {@code false}), it is not stored.
      *
      * @param saga The Saga instances to add.
      */

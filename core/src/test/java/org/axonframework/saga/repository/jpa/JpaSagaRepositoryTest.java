@@ -64,6 +64,23 @@ public class JpaSagaRepositoryTest {
 
     @DirtiesContext
     @Test
+    public void testAddingAnInactiveSagaDoesntStoreIt() {
+        StubSaga testSaga = new StubSaga("test1");
+        testSaga.registerAssociationValue(new AssociationValue("key", "value"));
+        testSaga.end();
+
+        repository.add(testSaga);
+        entityManager.flush();
+        entityManager.clear();
+        Set<String> actual = repository.find(StubSaga.class, new AssociationValue("key", "value"));
+        assertEquals(0, actual.size());
+        Object actualSaga = repository.load("test1");
+        assertNull(actualSaga);
+    }
+
+
+    @DirtiesContext
+    @Test
     public void testLoadSagaOfDifferentTypesWithSameAssociationValue_SagaFound() {
         StubSaga testSaga = new StubSaga("test1");
         MyOtherTestSaga otherTestSaga = new MyOtherTestSaga("test2");
