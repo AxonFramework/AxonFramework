@@ -117,7 +117,7 @@ public abstract class ParameterResolverFactory {
      *
      * @param memberAnnotations    annotations placed on the member (e.g. method)
      * @param parameterType        the parameter type to find a resolver for
-     * @param parameterAnnotations annotations places on the parameter
+     * @param parameterAnnotations annotations placed on the parameter
      * @return a suitable ParameterResolver, or <code>null</code> if none is found
      */
     protected abstract ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,

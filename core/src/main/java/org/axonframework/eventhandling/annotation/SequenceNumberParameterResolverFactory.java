@@ -17,35 +17,35 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.Message;
-import org.joda.time.DateTime;
+
 
 /**
- * AnnotatedParameterResolverFactory that accepts parameters of a {@link DateTime} type that have been annotated
- * with the {@link Timestamp} annotation and assigns the timestamp of the EventMessage.
+ * AnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type that have been annotated
+ * with the {@link SequenceNumber} annotation and assigns the sequenceNumber of the DomainEventMessage.
  *
- * @author Allard Buijze
- * @since 2.0
+ * @author Mark Ingram
+ * @since 2.1
  */
-public final class TimestampParameterResolverFactory extends AnnotatedParameterResolverFactory<Timestamp, DateTime> {
+public final class SequenceNumberParameterResolverFactory extends AnnotatedParameterResolverFactory<SequenceNumber, Long> {
 
-    public TimestampParameterResolverFactory() {
-        super(Timestamp.class, DateTime.class, new TimestampParameterResolver());
+    public SequenceNumberParameterResolverFactory() {
+        super(SequenceNumber.class, Long.class, new SequenceNumberParameterResolver());
     }
 
-    static class TimestampParameterResolver implements ParameterResolver<DateTime> {
+    static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
         @Override
-        public DateTime resolveParameterValue(Message message) {
-            if (message instanceof EventMessage) {
-                return ((EventMessage) message).getTimestamp();
+        public Long resolveParameterValue(Message message) {
+            if (message instanceof DomainEventMessage) {
+                return ((DomainEventMessage) message).getSequenceNumber();
             }
             return null;
         }
 
         @Override
         public boolean matches(Message message) {
-            return message instanceof EventMessage;
+            return message instanceof DomainEventMessage;
         }
     }
 }
