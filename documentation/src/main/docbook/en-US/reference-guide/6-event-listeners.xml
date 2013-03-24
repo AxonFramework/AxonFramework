@@ -194,7 +194,7 @@
                         </listitem>
                         <listitem>
                             <para>Parameters annotated with <code>@SequenceNumber</code> and of type
-                                <code>java.lang.Long</code> will resolve to the
+                                <code>java.lang.Long</code> or <code>long</code> will resolve to the
                                 sequenceNumber of a <code>DomainEventMessage</code>. This provides the order in
                                 which the Event was generated.</para>
                         </listitem>
