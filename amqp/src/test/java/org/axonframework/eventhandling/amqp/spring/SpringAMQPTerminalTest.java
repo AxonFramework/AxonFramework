@@ -35,6 +35,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -139,7 +140,7 @@ public class SpringAMQPTerminalTest {
         verify(transactionalChannel, never()).close();
 
         try {
-        uow.commit();
+            uow.commit();
             fail("Expected exception");
         } catch (EventPublicationFailedException e) {
             assertNotNull(e.getMessage());
@@ -175,4 +176,75 @@ public class SpringAMQPTerminalTest {
         verify(transactionalChannel).close();
     }
 
+    @Test
+    public void testSendMessageWithPublisherAck_UnitOfWorkCommitted()
+            throws InterruptedException, IOException, TimeoutException {
+        testSubject.setTransactional(false);
+        testSubject.setWaitForPublisherAck(true);
+        testSubject.setPublisherAckTimeout(123);
+
+        Connection connection = mock(Connection.class);
+        when(connectionFactory.createConnection()).thenReturn(connection);
+        Channel channel = mock(Channel.class);
+
+        when(channel.waitForConfirms()).thenReturn(true);
+        when(connection.createChannel(false)).thenReturn(channel);
+        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        when(serializer.serialize(message.getPayload(), byte[].class))
+                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+        when(serializer.serialize(message.getMetaData(), byte[].class))
+                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+
+        testSubject.publish(message);
+        verify(channel, never()).waitForConfirms();
+
+        uow.commit();
+
+        verify(channel).confirmSelect();
+        verify(channel).basicPublish(eq("mockExchange"), eq("java.lang"),
+                                     eq(false), eq(false),
+                                     any(AMQP.BasicProperties.class), isA(byte[].class));
+        verify(channel).waitForConfirmsOrDie(123);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCannotSetPublisherAcksAfterTransactionalSetting() {
+        testSubject.setTransactional(true);
+        testSubject.setWaitForPublisherAck(true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCannotSetTransactionalBehaviorAfterPublisherAcks() {
+        testSubject.setTransactional(false);
+
+        testSubject.setWaitForPublisherAck(true);
+        testSubject.setTransactional(true);
+    }
+
+    @Test
+    public void testSendMessageWithPublisherAck_NoActiveUnitOfWork() throws InterruptedException, IOException {
+        testSubject.setTransactional(false);
+        testSubject.setWaitForPublisherAck(true);
+
+        Connection connection = mock(Connection.class);
+        when(connectionFactory.createConnection()).thenReturn(connection);
+        Channel channel = mock(Channel.class);
+
+        when(channel.waitForConfirms()).thenReturn(true);
+        when(connection.createChannel(false)).thenReturn(channel);
+        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        when(serializer.serialize(message.getPayload(), byte[].class))
+                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+        when(serializer.serialize(message.getMetaData(), byte[].class))
+                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+
+        testSubject.publish(message);
+        verify(channel).confirmSelect();
+        verify(channel).basicPublish(eq("mockExchange"), eq("java.lang"),
+                                     eq(false), eq(false),
+                                     any(AMQP.BasicProperties.class), isA(byte[].class));
+        verify(channel).waitForConfirmsOrDie();
+    }
 }

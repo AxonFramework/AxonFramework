@@ -25,6 +25,7 @@ import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeNoException;
+import static org.junit.Assume.*;
 
 /**
  * @author Allard Buijze
@@ -49,6 +50,9 @@ public class AMQPTerminalTest {
 
     @Autowired
     private ConnectionFactory connectionFactory;
+
+    @Autowired
+    private SpringAMQPTerminal terminal;
 
     private static final int EVENT_COUNT = 100;
     private static final int THREAD_COUNT = 10;
@@ -65,7 +69,8 @@ public class AMQPTerminalTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @DirtiesContext
+    @Test(timeout = 10000)
     public void testConnectAndDispatch_DefaultQueueAndExchange() throws Exception {
         final EventMessage<String> sentEvent = GenericEventMessage.asEventMessage("Hello world");
         final CountDownLatch cdl = new CountDownLatch(EVENT_COUNT * THREAD_COUNT);
@@ -114,5 +119,23 @@ public class AMQPTerminalTest {
         }
         assertFalse("At least one failure was detected while publishing messages", failed.get());
         assertEquals("Did not receive message in time", 0, cdl.getCount());
+    }
+
+    @DirtiesContext
+    @Test(timeout = 10000)
+    public void testSendMessageWithPublisherAck() throws Exception {
+        terminal.setTransactional(false);
+        terminal.setWaitForPublisherAck(true);
+        terminal.setDurable(false);
+        testConnectAndDispatch_DefaultQueueAndExchange();
+    }
+
+    @DirtiesContext
+    @Test(timeout = 10000)
+    public void testSendMessageWithoutAnyTransactions() throws Exception {
+        terminal.setTransactional(false);
+        terminal.setWaitForPublisherAck(false);
+        terminal.setDurable(false);
+        testConnectAndDispatch_DefaultQueueAndExchange();
     }
 }

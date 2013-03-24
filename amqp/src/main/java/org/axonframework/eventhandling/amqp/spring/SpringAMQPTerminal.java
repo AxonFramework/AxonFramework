@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.amqp.spring;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
@@ -46,6 +47,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQP_CONFIG_PROPERTY;
 
@@ -72,11 +74,16 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
     private ApplicationContext applicationContext;
     private Serializer serializer;
     private RoutingKeyResolver routingKeyResolver;
+    private boolean waitForAck;
+    private long publisherAckTimeout;
 
     @Override
     public void publish(EventMessage... events) {
         final Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
+            if (waitForAck) {
+                channel.confirmSelect();
+            }
             for (EventMessage event : events) {
                 AMQPMessage amqpMessage = messageConverter.createAMQPMessage(event);
                 doSendMessage(channel, amqpMessage);
@@ -85,6 +92,8 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
                 CurrentUnitOfWork.get().registerListener(new ChannelTransactionUnitOfWorkListener(channel));
             } else if (isTransactional) {
                 channel.txCommit();
+            } else if (waitForAck) {
+                channel.waitForConfirmsOrDie();
             }
         } catch (IOException e) {
             if (isTransactional) {
@@ -93,6 +102,9 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
             throw new EventPublicationFailedException("Failed to dispatch Events to the Message Broker.", e);
         } catch (ShutdownSignalException e) {
             throw new EventPublicationFailedException("Failed to dispatch Events to the Message Broker.", e);
+        } catch (InterruptedException e) {
+            logger.warn("Interrupt received when waiting for message confirms.");
+            Thread.currentThread().interrupt();
         } finally {
             if (!CurrentUnitOfWork.isStarted()) {
                 tryClose(channel);
@@ -181,11 +193,47 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
      * <p/>
      * If a delegate Terminal  is configured, the transaction will be committed <em>after</em> the delegate has
      * dispatched the events.
+     * <p/>
+     * Transactional behavior cannot be enabled if {@link #setWaitForPublisherAck(boolean)} has been set to
+     * <code>true</code>.
      *
      * @param transactional whether dispatching should be transactional or not
      */
     public void setTransactional(boolean transactional) {
+        Assert.isTrue(!waitForAck || !transactional,
+                      "Cannot set transactional behavior when 'waitForServerAck' is enabled.");
         isTransactional = transactional;
+    }
+
+    /**
+     * Enables or diables the RabbitMQ specific publisher acknowledgements (confirms). When confirms are enabled, the
+     * terminal will wait until the server has acknowledged the reception (or fsync to disk on persistent messages) of
+     * all published messages.
+     * <p/>
+     * Server ACKS cannot be enabled when transactions are enabled.
+     * <p/>
+     * See <a href="http://www.rabbitmq.com/confirms.html">RabbitMQ Documentation</a> for more information about
+     * publisher acknowledgements.
+     *
+     * @param waitForPublisherAck whether or not to enab;e server acknowledgements (confirms)
+     */
+    public void setWaitForPublisherAck(boolean waitForPublisherAck) {
+        Assert.isTrue(!waitForPublisherAck || !isTransactional,
+                      "Cannot set 'waitForPublisherAck' when using transactions.");
+        this.waitForAck = waitForPublisherAck;
+    }
+
+    /**
+     * Sets the maximum amount of time (in milliseconds) the publisher may wait for the acknowledgement of published
+     * messages. If not all messages have been acknowledged withing this time, the publication will throw an
+     * EventPublicationFailedException.
+     * <p/>
+     * This setting is only used when {@link #setWaitForPublisherAck(boolean)} is set to <code>true</code>.
+     *
+     * @param publisherAckTimeout The number of milliseconds to wait for confirms, or 0 to wait indefinitely.
+     */
+    public void setPublisherAckTimeout(long publisherAckTimeout) {
+        this.publisherAckTimeout = publisherAckTimeout;
     }
 
     /**
@@ -309,9 +357,9 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
 
         @Override
         public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
-            if (isTransactional && isOpen && !channel.isOpen()) {
-                throw new EventPublicationFailedException("Unable to Commit transaction to AMQP: Channel is closed.",
-                                                          channel.getCloseReason());
+            if ((isTransactional || waitForAck) && isOpen && !channel.isOpen()) {
+                throw new EventPublicationFailedException(
+                        "Unable to Commit UnitOfWork changes to AMQP: Channel is closed.", channel.getCloseReason());
             }
         }
 
@@ -321,18 +369,36 @@ public class SpringAMQPTerminal implements EventBusTerminal, InitializingBean, A
                 try {
                     if (isTransactional) {
                         channel.txCommit();
+                    } else if (waitForAck) {
+                        waitForConfirmations();
                     }
                 } catch (IOException e) {
                     logger.warn("Unable to commit transaction on channel.", e);
+                } catch (InterruptedException e) {
+                    logger.warn("Interrupt received when waiting for message confirms.");
+                    Thread.currentThread().interrupt();
                 }
                 tryClose(channel);
+            }
+        }
+
+        private void waitForConfirmations() throws InterruptedException {
+            try {
+                channel.waitForConfirmsOrDie(publisherAckTimeout);
+            } catch (IOException ex) {
+                throw new EventPublicationFailedException("Failed to receive acknowledgements for all events", ex);
+            } catch (TimeoutException ex) {
+                throw new EventPublicationFailedException("Timeout while waiting for publisher acknowledgements",
+                                                          ex);
             }
         }
 
         @Override
         public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             try {
-                channel.txRollback();
+                if (isTransactional) {
+                    channel.txRollback();
+                }
             } catch (IOException e) {
                 logger.warn("Unable to rollback transaction on channel.", e);
             }
