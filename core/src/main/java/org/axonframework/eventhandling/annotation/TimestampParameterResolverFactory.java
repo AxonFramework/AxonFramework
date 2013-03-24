@@ -22,16 +22,27 @@ import org.axonframework.domain.Message;
 import org.joda.time.DateTime;
 
 /**
- * AnnotatedParameterResolverFactory that accepts parameters of a {@link DateTime} type that have been annotated
+ * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link DateTime} that are annotated
  * with the {@link Timestamp} annotation and assigns the timestamp of the EventMessage.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public final class TimestampParameterResolverFactory extends AnnotatedParameterResolverFactory<Timestamp, DateTime> {
+public final class TimestampParameterResolverFactory extends AbstractAnnotatedParameterResolverFactory<Timestamp, DateTime> {
+    private final ParameterResolver<DateTime> resolver;
 
+    /**
+     * Initializes a {@link org.axonframework.common.annotation.ParameterResolverFactory} for {@link Timestamp}
+     * annotated parameters
+     */
     public TimestampParameterResolverFactory() {
-        super(Timestamp.class, DateTime.class, new TimestampParameterResolver());
+        super(Timestamp.class, DateTime.class);
+        resolver = new TimestampParameterResolver();
+    }
+
+    @Override
+    protected ParameterResolver<DateTime> getResolver() {
+        return resolver;
     }
 
     static class TimestampParameterResolver implements ParameterResolver<DateTime> {

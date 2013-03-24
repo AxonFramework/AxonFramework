@@ -28,6 +28,7 @@ import java.util.Set;
 
 import static org.axonframework.common.ReflectionUtils.explicitlyUnequal;
 import static org.axonframework.common.ReflectionUtils.hasEqualsMethod;
+import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperType;
 import static org.junit.Assert.*;
 
 /**
@@ -133,6 +134,11 @@ public class ReflectionUtilsTest {
     @Test
     public void testExplicitlyUnequal_NoEqualsOrComparable() {
         assertFalse(explicitlyUnequal(new SomeType(), new SomeType()));
+    }
+
+    @Test
+    public void testResolvePrimitiveWrapperTypeForLong() {
+        assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
     }
 
     private static class SomeType {

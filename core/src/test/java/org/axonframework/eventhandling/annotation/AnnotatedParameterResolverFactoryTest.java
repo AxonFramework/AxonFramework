@@ -43,6 +43,13 @@ public class AnnotatedParameterResolverFactoryTest {
                 new Class<?>[]{ SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class, null});
     }
 
+    @Test
+    public void testSequenceNumberParameterResolverHandlesPrimitive() throws NoSuchMethodException {
+        Method method = TestClass.class.getMethod("methodWithPrimitiveParameter", long.class);
+        testMethod(new SequenceNumberParameterResolverFactory(), method,
+                new Class<?>[]{ SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class});
+    }
+
     @SuppressWarnings("unused")
     private static class TestClass {
         public void methodWithTimestampParameter(@Timestamp DateTime timestamp, @Timestamp Long wrongType, DateTime unannotated) {
@@ -52,9 +59,13 @@ public class AnnotatedParameterResolverFactoryTest {
         public void methodWithSequenceNumberParameter(@SequenceNumber Long sequenceNumber, @Timestamp DateTime different) {
 
         }
+
+        public void methodWithPrimitiveParameter(@SequenceNumber long primitiveSequenceNumber) {
+
+        }
     }
 
-    private static void testMethod(AnnotatedParameterResolverFactory<?,?> factory, Method method, Class<?>[] expectedResolvers) {
+    private static void testMethod(AbstractAnnotatedParameterResolverFactory<?,?> factory, Method method, Class<?>[] expectedResolvers) {
         Class<?>[] parameterTypes = method.getParameterTypes();
         Annotation[][] annotations = method.getParameterAnnotations();
         for(int param = 0; param < parameterTypes.length; param++) {

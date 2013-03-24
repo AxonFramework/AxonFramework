@@ -22,16 +22,30 @@ import org.axonframework.domain.Message;
 
 
 /**
- * AnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type that have been annotated
- * with the {@link SequenceNumber} annotation and assigns the sequenceNumber of the DomainEventMessage.
+ * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type
+ * annotated with the {@link SequenceNumber} annotation and assigns the sequenceNumber of the DomainEventMessage.
+ *
+ * Primitive long parameters are also supported.
  *
  * @author Mark Ingram
  * @since 2.1
  */
-public final class SequenceNumberParameterResolverFactory extends AnnotatedParameterResolverFactory<SequenceNumber, Long> {
+public final class SequenceNumberParameterResolverFactory extends
+        AbstractAnnotatedParameterResolverFactory<SequenceNumber, Long> {
+    private final ParameterResolver<Long> resolver;
 
+    /**
+     * Initializes a {@link org.axonframework.common.annotation.ParameterResolverFactory} for {@link SequenceNumber}
+     * annotated parameters
+     */
     public SequenceNumberParameterResolverFactory() {
-        super(SequenceNumber.class, Long.class, new SequenceNumberParameterResolver());
+        super(SequenceNumber.class, Long.class);
+        resolver = new SequenceNumberParameterResolver();
+    }
+
+    @Override
+    protected ParameterResolver<Long> getResolver() {
+        return resolver;
     }
 
     static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
