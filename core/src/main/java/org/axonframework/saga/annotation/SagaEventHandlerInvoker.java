@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.domain.EventMessage;
@@ -40,7 +41,8 @@ public class SagaEventHandlerInvoker {
      * @param target The target to invoke methods on
      */
     public SagaEventHandlerInvoker(Object target) {
-        invoker = new MessageHandlerInvoker(target, SagaEventHandler.class, false);
+        invoker = new MessageHandlerInvoker<SagaEventHandler>(
+                target, SagaEventHandler.class, false, AnnotationPayloadTypeResolver.INSTANCE);
     }
 
     /**
@@ -68,6 +70,19 @@ public class SagaEventHandlerInvoker {
             throw new EventHandlerInvocationException("Access to the Saga Event handler method was denied.", e);
         } catch (InvocationTargetException e) {
             throw new EventHandlerInvocationException("An exception occurred while invoking the handler method.", e);
+        }
+    }
+
+    private static final class AnnotationPayloadTypeResolver extends AbstractPayloadTypeResolver<SagaEventHandler> {
+
+        private static final AnnotationPayloadTypeResolver INSTANCE = new AnnotationPayloadTypeResolver();
+
+        private AnnotationPayloadTypeResolver() {
+        }
+
+        @Override
+        protected Class<?> getDefinedPayload(SagaEventHandler annotation) {
+            return annotation.payloadType();
         }
     }
 }

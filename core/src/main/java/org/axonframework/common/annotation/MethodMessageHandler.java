@@ -39,24 +39,29 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
     private final Method method;
 
     /**
-     * Creates a MethodMessageHandler for the given <code>method</code>.
+     * Creates a MethodMessageHandler for the given <code>method</code>, using given <code>explicitPayloadType</code>
+     * (if not <code>null</code>) defining the payload of the message it supports. If <code>null</code>, the payload
+     * type is deducted from the first parameter of the method.
      *
-     * @param method The method to create a Handler for
+     * @param method              The method to create a Handler for
+     * @param explicitPayloadType The payload type explicitly defined on the method, or <code>null</code>
      * @return The MethodMessageHandler implementation for the given method.
      *
      * @throws UnsupportedHandlerException if the given method is not suitable as a Handler
      */
-    public static MethodMessageHandler createFor(Method method) {
+    public static MethodMessageHandler createFor(Method method, Class<?> explicitPayloadType) {
         ParameterResolver[] resolvers = findResolvers(
                 method.getAnnotations(),
                 method.getParameterTypes(),
-                method.getParameterAnnotations());
-        Class<?> firstParameter = method.getParameterTypes()[0];
-        Class payloadType;
-        if (Message.class.isAssignableFrom(firstParameter)) {
-            payloadType = Object.class;
-        } else {
-            payloadType = firstParameter;
+                method.getParameterAnnotations(), explicitPayloadType == null);
+        Class<?> payloadType = explicitPayloadType;
+        if (explicitPayloadType == null) {
+            Class<?> firstParameter = method.getParameterTypes()[0];
+            if (Message.class.isAssignableFrom(firstParameter)) {
+                payloadType = Object.class;
+            } else {
+                payloadType = firstParameter;
+            }
         }
         ensureAccessible(method);
         validate(method, resolvers);
@@ -81,10 +86,6 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
     }
 
     private static void validate(Method method, ParameterResolver[] parameterResolvers) {
-        if (method.getParameterTypes()[0].isPrimitive()) {
-            throw new UnsupportedHandlerException(format("The first parameter of %s may not be a primitive type",
-                                                         method.toGenericString()), method);
-        }
         for (int i = 0; i < method.getParameterTypes().length; i++) {
             if (parameterResolvers[i] == null) {
                 throw new UnsupportedHandlerException(
@@ -150,12 +151,7 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
         }
 
         MethodMessageHandler that = (MethodMessageHandler) o;
-
-        if (!method.equals(that.method)) {
-            return false;
-        }
-
-        return true;
+        return method.equals(that.method);
     }
 
     @Override

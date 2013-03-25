@@ -43,8 +43,8 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
     /**
      * Creates a ConstructorCommandMessageHandler for the given <code>constructor</code>.
      *
-     * @param constructor The constructor to wrap as a Handler
-     * @param <T>         The type of Aggregate created by the constructor
+     * @param constructor         The constructor to wrap as a Handler
+     * @param <T>                 The type of Aggregate created by the constructor
      * @return ConstructorCommandMessageHandler
      *
      * @throws UnsupportedHandlerException when the given constructor is not suitable as a Handler
@@ -54,7 +54,7 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
         ParameterResolver[] resolvers = findResolvers(
                 constructor.getAnnotations(),
                 constructor.getParameterTypes(),
-                constructor.getParameterAnnotations());
+                constructor.getParameterAnnotations(), true);
         Class<?> firstParameter = constructor.getParameterTypes()[0];
         Class payloadType;
         if (Message.class.isAssignableFrom(firstParameter)) {
@@ -68,10 +68,6 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
     }
 
     private static void validate(Constructor constructor, ParameterResolver[] parameterResolvers) {
-        if (constructor.getParameterTypes()[0].isPrimitive()) {
-            throw new UnsupportedHandlerException(format("The first parameter of %s may not be a primitive type",
-                                                         constructor.toGenericString()), constructor);
-        }
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
             if (parameterResolvers[i] == null) {
                 throw new UnsupportedHandlerException(

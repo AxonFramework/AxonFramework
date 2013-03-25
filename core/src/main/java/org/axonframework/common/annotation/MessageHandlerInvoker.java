@@ -27,7 +27,7 @@ import java.lang.reflect.InvocationTargetException;
  * @author Allard Buijze
  * @since 0.6
  */
-public final class MessageHandlerInvoker {
+public final class MessageHandlerInvoker<T extends Annotation> {
 
     private final Object target;
     private final MethodMessageHandlerInspector inspector;
@@ -36,13 +36,16 @@ public final class MessageHandlerInvoker {
      * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
      * given <code>annotationType</code>.
      *
-     * @param target          The target to invoke methods on
-     * @param annotationType  The type of annotation used to demarcate the handler methods
-     * @param allowDuplicates Whether or not to accept multiple handlers listening to messages with the same payload
-     *                        type
+     * @param target              The target to invoke methods on
+     * @param annotationType      The type of annotation used to demarcate the handler methods
+     * @param allowDuplicates     Whether or not to accept multiple handlers listening to messages with the same
+     *                            payload type
+     * @param payloadTypeResolver The resolver providing the explicitly configured payload, if any
      */
-    public MessageHandlerInvoker(Object target, Class<? extends Annotation> annotationType, boolean allowDuplicates) {
-        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(), annotationType, allowDuplicates);
+    public MessageHandlerInvoker(Object target, Class<T> annotationType, boolean allowDuplicates,
+                                 HandlerPayloadTypeResolver<T> payloadTypeResolver) {
+        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(), annotationType,
+                                                                   allowDuplicates, payloadTypeResolver);
         this.target = target;
     }
 

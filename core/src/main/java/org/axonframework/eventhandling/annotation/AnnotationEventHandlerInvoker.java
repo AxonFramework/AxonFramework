@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.domain.EventMessage;
 
@@ -39,8 +40,8 @@ public class AnnotationEventHandlerInvoker {
      * @param target the bean on which to invoke event handlers
      */
     public AnnotationEventHandlerInvoker(Object target) {
-        invoker = new MessageHandlerInvoker(target, EventHandler.class, false);
-
+        invoker = new MessageHandlerInvoker<EventHandler>(
+                target, EventHandler.class, false, AnnotationPayloadTypeResolver.INSTANCE);
     }
 
     /**
@@ -58,6 +59,19 @@ public class AnnotationEventHandlerInvoker {
                 throw (RuntimeException) e.getCause();
             }
             throw new EventHandlerInvocationException("An exception occurred while invoking the handler method.", e);
+        }
+    }
+
+    private static final class AnnotationPayloadTypeResolver extends AbstractPayloadTypeResolver<EventHandler> {
+
+        private static final AnnotationPayloadTypeResolver INSTANCE = new AnnotationPayloadTypeResolver();
+
+        private AnnotationPayloadTypeResolver() {
+        }
+
+        @Override
+        protected Class<?> getDefinedPayload(EventHandler annotation) {
+            return annotation.eventType();
         }
     }
 }

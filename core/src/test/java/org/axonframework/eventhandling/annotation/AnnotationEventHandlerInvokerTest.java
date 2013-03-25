@@ -20,6 +20,7 @@ import org.axonframework.common.annotation.UnsupportedHandlerException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
+import org.joda.time.DateTime;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -189,8 +190,8 @@ public class AnnotationEventHandlerInvokerTest {
             invocationCount1++;
         }
 
-        @EventHandler
-        public void handle(StubEventOne event) {
+        @EventHandler(eventType = StubEventOne.class)
+        public void handle() {
             invocationCount2++;
         }
     }
@@ -199,8 +200,8 @@ public class AnnotationEventHandlerInvokerTest {
 
         protected int invocationCount3;
 
-        @EventHandler
-        public void method3(StubEventOne event) {
+        @EventHandler(eventType = StubEventOne.class)
+        public void method3(@Timestamp DateTime dateTime) {
             invocationCount3++;
         }
     }
@@ -225,8 +226,8 @@ public class AnnotationEventHandlerInvokerTest {
         public void oneHandler(StubEventOne event) {
         }
 
-        @EventHandler
-        public void otherHandler(StubEventOne event) {
+        @EventHandler(eventType = StubEventOne.class)
+        public void otherHandler() {
         }
     }
 

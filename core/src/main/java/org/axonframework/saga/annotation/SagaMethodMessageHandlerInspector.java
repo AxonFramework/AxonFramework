@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.domain.EventMessage;
@@ -65,9 +66,8 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
      * @param sagaType The type of saga this inspector handles
      */
     protected SagaMethodMessageHandlerInspector(Class<T> sagaType) {
-        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(sagaType,
-                                                                                            SagaEventHandler.class,
-                                                                                            true);
+        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(
+                sagaType, SagaEventHandler.class, true, AnnotationPayloadTypeResolver.INSTANCE);
         for (MethodMessageHandler handler : inspector.getHandlers()) {
             handlers.add(SagaMethodMessageHandler.getInstance(handler));
         }
@@ -99,5 +99,18 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     @SuppressWarnings({"unchecked"})
     public Class<T> getSagaType() {
         return sagaType;
+    }
+
+    private static final class AnnotationPayloadTypeResolver extends AbstractPayloadTypeResolver<SagaEventHandler> {
+
+        private static final AnnotationPayloadTypeResolver INSTANCE = new AnnotationPayloadTypeResolver();
+
+        private AnnotationPayloadTypeResolver() {
+        }
+
+        @Override
+        protected Class<?> getDefinedPayload(SagaEventHandler annotation) {
+            return annotation.payloadType();
+        }
     }
 }

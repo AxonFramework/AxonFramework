@@ -60,4 +60,10 @@ public @interface SagaEventHandler {
      */
     String keyName() default "";
 
+    /**
+     * The type of event this method handles. If specified, this handler will only be invoked for message that have a
+     * payload assignable to the given payload type. If unspecified, the first parameter of the method defines the type
+     * of supported event.
+     */
+    Class<?> payloadType() default Void.class;
 }

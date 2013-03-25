@@ -36,7 +36,7 @@ import java.util.Arrays;
 public abstract class AbstractMessageHandler implements Comparable<AbstractMessageHandler> {
 
     private final Score score;
-    private final Class payloadType;
+    private final Class<?> payloadType;
     private final ParameterResolver[] parameterValueResolvers;
 
     /**
@@ -62,6 +62,9 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      */
     public boolean matches(Message message) {
         Assert.notNull(message, "Event may not be null");
+        if (payloadType != null && !payloadType.isAssignableFrom(message.getPayloadType())) {
+            return false;
+        }
         for (ParameterResolver parameterResolver : parameterValueResolvers) {
             if (!parameterResolver.matches(message)) {
                 return false;
@@ -117,24 +120,25 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * @param memberAnnotations    The annotations on the member (e.g. method)
      * @param parameterTypes       The parameter type of the member
      * @param parameterAnnotations The annotations on each of the parameters
+     * @param resolvePayload       Indicates whether the payload of the message should be resolved from the parameters
      * @return the parameter resolvers for the given Member details
      *
      * @see java.lang.reflect.Method
      * @see java.lang.reflect.Constructor
      */
     protected static ParameterResolver[] findResolvers(Annotation[] memberAnnotations, Class<?>[] parameterTypes,
-                                                       Annotation[][] parameterAnnotations) {
+                                                       Annotation[][] parameterAnnotations, boolean resolvePayload) {
         int parameters = parameterTypes.length;
         ParameterResolver[] parameterValueResolvers = new ParameterResolver[parameters];
         for (int i = 0; i < parameters; i++) {
             // currently, the first parameter is considered the payload parameter
-            final boolean isPayloadParameter = i == 0;
+            final boolean isPayloadParameter = resolvePayload && i == 0;
             parameterValueResolvers[i] = ParameterResolverFactory.findParameterResolver(memberAnnotations,
                                                                                         parameterTypes[i],
                                                                                         parameterAnnotations[i],
                                                                                         isPayloadParameter);
         }
-        if (parameterValueResolvers[0] == null) {
+        if (parameterValueResolvers.length > 0 && parameterValueResolvers[0] == null) {
             parameterValueResolvers[0] = ParameterResolverFactory.createPayloadResolver(parameterTypes[0]);
         }
 
@@ -188,10 +192,9 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
         @Override
         public int compareTo(Score o) {
             if (declarationDepth != o.declarationDepth) {
-                return (o.declarationDepth < declarationDepth) ? -1 : ((o.declarationDepth
-                        == declarationDepth) ? 0 : 1);
+                return (o.declarationDepth < declarationDepth) ? -1 : 1;
             } else if (payloadDepth != o.payloadDepth) {
-                return (o.payloadDepth < payloadDepth) ? -1 : ((o.payloadDepth == payloadDepth) ? 0 : 1);
+                return (o.payloadDepth < payloadDepth) ? -1 : 1;
             } else {
                 return payloadName.compareTo(o.payloadName);
             }
@@ -207,18 +210,9 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
             }
 
             Score score = (Score) o;
-
-            if (declarationDepth != score.declarationDepth) {
-                return false;
-            }
-            if (payloadDepth != score.payloadDepth) {
-                return false;
-            }
-            if (!payloadName.equals(score.payloadName)) {
-                return false;
-            }
-
-            return true;
+            return declarationDepth == score.declarationDepth
+                    && payloadDepth == score.payloadDepth
+                    && payloadName.equals(score.payloadName);
         }
 
         @Override
