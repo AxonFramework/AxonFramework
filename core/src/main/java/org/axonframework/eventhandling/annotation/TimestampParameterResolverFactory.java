@@ -17,49 +17,46 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.Message;
 import org.joda.time.DateTime;
 
-import java.lang.annotation.Annotation;
-
-import static org.axonframework.common.CollectionUtils.getAnnotation;
-
 /**
- * ParameterResolverFactory implementation that accepts parameters of a {@link DateTime} type that have been annotated
+ * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link DateTime} that are annotated
  * with the {@link Timestamp} annotation and assigns the timestamp of the EventMessage.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public class TimestampParameterResolverFactory extends ParameterResolverFactory implements ParameterResolver<DateTime> {
+public final class TimestampParameterResolverFactory extends AbstractAnnotatedParameterResolverFactory<Timestamp, DateTime> {
+    private final ParameterResolver<DateTime> resolver;
+
+    /**
+     * Initializes a {@link org.axonframework.common.annotation.ParameterResolverFactory} for {@link Timestamp}
+     * annotated parameters
+     */
+    public TimestampParameterResolverFactory() {
+        super(Timestamp.class, DateTime.class);
+        resolver = new TimestampParameterResolver();
+    }
 
     @Override
-    protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                               Annotation[] parameterAnnotations) {
-        Timestamp annotation = getAnnotation(parameterAnnotations, Timestamp.class);
-        if (parameterType.isAssignableFrom(DateTime.class) && annotation != null) {
-            return this;
+    protected ParameterResolver<DateTime> getResolver() {
+        return resolver;
+    }
+
+    static class TimestampParameterResolver implements ParameterResolver<DateTime> {
+        @Override
+        public DateTime resolveParameterValue(Message message) {
+            if (message instanceof EventMessage) {
+                return ((EventMessage) message).getTimestamp();
+            }
+            return null;
         }
-        return null;
-    }
 
-    @Override
-    public DateTime resolveParameterValue(Message message) {
-        if (message instanceof EventMessage) {
-            return ((EventMessage) message).getTimestamp();
+        @Override
+        public boolean matches(Message message) {
+            return message instanceof EventMessage;
         }
-        return null;
-    }
-
-    @Override
-    public boolean matches(Message message) {
-        return message instanceof EventMessage;
-    }
-
-    @Override
-    public boolean supportsPayloadResolution() {
-        return false;
     }
 }

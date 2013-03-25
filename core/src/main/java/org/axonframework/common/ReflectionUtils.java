@@ -24,8 +24,10 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -34,9 +36,24 @@ import java.util.List;
  * @since 0.7
  */
 public abstract class ReflectionUtils {
+    /**
+     * A map of Primitive types to their respective wrapper types.
+     */
+    private static final Map<Class<?>,Class<?>> primitiveWrapperTypeMap = new HashMap<Class<?>,Class<?>>(8);
 
     private ReflectionUtils() {
         // utility class
+    }
+
+    static {
+        primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
+        primitiveWrapperTypeMap.put(byte.class, Byte.class);
+        primitiveWrapperTypeMap.put(char.class, Character.class);
+        primitiveWrapperTypeMap.put(double.class, Double.class);
+        primitiveWrapperTypeMap.put(float.class, Float.class);
+        primitiveWrapperTypeMap.put(int.class, Integer.class);
+        primitiveWrapperTypeMap.put(long.class, Long.class);
+        primitiveWrapperTypeMap.put(short.class, Short.class);
     }
 
     /**
@@ -190,5 +207,23 @@ public abstract class ReflectionUtils {
             currentClazz = currentClazz.getSuperclass();
         } while (currentClazz != null);
         return Collections.unmodifiableList(methods);
+    }
+
+
+    /**
+     * Returns the boxed wrapper type for the given <code>primitiveType</code>.
+     *
+     * @param primitiveType The primitive type to return boxed wrapper type for
+     * @return the boxed wrapper type for the given <code>primitiveType</code>
+     * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
+     */
+    public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
+        Assert.notNull(primitiveType, "primitiveType may not be null");
+        Assert.isTrue(primitiveType.isPrimitive(), "primitiveType is not actually primitive: " + primitiveType);
+
+        Class<?> primitiveWrapperType = primitiveWrapperTypeMap.get(primitiveType);
+        Assert.notNull(primitiveWrapperType, "no wrapper found for primitiveType: " + primitiveType);
+        return primitiveWrapperType;
+
     }
 }
