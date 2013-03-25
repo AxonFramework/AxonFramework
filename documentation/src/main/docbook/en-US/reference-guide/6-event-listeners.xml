@@ -193,6 +193,12 @@
                                 which the Event was generated.</para>
                         </listitem>
                         <listitem>
+                            <para>Parameters annotated with <code>@SequenceNumber</code> and of type
+                                <code>java.lang.Long</code> or <code>long</code> will resolve to the
+                                sequenceNumber of a <code>DomainEventMessage</code>. This provides the order in
+                                which the Event was generated.</para>
+                        </listitem>
+                        <listitem>
                             <para>Parameters assignable to Message will have the entire
                                     <code>EventMessage</code> injected (if the message is assignable
                                 to that parameter). If the first parameter is of type message, it

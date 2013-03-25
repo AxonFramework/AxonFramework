@@ -1,2 +1,3 @@
 org.axonframework.commandhandling.annotation.CurrentUnitOfWorkParameterResolverFactory
+org.axonframework.eventhandling.annotation.SequenceNumberParameterResolverFactory
 org.axonframework.eventhandling.annotation.TimestampParameterResolverFactory
