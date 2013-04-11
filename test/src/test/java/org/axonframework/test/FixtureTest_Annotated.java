@@ -107,6 +107,24 @@ public class FixtureTest_Annotated {
                 new GenericDomainEventMessage<StubDomainEvent>(identifier, 2, new StubDomainEvent())));
     }
 
+    @Test
+    public void testFixture_AggregateDeleted() {
+        fixture.given(new MyEvent("aggregateId", 5))
+               .when(new DeleteCommand("aggregateId", false))
+               .expectEvents(new MyAggregateDeletedEvent(false));
+    }
+
+    @Test
+    public void testFixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
+        TestExecutor exec = fixture.given(new MyEvent("aggregateId", 5));
+        try {
+            exec.when(new DeleteCommand("aggregateId", true));
+            fail("Fixture should have failed");
+        } catch (AssertionError error) {
+            assertTrue("Wrong message: " + error.getMessage(), error.getMessage().contains("considered deleted"));
+        }
+    }
+
     private class StubDomainEvent {
 
         public StubDomainEvent() {

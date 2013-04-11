@@ -21,4 +21,13 @@ package org.axonframework.test;
  */
 public class MyAggregateDeletedEvent {
 
+    private final boolean withIllegalStateChange;
+
+    public MyAggregateDeletedEvent(boolean withIllegalStateChange) {
+        this.withIllegalStateChange = withIllegalStateChange;
+    }
+
+    public boolean isWithIllegalStateChange() {
+        return withIllegalStateChange;
+    }
 }

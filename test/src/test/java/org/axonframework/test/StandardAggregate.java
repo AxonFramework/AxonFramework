@@ -42,8 +42,11 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
         apply(new MyEvent(aggregateIdentifier == null ? UUID.randomUUID() : aggregateIdentifier, initialValue));
     }
 
-    public void delete() {
-        apply(new MyAggregateDeletedEvent());
+    public void delete(boolean withIllegalStateChange) {
+        apply(new MyAggregateDeletedEvent(withIllegalStateChange));
+        if (withIllegalStateChange) {
+            markDeleted();
+        }
     }
 
     public void doSomethingIllegal(Integer newIllegalValue) {
@@ -62,7 +65,9 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
 
     @EventHandler
     public void deleted(MyAggregateDeletedEvent event) {
-        markDeleted();
+        if (!event.isWithIllegalStateChange()) {
+            markDeleted();
+        }
     }
 
     @EventHandler

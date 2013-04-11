@@ -258,9 +258,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                 if (workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was considered deleted, "
                                                          + "but the Repository still contains a non-deleted copy of "
-                                                         + "the aggregate. Make sure one of the Aggregate's Events "
-                                                         + "contains an AggregateDeletedEvent, or the aggregate "
-                                                         + "explicitly marks itself as deleted in an EventHandler.");
+                                                         + "the aggregate. Make sure the aggregate explicitly marks "
+                                                         + "itself as deleted in an EventHandler.");
                 }
                 assertValidWorkingAggregateState(aggregate2);
             } catch (AggregateNotFoundException notFound) {

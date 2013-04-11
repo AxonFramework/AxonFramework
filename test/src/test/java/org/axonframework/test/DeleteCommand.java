@@ -16,18 +16,27 @@
 
 package org.axonframework.test;
 
+import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+
 /**
  *
  */
 public class DeleteCommand {
 
+    @TargetAggregateIdentifier
     private final Object aggregateIdentifier;
+    private final boolean asIllegalChange;
 
-    public DeleteCommand(Object aggregateIdentifier) {
+    public DeleteCommand(Object aggregateIdentifier, boolean asIllegalChange) {
         this.aggregateIdentifier = aggregateIdentifier;
+        this.asIllegalChange = asIllegalChange;
     }
 
     public Object getAggregateIdentifier() {
         return aggregateIdentifier;
+    }
+
+    public boolean isAsIllegalChange() {
+        return asIllegalChange;
     }
 }

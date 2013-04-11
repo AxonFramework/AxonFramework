@@ -67,7 +67,7 @@ class MyCommandHandler {
 
     @CommandHandler
     public void handleDeleteAggregate(DeleteCommand command) {
-        repository.load(command.getAggregateIdentifier()).delete();
+        repository.load(command.getAggregateIdentifier()).delete(command.isAsIllegalChange());
     }
 
     public void setRepository(Repository<StandardAggregate> repository) {

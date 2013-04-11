@@ -56,7 +56,10 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
     @CommandHandler
     public void delete(DeleteCommand command) {
-        apply(new MyAggregateDeletedEvent());
+        apply(new MyAggregateDeletedEvent(command.isAsIllegalChange()));
+        if (command.isAsIllegalChange()) {
+            markDeleted();
+        }
     }
 
     @CommandHandler
@@ -76,7 +79,9 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
     @EventHandler
     public void deleted(MyAggregateDeletedEvent event) {
-        markDeleted();
+        if (!event.isWithIllegalStateChange()) {
+            markDeleted();
+        }
     }
 
     @EventHandler

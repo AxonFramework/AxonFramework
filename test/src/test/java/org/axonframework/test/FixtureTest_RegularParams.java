@@ -139,23 +139,36 @@ public class FixtureTest_RegularParams {
 
     @Test
     public void testFixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
+        TestExecutor exec = fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
+                                                                                         fixture.getEventBus()))
+                                   .given(new MyEvent("aggregateId", 5));
+        try {
+            exec.when(new DeleteCommand("aggregateId", true));
+            fail("Fixture should have failed");
+        } catch (AssertionError error) {
+            assertTrue("Wrong message: " + error.getMessage(), error.getMessage().contains("considered deleted"));
+        }
+    }
+
+    @Test
+    public void testFixture_AggregateDeleted() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                      fixture.getEventBus()))
                .given(new MyEvent("aggregateId", 5))
-               .when(new DeleteCommand("aggregateId"))
-               .expectEvents(new MyAggregateDeletedEvent());
+               .when(new DeleteCommand("aggregateId", false))
+               .expectEvents(new MyAggregateDeletedEvent(false));
     }
 
     @Test
     public void testFixtureGivenCommands() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
-                                                                      fixture.getEventBus()))
-                .givenCommands(new CreateAggregateCommand("aggregateId"),
-                               new TestCommand("aggregateId"),
-                               new TestCommand("aggregateId"),
-                               new TestCommand("aggregateId"))
-                .when(new TestCommand("aggregateId"))
-                .expectEvents(new MyEvent("aggregateId", 4));
+                                                                     fixture.getEventBus()))
+               .givenCommands(new CreateAggregateCommand("aggregateId"),
+                              new TestCommand("aggregateId"),
+                              new TestCommand("aggregateId"),
+                              new TestCommand("aggregateId"))
+               .when(new TestCommand("aggregateId"))
+               .expectEvents(new MyEvent("aggregateId", 4));
     }
 
     @Test
@@ -183,9 +196,9 @@ public class FixtureTest_RegularParams {
                                                                fixture.getEventBus());
         try {
             fixture.registerAnnotatedCommandHandler(commandHandler)
-                    .given(givenEvents)
-                    .when(new TestCommand("aggregateId"))
-                    .expectEvents(new MyEvent("aggregateId", 4), new MyEvent("aggregateId", 5));
+                   .given(givenEvents)
+                   .when(new TestCommand("aggregateId"))
+                   .expectEvents(new MyEvent("aggregateId", 4), new MyEvent("aggregateId", 5));
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("org.axonframework.test.MyEvent <|> "));
