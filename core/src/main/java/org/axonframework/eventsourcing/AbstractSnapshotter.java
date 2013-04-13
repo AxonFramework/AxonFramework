@@ -85,8 +85,10 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         @Override
         public void run() {
             DomainEventStream eventStream = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
+            // a snapshot should only be stored if the snapshot replaces at least more than one event
+            long firstEventSequenceNumber = eventStream.peek().getSequenceNumber();
             DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, aggregateIdentifier, eventStream);
-            if (snapshotEvent != null) {
+            if (snapshotEvent != null && snapshotEvent.getSequenceNumber() > firstEventSequenceNumber) {
                 eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
             }
         }
