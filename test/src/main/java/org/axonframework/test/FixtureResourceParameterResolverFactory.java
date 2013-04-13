@@ -38,7 +38,6 @@ import java.util.List;
 public class FixtureResourceParameterResolverFactory extends ParameterResolverFactory {
 
     private final List<Object> injectableResources;
-    private boolean enabled = true;
 
     private FixtureResourceParameterResolverFactory(List<Object> injectableResources) {
         this.injectableResources = new ArrayList<Object>(injectableResources);
@@ -67,9 +66,6 @@ public class FixtureResourceParameterResolverFactory extends ParameterResolverFa
     @Override
     protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                                Annotation[] parameterAnnotations) {
-        if (!enabled) {
-            return null;
-        }
         return new LazyParameterResolver(parameterType, injectableResources);
     }
 
@@ -80,7 +76,7 @@ public class FixtureResourceParameterResolverFactory extends ParameterResolverFa
      * be ignored for other tests that run in the same JVM.
      */
     public void disable() {
-        this.enabled = false;
+        ParameterResolverFactory.unregisterFactory(this);
     }
 
     private class LazyParameterResolver implements ParameterResolver {

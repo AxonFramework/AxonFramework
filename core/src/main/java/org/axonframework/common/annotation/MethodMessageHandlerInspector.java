@@ -46,6 +46,16 @@ public final class MethodMessageHandlerInspector {
     private static final ConcurrentMap<String, MethodMessageHandlerInspector> INSPECTORS =
             new ConcurrentHashMap<String, MethodMessageHandlerInspector>();
 
+    static {
+        // make sure the cached inspectors are cleared when the parameter resolvers change
+        ParameterResolverFactory.registerChangeListener(new ParameterResolverFactory.ChangeListener() {
+            @Override
+            public void onChange() {
+                INSPECTORS.clear();
+            }
+        });
+    }
+
     /**
      * Returns a MethodMessageHandlerInspector for the given <code>handlerClass</code> that contains handler methods
      * annotated with the given <code>annotationType</code>. The <code>allowDuplicates</code> will indicate whether it
