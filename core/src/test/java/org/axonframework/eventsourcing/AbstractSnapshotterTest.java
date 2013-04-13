@@ -80,6 +80,17 @@ public class AbstractSnapshotterTest {
         verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEventMessage.class));
     }
 
+    @Test
+    public void testScheduleSnapshot_SnapshotReplacesOneEvent() {
+        Object aggregateIdentifier = "aggregateIdentifier";
+        when(mockEventStore.readEvents("test", aggregateIdentifier))
+                .thenReturn(new SimpleDomainEventStream(
+                        new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                                                              "Mock contents", MetaData.emptyInstance())));
+        testSubject.scheduleSnapshot("test", aggregateIdentifier);
+        verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEventMessage.class));
+    }
+
     private Matcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
         return new ArgumentMatcher<DomainEventMessage>() {
             @Override
