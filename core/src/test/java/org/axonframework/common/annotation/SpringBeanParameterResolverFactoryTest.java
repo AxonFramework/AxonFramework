@@ -30,6 +30,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -81,9 +83,40 @@ public class SpringBeanParameterResolverFactoryTest {
     }
 
     @Test
+    @DirtiesContext
     public void testMethodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() {
         // this should generate an error
         assertNotNull(applicationContext.getBean("duplicateResourceHandlerWithPrimary"));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testResolverStoppedWhenApplicationContextIsStopped() {
+        ((AbstractApplicationContext) applicationContext).stop();
+        try {
+            applicationContext.getBean("duplicateResourceHandlerWithPrimary");
+            fail("Expected an exception");
+        } catch (Exception e) {
+            assertTrue("The exception is not caused by an UnsupportedHandlerException",
+                       e.getCause() instanceof UnsupportedHandlerException);
+            assertTrue("This seems to be the wrong exception message: " + e.getMessage(),
+                       e.getMessage().contains("ParameterResolver"));
+        }
+    }
+
+    @Test
+    @DirtiesContext
+    public void testResolverStoppedWhenApplicationContextIsClosed() {
+        ((AbstractApplicationContext) applicationContext).close();
+        try {
+            applicationContext.getBean("duplicateResourceHandlerWithPrimary");
+            fail("Expected an exception");
+        } catch (Exception e) {
+            assertTrue("The exception is not caused by an UnsupportedHandlerException",
+                       e.getCause() instanceof UnsupportedHandlerException);
+            assertTrue("This seems to be the wrong exception message: " + e.getMessage(),
+                       e.getMessage().contains("ParameterResolver"));
+        }
     }
 
     @ImportResource(value = {"classpath:/contexts/spring-parameter-resolver.xml"})

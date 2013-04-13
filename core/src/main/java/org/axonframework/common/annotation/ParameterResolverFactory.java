@@ -20,7 +20,9 @@ import java.lang.annotation.Annotation;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Abstract Factory that provides access to all ParameterResolverFactory implementations.
@@ -45,6 +47,7 @@ public abstract class ParameterResolverFactory {
 
     private static final List<ParameterResolverFactory> RESOLVERS = new CopyOnWriteArrayList<ParameterResolverFactory>();
     private static final DefaultParameterResolverFactory DEFAULT_FACTORY = new DefaultParameterResolverFactory();
+    private static final Set<ChangeListener> changeListeners = new CopyOnWriteArraySet<ChangeListener>();
 
     static {
         for (ParameterResolverFactory factory : FACTORY_LOADER) {
@@ -53,13 +56,37 @@ public abstract class ParameterResolverFactory {
     }
 
     /**
-     * Registers a ParameterResolverFactory at runtime. Annotated handlers that have already been inspected will not be
-     * able to use the newly added factory.
+     * Registers a ParameterResolverFactory at runtime. Annotated handlers that have already been inspected *may* not
+     * be able to use the newly added factory.
+     * <p/>
+     * All registered ChangeListeners are notified of the registration
      *
      * @param factory The factory to register
      */
     public static void registerFactory(ParameterResolverFactory factory) {
         RESOLVERS.add(factory);
+        notifyChangeListeners();
+    }
+
+    /**
+     * Unregisters a ParameterResolverFactory at runtime. Annotated handlers that have already been inspected *may* not
+     * be affected by the removal of the parameter resolver.
+     * <p/>
+     * All registered ChangeListeners are notified of the registration if the given <code>factory</code> was registered
+     * prior to this method invocation.
+     *
+     * @param factory The factory to unregister
+     */
+    public static void unregisterFactory(ParameterResolverFactory factory) {
+        if (RESOLVERS.remove(factory)) {
+            notifyChangeListeners();
+        }
+    }
+
+    private static void notifyChangeListeners() {
+        for (ChangeListener listener : changeListeners) {
+            listener.onChange();
+        }
     }
 
     /**
@@ -122,4 +149,27 @@ public abstract class ParameterResolverFactory {
      */
     protected abstract ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                                         Annotation[] parameterAnnotations);
+
+    /**
+     * Registers a listener that is notified when the ParameterResolverFactory instances are registered or
+     * unregistered. Generally, when caching the results of the ParameterResolverFactories, the component managing the
+     * cache should listen to changes to invalidate the cache.
+     *
+     * @param listener The listener to notify when state has changed
+     */
+    public static void registerChangeListener(ChangeListener listener) {
+        changeListeners.add(listener);
+    }
+
+    /**
+     * Interface of the listener that listens to state changes in the ParameterResolverFactories available to the
+     * application.
+     */
+    static interface ChangeListener {
+
+        /**
+         * Invoked when a ParameterResolverFactory has been registered or unregistered.
+         */
+        void onChange();
+    }
 }

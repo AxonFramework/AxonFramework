@@ -46,6 +46,8 @@ public final class MethodMessageHandlerInspector {
     private static final ConcurrentMap<String, MethodMessageHandlerInspector> INSPECTORS =
             new ConcurrentHashMap<String, MethodMessageHandlerInspector>();
 
+<<<<<<< HEAD
+=======
     static {
         // make sure the cached inspectors are cleared when the parameter resolvers change
         ParameterResolverFactory.registerChangeListener(new ParameterResolverFactory.ChangeListener() {
@@ -55,6 +57,7 @@ public final class MethodMessageHandlerInspector {
             }
         });
     }
+>>>>>>> 91a7498... Added logic to remove ParameterResolverFactories at runtime
 
     /**
      * Returns a MethodMessageHandlerInspector for the given <code>handlerClass</code> that contains handler methods

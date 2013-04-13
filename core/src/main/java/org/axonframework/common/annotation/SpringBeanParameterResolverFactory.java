@@ -24,6 +24,11 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationContextEvent;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.ContextStoppedEvent;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
@@ -32,7 +37,7 @@ import java.util.Map;
  * @author Allard Buijze
  */
 public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
-        implements BeanFactoryPostProcessor, ApplicationContextAware {
+        implements BeanFactoryPostProcessor, ApplicationContextAware, ApplicationListener {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringBeanParameterResolverFactory.class);
 
@@ -85,5 +90,15 @@ public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         ParameterResolverFactory.registerFactory(this);
+    }
+
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof ContextStoppedEvent || event instanceof ContextClosedEvent) {
+            if (applicationContext == null
+                    || applicationContext.equals(((ApplicationContextEvent) event).getApplicationContext())) {
+                ParameterResolverFactory.unregisterFactory(this);
+            }
+        }
     }
 }
