@@ -78,9 +78,12 @@ public class SpringAggregateSnapshotterTest {
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID();
 
-        DomainEventMessage event1 = new GenericDomainEventMessage<String>(aggregateIdentifier, 1L,
+        DomainEventMessage event1 = new GenericDomainEventMessage<String>(aggregateIdentifier, 0L,
                                                                           "Mock contents", MetaData.emptyInstance());
-        when(mockEventStore.readEvents("stub", aggregateIdentifier)).thenReturn(new SimpleDomainEventStream(event1));
+        DomainEventMessage event2 = new GenericDomainEventMessage<String>(aggregateIdentifier, 1L,
+                                                                          "Mock contents", MetaData.emptyInstance());
+        when(mockEventStore.readEvents("stub", aggregateIdentifier))
+                .thenReturn(new SimpleDomainEventStream(event1, event2));
     }
 
     @Test
