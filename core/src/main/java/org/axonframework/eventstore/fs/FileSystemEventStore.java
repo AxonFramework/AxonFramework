@@ -100,6 +100,9 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
         OutputStream out = null;
         try {
             DomainEventMessage next = eventsToStore.next();
+            if (next.getSequenceNumber() == 0 && eventFileResolver.eventFileExists(type, next.getAggregateIdentifier())) {
+                throw new EventStoreException("Duplicate aggregateIdentifier, type=" + type + ", id=" + next.getAggregateIdentifier());
+            }
             out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
             FileSystemEventMessageWriter eventMessageWriter =
                     new FileSystemEventMessageWriter(new DataOutputStream(out), eventSerializer);
