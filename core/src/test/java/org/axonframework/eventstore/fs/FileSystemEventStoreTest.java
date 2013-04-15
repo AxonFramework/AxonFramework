@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -36,8 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 
 /**
@@ -81,6 +80,30 @@ public class FileSystemEventStoreTest {
         assertEquals(event1.getIdentifier(), domainEvents.get(0).getIdentifier());
         assertEquals(event2.getIdentifier(), domainEvents.get(1).getIdentifier());
         assertEquals(event3.getIdentifier(), domainEvents.get(2).getIdentifier());
+    }
+
+    @Test(expected = AxonNonTransientException.class)
+    // Issue AXON-121: FileSystemEventStore allows duplicate construction of the same RootAggregate
+    public void testShouldThrowExceptionUponDuplicateAggregateId() {
+        FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
+
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                0,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                1,
+                new StubDomainEvent());
+        DomainEventStream stream = new SimpleDomainEventStream(event1, event2);
+        eventStore.appendEvents("test", stream);
+
+        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                0,
+                new StubDomainEvent());
+        DomainEventStream stream2 = new SimpleDomainEventStream(event3);
+        eventStore.appendEvents("test", stream2);
     }
 
     @Test
