@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.jpa.criteria;
 
+import org.axonframework.eventstore.management.AbstractCriteria;
 import org.axonframework.eventstore.management.Criteria;
 
 /**
@@ -24,7 +25,7 @@ import org.axonframework.eventstore.management.Criteria;
  * @author Allard Buijze
  * @since 2.0
  */
-public abstract class JpaCriteria implements Criteria {
+public abstract class JpaCriteria extends AbstractCriteria {
 
     @Override
     public JpaCriteria and(Criteria criteria) {

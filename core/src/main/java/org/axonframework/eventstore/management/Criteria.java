@@ -40,4 +40,38 @@ public interface Criteria {
      * @return a criteria instance that matches if <code>this</code> or the given <code>criteria</code> match
      */
     Criteria or(Criteria criteria);
+
+    /**
+     * Returns a criteria instance specifying a limit to the results returned starting from <code>start</code> and
+     * not exceeding <code>batchSize</code>.
+     *
+     * @param start The starting record for the query
+     * @param batchSize The maximum number of records to fetch
+     * @return a criteria instance.
+     * @throws {@link IllegalStateException} if called more than once on a criteria.
+     */
+    Criteria limit(int start, int batchSize);
+
+    /**
+     * Returns the starting record position for the query.
+     *
+     * @return starting record position as specified by the {@link Criteria#limit(int, int)} method. -1 indicates that
+     * the limit has not been set.
+     */
+    int getStartAt();
+
+    /**
+     * Returns the total number of records to fetch for the query.
+     *
+     * @return maximum number of records to return for the query as specified by the {@link Criteria#limit(int, int)}
+     * method. -1 indicates that the limit has not been set.
+     */
+    int getBatchSize();
+
+    /**
+     * Method to check if there is a limit applied to the criteria.
+     *
+     * @return <code>true</code> if there is a limit to the criteria, otherwise <code>false</code>.
+     */
+    boolean hasLimit();
 }

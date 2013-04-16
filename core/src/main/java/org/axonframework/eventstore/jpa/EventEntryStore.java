@@ -20,9 +20,9 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
+import javax.persistence.EntityManager;
 import java.util.Iterator;
 import java.util.Map;
-import javax.persistence.EntityManager;
 
 /**
  * Interface describing the mechanism that stores Events into the backing data store.
@@ -92,12 +92,14 @@ public interface EventEntryStore {
      *
      * @param whereClause   The JPA clause to be included after the WHERE keyword
      * @param parameters    A map containing all the parameter values for parameter keys included in the where clause
+     * @param startAt       The start record position of the event in the entire selection
      * @param batchSize     The total number of events to return in this batch
      * @param entityManager The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
     Iterator<? extends SerializedDomainEventData> fetchFiltered(String whereClause, Map<String, Object> parameters,
-                                                                int batchSize, EntityManager entityManager);
+                                                                int startAt, int batchSize,
+                                                                EntityManager entityManager);
 
     /**
      * Removes old snapshots from the storage for an aggregate of given <code>type</code> that generated the given

@@ -31,28 +31,16 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
-import org.axonframework.serializer.MessageSerializer;
-import org.axonframework.serializer.SerializedDomainEventData;
-import org.axonframework.serializer.SerializedDomainEventMessage;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.*;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
-import org.axonframework.upcasting.SimpleUpcasterChain;
-import org.axonframework.upcasting.UpcastSerializedDomainEventData;
-import org.axonframework.upcasting.UpcasterAware;
-import org.axonframework.upcasting.UpcasterChain;
+import org.axonframework.upcasting.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
+import java.sql.SQLException;
+import java.util.*;
 
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 
@@ -263,15 +251,21 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
     @Override
     public void visitEvents(EventVisitor visitor) {
-        doVisitEvents(visitor, null, Collections.<String, Object>emptyMap());
+        doVisitEvents(visitor, null, Collections.<String, Object>emptyMap(), 0, batchSize, false);
     }
 
     @Override
     public void visitEvents(Criteria criteria, EventVisitor visitor) {
         StringBuilder sb = new StringBuilder();
         ParameterRegistry parameters = new ParameterRegistry();
-        ((JpaCriteria) criteria).parse("e", sb, parameters);
-        doVisitEvents(visitor, sb.toString(), parameters.getParameters());
+        JpaCriteria jpaCriteria = (JpaCriteria) criteria;
+        jpaCriteria.parse("e", sb, parameters);
+        if (jpaCriteria.hasLimit()) {
+            doVisitEvents(visitor, sb.toString(), parameters.getParameters(),
+                            jpaCriteria.getStartAt(), jpaCriteria.getBatchSize(), true);
+        } else {
+            doVisitEvents(visitor, sb.toString(), parameters.getParameters(), 0, batchSize, false);
+        }
     }
 
     @Override
@@ -279,15 +273,20 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         return new JpaCriteriaBuilder();
     }
 
-    private void doVisitEvents(EventVisitor visitor, String whereClause, Map<String, Object> parameters) {
+    private void doVisitEvents(EventVisitor visitor, String whereClause, Map<String, Object> parameters,
+                               int startAt, int batchSize, boolean hasLimit) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         Iterator<? extends SerializedDomainEventData> batch = eventEntryStore.fetchFiltered(whereClause,
                                                                                             parameters,
+                                                                                            startAt,
                                                                                             batchSize,
                                                                                             entityManager);
         DomainEventStream eventStream = new CursorBackedDomainEventStream(null, batch, null);
-        while (eventStream.hasNext()) {
+        int recordCount = 0;
+        boolean shouldContinue = true;
+        while (eventStream.hasNext() && shouldContinue) {
             visitor.doWithEvent(eventStream.next());
+            shouldContinue = !hasLimit || ++recordCount < batchSize;
         }
     }
 
