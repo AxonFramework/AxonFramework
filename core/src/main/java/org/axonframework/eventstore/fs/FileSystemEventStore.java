@@ -24,6 +24,7 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.repository.ConflictingModificationException;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
@@ -100,8 +101,11 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
         OutputStream out = null;
         try {
             DomainEventMessage next = eventsToStore.next();
-            if (next.getSequenceNumber() == 0 && eventFileResolver.eventFileExists(type, next.getAggregateIdentifier())) {
-                throw new EventStoreException("Duplicate aggregateIdentifier, type=" + type + ", id=" + next.getAggregateIdentifier());
+            if (next.getSequenceNumber() == 0
+                    && eventFileResolver.eventFileExists(type, next.getAggregateIdentifier())) {
+                throw new ConflictingModificationException("Could not create event stream for aggregate, such stream "
+                                                                   + "already exists, type=" + type + ", id="
+                                                                   + next.getAggregateIdentifier());
             }
             out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
             FileSystemEventMessageWriter eventMessageWriter =

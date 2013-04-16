@@ -16,14 +16,13 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.repository.ConflictingModificationException;
 import org.junit.*;
 import org.mockito.*;
 
@@ -37,6 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 
 /**
@@ -82,8 +83,8 @@ public class FileSystemEventStoreTest {
         assertEquals(event3.getIdentifier(), domainEvents.get(2).getIdentifier());
     }
 
-    @Test(expected = AxonNonTransientException.class)
-    // Issue AXON-121: FileSystemEventStore allows duplicate construction of the same RootAggregate
+    @Test(expected = ConflictingModificationException.class)
+    // Issue AXON-121: FileSystemEventStore allows duplicate construction of the same AggregateRoot
     public void testShouldThrowExceptionUponDuplicateAggregateId() {
         FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
 
