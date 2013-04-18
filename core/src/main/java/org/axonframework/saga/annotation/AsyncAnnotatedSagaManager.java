@@ -23,6 +23,7 @@ import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
@@ -37,9 +38,11 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A SagaManager implementation that processes Sagas asynchronously. Incoming events are placed on a queue and
@@ -73,6 +76,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
     private SagaManagerStatus sagaManagerStatus = new SagaManagerStatus();
+    private long startTimeout = 5000;
 
     /**
      * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code> to listen to
@@ -100,7 +104,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     public synchronized void start() {
         if (disruptor == null) {
             sagaManagerStatus.setStatus(true);
-            disruptor = new Disruptor<AsyncSagaProcessingEvent>(new AsyncSagaProcessingEvent.Factory(), executor,
+            disruptor = new Disruptor<AsyncSagaProcessingEvent>(new AsyncSagaProcessingEvent.Factory(),
+                                                                new ValidatingExecutor(executor, startTimeout),
                                                                 new MultiThreadedClaimStrategy(bufferSize),
                                                                 waitStrategy);
             disruptor.handleExceptionsWith(new LoggingExceptionHandler());
@@ -264,6 +269,21 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     }
 
     /**
+     * Sets the amount of time (in milliseconds) the AsyncSagaManager will wait for the async processors to be assigned
+     * a thread from the executor. This is used to ensure that the executor provides a thread for the processors,
+     * instead of queueing them. This typically occurs when using a thread pool with a core pool size smaller than the
+     * processorCount.
+     * <p/>
+     * Must be set before calling {@link #start()}. Defaults to 5000 (5 seconds).
+     *
+     * @param startTimeout the number of millis to wait for the processor to have been assigned a thread. Defaults to
+     *                     5000 (5 seconds).
+     */
+    public synchronized void setStartTimeout(long startTimeout) {
+        this.startTimeout = startTimeout;
+    }
+
+    /**
      * Sets the size of the processing buffer. This is equal to the amount of events that may awaiting for processing
      * before the input is blocked. Must be set <em>before</em> the SagaManager is started.
      * <p/>
@@ -330,6 +350,77 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
          */
         public boolean isRunning() {
             return isRunning;
+        }
+    }
+
+    /**
+     * Executor wrapper that checks whether a given task is executed immediately.
+     */
+    private static class ValidatingExecutor implements Executor {
+
+        private final Executor delegate;
+        private final long timeoutMillis;
+
+        /**
+         * Initialize the Executor that delegates to the given <code>executor</code> and wait for at most
+         * <code>timeoutMillis</code> for tasks to actually start.
+         *
+         * @param executor
+         * @param timeoutMillis
+         */
+        public ValidatingExecutor(Executor executor, long timeoutMillis) {
+            this.delegate = executor;
+            this.timeoutMillis = timeoutMillis;
+        }
+
+        @Override
+        public void execute(Runnable command) {
+            final StartDetectingRunnable task = new StartDetectingRunnable(command);
+            delegate.execute(task);
+            try {
+                if (!task.awaitStarted(timeoutMillis, TimeUnit.MILLISECONDS)) {
+                    throw new AxonConfigurationException("It seems that the given Executor is not providing a thread "
+                                                                 + "for the AsyncSagaManager. Ensure that the "
+                                                                 + "corePoolSize is larger than the processor count.");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /**
+     * Runnable implementation that exposes the fact it has started executing.
+     */
+    private static class StartDetectingRunnable implements Runnable {
+
+        private final Runnable delegate;
+        private final CountDownLatch cdl = new CountDownLatch(1);
+
+        /**
+         * @param command The actual runnable to execute
+         */
+        public StartDetectingRunnable(Runnable command) {
+            this.delegate = command;
+        }
+
+        @Override
+        public void run() {
+            cdl.countDown();
+            delegate.run();
+        }
+
+        /**
+         * Indicates whether the task has started, potentially waiting for the given <code>timeout</code>.
+         *
+         * @param timeout The amount of time to wait for the process to start
+         * @param unit    The unit of time
+         * @return whether the task has started or not
+         *
+         * @throws InterruptedException when the thread receives an interrupt while waiting for the start notification
+         */
+        public boolean awaitStarted(long timeout, TimeUnit unit) throws InterruptedException {
+            return cdl.await(timeout, unit);
         }
     }
 }
