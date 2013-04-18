@@ -29,9 +29,11 @@ import org.mockito.internal.stubbing.answers.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.domain.GenericEventMessage.asEventMessage;
@@ -92,6 +94,15 @@ public class AsyncAnnotatedSagaManagerTest {
         assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
+    }
+
+    @Test(timeout = 10000, expected = AxonConfigurationException.class)
+    public void testThreadPoolExecutorHasTooSmallCorePoolSize() throws InterruptedException {
+        testSubject.setStartTimeout(100);
+        executorService = new ThreadPoolExecutor(1, 3, 5, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(25));
+        testSubject.setExecutor(executorService);
+
+        testSubject.start();
     }
 
     @Test
