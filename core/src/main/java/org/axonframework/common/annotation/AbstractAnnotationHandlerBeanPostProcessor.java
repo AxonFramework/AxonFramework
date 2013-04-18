@@ -71,7 +71,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
             Subscribable adapter = initializeAdapterFor(bean);
             managedAdapters.put(beanName, adapter);
             return createAdapterProxy(targetClass, bean, adapter, getAdapterInterface(), true);
-        } else if (isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
+        } else if (!getAdapterInterface().isInstance(bean) &&
+                isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
             // Java Proxy, find target and inspect that instance
             try {
                 Object targetBean = ((Advised) bean).getTargetSource().getTarget();
