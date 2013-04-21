@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -124,6 +125,40 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
         testSubject.expectDispatchedCommandsEqualTo("First", "Second");
+    }
+
+    @Test
+    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+
+        testSubject.expectDispatchedCommandsEqualTo(new SimpleCommand("First"), new SimpleCommand("Second"));
+    }
+
+    @Test
+    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+
+        try {
+            testSubject.expectDispatchedCommandsEqualTo(new SimpleCommand("Second"), new SimpleCommand("Thrid"));
+            fail("Expected exception");
+        } catch (AxonAssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("expected <Second>"));
+        }
+    }
+
+    @Test
+    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+
+        try {
+            testSubject.expectDispatchedCommandsEqualTo("Second", new SimpleCommand("Thrid"));
+            fail("Expected exception");
+        } catch (AxonAssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("Expected <String>"));
+        }
     }
 
     @Test(expected = AxonAssertionError.class)
@@ -298,6 +333,15 @@ public class FixtureExecutionResultImplTest {
         @Override
         public void describeTo(Description description) {
             description.appendText("something you'll never be able to deliver");
+        }
+    }
+
+    private static class SimpleCommand {
+
+        private final String content;
+
+        public SimpleCommand(String content) {
+            this.content = content;
         }
     }
 }
