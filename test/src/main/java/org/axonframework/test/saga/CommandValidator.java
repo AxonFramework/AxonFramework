@@ -18,6 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.test.AxonAssertionError;
+import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -85,13 +86,7 @@ public class CommandValidator {
                             expectedMessage.getPayloadType(),
                             actualItem.getPayloadType()));
                 }
-                if (!expectedMessage.getPayload().equals(actualItem.getPayload())) {
-                    throw new AxonAssertionError(format(
-                            "Unexpected payload of command at position %s (0-based). Expected <%s>, got <%s>",
-                            counter,
-                            expectedMessage.getPayload(),
-                            actualItem.getPayload()));
-                }
+                assertCommandEquality(counter, expectedMessage.getPayload(), actualItem.getPayload());
                 if (!expectedMessage.getMetaData().equals(actualItem.getMetaData())) {
                     throw new AxonAssertionError(format(
                             "Unexpected Meta Data of command at position %s (0-based). Expected <%s>, got <%s>",
@@ -99,12 +94,8 @@ public class CommandValidator {
                             expectedMessage.getMetaData(),
                             actualItem.getMetaData()));
                 }
-            } else if (!expectedItem.equals(actualItem.getPayload())) {
-                throw new AxonAssertionError(format(
-                        "Unexpected command at position %s (0-based). Expected <%s>, got <%s>",
-                        counter,
-                        expectedItem,
-                        actualItem.getPayload()));
+            } else {
+                assertCommandEquality(counter, expectedItem, actualItem.getPayload());
             }
             counter++;
         }
@@ -121,8 +112,30 @@ public class CommandValidator {
             Description actualDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
             describe(commandBus.getDispatchedCommands(), actualDescription);
-            throw new AxonAssertionError(format("Incorrect dispatched commands. Expected <%s>, but got <%s>",
+            throw new AxonAssertionError(format("Incorrect dispatched command. Expected <%s>, but got <%s>",
                                                 expectedDescription, actualDescription));
+        }
+    }
+
+    private void assertCommandEquality(int commandIndex, Object expected, Object actual) {
+        if (!expected.equals(actual)) {
+            if (!expected.getClass().equals(actual.getClass())) {
+                throw new AxonAssertionError(format("Wrong command type at index %s (0-based). "
+                                                            + "Expected <%s>, but got <%s>",
+                                                    commandIndex,
+                                                    expected.getClass().getSimpleName(),
+                                                    actual.getClass().getSimpleName()));
+            }
+            EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<Object>(expected);
+            if (!matcher.matches(actual)) {
+                throw new AxonAssertionError(format("Unexpected command at index %s (0-based). "
+                                                            + "Field value of '%s.%s', expected <%s>, but got <%s>",
+                                                    commandIndex,
+                                                    expected.getClass().getSimpleName(),
+                                                    matcher.getFailedField().getName(),
+                                                    matcher.getFailedFieldExpectedValue().toString(),
+                                                    matcher.getFailedFieldActualValue().toString()));
+            }
         }
     }
 }
