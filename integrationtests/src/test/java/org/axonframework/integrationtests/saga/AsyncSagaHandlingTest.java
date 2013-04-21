@@ -27,6 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -61,12 +65,29 @@ public class AsyncSagaHandlingTest {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     @Before
     public void setUp() {
         assertNotNull(eventBus);
         assertNotNull(sagaRepository);
         for (int t = 0; t < 10; t++) {
             aggregateIdentifiers.add(UUID.randomUUID());
+        }
+        new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                entityManager.createQuery("DELETE FROM AssociationValueEntry e").executeUpdate();
+                entityManager.createQuery("DELETE FROM SagaEntry e").executeUpdate();
+            }
+        });
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (sagaManager != null) {
+            sagaManager.stop();
         }
     }
 
