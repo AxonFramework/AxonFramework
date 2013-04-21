@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.saga;
 
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
+import org.axonframework.saga.annotation.EndSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
 
@@ -47,6 +48,11 @@ public class AsyncSaga extends AbstractAnnotatedSaga {
     public void handleAssociatingEvent(SagaAssociationChangingEvent event) {
         removeAssociationWith("currentAssociation", event.getCurrentAssociation());
         associateWith("currentAssociation", event.getNewAssociation());
+    }
+
+    @EndSaga
+    @SagaEventHandler(associationProperty = "myId")
+    public void handleSagaEndEvent(SagaEndEvent event) {
     }
 
     public Collection<String> getReceivedMessages() {

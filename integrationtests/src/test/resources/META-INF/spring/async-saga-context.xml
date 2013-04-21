@@ -51,11 +51,7 @@
 
     <axon:jpa-event-store id="eventStore"/>
 
-    <bean id="executor" class="org.axonframework.integrationtests.saga.ExecutorServiceFactoryBean">
-        <property name="queue" ref="unlimitedQueue"/>
-    </bean>
-
-    <bean id="unlimitedQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+    <bean id="executor" class="org.axonframework.integrationtests.saga.ExecutorServiceFactoryBean"/>
 
     <!-- Database configuration -->
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">

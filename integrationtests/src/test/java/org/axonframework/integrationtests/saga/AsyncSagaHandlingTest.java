@@ -36,6 +36,7 @@ import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import static org.axonframework.domain.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 
 /**
@@ -45,7 +46,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(locations = {"/META-INF/spring/async-saga-context.xml"})
 public class AsyncSagaHandlingTest {
 
-    private static final int EVENTS_PER_SAGA = 100;
+    private static final int EVENTS_PER_SAGA = 300;
     private List<UUID> aggregateIdentifiers = new LinkedList<UUID>();
 
     @Autowired
@@ -88,11 +89,10 @@ public class AsyncSagaHandlingTest {
     @Test
     public void testAssociationProcessingOrder() throws InterruptedException {
         UUID currentAssociation = UUID.randomUUID();
-        eventBus.publish(new GenericEventMessage<SagaStartEvent>(new SagaStartEvent(currentAssociation,
-                                                                                              "message")));
+        eventBus.publish(asEventMessage(new SagaStartEvent(currentAssociation, "message")));
         for (int t = 0; t < EVENTS_PER_SAGA; t++) {
             UUID newAssociation = UUID.randomUUID();
-            eventBus.publish(new GenericEventMessage<SagaAssociationChangingEvent>(new SagaAssociationChangingEvent(
+            eventBus.publish(asEventMessage(new SagaAssociationChangingEvent(
                     currentAssociation.toString(),
                     newAssociation.toString())));
             currentAssociation = newAssociation;
@@ -102,6 +102,23 @@ public class AsyncSagaHandlingTest {
                                                  new AssociationValue("currentAssociation",
                                                                       currentAssociation.toString()));
         assertEquals(1, result.size());
+    }
+
+    @DirtiesContext
+    @Test
+    public void testStartEndAsyncSaga() throws InterruptedException {
+        for (int i = 0; i < 500; i++) {
+            UUID currentAssociation = UUID.randomUUID();
+            eventBus.publish(asEventMessage(new SagaStartEvent(currentAssociation, "message")));
+            eventBus.publish(asEventMessage(new SagaEndEvent(currentAssociation)));
+        }
+
+        sagaManager.stop();
+        long associationValuesCount = (Long) entityManager.createQuery("SELECT COUNT(a) FROM AssociationValueEntry a")
+                                                          .getSingleResult();
+        long sagaEntryCount = (Long) entityManager.createQuery("SELECT COUNT(se) FROM SagaEntry se").getSingleResult();
+        assertEquals("Did not expect any live Sagas", 0, sagaEntryCount);
+        assertEquals("Did not expect any association values", 0, associationValuesCount);
     }
 
     private void validateSaga(UUID myId) {
