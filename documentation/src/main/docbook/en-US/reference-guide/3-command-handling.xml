@@ -479,31 +479,49 @@ commandBus.subscribe("MyCustomCommand", myCommandHandler);</programlisting></par
                 one handler! This restriction counts for all handlers registered to the same command
                 bus. </para>
             <annotation>
-                <para>There is a number of extra parameters that can be added to the
-                        <code>@CommandHandler</code> methods:<itemizedlist>
+                <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
+                    annotated class into a <code>CommandHandler</code>. The adapter also takes a
+                        <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on
+                    the adapter to subscribe all the annotated handlers to the command bus using the
+                    correct command type. </para>
+                <para>The <code>AnnotationCommandHandlerAdapter</code>, as well as the
+                        <code>AggregateCommandHandlerAdapter</code>, use
+                        <code>ParameterResolver</code>s to resolve the value that should be passed
+                    in the parameters of methods annotated with <code>@CommandHandler</code>. By
+                    default, Axon provides a number of parameter resolvers that allow you to use the
+                    following parameter types: <itemizedlist>
                         <listitem>
-                            <para><code>UnitOfWork</code>: parameters of this type will be given a
-                                reference to the current Unit of Work</para>
+                            <para>The first parameter is always the payload of the Command Message.
+                                It may also be of type <code>Message</code> or
+                                    <code>CommandMessage</code>, if the @CommandHandler annotation
+                                explicitly defined the name of the Command the handler can process.
+                                By default, a Command name is the fully qualified class name of the
+                                Command's payload.</para>
                         </listitem>
                         <listitem>
-                            <para><code>MetaData</code>: will be given a reference to the object
-                                holding all Meta Data properties of the Command</para>
+                            <para>Parameters annotated with <code>@MetaData</code> will resolve to
+                                the Meta Data value with the key as indicated on the annotation. If
+                                    <code>required</code> is <code>false</code> (default),
+                                    <code>null</code> is passed when the meta data value is not
+                                present. If <code>required</code> is <code>true</code>, the resolver
+                                will not match and prevent the method from being invoked when the
+                                meta data value is not present.</para>
                         </listitem>
                         <listitem>
-                            <para><code>@MetaData(propertyName)</code>: parameters annotated with
-                                this annotation will be given the value of the Meta Data property
-                                with the given property name. If no such property exists, it either
-                                provides <code>null</code> (when <code>required = false</code>) or
-                                doesn't match against the Command Handler, potentially refusing the
-                                Command entirely.</para>
+                            <para>Parameters of type <code>MetaData</code> will have the entire
+                                    <code>MetaData</code> of a <code>CommandMessage</code>
+                                injected.</para>
                         </listitem>
                         <listitem>
-                            <para>Any custom parameter for which a <code>ParameterResolver</code>
-                                has been configured. See the JavaDoc of
-                                    <code>ParameterResolverFactory</code> for more
-                                information.</para>
+                            <para>When using Spring and <code>&lt;axon:annotation-config/></code> is
+                                declared, any other parameters will resolve to autowired beans, if
+                                exactly one autowirable candidate is available in the application
+                                context. This allows you to inject resources directly into
+                                    <code>@CommandHandler</code> annotated methods.</para>
                         </listitem>
-                    </itemizedlist><programlisting language="java">public class MyAnnotatedHandler {
+                    </itemizedlist></para>
+                <para>
+                    <programlisting language="java">public class MyAnnotatedHandler {
 
     @CommandHandler
     public void handleSomeCommand(SomeCommand command, @MetaData("userId") String userId) {
@@ -521,13 +539,17 @@ commandBus.subscribe("MyCustomCommand", myCommandHandler);</programlisting></par
 AnnotationCommandHandlerAdapter handler = AnnotationCommandHandlerAdapter.subscribe(new MyAnnotatedHandler(), commandBus);
 
 // and to unsubscribe again:
-handler.unsubscribe();</programlisting></para>
+handler.unsubscribe();</programlisting>
+                </para>
+                <para>You can configure additional <code>ParameterResolver</code>s by extending the
+                        <code>ParameterResolverFactory</code> class and creating a file named
+                        <code>/META-INF/service/org.axonframework.common.annotation.ParameterResolverFactory</code>
+                    containing the fully qualified name of the implementing class. Alternatively,
+                    you can register your implementation at runtime using
+                        <code>ParameterResolverFactory.registerFactory()</code>. Make sure to do so
+                    before any adapters are created, otherwise handlers may have been initialized
+                    without those parameter resolvers.</para>
             </annotation>
-            <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
-                annotated class into a <code>CommandHandler</code>. The adapter also takes a
-                    <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on the
-                adapter to subscribe all the annotated handlers to the command bus using the correct
-                command type. </para>
             <note>
                 <para>If you use Spring, you can add the <code>&lt;axon:annotation-config/></code>
                     element to your application context. It will turn any bean with
