@@ -16,9 +16,14 @@
 
 package org.axonframework.serializer.bson;
 
-import org.junit.*;
-
 import static org.junit.Assert.assertEquals;
+
+import java.util.Map;
+
+import org.junit.Test;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 
 /**
  * @author Allard Buijze
@@ -39,4 +44,24 @@ public class BSONNodeTest {
         assertEquals(node.asDBObject().toString(), parsedNode.asDBObject().toString());
     }
 
+    @SuppressWarnings("rawtypes")
+	@Test
+    public void prefixesAttributesWithCorrectPrefix() {
+        BSONNode node = new BSONNode("root");
+        node.setAttribute("test", "attribute");
+        
+        assertEquals("attribute", ((Map)node.asDBObject().get("root")).get("attr_test"));
+    }
+    
+    @Test
+    public void parsesPrefixedAttributesCorrectly() {
+    	DBObject attribute = new BasicDBObject();
+    	attribute.put("attr_test", "attribute");
+    	DBObject root = new BasicDBObject();
+    	root.put("root", attribute);
+    	
+    	BSONNode parsedNode = BSONNode.fromDBObject(root);
+    	
+    	assertEquals("attribute", parsedNode.getAttribute("test"));
+    }
 }
