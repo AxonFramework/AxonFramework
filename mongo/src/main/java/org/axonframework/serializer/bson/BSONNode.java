@@ -136,9 +136,7 @@ public class BSONNode {
      * @param attributeValue The value of the attribute
      */
     public void setAttribute(String attributeName, String attributeValue) {
-        BSONNode childNode = new BSONNode(attributeName);
-        childNode.setValue(attributeValue);
-        this.childNodes.add(childNode);
+    	addChild(ATTRIBUTE_PREFIX + attributeName, attributeValue);
     }
 
     /**
@@ -154,7 +152,12 @@ public class BSONNode {
         Assert.notNull(name, "Node name must not be null");
         Assert.isFalse(name.startsWith(ATTRIBUTE_PREFIX), "Node names may not start with '" + ATTRIBUTE_PREFIX + "'");
 
+        return addChild(name, null);
+    }
+    
+    private BSONNode addChild(String name, String value) {
         BSONNode childNode = new BSONNode(name);
+        childNode.setValue(value);
         this.childNodes.add(childNode);
         return childNode;
     }
@@ -199,8 +202,12 @@ public class BSONNode {
      */
     public String getAttribute(String name) {
         String attr = ATTRIBUTE_PREFIX + name;
+        return getChildValue(attr);
+    }
+    
+    private String getChildValue(String name) {
         for (BSONNode node : childNodes) {
-            if (attr.equals(node.encodedName)) {
+            if (name.equals(node.encodedName)) {
                 return node.value;
             }
         }
