@@ -204,11 +204,11 @@ public abstract class ReflectionUtils {
         Class<?> currentClazz = clazz;
         do {
             methods.addAll(Arrays.asList(currentClazz.getDeclaredMethods()));
+            addMethodsOnDeclaredInterfaces(currentClazz, methods);
             currentClazz = currentClazz.getSuperclass();
         } while (currentClazz != null);
         return Collections.unmodifiableList(methods);
     }
-
 
     /**
      * Returns the boxed wrapper type for the given <code>primitiveType</code>.
@@ -225,5 +225,12 @@ public abstract class ReflectionUtils {
         Assert.notNull(primitiveWrapperType, "no wrapper found for primitiveType: " + primitiveType);
         return primitiveWrapperType;
 
+    }
+
+    private static void addMethodsOnDeclaredInterfaces(Class<?> currentClazz, List<Method> methods) {
+        for (Class iface : currentClazz.getInterfaces()) {
+            methods.addAll(Arrays.asList(iface.getDeclaredMethods()));
+            addMethodsOnDeclaredInterfaces(iface, methods);
+        }
     }
 }

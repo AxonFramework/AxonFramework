@@ -77,15 +77,22 @@ public class ReflectionUtilsTest {
                     assertEquals("getField3", actual.getName());
                     break;
                 case 1:
+                    assertEquals("getField3", actual.getName());
+                    assertEquals("SomeSubInterface", actual.getDeclaringClass().getSimpleName());
+                    break;
                 case 2:
+                case 3:
                     assertTrue("Expected either getField1 or getField2, but got " + actual.getName()
                                        + " declared in " + actual.getDeclaringClass().getName(),
                                "getField1".equals(actual.getName())
                                        || "getField2".equals(actual.getName()));
                     break;
+                case 4:
+                    assertEquals("SomeInterface", actual.getDeclaringClass().getSimpleName());
+                    break;
             }
         }
-        assertTrue(t >= 2);
+        assertTrue(t >= 4);
     }
 
     @Test
@@ -141,11 +148,12 @@ public class ReflectionUtilsTest {
         assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
     }
 
-    private static class SomeType {
+    private static class SomeType implements SomeInterface  {
 
         private String field1 = "field1";
         private String field2 = "field2";
 
+        @Override
         public String getField1() {
             return field1;
         }
@@ -155,13 +163,23 @@ public class ReflectionUtilsTest {
         }
     }
 
-    public static class SomeSubType extends SomeType {
+    public static interface SomeInterface {
+        String getField1();
+    }
+
+    public static interface SomeSubInterface {
+        int getField3();
+
+    }
+
+    public static class SomeSubType extends SomeType implements SomeSubInterface {
 
         public int field3 = 3;
-
+        @Override
         public int getField3() {
             return field3;
         }
+
     }
 
     public static class ContainsCollectionsType extends SomeType {

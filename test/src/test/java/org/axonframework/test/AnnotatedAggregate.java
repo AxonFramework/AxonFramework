@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author Allard Buijze
  */
-class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
+class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot implements AnnotatedAggregateInterface {
 
     @SuppressWarnings("UnusedDeclaration")
     private transient int counter;
@@ -89,7 +89,7 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
         // we don't care about events
     }
 
-    @CommandHandler
+    @Override
     public void doSomething(TestCommand command) {
         // this state change should be accepted, since it happens on a transient value
         counter++;
