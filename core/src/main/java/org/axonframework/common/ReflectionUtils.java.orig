@@ -192,6 +192,25 @@ public abstract class ReflectionUtils {
         } while (currentClazz != null);
         return Collections.unmodifiableList(methods);
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * Returns the boxed wrapper type for the given <code>primitiveType</code>.
+     *
+     * @param primitiveType The primitive type to return boxed wrapper type for
+     * @return the boxed wrapper type for the given <code>primitiveType</code>
+     * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
+     */
+    public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
+        Assert.notNull(primitiveType, "primitiveType may not be null");
+        Assert.isTrue(primitiveType.isPrimitive(), "primitiveType is not actually primitive: " + primitiveType);
+
+        Class<?> primitiveWrapperType = primitiveWrapperTypeMap.get(primitiveType);
+        Assert.notNull(primitiveWrapperType, "no wrapper found for primitiveType: " + primitiveType);
+        return primitiveWrapperType;
+
+    }
 
     private static void addMethodsOnDeclaredInterfaces(Class<?> currentClazz, List<Method> methods) {
         for (Class iface : currentClazz.getInterfaces()) {
@@ -199,4 +218,5 @@ public abstract class ReflectionUtils {
             addMethodsOnDeclaredInterfaces(iface, methods);
         }
     }
+>>>>>>> 141a2e1... Annotations on interface methods are also inspected
 }

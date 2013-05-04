@@ -142,7 +142,16 @@ public class ReflectionUtilsTest {
         assertFalse(explicitlyUnequal(new SomeType(), new SomeType()));
     }
 
+<<<<<<< HEAD
+    private static class SomeType {
+=======
+    @Test
+    public void testResolvePrimitiveWrapperTypeForLong() {
+        assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
+    }
+
     private static class SomeType implements SomeInterface  {
+>>>>>>> 141a2e1... Annotations on interface methods are also inspected
 
         private String field1 = "field1";
         private String field2 = "field2";
