@@ -27,6 +27,8 @@ import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.jpa.criteria.JpaCriteriaBuilder;
+import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.TransactionManager;
@@ -128,6 +130,36 @@ public class ReplayingClusterTest {
         inOrder.verify(mockMessageHandler).prepareForReplay(isA(Cluster.class));
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(mockEventStore).visitEvents(isA(EventVisitor.class));
+        for (int i = 0; i < 10; i++) {
+            inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
+            inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));
+        }
+        inOrder.verify(mockMessageHandler).processBacklog(delegateCluster);
+        inOrder.verify(mockTransactionManager).commitTransaction(anyObject());
+    }
+
+    @Test
+    public void testPartialReplay_withCriteria() {
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                EventVisitor visitor = (EventVisitor) invocation.getArguments()[1];
+                for (DomainEventMessage message : messages) {
+                    visitor.doWithEvent(message);
+                }
+                return null;
+            }
+        }).when(mockEventStore).visitEvents(isA(Criteria.class), isA(EventVisitor.class));
+
+        when(mockEventStore.newCriteriaBuilder()).thenReturn(new JpaCriteriaBuilder());
+        Criteria criteria = testSubject.newCriteriaBuilder().property("abc").isNot(false);
+        testSubject.startReplay(criteria);
+
+        InOrder inOrder = inOrder(mockEventStore, mockTransactionManager, delegateCluster, mockMessageHandler);
+
+        inOrder.verify(mockMessageHandler).prepareForReplay(isA(Cluster.class));
+        inOrder.verify(mockTransactionManager).startTransaction();
+        inOrder.verify(mockEventStore).visitEvents(refEq(criteria), isA(EventVisitor.class));
         for (int i = 0; i < 10; i++) {
             inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
             inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));

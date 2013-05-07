@@ -22,6 +22,8 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventstore.management.Criteria;
+import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.EventStoreManagement;
@@ -85,14 +87,30 @@ public class ReplayingCluster implements Cluster {
         this.incomingMessageHandler = incomingMessageHandler;
     }
 
+
+    /**
+     * Returns a CriteriaBuilder that allows the construction of criteria for this EventStore implementation
+     *
+     * @return a builder to create Criteria for this Event Store.
+     *
+     * @see EventStoreManagement#newCriteriaBuilder()
+     */
+    public CriteriaBuilder newCriteriaBuilder() {
+        return replayingEventStore.newCriteriaBuilder();
+    }
+
     /**
      * Starts a replay process on the current thread. This method will return once the replay process is finished.
      *
      * @throws ReplayFailedException when an exception occurred during the replay process
      */
     public void startReplay() {
+        startReplay((Criteria) null);
+    }
+
+    public void startReplay(Criteria criteria) {
         try {
-            startReplay(DirectExecutor.INSTANCE).get();
+            startReplay(DirectExecutor.INSTANCE, criteria).get();
         } catch (InterruptedException e) {
             // Can't really occur, because we're running the task in the scheduling thread.
             Thread.currentThread().interrupt();
@@ -109,7 +127,11 @@ public class ReplayingCluster implements Cluster {
      * @return a Future that allows the calling thread to track progress.
      */
     public Future<Void> startReplay(Executor executor) {
-        RunnableFuture<Void> task = new FutureTask<Void>(new ReplayEventsTask(), null);
+        return startReplay(executor, null);
+    }
+
+    public Future<Void> startReplay(Executor executor, Criteria criteria) {
+        RunnableFuture<Void> task = new FutureTask<Void>(new ReplayEventsTask(criteria), null);
         executor.execute(task);
         return task;
     }
@@ -189,6 +211,12 @@ public class ReplayingCluster implements Cluster {
 
     private class ReplayEventsTask implements Runnable {
 
+        private Criteria criteria;
+
+        public ReplayEventsTask(Criteria criteria) {
+            this.criteria = criteria;
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
@@ -200,7 +228,10 @@ public class ReplayingCluster implements Cluster {
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.beforeReplay();
                 }
-                replayingEventStore.visitEvents(visitor);
+                if (criteria != null)
+                    replayingEventStore.visitEvents(criteria, visitor);
+                else
+                    replayingEventStore.visitEvents(visitor);
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.afterReplay();
                 }
