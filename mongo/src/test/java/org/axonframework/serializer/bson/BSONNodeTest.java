@@ -64,4 +64,14 @@ public class BSONNodeTest {
     	
     	assertEquals("attribute", parsedNode.getAttribute("test"));
     }
+    
+    @Test
+    public void setsValueFromChildElement() {
+    	DBObject value = new BasicDBObject();
+    	value.put("_value", "node value");
+    	
+    	BSONNode parsedNode = BSONNode.fromDBObject(value);
+    	
+    	assertEquals("node value", parsedNode.getValue());
+    }
 }
