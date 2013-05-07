@@ -22,20 +22,21 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventListener;
+<<<<<<< Updated upstream
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.unitofwork.TransactionManager;
+=======
+>>>>>>> Stashed changes
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.EventStoreManagement;
+import org.axonframework.unitofwork.TransactionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.*;
 
 /**
  * Cluster implementation that wraps another Cluster, adding the capability to replay events from an Event Store. All
@@ -62,6 +63,9 @@ public class ReplayingCluster implements Cluster {
     private final List<ReplayAware> replayAwareListeners = new CopyOnWriteArrayList<ReplayAware>();
 
     private volatile boolean inReplay = false;
+
+    private boolean logExceptions = false;
+    private final Logger log = LoggerFactory.getLogger(ReplayingCluster.class);
 
     /**
      * Initializes a ReplayingCluster that wraps the given <code>delegate</code>, to allow it to replay event from the
@@ -131,7 +135,8 @@ public class ReplayingCluster implements Cluster {
     }
 
     public Future<Void> startReplay(Executor executor, Criteria criteria) {
-        RunnableFuture<Void> task = new FutureTask<Void>(new ReplayEventsTask(criteria), null);
+        Runnable replayEventTask = logExceptions ? new LoggingTaskWrapper(new ReplayEventsTask(criteria)) : new ReplayEventsTask(criteria);
+        RunnableFuture<Void> task = new FutureTask<Void>(replayEventTask, null);
         executor.execute(task);
         return task;
     }
@@ -207,6 +212,34 @@ public class ReplayingCluster implements Cluster {
     @Override
     public ClusterMetaData getMetaData() {
         return delegate.getMetaData();
+    }
+
+    /**
+     * Set whether to log exceptions when the replay task is executed asynchronously.
+     *
+     * @param logExceptions Whether or not to log exceptions.
+     */
+    public void setLogReplayExceptions(boolean logExceptions) {
+        this.logExceptions = logExceptions;
+    }
+
+    private class LoggingTaskWrapper implements Runnable {
+
+        private Runnable delegate;
+
+        public LoggingTaskWrapper(Runnable delegate) {
+            this.delegate = delegate;
+        }
+
+        public void run() {
+            try {
+                delegate.run();
+            } catch (RuntimeException t) {
+                log.error("Replay failed due to an exception.", t);
+                throw t;
+            }
+        }
+
     }
 
     private class ReplayEventsTask implements Runnable {
