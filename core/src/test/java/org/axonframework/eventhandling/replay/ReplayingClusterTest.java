@@ -294,6 +294,7 @@ public class ReplayingClusterTest {
         public int counter;
         public int before;
         public int after;
+        public int failed;
 
         @EventHandler
         public void handleAll(Object payload) {
@@ -308,6 +309,11 @@ public class ReplayingClusterTest {
         @Override
         public void afterReplay() {
             after++;
+        }
+
+        @Override
+        public void onReplayFailed(Throwable t) {
+            failed++;
         }
     }
 }

@@ -70,7 +70,7 @@ public class DiscardingIncomingMessageHandler implements IncomingMessageHandler 
     }
 
     @Override
-    public void onReplayFailed(Cluster destination, RuntimeException cause) {
+    public void onReplayFailed(Cluster destination, Throwable cause) {
         // do nothing
     }
 }

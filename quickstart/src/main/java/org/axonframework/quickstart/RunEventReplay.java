@@ -141,6 +141,12 @@ public class RunEventReplay {
         public void afterReplay() {
             System.out.println("Seems like we've done replaying");
         }
+
+        @Override
+        public void onReplayFailed(Throwable t) {
+            System.err.println("The replay failed due to an exception.");
+            t.printStackTrace();
+        }
     }
 
     public static class StubEventStore implements EventStoreManagement, EventStore {

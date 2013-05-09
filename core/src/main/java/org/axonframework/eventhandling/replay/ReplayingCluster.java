@@ -237,13 +237,16 @@ public class ReplayingCluster implements Cluster {
                 }
                 incomingMessageHandler.processBacklog(delegate);
                 transactionManager.commitTransaction(visitor.getTransaction());
-            } catch (RuntimeException e) {
+            } catch (Throwable t) {
                 try {
-                    incomingMessageHandler.onReplayFailed(delegate, e);
+                    incomingMessageHandler.onReplayFailed(delegate, t);
+                    for (ReplayAware replayAwareEventListener : replayAwareListeners) {
+                        replayAwareEventListener.onReplayFailed(t);
+                    }
                 } finally {
                     transactionManager.rollbackTransaction(visitor.getTransaction());
                 }
-                throw e;
+                throw new ReplayFailedException("Replay failed due to an exception.",t);
             } finally {
                 inReplay = false;
             }
