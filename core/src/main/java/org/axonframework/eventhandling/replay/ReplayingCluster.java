@@ -22,11 +22,11 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
-import org.axonframework.unitofwork.TransactionManager;
-import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.EventStoreManagement;
+import org.axonframework.unitofwork.TransactionManager;
 
 import java.util.List;
 import java.util.Set;
@@ -108,6 +108,13 @@ public class ReplayingCluster implements Cluster {
         startReplay((Criteria) null);
     }
 
+    /**
+     * Start a replay process on the current thread, only reading events matching the given <code>criteria</code>. This
+     * method will return once the replay process is finished.
+     *
+     * @param criteria The criteria defining the events to reply
+     * @throws ReplayFailedException when an exception occurred during the replay process
+     */
     public void startReplay(Criteria criteria) {
         try {
             startReplay(DirectExecutor.INSTANCE, criteria).get();
@@ -116,7 +123,11 @@ public class ReplayingCluster implements Cluster {
             Thread.currentThread().interrupt();
             throw new ReplayFailedException("Replay failed because it was interrupted", e);
         } catch (ExecutionException e) {
-            throw new ReplayFailedException("Replay failed due to an exception.", e.getCause()); // NOSONAR
+            if (e.getCause() instanceof ReplayFailedException) {
+                throw (ReplayFailedException) e.getCause(); // NOSONAR
+            } else {
+                throw new ReplayFailedException("Replay failed due to an exception.", e.getCause()); // NOSONAR
+            }
         }
     }
 
@@ -130,6 +141,16 @@ public class ReplayingCluster implements Cluster {
         return startReplay(executor, null);
     }
 
+    /**
+     * Starts a replay process using the given <code>executor</code>, only reading events matching the given
+     * <code>criteria</code>. The replay process itself uses a single thread.
+     *
+     * @param executor The executor to execute the replay process
+     * @param criteria The criteria defining the events to reply
+     * @return a Future that allows the calling thread to track progress.
+     *
+     * @throws ReplayFailedException when an exception occurred during the replay process
+     */
     public Future<Void> startReplay(Executor executor, Criteria criteria) {
         RunnableFuture<Void> task = new FutureTask<Void>(new ReplayEventsTask(criteria), null);
         executor.execute(task);
@@ -228,10 +249,11 @@ public class ReplayingCluster implements Cluster {
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.beforeReplay();
                 }
-                if (criteria != null)
+                if (criteria != null) {
                     replayingEventStore.visitEvents(criteria, visitor);
-                else
+                } else {
                     replayingEventStore.visitEvents(visitor);
+                }
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.afterReplay();
                 }
@@ -246,7 +268,7 @@ public class ReplayingCluster implements Cluster {
                 } finally {
                     transactionManager.rollbackTransaction(visitor.getTransaction());
                 }
-                throw new ReplayFailedException("Replay failed due to an exception.",t);
+                throw new ReplayFailedException("Replay failed due to an exception.", t);
             } finally {
                 inReplay = false;
             }

@@ -143,9 +143,9 @@ public class RunEventReplay {
         }
 
         @Override
-        public void onReplayFailed(Throwable t) {
+        public void onReplayFailed(Throwable cause) {
             System.err.println("The replay failed due to an exception.");
-            t.printStackTrace();
+            cause.printStackTrace();
         }
     }
 

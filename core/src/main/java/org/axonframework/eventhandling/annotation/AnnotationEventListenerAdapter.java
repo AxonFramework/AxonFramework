@@ -116,8 +116,8 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     }
 
     @Override
-    public void onReplayFailed(Throwable t) {
-        replayAware.onReplayFailed(t);
+    public void onReplayFailed(Throwable cause) {
+        replayAware.onReplayFailed(cause);
     }
 
     private static final class NoOpReplayAware implements ReplayAware {
@@ -131,7 +131,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
         }
 
         @Override
-        public void onReplayFailed(Throwable t) {
+        public void onReplayFailed(Throwable cause) {
         }
     }
 }

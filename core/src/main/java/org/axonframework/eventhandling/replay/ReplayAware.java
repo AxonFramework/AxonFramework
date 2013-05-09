@@ -38,7 +38,7 @@ public interface ReplayAware {
     /**
      * Invoked when a replay has failed due to an exception.
      *
-     * @param t The exception that stopped the replay;
+     * @param cause The exception that stopped the replay;
      */
-    void onReplayFailed(Throwable t);
+    void onReplayFailed(Throwable cause);
 }

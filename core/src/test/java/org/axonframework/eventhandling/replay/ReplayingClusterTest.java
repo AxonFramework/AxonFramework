@@ -62,7 +62,7 @@ public class ReplayingClusterTest {
         mockEventStore = mock(EventStoreManagement.class);
         delegateCluster = mock(Cluster.class);
         testSubject = new ReplayingCluster(delegateCluster, mockEventStore, mockTransactionManager, -1,
-                mockMessageHandler);
+                                           mockMessageHandler);
 
         messages = new ArrayList<DomainEventMessage>();
         for (int i = 0; i < 10; i++) {
@@ -228,7 +228,7 @@ public class ReplayingClusterTest {
         testSubject.startReplay();
 
         InOrder inOrder = inOrder(mockEventStore, mockTransactionManager, delegateCluster, mockMessageHandler,
-                listener);
+                                  listener);
 
         inOrder.verify(mockMessageHandler).prepareForReplay(isA(Cluster.class));
         inOrder.verify(mockTransactionManager).startTransaction();
@@ -250,7 +250,7 @@ public class ReplayingClusterTest {
     @Test
     public void testIntermediateTransactionsCommitted() {
         testSubject = new ReplayingCluster(delegateCluster, mockEventStore, mockTransactionManager, 5,
-                mockMessageHandler);
+                                           mockMessageHandler);
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -312,7 +312,7 @@ public class ReplayingClusterTest {
         }
 
         @Override
-        public void onReplayFailed(Throwable t) {
+        public void onReplayFailed(Throwable cause) {
             failed++;
         }
     }
