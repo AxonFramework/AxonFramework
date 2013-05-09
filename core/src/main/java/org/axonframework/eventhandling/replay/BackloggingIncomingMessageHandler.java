@@ -104,7 +104,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     }
 
     @Override
-    public synchronized void onReplayFailed(Cluster destination, RuntimeException cause) {
+    public synchronized void onReplayFailed(Cluster destination, Throwable cause) {
         inReplay = false;
         replayedMessages.clear();
         backlog.clear();

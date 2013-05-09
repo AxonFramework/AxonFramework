@@ -100,5 +100,5 @@ public interface IncomingMessageHandler {
      * @param destination The destination cluster to dispatch backlogged messages to, if appropriate in this scenario
      * @param cause       The cause of the failure
      */
-    void onReplayFailed(Cluster destination, RuntimeException cause);
+    void onReplayFailed(Cluster destination, Throwable cause);
 }
