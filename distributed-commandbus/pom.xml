@@ -43,13 +43,10 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.*
+                            org.axonframework.commandhandling.distributed.*
                         </Export-Package>
                         <Import-Package>
-                            net.sf.jsr107cache;resolution:=optional,
                             org.springframework.*;resolution:=optional,
-                            org.quartz;resolution:=optional,
-                            com.lmax.disruptor;resolution:=optional,
                             *
                         </Import-Package>
                     </instructions>
