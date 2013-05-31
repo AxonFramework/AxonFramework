@@ -57,7 +57,7 @@ public class JpaEventStoreBeanDefinitionParserTest {
         PropertyValue batchSize = definition.getPropertyValues().getPropertyValue("batchSize");
         assertEquals("maxSnapshotsArchived value", "1000", batchSize.getValue());
 
-        JpaEventStore jpaEventStore = beanFactory.getBean("eventStore", JpaEventStore.class);
+        JpaEventStore jpaEventStore = beanFactory.getBean("eventStore1", JpaEventStore.class);
         assertNotNull(jpaEventStore);
     }
 
