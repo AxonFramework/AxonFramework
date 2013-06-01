@@ -30,7 +30,7 @@ import org.joda.time.DateTime;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SimpleSerializedDomainEventData implements SerializedDomainEventData {
+public class SimpleSerializedDomainEventData implements SerializedDomainEventData<byte[]> {
 
     private final String eventIdentifier;
     private final String aggregateIdentifier;
@@ -111,12 +111,12 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
     }
 
     @Override
-    public SerializedObject getMetaData() {
+    public SerializedObject<byte[]> getMetaData() {
         return serializedMetaData;
     }
 
     @Override
-    public SerializedObject getPayload() {
+    public SerializedObject<byte[]> getPayload() {
         return serializedPayload;
     }
 }
