@@ -109,7 +109,11 @@ public class RetryingCallback<R> implements CommandCallback<R> {
 
         @Override
         public void run() {
-            commandBus.dispatch(commandMessage, RetryingCallback.this);
+            try {
+                commandBus.dispatch(commandMessage, RetryingCallback.this);
+            } catch (Exception e) {
+                RetryingCallback.this.onFailure(e);
+            }
         }
     }
 }
