@@ -44,7 +44,7 @@ public class JpaEventStoreBeanDefinitionParserTest {
 
     @Test
     public void jpaEventStore() {
-        BeanDefinition definition = beanFactory.getBeanDefinition("eventStore");
+        BeanDefinition definition = beanFactory.getBeanDefinition("eventStore1");
         assertNotNull("BeanDefinition not created", definition);
         assertEquals("Wrong bean class", JpaEventStore.class.getName(), definition.getBeanClassName());
         ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(1, Serializer.class);

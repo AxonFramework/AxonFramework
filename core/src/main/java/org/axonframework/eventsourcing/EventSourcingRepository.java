@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Resource;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -282,7 +281,6 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @deprecated Set the event store using a constructor parameter instead.
      */
     @Deprecated
-    @Resource
     public void setEventStore(EventStore eventStore) {
         this.eventStore = eventStore;
     }
