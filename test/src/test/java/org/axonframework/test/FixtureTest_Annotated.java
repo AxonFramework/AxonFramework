@@ -16,14 +16,18 @@
 
 package org.axonframework.test;
 
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -37,6 +41,21 @@ public class FixtureTest_Annotated {
     @Before
     public void setUp() {
         fixture = Fixtures.newGivenWhenThenFixture(AnnotatedAggregate.class);
+    }
+
+    @Test
+    public void testAggregateCommandHandlersOverwrittenByCustomHandlers() {
+        final AtomicBoolean invoked = new AtomicBoolean(false);
+        fixture.registerCommandHandler(CreateAggregateCommand.class, new CommandHandler() {
+            @Override
+            public Object handle(CommandMessage commandMessage, UnitOfWork unitOfWork) throws Throwable {
+                invoked.set(true);
+                return null;
+            }
+        });
+
+        fixture.given().when(new CreateAggregateCommand()).expectEvents();
+        assertTrue("", invoked.get());
     }
 
     @Test

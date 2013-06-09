@@ -124,6 +124,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
+        registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         doWithInjectableResourcesAvailable(new Runnable() {
             @Override
@@ -142,6 +143,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     @Override
     @SuppressWarnings({"unchecked"})
     public FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler) {
+        registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(commandName, commandHandler);
         return this;
@@ -243,6 +245,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     private void finalizeConfiguration() {
         ensureRepositoryConfiguration();
+        registerAggregateCommandHandlers();
+        explicitCommandHandlersSet = true;
+    }
+
+    private void registerAggregateCommandHandlers() {
         if (!explicitCommandHandlersSet) {
             doWithInjectableResourcesAvailable(new Runnable() {
                 @Override
@@ -251,7 +258,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                 }
             });
         }
-        explicitCommandHandlersSet = true;
     }
 
     private void detectIllegalStateChanges() {
