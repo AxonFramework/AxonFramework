@@ -257,7 +257,7 @@ public class EventProcessor implements Runnable {
      * Callback that allows the SequenceManager to receive a notification when this scheduler finishes processing
      * events.
      */
-    interface ShutdownCallback {
+    public interface ShutdownCallback {
 
         /**
          * Called when event processing is complete. This means that there are no more events waiting and the last
