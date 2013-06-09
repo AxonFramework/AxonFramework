@@ -38,6 +38,7 @@ public class FixtureTest_RegularParams {
     @Before
     public void setUp() {
         fixture = Fixtures.newGivenWhenThenFixture(StandardAggregate.class);
+        fixture.registerAggregateFactory(new StandardAggregate.Factory());
     }
 
     @Test
