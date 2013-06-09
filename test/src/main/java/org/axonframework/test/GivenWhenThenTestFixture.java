@@ -244,12 +244,12 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     private void finalizeConfiguration() {
-        ensureRepositoryConfiguration();
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
     }
 
     private void registerAggregateCommandHandlers() {
+        ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
             doWithInjectableResourcesAvailable(new Runnable() {
                 @Override
