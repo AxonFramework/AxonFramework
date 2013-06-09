@@ -21,6 +21,7 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventstore.EventStoreException;
 import org.junit.*;
 
@@ -37,22 +38,24 @@ import static org.mockito.Mockito.*;
 public class FixtureTest_Generic {
 
     private FixtureConfiguration<StandardAggregate> fixture;
+    private AggregateFactory<StandardAggregate> mockAggregateFactory;
 
     @Before
     public void setUp() {
         fixture = Fixtures.newGivenWhenThenFixture(StandardAggregate.class);
+        fixture.setReportIllegalStateChange(false);
+        mockAggregateFactory = mock(AggregateFactory.class);
+        when(mockAggregateFactory.getAggregateType()).thenReturn(StandardAggregate.class);
+        when(mockAggregateFactory.getTypeIdentifier()).thenReturn(StandardAggregate.class.getSimpleName());
+        when(mockAggregateFactory.createAggregate(isA(String.class), isA(DomainEventMessage.class)))
+                .thenReturn(new StandardAggregate("id1"));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testConfigureCustomAggregateFactory() {
-        AggregateFactory<StandardAggregate> mockAggregateFactory = mock(AggregateFactory.class);
-        when(mockAggregateFactory.getAggregateType()).thenReturn(StandardAggregate.class);
-        when(mockAggregateFactory.getTypeIdentifier()).thenReturn(StandardAggregate.class.getSimpleName());
-        when(mockAggregateFactory.createAggregate(isA(String.class), isA(DomainEventMessage.class)))
-                .thenReturn(new StandardAggregate());
-        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.registerAggregateFactory(mockAggregateFactory);
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
 
         fixture.given(new MyEvent("id1", 1))
                 .when(new TestCommand("id1"));
@@ -60,8 +63,21 @@ public class FixtureTest_Generic {
         verify(mockAggregateFactory).createAggregate(eq("id1"), isA(DomainEventMessage.class));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test(expected = IncompatibleAggregateException.class)
+    public void testConfigurationOfRequiredCustomAggregateFactoryNotProvided_FailureOnGiven() {
+        fixture.given(new MyEvent("id1", 1));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test(expected = IncompatibleAggregateException.class)
+    public void testConfigurationOfRequiredCustomAggregateFactoryNotProvided_FailureOnGetRepository() {
+        fixture.getRepository();
+    }
+
     @Test
     public void testAggregateIdentifier_ServerGeneratedIdentifier() {
+        fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.given()
                .when(new CreateAggregateCommand());
@@ -69,12 +85,14 @@ public class FixtureTest_Generic {
 
     @Test(expected = FixtureExecutionException.class)
     public void testInjectResources_CommandHandlerAlreadyRegistered() {
+        fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.registerInjectableResource("I am injectable");
     }
 
     @Test
     public void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
+        fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                .when(new TestCommand("AggregateId"))
@@ -91,6 +109,7 @@ public class FixtureTest_Generic {
 
     @Test
     public void testReadAggregate_WrongIdentifier() {
+        fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         TestExecutor exec = fixture.given(new MyEvent("AggregateId", 1));
         try {

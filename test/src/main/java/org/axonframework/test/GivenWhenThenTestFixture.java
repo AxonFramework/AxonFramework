@@ -107,10 +107,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
         clearGivenWhenState();
-        final EventSourcingRepository<T> eventSourcingRepository = new EventSourcingRepository<T>(aggregateType,
-                                                                                                  eventStore);
-        eventSourcingRepository.setEventBus(eventBus);
-        repository = new IdentifierValidatingRepository<T>(eventSourcingRepository);
         this.aggregateType = aggregateType;
     }
 
@@ -181,6 +177,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public TestExecutor given(Object... domainEvents) {
+        ensureRepositoryConfiguration();
         return given(Arrays.asList(domainEvents));
     }
 
@@ -238,7 +235,14 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         return resultValidator;
     }
 
+    private void ensureRepositoryConfiguration() {
+        if (repository == null) {
+            registerRepository(new EventSourcingRepository<T>(aggregateType, eventStore));
+        }
+    }
+
     private void finalizeConfiguration() {
+        ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
             doWithInjectableResourcesAvailable(new Runnable() {
                 @Override
@@ -350,6 +354,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public Repository<T> getRepository() {
+        ensureRepositoryConfiguration();
         return repository;
     }
 
