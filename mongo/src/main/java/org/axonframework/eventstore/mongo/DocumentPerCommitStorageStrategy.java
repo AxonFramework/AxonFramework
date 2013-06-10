@@ -32,10 +32,13 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -140,6 +143,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
      */
     private static final class CommitEntry {
 
+        private static final Logger logger = LoggerFactory.getLogger(DocumentPerCommitStorageStrategy.class);
+
         private static final String AGGREGATE_IDENTIFIER_PROPERTY = "aggregateIdentifier";
         private static final String SEQUENCE_NUMBER_PROPERTY = "sequenceNumber";
         private static final String AGGREGATE_TYPE_PROPERTY = "type";
@@ -224,6 +229,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                 List<SerializedObject> upcastObjects = upcasterChain.upcast(
                         eventEntry.getPayload(), context);
                 for (SerializedObject upcastObject : upcastObjects) {
+                    try {
                     DomainEventMessage message = new SerializedDomainEventMessage(
                             new UpcastSerializedDomainEventData(
                                     new DomainEventData(this, eventEntry),
@@ -237,6 +243,10 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                     }
 
                     messages.add(message);
+                    } catch (UnknownSerializedTypeException e) {
+                        logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
+                                    upcastObject.getType().getName(), upcastObject.getType().getRevision());
+                    }
                 }
             }
             return messages;

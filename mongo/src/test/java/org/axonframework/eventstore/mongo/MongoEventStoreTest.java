@@ -28,6 +28,11 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.SerializedType;
+import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.SimpleSerializedType;
+import org.axonframework.upcasting.LazyUpcasterChain;
+import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcastingContext;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
@@ -243,6 +248,20 @@ public class MongoEventStoreTest {
     }
 
     @Test
+    public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
+        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<String>("test", 0, "test");
+        testSubject.appendEvents("test", new SimpleDomainEventStream(eventMessage));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
+        // we upcast the event to two instances, one of which is an unknown class
+        testSubject.setUpcasterChain(new LazyUpcasterChain(Arrays.<Upcaster>asList(new StubUpcaster())));
+        testSubject.visitEvents(eventVisitor);
+
+        verify(eventVisitor, times(21)).doWithEvent(isA(DomainEventMessage.class));
+    }
+
+    @Test
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
@@ -348,6 +367,33 @@ public class MongoEventStoreTest {
         private static final long serialVersionUID = 3459228620192273869L;
 
         private StubStateChangedEvent() {
+        }
+    }
+    private static class StubUpcaster implements Upcaster<byte[]> {
+
+        @Override
+        public boolean canUpcast(SerializedType serializedType) {
+            return "java.lang.String".equals(serializedType.getName());
+        }
+
+        @Override
+        public Class<byte[]> expectedRepresentationType() {
+            return byte[].class;
+        }
+
+        @Override
+        public List<SerializedObject<?>> upcast(SerializedObject<byte[]> intermediateRepresentation,
+                                                List<SerializedType> expectedTypes, UpcastingContext context) {
+            return Arrays.<SerializedObject<?>>asList(
+                    new SimpleSerializedObject<String>("data1", String.class, expectedTypes.get(0)),
+                    new SimpleSerializedObject<byte[]>(intermediateRepresentation.getData(), byte[].class,
+                                                       expectedTypes.get(1)));
+        }
+
+        @Override
+        public List<SerializedType> upcast(SerializedType serializedType) {
+            return Arrays.<SerializedType>asList(new SimpleSerializedType("unknownType1", "2"),
+                                                 new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
         }
     }
 }
