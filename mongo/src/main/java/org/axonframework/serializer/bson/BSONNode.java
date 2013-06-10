@@ -74,7 +74,12 @@ public class BSONNode {
         if (rootContents instanceof List) {
             for (Object childElement : (List) rootContents) {
                 if (childElement instanceof DBObject) {
-                    rootNode.addChildNode(fromDBObject((DBObject) childElement));
+                	DBObject dbChild = (DBObject) childElement;
+                	if (dbChild.containsField(VALUE_KEY)) {
+                		rootNode.setValue((String) dbChild.get(VALUE_KEY));
+                	} else {
+                		rootNode.addChildNode(fromDBObject(dbChild));
+                	}
                 }
             }
         } else if (rootContents instanceof DBObject) {
