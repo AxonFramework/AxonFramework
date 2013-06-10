@@ -31,16 +31,19 @@ import java.util.Map;
  */
 public class CorrelationAuditDataProvider implements AuditDataProvider {
 
-    private static final String DEFAULT_KEY = "command-identifier";
+    /**
+     * The default meta-data key, which is used when an instance is created using the default constructor
+     */
+    public static final String DEFAULT_CORRELATION_KEY = "command-identifier";
 
     private final String correlationIdKey;
 
     /**
      * Initializes the CorrelationAuditDataProvider which attaches the Command Identifier to an Event's MetaData using
-     * the default key ("{@value #DEFAULT_KEY}").
+     * the default key ("{@value #DEFAULT_CORRELATION_KEY}").
      */
     public CorrelationAuditDataProvider() {
-        this(DEFAULT_KEY);
+        this(DEFAULT_CORRELATION_KEY);
     }
 
     /**
