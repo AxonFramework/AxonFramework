@@ -26,7 +26,9 @@ import org.junit.*;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +36,6 @@ import static org.junit.Assert.*;
  * @author Allard Buijze
  */
 public class DBObjectXStreamSerializerTest {
-
 
     private DBObjectXStreamSerializer testSubject;
     private static final String SPECIAL__CHAR__STRING = "Special chars: '\"&;\n\\<>/\n\t";
@@ -57,6 +58,18 @@ public class DBObjectXStreamSerializerTest {
         assertTrue(actualResult instanceof SecondTestEvent);
         SecondTestEvent actualEvent = (SecondTestEvent) actualResult;
         assertEquals(objectList, actualEvent.getStrings());
+    }
+
+    // Test for issue AXON-141 - BSONNode - marshalling EnumSet problem
+    @Test
+    public void testSerializeEnumSet() throws Exception {
+        SerializedObject<String> serialized = testSubject.serialize(new TestEventWithEnumSet("testing123"),
+                                                                    String.class);
+
+        TestEventWithEnumSet actual = testSubject.deserialize(serialized);
+        assertEquals("testing123", actual.getName());
+        assertEquals(EnumSet.of(TestEventWithEnumSet.SomeEnum.FIRST, TestEventWithEnumSet.SomeEnum.SECOND),
+                     actual.enumSet);
     }
 
     @Test
@@ -173,6 +186,21 @@ public class DBObjectXStreamSerializerTest {
 
         public String getName() {
             return name;
+        }
+    }
+
+    public static class TestEventWithEnumSet extends TestEvent {
+
+        private Set<SomeEnum> enumSet;
+
+        public TestEventWithEnumSet(String name) {
+            super(name);
+            enumSet = EnumSet.of(SomeEnum.FIRST, SomeEnum.SECOND);
+        }
+
+
+        private enum SomeEnum {
+            FIRST, SECOND, THIRD;
         }
     }
 }
