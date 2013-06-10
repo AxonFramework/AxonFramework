@@ -36,6 +36,7 @@ import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
 import org.axonframework.upcasting.SimpleUpcasterChain;
@@ -227,15 +228,19 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
                 entry.getPayload(), context);
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
         for (SerializedObject object : objects) {
-            DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
-                    new UpcastSerializedDomainEventData(entry, identifier, object), serializer);
+            try {
+                DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
+                        new UpcastSerializedDomainEventData(entry, identifier, object), serializer);
 
-            // prevents duplicate deserialization of meta data when it has already been access during upcasting
-            if (context.getSerializedMetaData().isDeserialized()) {
-                message = message.withMetaData(context.getSerializedMetaData().getObject());
+                // prevents duplicate deserialization of meta data when it has already been access during upcasting
+                if (context.getSerializedMetaData().isDeserialized()) {
+                    message = message.withMetaData(context.getSerializedMetaData().getObject());
+                }
+                events.add(message);
+            } catch (UnknownSerializedTypeException e) {
+                logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
+                            object.getType().getName(), object.getType().getRevision());
             }
-
-            events.add(message);
         }
         return events;
     }
