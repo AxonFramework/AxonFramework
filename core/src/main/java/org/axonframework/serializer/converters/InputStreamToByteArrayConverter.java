@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2013. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.serializer.converters;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.axonframework.serializer.AbstractContentTypeConverter;
 import org.axonframework.serializer.CannotConvertBetweenTypesException;
 
@@ -45,10 +45,20 @@ public class InputStreamToByteArrayConverter extends AbstractContentTypeConverte
     @Override
     public byte[] convert(InputStream original) {
         try {
-            return IOUtils.toByteArray(original);
+            return bytesFrom(original);
         } catch (IOException e) {
             throw new CannotConvertBetweenTypesException("Unable to convert inputstream to byte[]. "
                                                                  + "Error while reading from Stream.", e);
         }
+    }
+
+    private byte[] bytesFrom(InputStream original) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int n;
+        while (-1 != (n = original.read(buffer))) {
+            output.write(buffer, 0, n);
+        }
+        return output.toByteArray();
     }
 }
