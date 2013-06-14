@@ -27,10 +27,13 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
+import org.axonframework.eventsourcing.ConflictResolver;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.hamcrest.Description;
 import org.junit.*;
+import org.junit.internal.matchers.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,7 +50,7 @@ public class CachingEventSourcingRepositoryTest {
 
     private CachingEventSourcingRepository<StubAggregate> testSubject;
     private EventBus mockEventBus;
-    private EventStore mockEventStore;
+    private InMemoryEventStore mockEventStore;
     private JCache cache;
 
     @Before
@@ -57,7 +60,7 @@ public class CachingEventSourcingRepositoryTest {
         mockEventBus = mock(EventBus.class);
         testSubject.setEventBus(mockEventBus);
 
-        cache = new JCache(CacheManager.getInstance().getCache("testCache"));
+        cache = spy(new JCache(CacheManager.getInstance().getCache("testCache")));
         testSubject.setCache(cache);
     }
 
@@ -72,6 +75,21 @@ public class CachingEventSourcingRepositoryTest {
     public void testAggregatesRetrievedFromCache() {
         DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate1 = new StubAggregate();
+        aggregate1.doSomething();
+
+        // ensure the cached aggregate has been committed before being cached.
+        when(cache.put(eq(aggregate1.getIdentifier()), argThat(new TypeSafeMatcher<StubAggregate>() {
+            @Override
+            public boolean matchesSafely(StubAggregate item) {
+                return item.getVersion() == null;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("An aggregate with a non-null version");
+            }
+        }))).thenThrow(new AssertionError("Aggregate should not have a null version when cached"));
+
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
@@ -88,8 +106,10 @@ public class CachingEventSourcingRepositoryTest {
         while (events.hasNext()) {
             eventList.add(events.next());
         }
-        assertEquals(2, eventList.size());
+        assertEquals(3, eventList.size());
+        verify(mockEventBus).publish(isA(EventMessage.class));
         verify(mockEventBus).publish(isA(EventMessage.class), isA(EventMessage.class));
+        verifyNoMoreInteractions(mockEventBus);
         cache.clear();
 
         reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
@@ -97,6 +117,50 @@ public class CachingEventSourcingRepositoryTest {
         assertNotSame(aggregate1, reloadedAggregate1);
         assertEquals(aggregate1.getVersion(),
                      reloadedAggregate1.getVersion());
+    }
+
+    @Test
+    public void testLoadAggregateWithExpectedVersion_ConcurrentModificationsDetected() {
+        final ConflictResolver conflictResolver = mock(ConflictResolver.class);
+        testSubject.setConflictResolver(conflictResolver);
+        StubAggregate aggregate1 = new StubAggregate();
+
+        DefaultUnitOfWork.startAndGet();
+        aggregate1.doSomething();
+        aggregate1.doSomething();
+        testSubject.add(aggregate1);
+        CurrentUnitOfWork.commit();
+
+        assertNotNull(((StubAggregate) cache.get(aggregate1.getIdentifier())).getVersion());
+
+        DefaultUnitOfWork.startAndGet();
+        StubAggregate loadedAggregate = testSubject.load(aggregate1.getIdentifier(), 0L);
+        loadedAggregate.doSomething();
+        CurrentUnitOfWork.commit();
+
+        assertEquals(3, mockEventStore.readEventsAsList(aggregate1.getIdentifier()).size());
+
+        verify(conflictResolver).resolveConflicts(argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+            @Override
+            public boolean matchesSafely(List<DomainEventMessage> item) {
+                return item.size() == 1 && item.get(0).getSequenceNumber() == 2;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("a list with 1 event, having sequence number 2");
+            }
+        }), argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+            @Override
+            public boolean matchesSafely(List<DomainEventMessage> item) {
+                return item.size() == 1 && item.get(0).getSequenceNumber() == 1;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("a list with 1 event, having sequence number 1");
+            }
+        }));
     }
 
     @Test
@@ -159,6 +223,10 @@ public class CachingEventSourcingRepositoryTest {
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
             return new SimpleDomainEventStream(store.get(identifier));
+        }
+
+        public List<DomainEventMessage> readEventsAsList(Object identifier) {
+            return store.get(identifier);
         }
     }
 }
