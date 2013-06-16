@@ -69,7 +69,7 @@ public class IdentifierBasedLockTest {
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
-        Thread t1 = createThread(lock, starter, cdl, deadlockInThread, "id1", "id2");
+        Thread t1 = createThread(starter, cdl, deadlockInThread, lock, "id1", lock, "id2");
         t1.start();
         lock.obtainLock("id2");
         starter.await();
@@ -83,14 +83,34 @@ public class IdentifierBasedLockTest {
     }
 
     @Test(timeout = 5000)
+    public void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
+        final IdentifierBasedLock lock1 = new IdentifierBasedLock();
+        final IdentifierBasedLock lock2 = new IdentifierBasedLock();
+        final CountDownLatch starter = new CountDownLatch(1);
+        final CountDownLatch cdl = new CountDownLatch(1);
+        final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
+        Thread t1 = createThread(starter, cdl, deadlockInThread, lock1, "id1", lock2, "id1");
+        t1.start();
+        lock2.obtainLock("id1");
+        starter.await();
+        cdl.countDown();
+        try {
+            lock1.obtainLock("id1");
+            assertTrue(deadlockInThread.get());
+        } catch (DeadlockException e) {
+            // this is ok!
+        }
+    }
+
+    @Test(timeout = 5000)
     public void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
         final IdentifierBasedLock lock = new IdentifierBasedLock();
         final CountDownLatch starter = new CountDownLatch(3);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
-        Thread t1 = createThread(lock, starter, cdl, deadlockInThread, "id1", "id2");
-        Thread t2 = createThread(lock, starter, cdl, deadlockInThread, "id2", "id3");
-        Thread t3 = createThread(lock, starter, cdl, deadlockInThread, "id3", "id4");
+        Thread t1 = createThread(starter, cdl, deadlockInThread, lock, "id1", lock, "id2");
+        Thread t2 = createThread(starter, cdl, deadlockInThread, lock, "id2", lock, "id3");
+        Thread t3 = createThread(starter, cdl, deadlockInThread, lock, "id3", lock, "id4");
         t1.start();
         t2.start();
         t3.start();
@@ -105,23 +125,25 @@ public class IdentifierBasedLockTest {
         }
     }
 
-    private Thread createThread(final IdentifierBasedLock lock, final CountDownLatch starter, final CountDownLatch cdl,
-                                final AtomicBoolean deadlockInThread, final String firstLock, final String secondLock) {
+    private Thread createThread(final CountDownLatch starter, final CountDownLatch cdl,
+                                final AtomicBoolean deadlockInThread, final IdentifierBasedLock lock1,
+                                final String firstLock,
+                                final IdentifierBasedLock lock2, final String secondLock) {
         return new Thread(new Runnable() {
             @Override
             public void run() {
-                lock.obtainLock(firstLock);
+                lock1.obtainLock(firstLock);
                 starter.countDown();
                 try {
                     cdl.await();
-                    lock.obtainLock(secondLock);
-                    lock.releaseLock(secondLock);
+                    lock2.obtainLock(secondLock);
+                    lock2.releaseLock(secondLock);
                 } catch (InterruptedException e) {
                     System.out.println("Thread 1 interrupted");
                 } catch (DeadlockException e) {
                     deadlockInThread.set(true);
                 } finally {
-                    lock.releaseLock(firstLock);
+                    lock1.releaseLock(firstLock);
                 }
             }
         });
