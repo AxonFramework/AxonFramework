@@ -26,12 +26,11 @@ import org.joda.time.DateTime;
 import java.io.Serializable;
 import java.util.Arrays;
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 /**
  * Data needed by different types of event logs.
@@ -40,8 +39,6 @@ import javax.persistence.UniqueConstraint;
  * @since 0.5
  */
 @MappedSuperclass
-@Table(uniqueConstraints =
-       @UniqueConstraint(columnNames = {"eventIdentifier"}))
 @IdClass(AbstractEventEntry.PK.class)
 public abstract class AbstractEventEntry implements SerializedDomainEventData {
 
@@ -51,7 +48,7 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
     private String aggregateIdentifier;
     @Id
     private long sequenceNumber;
-    @Basic(optional = false)
+    @Column(nullable = false, unique = true)
     private String eventIdentifier;
     @Basic(optional = false)
     private String timeStamp;

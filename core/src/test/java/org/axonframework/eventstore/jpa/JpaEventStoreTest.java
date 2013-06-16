@@ -47,10 +47,15 @@ import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,7 +77,6 @@ import static org.mockito.Mockito.same;
 /**
  * @author Allard Buijze
  */
-@Transactional
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
         "classpath:/META-INF/spring/db-context.xml",
@@ -86,8 +90,13 @@ public class JpaEventStoreTest {
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
 
+    @Autowired
+    private PlatformTransactionManager txManager;
+    private TransactionTemplate template;
+
     @Before
     public void setUp() {
+        template = new TransactionTemplate(txManager);
         aggregate1 = new StubAggregateRoot(UUID.randomUUID());
         for (int t = 0; t < 10; t++) {
             aggregate1.changeState();
@@ -97,7 +106,12 @@ public class JpaEventStoreTest {
         aggregate2.changeState();
         aggregate2.changeState();
         aggregate2.changeState();
-        entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
+        template.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
+            }
+        });
     }
 
     @After
@@ -106,12 +120,56 @@ public class JpaEventStoreTest {
         DateTimeUtils.setCurrentMillisSystem();
     }
 
+    @Test(expected = DataIntegrityViolationException.class)
+    public void testUniqueKeyConstraintOnEventIdentifier() {
+        final SimpleSerializedObject<byte[]> emptySerializedObject = new SimpleSerializedObject<byte[]>(new byte[]{},
+                                                                                                        byte[].class,
+                                                                                                        "test",
+                                                                                                        "");
+
+        template.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(
+                    TransactionStatus status) {
+                DomainEventMessage firstEvent = aggregate2.getUncommittedEvents().next();
+                entityManager.persist(new DomainEventEntry("type",
+                                                           new GenericDomainEventMessage(
+                                                                   "a",
+                                                                   new DateTime(),
+                                                                   "someValue",
+                                                                   0,
+                                                                   "",
+                                                                   MetaData.emptyInstance()),
+                                                           emptySerializedObject,
+                                                           emptySerializedObject));
+            }
+        });
+        template.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(
+                    TransactionStatus status) {
+                entityManager.persist(new DomainEventEntry("type",
+                                                           new GenericDomainEventMessage(
+                                                                   "a",
+                                                                   new DateTime(),
+                                                                   "anotherValue",
+                                                                   0,
+                                                                   "",
+                                                                   MetaData.emptyInstance()),
+                                                           emptySerializedObject,
+                                                           emptySerializedObject));
+            }
+        });
+    }
+
+    @Transactional
     @Test(expected = IllegalArgumentException.class)
     public void testStoreAndLoadEvents_BadIdentifierType() {
         testSubject.appendEvents("type", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<Object>(new BadIdentifierType(), 1, new Object())));
     }
 
+    @Transactional
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
@@ -160,6 +218,7 @@ public class JpaEventStoreTest {
 
     @DirtiesContext
     @Test
+    @Transactional
     public void testStoreAndLoadEvents_WithUpcaster() {
         assertNotNull(testSubject);
         UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
@@ -209,6 +268,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testLoad_LargeAmountOfEvents() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
         String aggregateIdentifier = "id";
@@ -231,12 +291,14 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testLoad_LargeAmountOfEventsInSmallBatches() {
         testSubject.setBatchSize(10);
         testLoad_LargeAmountOfEvents();
     }
 
     @Test
+    @Transactional
     public void testEntireStreamIsReadOnUnserializableSnapshot_WithException() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
         String aggregateIdentifier = "id";
@@ -303,6 +365,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testEntireStreamIsReadOnUnserializableSnapshot_WithError() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
         String aggregateIdentifier = "id";
@@ -373,6 +436,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testLoad_LargeAmountOfEventsWithSnapshot() {
         List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
         String aggregateIdentifier = "id";
@@ -399,6 +463,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testLoadWithSnapshotEvent() {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
@@ -423,11 +488,13 @@ public class JpaEventStoreTest {
     }
 
     @Test(expected = EventStreamNotFoundException.class)
+    @Transactional
     public void testLoadNonExistent() {
         testSubject.readEvents("Stub", UUID.randomUUID());
     }
 
     @Test
+    @Transactional
     public void testVisitAllEvents() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(77)));
@@ -438,6 +505,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
@@ -452,6 +520,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
@@ -471,6 +540,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testVisitEvents_BetweenTimestamps() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
@@ -493,6 +563,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testVisitEvents_OnOrAfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
@@ -512,6 +583,7 @@ public class JpaEventStoreTest {
     }
 
     @Test(expected = ConcurrencyException.class)
+    @Transactional
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>("123", 0L,
@@ -524,6 +596,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testStoreDuplicateEvent_NoSqlExceptionTranslator() {
         testSubject.setPersistenceExceptionResolver(null);
         try {
@@ -545,6 +618,7 @@ public class JpaEventStoreTest {
     }
 
     @Test
+    @Transactional
     public void testPrunesSnaphotsWhenNumberOfSnapshotsExceedsConfiguredMaxSnapshotsArchived() {
         testSubject.setMaxSnapshotsArchived(1);
 
@@ -583,6 +657,7 @@ public class JpaEventStoreTest {
 
     @SuppressWarnings({"PrimitiveArrayArgumentToVariableArgMethod", "unchecked"})
     @Test
+    @Transactional
     public void testCustomEventEntryStore() {
         EventEntryStore eventEntryStore = mock(EventEntryStore.class);
         testSubject = new JpaEventStore(new SimpleEntityManagerProvider(entityManager), eventEntryStore);
