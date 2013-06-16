@@ -19,9 +19,13 @@ package org.axonframework.common.lock;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.synchronizedMap;
 
 /**
  * Locking mechanism that allows multiple threads to hold a lock, as long as the identifier of the lock they hold is
@@ -37,16 +41,34 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class IdentifierBasedLock {
 
+    private static final Set<IdentifierBasedLock> INSTANCES =
+            newSetFromMap(synchronizedMap(new WeakHashMap<IdentifierBasedLock, Boolean>()));
+
     private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<String, DisposableLock>();
 
-    private Set<Thread> threadsWaitingForMyLocks(Thread owner) {
+    /**
+     * Creates a new IdentifierBasedLock instance.
+     * <p/>
+     * Deadlocks are detected across instances of the IdentifierBasedLock.
+     */
+    public IdentifierBasedLock() {
+        INSTANCES.add(this);
+    }
+
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
+        return threadsWaitingForMyLocks(owner, INSTANCES);
+    }
+
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<IdentifierBasedLock> locksInUse) {
         Set<Thread> waitingThreads = new HashSet<Thread>();
-        for (DisposableLock disposableLock : locks.values()) {
-            if (disposableLock.isHeldBy(owner)) {
-                final Collection<Thread> c = disposableLock.queuedThreads();
-                for (Thread thread : c) {
-                    if (waitingThreads.add(thread)) {
-                        waitingThreads.addAll(threadsWaitingForMyLocks(thread));
+        for (IdentifierBasedLock lock : locksInUse) {
+            for (DisposableLock disposableLock : lock.locks.values()) {
+                if (disposableLock.isHeldBy(owner)) {
+                    final Collection<Thread> c = disposableLock.queuedThreads();
+                    for (Thread thread : c) {
+                        if (waitingThreads.add(thread)) {
+                            waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse));
+                        }
                     }
                 }
             }
@@ -137,9 +159,11 @@ public class IdentifierBasedLock {
 
         private boolean lock() {
             try {
-                do {
-                    checkForDeadlock();
-                } while (!lock.tryLock(100, TimeUnit.MILLISECONDS));
+                if (!lock.tryLock(0, TimeUnit.NANOSECONDS)) {
+                    do {
+                        checkForDeadlock();
+                    } while (!lock.tryLock(100, TimeUnit.MILLISECONDS));
+                }
             } catch (InterruptedException e) {
                 throw new LockAcquisitionFailedException("Thread was interrupted", e);
             }
