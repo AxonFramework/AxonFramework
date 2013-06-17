@@ -158,7 +158,7 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
         /**
          * Constructor for JPA. Not to be used directly
          */
-        PK() {
+        public PK() {
         }
 
         @Override
