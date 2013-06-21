@@ -20,11 +20,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.SerializedDomainEventData;
-import org.axonframework.serializer.SerializedDomainEventMessage;
-import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
-import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 
 import java.io.BufferedInputStream;
@@ -32,11 +28,12 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
  * DomainEventStream implementation that reads DomainEvents from the filesystem using an {@link java.io.InputStream}.
@@ -105,7 +102,7 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
             List<DomainEventMessage> upcastEvents;
             do {
                 SerializedDomainEventData eventFromFile = eventMessageReader.readEventMessage();
-                upcastEvents = upcast(eventFromFile);
+                upcastEvents = upcastAndDeserialize(eventFromFile, null, serializer, upcasterChain);
             } while (upcastEvents.isEmpty());
             return upcastEvents;
         } catch (EOFException e) {
@@ -114,25 +111,5 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
         } catch (IOException e) {
             throw new EventStoreException("An error occurred while reading from the underlying source", e);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<DomainEventMessage> upcast(final SerializedDomainEventData entry) {
-        final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry,
-                                                                                                        serializer);
-        List<SerializedObject> objects = upcasterChain.upcast(
-                entry.getPayload(), context);
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
-        for (SerializedObject object : objects) {
-            DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
-                    new UpcastSerializedDomainEventData(entry, entry.getAggregateIdentifier(), object), serializer);
-
-            // prevents duplicate deserialization of meta data when it has already been access during upcasting
-            if (context.getSerializedMetaData().isDeserialized()) {
-                message = message.withMetaData(context.getSerializedMetaData().getObject());
-            }
-            events.add(message);
-        }
-        return events;
     }
 }

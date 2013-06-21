@@ -78,6 +78,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
         this.datastoreService = DatastoreServiceFactory.getDatastoreService();
     }
 
+    @Override
     public void appendEvents(String type, DomainEventStream events) {
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -85,6 +86,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
         }
     }
 
+    @Override
     public DomainEventStream readEvents(String type, Object identifier) {
         long snapshotSequenceNumber = -1;
         EventEntry lastSnapshotEvent = loadLastSnapshotEvent(type, identifier);
@@ -104,6 +106,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
         return new SimpleDomainEventStream(events);
     }
 
+    @Override
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         String snapshotType = "snapshot_" + type;
         doStoreEvent(snapshotType, snapshotEvent);

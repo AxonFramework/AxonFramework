@@ -24,24 +24,20 @@ import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.serializer.SerializedDomainEventData;
-import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.UnknownSerializedTypeException;
-import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
-import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
 import static org.axonframework.serializer.MessageSerializer.serializePayload;
+import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
  * Implementation of the StorageStrategy that stores each event as a separate document. This makes it easier to query
@@ -230,33 +226,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         @SuppressWarnings("unchecked")
         public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
                                                         UpcasterChain upcasterChain) {
-            Class<?> representationType = getRepresentationType();
-            final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(
-                    this,
-                    eventSerializer);
-            List<SerializedObject> upcastObjects = upcasterChain.upcast(
-                    new SimpleSerializedObject(serializedPayload, representationType, payloadType, payloadRevision),
-                    context);
-            List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastObjects.size());
-            for (SerializedObject upcastObject : upcastObjects) {
-                try {
-                    DomainEventMessage message = new SerializedDomainEventMessage(
-                            new UpcastSerializedDomainEventData(this,
-                                                                actualAggregateIdentifier == null
-                                                                        ? aggregateIdentifier : actualAggregateIdentifier,
-                                                                upcastObject),
-                            eventSerializer);
-                    // prevents duplicate deserialization of meta data when it has already been access during upcasting
-                    if (context.getSerializedMetaData().isDeserialized()) {
-                        message = message.withMetaData(context.getSerializedMetaData().getObject());
-                    }
-                    messages.add(message);
-                } catch (UnknownSerializedTypeException e) {
-                    logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
-                                upcastObject.getType().getName(), upcastObject.getType().getRevision());
-                }
-            }
-            return messages;
+            return upcastAndDeserialize(this, actualAggregateIdentifier, eventSerializer, upcasterChain);
         }
 
         private Class<?> getRepresentationType() {

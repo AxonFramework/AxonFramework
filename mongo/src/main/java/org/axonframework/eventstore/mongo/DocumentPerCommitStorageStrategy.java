@@ -27,13 +27,10 @@ import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.serializer.LazyDeserializingObject;
 import org.axonframework.serializer.SerializedDomainEventData;
-import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.UnknownSerializedTypeException;
-import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
@@ -45,6 +42,7 @@ import java.util.List;
 
 import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
 import static org.axonframework.serializer.MessageSerializer.serializePayload;
+import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
  * Implementation of the StorageStrategy that stores each commit as a single document. The document contains an array
@@ -109,8 +107,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
     @Override
     public List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier,
                                                          Serializer serializer, UpcasterChain upcasterChain) {
-        return new CommitEntry(entry).getDomainEvents(aggregateIdentifier,
-                                                      serializer, upcasterChain);
+        return new CommitEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain);
     }
 
     @Override
@@ -223,31 +220,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                                                         UpcasterChain upcasterChain) {
             List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
             for (final EventEntry eventEntry : eventEntries) {
-                final EntryBasedUpcastingContext context = new EntryBasedUpcastingContext(this,
-                                                                                          eventEntry,
-                                                                                          eventSerializer);
-                List<SerializedObject> upcastObjects = upcasterChain.upcast(
-                        eventEntry.getPayload(), context);
-                for (SerializedObject upcastObject : upcastObjects) {
-                    try {
-                    DomainEventMessage message = new SerializedDomainEventMessage(
-                            new UpcastSerializedDomainEventData(
-                                    new DomainEventData(this, eventEntry),
-                                    actualAggregateIdentifier == null ? aggregateIdentifier : actualAggregateIdentifier,
-                                    upcastObject),
-                            eventSerializer);
-
-                    // prevents duplicate deserialization of meta data when it has already been access during upcasting
-                    if (context.getSerializedMetaData().isDeserialized()) {
-                        message = message.withMetaData(context.getSerializedMetaData().getObject());
-                    }
-
-                    messages.add(message);
-                    } catch (UnknownSerializedTypeException e) {
-                        logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
-                                    upcastObject.getType().getName(), upcastObject.getType().getRevision());
-                    }
-                }
+                messages.addAll(upcastAndDeserialize(new DomainEventData(this, eventEntry), actualAggregateIdentifier,
+                                                     eventSerializer, upcasterChain));
             }
             return messages;
         }

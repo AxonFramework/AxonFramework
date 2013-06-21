@@ -23,21 +23,18 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
-import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
-import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
 import static org.axonframework.serializer.MessageSerializer.serializePayload;
+import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 
 /**
@@ -116,25 +113,7 @@ public class EventEntry implements SerializedDomainEventData<String> {
     @SuppressWarnings("unchecked")
     public List<DomainEventMessage> getDomainEvent(Object actualAggregateIdentifier, Serializer serializer,
                                                    UpcasterChain upcasterChain) {
-        final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(this,
-                                                                                                        serializer);
-        List<SerializedObject> upcastEvents = upcasterChain.upcast(
-                new SimpleSerializedObject<String>(serializedEvent, String.class, eventType, eventRevision), context);
-        List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>(upcastEvents.size());
-        for (SerializedObject upcastEvent : upcastEvents) {
-            DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
-                    new UpcastSerializedDomainEventData(this,
-                                                        actualAggregateIdentifier == null
-                                                                ? aggregateIdentifier : actualAggregateIdentifier,
-                                                        upcastEvent),
-                    serializer);
-            // prevents duplicate deserialization of meta data when it has already been access during upcasting
-            if (context.getSerializedMetaData().isDeserialized()) {
-                message = message.withMetaData(context.getSerializedMetaData().getObject());
-            }
-            messages.add(message);
-        }
-        return messages;
+        return upcastAndDeserialize(this, actualAggregateIdentifier, serializer, upcasterChain);
     }
 
     @Override
@@ -152,6 +131,7 @@ public class EventEntry implements SerializedDomainEventData<String> {
      *
      * @return long representing the sequence number of the event
      */
+    @Override
     public long getSequenceNumber() {
         return sequenceNumber;
     }

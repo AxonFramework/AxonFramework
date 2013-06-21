@@ -33,29 +33,24 @@ import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.SerializedDomainEventData;
-import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
 import org.axonframework.upcasting.SimpleUpcasterChain;
-import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterAware;
 import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
+import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
  * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as
@@ -220,31 +215,6 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         return new CursorBackedDomainEventStream(snapshotEvent, entries, identifier);
     }
 
-    @SuppressWarnings("unchecked")
-    private List<DomainEventMessage> upcastAndDeserialize(SerializedDomainEventData entry, Object identifier) {
-        final SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry,
-                                                                                                        serializer);
-        List<SerializedObject> objects = upcasterChain.upcast(
-                entry.getPayload(), context);
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
-        for (SerializedObject object : objects) {
-            try {
-                DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
-                        new UpcastSerializedDomainEventData(entry, identifier, object), serializer);
-
-                // prevents duplicate deserialization of meta data when it has already been access during upcasting
-                if (context.getSerializedMetaData().isDeserialized()) {
-                    message = message.withMetaData(context.getSerializedMetaData().getObject());
-                }
-                events.add(message);
-            } catch (UnknownSerializedTypeException e) {
-                logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
-                            object.getType().getName(), object.getType().getRevision());
-            }
-        }
-        return events;
-    }
-
     /**
      * {@inheritDoc}
      * <p/>
@@ -389,13 +359,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         private void initializeNextItem() {
             while (!currentBatch.hasNext() && cursor.hasNext()) {
                 final SerializedDomainEventData entry = cursor.next();
-                currentBatch = upcastAndDeserialize(entry, getAggregateIdentifier(entry)).iterator();
+                currentBatch = upcastAndDeserialize(entry, aggregateIdentifier, serializer, upcasterChain)
+                        .iterator();
             }
             next = currentBatch.hasNext() ? currentBatch.next() : null;
-        }
-
-        private Object getAggregateIdentifier(SerializedDomainEventData entry) {
-            return aggregateIdentifier != null ? aggregateIdentifier : entry.getAggregateIdentifier();
         }
 
         @Override
