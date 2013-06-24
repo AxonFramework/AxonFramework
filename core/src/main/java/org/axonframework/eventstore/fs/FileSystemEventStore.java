@@ -130,7 +130,18 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
             }
 
             InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(type, aggregateIdentifier);
-            DomainEventMessage snapshotEvent = readSnapshotEvent(type, aggregateIdentifier, eventFileInputStream);
+            DomainEventMessage snapshotEvent;
+            try {
+                snapshotEvent = readSnapshotEvent(type, aggregateIdentifier, eventFileInputStream);
+                // trigger deserialization
+                snapshotEvent.getPayload();
+            } catch (Exception e) {
+                // error while reading snapshot. We ignore it
+                snapshotEvent = null;
+                // we need to reset the stream, as it points to the event after the snapshot
+                IOUtils.closeQuietly(eventFileInputStream);
+                eventFileInputStream = eventFileResolver.openEventFileForReading(type, aggregateIdentifier);
+            }
 
             InputStream is = eventFileInputStream;
             if (snapshotEvent != null) {

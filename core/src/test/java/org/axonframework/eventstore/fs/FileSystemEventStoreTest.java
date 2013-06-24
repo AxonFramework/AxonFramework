@@ -23,7 +23,10 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.repository.ConflictingModificationException;
+import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
+import org.junit.rules.*;
 import org.mockito.*;
 
 import java.io.File;
@@ -47,11 +50,13 @@ public class FileSystemEventStoreTest {
 
     private Object aggregateIdentifier;
     private File eventFileBaseDir;
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
     public void setUp() {
         aggregateIdentifier = UUID.randomUUID();
-        eventFileBaseDir = new File("target/");
+        eventFileBaseDir = tempFolder.getRoot();
     }
 
     @Test
@@ -105,6 +110,34 @@ public class FileSystemEventStoreTest {
                 new StubDomainEvent());
         DomainEventStream stream2 = new SimpleDomainEventStream(event3);
         eventStore.appendEvents("test", stream2);
+    }
+
+    @Test
+    public void testReadEventsWithIllegalSnapshot() {
+        final XStreamSerializer serializer = spy(new XStreamSerializer());
+        FileSystemEventStore eventStore = new FileSystemEventStore(serializer,
+                                                                   new SimpleEventFileResolver(eventFileBaseDir));
+
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                0,
+                new StubDomainEvent());
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+                aggregateIdentifier,
+                1,
+                new StubDomainEvent());
+        DomainEventStream stream = new SimpleDomainEventStream(event1, event2);
+        eventStore.appendEvents("test", stream);
+
+        doReturn(new SimpleSerializedObject<byte[]>("error".getBytes(), byte[].class, String.class.getName(), "old"))
+                .when(serializer).serialize(anyObject(), eq(byte[].class));
+        eventStore.appendSnapshotEvent("test", event2);
+
+        DomainEventStream actual = eventStore.readEvents("test", aggregateIdentifier);
+        assertTrue(actual.hasNext());
+        assertEquals(0, actual.next().getSequenceNumber());
+        assertEquals(1, actual.next().getSequenceNumber());
+        assertFalse(actual.hasNext());
     }
 
     @Test
