@@ -89,7 +89,11 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
 
     @Override
     public DomainEventMessage next() {
-        return next.poll();
+        final DomainEventMessage nextMessage = next.poll();
+        if (next.isEmpty()) {
+            next.addAll(doReadNext());
+        }
+        return nextMessage;
     }
 
     @Override
