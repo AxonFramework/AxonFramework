@@ -19,19 +19,23 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SagaManager;
+import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.saga.spring.SpringResourceInjector;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
 
@@ -163,12 +167,30 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
     }
 
     private void parseTypesElement(Element element, GenericBeanDefinition sagaManagerDefinition) {
-        Element childNode = DomUtils.getChildElementByTagName(element, "types");
-        final String[] types = childNode.getTextContent().split("[,\\n]");
-        List<String> filteredTypes = new ArrayList<String>();
-        for (String type : types) {
-            if (StringUtils.hasText(type)) {
-                filteredTypes.add(type.trim());
+        Set<String> filteredTypes = new HashSet<String>();
+
+        // find explicitly names types
+        Element typeNode = DomUtils.getChildElementByTagName(element, "types");
+        if (typeNode != null) {
+            final String[] types = typeNode.getTextContent().split("[,\\n]");
+            for (String type : types) {
+                if (StringUtils.hasText(type)) {
+                    filteredTypes.add(type.trim());
+                }
+            }
+        }
+
+        if (element.hasAttribute("base-package")) {
+            // find using classpath scanning
+            ClassPathScanningCandidateComponentProvider scanner =
+                    new ClassPathScanningCandidateComponentProvider(false);
+            scanner.addIncludeFilter(new AssignableTypeFilter(AbstractAnnotatedSaga.class));
+            String basePackage = element.getAttribute("base-package");
+            if (StringUtils.hasText(basePackage)) {
+                Set<BeanDefinition> candidates = scanner.findCandidateComponents(basePackage.trim());
+                for (BeanDefinition bd : candidates) {
+                    filteredTypes.add(bd.getBeanClassName());
+                }
             }
         }
         registerTypes(filteredTypes.toArray(new String[filteredTypes.size()]), sagaManagerDefinition);

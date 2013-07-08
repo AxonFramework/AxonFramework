@@ -123,6 +123,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         SagaManager sagaManager = beanFactory.getBean("sagaManager", SagaManager.class);
         assertNotNull(sagaManager);
 
+        // This type is found using component scanning
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 

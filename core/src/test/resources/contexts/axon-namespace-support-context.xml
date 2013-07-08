@@ -25,6 +25,7 @@
                            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
 
     <context:annotation-config/>
+
     <tx:annotation-driven transaction-manager="transactionManager"/>
 
     <import resource="classpath:/META-INF/spring/db-context.xml"/>
@@ -32,9 +33,9 @@
 
     <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 
-    <axon:saga-manager id="sagaManager" saga-factory="sagaFactory">
+    <axon:saga-manager id="sagaManager" saga-factory="sagaFactory"
+                       base-package="org.axonframework.contextsupport.spring">
         <axon:types>
-            org.axonframework.contextsupport.spring.StubSaga
             org.axonframework.eventhandling.scheduling.SimpleTimingSaga
         </axon:types>
     </axon:saga-manager>
