@@ -105,6 +105,7 @@ public class JGroupsConnectorTest {
         System.out.println("Node 2 got " + counter2.get());
         verify(mockCommandBus1, atMost(40)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         verify(mockCommandBus2, atLeast(60)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+        assertEquals(connector1.getMembers(), connector2.getMembers());
     }
 
     @Test(expected = ConnectionFailedException.class, timeout = 30000)

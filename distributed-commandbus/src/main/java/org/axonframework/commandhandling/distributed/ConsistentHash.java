@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Basic implementation of a Consistent Hashing algorithm, using the MD5 algorithm to build the hash values for given
@@ -45,10 +46,10 @@ import java.util.TreeMap;
  */
 public class ConsistentHash implements Externalizable {
 
-    private static final long serialVersionUID = -586740481616520113L;
+    private static final long serialVersionUID = 799974496899291960L;
 
-    private static final ConsistentHash EMPTY = new ConsistentHash(new TreeMap<String, MemberNode>());
-    private final SortedMap<String, MemberNode> hashToMember;
+    private static final ConsistentHash EMPTY = new ConsistentHash(new TreeMap<String, Member>());
+    private final SortedMap<String, Member> hashToMember;
 
     /**
      * Returns an instance of an empty Ring, which can be used to add members.
@@ -67,10 +68,10 @@ public class ConsistentHash implements Externalizable {
      */
     @SuppressWarnings("UnusedDeclaration")
     public ConsistentHash() {
-        this(new TreeMap<String, MemberNode>());
+        this(new TreeMap<String, Member>());
     }
 
-    private ConsistentHash(SortedMap<String, MemberNode> hashed) {
+    private ConsistentHash(SortedMap<String, Member> hashed) {
         hashToMember = hashed;
     }
 
@@ -85,16 +86,16 @@ public class ConsistentHash implements Externalizable {
      * @return a ConsistentHash with the given additional node
      */
     public ConsistentHash withAdditionalNode(String nodeName, int segmentCount, Set<String> supportedCommandTypes) {
-        TreeMap<String, MemberNode> newHashes = new TreeMap<String, MemberNode>(hashToMember);
-        Iterator<Map.Entry<String, MemberNode>> iterator = newHashes.entrySet().iterator();
+        TreeMap<String, Member> newHashes = new TreeMap<String, Member>(hashToMember);
+        Iterator<Map.Entry<String, Member>> iterator = newHashes.entrySet().iterator();
         while (iterator.hasNext()) {
-            if (nodeName.equals(iterator.next().getValue().getName())) {
+            if (nodeName.equals(iterator.next().getValue().name())) {
                 iterator.remove();
             }
         }
-        for (int t = 0; t < segmentCount; t++) {
-            String hash = Digester.md5Hex(nodeName + " #" + t);
-            newHashes.put(hash, new MemberNode(nodeName, supportedCommandTypes));
+        Member node = new Member(nodeName, segmentCount, supportedCommandTypes);
+        for (String key : node.hashes()) {
+            newHashes.put(key, node);
         }
         return new ConsistentHash(newHashes);
     }
@@ -109,9 +110,9 @@ public class ConsistentHash implements Externalizable {
      */
     public ConsistentHash withExclusively(Collection<String> nodes) {
         Set<String> activeMembers = new HashSet<String>(nodes);
-        SortedMap<String, MemberNode> newHashes = new TreeMap<String, MemberNode>();
-        for (Map.Entry<String, MemberNode> entry : hashToMember.entrySet()) {
-            if (activeMembers.contains(entry.getValue().getName())) {
+        SortedMap<String, Member> newHashes = new TreeMap<String, Member>();
+        for (Map.Entry<String, Member> entry : hashToMember.entrySet()) {
+            if (activeMembers.contains(entry.getValue().name())) {
                 newHashes.put(entry.getKey(), entry.getValue());
             }
         }
@@ -128,21 +129,21 @@ public class ConsistentHash implements Externalizable {
      */
     public String getMember(String item, String commandType) {
         String hash = Digester.md5Hex(item);
-        SortedMap<String, MemberNode> tailMap = hashToMember.tailMap(hash);
-        Iterator<Map.Entry<String, MemberNode>> tailIterator = tailMap.entrySet().iterator();
-        MemberNode foundMember = findSuitableMember(commandType, tailIterator);
+        SortedMap<String, Member> tailMap = hashToMember.tailMap(hash);
+        Iterator<Map.Entry<String, Member>> tailIterator = tailMap.entrySet().iterator();
+        Member foundMember = findSuitableMember(commandType, tailIterator);
         if (foundMember == null) {
             // if the tail doesn't have a member, we should start back at the head
-            Iterator<Map.Entry<String, MemberNode>> headIterator = hashToMember.headMap(hash).entrySet().iterator();
+            Iterator<Map.Entry<String, Member>> headIterator = hashToMember.headMap(hash).entrySet().iterator();
             foundMember = findSuitableMember(commandType, headIterator);
         }
-        return foundMember == null ? null : foundMember.getName();
+        return foundMember == null ? null : foundMember.name();
     }
 
-    private MemberNode findSuitableMember(String commandType, Iterator<Map.Entry<String, MemberNode>> iterator) {
-        MemberNode foundMember = null;
+    private Member findSuitableMember(String commandType, Iterator<Map.Entry<String, Member>> iterator) {
+        Member foundMember = null;
         while (iterator.hasNext() && foundMember == null) {
-            Map.Entry<String, MemberNode> entry = iterator.next();
+            Map.Entry<String, Member> entry = iterator.next();
             if (entry.getValue().supportedCommands().contains(commandType)) {
                 foundMember = entry.getValue();
             }
@@ -173,15 +174,15 @@ public class ConsistentHash implements Externalizable {
     public String toString() {
         StringWriter w = new StringWriter();
         w.append("ConsistentHash: {");
-        Iterator<Map.Entry<String, MemberNode>> iterator = hashToMember.entrySet().iterator();
+        Iterator<Map.Entry<String, Member>> iterator = hashToMember.entrySet().iterator();
         if (iterator.hasNext()) {
             w.append("\n");
         }
         while (iterator.hasNext()) {
-            Map.Entry<String, MemberNode> entry = iterator.next();
+            Map.Entry<String, Member> entry = iterator.next();
             w.append(entry.getKey())
              .append(" -> ")
-             .append(entry.getValue().getName())
+             .append(entry.getValue().name())
              .append("(");
             Iterator<String> commandIterator = entry.getValue().supportedCommands().iterator();
             while (commandIterator.hasNext()) {
@@ -202,12 +203,13 @@ public class ConsistentHash implements Externalizable {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeInt(hashToMember.size());
-        for (Map.Entry<String, MemberNode> entry : hashToMember.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue().getName());
-            out.writeInt(entry.getValue().supportedCommands().size());
-            for (String supportedCommand : entry.getValue().supportedCommands()) {
+        Set<Member> members = new HashSet<Member>(hashToMember.values());
+        out.writeInt(members.size());
+        for (Member node : members) {
+            out.writeUTF(node.name());
+            out.writeInt(node.segmentCount());
+            out.writeInt(node.supportedCommands().size());
+            for (String supportedCommand : node.supportedCommands()) {
                 out.writeUTF(supportedCommand);
             }
         }
@@ -217,39 +219,98 @@ public class ConsistentHash implements Externalizable {
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         int size = in.readInt();
         for (int t = 0; t < size; t++) {
-            String key = in.readUTF();
             String memberName = in.readUTF();
+            int loadFactor = in.readInt();
             int supportedCommandCount = in.readInt();
             Set<String> supportedCommands = new HashSet<String>(supportedCommandCount);
             for (int c = 0; c < supportedCommandCount; c++) {
                 supportedCommands.add(in.readUTF());
             }
-            hashToMember.put(key, new MemberNode(memberName, supportedCommands));
+
+            Member node = new Member(memberName, loadFactor, supportedCommands);
+            for (String key : node.hashes()) {
+                hashToMember.put(key, node);
+            }
         }
     }
 
     /**
+     * Returns the set of members part of this hash ring.
+     *
+     * @return the set of members part of this hash ring
+     */
+    public Set<Member> getMembers() {
+        return Collections.unmodifiableSet(new HashSet<Member>(hashToMember.values()));
+    }
+
+    /**
+     * Represents a member in a consistently hashed cluster. A member is identified by its name, supports a number of
+     * commands and can have any number of segments (a.k.a buckets).
+     * <p/>
+     * Note that a single member may be presented by multiple {@code Member} instances if the number of segments
+     * differs per supported command type.
+     *
      * @author Allard Buijze
      */
-    private static class MemberNode {
+    public static class Member {
 
         private final String nodeName;
         private final Set<String> supportedCommandTypes;
+        private final Set<String> hashes;
 
-        public MemberNode(String nodeName, Set<String> supportedCommandTypes) {
+        public Member(String nodeName, int segmentCount, Set<String> supportedCommandTypes) {
             this.nodeName = nodeName;
-            this.supportedCommandTypes = new HashSet<String>(supportedCommandTypes);
+            this.supportedCommandTypes = Collections.unmodifiableSet(new HashSet<String>(supportedCommandTypes));
+            Set<String> newHashes = new TreeSet<String>();
+            for (int t = 0; t < segmentCount; t++) {
+                String hash = Digester.md5Hex(nodeName + " #" + t);
+                newHashes.add(hash);
+            }
+            this.hashes = Collections.unmodifiableSet(newHashes);
         }
 
-        public String getName() {
+        /**
+         * Returns the name of this member. Members are typically uniquely identified by their name.
+         * <p/>
+         * Note that a single member may be presented by multiple {@code Member} instances if the number of segments
+         * differs per supported command type. Therefore, the name should not be considered an absolutely unique value.
+         *
+         * @return the name of this member
+         */
+        public String name() {
             return nodeName;
         }
 
+        /**
+         * Returns the set of commands supported by this member.
+         *
+         * @return the set of commands supported by this member
+         */
         public Set<String> supportedCommands() {
-            return Collections.unmodifiableSet(supportedCommandTypes);
+            return supportedCommandTypes;
         }
 
-        @SuppressWarnings("RedundantIfStatement")
+        /**
+         * Returns the number of segments this member has on the consistent hash ring. Depending on the spread of the
+         * hashing algorithm used (default MD5), this number is an indication of the load of this node compared to
+         * other nodes.
+         *
+         * @return the number of segments this member has on the consistent hash ring
+         */
+        public int segmentCount() {
+            return hashes.size();
+        }
+
+        /**
+         * Returns the hash values assigned to this member. These values are used to locate the member to handle any
+         * given command.
+         *
+         * @return the hash values assigned to this member
+         */
+        public Set<String> hashes() {
+            return hashes;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -259,8 +320,11 @@ public class ConsistentHash implements Externalizable {
                 return false;
             }
 
-            MemberNode that = (MemberNode) o;
+            Member that = (Member) o;
 
+            if (!hashes.equals(that.hashes)) {
+                return false;
+            }
             if (!nodeName.equals(that.nodeName)) {
                 return false;
             }
@@ -273,9 +337,7 @@ public class ConsistentHash implements Externalizable {
 
         @Override
         public int hashCode() {
-            int result = nodeName.hashCode();
-            result = 31 * result + supportedCommandTypes.hashCode();
-            return result;
+            return nodeName.hashCode();
         }
     }
 }

@@ -25,6 +25,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
@@ -73,6 +76,22 @@ public class ConsistentHashTest {
         assertEquals(
                 "ConsistentHash: {\n2d9aa5c8a1cef20eafd756e8c58f1b29 -> Node(String), \ndc17bfc640c5e43ec7ecdfa874e703b2 -> Node(String)\n}",
                 actual);
+    }
+
+    @Test
+    public void testGetMembers() throws Exception {
+        ConsistentHash ring = ConsistentHash.emptyRing()
+                                            .withAdditionalNode("Node1", 2, singleton("String"))
+                                            .withAdditionalNode("Node2", 4, singleton("String"));
+
+        Set<ConsistentHash.Member> actual = ring.getMembers();
+        assertEquals(2, actual.size());
+        assertEquals(singleton("String"), actual.iterator().next().supportedCommands());
+        final Iterator<ConsistentHash.Member> members = actual.iterator();
+        Set<Integer> values = new HashSet<Integer>(Arrays.asList(2, 4));
+        while (!values.isEmpty()) {
+            assertTrue(values.remove(members.next().segmentCount()));
+        }
     }
 
     @Test

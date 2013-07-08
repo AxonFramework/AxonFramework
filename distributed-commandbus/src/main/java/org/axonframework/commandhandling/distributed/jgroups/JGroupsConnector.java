@@ -247,6 +247,17 @@ public class JGroupsConnector implements CommandBusConnector {
         return consistentHash;
     }
 
+    /**
+     * Returns the set of members currently registered with the connector.
+     * <p/>
+     * Note that any changes in membership are not reflected in the returned set.
+     *
+     * @return the set of members currently registered with the connector
+     */
+    public Set<ConsistentHash.Member> getMembers() {
+        return consistentHash.getMembers();
+    }
+
     private class MessageReceiver extends ReceiverAdapter {
 
         private volatile View currentView;
