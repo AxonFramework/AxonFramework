@@ -182,8 +182,25 @@ public class CachingEventSourcingRepositoryTest {
             fail("Expected AggregateDeletedException");
         } catch (AggregateDeletedException e) {
             assertTrue(e.getMessage().contains(identifier.toString()));
+        } finally {
+            CurrentUnitOfWork.commit();
         }
-        CurrentUnitOfWork.commit();
+    }
+
+    @Test
+    public void testCacheClearedAfterRollbackOfAddedAggregate() {
+        DefaultUnitOfWork.startAndGet();
+        StubAggregate aggregate1 = new StubAggregate("id1");
+        aggregate1.doSomething();
+        testSubject.add(aggregate1);
+        doThrow(new RuntimeException("Mock - simulate failure")).when(mockEventBus).publish(isA(EventMessage.class));
+        try {
+            CurrentUnitOfWork.get().commit();
+        } catch (RuntimeException e) {
+            // whatever
+        }
+        Object identifier = aggregate1.getIdentifier();
+        assertEquals(null, cache.get(identifier));
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {
@@ -222,6 +239,9 @@ public class CachingEventSourcingRepositoryTest {
 
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
+            if (!store.containsKey(identifier)) {
+                throw new AggregateNotFoundException(identifier, "Aggregate not found");
+            }
             return new SimpleDomainEventStream(store.get(identifier));
         }
 
