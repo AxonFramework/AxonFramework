@@ -26,6 +26,8 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionValidationException;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -35,6 +37,7 @@ import org.w3c.dom.Element;
 import java.util.List;
 
 import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
+import static org.springframework.util.StringUtils.hasText;
 
 /**
  * The RepositoryBeanDefinitionParser is responsible for parsing the <code>repository</code> element from the Axon
@@ -72,6 +75,10 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      * The aggregate root type attribute name.
      */
     private static final String AGGREGATE_ROOT_TYPE_ATTRIBUTE = "aggregate-type";
+    /**
+     * The aggregate factory attribute name.
+     */
+    private static final String AGGREGATE_FACTORY_ATTRIBUTE = "aggregate-factory";
     private static final String CACHE_ATTRIBUTE = "cache-ref";
 
     private static final String EVENT_PROCESSORS_ELEMENT = "event-processors";
@@ -92,7 +99,7 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
             repositoryDefinition.setBeanClass(EventSourcingRepository.class);
         }
 
-        parseAggregateRootType(element, repositoryDefinition);
+        parseAggregateFactory(element, repositoryDefinition);
         parseEventStore(element, repositoryDefinition);
         parseLockingStrategy(element, repositoryDefinition);
         parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues(),
@@ -184,17 +191,22 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      *                construct the {@link BeanDefinition}.
      */
     @SuppressWarnings({"unchecked"})
-    private void parseAggregateRootType(Element element, GenericBeanDefinition builder) {
-        // Mandatory in the XSD
-        String aggregateRootTypeString = element.getAttribute(AGGREGATE_ROOT_TYPE_ATTRIBUTE);
-        try {
-            Class<?> aggregateRootType = Class.forName(aggregateRootTypeString);
-            builder.getConstructorArgumentValues()
-                   .addIndexedArgumentValue(0, new GenericAggregateFactory(aggregateRootType));
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException(
-                    "No class of name " + aggregateRootTypeString + " was found on the classpath", e);
+    private void parseAggregateFactory(Element element, GenericBeanDefinition builder) {
+        Object aggregateFactory;
+        String aggregateFactoryRef = element.getAttribute(AGGREGATE_FACTORY_ATTRIBUTE);
+        String aggregateType = element.getAttribute(AGGREGATE_ROOT_TYPE_ATTRIBUTE);
+        if (hasText(aggregateFactoryRef)) {
+            aggregateFactory = new RuntimeBeanReference(aggregateFactoryRef);
+        } else if (hasText(aggregateType)) {
+            aggregateFactory = BeanDefinitionBuilder.genericBeanDefinition(GenericAggregateFactory.class)
+                                                    .addConstructorArgValue(aggregateType).getBeanDefinition();
+        } else {
+            throw new BeanDefinitionValidationException(
+                    "You must provide either an aggregate-type or an aggregate-factory in each "
+                            + "event-sourcing-repository element.");
         }
+        builder.getConstructorArgumentValues()
+               .addIndexedArgumentValue(0, aggregateFactory);
     }
 
     @Override

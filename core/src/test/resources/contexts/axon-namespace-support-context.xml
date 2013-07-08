@@ -206,10 +206,14 @@
     </axon:event-sourcing-repository>
 
     <axon:event-sourcing-repository id="testCacheRepository" cache-ref="mockCache" lock-manager="nullLockManager"
-                                    aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
+                                    aggregate-factory="mockFactory"
                                     event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver">
         <axon:snapshotter-trigger event-count-threshold="50" snapshotter-ref="snapshotter"/>
     </axon:event-sourcing-repository>
+
+    <bean id="mockFactory" class="org.axonframework.eventsourcing.GenericAggregateFactory">
+        <constructor-arg value="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
+    </bean>
 
     <axon:jpa-repository id="simpleJpaRepository"
                          aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>

@@ -36,6 +36,7 @@ import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -138,10 +139,10 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
                                                                                                    AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
-        assertEquals("First argument is wrong", GenericAggregateFactory.class, firstArgument.getValue().getClass());
-        assertEquals("First argument is wrong",
-                     EventSourcedAggregateRootMock.class.getSimpleName(),
-                     ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
+        assertEquals("First argument is wrong", GenericAggregateFactory.class,
+                     ((GenericBeanDefinition) firstArgument.getValue()).getBeanClass());
+        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class.getName(),
+                     ((GenericBeanDefinition) firstArgument.getValue()).getConstructorArgumentValues().getIndexedArgumentValue(0, String.class).getValue());
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues()
                                                    .getArgumentValue(1, BeanDefinition.class);
         assertNotNull("Second argument is wrong", secondArgument);
@@ -191,10 +192,9 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
                                                                                                    AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
-        assertEquals("First argument is wrong", GenericAggregateFactory.class, firstArgument.getValue().getClass());
+        assertEquals("First argument is wrong", RuntimeBeanReference.class, firstArgument.getValue().getClass());
         assertEquals("First argument is wrong",
-                     EventSourcedAggregateRootMock.class.getSimpleName(),
-                     ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
+                     "mockFactory", ((RuntimeBeanReference) firstArgument.getValue()).getBeanName());
 
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, EventStore.class);
         assertNotNull("Second argument is wrong", secondArgument);
@@ -245,11 +245,10 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder firstArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(0,
                                                                                                    AggregateFactory.class);
         assertNotNull("First argument is wrong", firstArgument);
-        assertEquals("First argument is wrong", GenericAggregateFactory.class, firstArgument.getValue().getClass());
-        assertEquals("First argument is wrong",
-                     EventSourcedAggregateRootMock.class.getSimpleName(),
-                     ((GenericAggregateFactory) firstArgument.getValue()).getTypeIdentifier());
-
+        assertEquals("First argument is wrong", GenericAggregateFactory.class,
+                     ((GenericBeanDefinition) firstArgument.getValue()).getBeanClass());
+        assertEquals("First argument is wrong", EventSourcedAggregateRootMock.class.getName(),
+                     ((GenericBeanDefinition) firstArgument.getValue()).getConstructorArgumentValues().getIndexedArgumentValue(0, String.class).getValue());
 
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, EventStore.class);
         assertNotNull("Second argument is wrong", secondArgument);

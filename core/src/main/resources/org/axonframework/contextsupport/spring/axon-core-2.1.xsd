@@ -955,10 +955,23 @@
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:all>
-                    <xsd:attribute name="aggregate-type" type="xsd:string" use="required">
+                    <xsd:attribute name="aggregate-type" type="xsd:string" use="optional">
                         <xsd:annotation>
                             <xsd:documentation>The fully qualified class name of the AggregateRoot type that this
-                                repository will store.
+                                repository will store. Either this attribute or the aggregate-type must be set.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="aggregate-factory" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventsourcing.AggregateFactory"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
+                            <xsd:documentation>The bean name of the AggregateFactory to create aggregate instances with.
+                                Defaults to a GenericAggregateFactory that creates instances using a default
+                                constructor. Either this attribute or the aggregate-type must be set.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
