@@ -79,6 +79,24 @@
         <axon:cache-config />
     </axon:jpa-saga-repository>
 
+    <axon:cluster id="defaultOrderedCluster">
+        <axon:ordered/>
+        <axon:selectors>
+            <axon:package prefix="com.doesnotexist"/>
+        </axon:selectors>
+    </axon:cluster>
+
+    <axon:cluster id="customOrderedCluster">
+        <axon:ordered order-resolver-ref="orderResolver"/>
+        <axon:selectors>
+            <axon:package prefix="com.does.not.exist"/>
+        </axon:selectors>
+    </axon:cluster>
+
+    <bean id="orderResolver" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.eventhandling.OrderResolver"/>
+    </bean>
+
     <axon:cluster id="firstCluster" order="2">
         <axon:meta-data>
             <entry key="meta" value="value"/>

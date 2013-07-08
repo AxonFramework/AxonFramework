@@ -19,7 +19,9 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Assert;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -33,18 +35,36 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public abstract class AbstractCluster implements Cluster {
 
     private final String name;
-    private final Set<EventListener> eventListeners = new CopyOnWriteArraySet<EventListener>();
-    private final Set<EventListener> immutableEventListeners = Collections.unmodifiableSet(eventListeners);
+    private final Set<EventListener> eventListeners;
+    private final Set<EventListener> immutableEventListeners;
     private final ClusterMetaData clusterMetaData = new DefaultClusterMetaData();
 
     /**
-     * Initializes the cluster with given <code>name</code>.
+     * Initializes the cluster with given <code>name</code>. The order in which listeners are organized in the cluster
+     * is undefined.
      *
      * @param name The name of this cluster
      */
     protected AbstractCluster(String name) {
         Assert.notNull(name, "name may not be null");
         this.name = name;
+        eventListeners = new CopyOnWriteArraySet<EventListener>();
+        immutableEventListeners = Collections.unmodifiableSet(eventListeners);
+    }
+
+    /**
+     * Initializes the cluster with given <code>name</code>, using given <code>comparator</code> to order the listeners
+     * in the cluster. The order of invocation of the members in this cluster is according the order provided by the
+     * comparator.
+     *
+     * @param name       The name of this cluster
+     * @param comparator The comparator providing the ordering of the Event Listeners
+     */
+    protected AbstractCluster(String name, Comparator<EventListener> comparator) {
+        Assert.notNull(name, "name may not be null");
+        this.name = name;
+        eventListeners = new ConcurrentSkipListSet<EventListener>(comparator);
+        immutableEventListeners = Collections.unmodifiableSet(eventListeners);
     }
 
     @Override

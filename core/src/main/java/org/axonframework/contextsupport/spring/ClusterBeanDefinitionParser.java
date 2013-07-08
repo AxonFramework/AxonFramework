@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.ClusterSelector;
 import org.axonframework.eventhandling.DefaultClusterSelector;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.SpringAnnotationOrderResolver;
 import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.IncomingMessageHandler;
@@ -114,6 +115,10 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             }
             innerCluster.getConstructorArgumentValues()
                         .addIndexedArgumentValue(0, resolveId(element, innerCluster, parserContext));
+            Element orderedElement = DomUtils.getChildElementByTagName(element, "ordered");
+            if (orderedElement != null) {
+                innerCluster.getConstructorArgumentValues().addGenericArgumentValue(parseOrderElement(orderedElement));
+            }
         }
         Map metaData = parseMetaData(element, parserContext, null);
 
@@ -135,6 +140,14 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             return wrapInReplayingCluster(DomUtils.getChildElementByTagName(element, REPLAY_ELEMENT), clusterBean);
         }
         return clusterBean;
+    }
+
+    private Object parseOrderElement(Element orderedElement) {
+        if (orderedElement.hasAttribute("order-resolver-ref")) {
+            return new RuntimeBeanReference(orderedElement.getAttribute("order-resolver-ref"));
+        } else {
+            return BeanDefinitionBuilder.genericBeanDefinition(SpringAnnotationOrderResolver.class).getBeanDefinition();
+        }
     }
 
     private AbstractBeanDefinition wrapInReplayingCluster(Element replayElement,

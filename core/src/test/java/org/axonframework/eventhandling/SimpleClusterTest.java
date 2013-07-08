@@ -44,6 +44,20 @@ public class SimpleClusterTest {
     }
 
     @Test
+    public void testSubscribeOrderedMembers() {
+        OrderResolver mockOrderResolver = mock(OrderResolver.class);
+        EventListener eventListener2 = mock(EventListener.class);
+        when(mockOrderResolver.orderOf(eventListener)).thenReturn(1);
+        when(mockOrderResolver.orderOf(eventListener2)).thenReturn(2);
+        testSubject = new SimpleCluster("cluster", mockOrderResolver);
+        testSubject.subscribe(eventListener2);
+        testSubject.subscribe(eventListener);
+        assertEquals(2, testSubject.getMembers().size());
+        // the eventListener instance must come first
+        assertEquals(eventListener, testSubject.getMembers().iterator().next());
+    }
+
+    @Test
     public void testUnsubscribeMember() {
         assertEquals(0, testSubject.getMembers().size());
         testSubject.subscribe(eventListener);

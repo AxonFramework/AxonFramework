@@ -37,9 +37,22 @@ public class SimpleCluster extends AbstractCluster {
         super(name);
     }
 
+    /**
+     * Initializes the cluster with given <code>name</code>, using given <code>orderResolver</code> to define the
+     * order in which listeners need to be invoked.
+     * <p/>
+     * Listeners are invoked with the lowest order first.
+     *
+     * @param name          The name of this cluster
+     * @param orderResolver The resolver defining the order in which listeners need to be invoked
+     */
+    public SimpleCluster(String name, OrderResolver orderResolver) {
+        super(name, new EventListenerOrderComparator(orderResolver));
+    }
+
     @Override
     public void publish(EventMessage... events) {
-        for(EventMessage event : events) {
+        for (EventMessage event : events) {
             for (EventListener eventListener : getMembers()) {
                 eventListener.handle(event);
             }

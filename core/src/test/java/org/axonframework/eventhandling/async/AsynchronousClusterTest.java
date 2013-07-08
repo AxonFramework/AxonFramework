@@ -20,11 +20,18 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.OrderResolver;
+import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.junit.*;
+import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
+import org.springframework.core.annotation.Order;
 
 import java.util.concurrent.Executor;
 
@@ -73,6 +80,34 @@ public class AsynchronousClusterTest {
     }
 
     @Test
+    public void testOrderingOfListeners() {
+        testSubject = new AsynchronousCluster("async", new DirectExecutor(),
+                                              new DefaultUnitOfWorkFactory(mockTransactionManager),
+                                              new SequentialPolicy(), new DefaultErrorHandler(RetryPolicy.proceed()),
+                                              new OrderResolver() {
+            @Override
+            public int orderOf(EventListener listener) {
+                if (listener instanceof EventListenerProxy) {
+                    return ((EventListenerProxy) listener).getTargetType().getSuperclass()
+                                                          .getAnnotation(Order.class).value();
+                }
+                return 0;
+            }
+        });
+
+        final FirstHandler handler1 = spy(new FirstHandler());
+        final SecondHandler handler2 = spy(new SecondHandler());
+        testSubject.subscribe(new AnnotationEventListenerAdapter(handler1, null));
+        testSubject.subscribe(new AnnotationEventListenerAdapter(handler2, null));
+
+        testSubject.publish(GenericEventMessage.asEventMessage("test"));
+
+        InOrder inOrder = Mockito.inOrder(handler1, handler2);
+        inOrder.verify(handler1).onEvent("test");
+        inOrder.verify(handler2).onEvent("test");
+    }
+
+    @Test
     public void testSubscriptions() throws Exception {
         EventListener mockEventListener = mock(EventListener.class);
         testSubject.subscribe(mockEventListener);
@@ -114,5 +149,25 @@ public class AsynchronousClusterTest {
         verify(mockEventListener1).handle(message);
         verify(mockEventListener2).handle(message);
         verify(mockEventListener3).handle(message);
+    }
+
+    @Order(1)
+    private static class FirstHandler {
+
+        @EventHandler
+        public void onEvent(String event) {
+
+        }
+
+    }
+
+    @Order(2)
+    private static class SecondHandler {
+
+        @EventHandler
+        public void onEvent(String event) {
+
+        }
+
     }
 }

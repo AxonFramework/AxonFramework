@@ -19,6 +19,8 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.AbstractCluster;
+import org.axonframework.eventhandling.EventListenerOrderComparator;
+import org.axonframework.eventhandling.OrderResolver;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
@@ -49,7 +51,6 @@ public class AsynchronousCluster extends AbstractCluster {
     private final ConcurrentMap<Object, EventProcessor> currentSchedulers =
             new ConcurrentHashMap<Object, EventProcessor>();
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
-    // the queue on which events are places that may be processed concurrently
     private UnitOfWorkFactory unitOfWorkFactory;
 
     /**
@@ -125,6 +126,37 @@ public class AsynchronousCluster extends AbstractCluster {
                                SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
                                ErrorHandler errorHandler) {
         super(name);
+        Assert.notNull(errorHandler, "errorHandler may not be null");
+        Assert.notNull(unitOfWorkFactory, "unitOfWorkFactory may not be null");
+        Assert.notNull(sequencingPolicy, "sequencingPolicy may not be null");
+        this.errorHandler = errorHandler;
+        this.executor = executor;
+        this.unitOfWorkFactory = unitOfWorkFactory;
+        this.sequencingPolicy = sequencingPolicy;
+    }
+
+    /**
+     * Creates an AsynchronousCluster implementation using the given <code>executor</code>,
+     * <code>unitOfWorkFactory</code> and <code>sequencingPolicy</code>. Failures are processed by the given
+     * <code>errorHandler</code>. Event Listeners are invoked in the order provided by the <code>orderResolver</code>.
+     * <p/>
+     * If transactions are required, the given <code>unitOfWorkFactory</code> should be configured to create
+     * Transaction backed Unit of Work instances.
+     * <p/>
+     * Event Listeners with the lowest order are invoked first.
+     *
+     * @param name              The unique identifier of this cluster
+     * @param executor          The executor to process event batches with
+     * @param unitOfWorkFactory The Unit of Work Factory Manager that manages Units of Work around event processing
+     * @param sequencingPolicy  The policy indicating which events must be processed sequentially, and which may be
+     *                          executed in parallel.
+     * @param errorHandler      The handler that handles error during event processing
+     * @param orderResolver     The resolver providing the expected order of the listeners
+     */
+    public AsynchronousCluster(String name, Executor executor, UnitOfWorkFactory unitOfWorkFactory,
+                               SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
+                               ErrorHandler errorHandler, OrderResolver orderResolver) {
+        super(name, new EventListenerOrderComparator(orderResolver));
         Assert.notNull(errorHandler, "errorHandler may not be null");
         Assert.notNull(unitOfWorkFactory, "unitOfWorkFactory may not be null");
         Assert.notNull(sequencingPolicy, "sequencingPolicy may not be null");

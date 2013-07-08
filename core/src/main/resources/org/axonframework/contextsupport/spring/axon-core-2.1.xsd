@@ -93,10 +93,23 @@
             <xsd:all>
                 <xsd:element ref="beans:bean" minOccurs="0"/>
                 <xsd:element name="meta-data" type="beans:mapType" minOccurs="0"/>
+                <xsd:element name="ordered" minOccurs="0">
+                    <xsd:complexType>
+                        <xsd:attribute name="order-resolver-ref" use="optional">
+                            <xsd:annotation>
+                                <xsd:documentation>The reference to the resolver that provides the order for each
+                                    registered Event Listener. Defaults to an implementation that checks for Spring's
+                                    @Order annotation.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                    </xsd:complexType>
+                </xsd:element>
                 <xsd:element name="selectors" minOccurs="0">
                     <xsd:annotation>
                         <xsd:documentation>
-
+                            Describes the criteria an Event Listener must meet to be selected for this instance. One or
+                            more sub-elements should be provided to define the criteria.
                         </xsd:documentation>
                         <xsd:appinfo>
                             <tool:annotation>

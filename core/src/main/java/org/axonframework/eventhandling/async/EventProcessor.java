@@ -23,11 +23,9 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,7 +50,7 @@ public class EventProcessor implements Runnable {
     // guarded by "this"
     private boolean isScheduled = false;
     private volatile boolean cleanedUp;
-    private List<EventListener> listeners;
+    private final Set<EventListener> listeners;
     private volatile long retryAfter = 0;
 
     /**
@@ -66,13 +64,13 @@ public class EventProcessor implements Runnable {
      * @param eventListeners    The event listeners that should handle incoming events
      */
     public EventProcessor(Executor executor, ShutdownCallback shutDownCallback, ErrorHandler errorHandler,
-                          UnitOfWorkFactory unitOfWorkFactory, Collection<EventListener> eventListeners) {
+                          UnitOfWorkFactory unitOfWorkFactory, Set<EventListener> eventListeners) {
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.eventQueue = new LinkedList<EventMessage<?>>();
         this.shutDownCallback = shutDownCallback;
         this.executor = executor;
         this.errorHandler = errorHandler;
-        this.listeners = new ArrayList<EventListener>(eventListeners);
+        this.listeners = eventListeners;
     }
 
     /**
