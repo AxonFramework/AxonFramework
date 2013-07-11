@@ -23,11 +23,15 @@ import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -39,7 +43,7 @@ import static org.junit.Assert.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:contexts/disruptor-context.xml"})
+@ContextConfiguration(classes = DisruptorCommandBusBeanDefinitionParserTest.Context.class)
 public class DisruptorCommandBusBeanDefinitionParserTest {
 
     @Autowired
@@ -81,5 +85,25 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
         assertTrue(config.getPropertyValues().getPropertyValue("serializer").getValue() instanceof BeanReference);
         assertEquals("3", config.getPropertyValues().getPropertyValue("serializerThreadCount").getValue());
         assertEquals("org.dom4j.Document", config.getPropertyValues().getPropertyValue("serializedRepresentation").getValue());
+    }
+
+    /**
+     * Spring configuration to test for <a href="http://issues.axonframework.org/youtrack/issue/AXON-159">AXON-159</a>
+     */
+    @Configuration
+    @ImportResource({"classpath:contexts/disruptor-context.xml"})
+    public static class Context {
+
+        @Bean
+        public String myBean(@Qualifier("myOtherAggregateRepository")Repository repository) {
+            assertNotNull(repository);
+            return "";
+        }
+
+        @Bean
+        public String myOtherBean(@Qualifier("myAggregateRepository")Repository repository) {
+            assertNotNull(repository);
+            return "";
+        }
     }
 }

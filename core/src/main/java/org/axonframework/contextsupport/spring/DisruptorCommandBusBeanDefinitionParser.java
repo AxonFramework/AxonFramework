@@ -27,7 +27,10 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.disruptor.DisruptorConfiguration;
 import org.axonframework.common.Assert;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.repository.Repository;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -170,23 +173,22 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
 
     private void parseRepository(Element repository, String commandBusId, ParserContext parserContext) {
         String id = repository.getAttribute(ATTRIBUTE_ID);
-        BeanDefinition definition;
+        BeanDefinitionBuilder definitionBuilder =
+                genericBeanDefinition(RepositoryFactoryBean.class)
+                        .addConstructorArgReference(commandBusId);
         if (repository.hasAttribute(ATTRIBUTE_AGGREGATE_FACTORY)) {
-            definition = genericBeanDefinition()
-                    .addConstructorArgReference(repository.getAttribute(ATTRIBUTE_AGGREGATE_FACTORY))
-                    .getBeanDefinition();
+            definitionBuilder = definitionBuilder
+                    .addConstructorArgReference(repository.getAttribute(ATTRIBUTE_AGGREGATE_FACTORY));
         } else {
             final String aggregateType = repository.getAttribute(ATTRIBUTE_AGGREGATE_TYPE);
             Assert.notNull(aggregateType, "Either one of 'aggregate-type' or 'aggregate-factory' attributes must be "
                     + "set on repository elements in <disruptor-command-bus>");
-            definition = genericBeanDefinition()
+            definitionBuilder = definitionBuilder
                     .addConstructorArgValue(genericBeanDefinition(GenericAggregateFactory.class)
                                                     .addConstructorArgValue(aggregateType)
-                                                    .getBeanDefinition()
-                    ).getBeanDefinition();
+                                                    .getBeanDefinition());
         }
-        definition.setFactoryBeanName(commandBusId);
-        definition.setFactoryMethodName(METHOD_CREATE_REPOSITORY);
+        final AbstractBeanDefinition definition = definitionBuilder.getBeanDefinition();
         parserContext.getRegistry().registerBeanDefinition(id, definition);
     }
 
@@ -280,6 +282,43 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         @Override
         public Class<?> getObjectType() {
             return WaitStrategy.class;
+        }
+
+        @Override
+        public boolean isSingleton() {
+            return true;
+        }
+    }
+
+    /**
+     * FactoryBean to create repository instances for use with the DisruptorCommandBus
+     */
+    public static class RepositoryFactoryBean implements FactoryBean<Repository> {
+
+        private final DisruptorCommandBus commandBus;
+        private final AggregateFactory<? extends EventSourcedAggregateRoot> factory;
+
+        /**
+         * Initialize the factory bean to generate repositories for the given <code>commandBus</code>, using given
+         * <code>factory</code> to create aggregate instances
+         *
+         * @param commandBus The command bus to create repositories for
+         * @param factory    The factory creating uninitialized instances of aggregates
+         */
+        public RepositoryFactoryBean(DisruptorCommandBus commandBus,
+                                     AggregateFactory<? extends EventSourcedAggregateRoot> factory) {
+            this.commandBus = commandBus;
+            this.factory = factory;
+        }
+
+        @Override
+        public Repository getObject() throws Exception {
+            return commandBus.createRepository(factory);
+        }
+
+        @Override
+        public Class<?> getObjectType() {
+            return Repository.class;
         }
 
         @Override
