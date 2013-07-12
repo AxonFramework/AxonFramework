@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import net.sf.cglib.proxy.Enhancer;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
@@ -76,7 +75,6 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 
-        assertTrue(Enhancer.isEnhanced(postProcessedBean.getClass()));
         assertTrue(postProcessedBean instanceof CommandHandler);
         assertTrue(postProcessedBean instanceof AnnotatedCommandHandler);
 
