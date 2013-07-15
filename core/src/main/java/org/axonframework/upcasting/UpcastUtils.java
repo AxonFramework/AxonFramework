@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2013. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.upcasting;
 
 import org.axonframework.domain.DomainEventMessage;
@@ -39,12 +55,14 @@ public abstract class UpcastUtils {
      *                            <code>null</code> to use the deserialized version
      * @param serializer          the serializer to deserialize the event with
      * @param upcasterChain       the chain containing the upcasters to upcast the events with
+     * @param skipUnknownTypes    whether unknown serialized types should be ignored
      * @return a list of upcast and deserialized events
      */
     @SuppressWarnings("unchecked")
     public static List<DomainEventMessage> upcastAndDeserialize(SerializedDomainEventData entry,
                                                                 Object aggregateIdentifier,
-                                                                Serializer serializer, UpcasterChain upcasterChain) {
+                                                                Serializer serializer, UpcasterChain upcasterChain,
+                                                                boolean skipUnknownTypes) {
         SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry, serializer);
         List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload(), context);
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
@@ -62,6 +80,9 @@ public abstract class UpcastUtils {
                 }
                 events.add(message);
             } catch (UnknownSerializedTypeException e) {
+                if (!skipUnknownTypes) {
+                    throw e;
+                }
                 logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
                             object.getType().getName(), object.getType().getRevision());
             }
