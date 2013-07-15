@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2013. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
+import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
@@ -112,6 +113,19 @@ public class JpaEventStoreTest {
                 new GenericDomainEventMessage<Object>(new BadIdentifierType(), 1, new Object())));
     }
 
+    @Test(expected = UnknownSerializedTypeException.class)
+    public void testUnknownSerializedTypeCausesException() {
+        testSubject.appendEvents("type", aggregate1.getUncommittedEvents());
+        entityManager.flush();
+        entityManager.clear();
+        entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type")
+                     .setParameter("type", "unknown")
+                     .executeUpdate();
+
+        testSubject.readEvents("type", aggregate1.getIdentifier());
+    }
+
+    @Transactional
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
