@@ -86,8 +86,9 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
 
     @Override
     public List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier,
-                                                         Serializer serializer, UpcasterChain upcasterChain) {
-        return new EventEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain);
+                                                         Serializer serializer, UpcasterChain upcasterChain,
+                                                         boolean skipUnknownTypes) {
+        return new EventEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain, skipUnknownTypes);
     }
 
     @Override
@@ -221,12 +222,14 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
          * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
          * @param upcasterChain             Set of upcasters to use when an event needs upcasting before
          *                                  de-serialization
+         * @param skipUnknownTypes          whether to skip unknown event types
          * @return The actual DomainEventMessage instances stored in this entry
          */
         @SuppressWarnings("unchecked")
         public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
-                                                        UpcasterChain upcasterChain) {
-            return upcastAndDeserialize(this, actualAggregateIdentifier, eventSerializer, upcasterChain);
+                                                        UpcasterChain upcasterChain, boolean skipUnknownTypes) {
+            return upcastAndDeserialize(this, actualAggregateIdentifier, eventSerializer,
+                                        upcasterChain, skipUnknownTypes);
         }
 
         private Class<?> getRepresentationType() {

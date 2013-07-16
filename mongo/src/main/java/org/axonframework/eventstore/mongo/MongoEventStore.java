@@ -156,7 +156,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         if (!dbCursor.hasNext() && lastSnapshotCommit == null) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier);
+        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier, false);
     }
 
     @Override
@@ -179,7 +179,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         DBCursor cursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
                                                      (MongoCriteria) criteria);
         cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
-        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null);
+        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null, true);
         while (events.hasNext()) {
             visitor.doWithEvent(events.next());
         }
@@ -199,7 +199,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         }
         DBObject first = dbCursor.next();
 
-        return storageStrategy.extractEventMessages(first, identifier, eventSerializer, upcasterChain);
+        return storageStrategy.extractEventMessages(first, identifier, eventSerializer, upcasterChain, false);
     }
 
     @Override
@@ -213,6 +213,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         private DomainEventMessage next;
         private final DBCursor dbCursor;
         private final Object actualAggregateIdentifier;
+        private boolean skipUnknownTypes;
 
         /**
          * Initializes the DomainEventStream, streaming events obtained from the given <code>dbCursor</code> and
@@ -225,9 +226,10 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
          *                                  <code>null</code> if unknown
          */
         public CursorBackedDomainEventStream(DBCursor dbCursor, List<DomainEventMessage> lastSnapshotCommit,
-                                             Object actualAggregateIdentifier) {
+                                             Object actualAggregateIdentifier, boolean skipUnknownTypes) {
             this.dbCursor = dbCursor;
             this.actualAggregateIdentifier = actualAggregateIdentifier;
+            this.skipUnknownTypes = skipUnknownTypes;
             if (lastSnapshotCommit != null) {
                 messagesToReturn = lastSnapshotCommit.iterator();
             }
@@ -257,7 +259,8 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         private void initializeNextItem() {
             while (!messagesToReturn.hasNext() && dbCursor.hasNext()) {
                 messagesToReturn = storageStrategy.extractEventMessages(dbCursor.next(), actualAggregateIdentifier,
-                                                                        eventSerializer, upcasterChain).iterator();
+                                                                        eventSerializer, upcasterChain,
+                                                                        skipUnknownTypes).iterator();
             }
             next = messagesToReturn.hasNext() ? messagesToReturn.next() : null;
         }

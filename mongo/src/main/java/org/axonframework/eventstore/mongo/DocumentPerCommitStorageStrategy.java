@@ -106,8 +106,9 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
 
     @Override
     public List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier,
-                                                         Serializer serializer, UpcasterChain upcasterChain) {
-        return new CommitEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain);
+                                                         Serializer serializer, UpcasterChain upcasterChain,
+                                                         boolean skipUnknownTypes) {
+        return new CommitEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain, skipUnknownTypes);
     }
 
     @Override
@@ -217,11 +218,11 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
          */
         @SuppressWarnings("unchecked")
         public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
-                                                        UpcasterChain upcasterChain) {
+                                                        UpcasterChain upcasterChain, boolean skipUnknownTypes) {
             List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
             for (final EventEntry eventEntry : eventEntries) {
                 messages.addAll(upcastAndDeserialize(new DomainEventData(this, eventEntry), actualAggregateIdentifier,
-                                                     eventSerializer, upcasterChain));
+                                                     eventSerializer, upcasterChain, skipUnknownTypes));
             }
             return messages;
         }

@@ -96,7 +96,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
 
         List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
         if (lastSnapshotEvent != null) {
-            events.addAll(0, lastSnapshotEvent.getDomainEvent(identifier, eventSerializer, upcasterChain));
+            events.addAll(0, lastSnapshotEvent.getDomainEvent(identifier, eventSerializer, upcasterChain, false));
         }
 
         if (events.isEmpty()) {
@@ -138,7 +138,7 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
 
         List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
         for (Entity entity : entities) {
-            events.addAll(new EventEntry(entity).getDomainEvent(identifier, eventSerializer, upcasterChain));
+            events.addAll(new EventEntry(entity).getDomainEvent(identifier, eventSerializer, upcasterChain, false));
         }
         return events;
     }

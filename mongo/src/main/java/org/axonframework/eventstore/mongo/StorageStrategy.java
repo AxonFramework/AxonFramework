@@ -56,10 +56,11 @@ public interface StorageStrategy {
      * @param aggregateIdentifier The aggregate identifier used to query events
      * @param serializer          The serializer to deserialize events with
      * @param upcasterChain       The upcaster chain to upcast stored events with
+     * @param skipUnknownTypes    Whether unknown event types should be skipped
      * @return a list of DomainEventMessage contained in the entry
      */
     List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier, Serializer serializer,
-                                                  UpcasterChain upcasterChain);
+                                                  UpcasterChain upcasterChain, boolean skipUnknownTypes);
 
     /**
      * Provides a cursor for access to all events for an aggregate with given <code>aggregateType</code> and

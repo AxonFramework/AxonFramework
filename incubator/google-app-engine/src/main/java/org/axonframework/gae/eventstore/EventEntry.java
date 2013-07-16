@@ -108,12 +108,13 @@ public class EventEntry implements SerializedDomainEventData<String> {
      * @param actualAggregateIdentifier The actual aggregate identifier instance used to perform the lookup
      * @param serializer                Serializer used to de-serialize the stored DomainEvent
      * @param upcasterChain             Set of upcasters to use when an event needs upcasting before de-serialization
+     * @param skipUnknownTypes          Whether to skip unknown event types
      * @return The actual DomainEventMessage instances stored in this entry
      */
     @SuppressWarnings("unchecked")
     public List<DomainEventMessage> getDomainEvent(Object actualAggregateIdentifier, Serializer serializer,
-                                                   UpcasterChain upcasterChain) {
-        return upcastAndDeserialize(this, actualAggregateIdentifier, serializer, upcasterChain);
+                                                   UpcasterChain upcasterChain, boolean skipUnknownTypes) {
+        return upcastAndDeserialize(this, actualAggregateIdentifier, serializer, upcasterChain, skipUnknownTypes);
     }
 
     @Override
