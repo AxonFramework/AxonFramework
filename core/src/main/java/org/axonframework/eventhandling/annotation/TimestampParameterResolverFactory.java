@@ -47,7 +47,10 @@ public final class TimestampParameterResolverFactory
         return resolver;
     }
 
-    private static class TimestampParameterResolver implements ParameterResolver<DateTime> {
+    /**
+     * ParameterResolver that resolved Timestamp parameters
+     */
+    static class TimestampParameterResolver implements ParameterResolver<DateTime> {
 
         @Override
         public DateTime resolveParameterValue(Message message) {
