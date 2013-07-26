@@ -160,9 +160,9 @@ public class BSONNode {
         return addChild(name, null);
     }
     
-    private BSONNode addChild(String name, String value) {
+    private BSONNode addChild(String name, String nodeValue) {
         BSONNode childNode = new BSONNode(name);
-        childNode.setValue(value);
+        childNode.setValue(nodeValue);
         this.childNodes.add(childNode);
         return childNode;
     }

@@ -22,6 +22,7 @@ import java.lang.annotation.Annotation;
  * Abstract implementation of the HandlerPayloadTypeResolver that uses the Void class to indicate a "null" value.
  * <code>null</code> values are not allowed on annotations.
  *
+ * @param <T> The type of annotation marking the handler method
  * @author Allard Buijze
  * @since 2.1
  */

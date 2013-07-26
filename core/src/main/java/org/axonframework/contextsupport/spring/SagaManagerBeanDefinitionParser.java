@@ -49,7 +49,8 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
     private final AsyncSagaManagerBeanDefinitionParser async;
     private final SyncSagaManagerBeanDefinitionParser sync;
 
-    private final Map<BeanDefinition, String> eventBusPerSagaManager = Collections.synchronizedMap(new WeakHashMap<BeanDefinition, String>());
+    private final Map<BeanDefinition, String> eventBusPerSagaManager = Collections
+            .synchronizedMap(new WeakHashMap<BeanDefinition, String>());
 
     /**
      * Initializes a SagaManagerBeanDefinitionParser.
@@ -100,6 +101,10 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
         return true;
     }
 
+    /**
+     * Manages the subscription of a SagaManager with an Event Bus. This is done in an external class to allow a
+     * SagaManager to be proxied (e.g. for security access control).
+     */
     public static class SagaManagerLifecycleManager implements SmartLifecycle {
 
         private volatile EventBus eventBus;
@@ -123,10 +128,20 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
             return started;
         }
 
+        /**
+         * Sets the event bus to which the SagaManager should be subscribed
+         *
+         * @param eventBus the event bus to which the SagaManager should be subscribed
+         */
         public void setEventBus(EventBus eventBus) {
             this.eventBus = eventBus;
         }
 
+        /**
+         * Sets the SagaManager instance to subscribe to the Event Bus
+         *
+         * @param sagaManager the SagaManager instance to subscribe to the Event Bus
+         */
         public void setSagaManager(SagaManager sagaManager) {
             this.sagaManager = sagaManager;
         }

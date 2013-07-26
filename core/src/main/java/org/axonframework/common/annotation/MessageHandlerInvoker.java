@@ -24,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * Abstract class to support implementations that need to invoke methods based on an annotation.
  *
+ * @param <T> The type of annotation marking the handler method
  * @author Allard Buijze
  * @since 0.6
  */

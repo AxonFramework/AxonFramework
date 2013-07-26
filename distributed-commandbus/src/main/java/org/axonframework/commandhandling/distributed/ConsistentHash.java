@@ -258,6 +258,14 @@ public class ConsistentHash implements Externalizable {
         private final Set<String> supportedCommandTypes;
         private final Set<String> hashes;
 
+        /**
+         * Constructs a new member with given <code>nodeName</code>, <code>segmentCount</code> supporting given
+         * <code>supportedCommandTypes</code>.
+         *
+         * @param nodeName              The name of the node
+         * @param segmentCount          The number of segments the node should have on the hash ring
+         * @param supportedCommandTypes The commands supported by this node
+         */
         public Member(String nodeName, int segmentCount, Set<String> supportedCommandTypes) {
             this.nodeName = nodeName;
             this.supportedCommandTypes = Collections.unmodifiableSet(new HashSet<String>(supportedCommandTypes));

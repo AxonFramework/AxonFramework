@@ -30,8 +30,6 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -130,8 +128,6 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
      * @since 2.0 (in incubator since 0.7)
      */
     private static final class EventEntry implements SerializedDomainEventData {
-
-        private static final Logger logger = LoggerFactory.getLogger(DocumentPerEventStorageStrategy.class);
 
         /**
          * Property name in mongo for the Aggregate Identifier.

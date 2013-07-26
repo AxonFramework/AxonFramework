@@ -53,7 +53,7 @@ public class InputStreamToByteArrayConverter extends AbstractContentTypeConverte
     }
 
     private byte[] bytesFrom(InputStream original) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = new ByteArrayOutputStream(); // NOSONAR - There is no point in closing BAOS
         byte[] buffer = new byte[1024];
         int n;
         while (-1 != (n = original.read(buffer))) {

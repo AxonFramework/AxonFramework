@@ -35,7 +35,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.0.1, 2.1
  */
-public class FixtureResourceParameterResolverFactory extends ParameterResolverFactory {
+public final class FixtureResourceParameterResolverFactory extends ParameterResolverFactory {
 
     private final List<Object> injectableResources;
 
@@ -79,7 +79,7 @@ public class FixtureResourceParameterResolverFactory extends ParameterResolverFa
         ParameterResolverFactory.unregisterFactory(this);
     }
 
-    private class LazyParameterResolver implements ParameterResolver {
+    private static class LazyParameterResolver implements ParameterResolver {
 
         private final Class<?> parameterType;
         private final List<Object> injectableResources;

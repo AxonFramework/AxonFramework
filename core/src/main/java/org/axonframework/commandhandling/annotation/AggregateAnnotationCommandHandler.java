@@ -174,16 +174,16 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     }
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
-        Map<String, CommandHandler<Object>> handlers = new HashMap<String, CommandHandler<Object>>();
+        Map<String, CommandHandler<Object>> handlersFound = new HashMap<String, CommandHandler<Object>>();
         for (final MethodMessageHandler commandHandler : inspector.getHandlers()) {
-            handlers.put(resolveAcceptedCommandName(commandHandler),
-                         new AggregateCommandHandler(commandHandler));
+            handlersFound.put(resolveAcceptedCommandName(commandHandler),
+                              new AggregateCommandHandler(commandHandler));
         }
 
         for (final ConstructorCommandMessageHandler<T> handler : inspector.getConstructorHandlers()) {
-            handlers.put(resolveAcceptedCommandName(handler), new AggregateConstructorCommandHandler(handler));
+            handlersFound.put(resolveAcceptedCommandName(handler), new AggregateConstructorCommandHandler(handler));
         }
-        return handlers;
+        return handlersFound;
     }
 
     /**

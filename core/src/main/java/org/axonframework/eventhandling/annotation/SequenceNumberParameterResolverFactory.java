@@ -48,7 +48,7 @@ public final class SequenceNumberParameterResolverFactory extends
         return resolver;
     }
 
-    static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
+    private static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
         @Override
         public Long resolveParameterValue(Message message) {
             if (message instanceof DomainEventMessage) {

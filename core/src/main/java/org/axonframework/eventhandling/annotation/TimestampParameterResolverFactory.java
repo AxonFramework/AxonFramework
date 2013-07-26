@@ -28,7 +28,9 @@ import org.joda.time.DateTime;
  * @author Allard Buijze
  * @since 2.0
  */
-public final class TimestampParameterResolverFactory extends AbstractAnnotatedParameterResolverFactory<Timestamp, DateTime> {
+public final class TimestampParameterResolverFactory
+        extends AbstractAnnotatedParameterResolverFactory<Timestamp, DateTime> {
+
     private final ParameterResolver<DateTime> resolver;
 
     /**
@@ -45,7 +47,8 @@ public final class TimestampParameterResolverFactory extends AbstractAnnotatedPa
         return resolver;
     }
 
-    static class TimestampParameterResolver implements ParameterResolver<DateTime> {
+    private static class TimestampParameterResolver implements ParameterResolver<DateTime> {
+
         @Override
         public DateTime resolveParameterValue(Message message) {
             if (message instanceof EventMessage) {

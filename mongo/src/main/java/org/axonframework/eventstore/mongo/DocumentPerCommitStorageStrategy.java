@@ -23,19 +23,14 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
-import org.axonframework.serializer.LazyDeserializingObject;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
-import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -140,8 +135,6 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
      * @since 2.0 (in incubator since 0.7)
      */
     private static final class CommitEntry {
-
-        private static final Logger logger = LoggerFactory.getLogger(DocumentPerCommitStorageStrategy.class);
 
         private static final String AGGREGATE_IDENTIFIER_PROPERTY = "aggregateIdentifier";
         private static final String SEQUENCE_NUMBER_PROPERTY = "sequenceNumber";
@@ -313,48 +306,6 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             @Override
             public SerializedObject getPayload() {
                 return eventEntry.getPayload();
-            }
-        }
-
-        private static class EntryBasedUpcastingContext implements UpcastingContext {
-
-            private final EventEntry eventEntry;
-            private final Object aggregateIdentifier;
-            private final LazyDeserializingObject<MetaData> serializedMetaData;
-
-            public EntryBasedUpcastingContext(CommitEntry commitEntry, EventEntry eventEntry, Serializer serializer) {
-                this.eventEntry = eventEntry;
-                this.aggregateIdentifier = commitEntry.getAggregateIdentifier();
-                this.serializedMetaData = new LazyDeserializingObject<MetaData>(eventEntry.getMetaData(), serializer);
-            }
-
-            @Override
-            public String getMessageIdentifier() {
-                return eventEntry.getEventIdentifier();
-            }
-
-            @Override
-            public Object getAggregateIdentifier() {
-                return aggregateIdentifier;
-            }
-
-            @Override
-            public Long getSequenceNumber() {
-                return eventEntry.getSequenceNumber();
-            }
-
-            @Override
-            public DateTime getTimestamp() {
-                return eventEntry.getTimestamp();
-            }
-
-            @Override
-            public MetaData getMetaData() {
-                return serializedMetaData.getObject();
-            }
-
-            public LazyDeserializingObject<MetaData> getSerializedMetaData() {
-                return serializedMetaData;
             }
         }
     }

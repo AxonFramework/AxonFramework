@@ -28,7 +28,7 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
 /**
  * ParameterResolverFactory that will supply a parameter resolver when a matching parameter annotation is paired
  * with a suitable type of parameter.
- *
+ * <p/>
  * Handling is in place to ensure that primitive parameter types will be resolved correctly from their respective
  * wrapper types.
  *
@@ -37,22 +37,23 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
  * @author Mark Ingram
  * @since 2.1
  */
-public abstract class AbstractAnnotatedParameterResolverFactory<A,P> extends ParameterResolverFactory {
+public abstract class AbstractAnnotatedParameterResolverFactory<A, P> extends ParameterResolverFactory {
+
     private final Class<A> annotationType;
-    private final Class<P> parameterType;
+    private final Class<P> declaredParameterType;
 
     /**
-     * Initialize a ParameterResolverFactory instance that resolves parameters of type <code>parameterType</code>
-     * annotated with the given <code>annotationType</code>.
+     * Initialize a ParameterResolverFactory instance that resolves parameters of type
+     * <code>declaredParameterType</code> annotated with the given <code>annotationType</code>.
      *
-     * @param annotationType the type of annotation that a prospective parameter should declare
-     * @param parameterType the type that the parameter value should be assignable from
+     * @param annotationType        the type of annotation that a prospective parameter should declare
+     * @param declaredParameterType the type that the parameter value should be assignable to
      */
-    protected AbstractAnnotatedParameterResolverFactory(Class<A> annotationType, Class<P> parameterType) {
+    protected AbstractAnnotatedParameterResolverFactory(Class<A> annotationType, Class<P> declaredParameterType) {
         Assert.notNull(annotationType, "annotationType may not be null");
-        Assert.notNull(parameterType, "parameterType may not be null");
+        Assert.notNull(declaredParameterType, "declaredParameterType may not be null");
         this.annotationType = annotationType;
-        this.parameterType = parameterType;
+        this.declaredParameterType = declaredParameterType;
     }
 
     /**
@@ -61,16 +62,18 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A,P> extends Par
     protected abstract ParameterResolver<P> getResolver();
 
     @Override
-    protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType, Annotation[] parameterAnnotations) {
+    protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                               Annotation[] parameterAnnotations) {
         A annotation = getAnnotation(parameterAnnotations, annotationType);
         if (annotation != null) {
-            if (parameterType.isAssignableFrom(this.parameterType)) {
+            if (parameterType.isAssignableFrom(declaredParameterType)) {
                 return getResolver();
             }
 
             //a 2nd chance to resolve if the parameter is primitive but its boxed wrapper type is assignable
-            if (parameterType.isPrimitive() &&
-                    ReflectionUtils.resolvePrimitiveWrapperType(parameterType).isAssignableFrom(this.parameterType)) {
+            if (parameterType.isPrimitive()
+                    && ReflectionUtils.resolvePrimitiveWrapperType(parameterType)
+                                      .isAssignableFrom(declaredParameterType)) {
                 return getResolver();
             }
         }

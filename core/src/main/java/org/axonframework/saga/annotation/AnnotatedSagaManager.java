@@ -77,6 +77,11 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
         }
     }
 
+    /**
+     * k
+     * @param sagaRepository
+     * @param sagaTypes
+     */
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         this(sagaRepository, new GenericSagaFactory(), sagaTypes);

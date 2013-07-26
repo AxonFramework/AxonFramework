@@ -21,6 +21,7 @@ import java.lang.annotation.Annotation;
 /**
  * Resolves the explicitly defined payload on a handler, if present.
  *
+ * @param <T> The type of annotation marking the handler method
  * @author Allard Buijze
  * @since 2.1
  */

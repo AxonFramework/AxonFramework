@@ -58,7 +58,6 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     private static final String ATTRIBUTE_ID = "id";
     private static final String ATTRIBUTE_AGGREGATE_FACTORY = "aggregate-factory";
     private static final String ATTRIBUTE_AGGREGATE_TYPE = "aggregate-type";
-    private static final String METHOD_CREATE_REPOSITORY = "createRepository";
 
     private static final String PROPERTY_WAIT_STRATEGY = "waitStrategy";
     private static final String ATTRIBUTE_WAIT_STRATEGY = "wait-strategy";

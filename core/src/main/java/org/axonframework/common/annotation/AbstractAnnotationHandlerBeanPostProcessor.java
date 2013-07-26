@@ -82,8 +82,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                 subscribe(proxy, adapter);
             }
             return proxy;
-        } else if (!getAdapterInterface().isInstance(bean) &&
-                isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
+        } else if (!getAdapterInterface().isInstance(bean)
+                && isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
             // Java Proxy, find target and inspect that instance
             try {
                 Object targetBean = ((Advised) bean).getTargetSource().getTarget();

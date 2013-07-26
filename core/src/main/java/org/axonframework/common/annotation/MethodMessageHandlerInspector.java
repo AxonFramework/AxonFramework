@@ -64,9 +64,10 @@ public final class MethodMessageHandlerInspector {
      * handler.
      *
      * @param handlerClass    The Class containing the handler methods to evaluate
-     * @param annotationType  The annotations demarcating handler methods
+     * @param annotationType  The annotation marking handler methods
      * @param allowDuplicates Indicates whether to accept multiple handlers listening to Messages with the same payload
      *                        type
+     * @param <T>             The type of annotation this inspector should check for
      * @return a MethodMessageHandlerInspector providing access to the handler methods
      */
     public static <T extends Annotation> MethodMessageHandlerInspector getInstance(Class<?> handlerClass,
@@ -83,11 +84,12 @@ public final class MethodMessageHandlerInspector {
      * handler.
      *
      * @param handlerClass        The Class containing the handler methods to evaluate
-     * @param annotationType      The annotations demarcating handler methods
+     * @param annotationType      The annotation marking handler methods
      * @param allowDuplicates     Indicates whether to accept multiple handlers listening to Messages with the same
      *                            payload
      *                            type
      * @param payloadTypeResolver The resolver providing the explicitly configured payload type of a method, if any
+     * @param <T>                 The type of annotation this inspector should check for
      * @return a MethodMessageHandlerInspector providing access to the handler methods
      */
     public static <T extends Annotation> MethodMessageHandlerInspector getInstance(
@@ -110,6 +112,7 @@ public final class MethodMessageHandlerInspector {
      * @param targetType          The targetType to inspect methods on
      * @param annotationType      The annotation used on the Event Handler methods.
      * @param payloadTypeResolver The resolver providing information about explicitly configured expected payload
+     * @param <T>                 The type of annotation this inspector should check for
      */
     private <T extends Annotation> MethodMessageHandlerInspector(Class<?> targetType, Class<T> annotationType,
                                                                  boolean allowDuplicates,
