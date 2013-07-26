@@ -94,11 +94,10 @@ public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof ContextStoppedEvent || event instanceof ContextClosedEvent) {
-            if (applicationContext == null
-                    || applicationContext.equals(((ApplicationContextEvent) event).getApplicationContext())) {
-                ParameterResolverFactory.unregisterFactory(this);
-            }
+        if ((event instanceof ContextStoppedEvent || event instanceof ContextClosedEvent)
+                && (applicationContext == null
+                || applicationContext.equals(((ApplicationContextEvent) event).getApplicationContext()))) {
+            ParameterResolverFactory.unregisterFactory(this);
         }
     }
 }

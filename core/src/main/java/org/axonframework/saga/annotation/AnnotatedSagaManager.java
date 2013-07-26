@@ -78,13 +78,15 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     }
 
     /**
-     * k
-     * @param sagaRepository
-     * @param sagaTypes
+     * Initialize the AnnotatedSagaManager using given <code>repository</code> to load sagas and supporting given
+     * annotated <code>sagaClasses</code>.
+     *
+     * @param sagaRepository The repository providing access to the Saga instances
+     * @param sagaClasses    The types of Saga that this instance should manage
      */
     public AnnotatedSagaManager(SagaRepository sagaRepository,
-                                Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
-        this(sagaRepository, new GenericSagaFactory(), sagaTypes);
+                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
+        this(sagaRepository, new GenericSagaFactory(), sagaClasses);
     }
 
     /**
